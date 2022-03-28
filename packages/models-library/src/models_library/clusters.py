@@ -1,6 +1,6 @@
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, validator
+from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
 from pydantic.types import NonNegativeInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -32,7 +32,7 @@ class BaseAuthentication(BaseModel):
 class SimpleAuthentication(BaseAuthentication):
     type: Literal["simple"] = "simple"
     username: str
-    password: str
+    password: SecretStr
 
     class Config(BaseAuthentication.Config):
         schema_extra = {
@@ -105,18 +105,12 @@ class BaseCluster(BaseModel):
         extra = Extra.forbid
         use_enum_values = True
 
-    def to_clusters_db(self, only_update: bool) -> Dict[str, Any]:
-        db_model = self.dict(
-            by_alias=True,
-            exclude={"id", "access_rights"},
-            exclude_unset=only_update,
-            exclude_none=only_update,
-        )
-        return db_model
+
+ClusterID = NonNegativeInt
 
 
 class Cluster(BaseCluster):
-    id: NonNegativeInt = Field(..., description="The cluster ID")
+    id: ClusterID = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
         schema_extra = {
@@ -176,5 +170,7 @@ class Cluster(BaseCluster):
             v[owner_gid] = CLUSTER_ADMIN_RIGHTS
         # check owner has full access
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
-            raise ValueError("the cluster owner access rights are incorrectly set")
+            raise ValueError(
+                f"the cluster owner access rights are incorrectly set: {v[owner_gid]}"
+            )
         return v

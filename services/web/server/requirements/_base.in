@@ -17,67 +17,42 @@
 --requirement ../../../../packages/service-library/requirements/_aiohttp.in
 
 
-# aiohttp + extensions
-aiohttp
-aiohttp_jinja2
-aiohttp_session[secure]
-aiohttp_security
-aiohttp-swagger[performance]
-gunicorn[setproctitle]
-
-
 # web-sockets
 # From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
 # test_resource_manager.py::test_websocket_resource_management fails because
 # socket_id saved in redis does not correspond to client's sio
 python-socketio~=4.6.1
 
-# postgres db
-aiopg[sa]
-asyncpg
-
-# i/o
-aiofiles
-
-# redis
-aioredis
-aioredlock
-
-# RabbitMQ client
-aio-pika
-
-# email
-aiosmtplib
-jinja_app_loader
-
-
-# data models
-pydantic[email]
-
-# security
-cryptography
-passlib
-
-# json
-orjson
-jsondiff
-json2html
-
-# asyncio debug
-aiodebug
-
-
-# misc
-change_case
-expiringdict
-semantic_version
-tenacity
-
-# import/export excel
-parfive
-openpyxl
-python-magic
-
-
 # SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
 yarl<1.6
+
+
+aio-pika # RabbitMQ client
+aiodebug # asyncio debug
+aiofiles # i/o
+aiohttp
+aiohttp_jinja2
+aiohttp_security
+aiohttp_session[secure]
+aiohttp-swagger[performance]
+aiopg[sa] # db
+aioredis # redis
+aioredlock # redis
+aiosmtplib # email
+asyncpg # db
+change_case
+cryptography # security
+expiringdict
+gunicorn[setproctitle]
+jinja_app_loader # email
+json2html
+jsondiff
+openpyxl # excel
+orjson  # json
+parfive  # excel
+passlib
+pint # units
+pydantic[email] # models
+python-magic # excel
+semantic_version
+tenacity

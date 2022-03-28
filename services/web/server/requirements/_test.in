@@ -8,6 +8,9 @@
 --constraint _base.txt
 
 # testing
+
+# fixtures
+hypothesis
 coverage
 Faker
 flaky

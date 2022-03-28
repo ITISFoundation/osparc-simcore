@@ -39,12 +39,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     this.base(arguments, form);
 
     const fl = this._getLayout();
-    fl.setColumnFlex(this.self().gridPos.label, 0);
-    fl.setColumnAlign(this.self().gridPos.label, "left", "top");
-    fl.setColumnFlex(this.self().gridPos.info, 0);
-    fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
-    fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 50);
+    fl.setColumnFlex(this.self().GRID_POS.LABEL, 0);
+    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
+    fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
+    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
+    fl.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
+    fl.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
   },
 
   properties: {
@@ -55,18 +55,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
   },
 
   statics: {
-    gridPos: {
-      label: 0,
-      info: 1,
-      ctrlField: 2,
-      unit: 3,
-      fieldLinkUnlink: 4
+    GRID_POS: {
+      LABEL: 0,
+      INFO: 1,
+      CTRL_FIELD: 2,
+      UNIT: 3,
+      FIELD_LINK_UNLINK: 4
     },
 
     getDisableables: function() {
       return [
-        this.gridPos.label,
-        this.gridPos.ctrlField
+        this.GRID_POS.LABEL,
+        this.GRID_POS.CTRL_FIELD
       ];
     }
   },
@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: this.self().gridPos.label,
+            column: this.self().GRID_POS.LABEL,
             colSpan: Object.keys(this.self().gridPos).length
           }
         );
@@ -100,24 +100,24 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
-          column: this.self().gridPos.label
+          column: this.self().GRID_POS.LABEL
         });
 
         const info = this._createInfoWHint(item.description);
         this._add(info, {
           row: this._row,
-          column: this.self().gridPos.info
+          column: this.self().GRID_POS.INFO
         });
 
         this._add(item, {
           row: this._row,
-          column: this.self().gridPos.ctrlField
+          column: this.self().GRID_POS.CTRL_FIELD
         });
 
-        const unit = this._createUnit(item.unitShort, item.unitLong);
+        const unit = this.__createUnit(item);
         this._add(unit, {
           row: this._row,
-          column: this.self().gridPos.unit
+          column: this.self().GRID_POS.UNIT
         });
 
         this._connectVisibility(item, label);
@@ -155,7 +155,47 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           filteredData[key] = data[key];
         }
       }
+      // convert values to service specified units
+      const changedXUnits = this.getChangedXUnits();
+      Object.keys(changedXUnits).forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        const nodeMD = this.getNode().getMetaData();
+        const {
+          unitPrefix
+        } = osparc.utils.Units.decomposeXUnit(nodeMD.inputs[portId]["x_unit"]);
+        filteredData[portId] = osparc.utils.Units.convertValue(filteredData[portId], ctrl.unitPrefix, unitPrefix);
+      });
       return filteredData;
+    },
+
+    getChangedXUnits: function() {
+      const xUnits = {};
+      const ctrls = this._form.getControls();
+      for (const portId in ctrls) {
+        const ctrl = this._form.getControl(portId);
+        xUnits[portId] = osparc.utils.Units.composeXUnit(ctrl.unit, ctrl.unitPrefix);
+      }
+      const nodeMD = this.getNode().getMetaData();
+      const changedXUnits = {};
+      for (const portId in xUnits) {
+        if (xUnits[portId] === null) {
+          break;
+        }
+        if (!("x_unit" in nodeMD.inputs[portId])) {
+          break;
+        }
+        if (xUnits[portId] !== nodeMD.inputs[portId].x_unit) {
+          changedXUnits[portId] = xUnits[portId];
+        }
+      }
+      return changedXUnits;
+    },
+
+    setInputsUnits: function(inputsUnits) {
+      Object.keys(inputsUnits).forEach(portId => {
+        const item = this._form.getControl(portId);
+        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
+      });
     },
 
     hasVisibleInputs: function() {
@@ -163,7 +203,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this.self().gridPos.label && child.getBuddy().isVisible()) {
+        if (layoutProps.column === this.self().GRID_POS.LABEL && child.getBuddy().isVisible()) {
           return true;
         }
       }
@@ -193,15 +233,54 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return infoWHint;
     },
 
-    _createUnit: function(unitShort, unitLong) {
-      const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
+    __createUnit: function(item) {
+      let {
+        unit,
+        unitPrefix,
+        unitShort,
+        unitLong
+      } = item;
+      if (unit) {
+        const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
+        unitShort = labels.unitShort;
+        unitLong = labels.unitLong;
+      }
+      const unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
         paddingBottom: 1,
         value: unitShort || null,
         toolTipText: unitLong || null,
         visibility: unitShort ? "visible" : "excluded"
       });
+      if (unit) {
+        unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
+        unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
+        unitLabel.addListener("tap", () => {
+          const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix);
+          this.__switchPrefix(item, item.unitPrefix, nextPrefix.long);
+        }, this);
+      }
       return unitLabel;
+    },
+
+    __switchPrefix: function(item, oldPrefix, newPrefix) {
+      const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
+      item.unitPrefix = newPrefix;
+      item.setValue(String(newValue));
+      this.__rerenderUnit(item);
+    },
+
+    __rerenderUnit: function(item) {
+      const {
+        unitShort,
+        unitLong
+      } = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
+      const unitLabel = this._geUnitFieldChild(item.key);
+      unitLabel.child.set({
+        value: unitShort || null,
+        toolTipText: unitLong || null,
+        visibility: unitShort ? "visible" : "excluded"
+      });
     },
 
     _getLayoutChild: function(portId, column) {
@@ -210,7 +289,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this.self().gridPos.label &&
+        if (layoutProps.column === this.self().GRID_POS.LABEL &&
           child.getBuddy().key === portId) {
           row = layoutProps.row;
           break;
@@ -233,11 +312,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _getLabelFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.label);
+      return this._getLayoutChild(portId, this.self().GRID_POS.LABEL);
     },
 
     _getCtrlFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
+      return this._getLayoutChild(portId, this.self().GRID_POS.CTRL_FIELD);
+    },
+
+    _geUnitFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this.self().GRID_POS.UNIT);
     }
   }
 });

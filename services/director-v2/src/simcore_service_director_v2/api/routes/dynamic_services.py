@@ -15,6 +15,7 @@ from simcore_service_director_v2.modules.rabbitmq import (
     RabbitMQClient,
     get_rabbitmq_client,
 )
+from models_library.users import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -26,7 +27,6 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.schemas.constants import UserID
 from ...models.schemas.dynamic_services import SchedulerData
 from ...modules import project_networks
 from ...modules.db.repositories.project_networks import ProjectNetworksRepository

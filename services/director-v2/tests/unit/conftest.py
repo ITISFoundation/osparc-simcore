@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import random
 from typing import AsyncIterable, AsyncIterator
 
@@ -145,19 +146,22 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
+    scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":31545"}}
 
     async with SpecCluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
-        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_CLUSTER_URL", f"{scheduler_address}" or "invalid"
+        )
         yield cluster
+    # force yielding to the event loop so that it properly closes the cluster
+    await asyncio.sleep(0)
 
 
 @pytest.fixture
-async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
+def local_dask_gateway_server_config() -> traitlets.config.Config:
     c = traitlets.config.Config()
     c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
     c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
@@ -174,10 +178,15 @@ async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
     c.ClusterConfig.worker_memory = "16G"  # type: ignore
 
     c.DaskGateway.log_level = "DEBUG"  # type: ignore
+    return c
 
+
+@pytest.fixture
+async def local_dask_gateway_server(
+    local_dask_gateway_server_config: traitlets.config.Config,
+) -> AsyncIterator[DaskGatewayServer]:
     print("--> creating local dask gateway server")
-
-    dask_gateway_server = DaskGateway(config=c)
+    dask_gateway_server = DaskGateway(config=local_dask_gateway_server_config)
     dask_gateway_server.initialize([])  # that is a shitty one!
     print("--> local dask gateway server initialized")
     await dask_gateway_server.setup()
@@ -187,7 +196,7 @@ async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
     yield DaskGatewayServer(
         f"http://{dask_gateway_server.backend.proxy.address}",
         f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
-        c.SimpleAuthenticator.password,  # type: ignore
+        local_dask_gateway_server_config.SimpleAuthenticator.password,  # type: ignore
         dask_gateway_server,
     )
     print("--> local dask gateway server switching off...")
