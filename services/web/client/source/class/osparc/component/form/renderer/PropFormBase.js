@@ -68,6 +68,21 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         this.GRID_POS.LABEL,
         this.GRID_POS.CTRL_FIELD
       ];
+    },
+
+    updateUnitLabelPrefix: function(item) {
+      const {
+        unitShort,
+        unitLong
+      } = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
+      if ("unitLabel" in item) {
+        const unitLabel = item["unitLabel"];
+        unitLabel.set({
+          value: unitShort || null,
+          toolTipText: unitLong || null,
+          visibility: unitShort ? "visible" : "excluded"
+        });
+      }
     }
   },
 
@@ -267,6 +282,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           this.__switchPrefix(item, item.unitPrefix, nextPrefix.long);
         }, this);
       }
+      item.unitLabel = unitLabel;
       return unitLabel;
     },
 
@@ -274,20 +290,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
       item.setValue(String(newValue));
-      this.__updatePrefix(item);
-    },
-
-    __updatePrefix: function(item) {
-      const {
-        unitShort,
-        unitLong
-      } = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
-      const unitLabel = this._geUnitFieldChild(item.key);
-      unitLabel.child.set({
-        value: unitShort || null,
-        toolTipText: unitLong || null,
-        visibility: unitShort ? "visible" : "excluded"
-      });
+      this.self().updateUnitLabelPrefix(item);
     },
 
     _getLayoutChild: function(portId, column) {
@@ -326,7 +329,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return this._getLayoutChild(portId, this.self().GRID_POS.CTRL_FIELD);
     },
 
-    _geUnitFieldChild: function(portId) {
+    __geUnitFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().GRID_POS.UNIT);
     }
   }

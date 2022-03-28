@@ -209,6 +209,12 @@ qx.Class.define("osparc.utils.Units", {
         unitPrefix,
         unit
       };
+    },
+
+    getPrefix(xUnit, text) {
+      const prefix = text.replace(this.BASE_UNITS[xUnit].short, "");
+      const idx = Object.values(this.PREFIXES).findIndex(p => p["short"] === prefix);
+      return idx > -1 ? Object.keys(this.PREFIXES)[idx] : null;
     }
   }
 });

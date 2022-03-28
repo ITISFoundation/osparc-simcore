@@ -310,7 +310,24 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       };
       const target2model = {
+        myContext: {
+          that: this,
+          s,
+          key
+        },
         converter: function(data) {
+          if ("x_unit" in this.myContext.s) {
+            console.log(this.myContext);
+            const tmp = data.split(" ");
+            if (tmp.length > 1) {
+              const prefix = osparc.utils.Units.getPrefix(this.myContext.s["x_unit"], tmp[1]);
+              if (prefix) {
+                const item = this.myContext.that.__ctrlMap[key];
+                item.unitPrefix = prefix;
+                osparc.component.form.renderer.PropFormBase.updateUnitLabelPrefix(item);
+              }
+            }
+          }
           return parseFloat(data);
         }
       };
