@@ -275,7 +275,7 @@ async def update_from_workbench(
         rabbitmq_client=rabbitmq_client,
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")
-    await project_networks_repository.update_project_networks(
+    await project_networks_repository.upsert_project_networks(
         project_id=project_id, networks_with_aliases=new_networks_with_aliases
     )
 

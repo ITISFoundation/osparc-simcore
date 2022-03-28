@@ -81,8 +81,8 @@ class DynamicSidecarClient:
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
-        self._attach_detach_network: httpx.Timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_ATTACH_DETACH_NETWORK,
+        self._attach_detach_network_timeout: httpx.Timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
@@ -300,7 +300,9 @@ class DynamicSidecarClient:
         )
         data = dict(network_id=network_id, network_aliases=network_aliases)
 
-        async with httpx.AsyncClient(timeout=self._attach_detach_network) as client:
+        async with httpx.AsyncClient(
+            timeout=self._attach_detach_network_timeout
+        ) as client:
             response = await client.post(url, json=data)
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(
@@ -316,7 +318,9 @@ class DynamicSidecarClient:
         )
         data = dict(network_id=network_id)
 
-        async with httpx.AsyncClient(timeout=self._attach_detach_network) as client:
+        async with httpx.AsyncClient(
+            timeout=self._attach_detach_network_timeout
+        ) as client:
             response = await client.post(url, json=data)
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(

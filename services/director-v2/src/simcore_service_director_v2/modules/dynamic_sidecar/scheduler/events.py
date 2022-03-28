@@ -437,7 +437,7 @@ class AttachProjectNetworks(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.were_services_created
-            and scheduler_data.dynamic_sidecar.project_network_attached == False
+            and scheduler_data.dynamic_sidecar.is_project_network_attached == False
             and _all_containers_running(
                 scheduler_data.dynamic_sidecar.containers_inspect
             )
@@ -472,7 +472,7 @@ class AttachProjectNetworks(DynamicSchedulerEvent):
                     network_alias=network_alias,
                 )
 
-        scheduler_data.dynamic_sidecar.project_network_attached = True
+        scheduler_data.dynamic_sidecar.is_project_network_attached = True
 
 
 class RemoveUserCreatedServices(DynamicSchedulerEvent):

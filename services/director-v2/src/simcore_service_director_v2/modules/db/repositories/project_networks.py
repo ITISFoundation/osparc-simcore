@@ -25,7 +25,7 @@ class ProjectNetworksRepository(BaseRepository):
             raise ProjectNotFoundError(project_id)
         return ProjectNetworks.from_orm(row)
 
-    async def update_project_networks(
+    async def upsert_project_networks(
         self, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
     ) -> None:
         project_networks_to_insert = ProjectNetworks.parse_obj(

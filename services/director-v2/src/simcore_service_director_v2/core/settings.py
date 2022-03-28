@@ -208,11 +208,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_ATTACH_DETACH_NETWORK: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
         3.0 * MINS,
         description=(
-            "when attaching a network to a container or when removing "
-            "it might take some time for the operation to be completed "
+            "timeout for attaching/detaching project networks to/from a container"
         ),
     )
 
