@@ -91,7 +91,7 @@ async def test_list_clusters(
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
     assert (
-        returned_clusters_list[0].id == "default"
+        returned_clusters_list[0].id == 0
     ), "default cluster id is not the one expected"
 
     # let's create some clusters
@@ -106,7 +106,7 @@ async def test_list_clusters(
         len(returned_clusters_list) == NUM_CLUSTERS + 1
     )  # the default cluster comes on top of the NUM_CLUSTERS
     assert (
-        returned_clusters_list[0].id == "default"
+        returned_clusters_list[0].id == 0
     ), "the first cluster shall be the platform default cluster"
 
     # now create a second user and check the clusters are not seen by it BUT the default one
@@ -118,7 +118,7 @@ async def test_list_clusters(
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
     assert (
-        returned_clusters_list[0].id == "default"
+        returned_clusters_list[0].id == 0
     ), "default cluster id is not the one expected"
 
     # let's create a few more clusters owned by user_1 with specific rights
@@ -277,7 +277,7 @@ async def test_get_default_cluster(
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = parse_obj_as(ClusterGet, response.json())
     assert returned_cluster
-    assert returned_cluster.id == "default"
+    assert returned_cluster.id == 0
     assert returned_cluster.name == "Default cluster"
     assert 1 in returned_cluster.access_rights  # everyone group is always 1
     assert returned_cluster.access_rights[1] == CLUSTER_USER_RIGHTS

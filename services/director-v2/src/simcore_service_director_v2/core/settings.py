@@ -311,7 +311,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
     @cached_property
     def default_cluster(self):
         return Cluster(
-            id="default",
+            id=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
