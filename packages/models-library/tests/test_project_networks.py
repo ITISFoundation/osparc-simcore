@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import json
-from typing import Dict
+from pprint import pformat
+from typing import Any, Dict, Type
 from uuid import UUID, uuid4
 
 import pytest
@@ -10,7 +11,7 @@ from models_library.project_networks import (
     NetworksWithAliases,
     ProjectNetworks,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 # UTILS
 
@@ -26,11 +27,22 @@ def uuid() -> UUID:
 # TESTS
 
 
-@pytest.mark.parametrize("example", NetworksWithAliases.Config.schema_extra["examples"])
-def test_networks_with_aliases(example: Dict) -> None:
-    project_networks = NetworksWithAliases.parse_obj(example)
-    assert json.loads(project_networks.json()) == example
-    assert project_networks.json() == json.dumps(example)
+@pytest.mark.parametrize(
+    "model_cls",
+    (
+        ProjectNetworks,
+        NetworksWithAliases,
+    ),
+)
+def test_service_settings_model_examples(
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+) -> None:
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+
+        model_instance = model_cls.parse_obj(example)
+        assert json.loads(model_instance.json()) == example
+        assert model_instance.json() == json.dumps(example)
 
 
 @pytest.mark.parametrize(
@@ -77,10 +89,6 @@ def test_project_networks_validation_fails(network_name: str) -> None:
         parse_obj_as(DockerNetworkName, network_name)
     with pytest.raises(ValidationError):
         parse_obj_as(DockerNetworkAlias, network_name)
-
-
-def test_project_networks() -> None:
-    assert ProjectNetworks.parse_obj(ProjectNetworks.Config.schema_extra["example"])
 
 
 def test_class_constructors_fail() -> None:
