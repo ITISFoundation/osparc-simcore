@@ -1,4 +1,4 @@
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Final, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
@@ -107,16 +107,17 @@ class BaseCluster(BaseModel):
 
 
 ClusterID = NonNegativeInt
+DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
 
 
 class Cluster(BaseCluster):
-    id: Union[ClusterID, Literal["default"]] = Field(..., description="The cluster ID")
+    id: ClusterID = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
         schema_extra = {
             "examples": [
                 {
-                    "id": "default",
+                    "id": DEFAULT_CLUSTER_ID,
                     "name": "The default cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 1456,
@@ -176,7 +177,7 @@ class Cluster(BaseCluster):
     @root_validator(pre=True)
     @classmethod
     def check_owner_has_access_rights(cls, values):
-        is_default_cluster = bool(values["id"] == "default")
+        is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)
         owner_gid = values["owner"]
 
         # check owner is in the access rights, if not add it

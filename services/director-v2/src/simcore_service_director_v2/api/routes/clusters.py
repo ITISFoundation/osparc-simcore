@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.clusters import Cluster, ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
@@ -39,7 +39,7 @@ async def _get_cluster_details_with_id(
 ) -> ClusterDetailsGet:
     log.debug("Getting details for cluster '%s'", cluster_id)
     cluster: Cluster = settings.default_cluster
-    if cluster_id != settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID:
+    if cluster_id != DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
         scheduler_info = client.dask_subsystem.client.scheduler_info()
@@ -86,7 +86,6 @@ async def list_clusters(
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
-    assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
     cluster = settings.default_cluster
     return cluster
 
@@ -149,11 +148,10 @@ async def get_default_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
     return await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,
-        cluster_id=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
+        cluster_id=DEFAULT_CLUSTER_ID,
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )

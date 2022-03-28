@@ -11,7 +11,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.clusters import Cluster, ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -46,7 +46,7 @@ async def _cluster_dask_client(
     user_id: UserID, cluster_id: ClusterID, scheduler: "DaskScheduler"
 ) -> AsyncIterator[DaskClient]:
     cluster: Cluster = scheduler.settings.default_cluster
-    if cluster_id != scheduler.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID:
+    if cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo: ClustersRepository = get_repository(
             scheduler.db_engine, ClustersRepository
         )  # type: ignore

@@ -14,9 +14,9 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.clusters import (
+    DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
-    ClusterID,
     NoAuthentication,
 )
 from models_library.projects_networks import SERVICE_NETWORK_RE
@@ -304,14 +304,11 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
 
     @cached_property
     def default_cluster(self):
         return Cluster(
-            id=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
+            id=DEFAULT_CLUSTER_ID,
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,

@@ -13,6 +13,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
+    DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
     JupyterHubTokenAuthentication,
@@ -235,10 +236,7 @@ def test_default_cluster_correctly_initialized(
         == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
     )
 
-    assert (
-        default_cluster.id
-        == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID
-    )
+    assert default_cluster.id == DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
 
