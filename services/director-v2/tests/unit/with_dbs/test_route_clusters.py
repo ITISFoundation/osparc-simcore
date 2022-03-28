@@ -604,6 +604,7 @@ async def test_update_another_cluster(
 
 async def test_delete_cluster(
     clusters_config: None,
+    cluster: Callable[..., Cluster],
     registered_user: Callable[..., Dict],
     async_client: httpx.AsyncClient,
 ):
