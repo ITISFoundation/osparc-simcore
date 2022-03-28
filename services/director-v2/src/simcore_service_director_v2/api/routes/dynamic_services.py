@@ -282,10 +282,7 @@ async def service_restart_containers(
 @router.patch(
     "/projects/{project_id}/-/project-networks",
     summary=(
-        "After a change to the workbench the `project networks` need to be updated, "
-        "this will trigger attaching and detaching of networks to ensure services "
-        "are correctly conencted between each other. For now all services are placed "
-        "on the same default network."
+        "Updates the project networks according to the current project's workbench"
     ),
     status_code=status.HTTP_204_NO_CONTENT,
 )
