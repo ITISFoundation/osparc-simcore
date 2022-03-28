@@ -197,5 +197,7 @@ class DefaultCluster(Cluster):
     id: Literal["default"] = "default"
     name: Literal["Default cluster"] = "Default cluster"
     type: ClusterType = ClusterType.ON_PREMISE
-    owner: GroupID = 1
+    owner: GroupID = (
+        1  # NOTE: This group ID 1 is 99% of the time equivalent to the Everyone group
+    )
     access_rights: Dict[GroupID, ClusterAccessRights] = {1: CLUSTER_USER_RIGHTS}
