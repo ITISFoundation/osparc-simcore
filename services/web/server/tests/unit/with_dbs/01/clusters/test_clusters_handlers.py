@@ -454,6 +454,14 @@ async def test_ping_cluster_with_error(
     assert error
 
 
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterPingError, web.HTTPUnprocessableEntity),
+    ],
+)
 async def test_ping_specific_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
