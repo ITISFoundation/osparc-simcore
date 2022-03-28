@@ -226,14 +226,19 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
                         )
 
+                        log_lines = await container.log(
+                            stdout=True, stderr=True, tail=20
+                        )
+                        # TODO: just for debugging. remove before merge!!!
+                        # print("".join(log_lines))
+                        # print(json.dumps(container_data, indent=1, sort_keys=True))
+
                         raise ServiceRunError(
                             service_key=self.service_key,
                             service_version=self.service_version,
                             container_id=container.id,
                             exit_code=container_data["State"]["ExitCode"],
-                            service_logs=await container.log(
-                                stdout=True, stderr=True, tail=20
-                            ),
+                            service_logs=log_lines,
                         )
                     await self._publish_sidecar_log("Container ran successfully.")
 

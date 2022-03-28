@@ -5,6 +5,7 @@
 # pylint: disable=too-many-instance-attributes
 
 import asyncio
+import inspect
 import json
 import logging
 import re
@@ -150,9 +151,7 @@ def input_data(ftp_server: List[URL]) -> TaskInputData:
             "the_input_43": 15.0,
             "the_bool_input_54": False,
             **{
-                f"some_file_input_{index+1}": FileUrl(
-                    url=f"{file}", file_mapping=file.path
-                )
+                f"some_file_input_{index+1}": FileUrl(url=f"{file}")
                 for index, file in enumerate(ftp_server)
             },
             **{
@@ -343,42 +342,6 @@ def ubuntu_task(
     )
 
 
-@pytest.fixture
-def python_task(
-    input_data: TaskInputData,
-    output_data_keys: TaskOutputDataSchema,
-    expected_output_data: TaskOutputData,
-    log_file_url: AnyUrl,
-) -> ServiceExampleParam:
-
-    # TODO: how to get input file ??
-    kwargs = {"input_dir": "${INPUT_FOLDER}", "output_dir": "${OUTPUT_FOLDER}"}
-    for key, value in input_data.items():
-        if isinstance(value, FileUrl) and value.file_mapping:
-            value = f"${{INPUT_FOLDER}}/{value.file_mapping}"
-        kwargs[key] = value
-
-    arguments_str = ",".join(f"{k}={v!r}" for k, v in kwargs.items())
-
-    return ServiceExampleParam(
-        docker_auth=DockerBasicAuth(
-            server_address="docker.io", username="pytest", password=""
-        ),
-        service_key="python",
-        service_version="3.8.10-slim-buster",
-        command=["python", "-c", f"print(dict({arguments_str}))"],
-        input_data=input_data,
-        output_data_keys=output_data_keys,
-        log_file_url=log_file_url,
-        ##
-        expected_output_data=expected_output_data,
-        expected_logs=[
-            '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-        ],
-        integration_version="1.0.0",
-    )
-
-
 @pytest.fixture()
 def ubuntu_task_fail(ubuntu_task: ServiceExampleParam) -> ServiceExampleParam:
     ubuntu_task.command = ["/bin/bash", "-c", "some stupid failing command"]
@@ -397,6 +360,125 @@ def ubuntu_task_unexpected_output(
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(logging.INFO):
         yield caplog
+
+
+@pytest.fixture
+def python_task(
+    input_data: TaskInputData,
+    output_data_keys: TaskOutputDataSchema,
+    expected_output_data: TaskOutputData,
+    log_file_url: AnyUrl,
+) -> ServiceExampleParam:
+
+    integration_version = Version("1.0.0")
+
+    (
+        input_json_file_name,
+        output_json_file_name,
+        log_file_name,
+    ) = get_io_service_file_names(integration_version)
+
+    def service_fun(
+        input_1: int,
+        intpu_23: str,
+        the_input_43: float,
+        the_bool_input_54: bool,
+        **kwargs,
+    ):
+        return {
+            "pytest_string": "is quite an amazing feat",
+            "pytest_integer": 432,
+            "pytest_float": 3.2,
+            "pytest_bool": False,
+        }
+
+    kwargs = {}  # {"input_dir": "${INPUT_FOLDER}", "output_dir": "${OUTPUT_FOLDER}"}
+    for key, value in input_data.items():
+        # if isinstance(value, FileUrl) and value.file_mapping:
+        #    value = f"${{INPUT_FOLDER}}/{value.file_mapping}"
+        if not isinstance(value, FileUrl):
+            kwargs[key] = value
+
+    arguments_str = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
+
+    code = inspect.getsource(service_fun).strip().replace('"', r"\"")
+
+    py_serialize_code = ";".join(
+        [
+            "from pathlib import Path",
+            f"code=''{code!r}''",
+            "print(code)"
+            # "Path('${INPUT_FOLDER}/service.py').write_text(code)",
+        ]
+    )
+
+    py_execute_code = ";".join(
+        ["from service import service_fun", f"print(service_fun({arguments_str}))"]
+    )
+
+    list_of_commands = [
+        'export PYTHONPATH="${INPUT_FOLDER}":${PYTHONPATH}',
+        f'python -c "{py_serialize_code}"',
+        # f'python -c "{py_execute_code}" > "${{OUTPUT_FOLDER}}/{output_json_file_name}"',
+    ]
+
+    return ServiceExampleParam(
+        docker_auth=DockerBasicAuth(
+            server_address="docker.io", username="pytest", password=""
+        ),
+        service_key="python",
+        service_version="3.8.10-slim-buster",
+        command=[
+            "/bin/bash",
+            "-c",
+            " && ".join(list_of_commands),
+        ],
+        input_data=input_data,
+        output_data_keys=output_data_keys,
+        log_file_url=log_file_url,
+        ##
+        expected_output_data=expected_output_data,
+        expected_logs=[
+            '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+        ],
+        integration_version=integration_version,
+    )
+
+
+def test_run_computational_sidecar_with_python_task(
+    caplog_info_level: LogCaptureFixture,
+    event_loop: asyncio.AbstractEventLoop,
+    mock_service_envs: None,
+    dask_subsystem_mock: Dict[str, MockerFixture],
+    python_task: ServiceExampleParam,
+    mocker: MockerFixture,
+):
+
+    mocked_get_integration_version = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
+        return_value=python_task.integration_version,
+    )
+    output_data: TaskOutputData = run_computational_sidecar(
+        python_task.docker_auth,
+        python_task.service_key,
+        python_task.service_version,
+        python_task.input_data,
+        python_task.output_data_keys,
+        python_task.log_file_url,
+        python_task.command,
+    )
+
+    mocked_get_integration_version.assert_called_once_with(
+        mock.ANY,
+        python_task.docker_auth,
+        python_task.service_key,
+        python_task.service_version,
+    )
+    for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
+        dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
+            name=event.topic_name()
+        )
 
 
 def test_run_computational_sidecar_real_fct(
