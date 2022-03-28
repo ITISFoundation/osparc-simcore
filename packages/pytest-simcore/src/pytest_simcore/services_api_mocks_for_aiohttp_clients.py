@@ -139,7 +139,9 @@ def create_cluster_cb(url, **kwargs) -> CallbackResult:
     random_cluster = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
     )
-    return CallbackResult(status=201, payload=random_cluster.dict(by_alias=True))
+    return CallbackResult(
+        status=201, payload=json.loads(random_cluster.json(by_alias=True))
+    )
 
 
 def list_clusters_cb(url, **kwargs) -> CallbackResult:
@@ -148,9 +150,11 @@ def list_clusters_cb(url, **kwargs) -> CallbackResult:
         status=200,
         body=json.dumps(
             [
-                Cluster.parse_obj(
-                    random.choice(Cluster.Config.schema_extra["examples"])
-                ).dict(by_alias=True)
+                json.loads(
+                    Cluster.parse_obj(
+                        random.choice(Cluster.Config.schema_extra["examples"])
+                    ).json(by_alias=True)
+                )
                 for _ in range(3)
             ]
         ),
@@ -162,12 +166,14 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
     cluster_id = url.path.split("/")[-1]
     return CallbackResult(
         status=200,
-        payload=Cluster.parse_obj(
-            {
-                **random.choice(Cluster.Config.schema_extra["examples"]),
-                **{"id": cluster_id},
-            }
-        ).dict(by_alias=True),
+        payload=json.loads(
+            Cluster.parse_obj(
+                {
+                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **{"id": cluster_id},
+                }
+            ).json(by_alias=True)
+        ),
     )
 
 
@@ -185,12 +191,14 @@ def patch_cluster_cb(url, **kwargs) -> CallbackResult:
     cluster_id = url.path.split("/")[-1]
     return CallbackResult(
         status=200,
-        payload=Cluster.parse_obj(
-            {
-                **random.choice(Cluster.Config.schema_extra["examples"]),
-                **{"id": cluster_id},
-            }
-        ).dict(by_alias=True),
+        payload=json.loads(
+            Cluster.parse_obj(
+                {
+                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **{"id": cluster_id},
+                }
+            ).json(by_alias=True)
+        ),
     )
 
 

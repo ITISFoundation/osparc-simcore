@@ -29,8 +29,10 @@ elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   APP_CONFIG=server-docker-prod.yaml
 fi
 
+APP_LOG_LEVEL=${WEBSERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL}}}
+
 # RUNNING application ----------------------------------------
-echo "$INFO" "Selected config $APP_CONFIG"
+echo "$INFO" "Selected config $APP_CONFIG w/ log-level $APP_LOG_LEVEL"
 
 # NOTE: the number of workers ```(2 x $num_cores) + 1``` is
 # the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
@@ -44,7 +46,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${LOG_LEVEL:-info}" \
+    --log-level="${APP_LOG_LEVEL:-info}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
     --reload
@@ -55,7 +57,7 @@ else
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${LOG_LEVEL:-warning}" \
+    --log-level="${APP_LOG_LEVEL:-warning}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
 fi

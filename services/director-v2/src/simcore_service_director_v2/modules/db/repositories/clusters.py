@@ -27,6 +27,7 @@ from ....core.errors import (
     ClusterNotFoundError,
 )
 from ....models.schemas.clusters import ClusterCreate, ClusterPatch
+from ....utils.db import to_clusters_db
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ class ClustersRepository(BaseRepository):
             new_cluster.owner = user_primary_gid
             new_cluster_id = await conn.scalar(
                 sa.insert(
-                    clusters, values=new_cluster.to_clusters_db(only_update=False)
+                    clusters, values=to_clusters_db(new_cluster, only_update=False)
                 ).returning(clusters.c.id)
             )
         assert new_cluster_id  # nosec
@@ -235,14 +236,7 @@ class ClustersRepository(BaseRepository):
                 await conn.execute(
                     sa.update(clusters)
                     .where(clusters.c.id == the_cluster.id)
-                    .values(
-                        updated_cluster.dict(
-                            by_alias=True,
-                            exclude_unset=True,
-                            exclude_none=True,
-                            exclude={"access_rights"},
-                        ),
-                    )
+                    .values(to_clusters_db(updated_cluster, only_update=True))
                 )
             except psycopg2.DatabaseError as e:
                 raise ClusterInvalidOperationError(cluster_id=cluster_id) from e

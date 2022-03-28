@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterID, NoAuthentication
+from models_library.clusters import Cluster, ClusterID
 from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import (
@@ -14,7 +14,7 @@ from ..core.errors import (
     ConfigurationError,
     DaskClientAcquisisitonError,
 )
-from ..core.settings import DaskSchedulerSettings
+from ..core.settings import DaskComputationalBackendSettings
 from .dask_client import DaskClient, TaskHandlers
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DaskClientsPool:
     app: FastAPI
-    settings: DaskSchedulerSettings
+    settings: DaskComputationalBackendSettings
     _client_acquisition_lock: asyncio.Lock = field(init=False)
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
     _task_handlers: Optional[TaskHandlers] = None
@@ -33,13 +33,13 @@ class DaskClientsPool:
         self._client_acquisition_lock = asyncio.Lock()
 
     @staticmethod
-    def default_cluster(settings: DaskSchedulerSettings):
+    def default_cluster(settings: DaskComputationalBackendSettings):
         return Cluster(
-            id=settings.DASK_DEFAULT_CLUSTER_ID,
-            name="Default internal cluster",
+            id=settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
+            name="Default cluster",
             type=ClusterType.ON_PREMISE,
-            endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-            authentication=NoAuthentication(),
+            endpoint=settings.DIRECTOR_V2_DEFAULT_CLUSTER_URL,
+            authentication=settings.DIRECTOR_V2_DEFAULT_CLUSTER_AUTH,
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 
@@ -48,7 +48,7 @@ class DaskClientsPool:
 
     @classmethod
     async def create(
-        cls, app: FastAPI, settings: DaskSchedulerSettings
+        cls, app: FastAPI, settings: DaskComputationalBackendSettings
     ) -> "DaskClientsPool":
         return cls(app=app, settings=settings)
 
@@ -114,10 +114,14 @@ class DaskClientsPool:
                 raise
 
 
-def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
+def setup(app: FastAPI, settings: DaskComputationalBackendSettings) -> None:
     async def on_startup() -> None:
         app.state.dask_clients_pool = await DaskClientsPool.create(
             app=app, settings=settings
+        )
+        logger.info(
+            "Default cluster is set to %s",
+            f"{DaskClientsPool.default_cluster(settings)!r}",
         )
 
     async def on_shutdown() -> None:

@@ -191,11 +191,15 @@ openpyxl==3.0.7
     # via -r requirements/_base.in
 orjson==3.5.3
     # via -r requirements/_base.in
+packaging==21.3
+    # via pint
 pamqp==2.3.0
     # via aiormq
 parfive==1.5.1
     # via -r requirements/_base.in
 passlib==1.7.4
+    # via -r requirements/_base.in
+pint==0.18
     # via -r requirements/_base.in
 prometheus-client==0.12.0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
@@ -225,6 +229,8 @@ pyinstrument==3.4.2
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
 pyinstrument-cext==0.2.4
     # via pyinstrument
+pyparsing==3.0.7
+    # via packaging
 pyrsistent==0.18.0
     # via jsonschema
 python-engineio==3.14.2
