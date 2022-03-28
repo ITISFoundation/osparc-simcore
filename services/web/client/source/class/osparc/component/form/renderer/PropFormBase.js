@@ -274,10 +274,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
       item.setValue(String(newValue));
-      this.__rerenderUnit(item);
+      this.__updatePrefix(item);
     },
 
-    __rerenderUnit: function(item) {
+    __updatePrefix: function(item) {
       const {
         unitShort,
         unitLong
