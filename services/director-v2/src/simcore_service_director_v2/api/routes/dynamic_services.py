@@ -11,11 +11,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.users import UserID
 from simcore_service_director_v2.modules.rabbitmq import (
     RabbitMQClient,
     get_rabbitmq_client,
 )
-from models_library.users import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -50,7 +50,6 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
-
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

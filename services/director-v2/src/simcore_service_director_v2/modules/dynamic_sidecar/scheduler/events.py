@@ -15,9 +15,6 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    DockerStatus,
-)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -30,6 +27,7 @@ from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     SchedulerData,
 )
+from ....models.schemas.dynamic_services.scheduler import DockerStatus
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.project_networks import ProjectNetworksRepository

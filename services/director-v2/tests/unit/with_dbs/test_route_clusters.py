@@ -6,8 +6,6 @@ import json
 import random
 from typing import Any, Callable, Dict, Iterator, List
 
-from settings_library.utils_cli import create_json_encoder_wo_secrets
-
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -28,6 +26,7 @@ from models_library.clusters import (
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
 from settings_library.rabbit import RabbitSettings
+from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,

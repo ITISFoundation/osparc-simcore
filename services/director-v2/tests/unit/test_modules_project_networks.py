@@ -8,11 +8,9 @@ from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
 import pytest
-
-from models_library.projects import Workbench
 from models_library.project_networks import NetworksWithAliases
+from models_library.projects import ProjectID, Workbench
 from models_library.projects_nodes import Node
-from models_library.projects import ProjectID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.modules.project_networks import (

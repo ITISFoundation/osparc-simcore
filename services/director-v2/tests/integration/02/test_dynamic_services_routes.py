@@ -11,10 +11,10 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from models_library.services import ServiceKeyVersion
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip

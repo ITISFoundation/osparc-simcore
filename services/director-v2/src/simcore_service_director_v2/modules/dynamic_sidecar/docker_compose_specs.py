@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import PathMappingsLabel, ComposeSpecLabel
+from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
 from settings_library.docker_registry import RegistrySettings
 
 from ._constants import CONTAINER_NAME

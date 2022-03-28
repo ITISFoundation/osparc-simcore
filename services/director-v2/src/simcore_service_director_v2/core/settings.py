@@ -13,9 +13,9 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
+from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
 from models_library.project_networks import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
-from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
