@@ -1,5 +1,5 @@
 from models_library.projects import ProjectID
-from pydantic import BaseModel, Field, constr, validate_arguments
+from pydantic import BaseModel, Field, constr
 
 from .generics import DictModel
 from .projects_nodes_io import NodeIDStr
@@ -10,16 +10,6 @@ PROJECT_NETWORK_PREFIX = "prj-ntwrk"
 
 DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
 DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)
-
-
-@validate_arguments
-def validate_network_name(value: DockerNetworkName) -> DockerNetworkName:
-    return value
-
-
-@validate_arguments
-def validate_network_alias(value: DockerNetworkAlias) -> DockerNetworkAlias:
-    return value
 
 
 class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):

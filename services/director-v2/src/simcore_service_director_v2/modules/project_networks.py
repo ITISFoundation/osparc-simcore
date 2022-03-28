@@ -11,8 +11,6 @@ from models_library.project_networks import (
     DockerNetworkName,
     NetworksWithAliases,
     ProjectNetworks,
-    validate_network_alias,
-    validate_network_name,
 )
 from models_library.projects import ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
@@ -20,7 +18,7 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.core.errors import ProjectNotFoundError
 from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
@@ -38,11 +36,11 @@ _ToAdd = namedtuple("_ToAdd", "project_id, node_id, network_name, network_alias"
 
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
     network_name = f"{PROJECT_NETWORK_PREFIX}_{project_id}_{user_defined}"
-    return validate_network_name(network_name)
+    return parse_obj_as(DockerNetworkName, network_name)
 
 
 def _network_alias(label: str) -> DockerNetworkAlias:
-    return validate_network_alias(label)
+    return parse_obj_as(DockerNetworkAlias, label)
 
 
 async def _attach_network_to_dynamic_sidecar(
