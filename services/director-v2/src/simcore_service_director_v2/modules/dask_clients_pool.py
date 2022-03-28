@@ -14,7 +14,7 @@ from ..core.errors import (
     ConfigurationError,
     DaskClientAcquisisitonError,
 )
-from ..core.settings import DaskComputationalBackendSettings
+from ..core.settings import ComputationalBackendSettings
 from .dask_client import DaskClient, TaskHandlers
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DaskClientsPool:
     app: FastAPI
-    settings: DaskComputationalBackendSettings
+    settings: ComputationalBackendSettings
     _client_acquisition_lock: asyncio.Lock = field(init=False)
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
     _task_handlers: Optional[TaskHandlers] = None
@@ -33,13 +33,13 @@ class DaskClientsPool:
         self._client_acquisition_lock = asyncio.Lock()
 
     @staticmethod
-    def default_cluster(settings: DaskComputationalBackendSettings):
+    def default_cluster(settings: ComputationalBackendSettings):
         return Cluster(
-            id=settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
+            id=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
             name="Default cluster",
             type=ClusterType.ON_PREMISE,
-            endpoint=settings.DIRECTOR_V2_DEFAULT_CLUSTER_URL,
-            authentication=settings.DIRECTOR_V2_DEFAULT_CLUSTER_AUTH,
+            endpoint=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
+            authentication=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 
@@ -48,7 +48,7 @@ class DaskClientsPool:
 
     @classmethod
     async def create(
-        cls, app: FastAPI, settings: DaskComputationalBackendSettings
+        cls, app: FastAPI, settings: ComputationalBackendSettings
     ) -> "DaskClientsPool":
         return cls(app=app, settings=settings)
 
@@ -114,7 +114,7 @@ class DaskClientsPool:
                 raise
 
 
-def setup(app: FastAPI, settings: DaskComputationalBackendSettings) -> None:
+def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
     async def on_startup() -> None:
         app.state.dask_clients_pool = await DaskClientsPool.create(
             app=app, settings=settings

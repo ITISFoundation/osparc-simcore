@@ -16,6 +16,7 @@ from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
+from pydantic import SecretStr
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status
@@ -37,7 +38,7 @@ def clusters_config(
     dask_spec_local_cluster: SpecCluster,
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
@@ -191,7 +192,8 @@ async def test_get_cluster_details(
         user_1,
         endpoint=local_dask_gateway_server.address,
         authentication=SimpleAuthentication(
-            username="pytest_user", password=local_dask_gateway_server.password
+            username="pytest_user",
+            password=SecretStr(local_dask_gateway_server.password),
         ).dict(by_alias=True),
     )
     # in its present state, the cluster should have no workers
@@ -267,8 +269,9 @@ async def test_get_cluster_details(
                 next(iter(cluster_out.scheduler.workers.values())).metrics.in_memory
                 == 1
             ), "worker did not keep the result in memory"
+            # NOTE: this is a CPU percent use
             assert (
-                next(iter(cluster_out.scheduler.workers.values())).metrics.cpu == 0
+                next(iter(cluster_out.scheduler.workers.values())).metrics.cpu < 5.0
             ), "worker did not update the cpu metrics"
 
     # since the task is completed the worker should have stopped executing

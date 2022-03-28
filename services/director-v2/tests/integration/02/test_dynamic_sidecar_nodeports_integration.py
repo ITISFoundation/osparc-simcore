@@ -311,7 +311,7 @@ def mock_env(
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
-        "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
 
