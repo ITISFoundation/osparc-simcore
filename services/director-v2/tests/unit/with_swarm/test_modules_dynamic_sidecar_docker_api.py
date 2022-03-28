@@ -247,7 +247,7 @@ async def project_id_labeled_network(
     yield network_id
 
     network = await async_docker_client.networks.get(network_id)
-    await network.delete()
+    assert await network.delete() is True
 
 
 @pytest.fixture
