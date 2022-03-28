@@ -1,7 +1,6 @@
 import json
 import logging
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Set, Type
+from typing import Any, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
@@ -20,15 +19,8 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
-from ....api.dependencies.database import get_base_repository
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import (
-    DockerContainerInspect,
-    DynamicSidecarStatus,
-    SchedulerData,
-)
-from ....models.schemas.dynamic_services.scheduler import DockerStatus
-from ....modules.db.repositories import BaseRepository
+from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.project_networks import ProjectNetworksRepository
 from ...db.repositories.projects import ProjectsRepository
@@ -60,40 +52,15 @@ from ..errors import (
 )
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
-from .events_utils import disabled_directory_watcher
+from .events_utils import (
+    all_containers_running,
+    disabled_directory_watcher,
+    fetch_repo_outside_of_request,
+    get_director_v0_client,
+    parse_containers_inspect,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _fetch_repo_outside_of_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
-) -> BaseRepository:
-    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
-
-
-def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
-    client = DirectorV0Client.instance(app)
-    return client
-
-
-def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
-    results: Deque[DockerContainerInspect] = deque()
-
-    if containers_inspect is None:
-        return []
-
-    for container_id in containers_inspect:
-        container_inspect_data = containers_inspect[container_id]
-        results.append(DockerContainerInspect.from_container(container_inspect_data))
-    return list(results)
-
-
-def _all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
-    return len(containers_inspect) > 0 and all(
-        (x.status == DockerStatus.RUNNING for x in containers_inspect)
-    )
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -120,10 +87,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         # resources and placement derived from all the images in
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
-        director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
 
         # fetching project form DB and fetching user settings
-        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
+        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
@@ -284,7 +251,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
             await logged_gather(*tasks)
 
             # inside this directory create the missing dirs, fetch those form the labels
-            director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+            director_v0_client: DirectorV0Client = get_director_v0_client(app)
             simcore_service_labels: SimcoreServiceLabels = (
                 await director_v0_client.get_service_labels(
                     service=ServiceKeyVersion(
@@ -436,7 +403,7 @@ class AttachProjectNetworks(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.were_services_created
             and scheduler_data.dynamic_sidecar.is_project_network_attached == False
-            and _all_containers_running(
+            and all_containers_running(
                 scheduler_data.dynamic_sidecar.containers_inspect
             )
         )
@@ -449,7 +416,7 @@ class AttachProjectNetworks(DynamicSchedulerEvent):
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         project_networks_repository: ProjectNetworksRepository = (
-            _fetch_repo_outside_of_request(app, ProjectNetworksRepository)
+            fetch_repo_outside_of_request(app, ProjectNetworksRepository)
         )
 
         project_networks: ProjectNetworks = (
