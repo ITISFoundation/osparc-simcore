@@ -12,7 +12,7 @@ project_networks = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_project_networks_project_networks_projects",
+            name="fk_project_networks_project_uuid_projects",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
@@ -24,6 +24,6 @@ project_networks = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Maps networks with attached services by node_id and alias",
+        doc="Maps networks with attached services by node_id and alias. See NetworksWithAliases",
     ),
 )
