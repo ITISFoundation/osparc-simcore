@@ -321,7 +321,8 @@ qx.Class.define("osparc.component.form.Auto", {
             const tmp = data.split(" ");
             if (tmp.length > 1) {
               const prefix = osparc.utils.Units.getPrefix(this.myContext.s["x_unit"], tmp[1]);
-              if (prefix) {
+              if (prefix !== null) {
+                // eslint-disable-next-line no-underscore-dangle
                 const item = this.myContext.that.__ctrlMap[key];
                 item.unitPrefix = prefix;
                 osparc.component.form.renderer.PropFormBase.updateUnitLabelPrefix(item);
