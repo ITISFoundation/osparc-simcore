@@ -459,6 +459,28 @@ async def test_update_own_cluster(
     ), f"received {response.text}"
 
 
+async def test_update_default_cluster_fails(
+    clusters_config: None,
+    registered_user: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    cluster_simple_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+):
+    _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
+    user_1 = registered_user()
+    # try to modify one that does not exist
+    response = await async_client.patch(
+        f"/v2/clusters/default?user_id={user_1['id']}",
+        json=json.loads(
+            ClusterPatch().json(
+                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 @pytest.mark.parametrize(
     "cluster_sharing_rights, can_use, can_manage, can_administer",
     [
@@ -583,10 +605,7 @@ async def test_update_another_cluster(
 async def test_delete_cluster(
     clusters_config: None,
     registered_user: Callable[..., Dict],
-    cluster: Callable[..., Cluster],
-    cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
-    faker: Faker,
 ):
     user_1 = registered_user()
     # let's create some clusters
@@ -669,6 +688,16 @@ async def test_delete_another_cluster(
         if can_administer
         else status.HTTP_200_OK
     ), f"received {response.text}"
+
+
+async def test_delete_default_cluster_fails(
+    clusters_config: None,
+    registered_user: Callable[..., Dict],
+    async_client: httpx.AsyncClient,
+):
+    user_1 = registered_user()
+    response = await async_client.delete(f"/v2/clusters/default?user_id={user_1['id']}")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 async def test_ping_invalid_cluster_raises_422(
