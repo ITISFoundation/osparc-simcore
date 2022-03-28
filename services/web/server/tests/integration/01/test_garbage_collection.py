@@ -93,7 +93,7 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
     )
     delete_computation_pattern = get_computation_pattern
     projects_networks_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/project-networks$"
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
     )
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
     # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..

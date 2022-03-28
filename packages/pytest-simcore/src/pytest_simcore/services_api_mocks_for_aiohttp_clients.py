@@ -221,7 +221,7 @@ async def director_v2_service_mock(
     )
     delete_computation_pattern = get_computation_pattern
     projects_networks_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/project-networks$"
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
     )
 
     aioresponses_mocker.post(

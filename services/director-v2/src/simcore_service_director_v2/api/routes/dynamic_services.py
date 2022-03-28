@@ -280,7 +280,7 @@ async def service_restart_containers(
 
 
 @router.patch(
-    "/projects/{project_id}/-/project-networks",
+    "/projects/{project_id}/-/networks",
     summary=(
         "Updates the project networks according to the current project's workbench"
     ),

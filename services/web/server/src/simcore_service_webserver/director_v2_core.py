@@ -112,10 +112,6 @@ async def _request_director_v2(
                         else await response.text()
                     )
 
-                    # NOTE:
-                    # - `sometimes director-v0` (via redirects) replies
-                    #   in plain text and this is considered an error
-                    # - `director-v2` and `director-v0` can reply with 204 no content
                     if response.status != expected_status.status_code:
                         if response.status in on_error:
                             exc, exc_ctx = on_error[response.status]
@@ -459,7 +455,7 @@ async def projects_networks_update(app: web.Application, project_id: ProjectID) 
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (
         URL(settings.base_url)
-        / f"dynamic_services/projects/{project_id}/-/project-networks"
+        / f"dynamic_services/projects/{project_id}/-/networks"
     )
     await _request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
