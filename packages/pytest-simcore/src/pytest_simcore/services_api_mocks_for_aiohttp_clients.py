@@ -128,6 +128,8 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
                 "adjacency_list": pipeline,
                 "node_states": node_states,
             },
+            "iteration": 2,
+            "cluster_id": 23,
         },
     )
 
