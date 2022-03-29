@@ -56,42 +56,33 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           break;
         case "back-to-dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
-            font: "text-14",
-            backgroundColor: "background-main-4"
+            font: "text-14"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
           this._add(control);
           break;
         case "user-menu-button":
-          control = new osparc.navigation.UserMenuButton().set({
-            backgroundColor: "background-main-4"
-          });
+          control = new osparc.navigation.UserMenuButton();
           osparc.io.WatchDog.getInstance().bind("online", control, "backgroundColor", {
-            converter: on => on ? "background-main-4" : "red"
+            converter: on => on ? null : "red"
           });
           control.getChildControl("label").exclude();
-          control.getMenu().set({
-            backgroundColor: "background-main-4"
-          });
+          control.getMenu();
           control.populateExtendedMenu();
           this._add(control);
           break;
         case "collapse-expand-stack": {
           control = new qx.ui.container.Stack();
 
-          const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-            backgroundColor: "background-main-4"
-          });
+          const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14");
           control.add(collapseNavBarBtn);
           collapseNavBarBtn.addListener("execute", () => {
             this.setCollapsed(true);
             this.fireEvent("collapseNavBar");
           });
 
-          const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-            backgroundColor: "background-main-4"
-          });
+          const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14");
           control.add(expandNavBarBtn);
           expandNavBarBtn.addListener("execute", () => {
             this.setCollapsed(false);
