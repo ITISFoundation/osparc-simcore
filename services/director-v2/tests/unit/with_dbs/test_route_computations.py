@@ -15,8 +15,10 @@ from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, parse_obj_as
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
@@ -35,7 +37,7 @@ def minimal_configuration(
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
 
 
-async def test_get_computation_empty_project(
+async def test_get_computation_from_empty_project(
     minimal_configuration: None,
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_adjacency: Dict[str, Any],
@@ -83,7 +85,7 @@ async def test_get_computation_empty_project(
     assert returned_computation.dict() == expected_computation.dict()
 
 
-async def test_get_computation_from_valid_project(
+async def test_get_computation_from_not_started_computation_task(
     minimal_configuration: None,
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_adjacency: Dict[str, Any],
@@ -141,6 +143,70 @@ async def test_get_computation_from_valid_project(
         result=None,
         iteration=None,
         cluster_id=None,
+    )
+
+    assert returned_computation.dict() == expected_computation.dict()
+
+
+async def test_get_computation_from_published_computation_task(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_adjacency: Dict[str, Any],
+    registered_user: Callable[..., Dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: Callable[..., List[CompTaskAtDB]],
+    runs: Callable[..., CompRunsAtDB],
+    faker: Faker,
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    pipeline(
+        project_id=proj.uuid,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED)
+    comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    get_computation_url = httpx.URL(
+        f"/v2/computations/{proj.uuid}?user_id={user['id']}"
+    )
+    response = await async_client.get(get_computation_url)
+    assert response.status_code == status.HTTP_200_OK, response.text
+    returned_computation = ComputationTaskGet.parse_obj(response.json())
+    assert returned_computation
+    expected_stop_url = async_client.base_url.join(
+        f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
+    )
+    expected_computation = ComputationTaskGet(
+        id=proj.uuid,
+        state=RunningState.PUBLISHED,
+        pipeline_details=PipelineDetails(
+            adjacency_list=parse_obj_as(
+                Dict[NodeID, List[NodeID]], fake_workbench_adjacency
+            ),
+            node_states={
+                t.node_id: NodeState(
+                    modified=True,
+                    currentStatus=RunningState.PUBLISHED,
+                    dependencies={
+                        NodeID(node)
+                        for node, next_nodes in fake_workbench_adjacency.items()
+                        if f"{t.node_id}" in next_nodes
+                    },
+                )
+                for t in comp_tasks
+                if t.node_class == NodeClass.COMPUTATIONAL
+            },
+        ),
+        url=parse_obj_as(AnyHttpUrl, f"{expected_stop_url}"),
+        stop_url=parse_obj_as(
+            AnyHttpUrl,
+            f"{async_client.base_url.join('/')}",
+        ),
+        result=None,
+        iteration=1,
+        cluster_id=DEFAULT_CLU,
     )
 
     assert returned_computation.dict() == expected_computation.dict()
