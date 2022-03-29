@@ -58,13 +58,15 @@ async def assert_computation_task_out_obj(
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
     assert task_out.url.path == f"/v2/computations/{project.uuid}"
-    assert task_out.stop_url
-    assert task_out.stop_url.path == (
-        f"/v2/computations/{project.uuid}:stop"
-        if exp_task_state
-        in [RunningState.PUBLISHED, RunningState.PENDING, RunningState.STARTED]
-        else None
-    )
+    if exp_task_state in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+    ]:
+        assert task_out.stop_url
+        assert task_out.stop_url.path == f"/v2/computations/{project.uuid}:stop"
+    else:
+        assert task_out.stop_url is None
     assert task_out.iteration == iteration
     assert task_out.cluster_id == cluster_id
     # check pipeline details contents
