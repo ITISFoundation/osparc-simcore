@@ -33,12 +33,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     });
     this._add(miniGrid);
 
-    this.__fetchDetails();
-    // Fecth every 3 seconds
-    const interval = 3000;
-    const timer = this.__timer = new qx.event.Timer(interval);
-    timer.addListener("interval", () => this.__fetchDetails(), this);
-    timer.start();
+    this.__startFetchingDetails();
 
     this.set({
       cursor: "pointer"
@@ -67,26 +62,35 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
 
   members: {
     __clusterId: null,
-    __timer: null,
     __clusterDetailsLayout: null,
     __miniGrid: null,
     __hint: null,
 
     setClusterId: function(clusterId) {
+      const clusters = osparc.utils.Clusters.getInstance();
+      if (this.__clusterId !== null) {
+        clusters.stopFetchDetailsTimer(this.__clusterId);
+      }
       this.__clusterId = clusterId;
+      clusters.startFetchDetailsTimer(clusterId);
     },
 
-    __fetchDetails: function() {
-      if (osparc.utils.Utils.checkIsOnScreen(this)) {
-        const params = {
-          url: {
-            "cid": this.__clusterId
+    __startFetchingDetails: function() {
+      // if (osparc.utils.Utils.checkIsOnScreen(this)) {
+        const clusters = osparc.utils.Clusters.getInstance();
+        clusters.addListener("clusterDetailsReceived", e => {
+          const data = e.getData();
+          if (this.__clusterId === data.clusterId) {
+            if ("error" in data) {
+              this.__detailsCallFailed();
+            } else {
+              const clusterDetails = data.clusterDetails;
+              this.__updateWorkersDetails(clusterDetails);
+            }
           }
-        };
-        osparc.data.Resources.get("clusterDetails", params)
-          .then(clusterDetails => this.__updateWorkersDetails(clusterDetails))
-          .catch(() => this.__detailsCallFailed());
-      }
+        });
+        clusters.startFetchDetailsTimer(this.__clusterId);
+      // }
     },
 
     __showFailedBulb: function() {
@@ -203,6 +207,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   },
 
   destruct: function() {
-    this.__timer.stop();
+    osparc.utils.Clusters.getInstance().stopFetchDetailsTimer(this.__clusterId);
   }
 });

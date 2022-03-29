@@ -27,6 +27,7 @@ qx.Class.define("osparc.utils.Clusters", {
 
   construct: function() {
     this.base(arguments);
+    this.__clusterIds = [];
     this.__fetchDetailsTimers = [];
   },
 
@@ -93,45 +94,60 @@ qx.Class.define("osparc.utils.Clusters", {
         });
       }
       return clusters;
-    },
+    }
+  },
 
-    fetchDetails: function(cid) {
+  events: {
+    "clusterDetailsReceived": "qx.event.type.Data"
+  },
+
+  members: {
+    __clusterIds: null,
+    __fetchDetailsTimers: null,
+
+    __fetchDetails: function(cid) {
       const params = {
         url: {
           cid
         }
       };
-      osparc.data.Resources.fetch("clusterDetails", params);
-    }
-  },
+      osparc.data.Resources.get("clusterDetails", params)
+        .then(clusterDetails => {
+          this.fireDataEvent("clusterDetailsReceived", {
+            clusterId: cid,
+            clusterDetails
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          this.fireDataEvent("clusterDetailsReceived", {
+            clusterId: cid,
+            error: err
+          });
+        })
+        .finally(() => {
+          // keep asking?
+          if (this.__clusterIds.includes(cid)) {
+            const interval = 3000;
+            qx.event.Timer.once(() => this.__fetchDetails(cid), this, interval);
+          }
+        });
+    },
 
-  members: {
-    __fetchDetailsTimers: null,
-
-    startFetchDetailsTimer: function(clusterId, interval = 3000) {
-      const fetchDetailsTimer = this.__fetchDetailsTimers.find(timer => timer.clusterId === clusterId);
-      if (fetchDetailsTimer) {
-        fetchDetailsTimer.counter++;
-        return;
+    startFetchDetailsTimer: function(clusterId) {
+      console.log("startFetchDetailsTimer", clusterId, this.__clusterIds);
+      const found = this.__clusterIds.includes(clusterId);
+      this.__clusterIds.push(clusterId);
+      if (!found) {
+        console.log("start fetching", this.__clusterIds);
+        this.__fetchDetails(clusterId);
       }
-      this.self().fetchDetails(clusterId);
-      const timer = new qx.event.Timer(interval);
-      timer.clusterId = clusterId;
-      timer.counter = 1;
-      timer.addListener("interval", () => this.self().fetchDetails(clusterId), this);
-      timer.start();
-      this.__fetchDetailsTimers.push(timer);
     },
 
     stopFetchDetailsTimer: function(clusterId) {
-      const idx = this.__fetchDetailsTimers.findIndex(timer => timer.clusterId === clusterId);
-      if (idx > 1) {
-        const fetchDetailsTimer = this.__fetchDetailsTimers[idx];
-        fetchDetailsTimer.counter--;
-        if (fetchDetailsTimer.counter === 0) {
-          fetchDetailsTimer.stop();
-          this.__fetchDetailsTimers.splice(idx, 1);
-        }
+      const idx = this.__clusterIds.indexOf(clusterId);
+      if (idx > -1) {
+        this.__clusterIds.splice(idx, 1);
       }
     }
   }
