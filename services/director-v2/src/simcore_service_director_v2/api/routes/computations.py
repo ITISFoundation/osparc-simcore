@@ -207,6 +207,14 @@ async def get_computation(
     filtered_tasks = [
         t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
     ]
+
+    # check that we have the expected tasks
+    if len(filtered_tasks) != len(pipeline_dag):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The tasks referenced by the pipeline are missing",
+        )
+
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
     log.debug(
