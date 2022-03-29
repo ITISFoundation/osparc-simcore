@@ -27,17 +27,14 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     this._add(clusterDetailsLayout);
 
     const grid = new qx.ui.layout.Grid(5, 8);
-    grid.setColumnFlex(1, 1);
+    for (let i=0; i<Object.keys(this.self().GRID_POS).length; i++) {
+      grid.setColumnFlex(i, 1);
+    }
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
     this.__clusterId = clusterId;
-    this.__fetchDetails();
-    // Fetch every 3 seconds
-    const interval = 3000;
-    const timer = this.__timer = new qx.event.Timer(interval);
-    timer.addListener("interval", () => this.__fetchDetails(), this);
-    timer.start();
+    this.__startFetchingDetails();
   },
 
   statics: {
@@ -50,22 +47,24 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
   members: {
     __clusterId: null,
-    __timer: null,
     __clusterDetailsLayout: null,
     __workersGrid: null,
 
-    __fetchDetails: function() {
-      const params = {
-        url: {
-          "cid": this.__clusterId
+    __startFetchingDetails: function() {
+      const clusters = osparc.utils.Clusters.getInstance();
+      clusters.addListener("clusterDetailsReceived", e => {
+        const data = e.getData();
+        if (this.__clusterId === data.clusterId) {
+          if ("error" in data) {
+            this.__detailsCallFailed();
+          } else {
+            const clusterDetails = data.clusterDetails;
+            this.__populateClusterDetails(clusterDetails);
+            this.__populateWorkersDetails(clusterDetails);
+          }
         }
-      };
-      osparc.data.Resources.get("clusterDetails", params)
-        .then(clusterDetails => {
-          this.__populateClusterDetails(clusterDetails);
-          this.__populateWorkersDetails(clusterDetails);
-        })
-        .catch(() => this.__detailsCallFailed());
+      });
+      clusters.startFetchingDetails(this.__clusterId);
     },
 
     __detailsCallFailed: function() {
@@ -153,6 +152,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       };
 
       let row = 0;
+      const gridW = this.__computedLayout ? this.__computedLayout.width - 15 : 600;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
@@ -182,9 +182,12 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           }
           const layout = osparc.wrapper.Plotly.getDefaultLayout();
           const plotId = "ClusterDetails_" + plotKey + "-" + row;
+          const w = parseInt(gridW/Object.keys(plots).length);
+          const h = parseInt(w*0.75);
+          console.log(gridW, w, h);
           const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
-            width: 200,
-            height: 160
+            width: w,
+            height: h
           });
           workersGrid.add(plot, {
             row,
@@ -196,6 +199,6 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   },
 
   destruct: function() {
-    this.__timer.stop();
+    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });
