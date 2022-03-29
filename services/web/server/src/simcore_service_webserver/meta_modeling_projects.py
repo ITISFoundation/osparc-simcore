@@ -58,7 +58,7 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
     if URL_PATTERN.match(f"{request.rel_url}"):
         #
         # TODO: because hierarchical design is not guaranteed, we find ourselves with
-        # entries like /v0/computation/pipeline/{project_id}:start which might also neeed
+        # entries like /v0/computations/{project_id}:start which might also neeed
         # indirection
         #
 

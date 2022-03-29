@@ -1,5 +1,5 @@
 paths:
-  /computation/pipeline/{project_id}/start:
+  /computations/{project_id}/start:
     post:
       description: Starts the pipeline(s) of a given (meta) project
       tags:
@@ -41,7 +41,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /computation/pipeline/{project_id}/stop:
+  /computations/{project_id}/stop:
     post:
       description: Stops (all) pipeline(s) of a given (meta) project
       tags:

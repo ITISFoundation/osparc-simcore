@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:start")
+@routes.post(f"/{VTAG}/computations/{{project_id}}:start")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -103,7 +103,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         )
 
 
-@routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:stop")
+@routes.post(f"/{VTAG}/computations/{{project_id}}:stop")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
