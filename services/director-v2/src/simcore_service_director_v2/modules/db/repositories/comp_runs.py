@@ -14,6 +14,7 @@ from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
+from ....core.errors import ComputationalRunNotFoundError
 from ....models.domains.comp_runs import CompRunsAtDB
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
@@ -23,6 +24,33 @@ logger = logging.getLogger(__name__)
 
 
 class CompRunsRepository(BaseRepository):
+    async def get(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Optional[PositiveInt] = None,
+    ) -> CompRunsAtDB:
+        """returns the run defined by user_id, project_id and iteration
+        In case iteration is None then returns the last iteration
+
+        :raises ComputationalRunNotFoundError: no entry found
+        """
+        async with self.db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([comp_runs])
+                .where(
+                    (comp_runs.c.user_id == user_id)
+                    & (comp_runs.c.project_uuid == f"{project_id}")
+                    & (comp_runs.c.iteration == iteration if iteration else True)
+                )
+                .order_by(desc(comp_runs.c.iteration))
+                .limit(1)
+            )
+            row: Optional[RowProxy] = await result.first()
+            if not row:
+                raise ComputationalRunNotFoundError()
+            return CompRunsAtDB.from_orm(row)
+
     async def list(
         self, filter_by_state: Optional[Set[RunningState]] = None
     ) -> List[CompRunsAtDB]:
