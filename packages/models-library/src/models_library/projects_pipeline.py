@@ -65,6 +65,8 @@ class ComputationTask(BaseModel):
                             },
                         },
                     },
+                    "iteration": None,
+                    "cluster_id": None,
                 },
                 {
                     "id": "f81d7994-9ccc-4c95-8c32-aa70d6bbb1b0",
