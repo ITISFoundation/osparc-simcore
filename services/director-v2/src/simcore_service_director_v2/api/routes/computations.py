@@ -1,14 +1,17 @@
 # pylint: disable=too-many-arguments
 
+import contextlib
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.users import UserID
+from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -17,7 +20,11 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
-from ...core.errors import ProjectNotFoundError, SchedulerError
+from ...core.errors import (
+    ComputationalRunNotFoundError,
+    ProjectNotFoundError,
+    SchedulerError,
+)
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
@@ -28,6 +35,7 @@ from ...models.schemas.comp_tasks import (
 )
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
+from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
@@ -183,6 +191,7 @@ async def get_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
+    computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
 ) -> ComputationTaskGet:
     log.debug(
         "User %s getting computation status for project %s",
@@ -229,18 +238,23 @@ async def get_computation(
     pipeline_details = await compute_pipeline_details(
         complete_dag, pipeline_dag, all_tasks
     )
-    self_url = request.url.remove_query_params("user_id")
 
+    # get run details if any
+    last_run: Optional[CompRunsAtDB] = None
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await computation_runs.get(user_id=user_id, project_id=project_id)
+
+    self_url = request.url.remove_query_params("user_id")
     task_out = ComputationTaskGet(
         id=project_id,
         state=pipeline_state,
         pipeline_details=pipeline_details,
-        url=f"{request.url}",
-        stop_url=f"{self_url}:stop?user_id={user_id}"
+        url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
+        stop_url=parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
         if pipeline_state.is_running()
         else None,
-        iteration=None,
-        cluster_id=None,
+        iteration=last_run.iteration if last_run else None,
+        cluster_id=last_run.cluster_id if last_run else None,
         result=None,
     )
     return task_out

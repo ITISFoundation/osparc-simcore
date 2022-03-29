@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List
 import httpx
 import pytest
 from faker import Faker
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
@@ -199,14 +200,13 @@ async def test_get_computation_from_published_computation_task(
                 if t.node_class == NodeClass.COMPUTATIONAL
             },
         ),
-        url=parse_obj_as(AnyHttpUrl, f"{expected_stop_url}"),
-        stop_url=parse_obj_as(
-            AnyHttpUrl,
-            f"{async_client.base_url.join('/')}",
+        url=parse_obj_as(
+            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
         ),
+        stop_url=parse_obj_as(AnyHttpUrl, f"{expected_stop_url}"),
         result=None,
         iteration=1,
-        cluster_id=DEFAULT_CLU,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     assert returned_computation.dict() == expected_computation.dict()
