@@ -557,6 +557,96 @@
           }
         }
       }
+    },
+    "/v1/containers/{id}/networks:attach": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "attach container to a network, if not already attached",
+        "operationId": "attach_container_to_network_v1_containers__id__networks_attach_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachContainerToNetworkItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}/networks:detach": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "detach container from a network, if not already detached",
+        "operationId": "detach_container_from_network_v1_containers__id__networks_detach_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DetachContainerFromNetworkItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -578,6 +668,27 @@
           }
         }
       },
+      "AttachContainerToNetworkItem": {
+        "title": "AttachContainerToNetworkItem",
+        "required": [
+          "network_id",
+          "network_aliases"
+        ],
+        "type": "object",
+        "properties": {
+          "network_id": {
+            "title": "Network Id",
+            "type": "string"
+          },
+          "network_aliases": {
+            "title": "Network Aliases",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "CreateDirsRequestItem": {
         "title": "CreateDirsRequestItem",
         "required": [
@@ -591,6 +702,19 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ServiceOutput"
             }
+          }
+        }
+      },
+      "DetachContainerFromNetworkItem": {
+        "title": "DetachContainerFromNetworkItem",
+        "required": [
+          "network_id"
+        ],
+        "type": "object",
+        "properties": {
+          "network_id": {
+            "title": "Network Id",
+            "type": "string"
           }
         }
       },

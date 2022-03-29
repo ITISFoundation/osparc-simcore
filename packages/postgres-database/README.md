@@ -25,7 +25,9 @@ This entrypoing wraps calls to [alembic] commands and customizes it for ``simcor
 
 A typical workflow:
 
-### Discover
+### Discover and configure
+
+**NOTE: below command will also configure the connection for future commands**
 
 ```bash
   # Replace with appropriate user and password
