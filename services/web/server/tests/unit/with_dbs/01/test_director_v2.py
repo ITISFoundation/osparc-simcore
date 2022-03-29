@@ -99,6 +99,20 @@ async def test_start_partial_pipeline(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_get_pipeline(
+    mocked_director_v2,
+    client,
+    logged_user: Dict,
+    project_id: ProjectID,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    url = client.app.router["get_pipeline"].url_for(project_id=f"{project_id}")
+    rsp = await client.get(url)
+    await assert_status(rsp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_pipeline(
     mocked_director_v2,
     client,
