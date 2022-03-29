@@ -18,14 +18,12 @@
 qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(clusterId = 0) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox().set({
       alignY: "middle"
     }));
-
-    this.__clusterId = clusterId;
 
     const grid = new qx.ui.layout.Grid(2, 2);
     const miniGrid = this.__miniGrid = new qx.ui.container.Composite(grid).set({
@@ -33,7 +31,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     });
     this._add(miniGrid);
 
-    this.__startFetchingDetails();
+    this.__listenToClusterDetails();
 
     this.set({
       cursor: "pointer"
@@ -75,22 +73,19 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       clusters.startFetchingDetails(clusterId);
     },
 
-    __startFetchingDetails: function() {
-      // if (osparc.utils.Utils.checkIsOnScreen(this)) {
-        const clusters = osparc.utils.Clusters.getInstance();
-        clusters.addListener("clusterDetailsReceived", e => {
-          const data = e.getData();
-          if (this.__clusterId === data.clusterId) {
-            if ("error" in data) {
-              this.__detailsCallFailed();
-            } else {
-              const clusterDetails = data.clusterDetails;
-              this.__updateWorkersDetails(clusterDetails);
-            }
+    __listenToClusterDetails: function() {
+      const clusters = osparc.utils.Clusters.getInstance();
+      clusters.addListener("clusterDetailsReceived", e => {
+        const data = e.getData();
+        if (this.__clusterId === data.clusterId) {
+          if ("error" in data) {
+            this.__detailsCallFailed();
+          } else {
+            const clusterDetails = data.clusterDetails;
+            this.__updateWorkersDetails(clusterDetails);
           }
-        });
-        clusters.startFetchingDetails(this.__clusterId);
-      // }
+        }
+      });
     },
 
     __showFailedBulb: function() {
