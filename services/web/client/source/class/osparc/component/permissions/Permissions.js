@@ -116,9 +116,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         allowGrowY: false,
         enabled: false
       });
-      addCollaboratorBtn.addListener("execute", () => {
-        this._addCollaborator();
-      }, this);
+      addCollaboratorBtn.addListener("execute", () => this._addCollaborator(), this);
       qx.event.message.Bus.getInstance().subscribe("OrgAndMembPermsFilter", () => {
         const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
         addCollaboratorBtn.setEnabled(anySelected);
