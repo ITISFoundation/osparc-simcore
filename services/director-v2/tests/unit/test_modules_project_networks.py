@@ -26,7 +26,7 @@ class MockedCalls(BaseModel):
     attach: List[Any]
 
 
-class TestCase(BaseModel):
+class Example(BaseModel):
     existing_networks_with_aliases: NetworksWithAliases
     new_networks_with_aliases: NetworksWithAliases
     expected_calls: MockedCalls
@@ -38,7 +38,7 @@ class TestCase(BaseModel):
         new: Dict[str, Any],
         detach: List[Any],
         attach: List[Any],
-    ) -> "TestCase":
+    ) -> "Example":
         return cls(
             existing_networks_with_aliases=NetworksWithAliases.parse_obj(existing),
             new_networks_with_aliases=NetworksWithAliases.parse_obj(new),
@@ -62,12 +62,12 @@ def _network_name(number: int) -> str:
 
 
 @pytest.fixture
-def test_case_factory(
+def examples_factory(
     mock_scheduler: AsyncMock, project_id: ProjectID
-) -> List[TestCase]:
+) -> List[Example]:
     return [
         # nothing exists
-        TestCase.using(
+        Example.using(
             existing={},
             new={
                 _network_name(1): {
@@ -90,7 +90,7 @@ def test_case_factory(
             ],
         ),
         # with existing network, remove node 2
-        TestCase.using(
+        Example.using(
             existing={
                 _network_name(1): {
                     _node_id(1): _node_alias(1),
@@ -111,7 +111,7 @@ def test_case_factory(
             attach=[],
         ),
         # remove node 2 and add node 2 with different alias
-        TestCase.using(
+        Example.using(
             existing={
                 _network_name(1): {
                     _node_id(1): _node_alias(1),
@@ -139,7 +139,7 @@ def test_case_factory(
             ],
         ),
         # nothing happens when updates with the same content
-        TestCase.using(
+        Example.using(
             existing={
                 _network_name(1): {
                     _node_id(1): _node_alias(1),
@@ -227,20 +227,20 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
 async def test_send_network_configuration_to_dynamic_sidecar(
     mock_scheduler: AsyncMock,
     project_id: ProjectID,
-    test_case_factory: List[TestCase],
+    examples_factory: List[Example],
     mock_docker_calls: Dict[str, AsyncMock],
 ) -> None:
-    for test_case in test_case_factory:
+    for example in examples_factory:
 
         await _send_network_configuration_to_dynamic_sidecar(
             scheduler=mock_scheduler,
             project_id=project_id,
-            new_networks_with_aliases=test_case.new_networks_with_aliases,
-            existing_networks_with_aliases=test_case.existing_networks_with_aliases,
+            new_networks_with_aliases=example.new_networks_with_aliases,
+            existing_networks_with_aliases=example.existing_networks_with_aliases,
         )
 
-        mock_scheduler.assert_has_calls(test_case.expected_calls.attach, any_order=True)
-        mock_scheduler.assert_has_calls(test_case.expected_calls.detach, any_order=True)
+        mock_scheduler.assert_has_calls(example.expected_calls.attach, any_order=True)
+        mock_scheduler.assert_has_calls(example.expected_calls.detach, any_order=True)
 
 
 async def test_get_networks_with_aliases_for_default_network_is_json_serializable(
