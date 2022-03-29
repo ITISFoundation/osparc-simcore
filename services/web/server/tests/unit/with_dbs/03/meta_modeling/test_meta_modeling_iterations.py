@@ -58,7 +58,11 @@ async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
 
 @pytest.mark.acceptance_test
 async def test_iterators_workflow(
-    client: TestClient, context_with_logged_user: None, mocker, faker: Faker
+    client: TestClient,
+    context_with_logged_user: None,
+    mocker,
+    faker: Faker,
+    director_v2_service_mock: None,
 ):
     #
     # NOTE: all TODOs below shall be addressed in next version of the iterator

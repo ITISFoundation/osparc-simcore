@@ -15,6 +15,8 @@ from models_library.users import UserID
 from starlette import status
 from starlette.datastructures import URL
 
+from ...api.dependencies.database import get_repository
+from ...api.dependencies.rabbitmq import get_rabbitmq_client
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -23,6 +25,9 @@ from ...models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from ...models.schemas.dynamic_services import SchedulerData
+from ...modules import projects_networks
+from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
@@ -32,6 +37,7 @@ from ...modules.dynamic_sidecar.errors import (
     LegacyServiceIsNotSupportedError,
 )
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
+from ...modules.rabbitmq import RabbitMQClient
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
@@ -271,3 +277,34 @@ async def service_restart_containers(
         raise LegacyServiceIsNotSupportedError() from error
 
     return NoContentResponse()
+
+
+@router.patch(
+    "/projects/{project_id}/-/networks",
+    summary=(
+        "Updates the project networks according to the current project's workbench"
+    ),
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@log_decorator(logger=logger)
+async def update_projects_networks(
+    project_id: ProjectID,
+    projects_networks_repository: ProjectsNetworksRepository = Depends(
+        get_repository(ProjectsNetworksRepository)
+    ),
+    projects_repository: ProjectsRepository = Depends(
+        get_repository(ProjectsRepository)
+    ),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    rabbitmq_client: RabbitMQClient = Depends(get_rabbitmq_client),
+) -> None:
+
+    await projects_networks.update_from_workbench(
+        projects_networks_repository=projects_networks_repository,
+        projects_repository=projects_repository,
+        scheduler=scheduler,
+        director_v0_client=director_v0_client,
+        rabbitmq_client=rabbitmq_client,
+        project_id=project_id,
+    )

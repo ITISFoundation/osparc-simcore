@@ -1,7 +1,7 @@
-from contextlib import suppress
 import logging
 import os
 import socket
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Final, Optional, Union
 
