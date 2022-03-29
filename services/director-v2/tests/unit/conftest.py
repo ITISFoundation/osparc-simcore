@@ -146,7 +146,7 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":31545"}}
+    scheduler = {"cls": Scheduler}
 
     async with SpecCluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
