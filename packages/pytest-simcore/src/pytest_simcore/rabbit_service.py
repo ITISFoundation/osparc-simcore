@@ -123,6 +123,7 @@ async def rabbit_channel(
     channel.add_close_callback(_channel_close_callback)
     yield channel
     # close channel
+    channel.remove_close_callback(_channel_close_callback)
     await channel.close()
 
 
