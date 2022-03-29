@@ -281,9 +281,8 @@ async def attach_container_to_network(
             )
             return
 
-        # NOTE: Not querying for the network because it might not be on the host.
-        # Attaching it to a container will make the object appera on the host.
-        # This issue presents itself when dealing with worker nodes.
+        # NOTE: A docker network is only visible on a docker node when it is
+        # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.connect(
             {
@@ -317,8 +316,7 @@ async def detach_container_from_network(
             )
             return
 
-        # NOTE: Not querying for the network because it might not be on the host.
-        # Attaching it to a container will make the object appera on the host.
-        # This issue presents itself when dealing with worker nodes.
+        # NOTE: A docker network is only visible on a docker node when it is
+        # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.disconnect({"Container": id})
