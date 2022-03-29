@@ -39,4 +39,33 @@ META_NUMBER, META_BOOL, META_INT, META_STR = [
     create_metadata(t) for t in ("number", "boolean", "integer", "string")
 ]
 
-REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR)
+META_ARRAY = ServiceDockerData.parse_obj(
+    {
+        "integration-version": LATEST_INTEGRATION_VERSION,
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/array",
+        "version": "1.0.0",
+        "type": ServiceType.FRONTEND,
+        "name": "Array probe",
+        "description": "Probes its input for array values",
+        "thumbnail": create_fake_thumbnail_url("array"),
+        "authors": [
+            OM,
+        ],
+        "contact": OM.email,
+        "inputs": {
+            "in_1": {
+                "label": "list[number]",
+                "description": "array",
+                "type": "ref_contentSchema",
+                "contentSchema": {
+                    "title": "list[number]",
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+            }
+        },
+        "outputs": {},
+    }
+)
+
+REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY)
