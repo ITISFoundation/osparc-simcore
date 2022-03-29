@@ -473,7 +473,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,
-        iteration=2,
+        iteration=3,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -511,7 +511,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=1,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -534,7 +534,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
-        iteration=1,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -575,7 +575,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
-        iteration=2,
+        iteration=3,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -588,7 +588,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
-        iteration=2,
+        iteration=3,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -625,7 +625,7 @@ async def test_abort_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=1,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -640,14 +640,10 @@ async def test_abort_computation(
     assert (
         task_out.state == RunningState.STARTED
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
-    assert (
-        task_out.url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
-    )
-    assert (
-        task_out.stop_url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
-    )
+    assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url
+    assert task_out.stop_url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
+    get_computation_state_url = deepcopy(task_out.url)
     # wait a bit till it has some momentum
     await asyncio.sleep(5)
 
@@ -659,16 +655,13 @@ async def test_abort_computation(
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationTaskGet.parse_obj(response.json())
-    assert (
-        str(task_out.url)
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
-    )
+    assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
     task_out = await assert_and_wait_for_pipeline_status(
         async_client,
-        task_out.url,
+        get_computation_state_url,
         user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.ABORTED],
@@ -764,7 +757,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=1,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
