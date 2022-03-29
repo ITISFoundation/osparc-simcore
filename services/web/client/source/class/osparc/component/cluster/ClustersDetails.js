@@ -55,6 +55,7 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
           selectBox.setSelection([selectable]);
         }
       });
+      this.__updateClusterDetails(selectClusterId);
     },
 
     __updateClusterDetails: function(clusterId) {
