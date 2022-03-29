@@ -1,0 +1,5 @@
+#
+# Specifies third-party dependencies
+#
+--constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in

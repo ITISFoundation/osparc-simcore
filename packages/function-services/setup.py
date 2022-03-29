@@ -1,0 +1,67 @@
+import re
+import sys
+from pathlib import Path
+from typing import Set
+
+from setuptools import find_packages, setup
+
+
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
+        )
+        if isinstance(r, str)
+    }
+
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+INSTALL_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.in")
+)  # WEAK requirements
+
+TEST_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
+    | {
+        "simcore-models-library",
+    }
+)  # STRICT requirements
+
+
+SETUP = dict(
+    name="simcore-function-services",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    author=", ".join(
+        (
+            "Pedro Crespo-Valero (pcrespov)",
+            "Odei Maiz (odeimaiz)",
+        )
+    ),
+    description="Function services",
+    python_requires="~=3.8",
+    classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3.8",
+    ],
+    license="MIT license",
+    install_requires=INSTALL_REQUIREMENTS,
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    include_package_data=True,
+    test_suite="tests",
+    tests_require=TEST_REQUIREMENTS,
+    extras_require={"test": TEST_REQUIREMENTS},
+    zip_safe=False,
+)
+
+
+if __name__ == "__main__":
+    setup(**SETUP)
