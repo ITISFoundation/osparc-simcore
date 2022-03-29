@@ -1,8 +1,9 @@
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
 
+from .clusters import ClusterID
 from .projects_nodes import NodeID, NodeState
 from .projects_state import RunningState
 
@@ -29,29 +30,69 @@ class ComputationTask(BaseModel):
     pipeline_details: PipelineDetails = Field(
         ..., description="the details of the generated pipeline"
     )
+    iteration: Optional[PositiveInt] = Field(
+        ...,
+        description="the iteration id of the computation task (none if no task ran yet)",
+    )
+    cluster_id: Optional[ClusterID] = Field(
+        ...,
+        description="the cluster on which the computaional task runs/ran (none if no task ran yet)",
+    )
 
     class Config:
         schema_extra = {
-            "example": {
-                "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
-                "state": "PUBLISHED",
-                "pipeline_details": {
-                    "adjacency_list": {
-                        "2fb4808a-e403-4a46-b52c-892560d27862": [],
-                        "19a40c7b-0a40-458a-92df-c77a5df7c886": [
-                            "2fb4808a-e403-4a46-b52c-892560d27862"
-                        ],
-                    },
-                    "node_states": {
-                        "2fb4808a-e403-4a46-b52c-892560d27862": {
-                            "modified": True,
-                            "dependencies": [],
+            "examples": [
+                {
+                    "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                    "state": "PUBLISHED",
+                    "pipeline_details": {
+                        "adjacency_list": {
+                            "2fb4808a-e403-4a46-b52c-892560d27862": [],
+                            "19a40c7b-0a40-458a-92df-c77a5df7c886": [
+                                "2fb4808a-e403-4a46-b52c-892560d27862"
+                            ],
                         },
-                        "19a40c7b-0a40-458a-92df-c77a5df7c886": {
-                            "modified": False,
-                            "dependencies": ["2fb4808a-e403-4a46-b52c-892560d27862"],
+                        "node_states": {
+                            "2fb4808a-e403-4a46-b52c-892560d27862": {
+                                "modified": True,
+                                "dependencies": [],
+                            },
+                            "19a40c7b-0a40-458a-92df-c77a5df7c886": {
+                                "modified": False,
+                                "dependencies": [
+                                    "2fb4808a-e403-4a46-b52c-892560d27862"
+                                ],
+                            },
                         },
                     },
                 },
-            }
+                {
+                    "id": "f81d7994-9ccc-4c95-8c32-aa70d6bbb1b0",
+                    "state": "SUCCESS",
+                    "pipeline_details": {
+                        "adjacency_list": {
+                            "2fb4808a-e403-4a46-b52c-892560d27862": [],
+                            "19a40c7b-0a40-458a-92df-c77a5df7c886": [
+                                "2fb4808a-e403-4a46-b52c-892560d27862"
+                            ],
+                        },
+                        "node_states": {
+                            "2fb4808a-e403-4a46-b52c-892560d27862": {
+                                "modified": False,
+                                "dependencies": [],
+                                "current_status": "SUCCESS",
+                            },
+                            "19a40c7b-0a40-458a-92df-c77a5df7c886": {
+                                "modified": False,
+                                "dependencies": [
+                                    "2fb4808a-e403-4a46-b52c-892560d27862"
+                                ],
+                                "current_status": "SUCCESS",
+                            },
+                        },
+                    },
+                    "iteration": 2,
+                    "cluster_id": 0,
+                },
+            ]
         }

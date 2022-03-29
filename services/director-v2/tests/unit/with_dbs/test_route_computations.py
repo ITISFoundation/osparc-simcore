@@ -69,3 +69,5 @@ async def test_get_computation_empty_project(
     assert f"{returned_computation.url.path}" == f"{get_computation_url.path}"
     assert returned_computation.stop_url is None
     assert returned_computation.result is None
+    assert returned_computation.iteration is None
+    assert returned_computation.cluster_id is None
