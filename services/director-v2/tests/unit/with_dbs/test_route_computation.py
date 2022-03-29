@@ -11,8 +11,11 @@ import httpx
 import pytest
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from models_library.projects_pipeline import PipelineDetails
+from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -29,7 +32,7 @@ def minimal_configuration(
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
 
 
-async def test_get_computation(
+async def test_get_computation_empty_project(
     minimal_configuration: None,
     registered_user: Callable[..., Dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -56,3 +59,13 @@ async def test_get_computation(
     project_pipeline = pipeline(project_id=proj.uuid)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
+    returned_computation = ComputationTaskGet.parse_obj(response.json())
+    assert returned_computation
+    assert returned_computation.id == proj.uuid
+    assert returned_computation.state == RunningState.UNKNOWN
+    assert returned_computation.pipeline_details == PipelineDetails(
+        adjacency_list={}, node_states={}
+    )
+    assert f"{returned_computation.url.path}" == f"{get_computation_url.path}"
+    assert returned_computation.stop_url is None
+    assert returned_computation.result is None
