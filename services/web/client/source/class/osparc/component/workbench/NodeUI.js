@@ -281,9 +281,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.__turnIntoCircledUI(width);
 
       const label = new qx.ui.basic.Label().set({
-        font: "text-18",
-        // paddingTop: 6,
-        paddingLeft: 6
+        font: "text-18"
       });
       const chipContainer = this.getChildControl("chips");
       chipContainer.add(label);
