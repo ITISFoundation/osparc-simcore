@@ -2,13 +2,13 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.clusters import Cluster, ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
 )
-from simcore_service_director_v2.utils.dask_client_utils import test_gateway_endpoint
+from simcore_service_director_v2.utils.dask_client_utils import test_scheduler_endpoint
 from starlette import status
 
 from ...core.errors import ClusterInvalidOperationError, ConfigurationError
@@ -38,8 +38,8 @@ async def _get_cluster_details_with_id(
     dask_clients_pool: DaskClientsPool,
 ) -> ClusterDetailsGet:
     log.debug("Getting details for cluster '%s'", cluster_id)
-    cluster: Cluster = dask_clients_pool.default_cluster(settings)
-    if cluster_id != settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID:
+    cluster: Cluster = settings.default_cluster
+    if cluster_id != DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
         scheduler_info = client.dask_subsystem.client.scheduler_info()
@@ -71,8 +71,10 @@ async def create_cluster(
 async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
-    return await clusters_repo.list_clusters(user_id)
+    default_cluster = settings.default_cluster
+    return [default_cluster] + await clusters_repo.list_clusters(user_id)
 
 
 @router.get(
@@ -84,8 +86,8 @@ async def list_clusters(
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
-    assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
-    raise NotImplementedError("dev in progress")
+    cluster = settings.default_cluster
+    return cluster
 
 
 @router.get(
@@ -146,11 +148,10 @@ async def get_default_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
     return await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,
-        cluster_id=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
+        cluster_id=DEFAULT_CLUSTER_ID,
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )
@@ -188,7 +189,7 @@ async def test_cluster_connection(
     cluster_auth: ClusterPing,
 ):
     try:
-        return await test_gateway_endpoint(
+        return await test_scheduler_endpoint(
             endpoint=cluster_auth.endpoint, authentication=cluster_auth.authentication
         )
 
@@ -196,6 +197,21 @@ async def test_cluster_connection(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
         ) from e
+
+
+@router.post(
+    "/default:ping",
+    summary="Test cluster connection",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def test_default_cluster_connection(
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
+):
+    cluster = settings.default_cluster
+    return await test_scheduler_endpoint(
+        endpoint=cluster.endpoint, authentication=cluster.authentication
+    )
 
 
 @router.post(
@@ -210,6 +226,6 @@ async def test_specific_cluster_connection(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
     cluster = await clusters_repo.get_cluster(user_id, cluster_id)
-    return await test_gateway_endpoint(
+    return await test_scheduler_endpoint(
         endpoint=cluster.endpoint, authentication=cluster.authentication
     )

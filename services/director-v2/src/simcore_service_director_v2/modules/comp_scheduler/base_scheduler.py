@@ -60,7 +60,6 @@ class BaseCompScheduler(ABC):
     ]
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
-    default_cluster_id: ClusterID
 
     async def run_new_pipeline(
         self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
@@ -84,7 +83,6 @@ class BaseCompScheduler(ABC):
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
-            default_cluster_id=self.default_cluster_id,
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)

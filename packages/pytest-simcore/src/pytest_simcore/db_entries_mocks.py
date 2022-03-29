@@ -37,6 +37,7 @@ def registered_user(
             )
             user = result.first()
             assert user
+            print(f"--> created {user=}")
             created_user_ids.append(user["id"])
         return dict(user)
 
@@ -44,6 +45,7 @@ def registered_user(
 
     with postgres_db.connect() as con:
         con.execute(users.delete().where(users.c.id.in_(created_user_ids)))
+    print(f"<-- deleted users {created_user_ids=}")
 
 
 @pytest.fixture
@@ -74,11 +76,12 @@ def project(
             )
 
             inserted_project = ProjectAtDB.parse_obj(result.first())
-            created_project_ids.append(f"{inserted_project.uuid}")
-            return inserted_project
+        created_project_ids.append(f"{inserted_project.uuid}")
+        return inserted_project
 
     yield creator
 
     # cleanup
     with postgres_db.connect() as con:
         con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
+    print(f"<-- delete projects {created_project_ids=}")
