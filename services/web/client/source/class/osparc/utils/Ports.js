@@ -24,16 +24,6 @@ qx.Class.define("osparc.utils.Ports", {
   type: "static",
 
   statics: {
-    __matchPortType: function(typeA, typeB) {
-      if (typeA === typeB) {
-        return true;
-      }
-      let mtA = osparc.data.MimeType.getMimeType(typeA);
-      let mtB = osparc.data.MimeType.getMimeType(typeB);
-      return mtA && mtB &&
-        new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
-    },
-
     arePortsCompatible: function(node1, portId1, node2, portId2) {
       return osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
         .then(compatiblePorts => {
