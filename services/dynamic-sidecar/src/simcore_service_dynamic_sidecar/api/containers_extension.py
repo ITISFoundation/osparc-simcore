@@ -5,7 +5,7 @@ import logging
 from collections import deque
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Set
 
-import aiodocker
+from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
@@ -281,14 +281,9 @@ async def attach_container_to_network(
             )
             return
 
-        try:
-            network = await docker.networks.get(item.network_id)
-        except aiodocker.docker.DockerError as e:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND,
-                detail="No network with id={item.network_id} found",
-            ) from e
-
+        # NOTE: A docker network is only visible on a docker node when it is
+        # used by a container
+        network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.connect(
             {
                 "Container": id,
@@ -321,12 +316,7 @@ async def detach_container_from_network(
             )
             return
 
-        try:
-            network = await docker.networks.get(item.network_id)
-        except aiodocker.docker.DockerError as e:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND,
-                detail="No network with id={item.network_id} found",
-            ) from e
-
+        # NOTE: A docker network is only visible on a docker node when it is
+        # used by a container
+        network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.disconnect({"Container": id})
