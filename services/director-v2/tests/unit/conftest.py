@@ -158,7 +158,7 @@ async def dask_spec_local_cluster(
         )
         yield cluster
     # force yielding to the event loop so that it properly closes the cluster
-    await asyncio.sleep(0)
+    await asyncio.sleep(3)
 
 
 @pytest.fixture
