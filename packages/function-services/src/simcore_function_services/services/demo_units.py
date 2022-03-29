@@ -4,8 +4,8 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, PC, create_fake_thumbnail_url, register_definition
-from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from .._utils import OM, PC, create_fake_thumbnail_url, register_definition
+from ..constants import FUNCTION_SERVICE_KEY_PREFIX
 
 
 def build_input(schema):
