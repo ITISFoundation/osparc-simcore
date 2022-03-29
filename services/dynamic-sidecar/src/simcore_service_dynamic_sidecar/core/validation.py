@@ -139,7 +139,10 @@ def _inject_backend_networking(
 
     for service_content in parsed_compose_spec["services"].values():
         service_networks = service_content.get("networks", [])
-        service_networks.append(network_name)
+        if isinstance(service_networks, list):
+            service_networks.append(network_name)
+        else:
+            service_networks[network_name] = None
         service_content["networks"] = service_networks
 
     parsed_compose_spec["networks"] = networks

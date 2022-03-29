@@ -27,6 +27,7 @@ from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
+from simcore_service_director_v2.utils.db import to_clusters_db
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
@@ -157,9 +158,6 @@ def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]
     # cleanup
     with postgres_db.connect() as conn:
         conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
-
-
-from simcore_service_director_v2.utils.db import to_clusters_db
 
 
 @pytest.fixture

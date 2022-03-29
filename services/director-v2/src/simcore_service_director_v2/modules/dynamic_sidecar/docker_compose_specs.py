@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
@@ -10,9 +10,12 @@ from settings_library.docker_registry import RegistrySettings
 from ._constants import CONTAINER_NAME
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
+EnvKeyEqValueList = List[str]
+EnvVarsMap = Dict[str, Optional[str]]
+
 
 def _inject_proxy_network_configuration(
-    service_spec: Dict[str, Any],
+    service_spec: ComposeSpecLabel,
     target_container: str,
     dynamic_sidecar_network_name: str,
 ) -> None:
@@ -22,22 +25,18 @@ def _inject_proxy_network_configuration(
     """
 
     # add external network to existing networks defined in the container
-    service_spec["networks"] = {
-        dynamic_sidecar_network_name: {
-            "external": {"name": dynamic_sidecar_network_name},
-            "driver": "overlay",
-        }
+    networks = service_spec.get("networks", {})
+    networks[dynamic_sidecar_network_name] = {
+        "external": {"name": dynamic_sidecar_network_name},
+        "driver": "overlay",
     }
+    service_spec["networks"] = networks
 
     # attach overlay network to container
     target_container_spec = service_spec["services"][target_container]
     container_networks = target_container_spec.get("networks", [])
     container_networks.append(dynamic_sidecar_network_name)
     target_container_spec["networks"] = container_networks
-
-
-EnvKeyEqValueList = List[str]
-EnvVarsMap = Dict[str, Optional[str]]
 
 
 class _environment_section:
@@ -76,7 +75,7 @@ class _environment_section:
 
 
 def _inject_paths_mappings(
-    service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
+    service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
@@ -129,8 +128,7 @@ def assemble_spec(
 
     # when no compose yaml file was provided
     if compose_spec is None:
-        service_spec: Dict[str, Any] = {
-            # NOTE: latest version does NOT require
+        service_spec: ComposeSpecLabel = {
             "version": docker_compose_version,
             "services": {
                 CONTAINER_NAME: {
@@ -147,7 +145,7 @@ def assemble_spec(
     assert container_name is not None  # nosec
 
     _inject_proxy_network_configuration(
-        service_spec,
+        service_spec=service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )

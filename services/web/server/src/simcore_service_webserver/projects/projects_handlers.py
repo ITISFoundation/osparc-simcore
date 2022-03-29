@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
+from uuid import UUID
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -161,6 +162,10 @@ async def create_projects(
                 await db.update_project_without_checking_permissions(
                     new_project, new_project["uuid"], hidden=False
                 )
+
+        await director_v2_api.projects_networks_update(
+            request.app, UUID(new_project["uuid"])
+        )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
@@ -436,6 +441,7 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
+        await director_v2_api.projects_networks_update(request.app, project_uuid)
         await director_v2_api.create_or_update_pipeline(
             request.app, user_id, project_uuid
         )

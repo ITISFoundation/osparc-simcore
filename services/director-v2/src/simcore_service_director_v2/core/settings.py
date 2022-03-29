@@ -14,7 +14,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
-from models_library.services import SERVICE_NETWORK_RE
+from models_library.projects_networks import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -54,7 +54,7 @@ class VFSCacheMode(str, Enum):
     OFF = "off"
     MINIMAL = "minimal"
     WRITES = "writes"
-    FILL = "full"
+    FULL = "full"
 
 
 class RCloneSettings(S3Settings):
@@ -206,6 +206,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "When stopping a service, depending on the amount of data to store, "
             "the operation might be very long. Also all relative created resources: "
             "services, containsers, volumes and networks need to be removed. "
+        ),
+    )
+
+    DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
+        3.0 * MINS,
+        description=(
+            "timeout for attaching/detaching project networks to/from a container"
         ),
     )
 

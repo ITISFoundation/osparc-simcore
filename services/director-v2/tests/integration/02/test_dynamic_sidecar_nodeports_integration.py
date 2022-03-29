@@ -32,7 +32,14 @@ import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
+from aiopg.sa import Engine
 from fastapi import FastAPI
+from models_library.projects_networks import (
+    PROJECT_NETWORK_PREFIX,
+    ContainerAliases,
+    NetworksWithAliases,
+    ProjectsNetworks,
+)
 from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
@@ -50,6 +57,7 @@ from shared_comp_utils import (
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 
@@ -61,6 +69,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTas
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from starlette import status
 from utils import (
     SEPARATOR,
@@ -266,10 +275,15 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
     return DBManager(aiopg_engine)
 
 
-# FIXME: ANE you can change this to something that runs everywhere. Thanks.
-# @pytest.fixture(scope="session", params=["true", "false"])
-@pytest.fixture(scope="session", params=["false"])
+def _is_docker_r_clone_plugin_installed() -> bool:
+    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
+    return is_plugin_installed
+
+
+@pytest.fixture(scope="session", params={"true", "false"})
 def dev_features_enabled(request) -> str:
+    if request.param == "true" and not _is_docker_r_clone_plugin_installed():
+        pytest.skip("Required docker plugin `rclone` not installed.")
     return request.param
 
 
@@ -353,6 +367,38 @@ async def cleanup_services_and_networks(
 @pytest.fixture
 def temp_dir(tmpdir: LocalPath) -> Path:
     return Path(tmpdir)
+
+
+@pytest.fixture
+async def projects_networks_db(
+    initialized_app: FastAPI, current_study: ProjectAtDB
+) -> None:
+    # NOTE: director-v2 does not have access to the webserver which creates this
+    # injecting all dynamic-sidecar started services on a default networks
+
+    container_aliases: ContainerAliases = ContainerAliases.parse_obj({})
+
+    for k, (node_uuid, node) in enumerate(current_study.workbench.items()):
+        if not is_legacy(node):
+            container_aliases[node_uuid] = f"networkable_alias_{k}"
+
+    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
+    default_network_name = f"{PROJECT_NETWORK_PREFIX}_{current_study.uuid}_test"
+    networks_with_aliases[default_network_name] = container_aliases
+
+    projects_networks_to_insert = ProjectsNetworks(
+        project_uuid=current_study.uuid, networks_with_aliases=networks_with_aliases
+    )
+
+    engine: Engine = initialized_app.state.engine
+
+    async with engine.acquire() as conn:
+        row_data = projects_networks_to_insert.dict()
+        insert_stmt = pg_insert(projects_networks).values(**row_data)
+        upsert_snapshot = insert_stmt.on_conflict_do_update(
+            constraint=projects_networks.primary_key, set_=row_data
+        )
+        await conn.execute(upsert_snapshot)
 
 
 # UTILS
@@ -806,6 +852,7 @@ async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
+    projects_networks_db: None,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,

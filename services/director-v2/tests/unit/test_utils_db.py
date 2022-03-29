@@ -4,7 +4,6 @@ from typing import Any, Dict, Type, cast
 import pytest
 from models_library.clusters import BaseCluster, Cluster
 from pydantic import BaseModel
-
 from simcore_service_director_v2.utils.db import to_clusters_db
 
 
