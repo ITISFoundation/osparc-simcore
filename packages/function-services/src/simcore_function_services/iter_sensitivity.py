@@ -7,7 +7,7 @@ from models_library.services import (
 )
 from pydantic import schema_of
 
-from ._utils import EN, OM, create_fake_thumbnail_url
+from ._utils import EN, OM, create_fake_thumbnail_url, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
@@ -64,3 +64,5 @@ META = ServiceDockerData.parse_obj(
         },
     }
 )
+
+REGISTRY = register_definition(META)
