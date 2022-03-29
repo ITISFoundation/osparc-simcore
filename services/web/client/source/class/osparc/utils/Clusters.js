@@ -74,16 +74,7 @@ qx.Class.define("osparc.utils.Clusters", {
       const store = osparc.store.Store.getInstance();
       const clusters = store.getClusters();
       if (clusters) {
-        const itemDefault = new qx.ui.form.ListItem().set({
-          label: "default",
-          toolTipText: "default cluster"
-        });
-        itemDefault.id = 0;
-        clustersSelectBox.add(itemDefault);
         clusters.forEach(cluster => {
-          if (!("name" in cluster)) {
-            return;
-          }
           const item = new qx.ui.form.ListItem().set({
             label: cluster["name"],
             toolTipText: cluster["type"] + "\n" + cluster["description"],
