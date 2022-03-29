@@ -62,9 +62,7 @@ def _network_name(number: int) -> str:
 
 
 @pytest.fixture
-def examples_factory(
-    mock_scheduler: AsyncMock, project_id: ProjectID
-) -> List[Example]:
+def examples_factory(mock_scheduler: AsyncMock, project_id: ProjectID) -> List[Example]:
     return [
         # nothing exists
         Example.using(
