@@ -27,19 +27,25 @@ AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.post]+)")
 def dump_changes(filename: Path):
     if filename.exists():
         filename.unlink()
+    command = f"""
+    git fetch upstream && \
+    git --no-pager diff upstream/master..$(git rev-parse --abbrev-ref HEAD) > {filename}
+    """
+
     subprocess.run(
-        f"git --no-pager diff master..$(git rev-parse --abbrev-ref HEAD) > {filename}",
+        command,
         shell=True,
         check=True,
     )
 
 
 def tag_upgrade(from_version: Version, to_version: Version):
-    #assert from_version < to_version, (from_version, to_version)
     if from_version.major < to_version.major:
         return "**MAJOR**"
     if from_version.minor < to_version.minor:
         return "*minor*"
+    if from_version > to_version:
+        return "🔥 downgrade"
     return ""
 
 
@@ -94,7 +100,7 @@ def main_changes_stats():
                 "|",
                 f'{", ".join(from_versions):15s}',
                 "|",
-                f'{",".join(to_versions) if to_versions else "removed":10s}',
+                f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
                 "|",
                 # how big the version change is
                 f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"

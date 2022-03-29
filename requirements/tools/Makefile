@@ -126,3 +126,8 @@ help: ## this colorful help
 .PHONY: guard-%
 guard-%:
 	@if [ "${${*}}" = "" ]; then echo "Environment variable $* not set"; exit 1; fi
+
+
+.PHONY: upgrade-report
+upgrade-report: ## generates an upgrade-report to be paste in the PR
+	python check_changes.py > upgrade-report.ignore.md
