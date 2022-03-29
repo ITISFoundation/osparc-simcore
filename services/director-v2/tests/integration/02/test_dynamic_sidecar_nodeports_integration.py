@@ -34,13 +34,14 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
+from models_library.clusters import DEFAULT_CLUSTER_ID
+from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
     NetworksWithAliases,
     ProjectsNetworks,
 )
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -904,7 +905,6 @@ async def test_nodeports_integration(
     )
 
     # STEP 2
-
     response = await create_pipeline(
         async_client,
         project=current_study,
@@ -916,11 +916,12 @@ async def test_nodeports_integration(
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to start
@@ -938,11 +939,12 @@ async def test_nodeports_integration(
     )
 
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_success),
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     update_project_workbench_with_comp_tasks(str(current_study.uuid))
