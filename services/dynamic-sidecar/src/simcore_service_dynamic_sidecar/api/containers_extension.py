@@ -286,7 +286,7 @@ async def attach_container_to_network(
         except aiodocker.docker.DockerError as e:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
-                detail="No network with id={item.network_id} found",
+                detail=f"No network with id={item.network_id} found",
             ) from e
 
         await network.connect(
@@ -326,7 +326,7 @@ async def detach_container_from_network(
         except aiodocker.docker.DockerError as e:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
-                detail="No network with id={item.network_id} found",
+                detail=f"No network with id={item.network_id} found",
             ) from e
 
         await network.disconnect({"Container": id})
