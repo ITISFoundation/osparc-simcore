@@ -82,14 +82,12 @@ class ComputationTask(BaseModel):
                             "2fb4808a-e403-4a46-b52c-892560d27862": {
                                 "modified": False,
                                 "dependencies": [],
-                                "current_status": "SUCCESS",
                             },
                             "19a40c7b-0a40-458a-92df-c77a5df7c886": {
                                 "modified": False,
                                 "dependencies": [
                                     "2fb4808a-e403-4a46-b52c-892560d27862"
                                 ],
-                                "current_status": "SUCCESS",
                             },
                         },
                     },
