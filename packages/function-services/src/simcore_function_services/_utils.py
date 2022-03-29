@@ -28,7 +28,7 @@ def create_fake_thumbnail_url(label: str) -> str:
     return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
 
 
-def register(
+def register_definition(
     *meta_objects: ServiceDockerData,
 ) -> Dict[_NodeKeyVersionPair, ServiceDockerData]:
     """Used to do a first validation and dump data in an intermediate trusted registry"""

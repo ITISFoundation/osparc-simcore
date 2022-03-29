@@ -6,7 +6,7 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, create_fake_thumbnail_url, register
+from ._utils import OM, create_fake_thumbnail_url, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 
@@ -59,4 +59,4 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
 
 META_INT = create_metadata("integer", prefix="int")
 
-REGISTRY = register(META_INT)
+REGISTRY = register_definition(META_INT)

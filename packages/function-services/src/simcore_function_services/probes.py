@@ -6,7 +6,7 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, create_fake_thumbnail_url, register
+from ._utils import OM, create_fake_thumbnail_url, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 
@@ -44,4 +44,4 @@ META_NUMBER, META_BOOL, META_INT, META_STR = [
     create_metadata(t) for t in ("number", "boolean", "integer", "string")
 ]
 
-REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR)
+REGISTRY = register_definition(META_NUMBER, META_BOOL, META_INT, META_STR)

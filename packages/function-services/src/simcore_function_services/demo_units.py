@@ -4,7 +4,7 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, PC, create_fake_thumbnail_url, register
+from ._utils import OM, PC, create_fake_thumbnail_url, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 
@@ -203,4 +203,4 @@ META = ServiceDockerData.parse_obj(
 
 
 # TODO: register ONLY when dev-feature is enabled
-REGISTRY = register(META)
+REGISTRY = register_definition(META)

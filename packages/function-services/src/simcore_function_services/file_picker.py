@@ -6,7 +6,7 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, register
+from ._utils import OM, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 META: Final = ServiceDockerData.parse_obj(
@@ -34,4 +34,4 @@ META: Final = ServiceDockerData.parse_obj(
 )
 
 
-REGISTRY = register(META)
+REGISTRY = register_definition(META)

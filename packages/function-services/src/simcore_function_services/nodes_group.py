@@ -4,7 +4,7 @@ from models_library.services import (
     ServiceType,
 )
 
-from ._utils import OM, register
+from ._utils import OM, register_definition
 from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 #
@@ -39,4 +39,4 @@ META = ServiceDockerData.parse_obj(
 assert META.outputs is not None  # nosec
 assert list(META.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
 
-REGISTRY = register(META)
+REGISTRY = register_definition(META)
