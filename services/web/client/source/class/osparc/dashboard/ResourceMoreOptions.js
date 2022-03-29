@@ -52,20 +52,26 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __qualityPage: null,
     __servicesUpdatePage: null,
 
+    __openPage: function(page) {
+      if (page) {
+        this.setSelection([page]);
+      }
+    },
+
     openAccessRights: function() {
-      this.setSelection([this.__permissionsPage]);
+      this.__openPage(this.__permissionsPage);
     },
 
     openClassifiers: function() {
-      this.setSelection([this.__classifiersPage]);
+      this.__openPage(this.__classifiersPage);
     },
 
     openQuality: function() {
-      this.setSelection([this.__qualityPage]);
+      this.__openPage(this.__qualityPage);
     },
 
     openUpdateServices: function() {
-      this.setSelection([this.__servicesUpdatePage]);
+      this.__openPage(this.__servicesUpdatePage);
     },
 
     __createServiceVersionSelector: function() {
