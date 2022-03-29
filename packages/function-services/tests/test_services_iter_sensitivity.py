@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import collections.abc
 import inspect
-from functools import wraps
 from inspect import Parameter, Signature
 from pprint import pprint
-from typing import Callable, List, get_args, get_origin
+from typing import Callable, List, NamedTuple, get_args, get_origin
 
 from models_library.services import (
     LATEST_INTEGRATION_VERSION,
@@ -15,44 +14,26 @@ from models_library.services import (
 )
 from pydantic import BaseModel, Field
 from pydantic.tools import schema_of
+from simcore_function_services.catalog import is_iterator_service
 from simcore_function_services.services.iter_sensitivity import eval_sensitivity
 
 
-def service(
-    key,
-    version,
-    type,
-    name=None,
-    description=None,
-    authors=None,
-    contact=None,
-    thumbnail=None,
-):
-
-    # TODO:
-
-    def decorator(fun):
-        @wraps(fun)
-        def wrapper(*args, **kwargs):
-            pass
-
-        return wrapper
-
-    return decorator
-
-
-class Point2(BaseModel):
-    x: float
-    y: float
+class ServiceRecord(NamedTuple):
+    meta: BaseModel  # service info + i/o
+    function: Callable  # service implementation
 
 
 class ServicesCatalog:
-    def __init__(self):
-        self.services = {}
+    def __init__(self, integration_version=None):
+        self.services = []
         self.service_meta_model_cls = ServiceDockerData
+
+        # catalog-wide options
+        self.integration_version = integration_version or LATEST_INTEGRATION_VERSION
 
     def add(
         self,
+        *,
         key,
         version,
         type,
@@ -70,28 +51,36 @@ class ServicesCatalog:
 
     def add_service(self, key: str, version: str, func: Callable, *, type, outputs):
         data = {
-            "integration-version": LATEST_INTEGRATION_VERSION,
+            "integration-version": self.integration_version,
             "key": key,
             "version": version,
         }
 
+        if inspect.iscoroutinefunction(func):
+            raise NotImplementedError("Coroutines as services still not implemented")
+
+        is_iterator = inspect.isgeneratorfunction(func)
+        if is_iterator != is_iterator_service(service_key=key):
+            raise ValueError(
+                f"{key=} defines an iterator service but function {func.__name__} is not iterable"
+            )
+
         #
         # inspect signature of func to retrieve inputs/output parameters
-        # and annotations.
-        # This ensures consistency
-        # Notice that parms are transmitted and we need to "glue"
-        # those to the inputs/outputs
+        # and annotations. This ensures consistency. Notice that parms are transmitted
+        # and we need to "glue" those to the inputs/outputs
         #
         #
         signature = inspect.signature(func)
-        inputs = self.validate_inputs(signature)
-        outputs = self.validate_outputs(
+        data["inputs"] = self.validate_inputs(signature)
+        data["outputs"] = self.validate_outputs(
             signature, is_iterator=inspect.isgeneratorfunction(func)
         )
-        data.update({"inputs": inputs, "outputs": outputs})
 
         service_meta_model_cls = self.service_meta_model_cls
-        self.services[(key, version)] = service_meta_model_cls(**data)
+        self.services.append(
+            ServiceRecord(meta=service_meta_model_cls(**data), function=func)
+        )
 
     def validate_inputs(self, signature: Signature):
         inputs = {}
@@ -106,6 +95,8 @@ class ServicesCatalog:
                 "description",
                 parameter.name.replace("_", " ").capitalize(),
             )
+
+            # FIXME: files are represented differently!
 
             content_schema = schema_of(
                 parameter.annotation,
@@ -127,6 +118,7 @@ class ServicesCatalog:
         return inputs
 
     def validate_outputs(self, signature: Signature, is_iterator: bool):
+        # TODO: add via decorator some extra info here!
         outputs = {}
         if signature.return_annotation != Signature.empty:
             origin = get_origin(signature.return_annotation)
@@ -150,6 +142,7 @@ class ServicesCatalog:
                     "type": "ref_contentSchema",
                     "contentSchema": schema_of(
                         output_parameter,
+                        # TODO: nicer names!
                         title=f"{output_parameter}".replace("typing.", ""),
                     ),
                 }
@@ -157,22 +150,26 @@ class ServicesCatalog:
         return outputs
 
 
-services = ServicesCatalog()
-
-
-@services.add(key="foo", version="1.2.3", type=ServiceType.BACKEND)
-def my_function_service(
-    x1: int,
-    x2: float,
-    x3: str,
-    x4: List[float] = Field(..., x_unit="mm"),
-    x5: Point2 = ...,
-) -> Point2:
-    # check function that ensures dask can transmit this function |<<<<----
-    pass
-
-
 ###-----------------------------------------------------
+
+
+def test_service_catalog():
+    services = ServicesCatalog()
+
+    class Point2(BaseModel):
+        x: float
+        y: float
+
+    @services.add(key="foo", version="1.2.3", type=ServiceType.BACKEND)
+    def my_function_service(
+        x1: int,
+        x2: float,
+        x3: str,
+        x4: List[float] = Field(..., x_unit="mm"),
+        x5: Point2 = ...,
+    ) -> Point2:
+        # check function that ensures dask can transmit this function |<<<<----
+        pass
 
 
 def test_it():
