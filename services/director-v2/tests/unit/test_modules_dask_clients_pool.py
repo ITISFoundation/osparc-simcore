@@ -13,6 +13,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
+    DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
     JupyterHubTokenAuthentication,
@@ -228,17 +229,14 @@ def test_default_cluster_correctly_initialized(
     dask_scheduler_settings = (
         client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     )
-    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     assert (
         default_cluster.endpoint
         == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
     )
 
-    assert (
-        default_cluster.id
-        == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID
-    )
+    assert default_cluster.id == DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
 
@@ -263,7 +261,7 @@ async def test_acquire_default_cluster(
     dask_scheduler_settings = (
         client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     )
-    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     async with dask_clients_pool.acquire(default_cluster) as dask_client:
 

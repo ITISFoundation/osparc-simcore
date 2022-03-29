@@ -13,7 +13,7 @@ from models_library.clusters import (
 )
 from models_library.generics import DictModel
 from models_library.users import GroupID
-from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl, root_validator, validator
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
 
@@ -52,6 +52,14 @@ class ClusterGet(Cluster):
 
     class Config(Cluster.Config):
         allow_population_by_field_name = True
+
+    @root_validator(pre=True)
+    @classmethod
+    def ensure_access_rights_converted(cls, values):
+        if "access_rights" in values:
+            access_rights = values.pop("access_rights")
+            values["accessRights"] = access_rights
+        return values
 
 
 class ClusterDetailsGet(BaseModel):

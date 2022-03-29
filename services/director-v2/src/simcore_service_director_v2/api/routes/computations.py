@@ -5,6 +5,7 @@ from typing import Any, List
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.users import UserID
 from servicelib.async_utils import run_sequentially_in_context
@@ -138,8 +139,7 @@ async def create_computation(
             await scheduler.run_new_pipeline(
                 job.user_id,
                 job.project_id,
-                job.cluster_id
-                or request.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
+                job.cluster_id or DEFAULT_CLUSTER_ID,
             )
 
         # filter the tasks by the effective pipeline
