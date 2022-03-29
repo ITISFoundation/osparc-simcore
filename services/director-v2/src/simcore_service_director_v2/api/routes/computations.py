@@ -170,7 +170,7 @@ async def create_computation(
     "/{project_id}",
     summary="Returns a computation pipeline state",
     response_model=ComputationTaskGet,
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_200_OK,
 )
 async def get_computation(
     user_id: UserID,
