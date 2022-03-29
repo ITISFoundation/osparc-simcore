@@ -301,21 +301,36 @@ qx.Class.define("osparc.component.form.Auto", {
       } else {
         s.set.value = String(0);
       }
-      this.__formCtrl.addBindingOptions(key,
-        { // model2target
-          converter: function(data) {
-            if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
-              return String(data);
-            }
-            return null;
+      const model2target = {
+        converter: function(data) {
+          if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
+            return String(data);
           }
-        },
-        { // target2model
-          converter: function(data) {
-            return parseFloat(data);
-          }
+          return null;
         }
-      );
+      };
+      const target2model = {
+        myContext: {
+          that: this,
+          s,
+          key
+        },
+        converter: function(data) {
+          const tmp = data.split(" ");
+          if (tmp.length > 1 && "x_unit" in this.myContext.s) {
+            // extract unit with prefix from text
+            const prefix = osparc.utils.Units.getPrefix(this.myContext.s["x_unit"], tmp[1]);
+            if (prefix !== null) {
+              // eslint-disable-next-line no-underscore-dangle
+              const item = this.myContext.that.__ctrlMap[key];
+              item.unitPrefix = prefix;
+              osparc.component.form.renderer.PropFormBase.updateUnitLabelPrefix(item);
+            }
+          }
+          return parseFloat(data);
+        }
+      };
+      this.__formCtrl.addBindingOptions(key, model2target, target2model);
     },
     __setupSpinner: function(s, key) {
       if (!s.set) {
@@ -519,6 +534,10 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       control.key = key;
       control.description = s.description;
+      const rangeText = osparc.ui.form.ContentSchemaHelper.getDomainText(s);
+      if (rangeText) {
+        control.description += `<br>----<br>${rangeText}`;
+      }
       control.type = s.type;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;
@@ -533,29 +552,7 @@ qx.Class.define("osparc.component.form.Auto", {
       }
 
       if (this.self().hasValidationProp(s)) {
-        const manager = new qx.ui.form.validation.Manager();
-        manager.add(control, (value, item) => {
-          let multiplier = 1;
-          let invalidMessage = this.tr("Out of range");
-          if ("x_unit" in s) {
-            multiplier = osparc.utils.Units.getMultiplier(s, control.unitPrefix, item.unitPrefix);
-          }
-          let valid = true;
-          if ("minimum" in s && value < multiplier*(s.minimum)) {
-            valid = false;
-            invalidMessage += "<br>";
-            invalidMessage += this.tr("Minimum value: ") + multiplier*(s.minimum);
-          }
-          if ("maximum" in s && value > multiplier*(s.maximum)) {
-            valid = false;
-            invalidMessage += "<br>";
-            invalidMessage += this.tr("Maximum value: ") + multiplier*(s.maximum);
-          }
-          if (!valid) {
-            item.setInvalidMessage(invalidMessage);
-          }
-          return Boolean(valid);
-        });
+        const manager = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
         control.addListener("changeValue", () => manager.validate());
       }
 
