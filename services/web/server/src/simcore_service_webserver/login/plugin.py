@@ -54,7 +54,7 @@ def setup_login_storage(app: web.Application):
 def _setup_login_options(app: web.Application):
     settings: SMTPSettings = get_email_plugin_settings(app)
 
-    cfg = settings.dict(exclude_unset=True)
+    cfg = settings.dict(exclude_none=True)
     if INDEX_RESOURCE_NAME in app.router:
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
