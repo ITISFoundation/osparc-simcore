@@ -231,6 +231,9 @@ async def get_computation(
         stop_url=f"{self_url}:stop?user_id={user_id}"
         if pipeline_state.is_running()
         else None,
+        iteration=None,
+        cluster_id=None,
+        result=None,
     )
     return task_out
 
