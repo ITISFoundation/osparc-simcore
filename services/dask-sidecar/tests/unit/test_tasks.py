@@ -407,8 +407,8 @@ def python_task(
         [
             "from pathlib import Path",
             f"code=''{code!r}''",
-            "print(code)"
-            # "Path('${INPUT_FOLDER}/service.py').write_text(code)",
+            # "print(code)"
+            "Path('${INPUT_FOLDER}/service.py').write_text(code)",
         ]
     )
 
@@ -419,7 +419,7 @@ def python_task(
     list_of_commands = [
         'export PYTHONPATH="${INPUT_FOLDER}":${PYTHONPATH}',
         f'python -c "{py_serialize_code}"',
-        # f'python -c "{py_execute_code}" > "${{OUTPUT_FOLDER}}/{output_json_file_name}"',
+        f'python -c "{py_execute_code}"',
     ]
 
     return ServiceExampleParam(

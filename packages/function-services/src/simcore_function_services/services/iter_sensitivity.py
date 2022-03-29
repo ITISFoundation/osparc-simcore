@@ -71,7 +71,8 @@ META = ServiceDockerData.parse_obj(
 REGISTRY = register_definition(META)
 
 
-def _sensitivity_func(
+def eval_sensitivity(
+    *,
     paramrefs: List[float],
     paramdiff: List[float],
     diff_or_fact: bool,
@@ -105,5 +106,5 @@ def _sensitivity_func(
 )
 def _sensitivity_generator(**kwargs) -> Iterator[Outputs]:
 
-    for i, paramtestplus, paramtestminus in _sensitivity_func(**kwargs):
+    for i, paramtestplus, paramtestminus in eval_sensitivity(**kwargs):
         yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
