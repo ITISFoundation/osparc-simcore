@@ -27,7 +27,9 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     this._add(clusterDetailsLayout);
 
     const grid = new qx.ui.layout.Grid(5, 8);
-    grid.setColumnFlex(1, 1);
+    for (let i=0; i<Object.keys(this.self().GRID_POS).length; i++) {
+      grid.setColumnFlex(i, 1);
+    }
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
@@ -150,6 +152,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       };
 
       let row = 0;
+      const gridW = this.__computedLayout ? this.__computedLayout.width - 15 : 600;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
@@ -179,9 +182,12 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           }
           const layout = osparc.wrapper.Plotly.getDefaultLayout();
           const plotId = "ClusterDetails_" + plotKey + "-" + row;
+          const w = parseInt(gridW/Object.keys(plots).length);
+          const h = parseInt(w*0.75);
+          console.log(gridW, w, h);
           const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
-            width: 200,
-            height: 160
+            width: w,
+            height: h
           });
           workersGrid.add(plot, {
             row,
