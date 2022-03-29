@@ -69,10 +69,10 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     setClusterId: function(clusterId) {
       const clusters = osparc.utils.Clusters.getInstance();
       if (this.__clusterId !== null) {
-        clusters.stopFetchDetailsTimer(this.__clusterId);
+        clusters.stopFetchingDetails(this.__clusterId);
       }
       this.__clusterId = clusterId;
-      clusters.startFetchDetailsTimer(clusterId);
+      clusters.startFetchingDetails(clusterId);
     },
 
     __startFetchingDetails: function() {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
             }
           }
         });
-        clusters.startFetchDetailsTimer(this.__clusterId);
+        clusters.startFetchingDetails(this.__clusterId);
       // }
     },
 
@@ -207,6 +207,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   },
 
   destruct: function() {
-    osparc.utils.Clusters.getInstance().stopFetchDetailsTimer(this.__clusterId);
+    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });

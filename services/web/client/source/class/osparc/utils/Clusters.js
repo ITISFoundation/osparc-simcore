@@ -118,6 +118,7 @@ qx.Class.define("osparc.utils.Clusters", {
         })
         .finally(() => {
           // keep asking?
+          console.log("keep asking", this.__clusterIds);
           if (this.__clusterIds.includes(cid)) {
             const interval = 3000;
             qx.event.Timer.once(() => this.__fetchDetails(cid), this, interval);
@@ -125,8 +126,8 @@ qx.Class.define("osparc.utils.Clusters", {
         });
     },
 
-    startFetchDetailsTimer: function(clusterId) {
-      console.log("startFetchDetailsTimer", clusterId, this.__clusterIds);
+    startFetchingDetails: function(clusterId) {
+      console.log("startFetchingDetails", clusterId, this.__clusterIds);
       const found = this.__clusterIds.includes(clusterId);
       this.__clusterIds.push(clusterId);
       if (!found) {
@@ -135,7 +136,7 @@ qx.Class.define("osparc.utils.Clusters", {
       }
     },
 
-    stopFetchDetailsTimer: function(clusterId) {
+    stopFetchingDetails: function(clusterId) {
       const idx = this.__clusterIds.indexOf(clusterId);
       if (idx > -1) {
         this.__clusterIds.splice(idx, 1);

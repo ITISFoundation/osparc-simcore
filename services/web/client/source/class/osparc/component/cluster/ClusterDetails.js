@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           }
         }
       });
-      clusters.startFetchDetailsTimer(this.__clusterId);
+      clusters.startFetchingDetails(this.__clusterId);
     },
 
     __detailsCallFailed: function() {
@@ -193,6 +193,6 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   },
 
   destruct: function() {
-    osparc.utils.Clusters.getInstance().stopFetchDetailsTimer(this.__clusterId);
+    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });
