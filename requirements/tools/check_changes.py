@@ -89,9 +89,6 @@ def main_changes_stats():
             # TODO: if major, get link to release notes
             from_versions = set(str(v) for v in before[name])
             to_versions = set(str(v) for v in after[name])
-
-            # print("before", sorted(set(before[name])), "after", sorted(set(after[name])))
-
             print(
                 "|",
                 f"{i:3d}",

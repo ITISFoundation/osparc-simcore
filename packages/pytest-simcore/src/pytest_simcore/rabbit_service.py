@@ -91,7 +91,7 @@ async def rabbit_connection(
     # create connection
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-    connection = await aio_pika.connect_robust(
+    connection: aio_pika.RobustConnection = await aio_pika.connect_robust(
         rabbit_settings.dsn + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
         client_properties={"connection_name": "pytest read connection"},
     )
@@ -116,7 +116,9 @@ async def rabbit_channel(
             print("sender was '{sender}'")
 
     # create channel
-    channel = await rabbit_connection.channel(publisher_confirms=False)
+    channel: aio_pika.Channel = await rabbit_connection.channel(
+        publisher_confirms=False
+    )
     assert channel
     channel.add_close_callback(_channel_close_callback)
     yield channel
