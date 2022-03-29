@@ -136,3 +136,35 @@ async def stop_pipeline(request: web.Request) -> web.Response:
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
+
+
+@routes.get(f"/{VTAG}/computations/{{project_id}}")
+@login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def get_pipeline(request: web.Request) -> web.Response:
+    # @PC: I'll need your help here
+    client = DirectorV2ApiClient(request.app)
+    run_policy = get_project_run_policy(request.app)
+    assert run_policy  # nosec
+
+    user_id = UserID(request[RQT_USERID_KEY])
+    project_id = ProjectID(request.match_info["project_id"])
+    try:
+        computation_task_out = await client.get(project_id=project_id, user_id=user_id)
+        data = {
+            key: computation_task_out[key]
+            for key in ["iteration", "cluster_id"]
+            if key in computation_task_out
+        }
+
+        return web.json_response(
+            data={"data": data},
+            dumps=json_dumps,
+        )
+    except DirectorServiceError as exc:
+        return create_error_response(
+            exc,
+            reason=exc.reason,
+            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+        )

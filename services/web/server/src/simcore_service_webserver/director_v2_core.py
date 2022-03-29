@@ -58,6 +58,18 @@ class DirectorV2ApiClient:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
+    async def get(self, project_id: ProjectID, user_id: UserID) -> Dict[str, Any]:
+        computation_task_out = await _request_director_v2(
+            self._app,
+            "GET",
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(
+                user_id=user_id
+            ),
+            expected_status=web.HTTPOk,
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out
+
     async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
         computation_task_out = await _request_director_v2(
             self._app,

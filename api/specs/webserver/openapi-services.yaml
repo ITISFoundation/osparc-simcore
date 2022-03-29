@@ -1,9 +1,27 @@
 paths:
+  /computations/{project_id}/stop:
+    get:
+      description: Returns the last computation data
+      tags:
+        - computations
+      operationId: get_pipeline
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Succesffully retrieved computation
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/pipeline.yaml#/components/schemas/PipelineEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /computations/{project_id}/start:
     post:
       description: Starts the pipeline(s) of a given (meta) project
       tags:
-        - service
+        - computations
       operationId: start_pipeline
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -45,7 +63,7 @@ paths:
     post:
       description: Stops (all) pipeline(s) of a given (meta) project
       tags:
-        - service
+        - computations
       operationId: stop_pipeline
       parameters:
         - $ref: "#/components/parameters/ProjectId"
