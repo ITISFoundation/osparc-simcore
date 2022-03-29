@@ -13,7 +13,12 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
+from models_library.clusters import (
+    DEFAULT_CLUSTER_ID,
+    Cluster,
+    ClusterAuthentication,
+    NoAuthentication,
+)
 from models_library.projects_networks import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -24,6 +29,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from simcore_postgres_database.models.clusters import ClusterType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
@@ -298,9 +304,17 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
+
+    @cached_property
+    def default_cluster(self):
+        return Cluster(
+            id=DEFAULT_CLUSTER_ID,
+            name="Default cluster",
+            endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
+            authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
+            owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
+            type=ClusterType.ON_PREMISE,
+        )  # type: ignore
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
     def empty_auth_is_none(v):
