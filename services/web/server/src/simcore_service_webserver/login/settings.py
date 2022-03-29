@@ -46,8 +46,8 @@ class LoginOptions(BaseModel):
     SMTP_HOST: str
     SMTP_PORT: int
     SMTP_TLS_ENABLED: bool
-    SMTP_USERNAME: Optional[str]
-    SMTP_PASSWORD: Optional[SecretStr]
+    SMTP_USERNAME: Optional[str] = Field(...)
+    SMTP_PASSWORD: Optional[SecretStr] = Field(...)
 
     # lifetime limits are in days
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS
