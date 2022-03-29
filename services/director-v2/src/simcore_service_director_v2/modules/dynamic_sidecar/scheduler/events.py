@@ -428,14 +428,14 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
             network_name,
             container_aliases,
         ) in projects_networks.networks_with_aliases.items():
-            for network_alias in container_aliases.values():
-                await dynamic_sidecar_client.attach_service_containers_to_project_network(
-                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
-                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-                    project_network=network_name,
-                    project_id=scheduler_data.project_id,
-                    network_alias=network_alias,
-                )
+            network_alias = container_aliases[f"{scheduler_data.node_uuid}"]
+            await dynamic_sidecar_client.attach_service_containers_to_project_network(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                project_network=network_name,
+                project_id=scheduler_data.project_id,
+                network_alias=network_alias,
+            )
 
         scheduler_data.dynamic_sidecar.is_project_network_attached = True
 
