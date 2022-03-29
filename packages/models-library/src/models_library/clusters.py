@@ -1,6 +1,6 @@
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Final, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
+from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -107,6 +107,7 @@ class BaseCluster(BaseModel):
 
 
 ClusterID = NonNegativeInt
+DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
 
 
 class Cluster(BaseCluster):
@@ -115,6 +116,18 @@ class Cluster(BaseCluster):
     class Config(BaseCluster.Config):
         schema_extra = {
             "examples": [
+                {
+                    "id": DEFAULT_CLUSTER_ID,
+                    "name": "The default cluster",
+                    "type": ClusterType.ON_PREMISE,
+                    "owner": 1456,
+                    "endpoint": "tcp://default-dask-scheduler:8786",
+                    "authentication": {
+                        "type": "simple",
+                        "username": "someuser",
+                        "password": "somepassword",
+                    },
+                },
                 {
                     "id": 432,
                     "name": "My awesome cluster",
@@ -161,16 +174,24 @@ class Cluster(BaseCluster):
             ]
         }
 
-    @validator("access_rights", always=True, pre=True)
+    @root_validator(pre=True)
     @classmethod
-    def check_owner_has_access_rights(cls, v, values):
+    def check_owner_has_access_rights(cls, values):
+        is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)
         owner_gid = values["owner"]
+
         # check owner is in the access rights, if not add it
-        if owner_gid not in v:
-            v[owner_gid] = CLUSTER_ADMIN_RIGHTS
-        # check owner has full access
-        if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
-            raise ValueError(
-                f"the cluster owner access rights are incorrectly set: {v[owner_gid]}"
+        access_rights = values.get("access_rights", values.get("accessRights", {}))
+        if owner_gid not in access_rights:
+            access_rights[owner_gid] = (
+                CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
             )
-        return v
+        # check owner has the expected access
+        if access_rights[owner_gid] != (
+            CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
+        ):
+            raise ValueError(
+                f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
+            )
+        values["access_rights"] = access_rights
+        return values

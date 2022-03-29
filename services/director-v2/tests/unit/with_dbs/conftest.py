@@ -167,7 +167,7 @@ def cluster(
     created_cluster_ids: List[str] = []
 
     def creator(user: Dict[str, Any], **cluster_kwargs) -> Cluster:
-        cluster_config = Cluster.Config.schema_extra["examples"][0]
+        cluster_config = Cluster.Config.schema_extra["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
         new_cluster = Cluster.parse_obj(cluster_config)
@@ -218,6 +218,7 @@ def cluster(
                 endpoint=created_cluster.endpoint,
                 authentication=created_cluster.authentication,
                 access_rights=access_rights_in_db,
+                thumbnail=None,
             )
 
     yield creator
