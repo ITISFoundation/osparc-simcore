@@ -47,7 +47,10 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
         let multiplier = 1;
         let invalidMessage = qx.locale.Manager.tr("Out of range");
         if ("x_unit" in s) {
-          multiplier = osparc.utils.Units.getMultiplier(s, control.unitPrefix, item.unitPrefix);
+          const {
+            unitPrefix
+          } = osparc.utils.Units.decomposeXUnit(s["x_unit"]);
+          multiplier = osparc.utils.Units.getMultiplier(unitPrefix, control.unitPrefix);
         }
         let valid = true;
         if ("minimum" in s && value < multiplier*(s.minimum)) {
