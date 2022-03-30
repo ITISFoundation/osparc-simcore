@@ -128,7 +128,6 @@ qx.Class.define("osparc.utils.Clusters", {
       const found = this.__clusterIds.includes(clusterId);
       this.__clusterIds.push(clusterId);
       if (!found) {
-        console.log("start fetching", this.__clusterIds);
         this.__fetchDetails(clusterId);
       }
     },

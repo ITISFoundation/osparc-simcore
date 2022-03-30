@@ -95,7 +95,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
         case "text":
-          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor());
+          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
       }
       if (representation) {
@@ -164,6 +164,14 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         osparc.wrapper.Svg.updateText(representation, newText);
+      }
+    },
+
+    setFontSize: function(fontSize) {
+      this.getAttributes().fontSize = fontSize;
+      const representation = this.getRepresentation();
+      if (representation) {
+        osparc.wrapper.Svg.updateTextSize(representation, fontSize);
       }
     },
 
