@@ -84,7 +84,9 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{compose_namespace}{cls._volume_name(path)}"
 
     @classmethod
-    def mount_entry(cls, compose_namespace: str, path: Path) -> Dict[str, Any]:
+    def mount_entry(
+        cls, compose_namespace: str, path: Path, node_uuid: NodeID
+    ) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
@@ -93,7 +95,10 @@ class DynamicSidecarVolumesPathsResolver:
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
-                "Labels": {"source": cls.source(compose_namespace, path)}
+                "Labels": {
+                    "source": cls.source(compose_namespace, path),
+                    "uuid": f"{node_uuid}",
+                }
             },
         }
 
@@ -110,7 +115,10 @@ class DynamicSidecarVolumesPathsResolver:
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
-                "Labels": {"source": cls.source(compose_namespace, path)},
+                "Labels": {
+                    "source": cls.source(compose_namespace, path),
+                    "uuid": f"{node_uuid}",
+                },
                 "DriverConfig": _get_s3_volume_driver_config(
                     r_clone_settings=r_clone_settings,
                     project_id=project_id,

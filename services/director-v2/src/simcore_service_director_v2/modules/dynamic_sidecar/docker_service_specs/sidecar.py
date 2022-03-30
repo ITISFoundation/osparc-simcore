@@ -102,7 +102,9 @@ def get_dynamic_sidecar_spec(
     ]:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
-                compose_namespace=compose_namespace, path=path_to_mount
+                compose_namespace=compose_namespace,
+                path=path_to_mount,
+                node_uuid=scheduler_data.node_uuid,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -121,7 +123,9 @@ def get_dynamic_sidecar_spec(
         else:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
-                    compose_namespace=compose_namespace, path=path_to_mount
+                    compose_namespace=compose_namespace,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
                 )
             )
 
