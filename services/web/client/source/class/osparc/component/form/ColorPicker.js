@@ -14,7 +14,8 @@ qx.Class.define("osparc.component.form.ColorPicker", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this._add(this.getChildControl("color-button"));
+    this._add(this.getChildControl("random-button"));
+    this._add(this.getChildControl("selector-button"));
     this._add(this.getChildControl("color-input"));
   },
 
@@ -30,9 +31,17 @@ qx.Class.define("osparc.component.form.ColorPicker", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "color-button":
+        case "random-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
           control.addListener("execute", () => this.setColor(osparc.utils.Utils.getRandomColor()), this);
+          this.bind("color", control, "backgroundColor");
+          this.bind("color", control, "textColor", {
+            converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
+          });
+          break;
+        case "selector-button":
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-dropper/12");
+          control.addListener("execute", () => this.__openColorSelector(), this);
           this.bind("color", control, "backgroundColor");
           this.bind("color", control, "textColor", {
             converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
@@ -53,6 +62,16 @@ qx.Class.define("osparc.component.form.ColorPicker", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __openColorSelector: function() {
+      const colorSelector = new qx.ui.control.ColorSelector();
+      const rgb = qx.util.ColorUtil.hexStringToRgb(this.getColor());
+      colorSelector.setRed(rgb[0]);
+      colorSelector.setGreen(rgb[1]);
+      colorSelector.setBlue(rgb[2]);
+      osparc.ui.window.Window.popUpInWindow(colorSelector, this.tr("Pick a color"), 590, 380);
+      colorSelector.addListener("changeValue", e => this.setColor(e.getData()));
     }
   }
 });
