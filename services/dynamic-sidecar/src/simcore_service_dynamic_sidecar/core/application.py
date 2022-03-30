@@ -80,12 +80,13 @@ def assemble_application() -> FastAPI:
     # error handlers
     application.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
+    # also sets up mounted_volumes
     setup_directory_watcher(application)
 
     def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
             await login_registry(application.state.settings.REGISTRY_SETTINGS)
-            await volumes_fix_permissions()
+            await volumes_fix_permissions(application.state.mounted_volumes)
 
             print(WELCOME_MSG, flush=True)
 

@@ -28,10 +28,7 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.mounted_fs import (
-    MountedVolumes,
-    get_mounted_volumes,
-)
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
@@ -500,7 +497,9 @@ async def test_container_pull_input_ports(
 
 
 async def test_directory_watcher_disabling(
-    test_client: TestClient, mock_dir_watcher_on_any_event: AsyncMock
+    test_client: TestClient,
+    mock_dir_watcher_on_any_event: AsyncMock,
+    mounted_volumes: MountedVolumes,
 ) -> None:
     async def _assert_disable_directory_watcher() -> None:
         response = await test_client.patch(
@@ -517,7 +516,6 @@ async def test_directory_watcher_disabling(
         assert response.text == ""
 
     def _create_random_dir_in_inputs() -> int:
-        mounted_volumes: MountedVolumes = get_mounted_volumes()
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
         dir_count = len(
@@ -557,6 +555,7 @@ async def test_container_create_outputs_dirs(
     test_client: TestClient,
     mock_outputs_labels: Dict[str, ServiceOutput],
     mock_dir_watcher_on_any_event: AsyncMock,
+    mounted_volumes: MountedVolumes,
 ) -> None:
 
     assert mock_dir_watcher_on_any_event.call_count == 0
@@ -571,7 +570,6 @@ async def test_container_create_outputs_dirs(
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     for dir_name in mock_outputs_labels.keys():
         assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
 

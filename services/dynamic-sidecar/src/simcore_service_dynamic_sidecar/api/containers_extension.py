@@ -14,6 +14,7 @@ from simcore_sdk.node_ports_common.data_items_utils import is_file_type
 
 from ..core.dependencies import (
     get_application,
+    get_mounted_volumes,
     get_rabbitmq,
     get_settings,
     get_shared_store,
@@ -27,7 +28,7 @@ from ..models.domains.shared_store import SharedStore
 from ..models.schemas.ports import PortTypeName
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
-from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..modules.mounted_fs import MountedVolumes
 from .containers import send_message
 
 # NOTE: importing the `containers_router` router from .containers
@@ -65,13 +66,15 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def restore_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> None:
+async def restore_state(
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> None:
     """
     When restoring the state:
     - pull inputs via nodeports
     - pull all the extra state paths
     """
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
@@ -91,8 +94,10 @@ async def restore_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> None:
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def save_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> None:
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
+async def save_state(
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> None:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
@@ -113,10 +118,11 @@ async def save_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> None:
     status_code=status.HTTP_200_OK,
 )
 async def pull_input_ports(
-    port_keys: Optional[List[str]] = None, rabbitmq: RabbitMQ = Depends(get_rabbitmq)
+    port_keys: Optional[List[str]] = None,
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
     port_keys = [] if port_keys is None else port_keys
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
@@ -153,8 +159,10 @@ async def disable_directory_watcher(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
+async def create_output_dirs(
+    request_mode: CreateDirsRequestItem,
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
     for port_key, service_output in request_mode.outputs_labels.items():
         if is_file_type(service_output.property_type):
@@ -170,9 +178,9 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 async def pull_output_ports(
     port_keys: Optional[List[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
     port_keys = [] if port_keys is None else port_keys
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await send_message(rabbitmq, f"Pulling output for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
@@ -189,10 +197,11 @@ async def pull_output_ports(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def push_output_ports(
-    port_keys: Optional[List[str]] = None, rabbitmq: RabbitMQ = Depends(get_rabbitmq)
+    port_keys: Optional[List[str]] = None,
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> None:
     port_keys = [] if port_keys is None else port_keys
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
     await nodeports.upload_outputs(

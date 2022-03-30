@@ -6,7 +6,7 @@ from typing import Any, Dict, Generator, List, Tuple
 
 import yaml
 
-from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..modules.mounted_fs import MountedVolumes
 from .settings import DynamicSidecarSettings
 from .shared_handlers import write_file_and_run_command
 
@@ -158,7 +158,9 @@ def parse_compose_spec(compose_file_content: str) -> Any:
 
 
 async def validate_compose_spec(
-    settings: DynamicSidecarSettings, compose_file_content: str
+    settings: DynamicSidecarSettings,
+    compose_file_content: str,
+    mounted_volumes: MountedVolumes,
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects
@@ -185,7 +187,6 @@ async def validate_compose_spec(
 
     spec_services_to_container_name: Dict[str, str] = {}
 
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]

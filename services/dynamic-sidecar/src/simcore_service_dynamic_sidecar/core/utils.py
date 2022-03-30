@@ -21,7 +21,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..modules.mounted_fs import MountedVolumes
 
 CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_stdout")
 
@@ -148,11 +148,10 @@ def assemble_container_names(validated_compose_content: str) -> List[str]:
     ]
 
 
-async def volumes_fix_permissions() -> None:
+async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     for volume_path in [
         mounted_volumes.disk_inputs_path,
         mounted_volumes.disk_outputs_path,

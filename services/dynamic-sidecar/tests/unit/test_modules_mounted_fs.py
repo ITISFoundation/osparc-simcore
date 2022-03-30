@@ -4,7 +4,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Iterator, List
+from typing import Any, List
 
 import pytest
 from simcore_service_dynamic_sidecar.modules import mounted_fs
@@ -24,21 +24,6 @@ def _assert_same_object(first: Any, second: Any) -> None:
 
 
 # FIXTURES
-
-
-@pytest.fixture
-def clear_mounted_volumes() -> Iterator[None]:
-    mounted_fs._mounted_volumes = None
-    yield
-    mounted_fs._mounted_volumes = None
-
-
-@pytest.fixture
-def mounted_volumes(clear_mounted_volumes: None) -> mounted_fs.MountedVolumes:
-    assert mounted_fs._mounted_volumes is None
-    mounted_volumes: mounted_fs.MountedVolumes = mounted_fs.setup_mounted_fs()
-    _assert_same_object(mounted_volumes, mounted_fs.get_mounted_volumes())
-    return mounted_volumes
 
 
 @pytest.fixture
