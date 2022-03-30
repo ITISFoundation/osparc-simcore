@@ -215,7 +215,7 @@ async def validate_compose_spec(
         service_volumes.append(await mounted_volumes.get_outputs_docker_volume())
         async for (
             state_paths_docker_volume
-        ) in mounted_volumes.get_state_paths_docker_volumes():
+        ) in mounted_volumes.iter_state_paths_to_docker_volumes():
             service_volumes.append(state_paths_docker_volume)
 
         service_content["volumes"] = service_volumes

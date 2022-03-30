@@ -68,7 +68,7 @@ async def test_expected_paths_and_volumes(
 ) -> None:
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len({x async for x in mounted_volumes.get_state_paths_docker_volumes()})
+        == len({x async for x in mounted_volumes.iter_state_paths_to_docker_volumes()})
         == len(set(mounted_volumes.disk_state_paths()))
     )
 
@@ -115,5 +115,5 @@ async def test_expected_paths_and_volumes(
 
     assert {
         _get_container_mount(x)
-        async for x in mounted_volumes.get_state_paths_docker_volumes()
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes()
     } == {f"{state_path}" for state_path in state_paths_dirs}

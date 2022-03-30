@@ -4,8 +4,8 @@ from typing import AsyncIterable
 
 import aiodocker
 import pytest
-from fastapi import HTTPException
 from simcore_service_dynamic_sidecar.core.docker_utils import get_volume_by_label
+from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
 pytestmark = pytest.mark.asyncio
 
@@ -32,6 +32,6 @@ async def test_volume_with_label(volume_with_label: None, volume_name: str) -> N
 
 
 async def test_volume_label_missing() -> None:
-    with pytest.raises(HTTPException, match="404") as info:
+    with pytest.raises(VolumeNotFoundError) as info:
         await get_volume_by_label("not_exist")
-    assert info.value.detail == "Could not find desired volume, query returned []"
+    assert info.value.args[0] == "Could not find desired volume, query returned []"

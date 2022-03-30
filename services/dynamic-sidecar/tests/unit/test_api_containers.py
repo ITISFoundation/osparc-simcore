@@ -392,19 +392,23 @@ async def test_container_docker_error(
     started_containers: List[str],
     mock_containers_get: int,
 ) -> None:
-    def _expected_error_string() -> Dict[str, str]:
-        return dict(detail="aiodocker_mocked_error")
+    def _expected_error_string(status_code: int) -> Dict[str, Any]:
+        return {
+            "errors": [
+                f"An unexpected Docker error occurred status={status_code}, message='aiodocker_mocked_error'"
+            ]
+        }
 
     for container in started_containers:
         # get container logs
         response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string()
+        assert response.json() == _expected_error_string(mock_containers_get)
 
         # inspect container
         response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string()
+        assert response.json() == _expected_error_string(mock_containers_get)
 
 
 async def test_container_save_state(

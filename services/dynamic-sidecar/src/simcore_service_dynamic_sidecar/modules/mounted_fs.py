@@ -102,7 +102,7 @@ class MountedVolumes:
         bind_path: Path = await self._get_bind_path_from_label(self.volume_name_outputs)
         return f"{bind_path}:{self.outputs_path}"
 
-    async def get_state_paths_docker_volumes(self) -> AsyncGenerator[str, None]:
+    async def iter_state_paths_to_docker_volumes(self) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths
         ):
