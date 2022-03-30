@@ -19,10 +19,10 @@ from ..core.dependencies import (
     get_shared_store,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import write_file_and_run_command
-from ..core.utils import docker_client
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.ports import PortTypeName
 from ..modules import directory_watcher, nodeports
