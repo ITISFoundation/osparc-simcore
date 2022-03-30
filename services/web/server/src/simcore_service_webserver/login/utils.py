@@ -118,6 +118,7 @@ def flash_response(msg: str, level: str = "INFO") -> web.Response:
 
 async def send_mail(app: web.Application, msg: MIMEText):
     cfg: LoginOptions = get_plugin_options(app)
+    log.debug("Email configuration %s", cfg)
 
     msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(
