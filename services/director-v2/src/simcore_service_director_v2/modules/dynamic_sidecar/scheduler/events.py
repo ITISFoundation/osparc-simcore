@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.projects_networks import ProjectsNetworks
 from models_library.projects import ProjectAtDB
+from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
@@ -17,13 +17,14 @@ from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_exponential, wait_fixed
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
-from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ...db.repositories.projects import ProjectsRepository
+from ...db.repositories.projects_networks import ProjectsNetworksRepository
+from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
@@ -47,7 +48,9 @@ from ..docker_service_specs import (
 from ..errors import (
     DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
+    GenericDockerError,
 )
+from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
 from .events_utils import (
     all_containers_running,
