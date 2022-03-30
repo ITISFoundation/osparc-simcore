@@ -71,6 +71,20 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
           row,
           column: 1
         });
+        row++;
+
+        this._add(new qx.ui.basic.Label(this.tr("Size")), {
+          row,
+          column: 0
+        });
+        console.log("attrs", annotation.getAttributes());
+        const fontSizeField = new qx.ui.form.Spinner(12);
+        fontSizeField.addListener("changeValue", e => annotation.setFontSize(e.getData()));
+        this._add(fontSizeField, {
+          row,
+          column: 1
+        });
+        row++;
       }
     }
   }
