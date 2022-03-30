@@ -47,6 +47,18 @@ _DATABASE_ERRORS = (
 logger = logging.getLogger(__name__)
 
 
+def _log_keep_message(message: str) -> None:
+    """
+    Logs a message which is meant to show in production deployments.
+    These messages are supposed to help debug the system.
+    """
+    logger.warning("[HINT] %s", message)
+
+
+def _log_stop_service(service_uuid: str, save_state: bool) -> None:
+    _log_keep_message(f"Will stop service '{service_uuid}'; {save_state=}")
+
+
 async def collect_garbage(app: web.Application):
     """
     Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
@@ -313,6 +325,7 @@ async def _remove_single_orphaned_service(
         )
         logger.info(message)
         try:
+            _log_stop_service(service_uuid, False)
             await director_v2_api.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -356,6 +369,7 @@ async def _remove_single_orphaned_service(
             if is_invalid_user_id or await is_user_guest(app, user_id):
                 save_state = False
 
+            _log_stop_service(service_uuid, save_state)
             await director_v2_api.stop_service(app, service_uuid, save_state)
 
         except (ServiceNotFoundError, DirectorException) as err:
