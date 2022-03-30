@@ -10,7 +10,7 @@ from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def volume_name() -> str:
     return "test_source_name"
 
