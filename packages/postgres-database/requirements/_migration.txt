@@ -4,15 +4,15 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt --strip-extras requirements/_migration.in
 #
-alembic==1.7.6
+alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
 certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via requests
-click==8.0.3
+click==8.0.4
     # via -r requirements/_migration.in
 docker==5.0.3
     # via -r requirements/_migration.in
@@ -20,24 +20,24 @@ greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   requests
-importlib-metadata==4.10.1
+importlib-metadata==4.11.3
     # via
     #   -c requirements/_base.txt
     #   alembic
-importlib-resources==5.4.0 ; python_version < "3.9"
+importlib-resources==5.6.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-mako==1.1.6
+mako==1.2.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
@@ -49,14 +49,14 @@ requests==2.27.1
     # via docker
 six==1.16.0
     # via websocket-client
-sqlalchemy==1.4.31
+sqlalchemy==1.4.32
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
 tenacity==8.0.1
     # via -r requirements/_migration.in
-urllib3==1.26.8
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in

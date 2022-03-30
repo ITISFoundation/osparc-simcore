@@ -20,7 +20,7 @@ requests==2.27.1
     # via docker
 tenacity==8.0.1
     # via -r requirements.in
-urllib3==1.26.8
+urllib3==1.26.9
     # via
     #   -c ../../../requirements/constraints.txt
     #   requests

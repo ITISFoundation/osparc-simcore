@@ -59,8 +59,6 @@ class _NotTaggedAsIteration(Exception):
     to be identified as an iterator
     """
 
-    ...
-
 
 class IterationItem(NamedTuple):
     project_id: ProjectID
