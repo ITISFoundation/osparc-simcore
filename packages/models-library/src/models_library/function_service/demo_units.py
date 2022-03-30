@@ -5,7 +5,7 @@ from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 def build_input(schema):
     description = schema.pop("description", schema["title"])
-    
+
     return {
         "label": schema["title"],
         "description": description,
@@ -15,11 +15,14 @@ def build_input(schema):
 
 
 # SEE https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
+
 META = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/demo-units",
-        "version": "0.1.0",
+        "version": "0.2.0",
+        # CHANGELOG
+        # - 0.2.0: reverted order of first 5 outputs
         "type": ServiceType.BACKEND,
         "name": "Demo Units",
         "description": "Demo that takes base units as inputs and transform them in the outputs",
@@ -98,13 +101,41 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
+            "entropy": build_input(
+                {
+                    "title": "Entropy",
+                    "x_unit": "m**2 kg/s**2/K",
+                    "type": "number",
+                }
+            ),
+            "radiation": build_input(
+                {
+                    "title": "Radiation",
+                    "x_unit": "roentgen",
+                    "type": "number",
+                }
+            ),
         },
         "outputs": {
-            "length": build_input(
+            "mass": build_input(
                 {
-                    "title": "Distance",
-                    "description": "Distance value converted",
-                    "x_unit": "milli-meter",
+                    "title": "Mass",
+                    "minimum": 0,
+                    "x_unit": "kilo-gram",
+                    "type": "number",
+                }
+            ),
+            "luminosity": build_input(
+                {
+                    "title": "Luminosity",
+                    "x_unit": "candela",
+                    "type": "number",
+                }
+            ),
+            "current": build_input(
+                {
+                    "title": "Current",
+                    "x_unit": "milli-ampere",
                     "type": "number",
                 }
             ),
@@ -116,25 +147,11 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "current": build_input(
+            "length": build_input(
                 {
-                    "title": "Current",
-                    "x_unit": "milli-ampere",
-                    "type": "number",
-                }
-            ),
-            "luminosity": build_input(
-                {
-                    "title": "Luminosity",
-                    "x_unit": "candela",
-                    "type": "number",
-                }
-            ),
-            "mass": build_input(
-                {
-                    "title": "Mass",
-                    "minimum": 0,
-                    "x_unit": "kilo-gram",
+                    "title": "Distance",
+                    "description": "Distance value converted",
+                    "x_unit": "milli-meter",
                     "type": "number",
                 }
             ),
@@ -165,6 +182,13 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Velo-city",
                     "x_unit": "kilometer_per_hour",
+                    "type": "number",
+                }
+            ),
+            "radiation": build_input(
+                {
+                    "title": "Radiati0n", # it's not a typo
+                    "x_unit": "curie",
                     "type": "number",
                 }
             ),

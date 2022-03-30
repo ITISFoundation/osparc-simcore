@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   },
 
   members: {
+    __clustersLayout: null,
     __clustersSelectBox: null,
     __startButton: null,
     __startSelectionButton: null,
@@ -95,7 +96,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __initDefault: function() {
-      const clustersSelectBox = this.__createClustersSelectBox();
+      const clustersSelectBox = this.__createClustersLayout();
       this._add(clustersSelectBox);
 
       const startButton = this.__createStartButton();
@@ -111,45 +112,39 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this._add(stopButton);
     },
 
-    __createClustersSelectBox: function() {
+    __createClustersLayout: function() {
+      const clustersLayout = this.__clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
       const selectBox = this.__clustersSelectBox = new qx.ui.form.SelectBox().set({
         alignY: "middle",
         maxHeight: 32
       });
+      clustersLayout.add(selectBox);
 
       const store = osparc.store.Store.getInstance();
       store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
-      this.__populateClustersSelectBox();
-      return selectBox;
+
+      const clusterMiniView = new osparc.component.cluster.ClusterMiniView().set({
+        alignY: "middle"
+      });
+      selectBox.addListener("changeSelection", e => {
+        const selection = e.getData();
+        if (selection.length) {
+          clusterMiniView.setClusterId(selection[0].id);
+        }
+      }, this);
+      clustersLayout.add(clusterMiniView);
+
+      return clustersLayout;
     },
 
     __populateClustersSelectBox: function() {
-      this.__clustersSelectBox.removeAll();
-
-      const store = osparc.store.Store.getInstance();
-      const clusters = store.getClusters();
-      if (clusters) {
-        const itemDefault = new qx.ui.form.ListItem().set({
-          label: "default",
-          toolTipText: "default cluster"
-        });
-        itemDefault.id = 0;
-        this.__clustersSelectBox.add(itemDefault);
-        clusters.forEach(cluster => {
-          const item = new qx.ui.form.ListItem().set({
-            label: cluster["name"],
-            toolTipText: cluster["type"] + "\n" + cluster["description"],
-            allowGrowY: false
-          });
-          item.id = cluster["id"];
-          this.__clustersSelectBox.add(item);
-        });
-      }
-      this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
+      const clusters = osparc.utils.Clusters.populateClustersSelectBox(this.__clustersSelectBox);
+      this.__clustersLayout.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
     },
 
     getClusterId: function() {
-      if (this.__clustersSelectBox.isVisible()) {
+      if (this.__clustersLayout.isVisible()) {
         return this.__clustersSelectBox.getSelection()[0].id;
       }
       return null;

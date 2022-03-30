@@ -281,9 +281,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.__turnIntoCircledUI(width);
 
       const label = new qx.ui.basic.Label().set({
-        font: "text-18",
-        // paddingTop: 6,
-        paddingLeft: 6
+        font: "text-18"
       });
       const chipContainer = this.getChildControl("chips");
       chipContainer.add(label);
@@ -291,7 +289,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.getNode().bind("outputs", label, "value", {
         converter: outputs => {
           if ("out_1" in outputs && "value" in outputs["out_1"]) {
-            return String(outputs["out_1"]["value"]);
+            const val = outputs["out_1"]["value"];
+            if (Array.isArray(val)) {
+              return "[" + val.join(",") + "]";
+            }
+            return String(val);
           }
           return "";
         }
@@ -368,7 +370,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           inputNode.bind("outputs", label, "value", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey]) {
-                return String(outputs[portKey]["value"]);
+                const val = outputs[portKey]["value"];
+                if (Array.isArray(val)) {
+                  return "[" + val.join(",") + "]";
+                }
+                return String(val);
               }
               return "";
             }

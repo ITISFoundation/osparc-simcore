@@ -40,7 +40,7 @@ from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
-from ..core.settings import DaskSchedulerSettings
+from ..core.settings import ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
@@ -99,7 +99,7 @@ UserCallbackInSepThread = Callable[[], None]
 class DaskClient:
     app: FastAPI
     dask_subsystem: DaskSubSystem
-    settings: DaskSchedulerSettings
+    settings: ComputationalBackendSettings
 
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
@@ -107,7 +107,7 @@ class DaskClient:
     async def create(
         cls,
         app: FastAPI,
-        settings: DaskSchedulerSettings,
+        settings: ComputationalBackendSettings,
         endpoint: AnyUrl,
         authentication: ClusterAuthentication,
     ) -> "DaskClient":
@@ -195,9 +195,7 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import (  # type: ignore
-                run_computational_sidecar,
-            )
+            from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
                 docker_auth,

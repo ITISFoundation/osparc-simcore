@@ -46,6 +46,7 @@ async def test_workflow(
     user_project: ProjectDict,
     aiohttp_mocked_request: web.Request,
     do_update_user_project: Callable,
+    director_v2_service_mock: None,
 ):
     vc_repo = VersionControlRepository(aiohttp_mocked_request)
 

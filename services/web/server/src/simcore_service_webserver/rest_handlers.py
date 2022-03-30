@@ -1,4 +1,4 @@
-""" Basic diagnostic handles to the rest API for operations
+""" Basic healthckeck and configuration handles to the rest API
 
 
 """
@@ -7,29 +7,53 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.rest_utils import extract_and_validate
 
-from ._meta import __version__, api_version_prefix
+from ._meta import api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
+from .rest_healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{api_version_prefix}/", name="check_running")
-async def check_running(_request: web.Request):
-    #
-    # - This entry point is used as a fast way
-    #   to check that the service is still running
-    # - Do not do add any expensive computatio here
-    # - Healthcheck has been moved to diagnostics module
-    #
-    data = {
-        "name": __name__.split(".")[0],
-        "version": f"{__version__}",
-        "status": "SERVICE_RUNNING",
-        "api_version": f"{__version__}",
-    }
-    return web.json_response(data={"data": data})
+@routes.get(f"/{api_version_prefix}/health", name="healthcheck_liveness_probe")
+async def healthcheck_liveness_probe(request: web.Request):
+    """Liveness probe: "Check if the container is alive"
+
+    This is checked by the containers orchestrator (docker swarm). When the service
+    is unhealthy, it will restart it so it can recover a working state.
+
+    SEE doc in rest_healthcheck.py
+    """
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+
+    try:
+        # if slots append get too delayed, just timeout
+        health_report = await healthcheck.run(request.app)
+    except HealthCheckFailed as err:
+        log.warning("%s", err)
+        raise web.HTTPServiceUnavailable(reason="unhealthy")
+
+    return web.json_response(data={"data": health_report})
+
+
+@routes.get(f"/{api_version_prefix}/", name="healthcheck_readiness_probe")
+async def healthcheck_readiness_probe(request: web.Request):
+    """Readiness probe: "Check if the container is ready to receive traffic"
+
+    When the target service is unhealthy, no traffic should be sent to it. Service discovery
+    services and load balancers (e.g. traefik) typically cut traffic from targets
+    in one way or another.
+
+    SEE doc in rest_healthcheck.py
+    """
+
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    health_report = healthcheck.get_app_info(request.app)
+    # NOTE: do NOT run healthcheck here, just return info fast.
+    health_report["status"] = "SERVICE_RUNNING"
+
+    return web.json_response(data={"data": health_report})
 
 
 @routes.get(f"/{api_version_prefix}/config", name="get_config")

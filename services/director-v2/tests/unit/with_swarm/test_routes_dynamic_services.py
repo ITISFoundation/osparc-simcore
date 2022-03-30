@@ -50,8 +50,8 @@ def minimal_config(project_env_devel_environment, monkeypatch: MonkeyPatch) -> N
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
@@ -79,8 +79,8 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 

@@ -27,6 +27,7 @@ from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
+from simcore_service_director_v2.utils.db import to_clusters_db
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
@@ -166,7 +167,7 @@ def cluster(
     created_cluster_ids: List[str] = []
 
     def creator(user: Dict[str, Any], **cluster_kwargs) -> Cluster:
-        cluster_config = Cluster.Config.schema_extra["examples"][0]
+        cluster_config = Cluster.Config.schema_extra["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
         new_cluster = Cluster.parse_obj(cluster_config)
@@ -176,7 +177,7 @@ def cluster(
             # insert basic cluster
             created_cluster = conn.execute(
                 sa.insert(clusters)
-                .values(new_cluster.to_clusters_db(only_update=False))
+                .values(to_clusters_db(new_cluster, only_update=False))
                 .returning(sa.literal_column("*"))
             ).one()
             created_cluster_ids.append(created_cluster.id)
@@ -208,7 +209,7 @@ def cluster(
                     "delete": row[cluster_to_groups.c.delete],
                 }
 
-            return Cluster.construct(
+            return Cluster(
                 id=created_cluster.id,
                 name=created_cluster.name,
                 description=created_cluster.description,
@@ -217,6 +218,7 @@ def cluster(
                 endpoint=created_cluster.endpoint,
                 authentication=created_cluster.authentication,
                 access_rights=access_rights_in_db,
+                thumbnail=None,
             )
 
     yield creator

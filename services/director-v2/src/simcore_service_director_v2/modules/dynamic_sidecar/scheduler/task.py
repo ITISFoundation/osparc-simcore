@@ -11,6 +11,7 @@ from uuid import UUID
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
+from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
 
@@ -283,6 +284,46 @@ class DynamicSidecarsScheduler:
             logger.info("Containers restarted")
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
+
+    async def attach_project_network(
+        self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias
+    ) -> None:
+        if node_id not in self._inverse_search_mapping:
+            return
+
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self.app
+        )
+
+        await dynamic_sidecar_client.attach_service_containers_to_project_network(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            project_network=project_network,
+            project_id=scheduler_data.project_id,
+            network_alias=network_alias,
+        )
+
+    async def detach_project_network(
+        self, node_id: NodeID, project_network: str
+    ) -> None:
+        if node_id not in self._inverse_search_mapping:
+            return
+
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self.app
+        )
+
+        await dynamic_sidecar_client.detach_service_containers_from_project_network(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            project_network=project_network,
+            project_id=scheduler_data.project_id,
+        )
 
     async def restart_containers(self, node_uuid: NodeID) -> None:
         """Restarts containers without saving or restoring the state or I/O ports"""

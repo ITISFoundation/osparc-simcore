@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-black==21.12b0
+black==22.1.0
     # via -r requirements/../../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==8.0.3
+click==8.0.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -18,9 +18,9 @@ click==8.0.3
     #   pip-tools
 distlib==0.3.4
     # via virtualenv
-filelock==3.4.2
+filelock==3.6.0
     # via virtualenv
-identify==2.4.3
+identify==2.4.12
     # via pre-commit
 inotify==0.2.10
     # via -r requirements/_tools.in
@@ -40,12 +40,12 @@ pep517==0.12.0
     # via pip-tools
 pip-tools==6.5.1
     # via -r requirements/../../../../requirements/devenv.txt
-platformdirs==2.4.0
+platformdirs==2.5.1
     # via
     #   -c requirements/_test.txt
     #   black
     #   virtualenv
-pre-commit==2.16.0
+pre-commit==2.17.0
     # via -r requirements/../../../../requirements/devenv.txt
 pyyaml==5.4.1
     # via
@@ -59,21 +59,18 @@ six==1.16.0
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
+    # via pre-commit
+tomli==2.0.1
     # via
-    #   -c requirements/_test.txt
-    #   pre-commit
-tomli==1.2.2
-    # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.13.0
+virtualenv==20.14.0
     # via pre-commit
 wheel==0.37.1
     # via pip-tools

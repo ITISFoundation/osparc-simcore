@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 black==22.1.0
     # via
@@ -19,11 +19,13 @@ click==8.0.3
     #   -c requirements/_base.txt
     #   black
     #   pip-tools
+dill==0.3.4
+    # via pylint
 distlib==0.3.4
     # via virtualenv
-filelock==3.4.2
+filelock==3.6.0
     # via virtualenv
-identify==2.4.9
+identify==2.4.12
     # via pre-commit
 isort==5.10.1
     # via
@@ -32,9 +34,9 @@ isort==5.10.1
     #   pylint
 lazy-object-proxy==1.7.1
     # via astroid
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
-mypy==0.931
+mypy==0.942
     # via -r requirements/_tools.in
 mypy-extensions==0.4.3
     # via
@@ -48,14 +50,14 @@ pep517==0.12.0
     # via pip-tools
 pip-tools==6.5.1
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via
     #   black
     #   pylint
     #   virtualenv
 pre-commit==2.17.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_tools.in
 pyyaml==5.4.1
     # via
@@ -68,16 +70,14 @@ six==1.16.0
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
+    # via pre-commit
+tomli==2.0.1
     # via
-    #   pre-commit
-    #   pylint
-tomli==1.2.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   mypy
     #   pep517
+    #   pylint
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
@@ -85,11 +85,11 @@ typing-extensions==3.10.0.2
     #   black
     #   mypy
     #   pylint
-virtualenv==20.13.1
+virtualenv==20.14.0
     # via pre-commit
 wheel==0.37.1
     # via pip-tools
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 
 # The following packages are considered to be unsafe in a requirements file:

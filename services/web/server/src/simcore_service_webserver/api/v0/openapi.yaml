@@ -55,8 +55,8 @@ paths:
     get:
       tags:
         - maintenance
-      summary: run check
-      operationId: check_running
+      summary: readiness probe for
+      operationId: healthcheck_readiness_probe
       responses:
         '200':
           description: Service information
@@ -92,8 +92,8 @@ paths:
     get:
       tags:
         - maintenance
-      summary: health check
-      operationId: check_health
+      summary: liveliness probe
+      operationId: healthcheck_liveness_probe
       responses:
         '200':
           description: Service information
@@ -4885,6 +4885,23 @@ paths:
       responses:
         '204':
           description: cluster has been successfully deleted
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/clusters/{cluster_id}:ping':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_cluster_id_handler
+      tags:
+        - cluster
+      responses:
+        '204':
+          description: connectivity is OK
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters/{cluster_id}/details':

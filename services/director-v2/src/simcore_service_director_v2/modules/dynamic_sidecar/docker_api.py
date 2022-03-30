@@ -9,10 +9,12 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
 
 import aiodocker
+from aiodocker.utils import clean_filters
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
+from servicelib.utils import logged_gather
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -36,7 +38,6 @@ log = logging.getLogger(__name__)
 def _monkey_patch_aiodocker() -> None:
     """Raises an error once the library is up to date."""
     from aiodocker import volumes
-    from aiodocker.utils import clean_filters
     from aiodocker.volumes import DockerVolume
 
     if version.parse(aiodocker.__version__) > version.parse("0.21.0"):
@@ -428,3 +429,80 @@ async def is_dynamic_service_running(
         )
 
         return len(dynamic_sidecar_services) == 1
+
+
+async def get_or_create_networks_ids(
+    networks: List[str], project_id: ProjectID
+) -> Dict[str, str]:
+    async def _get_id_from_name(client, network_name: str) -> str:
+        network = await client.networks.get(network_name)
+        network_inspect = await network.show()
+        return network_inspect["Id"]
+
+    async with docker_client() as client:
+        existing_networks_names = {x["Name"] for x in await client.networks.list()}
+        log.debug("existing_networks_names=%s", existing_networks_names)
+
+        # create networks if missing
+        for network in networks:
+            if network not in existing_networks_names:
+                network_config = {
+                    "Name": network,
+                    "Driver": "overlay",
+                    "Labels": {
+                        "com.simcore.description": "project service communication network",
+                        # used by the director-v2 to remove the network when the last
+                        # service connected to the network was removed
+                        "project_id": f"{project_id}",
+                    },
+                    "Attachable": True,
+                    "Internal": True,  # no internet access
+                }
+                try:
+                    await client.networks.create(network_config)
+                except aiodocker.exceptions.DockerError:
+                    # multiple calls to this function can be processed in parallel
+                    # this will cause creation to fail, it is OK to assume it already
+                    # exist an raise an error (see below)
+                    log.info(
+                        "Network %s might already exist, skipping creation", network
+                    )
+
+        networks_ids = await logged_gather(
+            *[_get_id_from_name(client, network) for network in networks]
+        )
+
+    return dict(zip(networks, networks_ids))
+
+
+async def get_projects_networks_containers(
+    project_id: ProjectID,
+) -> Dict[str, int]:
+    """
+    Returns all current projects_networks for the project with
+    the amount of containers attached to them.
+    """
+    async with docker_client() as client:
+        params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
+        filtered_networks = (
+            # pylint:disable=protected-access
+            await client.networks.docker._query_json("networks", params=params)
+        )
+
+    if not filtered_networks:
+        return {}
+
+    def _count_containers(item: Dict[str, Any]) -> int:
+        containers: Optional[List] = item.get("Containers")
+        return 0 if containers is None else len(containers)
+
+    return {x["Name"]: _count_containers(x) for x in filtered_networks}
+
+
+async def try_to_remove_network(network_name: str) -> None:
+    async with docker_client() as client:
+        network = await client.networks.get(network_name)
+        try:
+            return await network.delete()
+        except aiodocker.exceptions.DockerError:
+            log.warning("Could not remove network %s", network_name)

@@ -13,9 +13,14 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.clusters import ClusterID
-from models_library.services import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
+from models_library.clusters import (
+    DEFAULT_CLUSTER_ID,
+    Cluster,
+    ClusterAuthentication,
+    NoAuthentication,
+)
+from models_library.projects_networks import SERVICE_NETWORK_RE
+from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -24,6 +29,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from simcore_postgres_database.models.clusters import ClusterType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
@@ -54,7 +60,7 @@ class VFSCacheMode(str, Enum):
     OFF = "off"
     MINIMAL = "minimal"
     WRITES = "writes"
-    FILL = "full"
+    FULL = "full"
 
 
 class RCloneSettings(S3Settings):
@@ -209,6 +215,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
+        3.0 * MINS,
+        description=(
+            "timeout for attaching/detaching project networks to/from a container"
+        ),
+    )
+
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
@@ -272,22 +285,42 @@ class PGSettings(PostgresSettings):
     )
 
 
-class DaskSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
+class ComputationalBackendSettings(BaseCustomSettings):
+    COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         True,
     )
-    DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
+    COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
         True,
     )
-    DASK_SCHEDULER_HOST: str = Field(
-        "dask-scheduler",
-        description="Address of the scheduler to register (only if started as worker )",
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
+        "tcp://dask-scheduler:8786",
+        description="This is the cluster that will be used by default"
+        " when submitting computational services (typically "
+        "tcp://dask-scheduler:8786 for the internal cluster, or "
+        "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    DASK_SCHEDULER_PORT: PortInt = 8786
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
+        NoAuthentication(),
+        description="Empty for the internal cluster, must be one "
+        "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
+    )
 
-    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
+    @cached_property
+    def default_cluster(self):
+        return Cluster(
+            id=DEFAULT_CLUSTER_ID,
+            name="Default cluster",
+            endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
+            authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
+            owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
+            type=ClusterType.ON_PREMISE,
+        )  # type: ignore
+
+    @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
+    def empty_auth_is_none(v):
+        if not v:
+            return NoAuthentication()
+        return v
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -352,7 +385,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskSchedulerSettings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
+        auto_default_from_env=True
+    )
 
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 

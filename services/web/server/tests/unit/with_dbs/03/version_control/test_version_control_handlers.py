@@ -58,6 +58,7 @@ async def test_workflow(
     client: TestClient,
     user_project: ProjectDict,
     do_update_user_project: Callable[[UUID], Awaitable],
+    director_v2_service_mock: None,
 ):
 
     project_uuid = user_project["uuid"]

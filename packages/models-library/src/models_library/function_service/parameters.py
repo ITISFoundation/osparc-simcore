@@ -50,5 +50,34 @@ META_NUMBER, META_BOOL, META_INT, META_STR = [
     create_metadata(output_type=t) for t in ("number", "boolean", "integer", "string")
 ]
 
+META_ARRAY = ServiceDockerData.parse_obj(
+    {
+        "integration-version": LATEST_INTEGRATION_VERSION,
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/array",
+        "version": "1.0.0",
+        "type": ServiceType.FRONTEND,
+        "name": "Array Parameter",
+        "description": "Parameter of type array",
+        "thumbnail": create_fake_thumbnail_url("array"),
+        "authors": [
+            OM,
+        ],
+        "contact": OM.email,
+        "inputs": {},
+        "outputs": {
+            "out_1": {
+                "label": "list[number]",
+                "description": "array",
+                "type": "ref_contentSchema",
+                "contentSchema": {
+                    "title": "list[number]",
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+            }
+        },
+    }
+)
+
 # TODO: PC-> OM register more generic?
-REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR)
+REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY)

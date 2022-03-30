@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, AsyncIterable, AsyncIterator, Dict
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
@@ -14,6 +14,7 @@ from async_timeout import timeout
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -116,8 +117,8 @@ async def test_client(
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
@@ -191,6 +192,32 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         )
 
 
+@pytest.fixture
+async def key_version_expected(
+    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_service: Dict,
+    docker_registry_image_injector: Callable,
+) -> List[Tuple[ServiceKeyVersion, bool]]:
+
+    results: List[Tuple[ServiceKeyVersion, bool]] = []
+
+    sleeper_service = docker_registry_image_injector(
+        "itisfoundation/sleeper", "2.1.1", "user@e.mail"
+    )
+
+    for image, expected in [
+        (dy_static_file_server_dynamic_sidecar_service, True),
+        (dy_static_file_server_service, False),
+        (sleeper_service, False),
+    ]:
+        schema = image["schema"]
+        results.append(
+            (ServiceKeyVersion(key=schema["key"], version=schema["version"]), expected)
+        )
+
+    return results
+
+
 # TESTS
 
 
@@ -201,6 +228,7 @@ async def test_start_status_stop(
     ensure_services_stopped: None,
     mock_project_repository: None,
     mock_dynamic_sidecar_api_calls: None,
+    mock_projects_networks_repository: None,
 ):
     # starting the service
     headers = {

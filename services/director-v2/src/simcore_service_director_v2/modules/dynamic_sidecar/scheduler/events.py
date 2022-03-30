@@ -1,10 +1,10 @@
 import json
 import logging
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
+from models_library.projects_networks import ProjectsNetworks
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
@@ -19,25 +19,23 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ....api.dependencies.database import get_base_repository
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import (
-    DockerContainerInspect,
-    DynamicSidecarStatus,
-    SchedulerData,
-)
-from ....modules.db.repositories import BaseRepository
+from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
+from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ...db.repositories.projects import ProjectsRepository
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
+    get_projects_networks_containers,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
+    remove_dynamic_sidecar_volumes,
+    try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -51,34 +49,15 @@ from ..errors import (
     EntrypointContainerNotFoundError,
 )
 from .abc import DynamicSchedulerEvent
-from .events_utils import disabled_directory_watcher
+from .events_utils import (
+    all_containers_running,
+    disabled_directory_watcher,
+    fetch_repo_outside_of_request,
+    get_director_v0_client,
+    parse_containers_inspect,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _fetch_repo_outside_of_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
-) -> BaseRepository:
-    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
-
-
-def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
-    client = DirectorV0Client.instance(app)
-    return client
-
-
-def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
-    results: Deque[DockerContainerInspect] = deque()
-
-    if containers_inspect is None:
-        return []
-
-    for container_id in containers_inspect:
-        container_inspect_data = containers_inspect[container_id]
-        results.append(DockerContainerInspect.from_container(container_inspect_data))
-    return list(results)
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -105,10 +84,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         # resources and placement derived from all the images in
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
-        director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
 
         # fetching project form DB and fetching user settings
-        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
+        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
@@ -269,7 +248,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
             await logged_gather(*tasks)
 
             # inside this directory create the missing dirs, fetch those form the labels
-            director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+            director_v0_client: DirectorV0Client = get_director_v0_client(app)
             simcore_service_labels: SimcoreServiceLabels = (
                 await director_v0_client.get_service_labels(
                     service=ServiceKeyVersion(
@@ -315,6 +294,8 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
+        # fetching project form DB and fetching user settings
+
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
@@ -406,6 +387,57 @@ class CreateUserServices(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 
+class AttachProjectsNetworks(DynamicSchedulerEvent):
+    """
+    Triggers after CreateUserServices and when all started containers are running.
+
+    Will attach all started containers to the project network based on what
+    is saved in the project_network db entry.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return (
+            scheduler_data.dynamic_sidecar.were_services_created
+            and scheduler_data.dynamic_sidecar.is_project_network_attached == False
+            and all_containers_running(
+                scheduler_data.dynamic_sidecar.containers_inspect
+            )
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        logger.debug("Attaching project networks for %s", scheduler_data.service_name)
+
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+        projects_networks_repository: ProjectsNetworksRepository = (
+            fetch_repo_outside_of_request(app, ProjectsNetworksRepository)
+        )
+
+        projects_networks: ProjectsNetworks = (
+            await projects_networks_repository.get_projects_networks(
+                project_id=scheduler_data.project_id
+            )
+        )
+        for (
+            network_name,
+            container_aliases,
+        ) in projects_networks.networks_with_aliases.items():
+            network_alias = container_aliases.get(f"{scheduler_data.node_uuid}")
+            if network_alias is not None:
+                await dynamic_sidecar_client.attach_service_containers_to_project_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                    project_network=network_name,
+                    project_id=scheduler_data.project_id,
+                    network_alias=network_alias,
+                )
+
+        scheduler_data.dynamic_sidecar.is_project_network_attached = True
+
+
 class RemoveUserCreatedServices(DynamicSchedulerEvent):
     """
     Triggered when the service is marked for removal.
@@ -487,7 +519,67 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             scheduler_data.dynamic_sidecar_network_name
         )
 
-        # mark and signal operation as finished
+        # remove created inputs and outputs volumes
+
+        # compute which volumes we expected to be removed
+        # in case the expected volumes differ from the removed ones
+        # show an error
+        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+        expected_volumes_to_remove: Set[str] = {
+            DynamicSidecarVolumesPathsResolver.source(
+                compose_namespace=compose_namespace, path=path
+            )
+            for path in [
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        }
+
+        async for attempt in AsyncRetrying(
+            wait=wait_exponential(min=1),
+            stop=stop_after_delay(20),
+            retry_error_cls=GenericDockerError,
+        ):
+            with attempt:
+                logger.info(
+                    "Trying to remove volumes for %s", scheduler_data.service_name
+                )
+
+                removed_volumes = await remove_dynamic_sidecar_volumes(
+                    scheduler_data.node_uuid
+                )
+
+                if expected_volumes_to_remove != removed_volumes:
+                    logger.warning(
+                        (
+                            "Attention expected to remove %s, instead only removed %s. "
+                            "Please check with check that all expected to remove volumes "
+                            "are now gone."
+                        ),
+                        expected_volumes_to_remove,
+                        removed_volumes,
+                    )
+
+        logger.debug(
+            "Removed dynamic-sidecar created services for '%s'",
+            scheduler_data.service_name,
+        )
+
+        # if a project network for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
+        used_projects_networks = await get_projects_networks_containers(
+            project_id=scheduler_data.project_id
+        )
+        await logged_gather(
+            *[
+                try_to_remove_network(network_name)
+                for network_name, container_count in used_projects_networks.items()
+                if container_count == 0
+            ]
+        )
+
         await app.state.dynamic_sidecar_scheduler.finish_service_removal(
             scheduler_data.node_uuid
         )
@@ -501,5 +593,6 @@ REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
     GetStatus,
     PrepareServicesEnvironment,
     CreateUserServices,
+    AttachProjectsNetworks,
     RemoveUserCreatedServices,
 ]

@@ -22,7 +22,6 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from pytest_mock.plugin import MockerFixture
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
@@ -54,13 +53,21 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+def mock_env(
+    monkeypatch: MonkeyPatch,
+    dynamic_sidecar_docker_image: str,
+    dask_scheduler_service: str,
+) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
+    monkeypatch.setenv(
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
+        dask_scheduler_service,
+    )
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image)
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
@@ -71,7 +78,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 def minimal_configuration(
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
-    dask_scheduler_service: None,
+    dask_scheduler_service: str,
     dask_sidecar_service: None,
     redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
@@ -79,7 +86,6 @@ def minimal_configuration(
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
-    mocker: MockerFixture,
 ) -> None:
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
