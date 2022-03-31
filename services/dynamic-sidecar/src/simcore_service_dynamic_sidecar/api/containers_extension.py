@@ -132,7 +132,7 @@ async def pull_input_ports(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def disable_directory_watcher(
+async def toggle_directory_watcher(
     patch_directory_watcher_item: PatchDirectoryWatcherItem,
     app: FastAPI = Depends(get_application),
 ) -> None:
