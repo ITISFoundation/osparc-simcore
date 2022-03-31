@@ -409,7 +409,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -425,7 +425,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=expected_pipeline_details_after_run,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -473,7 +473,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,
-        iteration=3,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -511,7 +511,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -534,7 +534,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -575,7 +575,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
-        iteration=3,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -588,7 +588,7 @@ async def test_run_computation(
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
-        iteration=3,
+        iteration=2,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -625,7 +625,7 @@ async def test_abort_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
@@ -757,7 +757,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
-        iteration=2,
+        iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 

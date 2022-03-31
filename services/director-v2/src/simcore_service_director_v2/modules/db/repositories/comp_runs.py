@@ -89,7 +89,7 @@ class CompRunsRepository(BaseRepository):
                     )
                     .order_by(desc(comp_runs.c.iteration))
                 )
-                iteration = (last_iteration or 1) + 1
+                iteration = (last_iteration or 0) + 1
 
             result = await conn.execute(
                 comp_runs.insert()  # pylint: disable=no-value-for-parameter
