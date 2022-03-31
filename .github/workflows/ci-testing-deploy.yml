@@ -112,7 +112,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test isolated
@@ -171,7 +171,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -228,7 +228,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -285,7 +285,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-api-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -329,7 +329,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-api-server-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
@@ -386,7 +386,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-catalog-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
@@ -445,9 +445,11 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-datcore-adapter-${{ hashFiles('services/datcore-adapter/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-datcore-adapter-
             ${{ runner.os }}-pip-
+
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: test
@@ -511,7 +513,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-director-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: test
@@ -564,9 +566,11 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-director-v2-
             ${{ runner.os }}-pip-
+
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: test
@@ -629,7 +633,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-dask-task-models-library-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: codestyle
@@ -688,7 +692,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-dask-sidecar-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: test
@@ -745,7 +749,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-dynamic-sidecar-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: codestyle
@@ -842,7 +846,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-linting-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -886,7 +890,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-postgres-database-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
@@ -944,7 +948,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-service-integration-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
@@ -1001,7 +1005,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-service-library-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
@@ -1058,7 +1062,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-settings-library-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
@@ -1115,7 +1119,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-models-library-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
@@ -1172,7 +1176,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-simcore-sdk
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
@@ -1229,7 +1233,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-storage-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
@@ -1293,7 +1297,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1366,7 +1370,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1439,7 +1443,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-director-v2-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -1515,7 +1519,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-director-v2-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -1588,7 +1592,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-simcore-sdk-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -1661,7 +1665,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-public-api-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
@@ -1721,7 +1725,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-swarm-deploy-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -1785,7 +1789,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-swarm-e2e-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - uses: actions/cache@v3
         name: getting cached data node
         with:
@@ -1867,7 +1871,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-environment-setup-
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
