@@ -212,6 +212,53 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
+    __dataURItoBlob: function(dataURI, type = "image/png") {
+      const binary = atob(dataURI.split(",")[1]);
+      const array = [];
+      for (let i = 0; i < binary.length; i++) {
+        array.push(binary.charCodeAt(i));
+      }
+      return new Blob([new Uint8Array(array)], {type: type});
+    },
+
+    uploadScreenshotToS3: function(screenshot, studyId) {
+      return new Promise((resolve, reject) => {
+        const nodeId = "00000000-0000-0000-0000-000000000000";
+        const fileUuid = studyId +"/"+ nodeId +"/screenshot.png";
+        const dataStore = osparc.store.Data.getInstance();
+        // get link for upload
+        dataStore.getPresignedLink(false, 0, fileUuid)
+          .then(presignedPostData => {
+            if (presignedPostData.presignedLink) {
+              // post to link
+              const url = presignedPostData.presignedLink.link;
+              const xhr = new XMLHttpRequest();
+              xhr.open("PUT", url, true);
+
+              const blobData = this.__dataURItoBlob(screenshot);
+              xhr.setRequestHeader("Content-Encoding", "base64");
+              xhr.setRequestHeader("Content-Type", "image/png");
+
+              xhr.onload = () => {
+                if (xhr.status == 200 || xhr.status == 204) {
+                  // get link for download
+                  dataStore.getPresignedLink(true, 0, fileUuid)
+                    .then(data => {
+                      if (data.presignedLink) {
+                        resolve(data.presignedLink.link);
+                      }
+                    });
+                } else {
+                  console.log(xhr.response);
+                }
+              };
+              xhr.send(blobData);
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
     getPresignedLink: function(download = true, locationId, fileUuid) {
       return new Promise((resolve, reject) => {
         if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {

@@ -62,7 +62,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "takeScreenshot": "qx.event.type.Event"
   },
 
   properties: {
@@ -108,6 +109,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
+
+      this.getChildControl("screenshot-button");
 
       this.getChildControl("read-only-icon");
 
@@ -166,6 +169,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this.getChildControl("left-items").add(control);
           break;
+        case "screenshot-button":
+          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/20").set({
+            ...this.self().BUTTON_OPTIONS,
+            toolTipText: this.tr("Take screenshot and set as Thumbnail")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "takeScreenshotBtn");
+          control.addListener("execute", () => this.fireEvent("takeScreenshot"), this);
+          this.getChildControl("left-items").add(control);
+          break;
         case "read-only-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
             visibility: "excluded",
@@ -208,6 +220,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
+          this.getChildControl("screenshot-button").exclude();
           this.getChildControl("read-only-icon").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
@@ -305,6 +318,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     _applyStudy: function(study) {
       if (study) {
+        study.bind("readOnly", this.getChildControl("screenshot-button"), "visibility", {
+          converter: value => value ? "excluded" : "visible"
+        });
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });

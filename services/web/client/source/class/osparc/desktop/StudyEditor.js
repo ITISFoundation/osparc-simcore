@@ -608,6 +608,72 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
+    __fadeElement: function(elem) {
+      // flash effect
+      const fadeAnimation = {
+        duration: 50,
+        keyFrames: {
+          0 : {
+            "opacity" : 1,
+            "background-color": "#FFF"
+          },
+          50 : {
+            "opacity": 0
+          },
+          100 : {
+            "opacity": 1
+          }
+        }
+      };
+      return qx.bom.element.AnimationCss.animate(elem, fadeAnimation);
+    },
+
+    __capture: async function(screenshotBtn) {
+      screenshotBtn.setFetching(true);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      const video = document.createElement("video");
+
+      try {
+        const captureStream = await navigator.getUserMedia();
+        video.srcObject = captureStream;
+        context.drawImage(video, 0, 0, window.width, window.height);
+        const frame = canvas.toDataURL("image/png");
+        captureStream.getTracks().forEach(track => track.stop());
+        window.location.href = frame;
+        screenshotBtn.setFetching(false);
+      } catch (err) {
+        console.error("Error: " + err);
+      }
+    },
+
+    takeScreenshot: function(screenshotBtn) {
+      screenshotBtn.setFetching(true);
+      const useHtml2Canvas = true;
+      if (useHtml2Canvas) {
+        const html2canvas = osparc.wrapper.Html2canvas.getInstance();
+        const iframes = Array.from(document.getElementsByTagName("iframe"));
+        const visibleIframe = iframes.find(iframe => iframe.offsetTop !== osparc.component.widget.PersistentIframe.HIDDEN_TOP);
+        const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+        const animation = this.__fadeElement(elem);
+        animation.addListener("end", () => {
+          html2canvas.takeScreenshot(elem)
+            .then(screenshot => {
+              const filename = "screenshot.png";
+              screenshot.name = filename;
+              const dataStore = osparc.store.Data.getInstance();
+              dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
+                .then(link => {
+                  this.getStudy().setThumbnail(link);
+                });
+            })
+            .finally(() => screenshotBtn.setFetching(false));
+        });
+      } else {
+        this.__capture(screenshotBtn);
+      }
+    },
+
     closeEditor: function() {
       this.__stopAutoSaveTimer();
       if (this.getStudy()) {

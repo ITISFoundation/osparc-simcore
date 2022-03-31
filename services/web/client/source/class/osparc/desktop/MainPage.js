@@ -74,6 +74,11 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
       navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+      navBar.addListener("takeScreenshot", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.takeScreenshot(navBar.getChildControl("screenshot-button"));
+        }
+      });
       return navBar;
     },
 
