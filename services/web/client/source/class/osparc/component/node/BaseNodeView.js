@@ -31,6 +31,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
     this.__buildLayout();
+
+    this.set({
+      paddingBottom: 2
+    });
   },
 
   statics: {
