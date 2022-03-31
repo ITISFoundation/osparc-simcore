@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: osparc.ui.basic.LoadingPageHandler,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatingStudy: null,
     __updateThrottled: null,
 
-    setStudyData: function (studyData) {
+    setStudyData: function(studyData) {
       return new Promise((resolve, reject) => {
         if (this.__settingStudy) {
           resolve();
@@ -149,7 +149,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
     },
 
-    _applyStudy: function (study) {
+    _applyStudy: function(study) {
       this.__settingStudy = false;
 
       this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
@@ -242,7 +242,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__updatingStudy = 0;
     },
 
-    __reloadSnapshotsAndIterations: function () {
+    __reloadSnapshotsAndIterations: function() {
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
         .then(isVCDisabled => {
           if (!isVCDisabled) {
@@ -270,14 +270,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    __noLongerActive: function () {
+    __noLongerActive: function() {
       // This might happen when the socket connection is lost and the study gets closed
       const msg = this.tr("Study was closed while you were offline");
       osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       this.fireEvent("forceBackToDashboard");
     },
 
-    editSlides: function () {
+    editSlides: function() {
       if (this.getPageContext() !== "workbench") {
         return;
       }
@@ -298,7 +298,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
 
     // ------------------ START/STOP PIPELINE ------------------
-    __startPipeline: function (partialPipeline = []) {
+    __startPipeline: function(partialPipeline = []) {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
@@ -315,7 +315,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    __requestStartPipeline: function (studyId, partialPipeline = [], forceRestart = false) {
+    __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
@@ -362,7 +362,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __onPipelinesubmitted: function (e) {
+    __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
       const iterationRefIds = resp.data["ref_ids"];
@@ -390,7 +390,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __stopPipeline: function () {
+    __stopPipeline: function() {
       if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
         return;
       }
@@ -398,7 +398,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__requestStopPipeline(this.getStudy().getUuid());
     },
 
-    __requestStopPipeline: function (studyId) {
+    __requestStopPipeline: function(studyId) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", e => {
@@ -417,7 +417,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
     // ------------------ START/STOP PIPELINE ------------------
 
-    __updatePipelineAndRetrieve: function (node, portKey = null) {
+    __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(false)
         .then(() => {
           if (node) {
@@ -431,20 +431,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     // overridden
-    _showMainLayout: function (show) {
+    _showMainLayout: function(show) {
       this.__viewsStack.setVisibility(show ? "visible" : "excluded");
     },
 
-    nodeSelected: function (nodeId) {
+    nodeSelected: function(nodeId) {
       this.__workbenchView.nodeSelected(nodeId);
       this.__slideshowView.nodeSelected(nodeId);
     },
 
-    __getStudyLogger: function () {
+    __getStudyLogger: function() {
       return this.__workbenchView.getLogger();
     },
 
-    _applyPageContext: function (newCtxt) {
+    _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
@@ -458,13 +458,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __takeSnapshot: function () {
+    __takeSnapshot: function() {
       const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
       const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
       study.getSnapshots()
         .then(snapshots => {
-          tagCtrl.setValue("V" + snapshots.length);
+          tagCtrl.setValue("V"+snapshots.length);
         });
       const title = this.tr("Take Snapshot");
       const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
@@ -492,7 +492,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       editSnapshotView.addListener("cancel", () => win.close(), this);
     },
 
-    __showSnapshots: function () {
+    __showSnapshots: function() {
       const study = this.getStudy();
       const snapshots = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");
@@ -504,11 +504,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
     },
 
-    __createIterations: function () {
+    __createIterations: function() {
       console.log("createIterations not implemented yet");
     },
 
-    __showIterations: function () {
+    __showIterations: function() {
       const study = this.getStudy();
       const iterations = new osparc.component.snapshots.IterationsView(study);
       const title = this.tr("Iterations");
@@ -524,7 +524,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
-    __startAutoSaveTimer: function () {
+    __startAutoSaveTimer: function() {
       // Save every 3 seconds
       const interval = 3000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
@@ -537,7 +537,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       timer.start();
     },
 
-    __checkStudyChanges: function () {
+    __checkStudyChanges: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
@@ -565,14 +565,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __stopAutoSaveTimer: function () {
+    __stopAutoSaveTimer: function() {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
       }
     },
 
-    updateStudyDocument: function (run = false) {
+    updateStudyDocument: function(run = false) {
       const myGrpId = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGrpId);
@@ -608,7 +608,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    closeEditor: function () {
+    closeEditor: function() {
       this.__stopAutoSaveTimer();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
@@ -618,7 +618,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     /**
      * Destructor
      */
-    destruct: function () {
+    destruct: function() {
       osparc.store.Store.getInstance().setCurrentStudy(null);
       this.__stopAutoSaveTimer();
     }
