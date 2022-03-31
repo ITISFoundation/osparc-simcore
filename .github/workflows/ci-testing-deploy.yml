@@ -75,7 +75,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   unit-test-webserver-01:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -127,7 +127,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -177,7 +177,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -227,7 +227,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-api:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] api"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -264,7 +264,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -314,7 +314,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -370,7 +370,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-datcore-adapter:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -426,7 +426,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -477,7 +477,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -533,7 +533,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-task-models-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -585,7 +585,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-sidecar:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -635,7 +635,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dynamic-sidecar:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -687,7 +687,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -725,7 +725,7 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -762,7 +762,7 @@ jobs:
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -813,7 +813,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -863,7 +863,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -913,7 +913,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-settings-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -963,7 +963,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1013,7 +1013,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1063,7 +1063,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
