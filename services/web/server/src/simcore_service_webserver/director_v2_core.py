@@ -61,7 +61,7 @@ class DirectorV2ApiClient:
             self._app,
             "GET",
             (self._settings.base_url / "computations" / f"{project_id}").with_query(
-                user_id=user_id
+                user_id=int(user_id)
             ),
             expected_status=web.HTTPOk,
         )
@@ -257,7 +257,7 @@ async def get_computation_task(
     # request to director-v2
     try:
         computation_task_out_dict = await _request_director_v2(
-            app, "GET", backend_url, expected_status=web.HTTPAccepted
+            app, "GET", backend_url, expected_status=web.HTTPOk
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         log.debug("found computation task: %s", f"{task_out=}")
