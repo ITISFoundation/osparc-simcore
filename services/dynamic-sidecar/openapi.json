@@ -382,7 +382,7 @@
           "containers"
         ],
         "summary": "Enable/disable directory-watcher event propagation",
-        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_patch",
+        "operationId": "enabled_disable_directory_watcher_v1_containers_directory_watcher_patch",
         "requestBody": {
           "content": {
             "application/json": {
