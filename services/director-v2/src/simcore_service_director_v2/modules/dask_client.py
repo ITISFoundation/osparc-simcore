@@ -105,6 +105,18 @@ RemoteFct = Callable[
 UserCallbackInSepThread = Callable[[], None]
 
 
+def get_service_command_line(node_image: Image) -> List[str]:
+    command = ["run"]
+    # ---------------------------------------------------------------------------
+    # FIXME: PC HACK to tmp run a different command for osparc function services
+    # TODO: added in settings = [ {"name": "Cmd", "type": "array", "value": ["ofs", "linear-regression"] }]
+    suffix = node_image.name.split("/")[-1]
+    if suffix.startswith("ofs.sensitivity_ua"):
+        command = ["ofs", suffix.replace("ofs.sensitivity_ua", "")]
+    # ---------------------------------------------------------------------------
+    return command
+
+
 @dataclass
 class DaskClient:
     app: FastAPI
@@ -236,6 +248,7 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
+
             check_scheduler_is_still_the_same(
                 self.backend.scheduler_id, self.backend.client
             )
@@ -274,6 +287,8 @@ class DaskClient:
                 node_id=node_id,
             )
 
+            command = get_service_command_line(node_image)
+
             input_data = await compute_input_data(
                 self.app,
                 user_id,
@@ -310,7 +325,7 @@ class DaskClient:
                     input_data=input_data,
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
-                    command=["run"],
+                    command=command,
                     s3_settings=s3_settings,
                     key=job_id,
                     resources=dask_resources,
@@ -324,7 +339,9 @@ class DaskClient:
                     task_future, name=job_id
                 )  # type: ignore
 
-                logger.debug("Dask task %s started", task_future.key)
+                logger.debug(
+                    "Dask task %s started [%s]", f"{task_future.key=}", f"{command=}"
+                )
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
                 check_scheduler_status(self.backend.client)
