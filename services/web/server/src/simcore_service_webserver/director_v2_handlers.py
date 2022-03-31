@@ -153,9 +153,7 @@ async def get_pipeline(request: web.Request) -> web.Response:
     try:
         computation_task_out = await client.get(project_id=project_id, user_id=user_id)
         data = {
-            key: computation_task_out[key]
-            for key in ["iteration", "cluster_id"]
-            if key in computation_task_out
+            key: computation_task_out.get(key) for key in ["iteration", "cluster_id"]
         }
 
         return web.json_response(
