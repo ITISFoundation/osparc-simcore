@@ -35,9 +35,10 @@ ARG VCS_REF="undefined"
 ARG VCS_REF_CLIENT=undefined
 ARG VCS_STATUS_CLIENT=undefined
 
-# Increase to 5 GB
+# Increase to 5 GB, this does not fix the probable memory leak but allows to go further
 ENV NODE_OPTIONS="--max-old-space-size=5120"
 
+# this nice call prints the actual heap size limit in GB
 RUN node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' && \
   qx compile --target=build \
   --set-env osparc.vcsOriginUrl="${VCS_URL}" \
