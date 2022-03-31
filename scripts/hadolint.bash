@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker run --rm -i hadolint/hadolint hadolint \
+exec docker run --rm --interactive hadolint/hadolint hadolint \
   - < "$@"
