@@ -27,6 +27,7 @@ async def connect_to_db(app: FastAPI) -> None:
             "server_settings": {"application_name": cfg.POSTGRES_CLIENT_NAME}
         },
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
+        future=True,
     )
 
     logger.debug("Connected to %s", engine.url)  # pylint: disable=no-member
