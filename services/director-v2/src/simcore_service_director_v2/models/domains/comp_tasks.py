@@ -24,8 +24,13 @@ from ..schemas.services import NodeRequirements
 class Image(BaseModel):
     name: str = Field(..., regex=KEY_RE)
     tag: str = Field(..., regex=VERSION_RE)
-    requires_gpu: Optional[bool] = Field(None, deprecated=True)
-    requires_mpi: Optional[bool] = Field(None, deprecated=True)
+
+    requires_gpu: Optional[bool] = Field(
+        None, deprecated=True, description="Use instead node_requirements"
+    )
+    requires_mpi: Optional[bool] = Field(
+        None, deprecated=True, description="Use instead node_requirements"
+    )
     node_requirements: NodeRequirements = Field(
         None, description="the requirements for the service to run on a node"
     )
