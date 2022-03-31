@@ -1,5 +1,5 @@
 paths:
-  /computations/{project_id}/stop:
+  /computations/{project_id}:
     get:
       description: Returns the last computation data
       tags:
