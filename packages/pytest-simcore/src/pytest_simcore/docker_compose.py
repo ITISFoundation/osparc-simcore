@@ -276,6 +276,15 @@ def ops_docker_compose_file(
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
+    # these services are useless when running in the CI
+    ops_view_only_services = ["adminer", "redis-commander", "portainer", "filestash"]
+    if "CI" in os.environ:
+        ops_services_selection = list(
+            filter(
+                lambda item: item not in ops_view_only_services, ops_services_selection
+            )
+        )
+
     _filter_services_and_dump(
         ops_services_selection, ops_docker_compose, docker_compose_path
     )
@@ -316,6 +325,7 @@ def _filter_services_and_dump(
 
     # filters services
     remove = [name for name in content["services"] if name not in include]
+
     for name in remove:
         content["services"].pop(name, None)
 
