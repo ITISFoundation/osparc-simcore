@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 import random
 from typing import AsyncIterable, AsyncIterator
 
@@ -157,8 +156,6 @@ async def dask_spec_local_cluster(
             f"{scheduler_address}" or "invalid",
         )
         yield cluster
-    # force yielding to the event loop so that it properly closes the cluster
-    await asyncio.sleep(3)
 
 
 @pytest.fixture
