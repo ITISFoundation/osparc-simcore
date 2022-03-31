@@ -11,9 +11,10 @@ class BaseDynamicSidecarError(Exception):
 
 
 class VolumeNotFoundError(BaseDynamicSidecarError):
-    def __init__(self, volumes: List[str]) -> None:
+    def __init__(self, source_label: str, volumes: List[str]) -> None:
         super().__init__(
-            f"Could not find desired volume, query returned {volumes}", status=404
+            f"Expected 1 volume with {source_label=}, query returned {volumes}",
+            status=404,
         )
 
 

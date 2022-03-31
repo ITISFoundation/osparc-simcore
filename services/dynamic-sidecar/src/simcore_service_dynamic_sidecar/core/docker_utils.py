@@ -36,6 +36,6 @@ async def get_volume_by_label(label: str) -> Dict[str, Any]:
             f"volumes query for {label=} {volumes=}"
         )
         if len(volumes) != 1:
-            raise VolumeNotFoundError(volumes)
+            raise VolumeNotFoundError(label, volumes)
         volume_details = volumes[0]
         return volume_details  # type: ignore
