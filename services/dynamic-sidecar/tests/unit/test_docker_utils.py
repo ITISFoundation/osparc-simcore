@@ -34,4 +34,7 @@ async def test_volume_with_label(volume_with_label: None, volume_name: str) -> N
 async def test_volume_label_missing() -> None:
     with pytest.raises(VolumeNotFoundError) as info:
         await get_volume_by_label("not_exist")
-    assert info.value.args[0] == "Could not find desired volume, query returned []"
+    assert (
+        info.value.args[0]
+        == "Expected 1 volume with source_label='not_exist', query returned []"
+    )
