@@ -190,8 +190,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         if (resourceKey === "cpu") {
           text += osparc.utils.Utils.toTwoDecimals(resourceInfo.used*resourceInfo.available/100) + " / " + resourceInfo.available;
         } else if (resourceKey === "ram") {
-          const b2gb = 1024*1024*1024;
-          text += Math.round(100*resourceInfo.used/b2gb)/100 + "GB / " + Math.round(100*resourceInfo.available/b2gb)/100 + "GB";
+          text += osparc.utils.Utils.bytesToGB(resourceInfo.used) + "GB / " + osparc.utils.Utils.bytesToGB(resourceInfo.available) + "GB";
         } else {
           text += resourceInfo.used + " / " + resourceInfo.available;
         }

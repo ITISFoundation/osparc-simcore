@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         ram: {
           metric: "memory",
           resource: "RAM",
-          label: this.tr("Memory"),
+          label: this.tr("Memory (GB)"),
           column: this.self().GRID_POS.RAM
         },
         gpu: {
@@ -176,6 +176,9 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           } else if (plotKey === "cpu") {
             gaugeData.value = osparc.utils.Utils.toTwoDecimals(used*available/100);
             gaugeData.gauge.axis.range[1] = available;
+          } else if (plotKey === "ram") {
+            gaugeData.value = osparc.utils.Utils.bytesToGB(used);
+            gaugeData.gauge.axis.range[1] = osparc.utils.Utils.bytesToGB(available);
           } else {
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;
