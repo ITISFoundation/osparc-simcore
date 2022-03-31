@@ -44,6 +44,7 @@ def setup_director_v2(app: web.Application):
         specs = app[APP_OPENAPI_SPECS_KEY]
         routes = map_handlers_with_operations(
             {
+                "get_pipeline": director_v2_handlers.get_pipeline,
                 "start_pipeline": director_v2_handlers.start_pipeline,
                 "stop_pipeline": director_v2_handlers.stop_pipeline,
             },

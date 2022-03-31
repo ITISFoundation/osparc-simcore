@@ -316,7 +316,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
+      const url = "/computations/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -399,7 +399,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __requestStopPipeline: function(studyId) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
+      const url = "/computations/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", e => {
         this.__getStudyLogger().debug(null, "Pipeline aborting");
