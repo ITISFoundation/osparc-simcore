@@ -1593,7 +1593,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
-          cache-dependency-path: "test/e2e/package-lock.json"
+          cache-dependency-path: "tests/e2e/package-lock.json"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
