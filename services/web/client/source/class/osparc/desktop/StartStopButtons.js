@@ -151,6 +151,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __setClusterId: function(clusterId) {
+      if (clusterId === null) {
+        return;
+      }
       const clustersBox = this.__clustersSelectBox;
       if (clustersBox.isVisible()) {
         clustersBox.getSelectables().forEach(selectable => {
