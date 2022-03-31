@@ -42,12 +42,12 @@ class LoginOptions(BaseModel):
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
 
-    SMTP_SENDER: Optional[str] = None
+    SMTP_SENDER: str
     SMTP_HOST: str
     SMTP_PORT: int
-    SMTP_TLS_ENABLED: bool = False
-    SMTP_USERNAME: Optional[str] = None
-    SMTP_PASSWORD: Optional[SecretStr] = None
+    SMTP_TLS_ENABLED: bool
+    SMTP_USERNAME: Optional[str] = Field(...)
+    SMTP_PASSWORD: Optional[SecretStr] = Field(...)
 
     # lifetime limits are in days
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS

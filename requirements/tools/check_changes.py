@@ -1,13 +1,17 @@
+import argparse
 import fnmatch
-import os
 import re
 import subprocess
+import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List, Literal, NamedTuple, Optional, Set
 
 from packaging.version import Version
+
+HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+REPODIR = (HERE / ".." / "..").resolve()
 
 
 @contextmanager
@@ -25,15 +29,27 @@ AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.post]+)")
 
 
 def dump_changes(filename: Path):
-    subprocess.run(f"git --no-pager diff > {filename}", shell=True, check=True)
+    if filename.exists():
+        filename.unlink()
+    command = f"""
+    git fetch upstream && \
+    git --no-pager diff upstream/master..$(git rev-parse --abbrev-ref HEAD) > {filename}
+    """
+
+    subprocess.run(
+        command,
+        shell=True,
+        check=True,
+    )
 
 
 def tag_upgrade(from_version: Version, to_version: Version):
-    assert from_version < to_version
     if from_version.major < to_version.major:
         return "**MAJOR**"
     if from_version.minor < to_version.minor:
         return "*minor*"
+    if from_version > to_version:
+        return "🔥 downgrade"
     return ""
 
 
@@ -53,7 +69,7 @@ def parse_changes(filename: Path):
     return before, after, Counter(changes)
 
 
-def main_changes_stats():
+def main_changes_stats() -> None:
 
     filepath = Path("changes.ignore.keep.log")
     if not filepath.exists():
@@ -62,7 +78,7 @@ def main_changes_stats():
     before, after, counts = parse_changes(filepath)
 
     # format
-    print("Overview of changes in dependencies")
+    print("## 1/2 Changes to libraries (only updated libraries are included)")
     print("- #packages before:", len(before))
     print("- #packages after :", len(after))
     print()
@@ -77,7 +93,6 @@ def main_changes_stats():
             # TODO: if major, get link to release notes
             from_versions = set(str(v) for v in before[name])
             to_versions = set(str(v) for v in after[name])
-
             print(
                 "|",
                 f"{i:3d}",
@@ -86,7 +101,7 @@ def main_changes_stats():
                 "|",
                 f'{", ".join(from_versions):15s}',
                 "|",
-                f'{",".join(to_versions) if to_versions else "removed":10s}',
+                f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
                 "|",
                 # how big the version change is
                 f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
@@ -145,12 +160,11 @@ def parse_dependencies(
     return reqs
 
 
-def main_dep_stats(exclude: Optional[Set] = None):
-    repodir = Path(os.environ.get("REPODIR", "."))
-    reqs = parse_dependencies(repodir, exclude=exclude)
+def repo_wide_changes(exclude: Optional[Set] = None) -> None:
+    reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format
-    print("Overview of libraries used repo-wide")
+    print("## 2/2 Repo wide overview of libraries")
     print("- #reqs files parsed:", len(reqs))
     print()
 
@@ -161,7 +175,7 @@ def main_dep_stats(exclude: Optional[Set] = None):
             deps[name][r.target].append(version)
 
     with printing_table(
-        columns=["#", "name", "versions-base", "versions-test", "versons-tool"]
+        columns=["#", "name", "versions-base", "versions-test", "versions-tool"]
     ):
         for i, name in enumerate(sorted(deps.keys()), start=1):
 
@@ -187,6 +201,16 @@ def main_dep_stats(exclude: Optional[Set] = None):
             )
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(description="CLI to use")
+    parser.add_argument("--changed-reqs", action="store_true", help="print oly changed")
+    args = parser.parse_args()
+
+    if args.changed_reqs:
+        main_changes_stats()
+    else:
+        repo_wide_changes(exclude={"*/director/*"})
+
+
 if __name__ == "__main__":
-    # main_changes_stats()
-    main_dep_stats(exclude={"*/director/*"})
+    main()

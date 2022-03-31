@@ -34,6 +34,18 @@ qx.Class.define("osparc.ui.form.ContentSchemaArray", {
     }
   },
 
+  statics: {
+    addArrayBrackets: function(label) {
+      if (label.charAt(0) !== "[") {
+        label = "[" + label;
+      }
+      if (label.charAt(label.length-1) !== "]") {
+        label += "]";
+      }
+      return label;
+    }
+  },
+
   members: {
     // overrriden
     getValue: function() {
@@ -44,7 +56,7 @@ qx.Class.define("osparc.ui.form.ContentSchemaArray", {
       const cSchema = this.getContentSchema();
       if (cSchema) {
         if (cSchema.type === "array") {
-          value = this.__addArrayBrackets(value);
+          value = this.self().addArrayBrackets(value);
         }
       }
       return value;
@@ -58,20 +70,10 @@ qx.Class.define("osparc.ui.form.ContentSchemaArray", {
           if (Array.isArray(value)) {
             value = JSON.stringify(value);
           }
-          value = this.__addArrayBrackets(value);
+          value = this.self().addArrayBrackets(value);
         }
       }
       this.base(arguments, value);
-    },
-
-    __addArrayBrackets: function(label) {
-      if (label.charAt(0) !== "[") {
-        label = "[" + label;
-      }
-      if (label.charAt(label.length-1) !== "]") {
-        label += "]";
-      }
-      return label;
     }
   }
 });

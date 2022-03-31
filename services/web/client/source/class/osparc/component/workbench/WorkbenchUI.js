@@ -1806,6 +1806,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         titleEditor.addListener("labelChanged", e => {
           titleEditor.close();
           serializeData.attributes.text = e.getData()["newLabel"];
+          serializeData.attributes.fontSize = 12;
           this.__addAnnotation(serializeData);
         }, this);
         titleEditor.center();

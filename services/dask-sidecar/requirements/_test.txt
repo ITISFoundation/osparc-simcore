@@ -13,7 +13,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 async-timeout==4.0.1
     # via
@@ -38,22 +38,24 @@ charset-normalizer==2.0.6
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-coverage==6.3.1
+coverage==6.3.2
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.1
+cryptography==36.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pyopenssl
+dill==0.3.4
+    # via pylint
 docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==12.3.0
+faker==13.3.3
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
@@ -74,7 +76,7 @@ isort==5.10.1
     # via pylint
 lazy-object-proxy==1.7.1
     # via astroid
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 minio==7.0.4
     # via
@@ -91,7 +93,7 @@ packaging==20.4
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -107,7 +109,7 @@ pycparser==2.20
     #   cffi
 pyftpdlib==1.5.6
     # via pytest-localftpserver
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pyopenssl==22.0.0
     # via pytest-localftpserver
@@ -116,7 +118,7 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
-pytest==7.0.1
+pytest==7.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -129,7 +131,7 @@ pytest==7.0.1
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.1
+pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
@@ -165,12 +167,10 @@ six==1.15.0
     #   websocket-client
 termcolor==1.1.0
     # via pytest-sugar
-toml==0.10.2
-    # via pylint
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
+    #   pylint
     #   pytest
 typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
@@ -189,7 +189,7 @@ websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
     #   docker
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 yarl==1.6.3
     # via

@@ -93,8 +93,8 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       return osparc.wrapper.Svg.drawCurve(this.__canvas, controls, dashed);
     },
 
-    drawAnnotationText: function(x, y, label, color) {
-      return osparc.wrapper.Svg.drawAnnotationText(this.__canvas, x, y, label, color);
+    drawAnnotationText: function(x, y, label, color, fontSize) {
+      return osparc.wrapper.Svg.drawAnnotationText(this.__canvas, x, y, label, color, fontSize);
     },
 
     drawAnnotationRect: function(width, height, x, y, color) {

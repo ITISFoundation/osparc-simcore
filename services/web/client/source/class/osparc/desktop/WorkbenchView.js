@@ -813,17 +813,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyOptionsPage.add(this.__getAnnotationsSection());
       }
 
+      const snaps = this.__getSnapshotsSection();
+      snaps.exclude();
+      this.__studyOptionsPage.add(snaps);
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getSnapshotsSection());
+            snaps.show();
           }
         });
 
+      const iters = this.__getIterationsSection();
+      iters.exclude();
+      this.__studyOptionsPage.add(iters);
       osparc.utils.DisabledPlugins.isMetaModelingDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getIterationsSection());
+            iters.show();
           }
         });
     },

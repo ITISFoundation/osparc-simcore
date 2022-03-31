@@ -88,6 +88,9 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
         case "boolean":
           control = new qx.ui.form.CheckBox();
           break;
+        case "ref_contentSchema":
+          control = new osparc.ui.form.ContentSchemaArray();
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -116,6 +119,9 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
       const valueField = this.getChildControl(type);
       const outputs = node.getOutputs();
+      if (type === "ref_contentSchema") {
+        valueField.setContentSchema(outputs["out_1"]["contentSchema"]);
+      }
       if ("value" in outputs["out_1"]) {
         if (["integer", "boolean"].includes(type)) {
           valueField.setValue(outputs["out_1"]["value"]);
