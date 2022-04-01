@@ -117,7 +117,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       const workers = clusterDetails.scheduler.workers;
       if (Object.keys(workers).length === 0) {
         this.__showBulb(false);
-        this.__hint.setText(this.tr("no workers running at the moment in this cluster"));
+        this.__hint.setText(this.tr("No workers running at the moment in this cluster"));
         return;
       }
 
