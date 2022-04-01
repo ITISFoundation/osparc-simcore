@@ -70,13 +70,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this._requestResources(false);
       } else {
-        this._resetStudiesList([]);
+        this._resetResourcesList([]);
       }
     },
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this._resetStudiesList([]);
+      this._resetResourcesList([]);
       this._resourcesContainer.nextRequest = null;
     },
 
@@ -181,7 +181,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addListener("changeMode", () => {
-        this._resetStudiesList();
+        this._resetResourcesList();
 
         const studyItems = this._resourcesContainer.getChildren();
         studyItems.forEach((studyItem, i) => {
@@ -392,10 +392,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._resetStudiesList(studies);
+      this._resetResourcesList(studies);
     },
 
-    _resetStudiesList: function(studiesList) {
+    // overriden
+    _resetResourcesList: function(studiesList) {
       if (studiesList === undefined) {
         studiesList = this.__studies;
       }
