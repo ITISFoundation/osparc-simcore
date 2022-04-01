@@ -1,4 +1,5 @@
 import logging
+from asyncio.log import logger
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -148,13 +149,15 @@ async def get_default_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    return await _get_cluster_details_with_id(
+    default_cluster = await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,
         cluster_id=DEFAULT_CLUSTER_ID,
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )
+    logger.debug("found followind %s", f"{default_cluster=!r}")
+    return default_cluster
 
 
 @router.get(
@@ -170,13 +173,15 @@ async def get_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    return await _get_cluster_details_with_id(
+    cluster_details = await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,
         cluster_id=cluster_id,
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )
+    logger.debug("found followind %s", f"{cluster_details=!r}")
+    return cluster_details
 
 
 @router.post(
