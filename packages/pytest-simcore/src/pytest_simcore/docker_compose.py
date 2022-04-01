@@ -279,6 +279,9 @@ def ops_docker_compose_file(
     # these services are useless when running in the CI
     ops_view_only_services = ["adminer", "redis-commander", "portainer", "filestash"]
     if "CI" in os.environ:
+        print(
+            f"Warning: Services such as {ops_view_only_services!r} are removed from the stack when running in the CI"
+        )
         ops_services_selection = list(
             filter(
                 lambda item: item not in ops_view_only_services, ops_services_selection
