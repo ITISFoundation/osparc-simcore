@@ -33,7 +33,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       switch (id) {
         case "study-info":
           control = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
-            backgroundColor: "transparent"
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            toolTipText: this.tr("Study Information")
           });
           control.addListener("execute", () => this.__openStudyDetails(), this);
           this._add(control);

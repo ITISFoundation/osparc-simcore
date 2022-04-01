@@ -16,17 +16,35 @@ qx.Class.define("osparc.ui.window.Confirmation", {
    * @extends osparc.ui.window.Dialog
    * @param {String} message Message that will be displayed to the user.
    */
-  construct: function(message, confirmBtnText = this.tr("Yes")) {
+  construct: function(message) {
     this.base(arguments, this.tr("Confirmation"), null, message);
 
     this.addCancelButton();
 
-    this.getChildControl("confirm-button").set({
-      label: confirmBtnText
-    });
+    const confirmButton = this.__confirmButton = new qx.ui.form.Button();
+    confirmButton.addListener("execute", () => {
+      this.setConfirmed(true);
+      this.close(1);
+    }, this);
+    const command = new qx.ui.command.Command("Enter");
+    confirmButton.setCommand(command);
+    this.addButton(confirmButton);
   },
 
   properties: {
+    confirmText: {
+      check: "String",
+      init: "Yes",
+      apply: "__applyConfirmText"
+    },
+
+    confirmAction: {
+      check: [null, "create", "delete"],
+      init: null,
+      nullable: true,
+      apply: "__applyConfirmAction"
+    },
+
     confirmed: {
       check: "Boolean",
       init: false
@@ -34,26 +52,29 @@ qx.Class.define("osparc.ui.window.Confirmation", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "confirm-button": {
-          control = new qx.ui.form.Button();
-          control.addListener("execute", () => {
-            this.setConfirmed(true);
-            this.close(1);
-          }, this);
-          const command = new qx.ui.command.Command("Enter");
-          control.setCommand(command);
-          this.addButton(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
+    __confirmButton: null,
 
     getConfirmButton: function() {
-      return this.getChildControl("confirm-button");
+      return this.__confirmButton;
+    },
+
+    __applyConfirmText: function(confirmText) {
+      this.__confirmButton.setLabel(confirmText);
+    },
+
+    __applyConfirmAction: function(confirmationAction) {
+      const confBtn = this.__confirmButton;
+      switch (confirmationAction) {
+        case "create":
+          confBtn.setAppearance("strong-button");
+          break;
+        case "delete":
+          confBtn.setAppearance("danger-button");
+          break;
+        default:
+          confBtn.resetAppearance();
+          break;
+      }
     }
   }
 });

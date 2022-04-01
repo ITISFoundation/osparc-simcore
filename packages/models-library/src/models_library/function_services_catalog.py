@@ -14,7 +14,6 @@ from .function_service import (
     file_picker,
     iter_range,
     iter_sensitivity,
-    nodes_group,
     parameters,
     probes,
 )
@@ -51,7 +50,6 @@ _CATALOG_REGISTRY = create_registry(
     file_picker,
     iter_range,
     iter_sensitivity,
-    nodes_group,
     parameters,
     probes,
 )
