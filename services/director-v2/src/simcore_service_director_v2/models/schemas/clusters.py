@@ -42,7 +42,7 @@ class WorkersDict(DictModel[AnyUrl, Worker]):
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: WorkersDict
+    workers: Optional[WorkersDict] = Field(default_factory=dict)
 
 
 class ClusterGet(Cluster):
