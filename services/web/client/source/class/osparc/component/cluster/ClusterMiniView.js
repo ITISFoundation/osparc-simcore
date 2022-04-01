@@ -70,7 +70,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         clusters.stopFetchingDetails(this.__clusterId);
       }
       this.__clusterId = clusterId;
-      clusters.startFetchingDetails(clusterId);
+      if (clusterId) {
+        clusters.startFetchingDetails(clusterId);
+      }
     },
 
     __listenToClusterDetails: function() {

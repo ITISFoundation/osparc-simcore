@@ -616,6 +616,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
+      const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
+      if (clusterMiniView) {
+        clusterMiniView.setClusterId(null);
+      }
     },
 
     /**

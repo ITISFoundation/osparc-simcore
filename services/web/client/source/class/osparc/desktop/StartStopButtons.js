@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   members: {
     __clustersLayout: null,
     __clustersSelectBox: null,
+    __clusterMiniView: null,
     __startButton: null,
     __startSelectionButton: null,
     __startAllButton: null,
@@ -124,7 +125,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const store = osparc.store.Store.getInstance();
       store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
 
-      const clusterMiniView = new osparc.component.cluster.ClusterMiniView().set({
+      const clusterMiniView = this.__clusterMiniView = new osparc.component.cluster.ClusterMiniView().set({
         alignY: "middle"
       });
       selectBox.addListener("changeSelection", e => {
@@ -148,6 +149,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         return this.__clustersSelectBox.getSelection()[0].id;
       }
       return null;
+    },
+
+    getClusterMiniView: function() {
+      return this.__clusterMiniView;
     },
 
     __createStartButton: function() {
