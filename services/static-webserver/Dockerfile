@@ -4,20 +4,20 @@ LABEL maintainer=neagu@itis.swiss
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-    SC_USER_NAME=scu \
-    SC_BUILD_TARGET=base \
-    SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=${SC_USER_NAME}:${SC_USER_NAME} \
-    /project/build-output "/static-content"
+  /project/build-output "/static-content"
 
 # changing ownership of static-web-server files
-RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /entrypoint.sh
-RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /usr/local/bin/static-web-server
-RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /public
+RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /entrypoint.sh && \
+  chown -R ${SC_USER_NAME}:${SC_USER_NAME} /usr/local/bin/static-web-server && \
+  chown -R ${SC_USER_NAME}:${SC_USER_NAME} /public
 
 USER ${SC_USER_NAME}
 

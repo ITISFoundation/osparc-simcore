@@ -21,8 +21,8 @@ COPY --chown=node:node Manifest.json Manifest.json
 # Install packages (warning: cache might keep these library out-of-date!)
 # TODO: should we freeze packages??
 RUN qx package update &&\
-    qx package install &&\
-    ls -la qx_packages
+  qx package install &&\
+  ls -la qx_packages
 # -> /project/qx_packages
 
 
@@ -35,7 +35,12 @@ ARG VCS_REF="undefined"
 ARG VCS_REF_CLIENT=undefined
 ARG VCS_STATUS_CLIENT=undefined
 
-RUN qx compile --target=build \
+# Increase to 5 GB, this does not fix the probable memory leak but allows to go further
+ENV NODE_OPTIONS="--max-old-space-size=5120"
+
+# this nice call prints the actual heap size limit in GB
+RUN node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' && \
+  qx compile --target=build \
   --set-env osparc.vcsOriginUrl="${VCS_URL}" \
   --set-env osparc.vcsRef="${VCS_REF}" \
   --set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
