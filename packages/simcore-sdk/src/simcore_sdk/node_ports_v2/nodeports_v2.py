@@ -19,6 +19,10 @@ log = logging.getLogger(__name__)
 
 
 class Nodeports(BaseModel):
+    """
+    Represents a node in a project and all its input/output ports
+    """
+
     internal_inputs: InputsList = Field(..., alias="inputs")
     internal_outputs: OutputsList = Field(..., alias="outputs")
     db_manager: DBManager
