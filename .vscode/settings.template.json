@@ -10,6 +10,7 @@
     "**/requirements/*.in": "pip-requirements",
     "**/requirements/*.txt": "pip-requirements",
     "*logs.txt": "log",
+    "*.logs*": "log",
     "*Makefile": "makefile",
     "docker-compose*.yml": "dockercompose",
     "Dockerfile*": "dockerfile"
