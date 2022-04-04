@@ -98,28 +98,30 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   },
 
   members : {
-    __label: null,
+    __outputValue: null,
+    __outputValueLink: null,
+    __unitLabel: null,
 
-    _addWidgets : function() {
+    _addWidgets: function() {
+      this.addLabel();
+
       this.addHint().set({
         alignY: "middle"
       });
-      this._add(new qx.ui.core.Spacer(5));
 
       this.addIcon();
 
-      // Add the port label
-      const label = this.__label = new qx.ui.basic.Label().set({
+      const outputValue = this.__outputValue = new qx.ui.basic.Label().set({
         allowGrowX: true
       });
-      this.addWidget(label, {
+      this.addWidget(outputValue, {
         flex: 1
       });
-      this.bind("value", label, "visibility", {
+      this.bind("value", outputValue, "visibility", {
         converter: val => typeof val === "string" ? "visible" : "excluded"
       });
 
-      const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
+      const labelLink = this.__outputValueLink = new osparc.ui.basic.LinkLabel("", null).set({
         alignY: "middle",
         allowGrowX: true
       });
@@ -146,24 +148,24 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         const locationId = value.store;
         const fileId = value.path;
         const filename = value.filename;
-        this.__labelLink.set({
+        this.__outputValueLink.set({
           value: filename
         });
         const presignedLinkData = await osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId);
         if ("presignedLink" in presignedLinkData && presignedLinkData.presignedLink) {
-          this.__labelLink.set({
+          this.__outputValueLink.set({
             url: presignedLinkData.presignedLink.link
           });
         }
       } else if (typeof value === "object" && "downloadLink" in value) {
         // it's a link
         const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
-        this.__labelLink.set({
+        this.__outputValueLink.set({
           value: filename,
           url: value.downloadLink
         });
       } else {
-        this.__label.setValue(value);
+        this.__outputValue.setValue(value);
       }
     },
 

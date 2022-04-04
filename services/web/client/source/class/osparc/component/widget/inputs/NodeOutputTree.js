@@ -54,24 +54,19 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       minHeight: 0
     });
 
-    const self = this;
     this.setDelegate({
       createItem: () => new osparc.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("type", "type", null, item, id);
-        c.bindProperty("label", "description", null, item, id);
-        c.bindProperty("description", "description2", null, item, id);
+        c.bindProperty("label", "label", null, item, id);
+        c.bindProperty("description", "description", null, item, id);
         c.bindProperty("value", "value", null, item, id);
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);
         c.bindProperty("icon", "icon", null, item, id);
         c.bindProperty("unitShort", "unitShort", null, item, id);
         c.bindProperty("unitLong", "unitLong", null, item, id);
-      },
-      configureItem: item => {
-        item.setDraggable(true);
-        self.__attachEventHandlers(item); // eslint-disable-line no-underscore-dangle
       }
     });
 
@@ -100,47 +95,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
   },
 
   members: {
-    __attachEventHandlers: function(item) {
-      item.addListener("dragstart", e => {
-        // Register supported actions
-        e.addAction("copy");
-        // Register supported types
-        e.addType("osparc-port-link");
-
-        e.addData("osparc-port-link", {
-          "node1": this.getNode(),
-          "port1Key": item.getPortKey(),
-          "destinations": {}
-        });
-      }, this);
-
-      const msgCb = decoratorName => msg => {
-        this.getSelection().remove(item.getModel());
-        const compareFn = msg.getData();
-        if (item.getPortKey() && decoratorName) {
-          compareFn(this.getNode().getNodeId(), item.getPortKey())
-            .then(compatible => {
-              if (compatible) {
-                item.setDecorator(decoratorName);
-              } else {
-                item.resetDecorator();
-              }
-            })
-            .catch(() => item.resetDecorator());
-        } else {
-          item.resetDecorator();
-        }
-      };
-      item.addListener("appear", () => {
-        qx.event.message.Bus.getInstance().subscribe("inputFocus", msgCb("outputPortHighlighted"), this);
-        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb(), this);
-      });
-      item.addListener("disappear", () => {
-        qx.event.message.Bus.getInstance().unsubscribe("inputFocus", msgCb("outputPortHighlighted"), this);
-        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb(), this);
-      });
-    },
-
     __generateModel: function(node, ports) {
       let data = {
         label: "root",
@@ -180,10 +134,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       }
 
       return qx.data.marshal.Json.createModel(data, true);
-    },
-
-    getOutputWidget: function() {
-      return this;
     }
   }
 });
