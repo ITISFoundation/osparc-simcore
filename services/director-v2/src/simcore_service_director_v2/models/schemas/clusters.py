@@ -48,7 +48,7 @@ class Scheduler(BaseModel):
     @classmethod
     def ensure_workers_is_empty_dict(cls, v):
         if v is None:
-            return dict()
+            return {}
         return v
 
 
