@@ -162,6 +162,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
+          this.__lastSavedStudy = study.serialize();
+
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
 
@@ -540,7 +542,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       timer.start();
     },
 
-    __checkStudyChanges: function() {
+    didStudyChange: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
@@ -557,13 +559,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
 
-        if (deltaKeys.length > 0) {
-          if (this.__updatingStudy > 0) {
-            // throttle update
-            this.__updateThrottled = true;
-          } else {
-            this.updateStudyDocument(false);
-          }
+        return deltaKeys.length;
+      }
+      return false;
+    },
+
+    __checkStudyChanges: function() {
+      if (this.didStudyChange()) {
+        if (this.__updatingStudy > 0) {
+          // throttle update
+          this.__updateThrottled = true;
+        } else {
+          this.updateStudyDocument(false);
         }
       }
     },
