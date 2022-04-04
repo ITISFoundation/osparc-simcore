@@ -37,8 +37,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param port {Object} Port owning the widget
-  */
+    * @param ports {Object} Port owning the widget
+    */
   construct: function(node, ports) {
     const model = this.__generateModel(node, ports);
 
