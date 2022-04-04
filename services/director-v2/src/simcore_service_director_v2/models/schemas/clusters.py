@@ -42,7 +42,14 @@ class WorkersDict(DictModel[AnyUrl, Worker]):
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: WorkersDict
+    workers: Optional[WorkersDict] = Field(default_factory=dict)
+
+    @validator("workers", pre=True, always=True)
+    @classmethod
+    def ensure_workers_is_empty_dict(cls, v):
+        if v is None:
+            return {}
+        return v
 
 
 class ClusterGet(Cluster):
