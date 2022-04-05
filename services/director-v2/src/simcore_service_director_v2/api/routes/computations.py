@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import re
 from typing import Any, List, Optional
 
 import networkx as nx
@@ -334,7 +335,7 @@ async def stop_computation_project(
             pipeline_details=await compute_pipeline_details(
                 complete_dag, pipeline_dag, tasks
             ),
-            url=parse_obj_as(AnyHttpUrl, f"{str(request.url).rstrip(':stop')}"),
+            url=parse_obj_as(AnyHttpUrl, re.sub(r":stop", "", f"{request.url}")),
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
