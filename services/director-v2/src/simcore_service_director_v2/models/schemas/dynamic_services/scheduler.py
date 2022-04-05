@@ -27,9 +27,9 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
-SHA256 = constr(max_length=64, regex=r"\b[A-Fa-f0-9]{64}\b")
-ServiceId = SHA256
-NetworkId = SHA256
+DockerId = constr(max_length=25, regex=r"[A-Za-z0-9]{25}")
+ServiceId = DockerId
+NetworkId = DockerId
 
 logger = logging.getLogger()
 

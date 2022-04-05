@@ -372,10 +372,17 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> Set[str]:
+async def remove_dynamic_sidecar_volumes(
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> Set[str]:
     async with docker_client() as client:
         volumes_response = await client.volumes.list(
-            filters={"label": f"uuid={node_uuid}"}
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"uuid={node_uuid}",
+                ]
+            }
         )
         volumes = volumes_response["Volumes"]
         log.debug("Removing volumes: %s", [v["Name"] for v in volumes])

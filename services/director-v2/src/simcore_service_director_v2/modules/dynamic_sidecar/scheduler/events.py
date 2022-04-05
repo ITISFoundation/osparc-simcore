@@ -543,6 +543,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             wait=wait_exponential(min=1),
             stop=stop_after_delay(20),
             retry_error_cls=GenericDockerError,
+            reraise=False,
         ):
             with attempt:
                 logger.info(
@@ -550,7 +551,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
 
                 removed_volumes = await remove_dynamic_sidecar_volumes(
-                    scheduler_data.node_uuid
+                    scheduler_data.node_uuid, dynamic_sidecar_settings
                 )
 
                 if expected_volumes_to_remove != removed_volumes:

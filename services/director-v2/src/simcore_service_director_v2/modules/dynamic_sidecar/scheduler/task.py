@@ -145,9 +145,6 @@ class DynamicSidecarsScheduler:
                 resource_lock=AsyncResourceLock.from_is_locked(False),
                 scheduler_data=scheduler_data,
             )
-            # TODO: remove me?
-            # Below should not be necessary the service does not exist jet
-            # await update_scheduler_data_label(scheduler_data)
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
