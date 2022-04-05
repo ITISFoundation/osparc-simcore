@@ -404,11 +404,14 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(metaData.name);
         }
         if (metaData.inputs) {
-          this.__addInputs(metaData.inputs);
+          this.setInputs(metaData.inputs);
+          if (Object.keys(metaData.inputs).length) {
+            this.__addSettings(metaData.inputs);
+            this.__addSettingsAccessLevelEditor(metaData.inputs);
+          }
         }
         if (metaData.outputs) {
           this.setOutputs(metaData.outputs);
-          this.__addOutputWidget();
         }
       }
     },
@@ -606,19 +609,6 @@ qx.Class.define("osparc.data.model.Node", {
             this.getPropsForm().removePortLink(portId);
           }
         }
-      }
-    },
-
-    __addInputs: function(inputs) {
-      this.setInputs(inputs);
-
-      if (inputs === null) {
-        return;
-      }
-
-      if (Object.keys(inputs).length) {
-        this.__addSettings(inputs);
-        this.__addSettingsAccessLevelEditor(inputs);
       }
     },
 

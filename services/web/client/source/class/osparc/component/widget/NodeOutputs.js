@@ -84,6 +84,8 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
 
   members: {
     __populateLayout: function() {
+      this._removeAll();
+
       const ports = Object.values(this.getPorts());
       for (let i=0; i<ports.length; i++) {
         const port = ports[i];
