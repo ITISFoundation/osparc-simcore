@@ -116,7 +116,7 @@ async def create_temporary_user(request: web.Request):
         await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
             timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        ).acquire(blocking=False)
+        ).acquire()
 
     return user
 
