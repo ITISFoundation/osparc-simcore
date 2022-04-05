@@ -6,6 +6,7 @@ import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import aioredis
 import asyncpg.exceptions
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -82,9 +83,6 @@ async def collect_garbage(app: web.Application):
     # safe function is invoked by the GC. This will avoid
     # data loss for current users.
     await remove_orphaned_services(registry, app)
-
-
-import aioredis
 
 
 async def remove_disconnected_user_resources(
@@ -239,7 +237,7 @@ async def remove_users_manually_marked_as_guests(
     those accessing via the front-end).
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    lock_manager: aioredis.Redis = get_redis_lock_manager_client(app)
+    redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(app)
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
@@ -262,11 +260,11 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         # Prevents removing GUEST users that are initializating
-        lock_during_construction: bool = await lock_manager.lock(
+        lock_during_construction: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
         ).locked()
 
-        lock_during_initialization: bool = await lock_manager.lock(
+        lock_during_initialization: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_id)
         ).locked()
 

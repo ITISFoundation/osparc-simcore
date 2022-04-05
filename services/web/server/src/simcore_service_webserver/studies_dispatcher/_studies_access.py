@@ -15,9 +15,9 @@ from functools import lru_cache
 from typing import Dict
 from uuid import UUID, uuid5
 
+import aioredis
 from aiohttp import web
 from aiohttp_session import get_session
-import aioredis
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
@@ -65,7 +65,7 @@ async def create_temporary_user(request: web.Request):
     from ..security_api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    lock_manager: aioredis.Redis = get_redis_lock_manager_client(request.app)
+    redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
@@ -97,7 +97,7 @@ async def create_temporary_user(request: web.Request):
     #
 
     # (1) read details above
-    async with lock_manager.lock(
+    async with redis_locks_client.lock(
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
         timeout=MAX_DELAY_TO_CREATE_USER,
     ):
@@ -113,7 +113,7 @@ async def create_temporary_user(request: web.Request):
         )
 
         # (2) read details above
-        await lock_manager.lock(
+        await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
             timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
         ).acquire(blocking=False)

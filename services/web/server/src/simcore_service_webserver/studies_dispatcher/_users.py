@@ -10,8 +10,8 @@
 import logging
 from typing import Dict, Optional
 
-from aiohttp import web
 import aioredis
+from aiohttp import web
 from pydantic import BaseModel
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
@@ -50,7 +50,7 @@ async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
 
 async def _create_temporary_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    lock_manager: aioredis.Redis = get_redis_lock_manager_client(request.app)
+    redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_user_name = get_random_string(min_len=5)
@@ -82,7 +82,7 @@ async def _create_temporary_user(request: web.Request):
     #
 
     # (1) read details above
-    async with lock_manager.lock(
+    async with redis_locks_client.lock(
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
         timeout=MAX_DELAY_TO_CREATE_USER,
     ):
@@ -100,10 +100,10 @@ async def _create_temporary_user(request: web.Request):
         user: Dict = await get_user(request.app, usr["id"])
 
         # (2) read details above
-        await lock_manager.lock(
+        await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
             timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        ).acquire()
+        ).acquire(blocking=False)
 
     return user
 
