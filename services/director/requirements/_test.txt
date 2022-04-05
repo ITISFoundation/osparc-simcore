@@ -58,6 +58,9 @@ chardet==3.0.4
     # via
     #   -r requirements/_base.txt
     #   aiohttp
+charset-normalizer==2.0.12
+    # via
+    #   -r requirements/_base.txt
     #   requests
 codecov==2.1.10
     # via -r requirements/_test.in
@@ -182,7 +185,7 @@ pyyaml==5.4
     #   aiohttp-apiset
     #   openapi-spec-validator
     #   simcore-service-library
-requests==2.22.0
+requests==2.27.1
     # via
     #   -r requirements/_base.txt
     #   codecov
@@ -229,7 +232,7 @@ ujson==4.0.1
     # via
     #   -r requirements/_base.txt
     #   simcore-service-library
-urllib3==1.25.11
+urllib3==1.26.5
     # via
     #   -r requirements/_base.txt
     #   requests
