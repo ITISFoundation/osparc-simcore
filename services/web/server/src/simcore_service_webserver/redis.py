@@ -47,12 +47,10 @@ async def setup_redis_client(app: web.Application):
         ):
             with attempt:
                 client = aioredis.from_url(
-                    redis_settings.dsn, encoding="utf-8", decode_responses=True
+                    address, encoding="utf-8", decode_responses=True
                 )
                 if not await client.ping():
-                    raise ConnectionError(
-                        f"Connection to {redis_settings.dsn!r} failed"
-                    )
+                    raise ConnectionError(f"Connection to {address!r} failed")
                 log.info(
                     "Connection to %s succeeded with %s [%s]",
                     f"redis at {address=}",
@@ -62,22 +60,13 @@ async def setup_redis_client(app: web.Application):
         assert client  # nosec
         return client
 
-    origin_url = f"redis://{redis_settings.REDIS_HOST}:{redis_settings.REDIS_PORT}"
-    log.info(
-        "Connecting to redis at %s",
-        f"{origin_url=}",
-    )
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(origin_url)
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(redis_settings.dsn)
     assert client  # nosec
-
-    # TODO: use RedisDsn.build(**redis_settings.build_kwargs()) via a Mixin?
-    # create lock manager but use DB 1
-    lock_db_url = origin_url + "/1"
 
     # create a client for it as well
     app[
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
-    ] = client_lock_db = await _create_client(lock_db_url)
+    ] = client_lock_db = await _create_client(redis_settings.dsn_locks)
     assert client_lock_db  # nosec
 
     yield

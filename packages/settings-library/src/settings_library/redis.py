@@ -18,7 +18,8 @@ class RedisSettings(BaseCustomSettings):
     REDIS_PASSWORD: Optional[SecretStr] = None
 
     # db
-    REDIS_DB: Optional[str] = "0"
+    REDIS_DB: str = "0"
+    REDIS_LOCKS_DB: str = "1"
 
     @cached_property
     def dsn(self) -> str:
@@ -31,4 +32,17 @@ class RedisSettings(BaseCustomSettings):
             host=self.REDIS_HOST,
             port=f"{self.REDIS_PORT}",
             path=f"/{self.REDIS_DB}",
+        )
+
+    @cached_property
+    def dsn_locks(self) -> str:
+        return RedisDsn.build(
+            scheme="redis",
+            user=self.REDIS_USER or None,
+            password=self.REDIS_PASSWORD.get_secret_value()
+            if self.REDIS_PASSWORD
+            else None,
+            host=self.REDIS_HOST,
+            port=f"{self.REDIS_PORT}",
+            path=f"/{self.REDIS_LOCKS_DB}",
         )

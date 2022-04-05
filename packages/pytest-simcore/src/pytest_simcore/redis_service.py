@@ -67,6 +67,20 @@ async def redis_client(
     await client.flushall()
 
 
+@pytest.fixture(scope="function")
+async def redis_locks_client(
+    redis_settings: RedisSettings,
+) -> AsyncIterator[aioredis.Redis]:
+    """Creates a redis client to communicate with a redis service ready"""
+    client = aioredis.from_url(
+        redis_settings.dsn_locks, encoding="utf-8", decode_responses=True
+    )
+
+    yield client
+
+    await client.flushall()
+
+
 # HELPERS --
 
 
