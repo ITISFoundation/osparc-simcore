@@ -66,7 +66,6 @@ qx.Class.define("osparc.component.form.Auto", {
     this.__ctrlMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
-    this.__typeMap = {};
     for (let key in structure) {
       this.__addField(structure[key], key);
     }
@@ -88,13 +87,18 @@ qx.Class.define("osparc.component.form.Auto", {
     "changeData": "qx.event.type.Data"
   },
 
+  statics: {
+    hasValidationProp: function(s) {
+      return Object.keys(s).some(r => ["minimum", "maximum"].includes(r));
+    }
+  },
+
   members: {
     __boxCtrl: null,
     __ctrlMap: null,
     __formCtrl: null,
     __model: null,
     __settingData: false,
-    __typeMap: null,
 
 
     /**
@@ -152,31 +156,6 @@ qx.Class.define("osparc.component.form.Auto", {
 
 
     /**
-     * set the data in a selectbox
-     *
-     * @param box {let} selectbox name
-     * @param data {let} configuration of the box
-     */
-    setSelectBoxData: function(box, data) {
-      let model;
-      this.__settingData = true;
-
-      if (data.length == 0) {
-        model = qx.data.marshal.Json.createModel([{
-          label: "",
-          key: null
-        }]);
-      } else {
-        model = qx.data.marshal.Json.createModel(data);
-      }
-
-      this.__boxCtrl[box].setModel(model);
-      this.__boxCtrl[box].getTarget().resetSelection();
-      this.__settingData = false;
-    },
-
-
-    /**
      * load new data into a model
      * if relax is set unknown properties will be ignored
      *
@@ -221,6 +200,31 @@ qx.Class.define("osparc.component.form.Auto", {
       }
 
       return data;
+    },
+
+
+    /**
+     * set the data in a selectbox
+     *
+     * @param box {let} selectbox name
+     * @param data {let} configuration of the box
+     */
+    setSelectBoxData: function(box, data) {
+      let model;
+      this.__settingData = true;
+
+      if (data.length == 0) {
+        model = qx.data.marshal.Json.createModel([{
+          label: "",
+          key: null
+        }]);
+      } else {
+        model = qx.data.marshal.Json.createModel(data);
+      }
+
+      this.__boxCtrl[box].setModel(model);
+      this.__boxCtrl[box].getTarget().resetSelection();
+      this.__settingData = false;
     },
 
     __setupDateField: function(s) {
@@ -297,31 +301,45 @@ qx.Class.define("osparc.component.form.Auto", {
       } else {
         s.set.value = String(0);
       }
-      this.__formCtrl.addBindingOptions(key,
-        { // model2target
-          converter: function(data) {
-            if (qx.lang.Type.isNumber(data)) {
-              return String(data);
-            }
-            return null;
+      const model2target = {
+        converter: function(data) {
+          if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
+            return String(data);
           }
-        },
-        { // target2model
-          converter: function(data) {
-            return parseFloat(data);
-          }
+          return null;
         }
-      );
+      };
+      const target2model = {
+        myContext: {
+          that: this,
+          s,
+          key
+        },
+        converter: function(data) {
+          const tmp = data.split(" ");
+          if (tmp.length > 1 && "x_unit" in this.myContext.s) {
+            // extract unit with prefix from text
+            const prefix = osparc.utils.Units.getPrefix(this.myContext.s["x_unit"], tmp[1]);
+            if (prefix !== null) {
+              // eslint-disable-next-line no-underscore-dangle
+              const item = this.myContext.that.__ctrlMap[key];
+              item.unitPrefix = prefix;
+              osparc.component.form.renderer.PropFormBase.updateUnitLabelPrefix(item);
+            }
+          }
+          return parseFloat(data);
+        }
+      };
+      this.__formCtrl.addBindingOptions(key, model2target, target2model);
     },
     __setupSpinner: function(s, key) {
       if (!s.set) {
         s.set = {};
       }
-      if (s.defaultValue) {
-        s.set.value = parseInt(String(s.defaultValue));
-      } else {
-        s.set.value = 0;
-      }
+      s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
+      s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
+      s.set.value = s.minimum ? parseInt(String(s.defaultValue)) : 0;
+
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter: function(data) {
@@ -426,6 +444,10 @@ qx.Class.define("osparc.component.form.Auto", {
     },
 
     __getField: function(s, key) {
+      if (s.type === "ref_contentSchema") {
+        Object.assign(s, s.contentSchema);
+      }
+
       if (s.defaultValue) {
         if (!s.set) {
           s.set = {};
@@ -445,6 +467,7 @@ qx.Class.define("osparc.component.form.Auto", {
             number: "Number",
             boolean: "CheckBox",
             data: "FileButton",
+            array: "ArrayTextField",
             "ref_contentSchema": "ContentSchema"
           }[type]
         };
@@ -466,10 +489,6 @@ qx.Class.define("osparc.component.form.Auto", {
           break;
         case "Spinner":
           control = new qx.ui.form.Spinner();
-          control.set({
-            maximum: 10000,
-            minimum: -10000
-          });
           setup = this.__setupSpinner;
           break;
         case "Password":
@@ -496,8 +515,8 @@ qx.Class.define("osparc.component.form.Auto", {
           control = new qx.ui.form.TextField();
           setup = this.__setupFileButton;
           break;
-        case "ContentSchema":
-          control = new osparc.ui.form.ContentSchemaField();
+        case "ArrayTextField":
+          control = new osparc.ui.form.ContentSchemaArray();
           setup = this.__setupContentSchema;
           break;
         default:
@@ -510,20 +529,31 @@ qx.Class.define("osparc.component.form.Auto", {
         if (s.set.filter) {
           s.set.filter = RegExp(s.filter);
         }
-        if (s.set.placeholder) {
-          s.set.placeholder = this["tr"](s.set.placeholder);
-        }
-        if (s.set.label) {
-          s.set.label = this["tr"](s.set.label);
-        }
         control.set(s.set);
       }
       control.key = key;
       control.description = s.description;
+      const rangeText = osparc.ui.form.ContentSchemaHelper.getDomainText(s);
+      if (rangeText) {
+        control.description += `<br>----<br>${rangeText}`;
+      }
       control.type = s.type;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;
       control.unitLong = s.unitLong;
+      if ("x_unit" in s) {
+        const {
+          unitPrefix,
+          unit
+        } = osparc.utils.Units.decomposeXUnit(s.x_unit);
+        control.unitPrefix = unitPrefix;
+        control.unit = unit;
+      }
+
+      if (this.self().hasValidationProp(s)) {
+        const manager = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
+        control.addListener("changeValue", () => manager.validate());
+      }
 
       return control;
     }

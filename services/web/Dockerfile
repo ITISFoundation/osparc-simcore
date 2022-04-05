@@ -14,7 +14,8 @@ LABEL maintainer=pcrespov
 
 RUN set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
+  apt-get install -y --no-install-recommends \
+  gosu && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true
@@ -121,8 +122,6 @@ ARG VCS_REF
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production \
-  SC_HEALTHCHECK_INTERVAL=30 \
-  SC_HEALTHCHECK_RETRY=3 \
   SC_BUILD_DATE=${BUILD_DATE} \
   SC_VCS_URL=${VCS_URL} \
   SC_VCS_REF=${VCS_REF}
@@ -145,6 +144,9 @@ RUN apt-get update \
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
+
+# healthcheck. NOTE: do not forget to update variable
+ENV SC_HEALTHCHECK_TIMEOUT=120s
 HEALTHCHECK --interval=30s \
   --timeout=120s \
   --start-period=30s \

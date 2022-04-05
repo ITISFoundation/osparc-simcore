@@ -61,16 +61,30 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
       row++;
 
       if (annotation.getType() === "text") {
+        const attrs = annotation.getAttributes();
         this._add(new qx.ui.basic.Label(this.tr("Text")), {
           row,
           column: 0
         });
-        const textField = new qx.ui.form.TextField(annotation.getAttributes().text);
+        const textField = new qx.ui.form.TextField(attrs.text);
         textField.addListener("changeValue", e => annotation.setText(e.getData()));
         this._add(textField, {
           row,
           column: 1
         });
+        row++;
+
+        this._add(new qx.ui.basic.Label(this.tr("Size")), {
+          row,
+          column: 0
+        });
+        const fontSizeField = new qx.ui.form.Spinner(attrs.fontSize);
+        fontSizeField.addListener("changeValue", e => annotation.setFontSize(e.getData()));
+        this._add(fontSizeField, {
+          row,
+          column: 1
+        });
+        row++;
       }
     }
   }

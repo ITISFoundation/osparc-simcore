@@ -813,17 +813,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyOptionsPage.add(this.__getAnnotationsSection());
       }
 
+      const snaps = this.__getSnapshotsSection();
+      snaps.exclude();
+      this.__studyOptionsPage.add(snaps);
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getSnapshotsSection());
+            snaps.show();
           }
         });
 
+      const iters = this.__getIterationsSection();
+      iters.exclude();
+      this.__studyOptionsPage.add(iters);
       osparc.utils.DisabledPlugins.isMetaModelingDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getIterationsSection());
+            iters.show();
           }
         });
     },
@@ -1142,9 +1148,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();
@@ -1162,9 +1168,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();

@@ -8,6 +8,7 @@ from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
 from .diagnostics_settings import get_plugin_settings
+from .rest_healthcheck import HealthCheckFailed
 
 log = logging.getLogger(__name__)
 
@@ -21,10 +22,6 @@ kLATENCY_PROBE = f"{__name__}.latency_probe"
 kPLUGIN_START_TIME = f"{__name__}.plugin_start_time"
 
 kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
-
-
-class HealthError(Exception):
-    """Service is set as unhealty"""
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -80,11 +77,11 @@ def is_sensing_enabled(app: web.Application):
 
 
 def assert_healthy_app(app: web.Application) -> None:
-    """Diagnostics function that determins whether
-    current application is healthy based on incidents
-    occured up to now
+    """Diagnostics function that determines whether the current
+    application is healthy based on incidents probed since it was started
+    until now.
 
-    raises DiagnosticError if any incient detected
+    raises HealthCheckFailed if any incient detected
     """
     settings = get_plugin_settings(app)
 
@@ -111,7 +108,7 @@ def assert_healthy_app(app: web.Application) -> None:
                 max_delay,
                 max_delay_allowed,
             )
-            raise HealthError(msg)
+            raise HealthCheckFailed(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
     probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
@@ -126,6 +123,6 @@ def assert_healthy_app(app: web.Application) -> None:
         )
 
         if max_latency_allowed < latency:
-            raise HealthError(
+            raise HealthCheckFailed(
                 f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
             )

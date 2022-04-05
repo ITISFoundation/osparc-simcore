@@ -11,6 +11,7 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
+from models_library.users import UserID
 from pydantic import PositiveInt
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_director_v2.models.schemas.constants import (
@@ -68,22 +69,19 @@ async def ensure_volume_cleanup(
 async def ensure_network_cleanup(
     docker_client: aiodocker.Docker, project_id: str
 ) -> None:
-    network_names = {x["Name"] for x in await docker_client.networks.list()}
-
-    for network_name in network_names:
-        if project_id in network_name:
-            network = await docker_client.networks.get(network_name)
-            try:
-                # if there is an error this cleansup the environament
-                # useful for development, avoids leaving too many
-                # hanging networks
-                delete_result = await network.delete()
-                assert delete_result is True
-            except aiodocker.exceptions.DockerError as e:
-                # if the tests succeeds the network will not exists
-                str_error = str(e)
-                assert "network" in str_error
-                assert "not found" in str_error
+    async for attempt in AsyncRetrying(
+        reraise=False,
+        stop=stop_after_attempt(20),
+        wait=wait_fixed(5),
+    ):
+        with attempt:
+            for network_name in {
+                x["Name"] for x in await docker_client.networks.list()
+            }:
+                if project_id in network_name:
+                    network = await docker_client.networks.get(network_name)
+                    delete_result = await network.delete()
+                    assert delete_result is True
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
@@ -163,7 +161,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
 
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     service_key: str,
     service_version: str,

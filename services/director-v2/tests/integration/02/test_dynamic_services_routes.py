@@ -3,16 +3,19 @@
 
 import asyncio
 import logging
-from typing import Any, AsyncIterable, AsyncIterator, Dict
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
 
 import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from pydantic import PositiveInt
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceKeyVersion
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -42,20 +45,31 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def node_uuid() -> str:
-    return str(uuid4())
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> str:
+    return f"{faker.uuid4()}"
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> str:
+    return f"{faker.uuid4()}"
 
 
 @pytest.fixture
 def start_request_data(
-    node_uuid: str,
-    user_id: PositiveInt,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
         user_id=user_id,
-        project_id=str(uuid4()),
+        project_id=project_id,
         service_uuid=node_uuid,
         service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
@@ -103,8 +117,8 @@ async def test_client(
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
@@ -178,6 +192,32 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         )
 
 
+@pytest.fixture
+async def key_version_expected(
+    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_service: Dict,
+    docker_registry_image_injector: Callable,
+) -> List[Tuple[ServiceKeyVersion, bool]]:
+
+    results: List[Tuple[ServiceKeyVersion, bool]] = []
+
+    sleeper_service = docker_registry_image_injector(
+        "itisfoundation/sleeper", "2.1.1", "user@e.mail"
+    )
+
+    for image, expected in [
+        (dy_static_file_server_dynamic_sidecar_service, True),
+        (dy_static_file_server_service, False),
+        (sleeper_service, False),
+    ]:
+        schema = image["schema"]
+        results.append(
+            (ServiceKeyVersion(key=schema["key"], version=schema["version"]), expected)
+        )
+
+    return results
+
+
 # TESTS
 
 
@@ -188,6 +228,7 @@ async def test_start_status_stop(
     ensure_services_stopped: None,
     mock_project_repository: None,
     mock_dynamic_sidecar_api_calls: None,
+    mock_projects_networks_repository: None,
 ):
     # starting the service
     headers = {
@@ -202,6 +243,7 @@ async def test_start_status_stop(
     await patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
+    data = {}
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
@@ -217,7 +259,7 @@ async def test_start_status_stop(
 
             # give the service some time to keep up
             await asyncio.sleep(5)
-
+    assert "service_state" in data
     assert data["service_state"] == "running"
 
     # finally stopping the service

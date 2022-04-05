@@ -5,15 +5,16 @@ from typing import List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import PositiveInt
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....models.domains.comp_runs import CompRunsAtDB
-from ....models.schemas.constants import ClusterID, UserID
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
@@ -23,8 +24,10 @@ logger = logging.getLogger(__name__)
 
 class CompRunsRepository(BaseRepository):
     async def list(
-        self, filter_by_state: Set[RunningState] = None
+        self, filter_by_state: Optional[Set[RunningState]] = None
     ) -> List[CompRunsAtDB]:
+        if not filter_by_state:
+            filter_by_state = set()
         runs_in_db = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
@@ -45,7 +48,6 @@ class CompRunsRepository(BaseRepository):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        default_cluster_id: ClusterID,
         iteration: Optional[PositiveInt] = None,
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
@@ -66,7 +68,7 @@ class CompRunsRepository(BaseRepository):
                 .values(
                     user_id=user_id,
                     project_uuid=f"{project_id}",
-                    cluster_id=cluster_id if cluster_id != default_cluster_id else None,
+                    cluster_id=cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                     started=datetime.utcnow(),

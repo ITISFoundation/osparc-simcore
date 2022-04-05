@@ -14,12 +14,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
-import aiobotocore
 import attr
 import botocore
 import sqlalchemy as sa
 from aiobotocore.client import AioBaseClient
-from aiobotocore.session import AioSession, ClientCreatorContext
+from aiobotocore.session import AioSession, ClientCreatorContext, get_session
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
@@ -149,7 +148,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
-    session: AioSession = field(default_factory=aiobotocore.get_session)
+    session: AioSession = field(default_factory=get_session)
     datcore_tokens: Dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
 

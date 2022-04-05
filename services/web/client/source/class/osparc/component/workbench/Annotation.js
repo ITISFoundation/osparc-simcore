@@ -95,7 +95,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
         case "text":
-          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor());
+          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
       }
       if (representation) {
@@ -167,15 +167,24 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       }
     },
 
+    setFontSize: function(fontSize) {
+      this.getAttributes().fontSize = fontSize;
+      const representation = this.getRepresentation();
+      if (representation) {
+        osparc.wrapper.Svg.updateTextSize(representation, fontSize);
+      }
+    },
+
     setSelected: function(selected) {
       const representation = this.getRepresentation();
       if (representation) {
+        const selectedColor = qx.theme.manager.Color.getInstance().resolve("busy-orange");
         switch (this.getType()) {
           case "rect":
-            osparc.wrapper.Svg.updateItemColor(representation, selected ? "yellow" : this.getColor());
+            osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
             break;
           case "text":
-            osparc.wrapper.Svg.updateTextColor(representation, selected ? "yellow" : this.getColor());
+            osparc.wrapper.Svg.updateTextColor(representation, selected ? selectedColor : this.getColor());
             break;
         }
       }

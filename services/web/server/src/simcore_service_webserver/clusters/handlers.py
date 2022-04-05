@@ -1,25 +1,62 @@
 import logging
-from typing import List
 
 from aiohttp import web
-from models_library.clusters import Cluster
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import ValidationError
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.json_serialization import json_dumps
 
+from .. import director_v2_api
 from .._meta import api_version_prefix
-from ..groups_api import list_user_groups
+from ..director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    ClusterPingError,
+    DirectorServiceError,
+)
+from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
-from .db import ClustersRepository
-from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
-from .models import ClusterCreate, ClusterPatch
 
 logger = logging.getLogger(__name__)
 
 # API ROUTES HANDLERS ---------------------------------------------------------
 routes = web.RouteTableDef()
+
+
+@routes.post(f"/{api_version_prefix}/clusters", name="create_cluster_handler")
+@login_required
+@permission_required("clusters.create")
+async def create_cluster_handler(request: web.Request) -> web.Response:
+    await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    body = await request.json()
+    assert body  # nosec
+
+    try:
+        new_cluster = ClusterCreate(
+            name=body.get("name", ""),
+            description=body.get("description"),
+            type=body.get("type"),
+            endpoint=body.get("endpoint"),
+            authentication=body.get("authentication"),
+            owner=None,
+            thumbnail=body.get("thumbnail", None),
+        )
+        created_cluster = await director_v2_api.create_cluster(
+            request.app, user_id=user_id, new_cluster=new_cluster
+        )
+        return web.json_response(
+            data={"data": created_cluster},
+            status=web.HTTPCreated.status_code,
+            dumps=json_dumps,
+        )
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.get(f"/{api_version_prefix}/clusters", name="list_clusters_handler")
@@ -28,54 +65,11 @@ routes = web.RouteTableDef()
 async def list_clusters_handler(request: web.Request) -> web.Response:
     await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-
-    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-
-    clusters_repo = ClustersRepository(request)
-
-    clusters_list: List[Cluster] = await clusters_repo.list_clusters(
-        GroupID(primary_group["gid"]),
-        [GroupID(g["gid"]) for g in std_groups],
-        GroupID(all_group["gid"]),
-    )
-
-    data = [d.dict(by_alias=True) for d in clusters_list]
-
-    return web.json_response(data={"data": data}, dumps=json_dumps)
-
-
-@routes.post(f"/{api_version_prefix}/clusters", name="create_cluster_handler")
-@login_required
-@permission_required("clusters.create")
-async def create_cluster_handler(request: web.Request) -> web.Response:
-    _, _, body = await extract_and_validate(request)
-    user_id: UserID = request[RQT_USERID_KEY]
-    primary_group, _, _ = await list_user_groups(request.app, user_id)
-
-    body = await request.json()
-
-    assert body  # no sec
     try:
-        new_cluster = ClusterCreate(
-            name=body.get("name"),
-            description=body.get("description"),
-            type=body.get("type"),
-            endpoint=body.get("endpoint"),
-            authentication=body.get("authentication"),
-            owner=primary_group["gid"],
-        )
-    except ValidationError as exc:
-        raise web.HTTPUnprocessableEntity(
-            reason=f"Invalid cluster definition: {exc} "
-        ) from exc
-
-    clusters_repo = ClustersRepository(request)
-    new_cluster = await clusters_repo.create_cluster(new_cluster)
-
-    data = new_cluster.dict(by_alias=True)
-    return web.json_response(
-        data={"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
-    )
+        data = await director_v2_api.list_clusters(request.app, user_id)
+        return web.json_response(data={"data": data}, dumps=json_dumps)
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.get(
@@ -86,22 +80,39 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
 async def get_cluster_handler(request: web.Request) -> web.Response:
     path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-
-    clusters_repo = ClustersRepository(request)
     try:
-        cluster = await clusters_repo.get_cluster(
-            GroupID(primary_group["gid"]),
-            [GroupID(g["gid"]) for g in std_groups],
-            GroupID(all_group["gid"]),
-            path["cluster_id"],
+        cluster = await director_v2_api.get_cluster(
+            request.app, user_id, cluster_id=path["cluster_id"]
         )
-        data = cluster.dict(by_alias=True)
-        return web.json_response(data={"data": data}, dumps=json_dumps)
+        return web.json_response(data={"data": cluster}, dumps=json_dumps)
     except ClusterNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"{exc}")
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
-        raise web.HTTPForbidden(reason=f"{exc}")
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
+@routes.get(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}/details",
+    name="get_cluster_details_handler",
+)
+@login_required
+@permission_required("clusters.read")
+async def get_cluster_details_handler(request: web.Request) -> web.Response:
+    path, _, _ = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    try:
+        cluster_details = await director_v2_api.get_cluster_details(
+            request.app, user_id, cluster_id=path["cluster_id"]
+        )
+        return web.json_response(data={"data": cluster_details}, dumps=json_dumps)
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.patch(
@@ -112,29 +123,23 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
 async def update_cluster_handler(request: web.Request) -> web.Response:
     path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-
     body = await request.json()
     try:
-        updated_cluster = ClusterPatch.parse_obj(body)
-        clusters_repo = ClustersRepository(request)
-        cluster = await clusters_repo.update_cluster(
-            GroupID(primary_group["gid"]),
-            [GroupID(g["gid"]) for g in std_groups],
-            GroupID(all_group["gid"]),
-            path["cluster_id"],
-            updated_cluster,
+        cluster_update = ClusterPatch.parse_obj(body)
+        updated_cluster = await director_v2_api.update_cluster(
+            request.app, user_id, path["cluster_id"], cluster_update
         )
-        data = cluster.dict(by_alias=True)
-        return web.json_response(data={"data": data}, dumps=json_dumps)
+        return web.json_response(data={"data": updated_cluster}, dumps=json_dumps)
     except ValidationError as exc:
         raise web.HTTPUnprocessableEntity(
             reason=f"Invalid cluster definition: {exc} "
         ) from exc
     except ClusterNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"{exc}")
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
-        raise web.HTTPForbidden(reason=f"{exc}")
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.delete(
@@ -145,17 +150,60 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
 async def delete_cluster_handler(request: web.Request) -> web.Response:
     path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
-    clusters_repo = ClustersRepository(request)
     try:
-        await clusters_repo.delete_cluster(
-            GroupID(primary_group["gid"]),
-            [GroupID(g["gid"]) for g in std_groups],
-            GroupID(all_group["gid"]),
-            path["cluster_id"],
-        )
-        return web.json_response(status=web.HTTPNoContent.status_code, dumps=json_dumps)
+        await director_v2_api.delete_cluster(request.app, user_id, path["cluster_id"])
+        return web.json_response(status=web.HTTPNoContent.status_code)
     except ClusterNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"{exc}")
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
-        raise web.HTTPForbidden(reason=f"{exc}")
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
+@routes.post(f"/{api_version_prefix}/clusters:ping", name="ping_cluster_handler")
+@login_required
+@permission_required("clusters.read")
+async def ping_cluster_handler(request: web.Request) -> web.Response:
+    await extract_and_validate(request)
+    body = await request.json()
+    try:
+        await director_v2_api.ping_cluster(
+            request.app,
+            ClusterPing(
+                endpoint=body.get("endpoint"), authentication=body.get("authentication")
+            ),
+        )
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
+    except ClusterPingError as exc:
+        raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
+@routes.post(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}:ping",
+    name="ping_cluster_cluster_id_handler",
+)
+@login_required
+@permission_required("clusters.read")
+async def ping_cluster_cluster_id_handler(request: web.Request) -> web.Response:
+    path, _, _ = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    try:
+        await director_v2_api.ping_specific_cluster(
+            request.app, user_id, path["cluster_id"]
+        )
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
+    except ClusterPingError as exc:
+        raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc

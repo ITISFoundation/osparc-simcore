@@ -1196,7 +1196,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const studyUI = model.getStudy().getUi();
         const initData = studyUI.getAnnotationsInitData();
         const annotations = initData ? initData : studyUI.getAnnotations();
-        Object.entries(annotations).forEach(([annotationId, annotation]) => this.__addAnnotation(annotation, annotationId));
+        Object.entries(annotations).forEach(([annotationId, annotation]) => {
+          if (annotation instanceof osparc.component.workbench.Annotation) {
+            this.__addAnnotation(annotation.serialize(), annotationId);
+          } else {
+            this.__addAnnotation(annotation, annotationId);
+          }
+        });
         if (initData) {
           studyUI.nullAnnotationsInitData();
         }
@@ -1806,6 +1812,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         titleEditor.addListener("labelChanged", e => {
           titleEditor.close();
           serializeData.attributes.text = e.getData()["newLabel"];
+          serializeData.attributes.fontSize = 12;
           this.__addAnnotation(serializeData);
         }, this);
         titleEditor.center();

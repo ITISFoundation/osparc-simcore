@@ -655,9 +655,9 @@ async def test_regression_concurrent_port_update_fails(
     with pytest.raises(AssertionError) as exc_info:
         for item_key, _, _ in outputs:
             assert (await PORTS.outputs)[item_key].value == parallel_int_item_value
-    assert (
-        exc_info.value.args[0]
-        == f"assert {int_item_value} == {parallel_int_item_value}\n  +{int_item_value}\n  -{parallel_int_item_value}"
+
+    assert exc_info.value.args[0].startswith(
+        f"assert {int_item_value} == {parallel_int_item_value}\n +  where {int_item_value} = Port("
     )
 
 

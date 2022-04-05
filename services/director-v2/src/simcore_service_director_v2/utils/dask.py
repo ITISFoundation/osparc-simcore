@@ -26,8 +26,10 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
@@ -42,7 +44,6 @@ from ..core.errors import (
     MissingComputationalResourcesError,
 )
 from ..models.domains.comp_tasks import Image
-from ..models.schemas.constants import ClusterID, UserID
 from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)

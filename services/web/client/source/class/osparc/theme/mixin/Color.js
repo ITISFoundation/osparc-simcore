@@ -5,15 +5,15 @@ qx.Theme.define("osparc.theme.mixin.Color", {
 
     "ready-green": "#58A6FF", // It is not really green because of reasons
     "warning-yellow": "#FFFF00",
-    "failed-red": "#FF2D2D",
     "busy-orange": "#FFA500",
+    "failed-red": "#FF2D2D",
+    "danger-red": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.danger", 40),
 
-    "logger-warning-message": "#FFFF00",
-    "logger-error-message": "#FF0000",
+    "visual-blue": "#007fd4", // Visual Studio blue
 
-    "contrasted-text-dark": "#222222",
-    "contrasted-text-light": "#EEEEEE",
+    "logger-warning-message": "warning-yellow",
+    "logger-error-message": "failed-red",
 
-    "workbench-edge-selected": "#FFFF00"
+    "workbench-edge-selected": "busy-orange"
   }
 });

@@ -259,7 +259,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._loadingResourcesBtn &&
         this._resourcesContainer.nextRequest !== null &&
         (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        this._loadingResourcesBtn.checkIsOnScreen())
+        osparc.utils.Utils.checkIsOnScreen(this._loadingResourcesBtn))
       ) {
         this.reloadResources();
       }
@@ -297,11 +297,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _resetStudiesList: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetTemplatesList: function() {
+    _resetResourcesList: function(resourcesList) {
       throw new Error("Abstract method called!");
     },
 

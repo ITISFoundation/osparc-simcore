@@ -29,6 +29,7 @@ from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedSt
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytest_plugins = [
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
 ]

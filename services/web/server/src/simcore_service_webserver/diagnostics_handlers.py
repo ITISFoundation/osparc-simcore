@@ -12,8 +12,7 @@ from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
 from . import catalog_client, db, director_v2_api, storage_api
-from ._meta import API_VERSION, APP_NAME, __version__, api_version_prefix
-from .diagnostics_core import HealthError, assert_healthy_app
+from ._meta import API_VERSION, APP_NAME, api_version_prefix
 from .login.decorators import login_required
 from .security_decorators import permission_required
 from .utils import get_task_info, get_tracemalloc_info
@@ -21,23 +20,6 @@ from .utils import get_task_info, get_tracemalloc_info
 log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
-
-
-@routes.get(f"/{api_version_prefix}/health", name="check_health")
-async def get_app_health(request: web.Request):
-    # diagnostics of incidents
-    try:
-        assert_healthy_app(request.app)
-    except HealthError as err:
-        log.error("Unhealthy application: %s", err)
-        raise web.HTTPServiceUnavailable()
-
-    data = {
-        "name": APP_NAME,
-        "version": __version__,
-        "api_version": API_VERSION,
-    }
-    return data
 
 
 @routes.get(f"/{api_version_prefix}/status/diagnostics", name="get_app_diagnostics")

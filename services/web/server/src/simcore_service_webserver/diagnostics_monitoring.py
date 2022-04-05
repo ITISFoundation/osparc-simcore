@@ -10,7 +10,11 @@ from servicelib.aiohttp.monitoring import get_collector_registry
 from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 
 from . import _meta
-from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
+from .diagnostics_healthcheck import (
+    DelayWindowProbe,
+    is_sensing_enabled,
+    kLATENCY_PROBE,
+)
 
 log = logging.getLogger(__name__)
 

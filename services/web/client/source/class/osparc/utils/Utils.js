@@ -30,6 +30,33 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    checkIsOnScreen: function(elem) {
+      const isInViewport = element => {
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const html = document.documentElement;
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            // a bit of tolerance to deal with zooming factors
+            rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
+            rect.right*0.95 <= (window.innerWidth || html.clientWidth)
+          );
+        }
+        return false;
+      };
+
+      const domElem = elem.getContentElement().getDomElement();
+      const checkIsOnScreen = isInViewport(domElem);
+      return checkIsOnScreen;
+    },
+
+    toTwoDecimals: function(value) {
+      return Math.round(100*value)/100;
+    },
+
     computeServiceUrl: function(resp) {
       const data = {
         srvUrl: null,
@@ -229,6 +256,10 @@ qx.Class.define("osparc.utils.Utils", {
       widget.getContentElement().setStyle("border", "0px solid");
     },
 
+    hideBorder: function(widget) {
+      widget.getContentElement().setStyle("border", "1px solid transparent");
+    },
+
     __setStyleToIFrame: function(domEl) {
       if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
         const iframeDocument = domEl.contentDocument.documentElement;
@@ -298,6 +329,11 @@ qx.Class.define("osparc.utils.Utils", {
       }
       const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
+    },
+
+    bytesToGB: function(bytes) {
+      const b2gb = 1024*1024*1024;
+      return Math.round(100*bytes/b2gb)/100;
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {

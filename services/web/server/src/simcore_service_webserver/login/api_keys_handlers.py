@@ -1,5 +1,6 @@
 import logging
 import uuid as uuidlib
+from copy import deepcopy
 from typing import Dict, List
 
 import simcore_postgres_database.webserver_models as orm
@@ -18,7 +19,7 @@ log = logging.getLogger(__name__)
 
 def generate_api_credentials() -> Dict[str, str]:
     credentials: Dict = dict.fromkeys(("api_key", "api_secret"), "")
-    for name in credentials:
+    for name in deepcopy(credentials):
         value = get_random_string(20)
         credentials[name] = str(uuidlib.uuid5(uuidlib.NAMESPACE_DNS, value))
     return credentials

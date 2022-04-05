@@ -6,21 +6,23 @@ import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
+from pint import UnitRegistry
 from pydantic import ValidationError
 
 from . import catalog_client
 from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix
 from .catalog_models import (
-    ServiceInputApiOut,
+    ServiceInputGet,
     ServiceInputKey,
     ServiceKey,
-    ServiceOutputApiOut,
+    ServiceOutputGet,
     ServiceOutputKey,
     ServiceVersion,
     json_dumps,
     replace_service_input_outputs,
 )
+from .catalog_utils import can_connect
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
@@ -44,6 +46,7 @@ class _RequestContext:
     app: web.Application
     user_id: int
     product_name: str
+    unit_registry: UnitRegistry
 
     @classmethod
     def create(cls, request: Request) -> "_RequestContext":
@@ -51,6 +54,7 @@ class _RequestContext:
             app=request.app,
             user_id=request[RQT_USERID_KEY],
             product_name=request[RQ_PRODUCT_KEY],
+            unit_registry=request.app[UnitRegistry.__name__],
         )
 
 
@@ -280,56 +284,14 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
 #
 
 
-def can_connect(
-    from_output: ServiceOutput, to_input: ServiceInput, *, strict: bool = False
-) -> bool:
-    # FIXME: can_connect is a very very draft version
-
-    # compatible units
-    ok = from_output.unit == to_input.unit
-    if ok:
-        # compatible types
-        # FIXME: see mimetypes examples in property_type
-        #
-        #   "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-        #   "description": "data type expected on this input glob matching for data type is allowed",
-        #   "examples": [
-        #     "number",
-        #     "boolean",
-        #     "data:*/*",
-        #     "data:text/*",
-        #     "data:[image/jpeg,image/png]",
-        #     "data:application/json",
-        #     "data:application/json;schema=https://my-schema/not/really/schema.json",
-        #     "data:application/vnd.ms-excel",
-        #     "data:text/plain",
-        #     "data:application/hdf5",
-        #     "data:application/edu.ucdavis@ceclancy.xyz"
-        #
-        ok = from_output.property_type == to_input.property_type
-        if not ok:
-            ok = (
-                # data:  -> data:*/*
-                to_input.property_type == "data:*/*"
-                and from_output.property_type.startswith("data:")
-            )
-
-            if not strict:
-                # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
-                # data:*/*  -> data:
-                ok |= (
-                    from_output.property_type == "data:*/*"
-                    and to_input.property_type.startswith("data:")
-                )
-    return ok
-
-
 async def list_services(ctx: _RequestContext):
     services = await catalog_client.get_services_for_user_in_product(
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
-        replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+        replace_service_input_outputs(
+            service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+        )
     return services
 
 
@@ -339,7 +301,9 @@ async def get_service(
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    replace_service_input_outputs(
+        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    )
     return service
 
 
@@ -357,21 +321,24 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    replace_service_input_outputs(
+        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    )
     return service
 
 
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
-) -> List[ServiceOutputApiOut]:
+) -> ServiceOutputGet:
 
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-
     inputs = []
     for input_key in service["inputs"].keys():
-        service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
+        service_input = ServiceInputGet.from_catalog_service_api_model(
+            service, input_key
+        )
         inputs.append(service_input)
     return inputs
 
@@ -381,12 +348,12 @@ async def get_service_input(
     service_version: ServiceVersion,
     input_key: ServiceInputKey,
     ctx: _RequestContext,
-) -> ServiceInputApiOut:
+) -> ServiceInputGet:
 
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
+    service_input = ServiceInputGet.from_catalog_service_api_model(service, input_key)
 
     return service_input
 
@@ -427,7 +394,7 @@ async def get_compatible_inputs_given_source_output(
     # check
     matches = []
     for key_id, to_input in iter_service_inputs():
-        if can_connect(from_output, to_input):
+        if can_connect(from_output, to_input, units_registry=ctx.unit_registry):
             matches.append(key_id)
 
     return matches
@@ -437,14 +404,16 @@ async def list_service_outputs(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     ctx: _RequestContext,
-) -> List[ServiceOutputApiOut]:
+) -> List[ServiceOutputGet]:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
 
     outputs = []
     for output_key in service["outputs"].keys():
-        service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
+        service_output = ServiceOutputGet.from_catalog_service_api_model(
+            service, output_key
+        )
         outputs.append(service_output)
     return outputs
 
@@ -454,11 +423,13 @@ async def get_service_output(
     service_version: ServiceVersion,
     output_key: ServiceOutputKey,
     ctx: _RequestContext,
-) -> ServiceOutputApiOut:
+) -> ServiceOutputGet:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
+    service_output = ServiceOutputGet.from_catalog_service_api_model(
+        service, output_key
+    )
 
     return service_output
 
@@ -492,7 +463,7 @@ async def get_compatible_outputs_given_target_input(
     # check
     matches = []
     for key_id, from_output in iter_service_outputs():
-        if can_connect(from_output, to_input):
+        if can_connect(from_output, to_input, units_registry=ctx.unit_registry):
             matches.append(key_id)
 
     return matches

@@ -141,12 +141,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       };
     },
 
-    drawAnnotationText: function(draw, x, y, label, color) {
+    drawAnnotationText: function(draw, x, y, label, color, fontSize) {
       const text = draw.text(label)
         .font({
           fill: color,
-          family: "Roboto",
-          size: "12px"
+          size: (fontSize ? fontSize : 12) + "px",
+          family: "Roboto"
         })
         .style({
           cursor: "pointer"
@@ -199,7 +199,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawNodeUI: function(draw, width, height, radius, x, y) {
-      const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
+      const nodeUIColor = qx.theme.manager.Color.getInstance().resolve("background-main-3");
       const rect = draw.rect(width, height)
         .fill(nodeUIColor)
         .stroke({
@@ -243,6 +243,13 @@ qx.Class.define("osparc.wrapper.Svg", {
         fill: color
       });
     },
+
+    updateTextSize: function(text, size) {
+      text.font({
+        size: size + "px"
+      });
+    },
+
     updateCurveDashes: function(curve, dashed) {
       curve.attr({
         "stroke-dasharray": dashed ? 5 : 0

@@ -29,9 +29,14 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     const title = this.tr("Clusters");
     this.base(arguments, title, iconSrc);
 
+    const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      alignX: "center"
+    }));
     if (osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-      this.add(this.__getCreateClusterSection());
+      buttonsLayout.add(this.__getCreateClusterButton());
     }
+    buttonsLayout.add(this.__getShowClustersDetailsButton());
+    this.add(buttonsLayout);
     this.add(this.__getClustersSection());
     this.add(this.__getOrgsAndMembersSection(), {
       flex: 1
@@ -48,7 +53,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __organizationsAndMembers: null,
     __membersArrayModel: null,
 
-    __getCreateClusterSection: function() {
+    __getCreateClusterButton: function() {
       const createClusterBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Cluster"),
@@ -59,12 +64,22 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         const newCluster = true;
         const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 260);
         clusterEditor.addListener("createCluster", () => {
           this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
         clusterEditor.addListener("cancel", () => win.close());
       }, this);
+      return createClusterBtn;
+    },
+
+    __getShowClustersDetailsButton: function() {
+      const createClusterBtn = new qx.ui.form.Button().set({
+        label: this.tr("Show Resources"),
+        icon: "@FontAwesome5Solid/info/14",
+        allowGrowX: false
+      });
+      createClusterBtn.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
       return createClusterBtn;
     },
 
@@ -98,7 +113,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("endpoint", "endpoint", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("access_rights", "members", null, item, id);
+          ctrl.bindProperty("accessRights", "members", null, item, id);
         },
         configureItem: item => {
           item.addListener("openEditCluster", e => {
@@ -306,7 +321,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       clusterEditor.setSimpleAuthenticationPassword(cluster.getAuthentication().getPassword());
       cluster.bind("description", clusterEditor, "description");
       const title = this.tr("Cluster Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
+      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 260);
       clusterEditor.addListener("updateCluster", () => {
         this.__updateCluster(win, clusterEditor.getChildControl("save"), clusterEditor);
       });
@@ -326,9 +341,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const name = cluster.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-      win.getConfirmButton().set({
-        appearance: "danger-button"
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
       });
       win.center();
       win.open();
@@ -359,7 +374,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clusterKey = clusterEditor.getCid();
       const name = clusterEditor.getLabel();
       const endpoint = clusterEditor.getEndpoint();
-      const authenticationType = "simple";
       const simpleAuthenticationUsername = clusterEditor.getSimpleAuthenticationUsername();
       const simpleAuthenticationPassword = clusterEditor.getSimpleAuthenticationPassword();
       const description = clusterEditor.getDescription();
@@ -371,7 +385,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           "name": name,
           "endpoint": endpoint,
           "authentication": {
-            "type": authenticationType,
+            "type": "simple",
             "username": simpleAuthenticationUsername,
             "password": simpleAuthenticationPassword
           },
