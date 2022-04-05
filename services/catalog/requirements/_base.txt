@@ -10,7 +10,7 @@ aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiofiles==0.5.0
+aiofiles==0.8.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -68,9 +68,6 @@ httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
