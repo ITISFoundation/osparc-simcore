@@ -142,7 +142,6 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -251,7 +250,6 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
-    __outputWidget: null,
     __posX: null,
     __posY: null,
     __unresponsiveRetries: null,
@@ -427,10 +425,6 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      if (this.__outputWidget) {
-        this.__outputWidget.populatePortsData();
-      }
-
       this.__initLogger();
       if (this.isDynamic()) {
         this.__initIFrame();
@@ -506,12 +500,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
       osparc.data.Resources.fetch("studies", "deleteNode", params)
         .catch(err => console.error(err));
-    },
-
-    __applyOutputs: function() {
-      if (this.__outputWidget) {
-        this.__outputWidget.populatePortsData();
-      }
     },
 
     __applyPropsForm: function() {
@@ -619,15 +607,6 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       }
-    },
-
-    getOutputWidget: function() {
-      return this.__outputWidget;
-    },
-
-    __addOutputWidget: function() {
-      const isInputModel = true;
-      this.__outputWidget = new osparc.component.widget.NodePorts(this, isInputModel);
     },
 
     __addInputs: function(inputs) {

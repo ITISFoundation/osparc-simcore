@@ -94,7 +94,7 @@ qx.Class.define("osparc.component.node.NodeView", {
     _addOutputs: function() {
       this._outputsLayout.removeAll();
 
-      const nodeOutputs = new osparc.component.widget.inputs.NodeOutputs(this.getNode(), this.getNode().getMetaData().outputs);
+      const nodeOutputs = new osparc.component.widget.NodeOutputs(this.getNode(), this.getNode().getMetaData().outputs);
       this._mainView.bind("backgroundColor", nodeOutputs, "backgroundColor");
       this._outputsLayout.add(nodeOutputs);
 

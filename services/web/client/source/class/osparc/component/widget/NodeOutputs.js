@@ -19,12 +19,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputs = new osparc.component.widget.inputs.NodeOutputs(node, port);
+ *   let nodeOutputs = new osparc.component.widget.NodeOutputs(node, port);
  *   this.getRoot().add(nodeOutputs);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.inputs.NodeOutputs", {
+qx.Class.define("osparc.component.widget.NodeOutputs", {
   extend: qx.ui.core.Widget,
 
   /**

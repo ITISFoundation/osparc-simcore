@@ -1025,7 +1025,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const nodeOutputs = new osparc.component.widget.inputs.NodeOutputs(node, node.getMetaData().outputs);
+        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs);
         this.__outputsPage.add(nodeOutputs);
       }
 
