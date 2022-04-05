@@ -6,10 +6,10 @@ import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import aioredis
 import asyncpg.exceptions
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from redis.asyncio import Redis
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
@@ -88,7 +88,7 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: aioredis.Redis = get_redis_lock_manager_client(app)
+    lock_manager: Redis = get_redis_lock_manager_client(app)
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -237,7 +237,7 @@ async def remove_users_manually_marked_as_guests(
     those accessing via the front-end).
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(app)
+    redis_locks_client: Redis = get_redis_lock_manager_client(app)
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()

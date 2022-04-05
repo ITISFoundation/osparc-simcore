@@ -10,6 +10,3 @@
 #
 # SEE https://github.com/joerick/pyinstrument#v400release
 pyinstrument<4
-# compatiblity between redis/astroid
-# When redis 4.2.0 is out then we can remove aioredis at it is then integrated
-wrapt<1.14

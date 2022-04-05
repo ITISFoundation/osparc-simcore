@@ -293,7 +293,7 @@ websocket-client==0.59.0
     #   docker-compose
 websockets==10.2
     # via -r requirements/_test.in
-wrapt==1.13.3
+wrapt==1.14.0
     # via
     #   -c requirements/_base.txt
     #   astroid
