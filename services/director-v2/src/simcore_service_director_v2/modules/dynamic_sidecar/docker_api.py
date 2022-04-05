@@ -2,24 +2,26 @@
 
 
 import asyncio
+import json
 import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
+from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
+from aiodocker.utils import clean_map
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from packaging import version
 
 from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
-from ...models.schemas.dynamic_services import (
-    ServiceLabelsStoredData,
-    ServiceState,
-    ServiceType,
+from ...models.schemas.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    UserID,
 )
+from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -159,10 +161,12 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
 
 async def get_dynamic_sidecars_to_observe(
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> Deque[ServiceLabelsStoredData]:
+) -> List[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services = await client.services.list(
+        running_dynamic_sidecar_services: List[
+            Mapping[str, Any]
+        ] = await client.services.list(
             filters={
                 "label": [
                     f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}"
@@ -170,13 +174,9 @@ async def get_dynamic_sidecars_to_observe(
                 "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }
         )
-
-    dynamic_sidecar_services: Deque[ServiceLabelsStoredData] = Deque()
-
-    for service in running_dynamic_sidecar_services:
-        dynamic_sidecar_services.append(ServiceLabelsStoredData.from_service(service))
-
-    return dynamic_sidecar_services
+    return [
+        SchedulerData.from_service_inspect(x) for x in running_dynamic_sidecar_services
+    ]
 
 
 async def _extract_task_data_from_service_for_state(
@@ -427,3 +427,31 @@ async def is_dynamic_service_running(
         )
 
         return len(dynamic_sidecar_services) == 1
+
+
+async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+    async with docker_client() as client:
+        # NOTE: builtin `DockerServices.update` function is very limited.
+        # Using the same pattern but updating labels
+
+        # fetch information from service name
+        service_inspect = await client.services.inspect(scheduler_data.service_name)
+        service_version = service_inspect["Version"]["Index"]
+        service_id = service_inspect["ID"]
+        spec = service_inspect["Spec"]
+
+        # allows to use json encodes not available on dict
+        dict_scheduler_data = json.loads(scheduler_data.json())
+        # compose_spec needs to be json encoded
+        dict_scheduler_data["compose_spec"] = json.dumps(
+            dict_scheduler_data["compose_spec"]
+        )
+        label_data = json.dumps(dict_scheduler_data)
+        spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+
+        await client._query_json(  # pylint: disable=protected-access
+            "services/{service_id}/update".format(service_id=service_id),
+            method="POST",
+            data=json.dumps(clean_map(spec)),
+            params={"version": service_version},
+        )

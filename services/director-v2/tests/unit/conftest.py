@@ -1,8 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import json
 import random
-from typing import AsyncIterable, AsyncIterator
+from typing import Any, AsyncIterable, AsyncIterator, Mapping
 
 import pytest
 import traitlets.config
@@ -17,10 +18,12 @@ from pydantic.types import NonNegativeInt
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
+from simcore_service_director_v2.models.schemas.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
-    ServiceLabelsStoredData,
 )
 from yarl import URL
 
@@ -42,13 +45,6 @@ def dynamic_service_create() -> DynamicServiceCreate:
     return DynamicServiceCreate.parse_obj(ServiceDetails.Config.schema_extra["example"])
 
 
-@pytest.fixture
-def service_labels_stored_data() -> ServiceLabelsStoredData:
-    return ServiceLabelsStoredData.parse_obj(
-        ServiceLabelsStoredData.Config.schema_extra["example"]
-    )
-
-
 @pytest.fixture(scope="session")
 def dynamic_sidecar_port() -> int:
     return 1222
@@ -68,28 +64,41 @@ def scheduler_data_from_http_request(
 
 
 @pytest.fixture
-def scheduler_data_from_service_labels_stored_data(
-    service_labels_stored_data: ServiceLabelsStoredData, dynamic_sidecar_port: int
+def mock_service_inspect(
+    scheduler_data_from_http_request: ServiceDetails,
+) -> Mapping[str, Any]:
+    service_details = json.loads(scheduler_data_from_http_request.json())
+    service_details["compose_spec"] = json.dumps(service_details["compose_spec"])
+    return {
+        "Spec": {
+            "Labels": {
+                DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: json.dumps(service_details)
+            }
+        }
+    }
+
+
+@pytest.fixture
+def scheduler_data_from_service_inspect(
+    mock_service_inspect: Mapping[str, Any]
 ) -> SchedulerData:
-    return SchedulerData.from_service_labels_stored_data(
-        service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
-    )
+    return SchedulerData.from_service_inspect(mock_service_inspect)
 
 
 @pytest.fixture(
     params=[
         scheduler_data_from_http_request.__name__,
-        scheduler_data_from_service_labels_stored_data.__name__,
+        scheduler_data_from_service_inspect.__name__,
     ]
 )
 def scheduler_data(
     scheduler_data_from_http_request: SchedulerData,
-    scheduler_data_from_service_labels_stored_data: SchedulerData,
+    scheduler_data_from_service_inspect: SchedulerData,
     request,
 ) -> SchedulerData:
     return {
         "scheduler_data_from_http_request": scheduler_data_from_http_request,
-        "scheduler_data_from_service_labels_stored_data": scheduler_data_from_service_labels_stored_data,
+        "scheduler_data_from_service_inspect": scheduler_data_from_service_inspect,
     }[request.param]
 
 

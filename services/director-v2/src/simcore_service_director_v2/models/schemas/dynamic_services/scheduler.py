@@ -1,23 +1,22 @@
-import datetime
 import json
 import logging
 from asyncio import Lock
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional
 from uuid import UUID
 
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
-    RestartPolicy,
     SimcoreServiceLabels,
 )
 from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     REGEX_DY_SERVICE_PROXY,
     REGEX_DY_SERVICE_SIDECAR,
@@ -93,11 +92,6 @@ class DockerContainerInspect(BaseModel):
     )
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
-
-    last_updated: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow,
-        description="time of the update in UTC",
-    )
 
     @classmethod
     def from_container(cls, container: Dict[str, Any]) -> "DockerContainerInspect":
@@ -238,62 +232,6 @@ class DynamicSidecar(BaseModel):
         )
 
 
-class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    service_name: str
-    paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
-    dynamic_sidecar_network_name: str
-    simcore_traefik_zone: str
-    service_port: int
-
-    @classmethod
-    def from_service(cls, service: Dict[str, Any]) -> "ServiceLabelsStoredData":
-        labels = service["Spec"]["Labels"]
-        params = dict(
-            service_name=service["Spec"]["Name"],
-            node_uuid=NodeID(labels["uuid"]),
-            key=labels["service_key"],
-            version=labels["service_tag"],
-            paths_mapping=PathMappingsLabel.parse_raw(labels["paths_mapping"]),
-            dynamic_sidecar_network_name=labels["traefik.docker.network"],
-            simcore_traefik_zone=labels["io.simcore.zone"],
-            service_port=labels["service_port"],
-            project_id=ProjectID(labels["study_id"]),
-            user_id=int(labels["user_id"]),
-        )
-        if "compose_spec" in labels:
-            params["compose_spec"] = labels["compose_spec"]
-        if "container_http_entry" in labels:
-            params["container_http_entry"] = labels["container_http_entry"]
-        if "restart_policy" in labels:
-            params["restart_policy"] = labels["restart_policy"]
-        return cls(**params)
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        schema_extra = {
-            "example": {
-                "service_name": "some service",
-                "node_uuid": UUID("75c7f3f4-18f9-4678-8610-54a2ade78eaa"),
-                "key": "simcore/services/dynamic/3dviewer",
-                "version": "2.4.5",
-                "paths_mapping": PathMappingsLabel.parse_obj(
-                    PathMappingsLabel.Config.schema_extra["example"]
-                ),
-                "compose_spec": SimcoreServiceLabels.Config.schema_extra["examples"][2][
-                    "simcore.service.compose-spec"
-                ],
-                "container_http_entry": "some-entrypoint",
-                "dynamic_sidecar_network_name": "some_network_name",
-                "simcore_traefik_zone": "main",
-                "service_port": 300,
-                "restart_policy": RestartPolicy.NO_RESTART.value,
-                "project_id": UUID("dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe"),
-                "user_id": 234,
-            }
-        }
-
-
 class DynamicSidecarNames(BaseModel):
     """
     Service naming schema:
@@ -424,42 +362,16 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         return cls.parse_obj(obj_dict)
 
     @classmethod
-    def from_service_labels_stored_data(
-        cls,
-        service_labels_stored_data: ServiceLabelsStoredData,
-        port: Optional[int],
-        request_dns: str = None,
-        request_scheme: str = None,
-        proxy_service_name: str = None,
+    def from_service_inspect(
+        cls, service_inspect: Mapping[str, Any]
     ) -> "SchedulerData":
-        return cls.parse_obj(
-            dict(
-                service_name=service_labels_stored_data.service_name,
-                node_uuid=service_labels_stored_data.node_uuid,
-                project_id=service_labels_stored_data.project_id,
-                user_id=service_labels_stored_data.user_id,
-                key=service_labels_stored_data.key,
-                version=service_labels_stored_data.version,
-                paths_mapping=service_labels_stored_data.paths_mapping,
-                compose_spec=json.dumps(service_labels_stored_data.compose_spec),
-                container_http_entry=service_labels_stored_data.container_http_entry,
-                restart_policy=service_labels_stored_data.restart_policy,
-                dynamic_sidecar_network_name=service_labels_stored_data.dynamic_sidecar_network_name,
-                simcore_traefik_zone=service_labels_stored_data.simcore_traefik_zone,
-                service_port=service_labels_stored_data.service_port,
-                request_dns=request_dns,
-                request_scheme=request_scheme,
-                proxy_service_name=proxy_service_name,
-                dynamic_sidecar=dict(
-                    hostname=service_labels_stored_data.service_name,
-                    port=port,
-                ),
-            )
-        )
+        labels = service_inspect["Spec"]["Labels"]
+        return cls.parse_obj(json.loads(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]))
 
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True
+        json_encoders = {Path: lambda v: f"{v}"}
 
 
 class AsyncResourceLock(BaseModel):

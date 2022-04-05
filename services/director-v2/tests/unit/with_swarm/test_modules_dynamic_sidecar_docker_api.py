@@ -13,11 +13,12 @@ from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     UserID,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
-    ServiceLabelsStoredData,
+    SchedulerData,
     ServiceState,
     ServiceType,
 )
@@ -129,10 +130,12 @@ def dynamic_sidecar_service_name() -> str:
 
 @pytest.fixture
 def dynamic_sidecar_service_spec(
-    dynamic_sidecar_service_name: str, dynamic_sidecar_settings: DynamicSidecarSettings
+    dynamic_sidecar_service_name: str,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    scheduler_data_from_http_request: SchedulerData,
 ) -> Dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
-    sample = ServiceLabelsStoredData.Config.schema_extra["example"]
+    scheduler_data_from_http_request.service_name = dynamic_sidecar_service_name
 
     return {
         "name": dynamic_sidecar_service_name,
@@ -142,15 +145,12 @@ def dynamic_sidecar_service_spec(
             "uuid": f"{uuid4()}",
             "service_key": "simcore/services/dynamic/3dviewer",
             "service_tag": "2.4.5",
-            "paths_mapping": sample["paths_mapping"].json(),
-            "compose_spec": sample["compose_spec"],
-            "container_http_entry": sample["container_http_entry"],
-            "restart_policy": sample["restart_policy"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
             "service_port": "80",
             "study_id": f"{uuid4()}",
             "user_id": "123",
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.json(),
         },
     }
 
