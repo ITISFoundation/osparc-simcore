@@ -5,9 +5,9 @@
 import logging
 from typing import AsyncIterator, Dict, Union
 
-import aioredis
 import pytest
 import tenacity
+from redis import asyncio as aioredis
 from settings_library.redis import RedisSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay

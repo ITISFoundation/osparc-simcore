@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager, suppress
 from typing import Optional, Union
 
-import aioredis.exceptions
-import aioredis.lock
+import redis
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
+from redis import asyncio as aioredis
 
 from ..redis import get_redis_lock_manager_client
 from ..users_api import UserNameDict
@@ -13,7 +13,7 @@ from ..users_api import UserNameDict
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 
 ProjectLock = aioredis.lock.Lock
-ProjectLockError = aioredis.exceptions.LockError
+ProjectLockError = redis.exceptions.LockError
 
 
 @asynccontextmanager
@@ -54,9 +54,7 @@ async def lock_project(
         yield
     finally:
         # let's ensure we release that stuff
-        with suppress(
-            aioredis.exceptions.LockError, aioredis.exceptions.LockNotOwnedError
-        ):
+        with suppress(redis.exceptions.LockError, redis.exceptions.LockNotOwnedError):
             if await redis_lock.owned():
                 await redis_lock.release()
 

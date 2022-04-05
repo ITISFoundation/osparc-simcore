@@ -4,9 +4,9 @@
 
 import asyncio
 
-import aioredis
-import aioredis.exceptions
 import pytest
+import redis
+from redis import asyncio as aioredis
 
 
 async def test_aioredis(redis_client: aioredis.Redis):
@@ -32,14 +32,14 @@ async def test_redlocks_features(redis_client: aioredis.Redis):
         assert await lock.locked()
         assert await lock.owned()
         # a lock with no timeout cannot be extended
-        with pytest.raises(aioredis.exceptions.LockError):
+        with pytest.raises(redis.exceptions.LockError):
             await lock.extend(2)
         # try to acquire the lock a second time
         same_lock = redis_client.lock("resource_name", blocking_timeout=1)
         assert await same_lock.locked()
         assert not await same_lock.owned()
         assert await same_lock.acquire() == False
-        with pytest.raises(aioredis.exceptions.LockError):
+        with pytest.raises(redis.exceptions.LockError):
             async with same_lock:
                 ...
     assert not await lock.locked()
@@ -47,7 +47,7 @@ async def test_redlocks_features(redis_client: aioredis.Redis):
     # now create a lock with a ttl
     ttl_lock = redis_client.lock("ttl_resource", timeout=2, blocking_timeout=1)
     assert not await ttl_lock.locked()
-    with pytest.raises(aioredis.exceptions.LockNotOwnedError):
+    with pytest.raises(redis.exceptions.LockNotOwnedError):
         # this raises as the lock is lost
         async with ttl_lock:
             assert await ttl_lock.locked()

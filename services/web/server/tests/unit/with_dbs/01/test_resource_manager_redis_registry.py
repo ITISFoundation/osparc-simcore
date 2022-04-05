@@ -6,10 +6,10 @@ from random import randint
 from typing import Callable, Dict, List
 from uuid import uuid4
 
-import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
+from redis import asyncio as aioredis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings

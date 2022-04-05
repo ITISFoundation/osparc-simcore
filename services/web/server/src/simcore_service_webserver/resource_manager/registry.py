@@ -16,8 +16,8 @@
 import logging
 from typing import Dict, List, Tuple
 
-import aioredis
 from aiohttp import web
+from redis import asyncio as aioredis
 
 from ..redis import get_redis_client
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY

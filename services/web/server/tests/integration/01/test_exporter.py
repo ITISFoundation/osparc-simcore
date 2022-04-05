@@ -33,12 +33,12 @@ import aiofiles
 import aiohttp.web
 import aiopg
 import aiopg.sa
-import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
+from redis import asyncio as aioredis
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.services import (

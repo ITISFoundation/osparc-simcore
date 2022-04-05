@@ -17,14 +17,14 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
-from _helpers import MockedStorageSubsystem  # type: ignore
+from _helpers import MockedStorageSubsystem
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioredis import Redis
 from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
+from redis.asyncio import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver import garbage_collector_core
