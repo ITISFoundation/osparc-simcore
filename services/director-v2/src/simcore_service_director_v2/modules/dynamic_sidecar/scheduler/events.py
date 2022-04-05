@@ -543,7 +543,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             wait=wait_exponential(min=1),
             stop=stop_after_delay(20),
             retry_error_cls=GenericDockerError,
-            reraise=False,
         ):
             with attempt:
                 logger.info(
