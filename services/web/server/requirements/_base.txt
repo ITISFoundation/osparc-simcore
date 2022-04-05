@@ -45,10 +45,6 @@ aiopg==1.3.3
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
 aioredis==2.0.1
-    # via
-    #   -r requirements/_base.in
-    #   aioredlock
-aioredlock==0.7.3
     # via -r requirements/_base.in
 aiormq==6.2.3
     # via aio-pika
@@ -109,8 +105,6 @@ greenlet==1.1.2
     # via sqlalchemy
 gunicorn==20.1.0
     # via -r requirements/_base.in
-hiredis==2.0.0
-    # via aioredis
 idna==3.3
     # via
     #   email-validator
@@ -273,15 +267,12 @@ typer==0.4.0
 typing-extensions==4.1.1
     # via
     #   aiodebug
+    #   aioredis
     #   pydantic
 ujson==5.1.0
     # via aiohttp-swagger
 werkzeug==2.0.3
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-wrapt==1.13.3
-    # via
-    #   -c requirements/./constraints.txt
-    #   deprecated
 yarl==1.5.1
     # via
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
