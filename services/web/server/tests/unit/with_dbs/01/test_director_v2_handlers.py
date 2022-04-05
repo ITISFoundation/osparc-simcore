@@ -26,7 +26,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_pipeline(
+async def test_start_computation(
     mocked_director_v2,
     client,
     logged_user: Dict,
@@ -34,7 +34,7 @@ async def test_start_pipeline(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(url)
     data, error = await assert_status(
         rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
@@ -50,7 +50,7 @@ async def test_start_pipeline(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_partial_pipeline(
+async def test_start_partial_computation(
     mocked_director_v2,
     client,
     logged_user: Dict,
@@ -58,7 +58,7 @@ async def test_start_partial_pipeline(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(
         url, json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
     )
@@ -76,7 +76,7 @@ async def test_start_partial_pipeline(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_get_pipeline(
+async def test_get_computation(
     mocked_director_v2,
     client,
     logged_user: Dict,
@@ -84,13 +84,13 @@ async def test_get_pipeline(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["get_pipeline"].url_for(project_id=f"{project_id}")
+    url = client.app.router["get_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.get(url)
     await assert_status(rsp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok)
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_stop_pipeline(
+async def test_stop_computation(
     mocked_director_v2,
     client,
     logged_user: Dict,
@@ -98,7 +98,7 @@ async def test_stop_pipeline(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["stop_pipeline"].url_for(project_id=f"{project_id}")
+    url = client.app.router["stop_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(url)
     await assert_status(
         rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content

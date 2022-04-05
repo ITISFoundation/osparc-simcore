@@ -4,7 +4,7 @@ paths:
       description: Returns the last computation data
       tags:
         - computations
-      operationId: get_pipeline
+      operationId: get_computation
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       responses:
@@ -22,7 +22,7 @@ paths:
       description: Starts the pipeline(s) of a given (meta) project
       tags:
         - computations
-      operationId: start_pipeline
+      operationId: start_computation
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       requestBody:
@@ -64,7 +64,7 @@ paths:
       description: Stops (all) pipeline(s) of a given (meta) project
       tags:
         - computations
-      operationId: stop_pipeline
+      operationId: stop_computation
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       responses:

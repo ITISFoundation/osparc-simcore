@@ -26,7 +26,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def start_pipeline(request: web.Request) -> web.Response:
+async def start_computation(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
 
     run_policy = get_project_run_policy(request.app)
@@ -107,7 +107,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def stop_pipeline(request: web.Request) -> web.Response:
+async def stop_computation(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
@@ -142,7 +142,7 @@ async def stop_pipeline(request: web.Request) -> web.Response:
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def get_pipeline(request: web.Request) -> web.Response:
+async def get_computation(request: web.Request) -> web.Response:
     # @PC: I'll need your help here
     client = DirectorV2ApiClient(request.app)
     run_policy = get_project_run_policy(request.app)
