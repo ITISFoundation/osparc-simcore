@@ -27,6 +27,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     this.__listenToClusterDetails();
 
     this.set({
+      allowGrowY: false,
       cursor: "pointer"
     });
     this.addListener("tap", () => osparc.utils.Clusters.popUpClustersDetails(this.__clusterId), this);
