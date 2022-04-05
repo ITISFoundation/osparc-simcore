@@ -1,7 +1,9 @@
 import json
 import os
-from typing import Dict, Tuple
+from typing import Dict, Final, Tuple
 from urllib.parse import quote
+
+from pydantic import BaseSettings
 
 from ..services import Author, ServiceDockerData
 
@@ -39,7 +41,16 @@ def register(
 
         kv = (meta.key, meta.version)
         if kv in _validated_registry:
-            raise ValueError(f"{(meta.key, meta.version)=} is already registered")
+            raise ValueError(f"{(meta.key, meta.version)} is already registered")
 
         _validated_registry[kv] = meta
     return _validated_registry
+
+
+class FunctionServiceSettings(BaseSettings):
+    CATALOG_DEV_FEATURES_ENABLED: bool = False
+    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
+    WEBSERVER_DEV_FEATURES_ENABLED: bool = False
+
+
+SETTINGS: Final[FunctionServiceSettings] = FunctionServiceSettings()
