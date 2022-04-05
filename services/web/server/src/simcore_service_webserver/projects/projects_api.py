@@ -284,6 +284,11 @@ async def remove_project_interactive_services(
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
 ) -> None:
+    """
+
+    :raises UserNotFoundError:
+    """
+
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
     log.debug(
@@ -296,7 +301,7 @@ async def remove_project_interactive_services(
 
         # TODO: logic around save_state is not ideal, but it remains with the same logic
         # as before until it is properly refactored
-        user_role: Optional[UserRole]
+        user_role: Optional[UserRole] = None
         try:
             user_role = await get_user_role(app, user_id)
         except UserNotFoundError:

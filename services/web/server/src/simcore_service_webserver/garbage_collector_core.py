@@ -40,12 +40,6 @@ from .users_api import (
 from .users_exceptions import UserNotFoundError
 from .users_to_groups_api import get_users_for_gid
 
-_DATABASE_ERRORS = (
-    DatabaseError,
-    asyncpg.exceptions.PostgresError,
-    ProjectNotFoundError,
-)
-
 logger = logging.getLogger(__name__)
 
 
@@ -354,12 +348,12 @@ async def _remove_single_orphaned_service(
 
             # TODO: logic around save_state is not ideal, but it remains
             # with the same logic as before until it is properly refactored
-            user_role: Optional[UserRole]
+            user_role: Optional[UserRole] = None
             try:
                 user_role = await get_user_role(
                     app, user_id=int(interactive_service.get("user_id", -1))
                 )
-            except UserNotFoundError:
+            except (UserNotFoundError, ValueError):
                 user_role = None
 
             save_state = True
@@ -456,7 +450,12 @@ async def remove_guest_user_with_all_its_resources(
         )
         await remove_user(app=app, user_id=user_id)
 
-    except _DATABASE_ERRORS as error:
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+    ) as error:
         logger.warning(
             "Failure in database while removing user (%s) and its resources with %s",
             f"{user_id=}",
@@ -673,7 +672,12 @@ async def replace_current_owner(
             app=app, primary_gid=new_project_owner_gid
         )
 
-    except _DATABASE_ERRORS:
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+    ):
         logger.exception(
             "Could not recover new user id from gid %s", new_project_owner_gid
         )
@@ -701,7 +705,12 @@ async def replace_current_owner(
             project_data=project,
             project_uuid=project_uuid,
         )
-    except _DATABASE_ERRORS:
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+    ):
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
@@ -712,7 +721,12 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except _DATABASE_ERRORS as err:
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+    ) as err:
         logger.warning(
             "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )

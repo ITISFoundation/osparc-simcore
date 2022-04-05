@@ -13,7 +13,6 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from simcore_postgres_database.errors import ProgrammingError
 from simcore_postgres_database.models.users import UserRole
 from sqlalchemy import and_, literal_column
 
@@ -27,14 +26,32 @@ from .users_utils import convert_user_db_to_schema
 logger = logging.getLogger(__name__)
 
 
+def _parse_as_user(user_id: Any) -> int:
+    # analogous to pydantic.parse_obj_as(PositiveInt, user_id) but lighter and
+    # raise UserNotFoundError instead of ValidationError
+    try:
+        user_id = int(user_id)
+    except ValueError as err:
+        raise UserNotFoundError(uid=user_id) from err
+
+    if user_id <= 0:
+        raise UserNotFoundError(uid=user_id)
+    return user_id
+
+
 # USERS  API ----------------------------------------------------------------------------
 
 
 async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]:
+    """
+    :raises UserNotFoundError:
+    """
+
     engine: Engine = app[APP_DB_ENGINE_KEY]
     user_profile: Dict[str, Any] = {}
     user_primary_group = all_group = {}
     user_standard_groups = []
+    user_id = _parse_as_user(user_id)
 
     async with engine.acquire() as conn:
         async for row in conn.execute(
@@ -90,7 +107,13 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]
 async def update_user_profile(
     app: web.Application, user_id: int, profile: Dict
 ) -> None:
+    """
+    :raises UserNotFoundError:
+    """
+
     engine = app[APP_DB_ENGINE_KEY]
+    user_id = _parse_as_user(user_id)
+
     async with engine.acquire() as conn:
         default_name = await conn.scalar(
             sa.select([users.c.name]).where(users.c.id == user_id)
@@ -110,29 +133,16 @@ async def update_user_profile(
         assert resp.rowcount == 1  # nosec
 
 
-async def is_user_guest(app: web.Application, user_id: int) -> bool:
-    """Returns True if the user exists and is a GUEST"""
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        try:
-            user_role = await conn.scalar(
-                sa.select([users.c.role]).where(users.c.id == int(user_id))
-            )
-            return user_role == UserRole.GUEST
-
-        except ProgrammingError as err:
-            logger.warning("Could not find user with %s [%s]", f"{user_id=}", err)
-            return False
-
-
 async def get_user_role(app: web.Application, user_id: int) -> UserRole:
     """
     :raises UserNotFoundError:
     """
+    user_id = _parse_as_user(user_id)
+
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_role: Optional[RowProxy] = await conn.scalar(
-            sa.select([users.c.role]).where(users.c.id == int(user_id))
+            sa.select([users.c.role]).where(users.c.id == user_id)
         )
         if user_role is None:
             raise UserNotFoundError(uid=user_id)
@@ -181,6 +191,7 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
     :raises UserNotFoundError:
     """
     engine = app[APP_DB_ENGINE_KEY]
+    user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
         user_name = await conn.scalar(
             sa.select([users.c.name]).where(users.c.id == user_id)
@@ -196,6 +207,7 @@ async def get_user(app: web.Application, user_id: int) -> Dict:
     :raises UserNotFoundError:
     """
     engine = app[APP_DB_ENGINE_KEY]
+    user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
         result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
         row: RowProxy = await result.fetchone()
