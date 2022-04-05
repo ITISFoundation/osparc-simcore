@@ -33,9 +33,10 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
 
   statics: {
     GRID_POS: {
-      CPU: 0,
-      RAM: 1,
-      GPU: 2
+      ICON: 0,
+      CPU: 1,
+      RAM: 2,
+      GPU: 3
     }
   },
 
@@ -102,17 +103,20 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
 
       let row = 0;
       const gridW = this.__computedLayout ? this.__computedLayout.width - 15 : 600;
-      Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
+      Object.keys(clusterDetails.scheduler.workers).forEach(workerUrl => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
-        row++;
 
-        const workerNameLabel = new qx.ui.basic.Label("C-" + this.__clusterId + "_W-" + idx + ": " + worker.name);
-        this._add(workerNameLabel, {
-          row,
-          column: 0,
-          colSpan: 4
+        const img = new qx.ui.basic.Image().set({
+          source: "@FontAwesome5Solid/server/24",
+          toolTipText: worker.name,
+          textColor: "ready-green",
+          paddingTop: 50
         });
-        row++;
+        this._add(img, {
+          row,
+          column: this.self().GRID_POS.ICON
+        });
+
         Object.keys(plots).forEach(plotKey => {
           const plotInfo = plots[plotKey];
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
@@ -146,6 +150,7 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
             column: plotInfo.column
           });
         });
+        row++;
       });
     }
   },
