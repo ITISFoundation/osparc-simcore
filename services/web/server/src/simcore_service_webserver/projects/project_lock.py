@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager, suppress
+from asyncio.log import logger
+from contextlib import asynccontextmanager
 from typing import Optional, Union
 
 import redis
@@ -54,9 +55,15 @@ async def lock_project(
         yield
     finally:
         # let's ensure we release that stuff
-        with suppress(redis.exceptions.LockError, redis.exceptions.LockNotOwnedError):
+        try:
             if await redis_lock.owned():
                 await redis_lock.release()
+        except (redis.exceptions.LockError, redis.exceptions.LockNotOwnedError) as exc:
+            logger.warning(
+                "releasing %s unexpectedly raised an exception: %s",
+                f"{redis_lock=!r}",
+                f"{exc}",
+            )
 
 
 async def is_project_locked(
