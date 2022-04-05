@@ -791,7 +791,7 @@ async def _get_project_lock_state(
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
         log.debug("project [%s] is not in use", f"{project_uuid=}")
-        return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+        return ProjectLocked(value=False, status=ProjectStatus.CLOSED, owner=None)
 
     log.debug(
         "project [%s] might be used by the following users: [%s]",
@@ -859,7 +859,7 @@ async def add_project_states_for_user(
         f"{project['uuid']=}",
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED, owner=None)
     running_state = RunningState.UNKNOWN
 
     if not is_template:

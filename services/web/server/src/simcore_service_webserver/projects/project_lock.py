@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager, suppress
 from typing import Optional, Union
 
-import aioredis.lock
 import aioredis.exceptions
+import aioredis.lock
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
@@ -75,9 +75,9 @@ async def get_project_locked_state(
 ) -> Optional[ProjectLocked]:
     """returns the ProjectLocked object if the project is locked"""
     if await is_project_locked(app, project_uuid):
-        redis_lock = get_redis_lock_manager_client(app).lock(
-            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
-        )
+        redis_locks_client = get_redis_lock_manager_client(app)
 
-        if project_locked := redis_lock.local.token:
-            return ProjectLocked.parse_raw(project_locked)
+        if lock_value := await redis_locks_client.get(
+            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+        ):
+            return ProjectLocked.parse_raw(lock_value)

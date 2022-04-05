@@ -15,6 +15,8 @@ from pydantic import parse_raw_as
 from simcore_service_webserver.projects.project_lock import (
     PROJECT_REDIS_LOCK_KEY,
     ProjectLockError,
+    get_project_locked_state,
+    is_project_locked,
     lock_project,
 )
 from simcore_service_webserver.users_api import UserNameDict
@@ -130,3 +132,66 @@ async def test_raise_exception_while_locked_release_lock(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid)
     )
     assert not redis_value
+
+
+async def test_is_project_locked(
+    client: TestClient,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    faker: Faker,
+):
+    assert client.app
+    assert await is_project_locked(client.app, project_uuid) == False
+    user_name: UserNameDict = {
+        "first_name": faker.first_name(),
+        "last_name": faker.last_name(),
+    }
+    async with lock_project(
+        app=client.app,
+        project_uuid=project_uuid,
+        status=ProjectStatus.EXPORTING,
+        user_id=user_id,
+        user_name=user_name,
+    ):
+        assert await is_project_locked(client.app, project_uuid) == True
+
+
+@pytest.mark.parametrize(
+    "lock_status",
+    [
+        ProjectStatus.CLOSING,
+        ProjectStatus.CLONING,
+        ProjectStatus.EXPORTING,
+        ProjectStatus.OPENING,
+    ],
+)
+async def test_get_project_locked_state(
+    client: TestClient,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    faker: Faker,
+    lock_status: ProjectStatus,
+):
+    assert client.app
+    # no lock
+    assert await get_project_locked_state(client.app, project_uuid) == None
+
+    assert await is_project_locked(client.app, project_uuid) == False
+    user_name: UserNameDict = {
+        "first_name": faker.first_name(),
+        "last_name": faker.last_name(),
+    }
+    async with lock_project(
+        app=client.app,
+        project_uuid=project_uuid,
+        status=lock_status,
+        user_id=user_id,
+        user_name=user_name,
+    ):
+        locked_state = await get_project_locked_state(client.app, project_uuid)
+        expected_locked_state = ProjectLocked(
+            value=bool(lock_status not in [ProjectStatus.CLOSED, ProjectStatus.OPENED]),
+            owner=Owner(user_id=user_id, **user_name),
+            status=lock_status,
+        )
+        assert locked_state == expected_locked_state
