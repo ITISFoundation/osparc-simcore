@@ -23,15 +23,17 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__populateClustersBox(selectClusterId);
+    this.__populateClustersLayout(selectClusterId);
   },
 
   members: {
     __clustersSelectBox: null,
     __clusterDetails: null,
 
-    __populateClustersBox: function(selectClusterId) {
-      const clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    __populateClustersLayout: function(selectClusterId) {
+      const clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
 
       const clustersLabel = new qx.ui.basic.Label(this.tr("Connected clusters"));
       clustersLayout.add(clustersLabel);
@@ -46,7 +48,18 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       }, this);
       clustersLayout.add(selectBox);
 
+      clustersLayout.add(new qx.ui.core.Spacer(10, null));
+
+      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status:"));
+      clustersLayout.add(clusterStatusLabel);
+
+      const clusterStatusBulb = this.__clusterStatusBulb = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/lightbulb/16"
+      });
+      clustersLayout.add(clusterStatusBulb);
+
       this._add(clustersLayout);
+
       if (selectClusterId === undefined) {
         selectClusterId = 0;
       }
@@ -56,6 +69,17 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
         }
       });
       this.__updateClusterDetails(selectClusterId);
+
+      this.__clusterDetails.bind("clusterStatus", clusterStatusBulb, "textColor", {
+        converter: status => {
+          if (status === "connected") {
+            return "ready-green";
+          } else if (status === "failed") {
+            return "failed-red";
+          }
+          return "text";
+        }
+      });
     },
 
     __updateClusterDetails: function(clusterId) {
@@ -63,8 +87,8 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
         this._remove(this.__clusterDetails);
         this.__clusterDetails.dispose();
       }
-      const clusterDetailsView = this.__clusterDetails = new osparc.component.cluster.ClusterDetails(clusterId);
-      this._add(clusterDetailsView, {
+      const clusterDetails = this.__clusterDetails = new osparc.component.cluster.ClusterWorkers(clusterId);
+      this._add(clusterDetails, {
         flex: 1
       });
     }
