@@ -94,6 +94,10 @@ qx.Class.define("osparc.component.node.NodeView", {
     _addOutputs: function() {
       this._outputsLayout.removeAll();
 
+      const nodeOutputs = new osparc.component.widget.inputs.NodeOutputs(this.getNode(), this.getNode().getMetaData().outputs);
+      this._mainView.bind("backgroundColor", nodeOutputs, "backgroundColor");
+      this._outputsLayout.add(nodeOutputs);
+
       const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
         allowGrowX: false
       });
@@ -104,11 +108,6 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._outputsBtn.set({
         value: false,
         enabled: this.getNode().hasOutputs() > 0
-      });
-      const outputsTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), this.getNode().getMetaData().outputs);
-      this._mainView.bind("backgroundColor", outputsTree, "backgroundColor");
-      this._outputsLayout.add(outputsTree, {
-        flex: 1
       });
     },
 
