@@ -60,7 +60,9 @@ async def setup_redis_client(app: web.Application):
         assert client  # nosec
         return client
 
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(redis_settings.dsn)
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(
+        redis_settings.dsn_resources
+    )
     assert client  # nosec
 
     # create a client for it as well

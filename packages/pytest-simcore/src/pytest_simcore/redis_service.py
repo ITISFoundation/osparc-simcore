@@ -34,7 +34,7 @@ async def redis_settings(
     )
     # test runner is running on the host computer
     settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=int(port))
-    await wait_till_redis_responsive(settings.dsn)
+    await wait_till_redis_responsive(settings.dsn_resources)
 
     return settings
 
@@ -59,7 +59,7 @@ async def redis_client(
 ) -> AsyncIterator[aioredis.Redis]:
     """Creates a redis client to communicate with a redis service ready"""
     client = aioredis.from_url(
-        redis_settings.dsn, encoding="utf-8", decode_responses=True
+        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
     )
 
     yield client

@@ -126,7 +126,7 @@ def __drop_and_recreate_postgres__(
 @pytest.fixture(autouse=True)
 async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     client = aioredis.from_url(
-        redis_settings.dsn, encoding="utf-8", decode_responses=True
+        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
     )
     await client.flushall()
 
