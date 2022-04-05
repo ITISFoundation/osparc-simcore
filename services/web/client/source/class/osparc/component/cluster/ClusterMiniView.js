@@ -21,15 +21,8 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox().set({
-      alignY: "middle"
-    }));
-
     const grid = new qx.ui.layout.Grid(2, 2);
-    const miniGrid = this.__miniGrid = new qx.ui.container.Composite(grid).set({
-      minWidth: 1
-    });
-    this._add(miniGrid);
+    this._setLayout(grid);
 
     this.__listenToClusterDetails();
 
@@ -60,8 +53,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
 
   members: {
     __clusterId: null,
-    __clusterDetailsLayout: null,
-    __miniGrid: null,
     __hint: null,
 
     setClusterId: function(clusterId) {
@@ -91,8 +82,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     },
 
     __showBulb: function(failed) {
-      const miniGrid = this.__miniGrid;
-      miniGrid.removeAll();
+      this._removeAll();
 
       const clusterStatusImage = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/lightbulb/16",
@@ -101,7 +91,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         paddingLeft: 3,
         textColor: failed ? "failed-red" : "ready-green"
       });
-      miniGrid.add(clusterStatusImage, {
+      this._add(clusterStatusImage, {
         row: 0,
         column: 0
       });
@@ -113,8 +103,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     },
 
     __updateWorkersDetails: function(clusterDetails) {
-      const miniGrid = this.__miniGrid;
-      miniGrid.removeAll();
+      this._removeAll();
 
       const workers = clusterDetails.scheduler.workers;
       if (Object.keys(workers).length === 0) {
@@ -155,14 +144,13 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     },
 
     __updateMiniView: function(resources) {
-      const miniGrid = this.__miniGrid;
       Object.keys(resources).forEach((resourceKey, idx) => {
         const resourceInfo = resources[resourceKey];
         if (resourceInfo.available === 0) {
           return;
         }
         const icon = new qx.ui.basic.Image(resourceInfo.icon);
-        miniGrid.add(icon, {
+        this._add(icon, {
           row: idx,
           column: 0
         });
@@ -174,7 +162,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         progressBar.getChildControl("progress").set({
           backgroundColor: "visual-blue"
         });
-        miniGrid.add(progressBar, {
+        this._add(progressBar, {
           row: idx,
           column: 1
         });
