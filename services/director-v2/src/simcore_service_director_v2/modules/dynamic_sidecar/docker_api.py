@@ -518,24 +518,32 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
 
-        # fetch information from service name
-        service_inspect = await client.services.inspect(scheduler_data.service_name)
-        service_version = service_inspect["Version"]["Index"]
-        service_id = service_inspect["ID"]
-        spec = service_inspect["Spec"]
+        try:
+            # fetch information from service name
+            service_inspect = await client.services.inspect(scheduler_data.service_name)
+            service_version = service_inspect["Version"]["Index"]
+            service_id = service_inspect["ID"]
+            spec = service_inspect["Spec"]
 
-        # allows to use json encodes not available on dict
-        dict_scheduler_data = json.loads(scheduler_data.json())
-        # compose_spec needs to be json encoded
-        dict_scheduler_data["compose_spec"] = json.dumps(
-            dict_scheduler_data["compose_spec"]
-        )
-        label_data = json.dumps(dict_scheduler_data)
-        spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+            # allows to use json encodes not available on dict
+            dict_scheduler_data = json.loads(scheduler_data.json())
+            # compose_spec needs to be json encoded
+            dict_scheduler_data["compose_spec"] = json.dumps(
+                dict_scheduler_data["compose_spec"]
+            )
+            label_data = json.dumps(dict_scheduler_data)
+            spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
 
-        await client._query_json(  # pylint: disable=protected-access
-            "services/{service_id}/update".format(service_id=service_id),
-            method="POST",
-            data=json.dumps(clean_map(spec)),
-            params={"version": service_version},
-        )
+            await client._query_json(  # pylint: disable=protected-access
+                "services/{service_id}/update".format(service_id=service_id),
+                method="POST",
+                data=json.dumps(clean_map(spec)),
+                params={"version": service_version},
+            )
+        except aiodocker.exceptions.DockerError as e:
+            if e.message != f"service {scheduler_data.service_name} not found":
+                raise e
+            log.debug(
+                "Skip update for service '%s' which could not be found",
+                scheduler_data.service_name,
+            )
