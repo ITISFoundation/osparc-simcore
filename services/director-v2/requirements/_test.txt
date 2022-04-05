@@ -21,8 +21,6 @@ aiohttp==3.8.1
     #   pytest-aiohttp
 aioitertools==0.10.0
     # via aiobotocore
-aioredis==2.0.1
-    # via -r requirements/_test.in
 aiormq==3.3.1
     # via
     #   -c requirements/_base.txt
@@ -49,7 +47,6 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   aioredis
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -352,7 +349,6 @@ typing-extensions==4.1.1 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
     #   aioitertools
-    #   aioredis
     #   astroid
     #   bokeh
     #   pylint
