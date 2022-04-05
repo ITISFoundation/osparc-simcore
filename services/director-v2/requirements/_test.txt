@@ -352,6 +352,7 @@ typing-extensions==4.1.1 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
     #   aioitertools
+    #   aioredis
     #   astroid
     #   bokeh
     #   pylint
