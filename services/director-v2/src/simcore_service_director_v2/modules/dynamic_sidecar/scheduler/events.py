@@ -541,7 +541,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
         async for attempt in AsyncRetrying(
             wait=wait_exponential(min=1),
-            stop=stop_after_delay(20),
+            stop=stop_after_delay(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S
+            ),
             retry_error_cls=GenericDockerError,
         ):
             with attempt:

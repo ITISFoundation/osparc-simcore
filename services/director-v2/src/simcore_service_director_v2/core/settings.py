@@ -221,6 +221,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "timeout for attaching/detaching project networks to/from a container"
         ),
     )
+    DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S: PositiveFloat = Field(
+        1.0 * MINS,
+        description=(
+            "time to wait before giving up on removing dynamic-sidecar volumes "
+            "used for inputs, outputs and state syncing"
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
