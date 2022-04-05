@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from aiohttp import web
 from models_library.clusters import ClusterID
@@ -141,7 +141,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 
 
 class ComputationTaskGet(BaseModel):
-    cluster_id: ClusterID
+    cluster_id: Optional[ClusterID]
 
 
 @routes.get(f"/{VTAG}/computations/{{project_id}}")
@@ -175,11 +175,7 @@ async def get_computation(request: web.Request) -> web.Response:
             for c in list_computation_tasks
         )
         return web.json_response(
-            data={
-                "data": list_computation_tasks[0].dict(
-                    by_alias=True, exclude_unset=True
-                )
-            },
+            data={"data": list_computation_tasks[0].dict(by_alias=True)},
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:
