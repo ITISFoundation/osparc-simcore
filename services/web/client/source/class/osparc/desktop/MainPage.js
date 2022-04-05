@@ -105,25 +105,23 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __backToDashboard: function() {
+    __backToDashboard: async function() {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
+      if (this.__studyEditor.didStudyChange()) {
+        await this.__studyEditor.updateStudyDocument(false);
+      }
       const studyId = this.__studyEditor.getStudy().getUuid();
-      this.__studyEditor.updateStudyDocument(false)
+      this.__studyEditor.closeEditor();
+      this.__showDashboard();
+      this.__dashboard.getStudyBrowser().invalidateStudies();
+      this.__dashboard.getStudyBrowser().reloadResources();
+      this.__dashboard.getStudyBrowser().resetSelection();
+      this.__dashboard.getStudyBrowser().reloadStudy(studyId)
         .then(() => {
-          this.__studyEditor.closeEditor();
-          this.__showDashboard();
-          this.__dashboard.getStudyBrowser().invalidateStudies();
-          this.__dashboard.getStudyBrowser().reloadResources();
-          this.__dashboard.getStudyBrowser().resetSelection();
-          this.__dashboard.getStudyBrowser().reloadStudy(studyId)
-            .then(() => {
-              this.__closeStudy(studyId);
-            });
-        })
-        .finally(() => {
-          dashboardBtn.setFetching(false);
+          this.__closeStudy(studyId);
         });
+      dashboardBtn.setFetching(false);
     },
 
     __createMainStack: function() {
