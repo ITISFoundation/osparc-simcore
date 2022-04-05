@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.cluster.ClusterWorkers", {
   extend: qx.ui.core.Widget,
 
-  construct: function(clusterId) {
+  construct: function() {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(5, 8);
@@ -26,9 +26,6 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
       grid.setColumnFlex(i, 1);
     }
     this._setLayout(grid);
-
-    this.__clusterId = clusterId;
-    this.__startFetchingDetails();
   },
 
   statics: {
@@ -40,37 +37,11 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
     }
   },
 
-  properties: {
-    clusterStatus: {
-      check: ["unknown", "connected", "failed"],
-      init: "unknown",
-      event: "changeClusterStatus"
-    }
-  },
-
   members: {
-    __clusterId: null,
-
-    __startFetchingDetails: function() {
-      const clusters = osparc.utils.Clusters.getInstance();
-      clusters.addListener("clusterDetailsReceived", e => {
-        const data = e.getData();
-        if (this.__clusterId === data.clusterId) {
-          if ("error" in data) {
-            this.setClusterStatus("failed");
-          } else {
-            this.setClusterStatus("connected");
-            this.populateWorkersDetails(data.clusterDetails);
-          }
-        }
-      });
-      clusters.startFetchingDetails(this.__clusterId);
-    },
-
     populateWorkersDetails: function(clusterDetails) {
       this._removeAll();
 
-      if (Object.keys(clusterDetails.scheduler.workers).length === 0) {
+      if (clusterDetails === null) {
         const workerNameLabel = new qx.ui.basic.Label(this.tr("No workers found in this cluster"));
         this._add(workerNameLabel, {
           row: 0,
@@ -107,7 +78,7 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
         const worker = clusterDetails.scheduler.workers[workerUrl];
 
         const img = new qx.ui.basic.Image().set({
-          source: "@FontAwesome5Solid/server/24",
+          source: "@FontAwesome5Solid/hdd/24",
           toolTipText: worker.name,
           textColor: "ready-green",
           paddingTop: 50
@@ -153,9 +124,5 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
         row++;
       });
     }
-  },
-
-  destruct: function() {
-    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });
