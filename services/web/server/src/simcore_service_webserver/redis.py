@@ -2,8 +2,8 @@ import json
 import logging
 from typing import Optional
 
+import redis.asyncio as aioredis
 from aiohttp import web
-from redis import asyncio as aioredis
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying

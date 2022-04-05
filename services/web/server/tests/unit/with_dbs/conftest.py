@@ -20,6 +20,7 @@ from uuid import uuid4
 
 import pytest
 import redis
+import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
@@ -30,7 +31,6 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
-from redis import asyncio as aioredis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings

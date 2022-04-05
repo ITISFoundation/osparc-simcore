@@ -1,4 +1,11 @@
 import pytest
+
+# pylint: disable=no-value-for-parameter
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
@@ -6,13 +13,6 @@ from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.users import UserID
 from pydantic import parse_raw_as
-
-# pylint: disable=no-value-for-parameter
-# pylint: disable=protected-access
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-from redis import asyncio as aioredis
 from simcore_service_webserver.projects.project_lock import (
     PROJECT_REDIS_LOCK_KEY,
     ProjectLockError,

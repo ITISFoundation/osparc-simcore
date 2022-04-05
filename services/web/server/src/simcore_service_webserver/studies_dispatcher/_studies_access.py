@@ -15,9 +15,9 @@ from functools import lru_cache
 from typing import Dict
 from uuid import UUID, uuid5
 
+import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
-from redis import asyncio as aioredis
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT

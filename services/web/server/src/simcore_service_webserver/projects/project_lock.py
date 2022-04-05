@@ -6,14 +6,14 @@ import redis
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
-from redis import asyncio as aioredis
+from redis.asyncio.lock import Lock
 
 from ..redis import get_redis_lock_manager_client
 from ..users_api import UserNameDict
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 
-ProjectLock = aioredis.lock.Lock
+ProjectLock = Lock
 ProjectLockError = redis.exceptions.LockError
 
 

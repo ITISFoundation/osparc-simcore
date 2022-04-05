@@ -13,12 +13,12 @@ from uuid import uuid4
 import aiopg
 import aiopg.sa
 import pytest
+import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
-from redis import asyncio as aioredis
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import garbage_collector_core

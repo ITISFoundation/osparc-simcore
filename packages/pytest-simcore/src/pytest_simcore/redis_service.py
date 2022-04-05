@@ -7,7 +7,7 @@ from typing import AsyncIterator, Dict, Union
 
 import pytest
 import tenacity
-from redis import asyncio as aioredis
+from redis.asyncio import Redis, from_url
 from settings_library.redis import RedisSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -56,9 +56,9 @@ def redis_service(
 @pytest.fixture(scope="function")
 async def redis_client(
     redis_settings: RedisSettings,
-) -> AsyncIterator[aioredis.Redis]:
+) -> AsyncIterator[Redis]:
     """Creates a redis client to communicate with a redis service ready"""
-    client = aioredis.from_url(
+    client = from_url(
         redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
     )
 
@@ -70,11 +70,9 @@ async def redis_client(
 @pytest.fixture(scope="function")
 async def redis_locks_client(
     redis_settings: RedisSettings,
-) -> AsyncIterator[aioredis.Redis]:
+) -> AsyncIterator[Redis]:
     """Creates a redis client to communicate with a redis service ready"""
-    client = aioredis.from_url(
-        redis_settings.dsn_locks, encoding="utf-8", decode_responses=True
-    )
+    client = from_url(redis_settings.dsn_locks, encoding="utf-8", decode_responses=True)
 
     yield client
 
@@ -91,7 +89,7 @@ async def redis_locks_client(
     reraise=True,
 )
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
-    client = aioredis.from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
+    client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
 
     if not await client.ping():
         raise ConnectionError(f"{redis_url=} not available")

@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 import redis
-from redis import asyncio as aioredis
+import redis.asyncio as aioredis
 
 
 async def test_aioredis(redis_client: aioredis.Redis):

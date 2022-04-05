@@ -10,9 +10,9 @@
 import logging
 from typing import Dict, Optional
 
+import redis.asyncio as aioredis
 from aiohttp import web
 from pydantic import BaseModel
-from redis import asyncio as aioredis
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.handlers import ACTIVE, GUEST
