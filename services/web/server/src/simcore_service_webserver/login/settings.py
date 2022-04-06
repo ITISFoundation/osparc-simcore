@@ -45,8 +45,8 @@ class LoginOptions(BaseModel):
     SMTP_SENDER: str
     SMTP_HOST: str
     SMTP_PORT: int
-    SMTP_TLS_ENABLED: bool = False
-    SMTP_STARTTLS_ENABLED: bool = True
+    SMTP_TLS_ENABLED: bool
+    SMTP_STARTTLS_ENABLED: bool
     SMTP_USERNAME: Optional[str] = Field(...)
     SMTP_PASSWORD: Optional[SecretStr] = Field(...)
 

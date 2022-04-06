@@ -19,7 +19,7 @@ class SMTPSettings(BaseCustomSettings):
 
     SMTP_TLS_ENABLED: bool = Field(False, description="Enables TLS Secure Mode")
     SMTP_STARTTLS_ENABLED: bool = Field(
-        True, description="Enables STARTTLS Secure Mode"
+        False, description="Enables STARTTLS Secure Mode"
     )
     SMTP_USERNAME: Optional[str] = Field(None, min_length=1)
     SMTP_PASSWORD: Optional[SecretStr] = Field(None, min_length=1)

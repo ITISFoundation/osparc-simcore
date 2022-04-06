@@ -107,7 +107,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
             "tls": int(getattr(app_settings.WEBSERVER_EMAIL, "SMTP_TLS_ENABLED", 0)),
             "starttls": int(
-                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_STARTTLS_ENABLED", 1)
+                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_STARTTLS_ENABLED", 0)
             ),
             "username": str(
                 getattr(app_settings.WEBSERVER_EMAIL, "SMTP_USERNAME", None)
