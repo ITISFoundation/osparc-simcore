@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Literal, Optional, Tuple
 
 from aiohttp import web
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
@@ -49,13 +49,6 @@ class LoginOptions(BaseModel):
     SMTP_STARTTLS_ENABLED: bool = True
     SMTP_USERNAME: Optional[str] = Field(...)
     SMTP_PASSWORD: Optional[SecretStr] = Field(...)
-
-    @root_validator(pre=True)
-    @classmethod
-    def not_both_tls_and_starttls(cls, values):
-        if values["SMTP_TLS_ENABLED"] and values["SMTP_STARTTLS_ENABLED"]:
-            raise ValueError("TLS and STARTTLS cannot be enabled simultaneously")
-        return values
 
     # lifetime limits are in days
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS

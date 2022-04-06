@@ -17,7 +17,10 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_HOST: str
     SMTP_PORT: PortInt
 
-    SMTP_TLS_ENABLED: bool = Field(False, description="Enables Secure Mode")
+    SMTP_TLS_ENABLED: bool = Field(False, description="Enables TLS Secure Mode")
+    SMTP_STARTTLS_ENABLED: bool = Field(
+        True, description="Enables STARTTLS Secure Mode"
+    )
     SMTP_USERNAME: Optional[str] = Field(None, min_length=1)
     SMTP_PASSWORD: Optional[SecretStr] = Field(None, min_length=1)
 
@@ -38,11 +41,19 @@ class SMTPSettings(BaseCustomSettings):
     @classmethod
     def enabled_tls_required_authentication(cls, values):
         tls_enabled = values.get("SMTP_TLS_ENABLED")
+        starttls_enabled = values.get("SMTP_STARTTLS_ENABLED")
         username = values.get("SMTP_USERNAME")
         password = values.get("SMTP_PASSWORD")
 
-        if tls_enabled and not (username or password):
+        if (tls_enabled or starttls_enabled) and not (username or password):
             raise ValueError(
                 "when using SMTP_TLS_ENABLED is True username and password are required"
             )
+        return values
+
+    @root_validator(pre=True)
+    @classmethod
+    def not_both_tls_and_starttls(cls, values):
+        if values.get("SMTP_TLS_ENABLED") and values.get("SMTP_STARTTLS_ENABLED"):
+            raise ValueError("TLS and STARTTLS cannot be enabled simultaneously")
         return values
