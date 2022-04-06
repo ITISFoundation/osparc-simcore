@@ -26,7 +26,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 )
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
-    SchedulerData,
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
