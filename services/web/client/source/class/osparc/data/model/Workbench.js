@@ -471,12 +471,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       const requesterNode = this.getNode(nodeId);
 
       // create a new ProbeNode
+      const requesterPortMD = requesterNode.getMetaData()["outputs"][portId];
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
       const probeMD = osparc.utils.Services.getProbeMetadata(type);
       if (probeMD) {
         const parentNodeId = requesterNode.getParentNodeId();
         const parent = parentNodeId ? this.getNode(parentNodeId) : null;
         const probeNode = this.createNode(probeMD["key"], probeMD["version"], null, parent);
+        probeNode.setLabel(requesterPortMD.label);
 
         // do not overlap the new Parameter Node with other nodes
         const freePos = this.__getFreePosition(requesterNode, false);
