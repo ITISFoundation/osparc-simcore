@@ -374,7 +374,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         cls, service_inspect: Mapping[str, Any]
     ) -> "SchedulerData":
         labels = service_inspect["Spec"]["Labels"]
-        return cls.parse_obj(json.loads(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]))
+        return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
     class Config:
         extra = Extra.allow
