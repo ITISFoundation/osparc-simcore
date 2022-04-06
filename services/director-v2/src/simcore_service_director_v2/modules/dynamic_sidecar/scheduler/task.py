@@ -110,8 +110,7 @@ class DynamicSidecarsScheduler:
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
 
-    # NOTE: used by API: this provides data that should be protected by the lock
-    # figure out how to store it internally
+    # NOTE: used by API
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
 
