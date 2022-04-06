@@ -121,7 +121,7 @@ async def unpublished_project(client, fake_project, tests_data_dir: Path):
         yield template_project
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def director_v2_mock(director_v2_service_mock) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock
 
@@ -267,6 +267,7 @@ async def test_access_study_anonymously(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
 ):
     assert not is_user_authenticated(client.session), "Is anonymous"
@@ -310,6 +311,7 @@ async def test_access_study_by_logged_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
     auto_delete_projects,
 ):
@@ -336,6 +338,7 @@ async def test_access_cookie_of_expired_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
 ):
     # emulates issue #1570
@@ -396,6 +399,7 @@ async def test_guest_user_is_not_garbage_collected(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
