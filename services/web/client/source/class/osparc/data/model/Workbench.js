@@ -350,10 +350,17 @@ qx.Class.define("osparc.data.model.Workbench", {
           } = e.getData();
           this.__filePickerNodeRequested(nodeId, portId, file);
         }, this);
+        node.addListener("probeRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
+          this.__probeNodeRequested(nodeId, portId);
+        }, this);
       }
     },
 
-    getFreePosition: function(node, toTheLeft = true) {
+    __getFreePosition: function(node, toTheLeft = true) {
       // do not overlap the new node2 with other nodes
       const pos = node.getPosition();
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
@@ -384,7 +391,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
-        const freePos = this.getFreePosition(requesterNode);
+        const freePos = this.__getFreePosition(requesterNode);
 
         // create a new FP
         const filePickerMetadata = osparc.utils.Services.getFilePicker();
@@ -440,7 +447,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.getFreePosition(requesterNode);
+        const freePos = this.__getFreePosition(requesterNode);
         pm.setPosition(freePos);
 
         // create connection
@@ -454,6 +461,37 @@ qx.Class.define("osparc.data.model.Workbench", {
             } else {
               this.removeNode(pmId);
               const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            }
+          });
+      }
+    },
+
+    __probeNodeRequested: function(nodeId, portId) {
+      const requesterNode = this.getNode(nodeId);
+
+      // create a new ProbeNode
+      const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
+      const probeMD = osparc.utils.Services.getProbeMetadata(type);
+      if (probeMD) {
+        const parentNodeId = requesterNode.getParentNodeId();
+        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
+        const probeNode = this.createNode(probeMD["key"], probeMD["version"], null, parent);
+
+        // do not overlap the new Parameter Node with other nodes
+        const freePos = this.__getFreePosition(requesterNode, false);
+        probeNode.setPosition(freePos);
+
+        // create connection
+        const probeId = probeNode.getNodeId();
+        probeNode.addInputNode(nodeId);
+        probeNode.addPortLink("in_1", nodeId, portId)
+          .then(success => {
+            if (success) {
+              this.fireEvent("reloadModel");
+            } else {
+              this.removeNode(probeId);
+              const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
               osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
             }
           });
@@ -526,10 +564,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       if (leftNodeId) {
         const leftNode = this.getNode(leftNodeId);
-        node.setPosition(this.getFreePosition(leftNode, false));
+        node.setPosition(this.__getFreePosition(leftNode, false));
       } else if (rightNodeId) {
         const rightNode = this.getNode(rightNodeId);
-        node.setPosition(this.getFreePosition(rightNode, true));
+        node.setPosition(this.__getFreePosition(rightNode, true));
       } else {
         node.setPosition({
           x: 20,

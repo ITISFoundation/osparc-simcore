@@ -290,6 +290,10 @@ qx.Class.define("osparc.utils.Services", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
     },
 
+    getProbeMetadata: function(type) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/iterator-consumer/probe/"+type);
+    },
+
     getNodesGroup: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
