@@ -8,7 +8,17 @@ from settings_library.email import SMTPSettings
 @pytest.mark.parametrize(
     "cfg",
     [
-        {"SMTP_HOST": "test", "SMTP_PORT": 113},
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": 113,
+            "SMTP_STARTTLS_ENABLED": False,
+            "SMTP_TLS_ENABLED": False,
+        },
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": 113,
+            "SMTP_STARTTLS_ENABLED": False,
+        },
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
@@ -51,6 +61,14 @@ from settings_library.email import SMTPSettings
             "SMTP_PASSWORD": "test",
             "SMTP_STARTTLS_ENABLED": False,
             "SMTP_TLS_ENABLED": True,
+        },
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": 113,
+            "SMTP_USERNAME": "test",
+            "SMTP_PASSWORD": "test",
+            "SMTP_STARTTLS_ENABLED": False,
+            "SMTP_TLS_ENABLED": False,
         },
     ],
 )
