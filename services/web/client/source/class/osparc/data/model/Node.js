@@ -142,7 +142,6 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -251,7 +250,6 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
-    __outputWidget: null,
     __posX: null,
     __posY: null,
     __unresponsiveRetries: null,
@@ -406,11 +404,14 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(metaData.name);
         }
         if (metaData.inputs) {
-          this.__addInputs(metaData.inputs);
+          this.setInputs(metaData.inputs);
+          if (Object.keys(metaData.inputs).length) {
+            this.__addSettings(metaData.inputs);
+            this.__addSettingsAccessLevelEditor(metaData.inputs);
+          }
         }
         if (metaData.outputs) {
           this.setOutputs(metaData.outputs);
-          this.__addOutputWidget();
         }
       }
     },
@@ -425,10 +426,6 @@ qx.Class.define("osparc.data.model.Node", {
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
         }
-      }
-
-      if (this.__outputWidget) {
-        this.__outputWidget.populatePortsData();
       }
 
       this.__initLogger();
@@ -506,12 +503,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
       osparc.data.Resources.fetch("studies", "deleteNode", params)
         .catch(err => console.error(err));
-    },
-
-    __applyOutputs: function() {
-      if (this.__outputWidget) {
-        this.__outputWidget.populatePortsData();
-      }
     },
 
     __applyPropsForm: function() {
@@ -618,28 +609,6 @@ qx.Class.define("osparc.data.model.Node", {
             this.getPropsForm().removePortLink(portId);
           }
         }
-      }
-    },
-
-    getOutputWidget: function() {
-      return this.__outputWidget;
-    },
-
-    __addOutputWidget: function() {
-      const isInputModel = true;
-      this.__outputWidget = new osparc.component.widget.NodePorts(this, isInputModel);
-    },
-
-    __addInputs: function(inputs) {
-      this.setInputs(inputs);
-
-      if (inputs === null) {
-        return;
-      }
-
-      if (Object.keys(inputs).length) {
-        this.__addSettings(inputs);
-        this.__addSettingsAccessLevelEditor(inputs);
       }
     },
 

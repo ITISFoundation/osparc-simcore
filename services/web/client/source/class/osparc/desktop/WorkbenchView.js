@@ -1025,10 +1025,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
-          allowGrowY: false
-        });
-        this.__outputsPage.add(portTree);
+        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs);
+        this.__outputsPage.add(nodeOutputs);
       }
 
       const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({

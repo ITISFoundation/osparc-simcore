@@ -56,7 +56,7 @@ openapi-spec-validator==0.2.9
 prometheus-client==0.8.0
 psycopg2-binary==2.8.6
 pydantic==1.7.2
-PyYAML==5.3
+PyYAML==5.4 # CVE-2020-1747
 requests==2.22.0
 simcore-service-library @ git+https://github.com/ITISFoundation/osparc-simcore.git@c8669fb52659b684514fefa4f3b4599f57f276a0#egg=simcore-service-library&subdirectory=packages/service-library
 six==1.12.0
