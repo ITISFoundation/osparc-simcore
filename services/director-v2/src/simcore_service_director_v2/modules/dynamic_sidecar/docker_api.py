@@ -7,6 +7,7 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
+from copy import deepcopy
 from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
@@ -525,13 +526,14 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             service_id = service_inspect["ID"]
             spec = service_inspect["Spec"]
 
-            # allows to use json encodes not available on dict
-            dict_scheduler_data = json.loads(scheduler_data.json())
             # compose_spec needs to be json encoded
-            dict_scheduler_data["compose_spec"] = json.dumps(
-                dict_scheduler_data["compose_spec"]
+            # before encoding it to json and storing it
+            # in the label
+            scheduler_data_copy = deepcopy(scheduler_data)
+            scheduler_data_copy.compose_spec = json.dumps(
+                scheduler_data_copy.compose_spec
             )
-            label_data = json.dumps(dict_scheduler_data)
+            label_data = scheduler_data_copy.json()
             spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
 
             await client._query_json(  # pylint: disable=protected-access

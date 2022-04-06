@@ -75,7 +75,7 @@ def _mock_containers_docker_status(
     with respx.mock as mock:
         mock.get(
             re.compile(
-                fr"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(**mocked_params)
@@ -128,7 +128,7 @@ def mocked_director_v0(
     with respx.mock as mock:
         mock.get(
             re.compile(
-                fr"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
+                rf"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
             ),
             name="service labels",
         ).respond(
