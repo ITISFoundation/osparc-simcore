@@ -75,7 +75,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   unit-test-webserver-01:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -102,17 +102,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test isolated
@@ -134,7 +127,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -161,17 +154,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -191,7 +177,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -218,17 +204,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -248,7 +227,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-api:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] api"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -275,24 +254,17 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-api-${{ hashFiles('api/tests/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-api-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -319,17 +291,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/api-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-api-server-${{ hashFiles('services/api-server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-api-server-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
@@ -349,7 +314,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -376,17 +341,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/catalog/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-catalog-${{ hashFiles('services/catalog/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-catalog-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
@@ -412,7 +370,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-datcore-adapter:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -439,15 +397,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: test
@@ -473,7 +426,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -501,17 +454,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-director-${{ hashFiles('services/director/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-director-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: test
@@ -531,7 +477,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -558,15 +504,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: test
@@ -592,7 +533,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-task-models-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -619,17 +560,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-dask-task-models-library-${{ hashFiles('packages/dask-task-models-library/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-dask-task-models-library-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: codestyle
@@ -651,7 +585,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-sidecar:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -678,17 +612,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dask-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-dask-sidecar-${{ hashFiles('services/dask-sidecar/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-dask-sidecar-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: test
@@ -708,7 +635,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dynamic-sidecar:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -735,17 +662,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-dynamic-sidecar-${{ hashFiles('services/dynamic-sidecar/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-dynamic-sidecar-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: codestyle
@@ -767,7 +687,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -805,7 +725,7 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -832,24 +752,17 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/_test.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-linting-${{ hashFiles('ci/helpers/install_pylint.bash') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-linting-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -876,17 +789,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/postgres-database/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-postgres-database-${{ hashFiles('packages/postgres-database/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-postgres-database-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
@@ -907,7 +813,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -934,17 +840,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-integration/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-service-integration-${{ hashFiles('packages/service-integration/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-service-integration-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
@@ -964,7 +863,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -991,17 +890,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci[all].txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-service-library-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
@@ -1021,7 +913,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-settings-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1048,17 +940,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/settings-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-settings-library-${{ hashFiles('packages/settings-library/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-settings-library-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
@@ -1078,7 +963,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1105,17 +990,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-models-library-${{ hashFiles('packages/models-library/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-models-library-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
@@ -1135,7 +1013,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1162,17 +1040,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-simcore-sdk${{ hashFiles('packages/simcore-sdk/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-simcore-sdk
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
@@ -1192,7 +1063,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
-    timeout-minutes: 14 # if this timeout gets too small, then split the tests
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1219,17 +1090,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/storage/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-storage-${{ hashFiles('services/storage/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-storage-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
@@ -1283,17 +1147,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1356,17 +1213,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-webserver-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1429,17 +1279,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-director-v2-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -1505,17 +1348,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-director-v2-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -1578,17 +1414,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-simcore-sdk-${{ hashFiles('packages/simcore-sdk/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-simcore-sdk-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -1651,17 +1480,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-public-api-${{ hashFiles('tests/public-api/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-public-api-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
@@ -1711,17 +1533,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-swarm-deploy-${{ hashFiles('tests/swarm-deploy/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-swarm-deploy-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -1772,27 +1587,15 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/e2e/requirements/requirements.txt"
       - uses: actions/setup-node@v3.1.0
         with:
           node-version: ${{ matrix.node }}
+          cache: "npm"
+          cache-dependency-path: "tests/e2e/package-lock.json"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data python
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-swarm-e2e-${{ hashFiles('tests/e2e/requirements/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-swarm-e2e-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-      - uses: actions/cache@v3
-        name: getting cached data node
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
@@ -1857,17 +1660,10 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v3
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-environment-setup-${{ hashFiles('tests/environment-setup/requirements/ci.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-environment-setup-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test

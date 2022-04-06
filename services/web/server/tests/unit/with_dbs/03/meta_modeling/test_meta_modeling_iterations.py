@@ -120,7 +120,7 @@ async def test_iterators_workflow(
     # ----
 
     resp = await client.post(
-        f"/v0/computation/pipeline/{project_uuid}:start",
+        f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
@@ -222,7 +222,7 @@ async def test_iterators_workflow(
 
     # RUN again them ---------------------------------------------------------------------------
     resp = await client.post(
-        f"/v0/computation/pipeline/{project_uuid}:start",
+        f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
     data, _ = await assert_status(resp, web.HTTPCreated)
