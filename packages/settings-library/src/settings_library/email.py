@@ -55,5 +55,5 @@ class SMTPSettings(BaseCustomSettings):
     @classmethod
     def not_both_tls_and_starttls(cls, values):
         if values.get("SMTP_TLS_ENABLED") and values.get("SMTP_STARTTLS_ENABLED"):
-            raise ValueError("TLS and STARTTLS cannot be enabled simultaneously")
+            raise ValueError("SMTP_TLS_ENABLED and SMTP_STARTTLS_ENABLED cannot be enabled simultaneously")
         return values
