@@ -224,8 +224,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S: PositiveFloat = Field(
         1.0 * MINS,
         description=(
-            "time to wait before giving up on removing dynamic-sidecar volumes "
-            "used for inputs, outputs and state syncing"
+            "time to wait before giving up on removing dynamic-sidecar's volumes "
+            "used for syncing data for: inputs, outputs and state paths"
         ),
     )
 
