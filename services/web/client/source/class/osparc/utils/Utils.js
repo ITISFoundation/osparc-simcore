@@ -131,15 +131,9 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDevelopmentPlatform: function() {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         osparc.utils.LibVersions.getPlatformName()
-          .then(platformName => {
-            if (["dev", "master"].includes(platformName)) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
-          });
+          .then(platformName => resolve(["dev", "master"].includes(platformName)));
       });
     },
 
