@@ -24,28 +24,19 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
     ServiceType,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
-from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
-    DynamicSidecarError,
-    GenericDockerError,
-)
-import json
-from typing import AsyncIterable
-
-import aiodocker
-import pytest
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-)
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
     SchedulerData,
     SimcoreServiceLabels,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_api import (
     update_scheduler_data_label,
 )
-
+from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
+    DynamicSidecarError,
+    GenericDockerError,
+)
 
 MAX_INT64 = 9223372036854775807
 
@@ -736,7 +727,7 @@ async def test_update_scheduler_data_label(
     # fetch stored data in labels
     service_inspect = await docker.services.inspect(mock_service)
     labels = service_inspect["Spec"]["Labels"]
-    scheduler_data = SchedulerData.parse_obj(
-        json.loads(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
+    scheduler_data = SchedulerData.parse_raw(
+        labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
     )
     assert scheduler_data == mock_scheduler_data
