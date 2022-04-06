@@ -147,7 +147,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         label: this.tr("Add marker"),
         icon: "@FontAwesome5Solid/bookmark/10"
       });
-      addMarkerBtn.addListener("execute", () => this.fireDataEvent("addBookmarkNode", this.getNodeId()));
+      addMarkerBtn.addListener("execute", () => this.getNode().addBookmark());
       optionsMenu.add(addMarkerBtn);
 
       const infoBtn = new qx.ui.menu.Button().set({

@@ -141,17 +141,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
       this.resetThumbnail();
 
-      const color = osparc.utils.Utils.getRandomColor();
-      const bookmark = new qx.ui.basic.Image().set({
-        source: "@FontAwesome5Solid/bookmark/12",
-        padding: 4,
-        textColor: color
-      });
-      this.getChildControl("captionbar").add(bookmark, {
-        row: 0,
-        column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
-      });
-
       this._createWindowLayout();
     },
 
@@ -212,6 +201,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
         this._optionsMenu.add(convertToParameter);
       }
+
+      const bookmark = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/bookmark/12",
+        padding: 4
+      });
+      this.getChildControl("captionbar").add(bookmark, {
+        row: 0,
+        column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
+      });
+      node.bind("bookmark", bookmark, "textColor");
+      node.bind("bookmark", bookmark, "visibility", {
+        converter: val => val ? "visible" : "excluded"
+      });
     },
 
     __applyType: function(type) {

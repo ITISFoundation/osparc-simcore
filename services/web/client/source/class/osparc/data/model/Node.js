@@ -164,6 +164,13 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    bookmark: {
+      check: "Color",
+      init: null,
+      nullable: true,
+      event: "changeBookmark"
+    },
+
     inputConnected: {
       check: "Boolean",
       init: false,
@@ -611,6 +618,11 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       }
+    },
+
+    addBookmark: function() {
+      const color = osparc.utils.Utils.getRandomColor();
+      this.setBookmark(color);
     },
 
     __setInputData: function(inputs) {

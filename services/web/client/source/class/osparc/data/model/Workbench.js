@@ -896,6 +896,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         const node = nodes[nodeId];
         workbenchUI[nodeId] = {};
         workbenchUI[nodeId]["position"] = node.getPosition();
+        const bm = node.getBookmark();
+        if (bm) {
+          workbenchUI[nodeId]["bookmark"] = bm;
+        }
       }
       return workbenchUI;
     }
