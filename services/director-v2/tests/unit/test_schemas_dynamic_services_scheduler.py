@@ -1,22 +1,17 @@
 # pylint: disable=redefined-outer-name
 
-import json
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Iterator
+from contextlib import contextmanager
 
 import pytest
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
 
-
-@dataclass
-class Change:
-    target_prop: Callable[[SchedulerData], Any]
-    attr_name: str
-    value: Any
+# FIXTURES
 
 
 @pytest.fixture(
@@ -37,42 +32,42 @@ def fake_scheduler_data(mocks_dir: Path, fake_data_file_name: str) -> str:
     return file.read_text()
 
 
+# UTILS
+
+
+@contextmanager
+def assert_copy_has_changes(original: SchedulerData) -> Iterator[SchedulerData]:
+    to_change = deepcopy(original)
+
+    yield to_change
+
+    assert original != to_change
+
+
+# TESTS
+
+
 async def test_parse_saved_fake_scheduler_data(fake_scheduler_data: str) -> None:
-    assert SchedulerData.parse_obj(json.loads(fake_scheduler_data))
+    assert SchedulerData.parse_raw(fake_scheduler_data)
 
 
-CHANGES = [
-    Change(
-        target_prop=lambda x: x.paths_mapping,
-        attr_name="inputs_path",
-        value=Path("/tmp"),
-    ),
-    Change(target_prop=lambda x: x, attr_name="version", value="2.0.5"),
-    Change(target_prop=lambda x: x.dynamic_sidecar, attr_name="port", value=33333),
-    Change(
-        target_prop=lambda x: x.dynamic_sidecar.status,
-        attr_name="info",
-        value="some info",
-    ),
-    Change(
-        target_prop=lambda x: x.dynamic_sidecar,
-        attr_name="containers_inspect",
-        value=[],
-    ),
-    Change(
-        target_prop=lambda x: x.dynamic_sidecar.service_removal_state,
-        attr_name="was_removed",
-        value=True,
-    ),
-]
+def test_nested_compare(fake_scheduler_data: str) -> None:
+    scheduler_data = SchedulerData.parse_raw(fake_scheduler_data)
 
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.paths_mapping.inputs_path = Path("/tmp")
 
-@pytest.mark.parametrize("change", CHANGES, ids=[x.attr_name for x in CHANGES])
-async def test_nested_compare(fake_scheduler_data: str, change: Change) -> None:
-    scheduler_data = SchedulerData.parse_obj(json.loads(fake_scheduler_data))
-    original_scheduler_data = deepcopy(scheduler_data)
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.version = "2.0.5"
 
-    # change change to attribute
-    change.target_prop(scheduler_data).__setattr__(change.attr_name, change.value)
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.dynamic_sidecar.port = 333333
 
-    assert original_scheduler_data != scheduler_data
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.dynamic_sidecar.status.info = "some info"
+
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.dynamic_sidecar.containers_inspect = []
+
+    with assert_copy_has_changes(scheduler_data) as to_change:
+        to_change.dynamic_sidecar.service_removal_state.was_removed = True
