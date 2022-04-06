@@ -535,7 +535,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
 
             await client._query_json(  # pylint: disable=protected-access
-                "services/{service_id}/update".format(service_id=service_id),
+                f"services/{service_id}/update",
                 method="POST",
                 data=json.dumps(clean_map(spec)),
                 params={"version": service_version},
