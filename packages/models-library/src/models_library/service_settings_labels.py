@@ -110,7 +110,6 @@ class PathMappingsLabel(BaseModel):
                 "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
             }
         }
-        json_encoders = {Path: lambda v: f"{v}"}
 
 
 ComposeSpecLabel = Dict[str, Any]

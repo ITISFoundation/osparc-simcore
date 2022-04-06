@@ -2,7 +2,6 @@ import json
 import logging
 from asyncio import Lock
 from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 from uuid import UUID
 
@@ -379,7 +378,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True
-        json_encoders = {Path: lambda v: f"{v}"}
 
 
 class AsyncResourceLock(BaseModel):
