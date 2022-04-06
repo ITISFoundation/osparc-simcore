@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     const menuBtn = this.__getMenuButton();
     this.getChildControl("captionbar").add(menuBtn, {
       row: 0,
-      column: 2
+      column: this.self().CAPTION_POS.MENU
     });
 
     const captionTitle = this.getChildControl("title");
@@ -91,6 +91,13 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     NODE_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
     NODE_DISCONNECTED: "@FontAwesome5Regular/circle/18",
 
+    CAPTION_POS: {
+      ICON: 0, // from qooxdoo
+      TITLE: 1, // from qooxdoo
+      BOOKMARK: 2,
+      MENU: 3
+    },
+
     captionHeight: function() {
       return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
@@ -100,6 +107,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   events: {
     "renameNode": "qx.event.type.Data",
     "infoNode": "qx.event.type.Data",
+    "addBookmarkNode": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "edgeDragStart": "qx.event.type.Data",
     "edgeDragOver": "qx.event.type.Data",
@@ -134,6 +142,13 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       });
       renameBtn.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
       optionsMenu.add(renameBtn);
+
+      const addMarkerBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Add marker"),
+        icon: "@FontAwesome5Solid/bookmark/10"
+      });
+      addMarkerBtn.addListener("execute", () => this.fireDataEvent("addBookmarkNode", this.getNodeId()));
+      optionsMenu.add(addMarkerBtn);
 
       const infoBtn = new qx.ui.menu.Button().set({
         label: this.tr("Information"),
