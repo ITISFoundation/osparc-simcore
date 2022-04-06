@@ -541,7 +541,10 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
                 params={"version": service_version},
             )
         except aiodocker.exceptions.DockerError as e:
-            if e.message != f"service {scheduler_data.service_name} not found":
+            if not (
+                e.status == 404
+                and e.message == f"service {scheduler_data.service_name} not found"
+            ):
                 raise e
             log.debug(
                 "Skip update for service '%s' which could not be found",
