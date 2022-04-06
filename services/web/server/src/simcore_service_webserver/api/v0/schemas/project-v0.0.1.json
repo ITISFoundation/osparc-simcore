@@ -535,6 +535,14 @@
                     0,
                     2
                   ]
+                },
+                "bookmark": {
+                  "type": "string",
+                  "description": "Bookmark's color",
+                  "examples": [
+                    "#FF0000",
+                    "#0000FF"
+                  ]
                 }
               }
             }
