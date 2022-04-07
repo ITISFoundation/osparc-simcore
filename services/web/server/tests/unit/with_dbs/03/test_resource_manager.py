@@ -9,7 +9,7 @@ import logging
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, AsyncIterator, Callable, Dict
 from unittest import mock
 from unittest.mock import call
 
@@ -138,9 +138,9 @@ def client(
 
 
 @pytest.fixture
-def mock_delete_data_folders_for_project(mocker):
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+def mock_storage_delete_data_folders(mocker) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project",
         return_value=None,
     )
 
@@ -158,7 +158,7 @@ async def empty_user_project(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> Dict[str, Any]:
+) -> AsyncIterator[Dict[str, Any]]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -174,7 +174,7 @@ async def empty_user_project2(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> Dict[str, Any]:
+) -> AsyncIterator[Dict[str, Any]]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -336,7 +336,8 @@ async def test_websocket_disconnected_after_logout(
     expected,
     mocker: MockerFixture,
 ):
-    app = client.server.app
+    assert client.app
+    app = client.app
     socket_registry = get_registry(app)
 
     # connect first socket
@@ -404,6 +405,8 @@ async def test_interactive_services_removed_after_logout(
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
 ):
+    assert client.app
+
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -438,7 +441,7 @@ async def test_interactive_services_removed_after_logout(
                 expected_save_state,
             )
             mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
-                app=client.server.app,
+                app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=expected_save_state,
             )
@@ -777,33 +780,39 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
 async def test_regression_removing_unexisting_user(
-    client,
-    logged_user,
-    empty_user_project,
-    user_role,
-    mock_delete_data_folders_for_project,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    empty_user_project: Dict[str, Any],
+    user_role: UserRole,
+    mock_storage_delete_data_folders: mock.Mock,
 ) -> None:
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
-
+    assert client.app
     # remove project
     await delete_project(
-        app=client.server.app,
+        app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
     )
     # remove user
-    await delete_user(app=client.server.app, user_id=logged_user["id"])
+    await delete_user(app=client.app, user_id=logged_user["id"])
 
     with pytest.raises(UserNotFoundError):
         await remove_project_interactive_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
-            app=client.server.app,
+            app=client.app,
         )
     with pytest.raises(ProjectNotFoundError):
         await remove_project_interactive_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
-            app=client.server.app,
+            app=client.app,
             user_name={"first_name": "my name is", "last_name": "pytest"},
         )
+    # since the call to delete is happening as fire and forget task, let's wait until it is done
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
+        with attempt:
+            mock_storage_delete_data_folders.assert_called()
+    # wait a bit here so the task is completed to prevent having unclosed loops
+    await asyncio.sleep(1)
