@@ -143,7 +143,7 @@ markupsafe==2.0.1
     #   nbconvert
 mistune==0.8.4
     # via nbconvert
-msgpack==1.0.2
+msgpack==1.0.3
     # via distributed
 multidict==5.1.0
     # via
