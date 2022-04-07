@@ -194,6 +194,7 @@ def setup_directory_watcher(app: FastAPI) -> None:
 
         app.state.dir_watcher = DirectoryWatcherObservers()
         app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
+        app.state.dir_watcher.disable_event_propagation()
         app.state.dir_watcher.start()
 
     async def on_shutdown() -> None:

@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             const latestService = osparc.utils.Services.getLatest(services, key);
             servicesList.push(latestService);
           }
-          this.__resetServicesList(servicesList);
+          this._resetResourcesList(servicesList);
         })
         .catch(err => {
           console.error(err);
@@ -89,6 +89,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__addNewServiceButtons();
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
+
+      this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
       return servicesLayout;
     },
@@ -132,11 +134,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
         servicesList[index] = serviceData;
-        this.__resetServicesList(servicesList);
+        this._resetResourcesList(servicesList);
       }
     },
 
-    __resetServicesList: function(servicesList) {
+    // overriden
+    _resetResourcesList: function(servicesList) {
       if (servicesList === undefined) {
         servicesList = this.__servicesLatestList;
       }

@@ -331,6 +331,11 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
+    bytesToGB: function(bytes) {
+      const b2gb = 1024*1024*1024;
+      return Math.round(100*bytes/b2gb)/100;
+    },
+
     retrieveURLAndDownload: function(locationId, fileId) {
       let fileName = fileId.split("/");
       fileName = fileName[fileName.length-1];

@@ -77,6 +77,14 @@ qx.Class.define("osparc.file.FilePicker", {
       return null;
     },
 
+    getFilenameFromPath: function(output) {
+      if ("path" in output) {
+        const splitFilename = output.path.split("/");
+        return splitFilename[splitFilename.length-1];
+      }
+      return null;
+    },
+
     getOutputLabel: function(outputs) {
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
@@ -84,8 +92,7 @@ qx.Class.define("osparc.file.FilePicker", {
           return outFileValue.label;
         }
         if ("path" in outFileValue) {
-          const splitFilename = outFileValue.path.split("/");
-          return splitFilename[splitFilename.length-1];
+          return this.self().getFilenameFromPath(outFileValue);
         }
         if ("downloadLink" in outFileValue) {
           return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);

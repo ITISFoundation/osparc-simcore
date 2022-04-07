@@ -32,7 +32,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
       workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : this.getWorkbench(),
       slideshow: new osparc.data.model.Slideshow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow()),
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
-      mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode()
+      mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode(),
+      annotations: {}
     });
 
     if ("annotations" in studyDataUI) {

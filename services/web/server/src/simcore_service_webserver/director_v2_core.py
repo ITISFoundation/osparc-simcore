@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import UUID
@@ -12,6 +13,7 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
+from settings_library.utils_cli import create_json_encoder_wo_secrets
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -55,6 +57,18 @@ class DirectorV2ApiClient:
     def __init__(self, app: web.Application) -> None:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
+
+    async def get(self, project_id: ProjectID, user_id: UserID) -> Dict[str, Any]:
+        computation_task_out = await _request_director_v2(
+            self._app,
+            "GET",
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(
+                user_id=int(user_id)
+            ),
+            expected_status=web.HTTPOk,
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out
 
     async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
         computation_task_out = await _request_director_v2(
@@ -245,7 +259,7 @@ async def get_computation_task(
     # request to director-v2
     try:
         computation_task_out_dict = await _request_director_v2(
-            app, "GET", backend_url, expected_status=web.HTTPAccepted
+            app, "GET", backend_url, expected_status=web.HTTPOk
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         log.debug("found computation task: %s", f"{task_out=}")
@@ -454,8 +468,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 async def projects_networks_update(app: web.Application, project_id: ProjectID) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (
-        URL(settings.base_url)
-        / f"dynamic_services/projects/{project_id}/-/networks"
+        URL(settings.base_url) / f"dynamic_services/projects/{project_id}/-/networks"
     )
     await _request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
@@ -472,7 +485,13 @@ async def create_cluster(
         "POST",
         url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
         expected_status=web.HTTPCreated,
-        data=new_cluster.dict(by_alias=True, exclude_unset=True),
+        data=json.loads(
+            new_cluster.json(
+                by_alias=True,
+                exclude_unset=True,
+                encoder=create_json_encoder_wo_secrets(ClusterCreate),
+            )
+        ),
     )
 
     assert isinstance(cluster, dict)  # nosec
@@ -561,7 +580,13 @@ async def update_cluster(
             user_id=int(user_id)
         ),
         expected_status=web.HTTPOk,
-        data=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        data=json.loads(
+            cluster_patch.json(
+                by_alias=True,
+                exclude_unset=True,
+                encoder=create_json_encoder_wo_secrets(ClusterPatch),
+            )
+        ),
         on_error={
             web.HTTPNotFound.status_code: (
                 ClusterNotFoundError,
@@ -609,7 +634,13 @@ async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
         "POST",
         url=settings.base_url / "clusters:ping",
         expected_status=web.HTTPNoContent,
-        data=cluster_ping.dict(by_alias=True, exclude_unset=True),
+        data=json.loads(
+            cluster_ping.json(
+                by_alias=True,
+                exclude_unset=True,
+                encoder=create_json_encoder_wo_secrets(ClusterPing),
+            )
+        ),
         on_error={
             web.HTTPUnprocessableEntity.status_code: (
                 ClusterPingError,

@@ -54,7 +54,15 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
-      btn.addListener("execute", () => this.fireDataEvent("nodeSelected", nodeId), this);
+      btn.addListener("execute", e => {
+        if (btn.getValue()) {
+          // Unselected button clicked
+          this.fireDataEvent("nodeSelected", nodeId);
+        } else {
+          // Selected button clicked. Don't allo
+          btn.setValue(true);
+        }
+      }, this);
       return btn;
     },
 

@@ -1025,10 +1025,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
-          allowGrowY: false
-        });
-        this.__outputsPage.add(portTree);
+        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs);
+        this.__outputsPage.add(nodeOutputs);
       }
 
       const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
@@ -1148,9 +1146,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();
@@ -1168,9 +1166,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();

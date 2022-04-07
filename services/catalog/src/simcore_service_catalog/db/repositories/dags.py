@@ -24,7 +24,7 @@ class DAGsRepository(BaseRepository):
             return DAGAtDB(**row)
 
     async def create_dag(self, dag: DAGIn) -> int:
-        async with self.db_engine.connect() as conn:
+        async with self.db_engine.begin() as conn:
             new_id: int = await (
                 await conn.execute(
                     dags.insert().values(
@@ -36,7 +36,7 @@ class DAGsRepository(BaseRepository):
             return new_id
 
     async def replace_dag(self, dag_id: int, dag: DAGIn):
-        async with self.db_engine.connect() as conn:
+        async with self.db_engine.begin() as conn:
             await conn.execute(
                 dags.update()
                 .values(
@@ -50,7 +50,7 @@ class DAGsRepository(BaseRepository):
         patch = dag.dict(exclude_unset=True, exclude={"workbench"})
         if "workbench" in dag.__fields_set__:
             patch["workbench"] = json.dumps(patch["workbench"])
-        async with self.db_engine.connect() as conn:
+        async with self.db_engine.begin() as conn:
             res = await conn.execute(
                 sa.update(dags).values(**patch).where(dags.c.id == dag_id)
             )
@@ -59,5 +59,5 @@ class DAGsRepository(BaseRepository):
             assert res.returns_rows == False  # nosec
 
     async def delete_dag(self, dag_id: int):
-        async with self.db_engine.connect() as conn:
+        async with self.db_engine.begin() as conn:
             await conn.execute(sa.delete(dags).where(dags.c.id == dag_id))

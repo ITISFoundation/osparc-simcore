@@ -70,7 +70,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         clusters.stopFetchingDetails(this.__clusterId);
       }
       this.__clusterId = clusterId;
-      clusters.startFetchingDetails(clusterId);
+      if (clusterId !== null) {
+        clusters.startFetchingDetails(clusterId);
+      }
     },
 
     __listenToClusterDetails: function() {
@@ -88,7 +90,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       });
     },
 
-    __showFailedBulb: function() {
+    __showBulb: function(failed) {
       const miniGrid = this.__miniGrid;
       miniGrid.removeAll();
 
@@ -97,7 +99,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         alignY: "middle",
         alignX: "center",
         paddingLeft: 3,
-        textColor: "failed-red"
+        textColor: failed ? "failed-red" : "ready-green"
       });
       miniGrid.add(clusterStatusImage, {
         row: 0,
@@ -106,7 +108,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     },
 
     __detailsCallFailed: function() {
-      this.__showFailedBulb();
+      this.__showBulb(true);
       this.__hint.setText(this.tr("Connection failed"));
     },
 
@@ -116,8 +118,8 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
 
       const workers = clusterDetails.scheduler.workers;
       if (Object.keys(workers).length === 0) {
-        this.__showFailedBulb();
-        this.__hint.setText(this.tr("No workers found in this cluster"));
+        this.__showBulb(false);
+        this.__hint.setText(this.tr("No workers running at the moment in this cluster"));
         return;
       }
 
@@ -190,8 +192,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         if (resourceKey === "cpu") {
           text += osparc.utils.Utils.toTwoDecimals(resourceInfo.used*resourceInfo.available/100) + " / " + resourceInfo.available;
         } else if (resourceKey === "ram") {
-          const b2gb = 1024*1024*1024;
-          text += Math.round(100*resourceInfo.used/b2gb)/100 + "GB / " + Math.round(100*resourceInfo.available/b2gb)/100 + "GB";
+          text += osparc.utils.Utils.bytesToGB(resourceInfo.used) + "GB / " + osparc.utils.Utils.bytesToGB(resourceInfo.available) + "GB";
         } else {
           text += resourceInfo.used + " / " + resourceInfo.available;
         }

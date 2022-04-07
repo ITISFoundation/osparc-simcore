@@ -264,6 +264,22 @@ def _create_network_aliases(network_name: str) -> List[str]:
     return [f"alias_{i}_{network_name}" for i in range(10)]
 
 
+async def _assert_enable_directory_watcher(test_client: TestClient) -> None:
+    response = await test_client.patch(
+        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+
+async def _assert_disable_directory_watcher(test_client: TestClient) -> None:
+    response = await test_client.patch(
+        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+
 # TESTS
 
 
@@ -501,20 +517,6 @@ async def test_directory_watcher_disabling(
     mock_dir_watcher_on_any_event: AsyncMock,
     mounted_volumes: MountedVolumes,
 ) -> None:
-    async def _assert_disable_directory_watcher() -> None:
-        response = await test_client.patch(
-            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
-        )
-        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-        assert response.text == ""
-
-    async def _assert_enable_directory_watcher() -> None:
-        response = await test_client.patch(
-            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
-        )
-        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-        assert response.text == ""
-
     def _create_random_dir_in_inputs() -> int:
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
@@ -529,7 +531,8 @@ async def test_directory_watcher_disabling(
 
     EVENTS_PER_DIR_CREATION = 2
 
-    # by default it is enabled
+    # by default directory-watcher it is disabled
+    await _assert_enable_directory_watcher(test_client)
     assert mock_dir_watcher_on_any_event.call_count == 0
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 1
@@ -537,14 +540,14 @@ async def test_directory_watcher_disabling(
     assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # disable and wait for events should have the same count as before
-    await _assert_disable_directory_watcher()
+    await _assert_disable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 2
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
     assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # enable and wait for events
-    await _assert_enable_directory_watcher()
+    await _assert_enable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 3
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
@@ -557,6 +560,8 @@ async def test_container_create_outputs_dirs(
     mock_dir_watcher_on_any_event: AsyncMock,
     mounted_volumes: MountedVolumes,
 ) -> None:
+    # by default directory-watcher it is disabled
+    await _assert_enable_directory_watcher(test_client)
 
     assert mock_dir_watcher_on_any_event.call_count == 0
 
