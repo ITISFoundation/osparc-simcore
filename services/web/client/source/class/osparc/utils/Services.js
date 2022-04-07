@@ -93,7 +93,7 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getSorting(type) {
+    getSorting: function(type) {
       const typeInfo = this.getType(type);
       if (typeInfo) {
         return typeInfo["sorting"];
