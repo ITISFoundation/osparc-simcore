@@ -4,15 +4,24 @@
     - Users they have a role within the framework that provides
     them different access levels to it
 """
-import itertools
 from enum import Enum
+from functools import total_ordering
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func
 
 from .base import metadata
 
+_USER_ROLE_TO_LEVEL = {
+    "ANONYMOUS": 0,
+    "GUEST": 10,
+    "USER": 20,
+    "TESTER": 30,
+    "ADMIN": 100,
+}
 
+
+@total_ordering
 class UserRole(Enum):
     """SORTED enumeration of user roles
 
@@ -36,11 +45,14 @@ class UserRole(Enum):
     TESTER = "TESTER"
     ADMIN = "ADMIN"
 
-    @classmethod
-    def super_users(cls):
-        return list(itertools.takewhile(lambda e: e != cls.USER, cls))
+    @property
+    def privilege_level(self) -> int:
+        return _USER_ROLE_TO_LEVEL[self.name]
 
-    # TODO: add comparison https://portingguide.readthedocs.io/en/latest/comparisons.html
+    def __lt__(self, other) -> bool:
+        if self.__class__ is other.__class__:
+            return self.privilege_level < other.privilege_level
+        return NotImplemented
 
 
 class UserStatus(Enum):
