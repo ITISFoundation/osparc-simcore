@@ -202,6 +202,18 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this._optionsMenu.add(convertToParameter);
       }
 
+      this._markerBtn.show();
+      this.getNode().bind("bookmark", this._markerBtn, "label", {
+        converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
+      });
+      this._markerBtn.addListener("execute", () => {
+        if (this.getNode().getBookmark()) {
+          this.getNode().removeBookmark();
+        } else {
+          this.getNode().addBookmark();
+        }
+      });
+
       const bookmark = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/bookmark/12",
         padding: 4
