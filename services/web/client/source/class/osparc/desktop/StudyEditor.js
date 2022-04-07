@@ -162,6 +162,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
+          this.__lastSavedStudy = study.serialize();
+
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
 
@@ -330,7 +332,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else if (e.getTarget().getStatus() == "422") {
           this.__getStudyLogger().info(null, "The pipeline is up-to-date");
           const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
-          const win = new osparc.ui.window.Confirmation(msg, this.tr("Run"));
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Run"),
+            confirmAction: "create"
+          });
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -531,7 +536,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       timer.start();
     },
 
-    __checkStudyChanges: function() {
+    didStudyChange: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
@@ -548,13 +553,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
 
-        if (deltaKeys.length > 0) {
-          if (this.__updatingStudy > 0) {
-            // throttle update
-            this.__updateThrottled = true;
-          } else {
-            this.updateStudyDocument(false);
-          }
+        return deltaKeys.length;
+      }
+      return false;
+    },
+
+    __checkStudyChanges: function() {
+      if (this.didStudyChange()) {
+        if (this.__updatingStudy > 0) {
+          // throttle update
+          this.__updateThrottled = true;
+        } else {
+          this.updateStudyDocument(false);
         }
       }
     },
@@ -606,6 +616,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
+      }
+      const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
+      if (clusterMiniView) {
+        clusterMiniView.setClusterId(null);
       }
     },
 

@@ -158,11 +158,11 @@ paths:
 
   # SERVICES ------------------------------------------------------------------------
   /computations/{project_id}:
-    $ref: "./openapi-computations.yaml#/paths/~1computations~1{project_id}"
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id"
   /computations/{project_id}:start:
-    $ref: "./openapi-computations.yaml#/paths/~1computations~1{project_id}~1start"
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id_start"
   /computations/{project_id}:stop:
-    $ref: "./openapi-computations.yaml#/paths/~1computations~1{project_id}~1stop"
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id_stop"
 
   # PROJECT SERVICES -----------------------------------------------------------------
 

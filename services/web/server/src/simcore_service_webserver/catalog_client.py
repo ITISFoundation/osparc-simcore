@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
@@ -60,7 +60,7 @@ async def make_request_and_envelope_response(
     app: web.Application,
     method: str,
     url: URL,
-    headers: Optional[Dict[str, str]] = None,
+    headers: Optional[Mapping[str, str]] = None,
     data: Optional[bytes] = None,
 ) -> web.Response:
     """

@@ -34,24 +34,32 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
   construct: function(label, url) {
     this.base(arguments, label);
 
-    this.set({
-      rich: true,
-      cursor: "pointer",
-      url: url,
-      font: "link-label"
-    });
+    this.setRich(true);
 
-    this.addListener("click", this.__onClick);
+    if (url) {
+      this.setUrl(url);
+    }
   },
 
   properties: {
     url: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyUrl"
     }
   },
 
   members: {
+    __applyUrl: function(url) {
+      this.set({
+        url,
+        cursor: "pointer",
+        font: "link-label"
+      });
+
+      this.addListener("click", this.__onClick);
+    },
+
     __onClick: function() {
       const link = this.getUrl();
       if (link) {

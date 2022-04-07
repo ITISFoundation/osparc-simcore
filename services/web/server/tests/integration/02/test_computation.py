@@ -370,7 +370,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 # TESTS ------------------------------------------
 @pytest.mark.skip(reason="FIXME: still not bullet proof")
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_stop_pipeline(
+async def test_start_stop_computation(
     client: TestClient,
     sleeper_service: Dict[str, str],
     postgres_session: sa.orm.session.Session,
@@ -383,7 +383,7 @@ async def test_start_stop_pipeline(
     project_id = user_project["uuid"]
     fake_workbench_payload = user_project["workbench"]
 
-    url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    url_start = client.app.router["stop_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
 
     # POST /v0/computations/{project_id}:start
@@ -426,7 +426,7 @@ async def test_start_stop_pipeline(
 
     # now stop the pipeline
     # POST /v0/computations/{project_id}:stop
-    url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
+    url_stop = client.app.router["stop_computation"].url_for(project_id=project_id)
     assert url_stop == URL(f"/{API_VTAG}/computations/{project_id}:stop")
     resp = await client.post(f"{url_stop}")
     data, error = await assert_status(resp, expected.no_content)
@@ -455,7 +455,7 @@ async def test_run_pipeline_and_check_state(
     project_id = user_project["uuid"]
     fake_workbench_payload = user_project["workbench"]
 
-    url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
 
     # POST /v0/computations/{project_id}:start

@@ -146,8 +146,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         case "node-id": {
           control = new qx.ui.basic.Label().set({
             maxWidth: 70,
-            alignY: "middle"
+            alignY: "middle",
+            cursor: "copy"
           });
+          control.addListener("tap", () => osparc.utils.Utils.copyTextToClipboard(this.getNodeId()));
           this.bind("nodeId", control, "value", {
             converter: value => value && value.substring(0, 8)
           });

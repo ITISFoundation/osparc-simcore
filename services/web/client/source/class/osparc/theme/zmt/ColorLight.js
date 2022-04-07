@@ -19,7 +19,6 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
     "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
-    "danger-red": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.danger", 40),
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
 

@@ -26,8 +26,8 @@ from ...models.domains.dynamic_services import (
 )
 from ...models.schemas.dynamic_services import SchedulerData
 from ...modules import projects_networks
-from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,

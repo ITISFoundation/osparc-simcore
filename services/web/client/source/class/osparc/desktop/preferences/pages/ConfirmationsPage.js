@@ -106,10 +106,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmDeleteStudy.addListener("changeValue", e => {
         if (!e.getData()) {
           const msg = this.tr("Warning: deleting a study cannot be undone");
-          const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-          win.getConfirmButton().set({
-            label: this.tr("OK"),
-            appearance: "danger-button"
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Understood"),
+            confirmAction: "delete"
           });
           win.center();
           win.open();
@@ -128,10 +127,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmDeleteNode.addListener("changeValue", e => {
         if (!e.getData()) {
           const msg = this.tr("Warning: deleting a node cannot be undone");
-          const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-          win.getConfirmButton().set({
-            label: this.tr("OK"),
-            appearance: "danger-button"
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Understood"),
+            confirmAction: "delete"
           });
           win.center();
           win.open();

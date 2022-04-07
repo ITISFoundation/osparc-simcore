@@ -1,10 +1,12 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from aiohttp import web
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from pydantic import BaseModel, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
 from servicelib.json_serialization import json_dumps
@@ -26,7 +28,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def start_pipeline(request: web.Request) -> web.Response:
+async def start_computation(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
 
     run_policy = get_project_run_policy(request.app)
@@ -107,7 +109,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def stop_pipeline(request: web.Request) -> web.Response:
+async def stop_computation(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
@@ -138,26 +140,42 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         )
 
 
+class ComputationTaskGet(BaseModel):
+    cluster_id: Optional[ClusterID]
+
+
 @routes.get(f"/{VTAG}/computations/{{project_id}}")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-async def get_pipeline(request: web.Request) -> web.Response:
-    # @PC: I'll need your help here
+async def get_computation(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
     user_id = UserID(request[RQT_USERID_KEY])
     project_id = ProjectID(request.match_info["project_id"])
-    try:
-        computation_task_out = await client.get(project_id=project_id, user_id=user_id)
-        data = {
-            key: computation_task_out.get(key) for key in ["iteration", "cluster_id"]
-        }
 
+    try:
+        project_ids: List[ProjectID] = await run_policy.get_runnable_projects_ids(
+            request, project_id
+        )
+        log.debug("Project %s will get %d variants", project_id, len(project_ids))
+        list_computation_tasks = parse_obj_as(
+            List[ComputationTaskGet],
+            await asyncio.gather(
+                *[client.get(project_id=pid, user_id=user_id) for pid in project_ids]
+            ),
+        )
+        assert len(list_computation_tasks) == len(project_ids)  # nosec
+        # NOTE: until changed all the versions of a meta project shall use the same cluster
+        # this should fail the day that changes
+        assert all(
+            c.cluster_id == list_computation_tasks[0].cluster_id
+            for c in list_computation_tasks
+        )
         return web.json_response(
-            data={"data": data},
+            data={"data": list_computation_tasks[0].dict(by_alias=True)},
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:
@@ -166,3 +184,5 @@ async def get_pipeline(request: web.Request) -> web.Response:
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
+    except ValidationError as exc:
+        return create_error_response(exc, http_error_cls=web.HTTPInternalServerError)

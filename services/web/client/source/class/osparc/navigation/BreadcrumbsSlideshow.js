@@ -54,37 +54,22 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         "box-shadow": "none"
       });
 
-      const updateStyle = button => {
-        const colorManager = qx.theme.manager.Color.getInstance();
-        if (button.getEnabled() === false) {
-          // disabled
-          button.set({
-            textColor: "text-disabled",
-            backgroundColor: "transparent"
-          });
-          osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
-        } else if (button.getValue() === false) {
-          // enabled but not current
-          button.set({
-            textColor: "text",
-            backgroundColor: "transparent"
-          });
-          osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
-        } else {
-          // current
-          button.set({
-            textColor: "text",
-            backgroundColor: "background-main-2"
-          });
-          osparc.utils.Utils.removeBorder(button);
-        }
-      };
-
-      updateStyle(btn);
-      btn.addListener("changeValue", () => updateStyle(btn), this);
-      btn.addListener("changeEnabled", () => updateStyle(btn), this);
       const colorManager = qx.theme.manager.Color.getInstance();
+      const updateStyle = button => {
+        osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
+      };
       colorManager.addListener("changeTheme", () => updateStyle(btn), this);
+      updateStyle(btn);
+
+      btn.addListener("changeValue", e => {
+        if (e.getData()) {
+          btn.setFont("title-14");
+          btn.setAppearance("strong-button");
+        } else {
+          btn.resetFont();
+          btn.resetAppearance();
+        }
+      });
     },
 
     __createBtn: function(nodeId) {
@@ -97,9 +82,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         const pos = slideshow[nodeId].position;
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}: ${val}`
-        });
-        node.getStatus().bind("dependencies", btn.getChildControl("label"), "font", {
-          converter: dependencies => (dependencies && dependencies.length) ? "text-14" : "title-14"
         });
         node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
           converter: dependencies => (dependencies && dependencies.length) ? "material-button-text-disabled" : "material-button-text"

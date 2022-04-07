@@ -1,16 +1,17 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import Generator, List, Optional
+from typing import AsyncGenerator, Generator, List
 
+from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
     get_settings,
 )
 
-DY_VOLUMES = Path("/dy-volumes")
+from ..core.docker_utils import get_volume_by_label
 
-_mounted_volumes: Optional["MountedVolumes"] = None
+DY_VOLUMES = Path("/dy-volumes")
 
 
 def _ensure_path(path: Path) -> Path:
@@ -87,40 +88,39 @@ class MountedVolumes:
         self.disk_outputs_path  # pylint:disable= pointless-statement
         set(self.disk_state_paths())
 
-    def get_inputs_docker_volume(self) -> str:
-        return f"{self.volume_name_inputs}:{self.inputs_path}"
+    @staticmethod
+    async def _get_bind_path_from_label(label: str) -> Path:
+        volume_details = await get_volume_by_label(label=label)
+        return Path(volume_details["Mountpoint"])
 
-    def get_outputs_docker_volume(self) -> str:
-        return f"{self.volume_name_outputs}:{self.outputs_path}"
+    async def get_inputs_docker_volume(self) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_inputs)
+        return f"{bind_path}:{self.inputs_path}"
 
-    def get_state_paths_docker_volumes(self) -> Generator[str, None, None]:
+    async def get_outputs_docker_volume(self) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_outputs)
+        return f"{bind_path}:{self.outputs_path}"
+
+    async def iter_state_paths_to_docker_volumes(self) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths
         ):
-            yield f"{volume_state_path}:{state_path}"
+            bind_path: Path = await self._get_bind_path_from_label(volume_state_path)
+            yield f"{bind_path}:{state_path}"
 
 
-def setup_mounted_fs() -> MountedVolumes:
-    global _mounted_volumes  # pylint: disable=global-statement
-
+def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
+    # TODO: replace this with app version
     settings: DynamicSidecarSettings = get_settings()
 
-    _mounted_volumes = MountedVolumes(
+    app.state.mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
         state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
     )
 
-    return _mounted_volumes
+    return app.state.mounted_volumes
 
 
-def get_mounted_volumes() -> MountedVolumes:
-    if _mounted_volumes is None:
-        raise RuntimeError(
-            f"{MountedVolumes.__name__} was not initialized, did not call setup"
-        )
-    return _mounted_volumes
-
-
-__all__ = ["get_mounted_volumes", "MountedVolumes"]
+__all__ = ["MountedVolumes"]

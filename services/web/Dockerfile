@@ -14,7 +14,8 @@ LABEL maintainer=pcrespov
 
 RUN set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
+  apt-get install -y --no-install-recommends \
+  gosu && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true

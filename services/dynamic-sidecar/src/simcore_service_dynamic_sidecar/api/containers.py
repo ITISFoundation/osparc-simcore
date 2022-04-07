@@ -21,15 +21,17 @@ from fastapi.responses import PlainTextResponse
 from ..core.dependencies import (
     get_application,
     get_application_health,
+    get_mounted_volumes,
     get_rabbitmq,
     get_settings,
     get_shared_store,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..core.utils import assemble_container_names, docker_client
+from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
     parse_compose_spec,
@@ -37,6 +39,7 @@ from ..core.validation import (
 )
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +112,7 @@ async def runs_docker_compose_up(
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> Union[List[str], Dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
@@ -117,7 +121,9 @@ async def runs_docker_compose_up(
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
-            settings=settings, compose_file_content=body_as_text
+            settings=settings,
+            compose_file_content=body_as_text,
+            mounted_volumes=mounted_volumes,
         )
         shared_store.container_names = assemble_container_names(
             shared_store.compose_spec
