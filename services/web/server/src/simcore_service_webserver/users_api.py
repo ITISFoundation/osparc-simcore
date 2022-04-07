@@ -133,7 +133,7 @@ async def update_user_profile(
         assert resp.rowcount == 1  # nosec
 
 
-async def get_user_role(app: web.Application, user_id: int) -> UserRole:
+async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
     """
     :raises UserNotFoundError:
     """
