@@ -4,6 +4,7 @@ from typing import Dict, Optional, Set
 import asyncpg.exceptions
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from . import users_exceptions
@@ -18,8 +19,8 @@ from .users_to_groups_api import get_users_for_gid
 logger = logging.getLogger(__name__)
 
 
-async def fetch_new_project_owner_from_groups(
-    app: web.Application, standard_groups: Dict, user_id: int
+async def _fetch_new_project_owner_from_groups(
+    app: web.Application, standard_groups: Dict, user_id: UserID
 ) -> Optional[UserID]:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid
@@ -52,7 +53,7 @@ async def get_new_project_owner_gid(
     user_id: UserID,
     user_primary_gid: GroupID,
     project: Dict,
-) -> Optional[int]:
+) -> Optional[GroupID]:
     """Goes through the access rights and tries to find a new suitable owner.
     The first viable user is selected as a new owner.
     In order to become a new owner the user must have write access right.
@@ -102,7 +103,7 @@ async def get_new_project_owner_gid(
         new_project_owner_gid = int(list(primary_groups.keys())[0])
     # fallback to the groups search if the user does not exist
     if len(standard_groups) > 0 and new_project_owner_gid is None:
-        new_project_owner_gid = await fetch_new_project_owner_from_groups(
+        new_project_owner_gid = await _fetch_new_project_owner_from_groups(
             app=app,
             standard_groups=standard_groups,
             user_id=user_id,
@@ -120,8 +121,8 @@ async def get_new_project_owner_gid(
 async def replace_current_owner(
     app: web.Application,
     project_uuid: str,
-    user_primary_gid: int,
-    new_project_owner_gid: int,
+    user_primary_gid: GroupID,
+    new_project_owner_gid: GroupID,
     project: Dict,
 ) -> None:
     try:
@@ -174,7 +175,7 @@ async def replace_current_owner(
         )
 
 
-async def remove_user(app: web.Application, user_id: int) -> None:
+async def remove_user(app: web.Application, user_id: UserID) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
