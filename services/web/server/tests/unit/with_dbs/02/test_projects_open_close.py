@@ -534,7 +534,7 @@ async def test_project_node_lifetime(
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node",
         return_value="",
     )
 

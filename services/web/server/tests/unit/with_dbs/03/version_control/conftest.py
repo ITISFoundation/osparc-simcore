@@ -199,7 +199,7 @@ async def do_delete_user_project(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
     )
 
     async def _doit(project_uuid: UUID) -> None:

@@ -66,13 +66,13 @@ async def delete_project(
         mark_project_as_deleted(app, project_uuid)
 
         # stops dynamic services
-        # raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
+        # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
         await remove_project_dynamic_services(
             user_id, project_uuid, app, notify_users=False
         )
 
         # stops computational services
-        # raises DirectorServiceError
+        # - raises DirectorServiceError
         await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
 
         # rm data from storage

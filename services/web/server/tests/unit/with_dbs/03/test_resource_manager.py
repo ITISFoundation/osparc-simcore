@@ -140,7 +140,7 @@ def client(
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         return_value=None,
     )
 
