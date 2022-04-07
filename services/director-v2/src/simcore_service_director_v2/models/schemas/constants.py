@@ -5,7 +5,7 @@ DYNAMIC_PROXY_SERVICE_PREFIX = "dy-proxy"
 
 # label storing scheduler_data to allow service
 # monitoring recovery after director-v2 reboots
-DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL = "io.osparc.scheduler-data"
+DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL = "io.simcore.scheduler-data"
 
 # This matches registries by:
 # - local
