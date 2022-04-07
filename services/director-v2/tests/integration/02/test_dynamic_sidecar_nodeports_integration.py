@@ -32,11 +32,20 @@ import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
+from aiopg.sa import Engine
 from fastapi import FastAPI
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects_networks import (
+    PROJECT_NETWORK_PREFIX,
+    ContainerAliases,
+    NetworksWithAliases,
+    ProjectsNetworks,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -49,6 +58,7 @@ from shared_comp_utils import (
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 
@@ -60,6 +70,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTas
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from starlette import status
 from utils import (
     SEPARATOR,
@@ -126,7 +137,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
-    dask_scheduler_service: None,
+    dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
@@ -224,18 +235,25 @@ def services_node_uuids(
 
 
 @pytest.fixture
+def current_user(registered_user: Callable) -> Dict[str, Any]:
+    return registered_user()
+
+
+@pytest.fixture
 async def current_study(
+    current_user: Dict[str, Any],
     project: Callable,
     fake_dy_workbench: Dict[str, Any],
     async_client: httpx.AsyncClient,
 ) -> ProjectAtDB:
-    project_at_db = project(workbench=fake_dy_workbench)
+
+    project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
         async_client,
         project=project_at_db,
-        user_id=project_at_db.prj_owner,
+        user_id=current_user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -258,8 +276,15 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
     return DBManager(aiopg_engine)
 
 
-@pytest.fixture(scope="session", params=["true", "false"])
+def _is_docker_r_clone_plugin_installed() -> bool:
+    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
+    return is_plugin_installed
+
+
+@pytest.fixture(scope="session", params={"true", "false"})
 def dev_features_enabled(request) -> str:
+    if request.param == "true" and not _is_docker_r_clone_plugin_installed():
+        pytest.skip("Required docker plugin `rclone` not installed.")
     return request.param
 
 
@@ -269,6 +294,7 @@ def mock_env(
     network_name: str,
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
+    dask_scheduler_service: str,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -299,6 +325,10 @@ def mock_env(
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+    monkeypatch.setenv(
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
+        dask_scheduler_service,
+    )
 
 
 @pytest.fixture
@@ -340,11 +370,43 @@ def temp_dir(tmpdir: LocalPath) -> Path:
     return Path(tmpdir)
 
 
+@pytest.fixture
+async def projects_networks_db(
+    initialized_app: FastAPI, current_study: ProjectAtDB
+) -> None:
+    # NOTE: director-v2 does not have access to the webserver which creates this
+    # injecting all dynamic-sidecar started services on a default networks
+
+    container_aliases: ContainerAliases = ContainerAliases.parse_obj({})
+
+    for k, (node_uuid, node) in enumerate(current_study.workbench.items()):
+        if not is_legacy(node):
+            container_aliases[node_uuid] = f"networkable_alias_{k}"
+
+    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
+    default_network_name = f"{PROJECT_NETWORK_PREFIX}_{current_study.uuid}_test"
+    networks_with_aliases[default_network_name] = container_aliases
+
+    projects_networks_to_insert = ProjectsNetworks(
+        project_uuid=current_study.uuid, networks_with_aliases=networks_with_aliases
+    )
+
+    engine: Engine = initialized_app.state.engine
+
+    async with engine.acquire() as conn:
+        row_data = projects_networks_to_insert.dict()
+        insert_stmt = pg_insert(projects_networks).values(**row_data)
+        upsert_snapshot = insert_stmt.on_conflict_do_update(
+            constraint=projects_networks.primary_key, set_=row_data
+        )
+        await conn.execute(upsert_snapshot)
+
+
 # UTILS
 
 
 async def _get_mapped_nodeports_values(
-    user_id: int, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
 ) -> Dict[str, InputsOutputs]:
     result: Dict[str, InputsOutputs] = {}
 
@@ -503,7 +565,7 @@ async def _fetch_data_from_container(
 
 
 async def _fetch_data_via_data_manager(
-    dir_tag: str, user_id: int, project_id: str, service_uuid: str, temp_dir: Path
+    dir_tag: str, user_id: UserID, project_id: str, service_uuid: str, temp_dir: Path
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
@@ -557,9 +619,9 @@ async def _fetch_data_via_aioboto(
     return save_to
 
 
-async def _wait_for_dynamic_services_to_be_running(
+async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
-    user_id: int,
+    user_id: UserID,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
 ) -> Dict[str, str]:
@@ -791,10 +853,11 @@ async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
+    projects_networks_db: None,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
-    user_db: Dict,
+    current_user: Dict[str, Any],
     current_study: ProjectAtDB,
     services_endpoint: Dict[str, URL],
     workbench_dynamic_services: Dict[str, Node],
@@ -831,24 +894,21 @@ async def test_nodeports_integration(
     for saving the state, the state files are recovered via
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
-
     # STEP 1
-
     dynamic_services_urls: Dict[
         str, str
-    ] = await _wait_for_dynamic_services_to_be_running(
+    ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        user_id=user_db["id"],
+        user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )
 
     # STEP 2
-
     response = await create_pipeline(
         async_client,
         project=current_study,
-        user_id=user_db["id"],
+        user_id=current_user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -856,33 +916,35 @@ async def test_nodeports_integration(
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to start
     await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_db["id"],
+        current_user["id"],
         current_study.uuid,
         wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_db["id"], current_study.uuid
+        async_client, task_out.url, current_user["id"], current_study.uuid
     )
 
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_success),
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     update_project_workbench_with_comp_tasks(str(current_study.uuid))
@@ -924,7 +986,10 @@ async def test_nodeports_integration(
     )
 
     mapped_nodeports_values = await _get_mapped_nodeports_values(
-        user_db["id"], str(current_study.uuid), current_study.workbench, db_manager
+        current_user["id"],
+        str(current_study.uuid),
+        current_study.workbench,
+        db_manager,
     )
     await _assert_port_values(mapped_nodeports_values, services_node_uuids)
 
@@ -1003,7 +1068,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy",
-            user_id=user_db["id"],
+            user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy,
             temp_dir=temp_dir,
@@ -1021,7 +1086,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy_compose_spec",
-            user_id=user_db["id"],
+            user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=temp_dir,
@@ -1030,9 +1095,9 @@ async def test_nodeports_integration(
 
     # STEP 6
 
-    await _wait_for_dynamic_services_to_be_running(
+    await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        user_id=user_db["id"],
+        user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )

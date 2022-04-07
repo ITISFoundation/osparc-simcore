@@ -70,13 +70,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this._requestResources(false);
       } else {
-        this._resetStudiesList([]);
+        this._resetResourcesList([]);
       }
     },
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this._resetStudiesList([]);
+      this._resetResourcesList([]);
       this._resourcesContainer.nextRequest = null;
     },
 
@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -181,7 +181,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addListener("changeMode", () => {
-        this._resetStudiesList();
+        this._resetResourcesList();
 
         const studyItems = this._resourcesContainer.getChildren();
         studyItems.forEach((studyItem, i) => {
@@ -392,10 +392,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._resetStudiesList(studies);
+      this._resetResourcesList(studies);
     },
 
-    _resetStudiesList: function(studiesList) {
+    // overriden
+    _resetResourcesList: function(studiesList) {
       if (studiesList === undefined) {
         studiesList = this.__studies;
       }
@@ -451,7 +452,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
-      item.addListener("updateQualityStudy", e => {
+      item.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
         updatedStudyData["resourceType"] = "study";
         this._resetStudyItem(updatedStudyData);
@@ -761,7 +762,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       operationPromise
         .then(() => {
-          this.__deleteSecondaryStudies(studyData);
           this.__removeFromStudyList(studyData.uuid, false);
         })
         .catch(err => {
@@ -777,23 +777,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __deleteSecondaryStudies: function(studyData) {
-      if ("dev" in studyData && "sweeper" in studyData["dev"] && "secondaryStudyIds" in studyData["dev"]["sweeper"]) {
-        const secondaryStudyIds = studyData["dev"]["sweeper"]["secondaryStudyIds"];
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
-        });
-      }
-    },
-
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
-      const confirmationWin = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-      const confirmButton = confirmationWin.getConfirmButton();
-      confirmButton.set({
-        appearance: "danger-button"
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
       });
-      osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDeleteStudyBtn");
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
       return confirmationWin;
     }
   }

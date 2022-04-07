@@ -358,8 +358,9 @@ push-version: tag-version
 .venv:
 	@python3 --version
 	python3 -m venv $@
+	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=21.3 \
+		pip \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose

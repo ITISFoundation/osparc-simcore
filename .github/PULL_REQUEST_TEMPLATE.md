@@ -1,19 +1,24 @@
 <!-- Common title prefixes/annotations:
+PREFIX:
 
-WIP: work in progress
+  WIP: work in progress
+  🐛    Fix a bug.
+  ✨    Introduce new features.
+  ♻️     Refactor code.
+  🚑️    Critical hotfix.
+  ⚗️     Perform experiments.
+  ⬆️    Upgrade dependencies.
+  📝    Add or update documentation.
+  🗑️    Deprecate code that needs to be cleaned up.
+  ⚰️     Remove dead code.
+  🔥    Remove code or files.
+  🔨    Add or update development scripts.
 
-Consider prefix your PR message with an emoticon
-  🐛 bugfix
-  ✨ new feature
-  ♻️ refactoring
-  💄 updates UI or 🚸 UX/usability
-  🚑️ hotfix
-  ⚗️ experimental
-  ⬆️ upgrades dependencies
-  📝 documentation
-or from https://gitmoji.dev/
+or from https://gitmoji.dev/ and https://github.com/carloscuesta/gitmoji/blob/master/src/data/gitmojis.json
 
-and append (⚠️ devops) if changes in devops configuration required before deploying
+SUFFIX:
+ (⚠️ devops)  changes in devops configuration required before deploying
+
 -->
 
 ## What do these changes do?
@@ -25,10 +30,8 @@ and append (⚠️ devops) if changes in devops configuration required before de
 
 <!-- Enumerate REVIEWERS other issues
 
-e.g.
-
+- ITISFoundation/osparc-issues#428
 - #26 : node_ports should have retry policies when upload/download fails  (FIXED)
-- ITISFoundation/osparc-issues#304: (Part 2) Prep2Go: creating features to support complex S4L scripts (IMPLEMENTED)
 
 -->
 

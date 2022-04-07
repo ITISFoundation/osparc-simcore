@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this.__templates = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -44,7 +44,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         this._requestResources(true);
       } else {
-        this._resetTemplatesList([]);
+        this._resetResourcesList([]);
       }
     },
 
@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.add(loadingTemplatesBtn);
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
-      this._resourcesContainer.addListener("changeMode", () => this._resetTemplatesList());
+      this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
       return templatesLayout;
     },
@@ -88,10 +88,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       } else {
         templatesList[index] = templateData;
       }
-      this._resetTemplatesList(templatesList);
+      this._resetResourcesList(templatesList);
     },
 
-    _resetTemplatesList: function(tempStudyList) {
+    // overriden
+    _resetResourcesList: function(tempStudyList) {
       if (tempStudyList === undefined) {
         tempStudyList = this.__templates;
       }
@@ -112,7 +113,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
         const templateItem = this.__createTemplateItem(tempStudy, this._resourcesContainer.getMode());
-        templateItem.addListener("updateQualityTemplate", e => {
+        templateItem.addListener("updateTemplate", e => {
           const updatedTemplateData = e.getData();
           updatedTemplateData["resourceType"] = "template";
           this._resetTemplateItem(updatedTemplateData);
@@ -269,9 +270,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
-      const confWin = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-      confWin.getChildControl("confirm-button").set({
-        appearance: "danger-button"
+      const confWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
       });
       return confWin;
     }

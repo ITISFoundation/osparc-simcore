@@ -19,7 +19,9 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
 /**
- * @asset(svg/svg.*js)
+ * @asset(svg/svg.js)
+ * @asset(svg/svg.path.js)
+ * @asset(svg/svg.draggable.js)
  * @ignore(SVG)
  */
 
@@ -129,6 +131,46 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    getRectAttributes: function(rect) {
+      const attrs = rect.node.attributes;
+      return {
+        x: attrs.x.value,
+        y: attrs.y.value,
+        width: attrs.width ? attrs.width.value : null,
+        height: attrs.height ? attrs.height.value : null
+      };
+    },
+
+    drawAnnotationText: function(draw, x, y, label, color, fontSize) {
+      const text = draw.text(label)
+        .font({
+          fill: color,
+          size: (fontSize ? fontSize : 12) + "px",
+          family: "Roboto"
+        })
+        .style({
+          cursor: "pointer"
+        })
+        .move(x, y);
+      text.back();
+      return text;
+    },
+
+    drawAnnotationRect: function(draw, width, height, x, y, color) {
+      const rect = draw.rect(width, height)
+        .fill("none")
+        .stroke({
+          width: 2,
+          color
+        })
+        .style({
+          cursor: "pointer"
+        })
+        .move(x, y);
+      rect.back();
+      return rect;
+    },
+
     drawDashedRect: function(draw, width, height, x, y) {
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
       const rect = draw.rect(width, height)
@@ -157,7 +199,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawNodeUI: function(draw, width, height, radius, x, y) {
-      const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
+      const nodeUIColor = qx.theme.manager.Color.getInstance().resolve("background-main-3");
       const rect = draw.rect(width, height)
         .fill(nodeUIColor)
         .stroke({
@@ -178,12 +220,34 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.move(x, y);
     },
 
-    updateRectPos: function(rect, x, y) {
-      rect.move(x, y);
+    updateItemPos: function(item, x, y) {
+      item.move(x, y);
     },
 
-    removeRect: function(rect) {
-      rect.remove();
+    updateItemColor: function(item, color) {
+      item.stroke({
+        color: color
+      });
+    },
+
+    removeItem: function(item) {
+      item.remove();
+    },
+
+    updateText: function(text, label) {
+      text.text(label);
+    },
+
+    updateTextColor: function(text, color) {
+      text.font({
+        fill: color
+      });
+    },
+
+    updateTextSize: function(text, size) {
+      text.font({
+        size: size + "px"
+      });
     },
 
     updateCurveDashes: function(curve, dashed) {
@@ -231,20 +295,6 @@ qx.Class.define("osparc.wrapper.Svg", {
       return polyline;
     },
 
-    updateStrokeColor: function(polyline, color) {
-      polyline.stroke({
-        color: color
-      });
-    },
-
-    updateNodeUI: function(nodeUI, x, y) {
-      nodeUI.move(x, y);
-    },
-
-    removeNodeUI: function(nodeUI) {
-      nodeUI.remove();
-    },
-
     drawLine: function(draw, controls) {
       const line = draw.line(controls.join())
         .fill("none")
@@ -264,6 +314,13 @@ qx.Class.define("osparc.wrapper.Svg", {
         })
         .move(0, 0);
       return polygon;
+    },
+
+    makeDraggable: function(item, draggable = true) {
+      item.style({
+        cursor: "move"
+      });
+      item.draggable(draggable);
     }
   },
 
@@ -277,9 +334,11 @@ qx.Class.define("osparc.wrapper.Svg", {
 
         // initialize the script loading
         const svgPath = "svg/svg.js";
+        const svgDraggablePath = "svg/svg.draggable.js";
         const svgPathPath = "svg/svg.path.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           svgPath,
+          svgDraggablePath,
           svgPathPath
         ]);
 

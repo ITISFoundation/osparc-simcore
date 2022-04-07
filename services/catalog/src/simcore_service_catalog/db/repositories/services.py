@@ -1,10 +1,10 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import sqlalchemy as sa
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
+from psycopg2.errors import ForeignKeyViolation
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
@@ -39,8 +39,8 @@ def _make_list_services_query(
         query = (
             sa.select(
                 [services_meta_data],
-                distinct=[services_meta_data.c.key, services_meta_data.c.version],
             )
+            .distinct(services_meta_data.c.key, services_meta_data.c.version)
             .select_from(services_meta_data.join(services_access_rights))
             .where(
                 and_(
@@ -74,8 +74,8 @@ class ServicesRepository(BaseRepository):
     ) -> List[ServiceMetaDataAtDB]:
         services_in_db = []
 
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(
                 _make_list_services_query(
                     gids,
                     execute_access,
@@ -124,8 +124,8 @@ class ServicesRepository(BaseRepository):
             query = query.limit(limit_count)
 
         releases = []
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(query):
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(query):
                 releases.append(ServiceMetaDataAtDB(**row))
 
         return releases
@@ -170,9 +170,9 @@ class ServicesRepository(BaseRepository):
                     )
                 )
             )
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
-            row = await result.first()
+            row = result.first()
         if row:
             return ServiceMetaDataAtDB(**row)
 
@@ -191,31 +191,30 @@ class ServicesRepository(BaseRepository):
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
-            async with conn.begin() as _transaction:
-                result = await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    services_meta_data.insert()
-                    .values(**new_service.dict(by_alias=True))
-                    .returning(literal_column("*"))
-                )
-                row = await result.first()
-                assert row  # nosec
-                created_service = ServiceMetaDataAtDB(**row)
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                services_meta_data.insert()
+                .values(**new_service.dict(by_alias=True))
+                .returning(literal_column("*"))
+            )
+            row = result.first()
+            assert row  # nosec
+            created_service = ServiceMetaDataAtDB(**row)
 
-                for access_rights in new_service_access_rights:
-                    insert_stmt = pg_insert(services_access_rights).values(
-                        **access_rights.dict(by_alias=True)
-                    )
-                    await conn.execute(insert_stmt)
+            for access_rights in new_service_access_rights:
+                insert_stmt = pg_insert(services_access_rights).values(
+                    **access_rights.dict(by_alias=True)
+                )
+                await conn.execute(insert_stmt)
         return created_service
 
     async def update_service(
         self, patched_service: ServiceMetaDataAtDB
     ) -> ServiceMetaDataAtDB:
         # update the services_meta_data table
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.update()
@@ -226,7 +225,7 @@ class ServicesRepository(BaseRepository):
                 .values(**patched_service.dict(by_alias=True, exclude_unset=True))
                 .returning(literal_column("*"))
             )
-            row = await result.first()
+            row = result.first()
             assert row  # nosec
         updated_service = ServiceMetaDataAtDB(**row)
         return updated_service
@@ -249,13 +248,15 @@ class ServicesRepository(BaseRepository):
 
         query = sa.select([services_access_rights]).where(search_expression)
 
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(query):
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
     async def list_services_access_rights(
-        self, key_versions: List[Tuple[str, str]], product_name: Optional[str] = None
+        self,
+        key_versions: Iterable[Tuple[str, str]],
+        product_name: Optional[str] = None,
     ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
@@ -271,15 +272,8 @@ class ServicesRepository(BaseRepository):
                 else True
             )
         )
-        async with self.db_engine.acquire() as conn:
-            # NOTE: this strange query compile is due to an incompatilility
-            # between aiopg.sa and sqlalchemy 1.4
-            # One of the maintainer of aiopg says:
-            # https://github.com/aio-libs/aiopg/issues/798#issuecomment-934256346
-            # we should drop aiopg.sa
-            async for row in conn.execute(
-                f"{(query.compile(compile_kwargs={'literal_binds': True}))}"
-            ):
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(query):
                 service_to_access_rights[
                     (
                         row[services_access_rights.c.key],
@@ -303,14 +297,16 @@ class ServicesRepository(BaseRepository):
                     services_access_rights.c.gid,
                     services_access_rights.c.product_name,
                 ],
-                set_=rights.dict(by_alias=True, exclude_unset=True),
+                set_=rights.dict(
+                    by_alias=True,
+                    exclude_unset=True,
+                    exclude={"key", "version", "gid", "product_name"},
+                ),
             )
             try:
-                async with self.db_engine.acquire() as conn:
-                    await conn.execute(
-                        # pylint: disable=no-value-for-parameter
-                        on_update_stmt
-                    )
+                async with self.db_engine.begin() as conn:
+                    result = await conn.execute(on_update_stmt)
+                    assert result  # nosec
             except ForeignKeyViolation:
                 logger.warning(
                     "The service %s:%s is missing from services_meta_data",
@@ -321,7 +317,7 @@ class ServicesRepository(BaseRepository):
     async def delete_service_access_rights(
         self, delete_access_rights: List[ServiceAccessRightsAtDB]
     ) -> None:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:
                 await conn.execute(
                     # pylint: disable=no-value-for-parameter

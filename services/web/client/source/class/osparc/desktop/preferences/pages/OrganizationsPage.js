@@ -299,9 +299,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
       const name = org.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-      win.getConfirmButton().set({
-        appearance: "danger-button"
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
       });
       win.center();
       win.open();

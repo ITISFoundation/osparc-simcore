@@ -1,12 +1,11 @@
 from typing import List, Optional
 
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
+from models_library.users import UserID
 from pydantic import AnyHttpUrl, BaseModel, Field
-
-from ...models.schemas.constants import ClusterID
-from ..schemas.constants import UserID
 
 
 class ComputationTaskGet(ComputationTask):

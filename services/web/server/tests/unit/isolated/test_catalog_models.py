@@ -1,29 +1,38 @@
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=no-name-in-module
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 from copy import deepcopy
 from pprint import pformat
+from typing import Any, Dict, Mapping, Type
 
 import pytest
+from pint import UnitRegistry
+from pydantic import BaseModel
 from simcore_service_webserver.catalog_handlers import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.catalog_models import (
-    ServiceInputApiOut,
-    ServiceOutputApiOut,
+    ServiceInputGet,
+    ServiceOutputGet,
     replace_service_input_outputs,
 )
+
+
+@pytest.fixture(scope="module")
+def unit_registry():
+    return UnitRegistry()
 
 
 @pytest.mark.parametrize(
     "model_cls",
     (
-        ServiceInputApiOut,
-        ServiceOutputApiOut,
+        ServiceInputGet,
+        ServiceOutputGet,
     ),
 )
-def test_webserver_catalog_api_models(model_cls, model_cls_examples):
+def test_webserver_catalog_api_models(
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Mapping[str, Any]]
+):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
@@ -34,7 +43,7 @@ def test_webserver_catalog_api_models(model_cls, model_cls_examples):
         assert model_cls(**data) == model_instance
 
 
-def test_from_catalog_to_webapi_service():
+def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
 
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
     catalog_service = {
@@ -73,7 +82,7 @@ def test_from_catalog_to_webapi_service():
             "outFile": {
                 "displayOrder": 0,
                 "label": "File",
-                "unit": "second",
+                "unit": "sec",
                 "description": "Chosen File",
                 "type": "data:*/*",
                 "fileToKeyMap": None,
@@ -85,14 +94,16 @@ def test_from_catalog_to_webapi_service():
     }
 
     webapi_service = deepcopy(catalog_service)
-    replace_service_input_outputs(webapi_service, **RESPONSE_MODEL_POLICY)
+    replace_service_input_outputs(
+        webapi_service, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
+    )
 
     print(json.dumps(webapi_service, indent=2))
 
     # If units are defined, I want unitShort and unitLong
-    assert webapi_service["outputs"]["outFile"]["unit"] is "second"
-    assert webapi_service["outputs"]["outFile"]["unitShort"] is "s"
-    assert webapi_service["outputs"]["outFile"]["unitLong"] is "seconds"
+    assert webapi_service["outputs"]["outFile"]["unit"] == "sec"
+    assert webapi_service["outputs"]["outFile"]["unitShort"] == "s"
+    assert webapi_service["outputs"]["outFile"]["unitLong"] == "second"
 
     # if units are NOT defined => must NOT set Long/Short units
     fields = set(webapi_service["inputs"]["uno"].keys())

@@ -27,7 +27,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
-from pytest_simcore.helpers.utils_login import AUserDict, NewUser
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -130,6 +130,13 @@ def _default_app_config_for_integration_tests(
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
+    # NOTE: previously in .env but removed from that file env since the webserver
+    # can be configured as GC service as well. In integration tests, we are
+    # for the moment using web-server as an all-in-one service.
+    # TODO: create integration tests using different configs
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
+    test_environ["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = "30"
+
     # recreate config-file
     config_template = Template(default_app_config_integration_file.read_text())
     config_text = config_template.substitute(**test_environ)
@@ -169,14 +176,14 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user: AUserDict) -> Dict[str, str]:
+async def primary_group(client, logged_user: UserInfoDict) -> Dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: AUserDict
+    client, logged_user: UserInfoDict
 ) -> AsyncIterable[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {

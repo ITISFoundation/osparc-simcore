@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aiodebug==1.1.2
+aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -13,36 +13,37 @@ aiofiles==0.8.0
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-anyio==3.2.1
+anyio==3.5.0
     # via
     #   httpcore
     #   starlette
-asgiref==3.4.1
+    #   watchgod
+asgiref==3.5.0
     # via uvicorn
-boto3==1.17.104
+boto3==1.21.33
     # via pennsieve
-botocore==1.20.104
+botocore==1.24.33
     # via
     #   boto3
     #   s3transfer
-certifi==2021.5.30
+certifi==2021.10.8
     # via
     #   httpcore
     #   httpx
     #   requests
-chardet==4.0.0
-    # via requests
-charset-normalizer==2.0.10
-    # via httpx
-click==8.0.3
+charset-normalizer==2.0.12
+    # via
+    #   httpx
+    #   requests
+click==8.1.2
     # via
     #   typer
     #   uvicorn
-configparser==5.0.2
+configparser==5.2.0
     # via pennsieve
-deprecated==1.2.12
+deprecated==1.2.13
     # via pennsieve
-dnspython==2.1.0
+dnspython==2.2.1
     # via email-validator
 docopt==0.6.2
     # via pennsieve
@@ -50,7 +51,7 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.71.0
+fastapi==0.75.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -58,40 +59,37 @@ fastapi==0.71.0
     #   fastapi-pagination
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.8.0
+fastapi-pagination==0.9.1
     # via -r requirements/_base.in
 future==0.18.2
     # via pennsieve
-futures==3.1.1
+futures==3.0.5
     # via pennsieve
 h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-h2==3.2.0
+h2==4.1.0
     # via httpx
-hpack==3.0.0
+hpack==4.0.0
     # via h2
-httpcore==0.14.4
+httpcore==0.14.7
     # via httpx
-httptools==0.3.0
+httptools==0.4.0
     # via uvicorn
-httpx==0.21.3
+httpx==0.22.0
     # via -r requirements/_base.in
-hyperframe==5.2.0
+hyperframe==6.0.1
     # via h2
-idna==2.10
+idna==3.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
     #   rfc3986
 jaeger-client==4.8.0
     # via fastapi-contrib
-jmespath==0.10.0
+jmespath==1.0.0
     # via
     #   boto3
     #   botocore
@@ -101,9 +99,9 @@ opentracing==2.4.0
     #   jaeger-client
 pennsieve==6.1.2
     # via -r requirements/_base.in
-protobuf==3.17.3
+protobuf==3.20.0
     # via pennsieve
-psutil==5.8.0
+psutil==5.9.0
     # via pennsieve
 pyasn1==0.4.8
     # via
@@ -123,21 +121,21 @@ pydantic==1.9.0
     #   -r requirements/_base.in
     #   fastapi
     #   fastapi-pagination
-pyinstrument==4.0.3
+pyinstrument==4.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   botocore
     #   pennsieve
-python-dotenv==0.18.0
+python-dotenv==0.20.0
     # via uvicorn
 python-jose==3.2.0
     # via pennsieve
 python-multipart==0.0.5
     # via -r requirements/_base.in
-pytz==2021.1
+pytz==2022.1
     # via pennsieve
 pyyaml==5.4.1
     # via
@@ -151,7 +149,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
-requests==2.25.1
+requests==2.27.1
     # via pennsieve
 rfc3986==1.5.0
     # via httpx
@@ -159,14 +157,13 @@ rsa==4.0
     # via
     #   pennsieve
     #   python-jose
-s3transfer==0.4.2
+s3transfer==0.5.2
     # via boto3
 semver==2.13.0
     # via pennsieve
 six==1.16.0
     # via
     #   ecdsa
-    #   protobuf
     #   python-dateutil
     #   python-jose
     #   python-multipart
@@ -184,19 +181,19 @@ tenacity==8.0.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.13.0
+thrift==0.16.0
     # via jaeger-client
 tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typer==0.4.0
+typer==0.4.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
-    #   fastapi-pagination
+    #   aiodebug
     #   pydantic
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -205,15 +202,15 @@ urllib3==1.26.7
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-uvicorn==0.17.0
+uvicorn==0.17.6
     # via -r requirements/_base.in
-uvloop==0.15.2
+uvloop==0.16.0
     # via uvicorn
-watchgod==0.7
+watchgod==0.8.2
     # via uvicorn
-websocket-client==1.1.0
+websocket-client==1.3.2
     # via pennsieve
-websockets==10.1
+websockets==10.2
     # via uvicorn
-wrapt==1.12.1
+wrapt==1.14.0
     # via deprecated

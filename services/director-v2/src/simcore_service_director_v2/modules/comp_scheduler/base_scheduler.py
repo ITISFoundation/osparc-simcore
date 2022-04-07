@@ -19,9 +19,11 @@ from typing import Dict, List, Optional, Set, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ...core.errors import (
@@ -36,7 +38,6 @@ from ...core.errors import (
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...models.schemas.constants import ClusterID, UserID
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -59,7 +60,6 @@ class BaseCompScheduler(ABC):
     ]
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
-    default_cluster_id: ClusterID
 
     async def run_new_pipeline(
         self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
@@ -83,7 +83,6 @@ class BaseCompScheduler(ABC):
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
-            default_cluster_id=self.default_cluster_id,
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
@@ -222,7 +221,11 @@ class BaseCompScheduler(ABC):
         return tasks
 
     async def _update_states_from_comp_backend(
-        self, cluster_id: ClusterID, project_id: ProjectID, pipeline_dag: nx.DiGraph
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        project_id: ProjectID,
+        pipeline_dag: nx.DiGraph,
     ):
         pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
             project_id, pipeline_dag
@@ -239,7 +242,7 @@ class BaseCompScheduler(ABC):
             )
             # ensure these tasks still exist in the backend, if not we abort these
             tasks_backend_status = await self._get_tasks_status(
-                cluster_id, tasks_supposedly_processing
+                user_id, cluster_id, tasks_supposedly_processing
             )
             logger.debug("Computational states: %s", f"{tasks_backend_status=}")
             for task, backend_state in zip(
@@ -259,7 +262,7 @@ class BaseCompScheduler(ABC):
                 elif backend_state in COMPLETED_STATES:
                     tasks_completed.append(task)
         if tasks_completed:
-            await self._process_completed_tasks(cluster_id, tasks_completed)
+            await self._process_completed_tasks(user_id, cluster_id, tasks_completed)
 
     @abstractmethod
     async def _start_tasks(
@@ -273,19 +276,19 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _get_tasks_status(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> List[RunningState]:
         ...
 
     @abstractmethod
     async def _stop_tasks(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
         ...
 
     @abstractmethod
     async def _process_completed_tasks(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
         ...
 
@@ -307,14 +310,18 @@ class BaseCompScheduler(ABC):
         try:
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
-            await self._update_states_from_comp_backend(cluster_id, project_id, dag)
+            await self._update_states_from_comp_backend(
+                user_id, cluster_id, project_id, dag
+            )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
                 project_id, dag
             )
             # 3. do we want to stop the pipeline now?
             if marked_for_stopping:
-                await self._schedule_tasks_to_stop(project_id, cluster_id, comp_tasks)
+                await self._schedule_tasks_to_stop(
+                    user_id, project_id, cluster_id, comp_tasks
+                )
             else:
                 # let's get the tasks to schedule then
                 await self._schedule_tasks_to_start(
@@ -355,6 +362,7 @@ class BaseCompScheduler(ABC):
 
     async def _schedule_tasks_to_stop(
         self,
+        user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         comp_tasks: Dict[str, CompTaskAtDB],
@@ -371,7 +379,7 @@ class BaseCompScheduler(ABC):
             if t.state
             in [RunningState.STARTED, RunningState.RETRY, RunningState.PENDING]
         ]
-        await self._stop_tasks(cluster_id, tasks_to_stop)
+        await self._stop_tasks(user_id, cluster_id, tasks_to_stop)
 
     async def _schedule_tasks_to_start(
         self,

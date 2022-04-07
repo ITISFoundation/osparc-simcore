@@ -26,11 +26,60 @@ from ..modules import (
     remote_debug,
 )
 from ..utils.logging_utils import config_all_loggers
-from .errors import PipelineNotFoundError, ProjectNotFoundError
+from .errors import (
+    ClusterAccessForbiddenError,
+    ClusterNotFoundError,
+    PipelineNotFoundError,
+    ProjectNotFoundError,
+)
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
 
 logger = logging.getLogger(__name__)
+
+
+def _set_exception_handlers(app: FastAPI):
+    app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # director-v2 core.errors mappend into HTTP errors
+    app.add_exception_handler(
+        ProjectNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, ProjectNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        PipelineNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, PipelineNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        ClusterNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, ClusterNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        ClusterAccessForbiddenError,
+        make_http_error_handler_for_exception(
+            status.HTTP_403_FORBIDDEN, ClusterAccessForbiddenError
+        ),
+    )
+
+    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
+    app.add_exception_handler(
+        NotImplementedError,
+        make_http_error_handler_for_exception(
+            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
+        ),
+    )
+    app.add_exception_handler(
+        Exception,
+        make_http_error_handler_for_exception(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+        ),
+    )
 
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
@@ -73,10 +122,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     ):
         dynamic_sidecar.setup(app)
 
-    if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED:
-        dask_clients_pool.setup(app, settings.DASK_SCHEDULER)
+    if (
+        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
+    ):
+        dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
-    if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
 
@@ -86,36 +137,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
-
-    app.add_exception_handler(HTTPException, http_error_handler)
-    app.add_exception_handler(RequestValidationError, http422_error_handler)
-    # director-v2 core.errors mappend into HTTP errors
-    app.add_exception_handler(
-        ProjectNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, ProjectNotFoundError
-        ),
-    )
-    app.add_exception_handler(
-        PipelineNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, PipelineNotFoundError
-        ),
-    )
-
-    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
-    app.add_exception_handler(
-        NotImplementedError,
-        make_http_error_handler_for_exception(
-            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
-        ),
-    )
-    app.add_exception_handler(
-        Exception,
-        make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
-        ),
-    )
+    _set_exception_handlers(app)
 
     app.include_router(api_router)
 

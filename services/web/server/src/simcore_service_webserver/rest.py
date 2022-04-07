@@ -17,9 +17,10 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 
-from . import rest_routes
+from . import rest_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from ._meta import API_VTAG, api_version_prefix
+from .rest_healthcheck import HealthCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
@@ -35,6 +36,9 @@ log = logging.getLogger(__name__)
 )
 def setup_rest(app: web.Application):
     settings: RestSettings = get_plugin_settings(app)
+    is_diagnostics_enabled: bool = (
+        app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS is not None
+    )
 
     spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
@@ -55,13 +59,14 @@ def setup_rest(app: web.Application):
             f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
         )
 
-    # diagnostics routes
-    routes = rest_routes.create(specs)
-    app.router.add_routes(routes)
+    app[HealthCheck.__name__] = HealthCheck(app)
+    log.debug("Setup %s", f"{app[HealthCheck.__name__]=}")
+
+    # basic routes
+    app.add_routes(rest_handlers.routes)
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs
-    is_diagnostics_enabled = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
     app.middlewares.extend(
         [
             error_middleware_factory(

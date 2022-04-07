@@ -179,6 +179,14 @@ class DynamicSidecar(BaseModel):
             "be used to check if the services were started"
         ),
     )
+    is_project_network_attached: bool = Field(
+        False,
+        description=(
+            "When True, all containers were in running state and project "
+            "networks were attached. Waiting for the container sto be in "
+            "running state guarantees all containers have been created"
+        ),
+    )
 
     service_environment_prepared: bool = Field(
         False,

@@ -7,10 +7,10 @@ from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
+from models_library.users import UserID
 from pydantic import BaseModel, Field
 
 from ....meta import API_VTAG
-from ..constants import UserID
 
 
 @unique

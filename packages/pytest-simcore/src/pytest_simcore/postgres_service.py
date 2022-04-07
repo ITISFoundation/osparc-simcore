@@ -1,22 +1,18 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
-import logging
-from typing import AsyncIterator, Dict, Iterator, List
+from typing import AsyncIterator, Dict, Final, Iterator, List
 
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import tenacity
+from servicelib.json_serialization import json_dumps
 from sqlalchemy.orm import sessionmaker
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_service_published_port
 from .helpers.utils_postgres import migrated_pg_tables_context
-
-log = logging.getLogger(__name__)
 
 TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
@@ -35,7 +31,7 @@ def execute_queries(
                 # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
                 # which can safely be ignored. The debug message is here to catch future errors which and
                 # avoid time wasting
-                log.debug("SQL error which can be ignored %s", str(e))
+                print(f"SQL error which can be ignored {e}")
 
 
 def create_template_db(postgres_dsn: Dict, postgres_engine: sa.engine.Engine) -> None:
@@ -138,16 +134,30 @@ def postgres_dsn(docker_stack: Dict, testing_environ_vars: Dict) -> Dict[str, st
     return pg_config
 
 
+_MINUTE: Final[int] = 60
+
+
 @pytest.fixture(scope="module")
 def postgres_engine(postgres_dsn: Dict[str, str]) -> Iterator[sa.engine.Engine]:
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         **postgres_dsn
     )
-    # Attempts until responsive
-    wait_till_postgres_is_responsive(dsn)
 
-    # Configures db and initializes tables
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
+    # Attempts until responsive
+    for attempt in tenacity.Retrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(5 * _MINUTE),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}..."
+            )
+            with engine.connect() as conn:
+                print(
+                    f"Connection to {dsn} succeeded [{json_dumps(attempt.retry_state.retry_object.statistics)}]"
+                )
 
     yield engine
 
@@ -168,7 +178,7 @@ def postgres_db(
 @pytest.fixture(scope="function")
 async def aiopg_engine(
     postgres_db: sa.engine.Engine,
-) -> AsyncIterator[aiopg.sa.engine.Engine]:
+) -> AsyncIterator:
     """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine
 
@@ -179,6 +189,22 @@ async def aiopg_engine(
     if engine:
         engine.close()
         await engine.wait_closed()
+
+
+@pytest.fixture(scope="function")
+async def sqlalchemy_async_engine(
+    postgres_db: sa.engine.Engine,
+) -> AsyncIterator:
+    # NOTE: prevent having to import this if latest sqlalchemy not installed
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine(
+        f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg")
+    )
+    assert engine
+    yield engine
+
+    await engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -195,7 +221,7 @@ def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str,
 
 
 @pytest.fixture(scope="module")
-def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
+def postgres_session(postgres_db: sa.engine.Engine) -> Iterator[sa.orm.session.Session]:
     from sqlalchemy.orm.session import Session
 
     Session_cls = sessionmaker(postgres_db)
@@ -204,16 +230,3 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
     yield session
 
     session.close()  # pylint: disable=no-member
-
-
-@tenacity.retry(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(60),
-    before_sleep=before_sleep_log(log, logging.WARNING),
-    reraise=True,
-)
-def wait_till_postgres_is_responsive(url: str) -> None:
-    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    conn = engine.connect()
-    conn.close()
-    log.info("Connected with %s", url)

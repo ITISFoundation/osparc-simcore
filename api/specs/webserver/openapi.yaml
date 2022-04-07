@@ -68,9 +68,6 @@ paths:
   /status/{service_name}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1status~1{service_name}"
 
-  /check/{action}:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"
-
   /config:
     $ref: "./openapi-diagnostics.yaml#/paths/~1config"
 
@@ -160,10 +157,12 @@ paths:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets"
 
   # SERVICES ------------------------------------------------------------------------
-  /computation/pipeline/{project_id}:start:
-    $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}~1start"
-  /computation/pipeline/{project_id}:stop:
-    $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}~1stop"
+  /computations/{project_id}:
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id"
+  /computations/{project_id}:start:
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id_start"
+  /computations/{project_id}:stop:
+    $ref: "./openapi-computations.yaml#/paths/computations_project_id_stop"
 
   # PROJECT SERVICES -----------------------------------------------------------------
 
@@ -290,10 +289,16 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
 
   # CLUSTER -------------------------------------------------------------------------
+  /clusters:ping:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_ping"
   /clusters:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters"
   /clusters/{cluster_id}:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters~1{cluster_id}"
+  /clusters/{cluster_id}:ping:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_ping"
+  /clusters/{cluster_id}/details:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_details"
 
   # VIEWER -------------------------------------------------------------------------
   /viewers:

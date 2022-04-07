@@ -1,12 +1,17 @@
 # pylint: disable=too-many-arguments
 
+import contextlib
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.users import UserID
+from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -15,7 +20,11 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
-from ...core.errors import ProjectNotFoundError, SchedulerError
+from ...core.errors import (
+    ComputationalRunNotFoundError,
+    ProjectNotFoundError,
+    SchedulerError,
+)
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
@@ -24,9 +33,9 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskGet,
     ComputationTaskStop,
 )
-from ...models.schemas.constants import UserID
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
+from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
@@ -70,6 +79,7 @@ async def create_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
+    computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskGet:
@@ -138,8 +148,7 @@ async def create_computation(
             await scheduler.run_new_pipeline(
                 job.user_id,
                 job.project_id,
-                job.cluster_id
-                or request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+                job.cluster_id or DEFAULT_CLUSTER_ID,
             )
 
         # filter the tasks by the effective pipeline
@@ -150,16 +159,30 @@ async def create_computation(
         ]
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
+        # get run details if any
+        last_run: Optional[CompRunsAtDB] = None
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await computation_runs.get(
+                user_id=job.user_id, project_id=job.project_id
+            )
+
         return ComputationTaskGet(
             id=job.project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
                 complete_dag, minimal_computational_dag, inserted_comp_tasks
             ),
-            url=f"{request.url}/{job.project_id}",
-            stop_url=f"{request.url}/{job.project_id}:stop"
+            url=parse_obj_as(
+                AnyHttpUrl, f"{request.url}/{job.project_id}?user_id={job.user_id}"
+            ),
+            stop_url=parse_obj_as(
+                AnyHttpUrl, f"{request.url}/{job.project_id}:stop?user_id={job.user_id}"
+            )
             if job.start_pipeline
             else None,
+            iteration=last_run.iteration if last_run else None,
+            cluster_id=last_run.cluster_id if last_run else None,
+            result=None,
         )
 
     except ProjectNotFoundError as e:
@@ -170,7 +193,7 @@ async def create_computation(
     "/{project_id}",
     summary="Returns a computation pipeline state",
     response_model=ComputationTaskGet,
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_200_OK,
 )
 async def get_computation(
     user_id: UserID,
@@ -183,6 +206,7 @@ async def get_computation(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
+    computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
 ) -> ComputationTaskGet:
     log.debug(
         "User %s getting computation status for project %s",
@@ -207,6 +231,14 @@ async def get_computation(
     filtered_tasks = [
         t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
     ]
+
+    # check that we have the expected tasks
+    if len(filtered_tasks) != len(pipeline_dag):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The tasks referenced by the pipeline are missing",
+        )
+
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
     log.debug(
@@ -221,14 +253,24 @@ async def get_computation(
     pipeline_details = await compute_pipeline_details(
         complete_dag, pipeline_dag, all_tasks
     )
-    self_url = f"{request.url.remove_query_params('user_id')}"
 
+    # get run details if any
+    last_run: Optional[CompRunsAtDB] = None
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await computation_runs.get(user_id=user_id, project_id=project_id)
+
+    self_url = request.url.remove_query_params("user_id")
     task_out = ComputationTaskGet(
         id=project_id,
         state=pipeline_state,
         pipeline_details=pipeline_details,
-        url=self_url,
-        stop_url=f"{self_url}:stop" if pipeline_state.is_running() else None,
+        url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
+        stop_url=parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
+        if pipeline_state.is_running()
+        else None,
+        iteration=last_run.iteration if last_run else None,
+        cluster_id=last_run.cluster_id if last_run else None,
+        result=None,
     )
     return task_out
 
@@ -250,6 +292,7 @@ async def stop_computation_project(
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
+    computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
 ) -> ComputationTaskGet:
     log.debug(
@@ -278,13 +321,24 @@ async def stop_computation_project(
         if is_pipeline_running(pipeline_state):
             await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
 
+        # get run details if any
+        last_run: Optional[CompRunsAtDB] = None
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await computation_runs.get(
+                user_id=comp_task_stop.user_id, project_id=project_id
+            )
+
         return ComputationTaskGet(
             id=project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
                 complete_dag, pipeline_dag, tasks
             ),
-            url=f"{str(request.url).rstrip(':stop')}",
+            url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
+            stop_url=None,
+            iteration=last_run.iteration if last_run else None,
+            cluster_id=last_run.cluster_id if last_run else None,
+            result=None,
         )
 
     except ProjectNotFoundError as e:

@@ -230,9 +230,9 @@ async def reset_password(request: web.Request):
                     "reason": err.reason,
                 },
             )
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err2:  # pylint: disable=broad-except
             log.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err2
     else:
         confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)

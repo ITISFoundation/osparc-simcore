@@ -2,19 +2,21 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterable, AsyncIterator, Dict, List
 from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from aiodocker.utils import clean_filters
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceLabelsStoredData,
@@ -167,18 +169,18 @@ async def cleanup_test_dynamic_sidecar_service(
 
 
 @pytest.fixture
-def node_uuid() -> NodeID:
-    return uuid4()
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
-def user_id() -> UserID:
-    return 123
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
 
 
 @pytest.fixture
-def project_id() -> ProjectID:
-    return uuid4()
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 @pytest.fixture
@@ -229,6 +231,54 @@ async def cleanup_dynamic_sidecar_stack(
             await async_docker_client.services.delete(dynamic_sidecar_spec["name"])
             is True
         )
+
+
+@pytest.fixture
+async def project_id_labeled_network(
+    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+) -> AsyncIterable[str]:
+    network_config = {
+        "Name": "test_network_by_project_id",
+        "Driver": "overlay",
+        "Labels": {"project_id": f"{project_id}"},
+    }
+    network_id = await docker_api.create_network(network_config)
+
+    yield network_id
+
+    network = await async_docker_client.networks.get(network_id)
+    assert await network.delete() is True
+
+
+@pytest.fixture
+async def test_networks(
+    async_docker_client: aiodocker.docker.Docker, docker_swarm: None
+) -> AsyncIterator[List[str]]:
+    network_names = [f"test_network_name__{k}" for k in range(5)]
+
+    yield network_names
+
+    for network_name in network_names:
+        docker_network = await async_docker_client.networks.get(network_name)
+        assert await docker_network.delete() is True
+
+
+@pytest.fixture
+async def existing_network(
+    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+) -> AsyncIterable[str]:
+    name = "test_with_existing_network_by_project_id"
+    network_config = {
+        "Name": name,
+        "Driver": "overlay",
+        "Labels": {"project_id": f"{project_id}"},
+    }
+    network_id = await docker_api.create_network(network_config)
+
+    yield name
+
+    network = await async_docker_client.networks.get(network_id)
+    assert await network.delete() is True
 
 
 # UTILS
@@ -569,3 +619,33 @@ async def test_is_dynamic_service_running(
         await docker_api.is_dynamic_service_running(node_uuid, dynamic_sidecar_settings)
         is True
     )
+
+
+async def test_get_projects_networks_containers(
+    async_docker_client: aiodocker.docker.Docker,
+    project_id_labeled_network: str,
+    project_id: ProjectID,
+    docker_swarm: None,
+) -> None:
+    # make sure API does not change
+    params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
+    filtered_networks = (
+        # pylint:disable=protected-access
+        await async_docker_client.networks.docker._query_json("networks", params=params)
+    )
+    assert len(filtered_networks) == 1
+    filtered_network = filtered_networks[0]
+
+    assert project_id_labeled_network == filtered_network["Id"]
+
+
+async def test_get_or_create_networks_ids(
+    test_networks: List[str], existing_network: str, project_id: ProjectID
+):
+    # test with duplicate networks and existing networks
+    networks_to_test = test_networks + test_networks + [existing_network]
+    network_ids = await docker_api.get_or_create_networks_ids(
+        networks=networks_to_test,
+        project_id=project_id,
+    )
+    assert set(networks_to_test) == set(network_ids.keys())

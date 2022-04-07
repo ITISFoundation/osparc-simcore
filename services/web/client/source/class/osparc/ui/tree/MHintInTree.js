@@ -25,14 +25,6 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       nullable: true
     },
 
-    description2: {
-      check: "String",
-      init: null,
-      event: "changeDescription2",
-      apply: "__populateInfoButton",
-      nullable: true
-    },
-
     url: {
       check: "String",
       init: null,
@@ -53,9 +45,7 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
     __populateInfoButton: function() {
       const texts = [];
       [
-        this.getLabel(),
-        this.getDescription(),
-        this.getDescription2()
+        this.getDescription()
       ].forEach(text => {
         if (text && text !== "") {
           texts.push(text);

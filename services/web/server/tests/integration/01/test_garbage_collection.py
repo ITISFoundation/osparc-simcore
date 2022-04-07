@@ -17,7 +17,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
+from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
@@ -92,6 +92,9 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
     )
     delete_computation_pattern = get_computation_pattern
+    projects_networks_pattern = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
+    )
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
     # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..
     # anyway I think this should disappear once the garbage collector moves to its own micro-service
@@ -103,6 +106,7 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
+        mock.patch(projects_networks_pattern, status=204, repeat=True)
         yield mock
 
 
@@ -177,7 +181,7 @@ async def login_guest_user(client: TestClient):
 
 async def new_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     tests_data_dir: Path,
     access_rights: Optional[Dict[str, Any]] = None,
 ):
@@ -196,7 +200,7 @@ async def new_project(
 
 async def get_template_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     project_data: ProjectDict,
     access_rights=None,
 ):

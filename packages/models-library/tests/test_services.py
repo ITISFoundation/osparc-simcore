@@ -4,12 +4,10 @@
 
 import re
 from copy import deepcopy
-from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, List
 
 import pytest
-import yaml
 from models_library.basic_regex import VERSION_RE
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -23,7 +21,6 @@ from models_library.services import (
     _BaseServiceCommonDataModel,
 )
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pint import Unit, UnitRegistry
 
 
 @pytest.fixture()
@@ -73,30 +70,12 @@ def test_node_with_thumbnail(minimal_service_common_data: Dict[str, Any]):
     )
 
 
-def test_service_port_units(project_tests_dir: Path):
-    ureg = UnitRegistry()
-
-    data = yaml.safe_load((project_tests_dir / "data" / "image-meta.yaml").read_text())
-    print(ServiceDockerData.schema_json(indent=2))
-
-    service_meta = ServiceDockerData.parse_obj(data)
-    assert service_meta.inputs
-
-    for input_nameid, input_meta in service_meta.inputs.items():
-        assert input_nameid
-
-        # validation
-        valid_unit: Unit = ureg.parse_units(input_meta.unit)
-        assert isinstance(valid_unit, Unit)
-
-        assert valid_unit.dimensionless
-
-
 @pytest.mark.parametrize(
     "model_cls",
     (
         ServiceInput,
         ServiceOutput,
+        BootOption,
     ),
 )
 def test_service_models_examples(model_cls, model_cls_examples):
@@ -231,11 +210,6 @@ def test_same_regex_patterns_in_jsonschema_and_python(
     for x_path in json_schema_entry_paths:
         json_pattern = _find_pattern_entry(json_schema_config, x_path)
         assert json_pattern == python_regex_pattern
-
-
-def test_boot_option() -> None:
-    for example in BootOption.Config.schema_extra["examples"]:
-        assert BootOption(**example)
 
 
 def test_boot_option_wrong_default() -> None:

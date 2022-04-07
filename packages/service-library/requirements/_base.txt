@@ -21,7 +21,7 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
 tenacity==8.0.1
     # via -r requirements/_base.in
-typing-extensions==4.0.1
+typing-extensions==4.1.1
     # via
     #   aiodebug
     #   pydantic

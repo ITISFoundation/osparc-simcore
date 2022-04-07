@@ -86,6 +86,10 @@ class PipelineNotFoundError(DirectorException):
         super().__init__(f"pipeline {pipeline_id} not found")
 
 
+class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
+    msg_template = "Computational run not found"
+
+
 class SchedulerError(DirectorException):
     """An error in the scheduler"""
 
@@ -155,7 +159,15 @@ class ConfigurationError(DirectorException):
 
 class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
     code = "cluster.not_found"
-    msg_template = "The cluster with id '{cluster_id}' was not found"
+    msg_template = "The cluster '{cluster_id}' not found"
+
+
+class ClusterAccessForbiddenError(PydanticErrorMixin, SchedulerError):
+    msg_template = "Insufficient rights to access cluster '{cluster_id}'"
+
+
+class ClusterInvalidOperationError(PydanticErrorMixin, SchedulerError):
+    msg_template = "Invalid operation on cluster '{cluster_id}'"
 
 
 class DaskClientRequestError(PydanticErrorMixin, SchedulerError):

@@ -7,14 +7,16 @@ import logging
 import sys
 from pathlib import Path
 from typing import AsyncIterator, Callable, Dict
+from uuid import UUID
 
 import pytest
 import simcore_service_webserver
 from _pytest.monkeypatch import MonkeyPatch
-from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
+from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -46,6 +48,7 @@ pytest_plugins = [
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.websocket_client",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.hypothesis_type_strategies",
 ]
 
 
@@ -94,7 +97,7 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AsyncIterator[AUserDict]:
+async def logged_user(client, user_role: UserRole) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -131,3 +134,12 @@ def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
         return envs
 
     return _patch
+
+
+@pytest.fixture
+def mock_projects_networks_network_name(mocker) -> None:
+    remove_orphaned_services = mocker.patch(
+        "simcore_service_webserver.projects_networks._network_name",
+        return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
+    )
+    return remove_orphaned_services

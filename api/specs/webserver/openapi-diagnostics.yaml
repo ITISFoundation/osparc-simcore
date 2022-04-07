@@ -3,8 +3,8 @@ paths:
     get:
       tags:
         - maintenance
-      summary: run check
-      operationId: check_running
+      summary: readiness probe for
+      operationId: healthcheck_readiness_probe
       responses:
         "200":
           description: Service information
@@ -18,8 +18,8 @@ paths:
     get:
       tags:
         - maintenance
-      summary: health check
-      operationId: check_health
+      summary: liveliness probe
+      operationId: healthcheck_liveness_probe
       responses:
         "200":
           description: Service information
@@ -64,42 +64,6 @@ paths:
         "200":
           description: returns status of connected service
 
-  /check/{action}:
-    post:
-      tags:
-        - maintenance
-      summary: service test endpoint
-      operationId: check_action
-      parameters:
-        - in: path
-          required: true
-          name: action
-          schema:
-            type: string
-            default: "echo"
-            enum: ["fail", "echo"]
-        - in: query
-          name: data
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "./components/schemas/fake.yaml#/FakeType"
-      responses:
-        "200":
-          description: Echoes response based on action
-          content:
-            application/json:
-              schema:
-                $ref: "./components/schemas/fake.yaml#/FakeEnveloped"
-        default:
-          description: "Returns enveloped payload w/ or w/o data"
-          content:
-            application/json:
-              schema:
-                $ref: "./components/schemas/fake.yaml#/FakeEnveloped"
   /config:
     get:
       summary: Front end runtime configuration

@@ -5,15 +5,16 @@
 import asyncio
 import logging
 import os
-from typing import AsyncIterable, Callable, Dict
-from uuid import uuid4
+from typing import Any, AsyncIterable, Callable, Dict, Iterable
 
 import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from models_library.projects import ProjectAtDB
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -69,28 +70,30 @@ def minimal_configuration(
     )
 
 
-def _str_uuid() -> str:
-    return str(uuid4())
+@pytest.fixture
+def uuid_legacy(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
-def uuid_legacy() -> str:
-    return _str_uuid()
+def uuid_dynamic_sidecar(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
-def uuid_dynamic_sidecar() -> str:
-    return _str_uuid()
+def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
-def uuid_dynamic_sidecar_compose() -> str:
-    return _str_uuid()
+def user_dict(registered_user: Callable) -> Iterable[Dict[str, Any]]:
+    yield registered_user()
 
 
 @pytest.fixture
 async def dy_static_file_server_project(
     minimal_configuration: None,
+    user_dict: Dict[str, Any],
     project: Callable,
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
@@ -107,6 +110,7 @@ async def dy_static_file_server_project(
         }
 
     return project(
+        user=user_dict,
         workbench={
             uuid_legacy: _assemble_node_data(
                 dy_static_file_server_service,
@@ -120,7 +124,7 @@ async def dy_static_file_server_project(
                 dy_static_file_server_dynamic_sidecar_compose_spec_service,
                 "DYNAMIC_COMPOSE",
             ),
-        }
+        },
     )
 
 
@@ -150,13 +154,9 @@ async def director_v2_client(
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     # patch host for dynamic-sidecar, not reachable via localhost
@@ -169,9 +169,7 @@ async def director_v2_client(
     app = init_app(settings)
 
     async with LifespanManager(app):
-        async with httpx.AsyncClient(
-            app=app, base_url="http://testserver/v2"
-        ) as client:
+        async with httpx.AsyncClient(app=app, base_url="http://testserver") as client:
             yield client
 
 
@@ -203,35 +201,29 @@ async def ensure_services_stopped(
         await ensure_network_cleanup(docker_client, project_id)
 
 
-@pytest.fixture(scope="module")
-def simcore_services_ready_and_change_director_env(
-    simcore_services_ready: None, monkeypatch_module
-):
-    # FIXME: PC: this is trial fix for a nasty bug with environs in simcore_services_ready!!!!
-    monkeypatch_module.setenv("DIRECTOR_HOST", "director")
-    monkeypatch_module.setenv("DIRECTOR_PORT", "8080")
+@pytest.fixture
+def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
+    for method_name, return_value in [
+        ("service_restore_state", None),
+        ("service_pull_output_ports", 42),
+    ]:
+        mocker.patch(
+            f"simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.{method_name}",
+            return_value=return_value,
+        )
 
 
 # TESTS ----------------------------------------------------------------------------------------
 
-pytestmark = pytest.mark.skip(
-    reason="FIXME: temp disabled due to faulty environ variables"
-)
-
-
-def test_all_stack_services_running(
-    simcore_services_ready_and_change_director_env, dy_static_file_server_project
-):
-    assert True
-
 
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
-    user_db: Dict,
+    user_dict: Dict[str, Any],
     services_endpoint: Dict[str, URL],
-    simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
+    mock_projects_networks_repository: None,
+    mock_dynamic_sidecar_client: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check
@@ -250,7 +242,7 @@ async def test_legacy_and_dynamic_sidecar_run(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 # context
-                user_id=user_db["id"],
+                user_id=user_dict["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 # service
                 service_key=node.key,

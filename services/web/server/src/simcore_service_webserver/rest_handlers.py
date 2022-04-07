@@ -1,56 +1,62 @@
-""" Basic diagnostic handles to the rest API for operations
+""" Basic healthckeck and configuration handles to the rest API
 
 
 """
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from servicelib.aiohttp.rest_responses import wrap_as_envelope
-from servicelib.aiohttp.rest_utils import body_to_dict, extract_and_validate
+from servicelib.aiohttp.rest_utils import extract_and_validate
 
-from ._meta import __version__
+from ._meta import api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
+from .rest_healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)
 
-
-async def check_running(_request: web.Request):
-    #
-    # - This entry point is used as a fast way
-    #   to check that the service is still running
-    # - Do not do add any expensive computatio here
-    # - Healthcheck has been moved to diagnostics module
-    #
-    data = {
-        "name": __name__.split(".")[0],
-        "version": f"{__version__}",
-        "status": "SERVICE_RUNNING",
-        "api_version": f"{__version__}",
-    }
-    return data
+routes = web.RouteTableDef()
 
 
-async def check_action(request: web.Request):
-    params, query, body = await extract_and_validate(request)
+@routes.get(f"/{api_version_prefix}/health", name="healthcheck_liveness_probe")
+async def healthcheck_liveness_probe(request: web.Request):
+    """Liveness probe: "Check if the container is alive"
 
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert body, "body %s" % body  # nosec
+    This is checked by the containers orchestrator (docker swarm). When the service
+    is unhealthy, it will restart it so it can recover a working state.
 
-    if params["action"] == "fail":
-        raise ValueError("some randome failure")
+    SEE doc in rest_healthcheck.py
+    """
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
-    # echo's input
-    data = {
-        "path_value": params["action"],
-        "query_value": query["data"],
-        "body_value": body_to_dict(body),
-    }
+    try:
+        # if slots append get too delayed, just timeout
+        health_report = await healthcheck.run(request.app)
+    except HealthCheckFailed as err:
+        log.warning("%s", err)
+        raise web.HTTPServiceUnavailable(reason="unhealthy")
 
-    return wrap_as_envelope(data=data)
+    return web.json_response(data={"data": health_report})
 
 
+@routes.get(f"/{api_version_prefix}/", name="healthcheck_readiness_probe")
+async def healthcheck_readiness_probe(request: web.Request):
+    """Readiness probe: "Check if the container is ready to receive traffic"
+
+    When the target service is unhealthy, no traffic should be sent to it. Service discovery
+    services and load balancers (e.g. traefik) typically cut traffic from targets
+    in one way or another.
+
+    SEE doc in rest_healthcheck.py
+    """
+
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    health_report = healthcheck.get_app_info(request.app)
+    # NOTE: do NOT run healthcheck here, just return info fast.
+    health_report["status"] = "SERVICE_RUNNING"
+
+    return web.json_response(data={"data": health_report})
+
+
+@routes.get(f"/{api_version_prefix}/config", name="get_config")
 async def get_config(request: web.Request):
     """
     This entrypoint aims to provide an extra configuration mechanism for
@@ -64,13 +70,4 @@ async def get_config(request: web.Request):
     """
     await extract_and_validate(request)
 
-    cfg = request.app[APP_CONFIG_KEY]
-    login_cfg = cfg.get("login", {})
-
-    # Schema api/specs/webserver/v0/components/schemas/config.yaml
-    data = {
-        "invitation_required": login_cfg.get("registration_invitation_required", False)
-    }
-    data.update(request.app[APP_SETTINGS_KEY].public_dict())
-
-    return data
+    return web.json_response(data={"data": request.app[APP_SETTINGS_KEY].public_dict()})

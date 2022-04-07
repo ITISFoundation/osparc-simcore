@@ -12,6 +12,7 @@ from models_library.basic_types import (
 )
 from pydantic import validator
 from pydantic.fields import Field, ModelField
+from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -58,8 +59,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # @Dockerfile
     SC_BOOT_MODE: Optional[BootModeEnum] = None
-    SC_HEALTHCHECK_INTERVAL: Optional[int] = None
-    SC_HEALTHCHECK_RETRY: Optional[int] = None
+    SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
+        None,
+        description="If a single run of the check takes longer than timeout seconds "
+        "then the check is considered to have failed."
+        "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
+    )
     SC_USER_ID: Optional[int] = None
     SC_USER_NAME: Optional[str] = None
 
@@ -226,6 +231,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value) -> str:
         return cls.validate_log_level(value)
 
+    @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)
+    @classmethod
+    def get_healthcheck_timeout_in_seconds(cls, v):
+        # Ex. HEALTHCHECK --interval=5m --timeout=3s
+        if isinstance(v, str):
+            if v.endswith("s"):
+                factor = 1
+            elif v.endswith("m"):
+                factor = 60
+            v = v.rstrip("ms")
+            return int(v) * factor
+        return v
+
     # HELPERS  --------------------------------------------------------
 
     def is_enabled(self, field_name: str) -> bool:
@@ -251,17 +269,27 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
-        return self.dict(
-            include={
-                "APP_NAME",
-                "API_VERSION",
-                "SC_VCS_URL",
-                "SC_VCS_REF",
-                "SC_BUILD_DATE",
-            },
-            exclude_none=True,
-            by_alias=True,
+
+        data = {"invitation_required": False}
+        if self.WEBSERVER_LOGIN:
+            data[
+                "invitation_required"
+            ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
+
+        data.update(
+            self.dict(
+                include={
+                    "APP_NAME",
+                    "API_VERSION",
+                    "SC_VCS_URL",
+                    "SC_VCS_REF",
+                    "SC_BUILD_DATE",
+                },
+                exclude_none=True,
+                by_alias=True,
+            )
         )
+        return data
 
     def to_client_statics(self) -> Dict[str, Any]:
         data = self.dict(

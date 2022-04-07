@@ -252,6 +252,21 @@
                 }
               }
             },
+            "inputsUnits": {
+              "type": "object",
+              "description": "values of input unit",
+              "patternProperties": {
+                "^[-_a-zA-Z0-9]+$": {
+                  "type": "string",
+                  "examples": [
+                    "kilo-meter",
+                    "milli-second",
+                    "micro-gram",
+                    "kelvin"
+                  ]
+                }
+              }
+            },
             "inputAccess": {
               "description": "map with key - access level pairs",
               "type": "object",
@@ -528,6 +543,42 @@
         "currentNodeId": {
           "type": "string",
           "format": "uuid"
+        },
+        "annotations": {
+          "type": "object",
+          "patternProperties": {
+            "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "color",
+                "attributes"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Annotation type",
+                  "examples": [
+                    "rect",
+                    "text"
+                  ]
+                },
+                "color": {
+                  "type": "string",
+                  "description": "Annotation's color",
+                  "examples": [
+                    "#FF0000",
+                    "#0000FF"
+                  ]
+                },
+                "attributes": {
+                  "type": "object",
+                  "description": "svg attributes"
+                }
+              }
+            }
+          }
         }
       }
     },

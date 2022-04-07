@@ -1,14 +1,16 @@
 import json
 import time
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import httpx
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
+from pydantic import PositiveInt
 from pydantic.networks import AnyHttpUrl
-from pydantic.types import PositiveInt
 from pytest_simcore.helpers.constants import MINUTE
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
@@ -24,7 +26,7 @@ async def create_pipeline(
     client: httpx.AsyncClient,
     *,
     project: ProjectAtDB,
-    user_id: PositiveInt,
+    user_id: UserID,
     start_pipeline: bool,
     expected_response_status_code: int,
     **kwargs,
@@ -45,21 +47,28 @@ async def create_pipeline(
 
 
 async def assert_computation_task_out_obj(
-    client: httpx.AsyncClient,
     task_out: ComputationTaskGet,
     *,
     project: ProjectAtDB,
     exp_task_state: RunningState,
     exp_pipeline_details: PipelineDetails,
+    iteration: Optional[PositiveInt],
+    cluster_id: Optional[ClusterID],
 ):
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
-    assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
-    assert task_out.stop_url == (
-        f"{client.base_url}/v2/computations/{project.uuid}:stop"
-        if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
-        else None
-    )
+    assert task_out.url.path == f"/v2/computations/{project.uuid}"
+    if exp_task_state in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+    ]:
+        assert task_out.stop_url
+        assert task_out.stop_url.path == f"/v2/computations/{project.uuid}:stop"
+    else:
+        assert task_out.stop_url is None
+    assert task_out.iteration == iteration
+    assert task_out.cluster_id == cluster_id
     # check pipeline details contents
     assert task_out.pipeline_details.dict() == exp_pipeline_details.dict()
 
@@ -67,9 +76,9 @@ async def assert_computation_task_out_obj(
 async def assert_and_wait_for_pipeline_status(
     client: httpx.AsyncClient,
     url: AnyHttpUrl,
-    user_id: PositiveInt,
+    user_id: UserID,
     project_uuid: UUID,
-    wait_for_states: List[RunningState] = None,
+    wait_for_states: Optional[List[RunningState]] = None,
 ) -> ComputationTaskGet:
     if not wait_for_states:
         wait_for_states = [
@@ -82,11 +91,11 @@ async def assert_and_wait_for_pipeline_status(
     async def check_pipeline_state() -> ComputationTaskGet:
         response = await client.get(url, params={"user_id": user_id})
         assert (
-            response.status_code == status.HTTP_202_ACCEPTED
+            response.status_code == status.HTTP_200_OK
         ), f"response code is {response.status_code}, error: {response.text}"
         task_out = ComputationTaskGet.parse_obj(response.json())
         assert task_out.id == project_uuid
-        assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
+        assert task_out.url.path == f"/v2/computations/{project_uuid}"
         print(
             f"Pipeline '{project_uuid=}' current task out is '{task_out=}'",
         )

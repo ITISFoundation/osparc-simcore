@@ -52,12 +52,8 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
           active: false
         });
 
-        const showHint = () => {
-          hint.show();
-        };
-        const hideHint = () => {
-          hint.exclude();
-        };
+        const showHint = () => hint.show();
+        const hideHint = () => hint.exclude();
 
         // Make hint "modal" when info button is clicked
         const tapListener = event => {

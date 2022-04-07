@@ -100,7 +100,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
+      - COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL=${COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL:-tcp://dask-scheduler:8786}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
@@ -193,18 +193,20 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - CATALOG_HOST=${CATALOG_HOST:-catalog}
-      - CATALOG_PORT=${CATALOG_PORT:-8000}
-      - DIAGNOSTICS_MAX_AVG_LATENCY=10
-      - DIAGNOSTICS_MAX_TASK_DELAY=30
-      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
-      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
-      - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
-      - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
-      - STORAGE_HOST=${STORAGE_HOST:-storage}
-      - STORAGE_PORT=${STORAGE_PORT:-8080}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      &webserver-environment
+      CATALOG_HOST: ${CATALOG_HOST:-catalog}
+      CATALOG_PORT: ${CATALOG_PORT:-8000}
+      DIAGNOSTICS_MAX_AVG_LATENCY: 10
+      DIAGNOSTICS_MAX_TASK_DELAY: 30
+      DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
+      DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
+      DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST:-director-v2}
+      DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT:-8000}
+      STORAGE_HOST: ${STORAGE_HOST:-storage}
+      STORAGE_PORT: ${STORAGE_PORT:-8080}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      WEBSERVER_GARBAGE_COLLECTOR: "null"
+      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
     env_file:
       - ../.env
     deploy:
@@ -232,6 +234,25 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
+    networks:
+      - default
+      - interactive_services_subnet
+
+  wb-garbage-collector:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      <<: *webserver-environment
+      WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
+    env_file:
+      - ../.env
+      - ../.env-wb-garbage-collector
+
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
     networks:
       - default
       - interactive_services_subnet

@@ -7,7 +7,6 @@
 # pylint:disable=no-name-in-module
 
 
-import uuid
 from random import choice
 from typing import Any, Dict
 from unittest import mock
@@ -25,11 +24,11 @@ from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
@@ -75,14 +74,19 @@ def service_version() -> str:
     return "1234.32432.2344"
 
 
-@pytest.fixture()
-def project_id() -> ProjectID:
-    return uuid.uuid4()
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
 
 
-@pytest.fixture()
-def node_id() -> NodeID:
-    return uuid.uuid4()
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 def test_dask_job_id_serialization(

@@ -6,7 +6,6 @@
         - return data and successful HTTP responses (or raise them)
         - upon failure raise errors that can be also HTTP reponses
 """
-# pylint: disable=too-many-arguments
 
 import asyncio
 import contextlib
@@ -51,7 +50,8 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import get_user_name, is_user_guest
+from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_exceptions import UserNotFoundError
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -284,6 +284,11 @@ async def remove_project_interactive_services(
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
 ) -> None:
+    """
+
+    :raises UserNotFoundError:
+    """
+
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
     log.debug(
@@ -292,12 +297,27 @@ async def remove_project_interactive_services(
         user_id,
     )
     try:
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+        # TODO: logic around save_state is not ideal, but it remains with the same logic
+        # as before until it is properly refactored
+        user_role: Optional[UserRole] = None
+        try:
+            user_role = await get_user_role(app, user_id)
+        except UserNotFoundError:
+            user_role = None
+
+        save_state: bool = True
+        if user_role is None or user_role <= UserRole.GUEST:
+            save_state = False
+        # -------------------
+
         async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            user_name or await get_user_name(app, user_id),
+            user_name_data,
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
@@ -307,9 +327,7 @@ async def remove_project_interactive_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    save_state=save_state,
                 )
     except ProjectLockError:
         pass
@@ -512,8 +530,8 @@ async def get_workbench_node_ids_from_project_uuid(
     project_uuid: str,
 ) -> Set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
-    db = app[APP_PROJECT_DBAPI]
-    return await db.get_all_node_ids_from_workbenches(project_uuid)
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.get_node_ids_from_project(project_uuid)
 
 
 async def is_node_id_present_in_any_project_workbench(
@@ -521,8 +539,8 @@ async def is_node_id_present_in_any_project_workbench(
     node_id: str,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
-    db = app[APP_PROJECT_DBAPI]
-    return node_id in await db.get_all_node_ids_from_workbenches()
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.node_id_exists(node_id)
 
 
 async def notify_project_state_update(

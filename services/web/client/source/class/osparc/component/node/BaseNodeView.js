@@ -31,6 +31,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
     this.__buildLayout();
+
+    this.set({
+      paddingBottom: 2
+    });
   },
 
   statics: {
@@ -41,7 +45,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         appearance: "settings-groupbox",
         maxWidth: 800,
         alignX: "center",
-        layout: new qx.ui.layout.VBox()
+        layout: new qx.ui.layout.VBox(10)
       });
       return settingsGroupBox;
     },
@@ -157,11 +161,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsLayout = this._outputsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-        padding: 5,
-        width: 250
+      const outputsLayout = this._outputsLayout = this.self().createSettingsGroupBox(this.tr("Outputs")).set({
+        padding: 10,
+        width: 280
       });
       mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
+      mainView.bind("backgroundColor", outputsLayout.getChildControl("frame"), "backgroundColor");
       this._outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
@@ -175,7 +180,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openServiceDetails: function() {
-      const serviceDetails = new osparc.servicecard.Large(this.getNode().getMetaData());
+      const serviceDetails = new osparc.servicecard.Large(this.getNode().getMetaData(), this.getNode().getNodeId());
       const title = this.tr("Service information");
       const width = 600;
       const height = 700;

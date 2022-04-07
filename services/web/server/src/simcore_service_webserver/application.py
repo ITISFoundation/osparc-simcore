@@ -2,12 +2,13 @@
 
 """
 import logging
+from pprint import pformat
 from typing import Any, Dict
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
 
-from ._meta import WELCOME_MSG
+from ._meta import WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
@@ -51,7 +52,7 @@ def create_application() -> web.Application:
     """
     app = create_safe_application()
 
-    setup_settings(app)
+    settings = setup_settings(app)
 
     # WARNING: setup order matters
     # TODO: create dependency mechanism
@@ -110,8 +111,12 @@ def create_application() -> web.Application:
 
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
+        if settings.WEBSERVER_GARBAGE_COLLECTOR:
+            print("with", WELCOME_GC_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
+
+    log.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 

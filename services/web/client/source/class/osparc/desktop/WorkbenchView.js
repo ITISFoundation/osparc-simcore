@@ -68,6 +68,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
+    "annotationRectStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
     "createIterations": "qx.event.type.Event",
@@ -805,19 +806,30 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
+
       this.__studyOptionsPage.add(this.__getSlideshowSection());
 
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        this.__studyOptionsPage.add(this.__getAnnotationsSection());
+      }
+
+      const snaps = this.__getSnapshotsSection();
+      snaps.exclude();
+      this.__studyOptionsPage.add(snaps);
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getSnapshotsSection());
+            snaps.show();
           }
         });
 
+      const iters = this.__getIterationsSection();
+      iters.exclude();
+      this.__studyOptionsPage.add(iters);
       osparc.utils.DisabledPlugins.isMetaModelingDisabled()
         .then(isDisabled => {
           if (!isDisabled) {
-            this.__studyOptionsPage.add(this.__getIterationsSection());
+            iters.show();
           }
         });
     },
@@ -862,6 +874,35 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
         this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
+    },
+
+    __getAnnotationsSection: function() {
+      const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
+        font: "title-14"
+      }));
+
+      const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      annotationsSection.add(annotationsButtons);
+
+      const buttonsHeight = 28;
+      const addRectBtn = new qx.ui.form.Button().set({
+        label: this.tr("Rect"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
+      annotationsButtons.add(addRectBtn);
+
+      const addTextBtn = new qx.ui.form.Button().set({
+        label: this.tr("Text"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);
+      annotationsButtons.add(addTextBtn);
+
+      return annotationsSection;
     },
 
     __getSnapshotsSection: function() {
@@ -930,32 +971,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
+      const fpView = new osparc.file.FilePicker(filePicker, "workbench");
       if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
         this.__infoPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
-        const view = osparc.file.FilePicker.buildInfoView(filePicker);
-        view.setEnabled(false);
-
-        this.__infoPage.add(view);
-
-        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-        const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
-          allowGrowX: false
+        this.__infoPage.add(fpView, {
+          flex: 1
         });
-        downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
-        hbox.add(downloadFileBtn);
-        const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
-          allowGrowX: false
-        });
-        resetFileBtn.addListener("execute", () => {
-          osparc.file.FilePicker.resetOutputValue(filePicker);
-          filePicker.setLabel("File Picker");
-          this.getStudy().getWorkbench().giveUniqueNameToNode(filePicker, "File Picker");
-          this.__populateSecondPanel(filePicker);
-        }, this);
-        hbox.add(resetFileBtn);
-        this.__infoPage.add(hbox);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -964,36 +987,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
-        const filePickerView = new osparc.file.FilePicker(filePicker);
-        filePickerView.buildLayout();
-
-        const fileDrop = new osparc.file.FileDrop();
-        fileDrop.addListener("localFileDropped", e => {
-          const files = e.getData()["data"];
-          if (filePickerView.uploadPendingFiles(files)) {
-            setTimeout(() => this.__populateSecondPanel(filePicker), 500);
-          }
-          fileDrop.resetDropAction();
-        });
-        fileDrop.addListener("fileLinkDropped", e => {
-          const data = e.getData()["data"];
-          osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-          this.__populateSecondPanel(filePicker);
-          fileDrop.resetDropAction();
-        });
-
-        this.__settingsPage.add(fileDrop, {
+        this.__settingsPage.add(fpView, {
           flex: 1
         });
-
-        filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").exclude();
-        filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("selected-file-layout").exclude();
-        filePickerView.getChildControl("select-button").exclude();
-        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView);
       }
+      [
+        "itemReset",
+        "itemSelected",
+        "fileUploaded"
+      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondPanel(filePicker)));
     },
 
     __populateSecondPanelParameter: function(parameter) {
@@ -1023,10 +1025,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
-          allowGrowY: false
-        });
-        this.__outputsPage.add(portTree);
+        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs);
+        this.__outputsPage.add(nodeOutputs);
       }
 
       const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
@@ -1146,9 +1146,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();
@@ -1166,9 +1166,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
-        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
-        win.getConfirmButton().set({
-          appearance: "danger-button"
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
         });
         win.center();
         win.open();

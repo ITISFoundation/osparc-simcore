@@ -24,7 +24,7 @@ async def _cancel_task_if_client_disconnected(
             await asyncio.sleep(interval)
 
 
-def cancellable_request(handler: Callable[[Any], Coroutine[Any, Any, Response]]):
+def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Response]]):
     """this decorator periodically checks if the client disconnected and then will cancel the request and return a 499 code (a la nginx)."""
 
     @wraps(handler)
