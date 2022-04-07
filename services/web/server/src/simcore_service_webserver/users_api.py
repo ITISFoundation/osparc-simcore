@@ -42,7 +42,7 @@ def _parse_as_user(user_id: Any) -> int:
 # USERS  API ----------------------------------------------------------------------------
 
 
-async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]:
+async def get_user_profile(app: web.Application, user_id: UserID) -> Dict[str, Any]:
     """
     :raises UserNotFoundError:
     """
