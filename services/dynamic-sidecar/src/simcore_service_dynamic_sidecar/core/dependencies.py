@@ -3,6 +3,7 @@ from fastapi.datastructures import State
 
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.mounted_fs import MountedVolumes
 from .rabbitmq import RabbitMQ
 from .settings import DynamicSidecarSettings
 
@@ -31,3 +32,7 @@ def get_shared_store(app_state: State = Depends(get_app_state)) -> SharedStore:
 
 def get_rabbitmq(app_state: State = Depends(get_app_state)) -> RabbitMQ:
     return app_state.rabbitmq  # type: ignore
+
+
+def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVolumes:
+    return app_state.mounted_volumes  # type: ignore

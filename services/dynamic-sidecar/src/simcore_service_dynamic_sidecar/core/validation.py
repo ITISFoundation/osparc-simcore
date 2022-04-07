@@ -6,7 +6,7 @@ from typing import Any, Dict, Generator, List, Tuple
 
 import yaml
 
-from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..modules.mounted_fs import MountedVolumes
 from .settings import DynamicSidecarSettings
 from .shared_handlers import write_file_and_run_command
 
@@ -158,7 +158,9 @@ def parse_compose_spec(compose_file_content: str) -> Any:
 
 
 async def validate_compose_spec(
-    settings: DynamicSidecarSettings, compose_file_content: str
+    settings: DynamicSidecarSettings,
+    compose_file_content: str,
+    mounted_volumes: MountedVolumes,
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects
@@ -185,7 +187,6 @@ async def validate_compose_spec(
 
     spec_services_to_container_name: Dict[str, str] = {}
 
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
@@ -214,24 +215,14 @@ async def validate_compose_spec(
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
 
-        service_volumes.append(mounted_volumes.get_inputs_docker_volume())
-        service_volumes.append(mounted_volumes.get_outputs_docker_volume())
-        for (
+        service_volumes.append(await mounted_volumes.get_inputs_docker_volume())
+        service_volumes.append(await mounted_volumes.get_outputs_docker_volume())
+        async for (
             state_paths_docker_volume
-        ) in mounted_volumes.get_state_paths_docker_volumes():
+        ) in mounted_volumes.iter_state_paths_to_docker_volumes():
             service_volumes.append(state_paths_docker_volume)
 
         service_content["volumes"] = service_volumes
-
-    # inject volumes creation in spec
-    volumes = parsed_compose_spec.get("volumes", {})
-
-    volumes[mounted_volumes.volume_name_inputs] = dict(external=True)
-    volumes[mounted_volumes.volume_name_outputs] = dict(external=True)
-    for volume_name_state_path in mounted_volumes.volume_name_state_paths():
-        volumes[volume_name_state_path] = dict(external=True)
-
-    parsed_compose_spec["volumes"] = volumes
 
     # if more then one container is defined, add an "backend" network
     if len(spec_services) > 1:

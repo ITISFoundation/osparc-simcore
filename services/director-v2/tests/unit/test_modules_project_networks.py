@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
 import pytest
-from models_library.projects_networks import NetworksWithAliases
 from models_library.projects import ProjectID, Workbench
+from models_library.projects_networks import NetworksWithAliases
 from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt
 from pytest_mock.plugin import MockerFixture
