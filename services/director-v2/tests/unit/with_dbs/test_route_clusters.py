@@ -25,7 +25,6 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
-from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
@@ -36,7 +35,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
 )
 from starlette import status
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -45,7 +44,6 @@ def clusters_config(
     mock_env: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitSettings,
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):

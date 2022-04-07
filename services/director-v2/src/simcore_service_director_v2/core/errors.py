@@ -86,6 +86,10 @@ class PipelineNotFoundError(DirectorException):
         super().__init__(f"pipeline {pipeline_id} not found")
 
 
+class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
+    msg_template = "Computational run not found"
+
+
 class SchedulerError(DirectorException):
     """An error in the scheduler"""
 

@@ -76,6 +76,7 @@ def project(
             )
 
             inserted_project = ProjectAtDB.parse_obj(result.first())
+        print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project
 
