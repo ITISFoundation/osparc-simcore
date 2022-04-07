@@ -49,7 +49,7 @@ async def fetch_new_project_owner_from_groups(
 async def get_new_project_owner_gid(
     app: web.Application,
     project_uuid: str,
-    user_id: int,
+    user_id: UserID,
     user_primary_gid: int,
     project: Dict,
 ) -> Optional[int]:
