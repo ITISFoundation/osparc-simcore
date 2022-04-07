@@ -82,7 +82,7 @@ async def create_temporary_user(request: web.Request):
     #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
     #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
-    MAX_DELAY_TO_CREATE_USER = 15  # secs
+    MAX_DELAY_TO_CREATE_USER = 3  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
@@ -113,7 +113,6 @@ async def create_temporary_user(request: web.Request):
                 "created_ip": get_client_ip(request),
             }
         )
-
         # (2) read details above
         await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
@@ -224,11 +223,18 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         # TODO: test if temp user overrides old cookie properly
         user = await get_authorized_user(request)
 
-    if not user:
-        log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
-        is_anonymous_user = True
-
+    try:
+        if not user:
+            log.debug("Creating temporary user ...")
+            user = await create_temporary_user(request)
+            is_anonymous_user = True
+    except Exception as exc:  # pylint: disable=broad-except
+        log.exception(
+            "Failed while creating temporary user. TIP: too many simultaneous request?",
+        )
+        raise web.HTTPInternalServerError(
+            reason=compose_error_msg("Unable to create temporary user.")
+        ) from exc
     try:
         log.debug(
             "Granted access to study '%s' for user %s. Copying study over ...",
