@@ -37,7 +37,7 @@ from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -798,13 +798,13 @@ async def test_regression_removing_unexisting_user(
     await delete_user(app=client.app, user_id=logged_user["id"])
 
     with pytest.raises(UserNotFoundError):
-        await remove_project_interactive_services(
+        await remove_project_dynamic_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,
         )
     with pytest.raises(ProjectNotFoundError):
-        await remove_project_interactive_services(
+        await remove_project_dynamic_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,

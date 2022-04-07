@@ -189,7 +189,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     await _delete_project_from_db(app, project_uuid, user_id)
 
     async def _remove_services_and_data():
-        await remove_project_interactive_services(
+        await remove_project_dynamic_services(
             user_id, project_uuid, app, notify_users=False
         )
         await storage_api.delete_data_folders_of_project(app, project_uuid, user_id)
@@ -273,7 +273,7 @@ async def lock_with_notification(
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
-async def remove_project_interactive_services(
+async def remove_project_dynamic_services(
     user_id: int,
     project_uuid: str,
     app: web.Application,
@@ -737,7 +737,7 @@ async def try_close_project_for_user(
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
-            remove_project_interactive_services(user_id, project_uuid, app)
+            remove_project_dynamic_services(user_id, project_uuid, app)
         )
     else:
         log.warning(

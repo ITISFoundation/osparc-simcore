@@ -8,9 +8,7 @@ from typing import Any, Callable, Dict, Type
 from unittest.mock import MagicMock, call
 
 import pytest
-from _helpers import ExpectedResponse  # type: ignore
-from _helpers import MockedStorageSubsystem  # type: ignore
-from _helpers import standard_role_response  # type: ignore
+from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 
 # TESTS -----------------------------------------------------------------------------------------
@@ -23,7 +21,7 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 # HELPERS -----------------------------------------------------------------------------------------
 
 
-async def _delete_project(
+async def _request_delete_project(
     client, project: Dict, expected: Type[web.HTTPException]
 ) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
@@ -50,7 +48,7 @@ async def test_delete_project(
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
-    await _delete_project(client, user_project, expected.no_content)
+    await _request_delete_project(client, user_project, expected.no_content)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected.no_content == web.HTTPNoContent:
@@ -116,4 +114,4 @@ async def test_delete_multiple_opened_project_forbidden(
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
-    await _delete_project(client, user_project, expected_forbidden)
+    await _request_delete_project(client, user_project, expected_forbidden)

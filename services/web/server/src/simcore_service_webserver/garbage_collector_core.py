@@ -26,7 +26,7 @@ from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
 )
 from .projects.projects_db import APP_PROJECT_DBAPI
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -183,7 +183,7 @@ async def remove_disconnected_user_resources(
                     # inform that the project can be closed on the backend side
                     #
                     try:
-                        await remove_project_interactive_services(
+                        await remove_project_dynamic_services(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
