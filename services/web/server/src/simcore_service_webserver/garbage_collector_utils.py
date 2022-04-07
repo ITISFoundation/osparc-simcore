@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 async def fetch_new_project_owner_from_groups(
     app: web.Application, standard_groups: Dict, user_id: int
-) -> Optional[int]:
+) -> Optional[UserID]:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid
     """
