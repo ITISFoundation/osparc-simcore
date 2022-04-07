@@ -10,10 +10,11 @@ from redis.asyncio.lock import Lock
 
 from ..redis import get_redis_lock_manager_client
 from ..users_api import UserNameDict
+from .projects_exceptions import ProjectLockError
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 
-ProjectLock = aioredlock.Lock
+ProjectLock = Lock
 
 
 @asynccontextmanager

@@ -1,5 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
-import aioredlock
+import redis.exceptions
 
 
 class ProjectsException(Exception):
@@ -51,4 +51,4 @@ class NodeNotFoundError(ProjectsException):
         self.project_uuid = project_uuid
 
 
-ProjectLockError = aioredlock.LockError
+ProjectLockError = redis.exceptions.LockError
