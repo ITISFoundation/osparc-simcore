@@ -63,7 +63,7 @@ log = logging.getLogger(__name__)
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 
-def is_node_dynamic(node_key: str) -> bool:
+def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
@@ -157,7 +157,8 @@ async def start_project_interactive_services(
     project_needed_services = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
-        if is_node_dynamic(service["key"]) and service_uuid not in running_service_uuids
+        if _is_node_dynamic(service["key"])
+        and service_uuid not in running_service_uuids
     }
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
@@ -362,7 +363,7 @@ async def add_project_node(
         user_id,
     )
     node_uuid = service_id if service_id else str(uuid4())
-    if is_node_dynamic(service_key):
+    if _is_node_dynamic(service_key):
         await director_v2_api.start_service(
             request.app,
             project_id=project_uuid,
@@ -605,7 +606,7 @@ async def trigger_connected_service_retrieve(
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
         # check this node is dynamic
-        if not is_node_dynamic(node["key"]):
+        if not _is_node_dynamic(node["key"]):
             continue
 
         # check whether this node has our updated node as linked inputs
