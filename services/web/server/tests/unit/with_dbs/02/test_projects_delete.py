@@ -45,15 +45,14 @@ async def test_delete_project(
     assert_get_same_project_caller: Callable,
 ):
     # DELETE /v0/projects/{project_id}
-    project_uuid = user_project["uuid"]
-    user_id = logged_user["id"]
-
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
     await _request_delete_project(client, user_project, expected.no_content)
 
-    tasks = get_delete_project_tasks(project_uuid, user_id)
+    tasks = get_delete_project_tasks(
+        project_uuid=user_project["uuid"], user_id=logged_user["id"]
+    )
 
     if expected.no_content == web.HTTPNoContent:
         # Waits until deletion tasks are done
@@ -105,7 +104,7 @@ async def test_delete_multiple_opened_project_forbidden(
     expected_ok,
     expected_forbidden,
 ):
-    # service in project = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
+    # service in project
     service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
 
     # open project in tab1
