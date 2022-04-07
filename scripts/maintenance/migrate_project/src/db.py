@@ -172,15 +172,9 @@ def get_project_and_files_to_migrate(
 
 def insert_file_meta_data(connection: Connection, data: Dict[str, Any]) -> None:
     insert_stmt = insert(file_meta_data).values(**data)
-    on_update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[file_meta_data.c.file_uuid], set_=data
-    )
-    connection.execute(on_update_stmt)
+    connection.execute(insert_stmt)
 
 
 def insert_projects(connection: Connection, data: Dict[str, Any]) -> None:
     insert_stmt = insert(projects).values(**data)
-    on_update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[projects.c.id], set_=data
-    )
-    connection.execute(on_update_stmt)
+    connection.execute(insert_stmt)
