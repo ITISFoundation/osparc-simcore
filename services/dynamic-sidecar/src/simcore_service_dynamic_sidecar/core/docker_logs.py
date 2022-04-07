@@ -5,8 +5,8 @@ from typing import Any, Callable, Coroutine, Dict, Optional, cast
 
 from fastapi import FastAPI
 
+from .docker_utils import docker_client
 from .rabbitmq import RabbitMQ
-from .utils import docker_client
 
 logger = logging.getLogger(__name__)
 

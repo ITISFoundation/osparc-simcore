@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI
-from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects import ProjectID
+from models_library.projects_networks import DockerNetworkAlias
 from servicelib.utils import logged_gather
 from starlette import status
 
