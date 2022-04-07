@@ -2028,9 +2028,9 @@ paths:
                                   description: The y position
                                   example:
                                     - '15'
-                            bookmark:
+                            marker:
                               type: string
-                              description: Bookmark's color
+                              description: Marker's color
                               example:
                                 - '#FF0000'
                                 - '#0000FF'

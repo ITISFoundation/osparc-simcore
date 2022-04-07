@@ -132,7 +132,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           createItem: () => {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
             nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
-            nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
+            nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
             nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
             return nodeTreeItem;
@@ -147,6 +147,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               item.getChildControl("options-delete-button").exclude();
             } else if (node) {
               node.bind("label", item.getModel(), "label");
+              if (node.getMarker()) {
+                console.log(node.getMarker());
+                node.bind("marker", item.getModel(), "marker");
+              }
 
               // set icon
               if (node.isFilePicker()) {
@@ -265,7 +269,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
-    __openItemRenamer: function(nodeId) {
+    _openItemRenamer: function(nodeId) {
       if (nodeId === undefined && this.__getSelection()) {
         nodeId = this.__getSelection().getNodeId();
       }
@@ -335,7 +339,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.addListener("keypress", keyEvent => {
         switch (keyEvent.getKeyIdentifier()) {
           case "F2":
-            this.__openItemRenamer();
+            this._openItemRenamer();
             break;
           case "I":
             this.__openNodeInfo();

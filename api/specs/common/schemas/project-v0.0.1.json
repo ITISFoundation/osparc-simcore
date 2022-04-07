@@ -514,9 +514,9 @@
                     }
                   }
                 },
-                "bookmark": {
+                "marker": {
                   "type": "string",
-                  "description": "Bookmark's color",
+                  "description": "Marker's color",
                   "examples": [
                     "#FF0000",
                     "#0000FF"

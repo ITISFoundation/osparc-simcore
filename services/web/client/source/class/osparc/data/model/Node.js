@@ -164,11 +164,11 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    bookmark: {
+    marker: {
       check: "Color",
       init: null,
       nullable: true,
-      event: "changeBookmark"
+      event: "changeMarker"
     },
 
     inputConnected: {
@@ -620,13 +620,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    addBookmark: function() {
+    addMarker: function() {
       const color = osparc.utils.Utils.getRandomColor();
-      this.setBookmark(color);
+      this.setMarker(color);
     },
 
-    removeBookmark: function() {
-      this.setBookmark(null);
+    removeMarker: function() {
+      this.setMarker(null);
     },
 
     __setInputData: function(inputs) {

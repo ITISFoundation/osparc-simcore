@@ -203,29 +203,29 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       this._markerBtn.show();
-      this.getNode().bind("bookmark", this._markerBtn, "label", {
+      this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
       this._markerBtn.addListener("execute", () => {
-        if (this.getNode().getBookmark()) {
-          this.getNode().removeBookmark();
+        if (this.getNode().getMarker()) {
+          this.getNode().removeMarker();
         } else {
-          this.getNode().addBookmark();
+          this.getNode().addMarker();
         }
       });
 
-      const bookmark = new qx.ui.basic.Image().set({
+      const marker = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/bookmark/12",
         padding: 4
       });
-      this.getChildControl("captionbar").add(bookmark, {
+      this.getChildControl("captionbar").add(marker, {
         row: 0,
         column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
       });
-      node.bind("bookmark", bookmark, "textColor");
-      node.bind("bookmark", bookmark, "visibility", {
+      node.bind("marker", marker, "visibility", {
         converter: val => val ? "visible" : "excluded"
       });
+      node.bind("marker", marker, "textColor");
     },
 
     __applyType: function(type) {

@@ -107,7 +107,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   events: {
     "renameNode": "qx.event.type.Data",
     "infoNode": "qx.event.type.Data",
-    "addBookmarkNode": "qx.event.type.Data",
+    "addMarkerNode": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "edgeDragStart": "qx.event.type.Data",
     "edgeDragOver": "qx.event.type.Data",

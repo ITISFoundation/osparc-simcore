@@ -45,6 +45,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     this.set({
       indent: 8,
+      allowGrowX: true,
       alignY: "middle"
     });
 
@@ -61,6 +62,13 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       event: "changeNodeId",
       apply: "__applyNodeId",
       nullable : true
+    },
+
+    marker: {
+      check: "Color",
+      init: null,
+      nullable: true,
+      event: "changeMarker"
     }
   },
 
@@ -157,7 +165,19 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
           });
           this.addWidget(control);
+          break;
         }
+        case "marker":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/bookmark/12",
+            padding: 4
+          });
+          this.bind("marker", control, "visibility", {
+            converter: val => val ? "visible" : "excluded"
+          });
+          this.bind("marker", control, "textColor");
+          this.addWidget(control);
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -192,6 +212,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.getChildControl("options-info-button");
       this.getChildControl("options-delete-button");
       this.getChildControl("node-id");
+      this.getChildControl("marker");
+    },
+
+    __applyNode: function(node) {
+      console.log(node);
     },
 
     __applyNodeId: function(nodeId) {
