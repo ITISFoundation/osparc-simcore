@@ -88,7 +88,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           isContainer: node.isContainer(),
           nodeId: node.getNodeId(),
           sortingValue: this.self().getSortingValue(node),
-          statusColor: null
+          statusColor: null,
+          marker: node.getMarker() ? node.getMarker() : null
         };
         children.push(nodeInTree);
       }
@@ -147,10 +148,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               item.getChildControl("options-delete-button").exclude();
             } else if (node) {
               node.bind("label", item.getModel(), "label");
-              if (node.getMarker()) {
-                console.log(node.getMarker());
-                node.bind("marker", item.getModel(), "marker");
-              }
+              c.bindProperty("marker", "marker", null, item, id);
 
               // set icon
               if (node.isFilePicker()) {

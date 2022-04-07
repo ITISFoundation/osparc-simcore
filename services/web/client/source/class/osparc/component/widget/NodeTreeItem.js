@@ -170,7 +170,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         case "marker":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/bookmark/12",
-            padding: 4
+            padding: 4,
+            // visibility: "excluded"
           });
           this.bind("marker", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
