@@ -205,7 +205,7 @@ markupsafe==2.0.1
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
     #   mako
-msgpack==1.0.2
+msgpack==1.0.3
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
