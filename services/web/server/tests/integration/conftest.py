@@ -27,7 +27,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
-from pytest_simcore.helpers.utils_login import AUserDict, NewUser
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -176,14 +176,14 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user: AUserDict) -> Dict[str, str]:
+async def primary_group(client, logged_user: UserInfoDict) -> Dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: AUserDict
+    client, logged_user: UserInfoDict
 ) -> AsyncIterable[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
