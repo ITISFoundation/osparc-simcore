@@ -1,5 +1,26 @@
 components:
   schemas:
+    PipelineEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/PipelineSchema"
+        error:
+          nullable: true
+          default: null
+
+    PipelineSchema:
+      type: object
+      properties:
+        iteration:
+          type: integer
+          minimum: 1
+        cluster_id:
+          type: integer
+          minimum: 0
+
     PipelineCreatedEnveloped:
       type: object
       required:

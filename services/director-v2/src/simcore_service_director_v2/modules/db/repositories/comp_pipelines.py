@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import networkx as nx
 import sqlalchemy as sa
@@ -23,7 +24,7 @@ class CompPipelinesRepository(BaseRepository):
                     comp_pipeline.c.project_id == str(project_id)
                 )
             )
-            row: RowProxy = await result.fetchone()
+            row: Optional[RowProxy] = await result.fetchone()
         if not row:
             raise PipelineNotFoundError(str(project_id))
         return CompPipelineAtDB.from_orm(row)
