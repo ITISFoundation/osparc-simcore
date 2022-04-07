@@ -8,7 +8,6 @@
 --constraint _base.txt
 
 
-aioboto3
 aioresponses
 alembic
 click
