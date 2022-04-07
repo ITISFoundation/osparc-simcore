@@ -24,7 +24,6 @@ from .projects_exceptions import (
 
 log = logging.getLogger(__name__)
 
-# helper to format task name when using fire&forget
 DELETE_PROJECT_TASK_NAME = "fire_and_forget.delete_project.project_uuid={0}.user_id={1}"
 
 
@@ -94,16 +93,16 @@ async def delete_project(
         ) from err
 
 
-def create_delete_project_task(
+def create_delete_project_background_task(
     app: web.Application,
     project_uuid: str,
     user_id: int,
     remove_project_dynamic_services: Callable,
     logger: logging.Logger,
 ) -> asyncio.Task:
-    """Helper to uniformly create 'delete_project' tasks
+    """Wrap `delete_project` for a `project_uuid` and `user_id` into a Task and schedule its execution in the event loop.
 
-    These tasks then can be used for fire&forget
+    Return the scheduled Task
     """
 
     def _log_errors(fut: asyncio.Future):
@@ -121,13 +120,11 @@ def create_delete_project_task(
 
     assert task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
 
-    # TODO: might use this to ensure only ONE task instance is fire&forget at a time
-
     task.add_done_callback(functools.partial(_log_errors, log))
     return task
 
 
-def get_delete_project_tasks(
+def get_delete_project_background_tasks(
     project_uuid: ProjectID, user_id: UserID
 ) -> List[asyncio.Task]:
     """Returns delete-project task if not yet finished"""
@@ -138,7 +135,14 @@ def get_delete_project_tasks(
     ]
 
 
-def is_delete_project_task_running(project_uuid: ProjectID, user_id: UserID) -> bool:
-    tasks = get_delete_project_tasks(project_uuid, user_id)
+def is_delete_project_background_task_running(
+    project_uuid: ProjectID, user_id: UserID
+) -> bool:
+    tasks = get_delete_project_background_tasks(project_uuid, user_id)
     assert len(tasks) <= 1
     return len(tasks) > 0
+
+
+# alias
+create_background_task = create_delete_project_background_task
+is_background_task_running = is_delete_project_background_task_running

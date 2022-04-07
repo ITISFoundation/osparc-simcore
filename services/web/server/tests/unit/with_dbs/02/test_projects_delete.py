@@ -13,7 +13,9 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects._delete import get_delete_project_tasks
+from simcore_service_webserver.projects._delete import (
+    get_delete_project_background_tasks,
+)
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 # HELPERS -----------------------------------------------------------------------------------------
@@ -50,7 +52,7 @@ async def test_delete_project(
 
     await _request_delete_project(client, user_project, expected.no_content)
 
-    tasks = get_delete_project_tasks(
+    tasks = get_delete_project_background_tasks(
         project_uuid=user_project["uuid"], user_id=logged_user["id"]
     )
 
