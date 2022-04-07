@@ -50,7 +50,7 @@ async def get_new_project_owner_gid(
     app: web.Application,
     project_uuid: str,
     user_id: UserID,
-    user_primary_gid: int,
+    user_primary_gid: GroupID,
     project: Dict,
 ) -> Optional[int]:
     """Goes through the access rights and tries to find a new suitable owner.
