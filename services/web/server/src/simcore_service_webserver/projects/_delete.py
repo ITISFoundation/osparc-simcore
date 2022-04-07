@@ -5,11 +5,12 @@
 import asyncio
 import functools
 import logging
-from typing import Callable
+from typing import Callable, List
 from uuid import UUID
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.users import UserID
 
 from .. import director_v2_api
 from ..storage_api import delete_data_folders_of_project
@@ -35,10 +36,10 @@ async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID)
     # TODO: tmp using invisible as a "deletion mark"
     # Even if any of the steps below fail, the project will remain invisible
     # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+
     # TODO: note that if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
-
     await db.set_hidden_flag(f"{project_uuid}", enabled=True)
 
 
@@ -51,12 +52,13 @@ async def delete_project(
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
 
-    NOTE: this does NOT use fire&forget anymore. This is a decission of the caller to make.
+    NOTE: this does NOT use fire&forget anymore. This is a decision of the caller to make.
 
     raises ProjectDeleteError
     """
+
     log.debug(
-        "deleting project '%s' for user '%s' in database",
+        "Deleting project '%s' for user '%s' in database",
         f"{project_uuid=}",
         f"{user_id=}",
     )
@@ -99,7 +101,7 @@ def create_delete_project_task(
     remove_project_dynamic_services: Callable,
     logger: logging.Logger,
 ) -> asyncio.Task:
-    """helper to uniformly create 'delete_project' tasks
+    """Helper to uniformly create 'delete_project' tasks
 
     These tasks then can be used for fire&forget
     """
@@ -117,7 +119,26 @@ def create_delete_project_task(
         name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
     )
 
+    assert task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+
     # TODO: might use this to ensure only ONE task instance is fire&forget at a time
 
     task.add_done_callback(functools.partial(_log_errors, log))
     return task
+
+
+def get_delete_project_tasks(
+    project_uuid: ProjectID, user_id: UserID
+) -> List[asyncio.Task]:
+    """Returns delete-project task if not yet finished"""
+    return [
+        task
+        for task in asyncio.all_tasks()
+        if task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+    ]
+
+
+def is_delete_project_task_running(project_uuid: ProjectID, user_id: UserID) -> bool:
+    tasks = get_delete_project_tasks(project_uuid, user_id)
+    assert len(tasks) <= 1
+    return len(tasks) > 0
