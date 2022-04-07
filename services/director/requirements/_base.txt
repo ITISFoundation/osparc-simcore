@@ -51,7 +51,8 @@ chardet==3.0.4
     # via
     #   -r requirements/_base.in
     #   aiohttp
-    #   requests
+charset-normalizer==2.0.12
+    # via requests
 dataclasses==0.7
     # via
     #   -r requirements/_base.in
@@ -113,7 +114,7 @@ pyyaml==5.4
     #   aiohttp-apiset
     #   openapi-spec-validator
     #   simcore-service-library
-requests==2.22.0
+requests==2.27.1
     # via -r requirements/_base.in
 simcore-service-library @ git+https://github.com/ITISFoundation/osparc-simcore.git@c8669fb52659b684514fefa4f3b4599f57f276a0#subdirectory=packages/service-library
     # via -r requirements/_base.in
@@ -144,7 +145,7 @@ ujson==4.0.1
     # via
     #   -r requirements/_base.in
     #   simcore-service-library
-urllib3==1.25.11
+urllib3==1.26.5
     # via
     #   -r requirements/_base.in
     #   requests
