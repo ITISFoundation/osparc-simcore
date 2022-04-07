@@ -864,6 +864,15 @@ class ProjectDBAPI:
             )
             return result.rowcount == 1
 
+    async def set_hidden_flag(self, project_uuid: str, enabled: bool):
+        async with self.engine.acquire() as conn:
+            stmt = (
+                projects.update()
+                .values(hidden=enabled)
+                .where(projects.c.uuid == project_uuid)
+            )
+            await conn.execute(stmt)
+
 
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
