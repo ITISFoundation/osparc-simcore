@@ -13,7 +13,7 @@ from .projects_nodes_ui import Position
 
 class WorkbenchUI(BaseModel):
     position: Position = Field(..., description="The node position in the workbench")
-    bookmark: Color = Field(..., description="Bookmark's color")
+    bookmark: Optional[Color] = None
 
     class Config:
         extra = Extra.forbid
