@@ -625,6 +625,10 @@ qx.Class.define("osparc.data.model.Node", {
       this.setBookmark(color);
     },
 
+    removeBookmark: function() {
+      this.setBookmark(null);
+    },
+
     __setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
