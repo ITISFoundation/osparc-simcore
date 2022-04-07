@@ -281,7 +281,16 @@ def _is_docker_r_clone_plugin_installed() -> bool:
     return is_plugin_installed
 
 
-@pytest.fixture(scope="session", params={"true", "false"})
+@pytest.fixture(
+    scope="session",
+    params={
+        # NOTE: There is an issue with the docker rclone volume plugin:
+        # SEE https://github.com/rclone/rclone/issues/6059
+        # Disabling rclone test until this is fixed.
+        # "true",
+        "false",
+    },
+)
 def dev_features_enabled(request) -> str:
     if request.param == "true" and not _is_docker_r_clone_plugin_installed():
         pytest.skip("Required docker plugin `rclone` not installed.")

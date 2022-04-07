@@ -31,24 +31,24 @@ def node_uuid(faker: Faker) -> UUID:
     return faker.uuid4(cast_to=None)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def state_paths() -> List[Path]:
     return [Path(f"/tmp/asd/asd/{x}") for x in range(10)]
 
 
 @pytest.fixture
-def expect(
-    node_uuid: UUID, swarm_stack_name: str
+def expected_volume_config(
+    swarm_stack_name: str, node_uuid: UUID
 ) -> Callable[[str, str], Dict[str, Any]]:
     def _callable(source: str, target: str) -> Dict[str, Any]:
         return {
-            "Source": source,
             "Target": target,
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "uuid": f"{node_uuid}",
+                    "source": source,
                     "swarm_stack_name": swarm_stack_name,
+                    "uuid": f"{node_uuid}",
                 }
             },
         }
@@ -64,14 +64,14 @@ def test_expected_paths(
     compose_namespace: str,
     node_uuid: UUID,
     state_paths: List[Path],
-    expect: Callable[[str, str], Dict[str, Any]],
+    expected_volume_config: Callable[[str, str], Dict[str, Any]],
 ) -> None:
     fake = Faker()
 
     inputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, compose_namespace, inputs_path, node_uuid
-    ) == expect(
+    ) == expected_volume_config(
         source=f"{compose_namespace}{f'{inputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
@@ -79,7 +79,7 @@ def test_expected_paths(
     outputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, compose_namespace, outputs_path, node_uuid
-    ) == expect(
+    ) == expected_volume_config(
         source=f"{compose_namespace}{f'{outputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
@@ -88,7 +88,7 @@ def test_expected_paths(
         name_from_path = f"{path}".replace(os.sep, "_")
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
             swarm_stack_name, compose_namespace, path, node_uuid
-        ) == expect(
+        ) == expected_volume_config(
             source=f"{compose_namespace}{name_from_path}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )

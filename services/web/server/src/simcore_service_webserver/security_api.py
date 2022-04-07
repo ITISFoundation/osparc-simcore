@@ -37,7 +37,7 @@ async def check_credentials(engine: Engine, email: str, password: str) -> bool:
 
 
 def encrypt_password(password: str) -> str:
-    return passlib.hash.sha256_crypt.encrypt(password, rounds=1000)
+    return passlib.hash.sha256_crypt.hash(password, rounds=1000)
 
 
 def check_password(password: str, password_hash: str) -> bool:

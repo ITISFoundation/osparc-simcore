@@ -96,11 +96,11 @@ class DynamicSidecarVolumesPathsResolver:
         dynamic-sidecar) is running.
         """
         return {
-            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
+                    "source": cls.source(compose_namespace, path),
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 }
@@ -118,11 +118,11 @@ class DynamicSidecarVolumesPathsResolver:
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
-            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
+                    "source": cls.source(compose_namespace, path),
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 },

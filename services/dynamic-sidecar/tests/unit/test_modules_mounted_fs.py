@@ -4,10 +4,12 @@
 
 import os
 from pathlib import Path
-from typing import Any, Iterator, List
+from typing import Any, List
 
 import pytest
 from simcore_service_dynamic_sidecar.modules import mounted_fs
+
+pytestmark = pytest.mark.asyncio
 
 # UTILS
 
@@ -22,21 +24,6 @@ def _assert_same_object(first: Any, second: Any) -> None:
 
 
 # FIXTURES
-
-
-@pytest.fixture
-def clear_mounted_volumes() -> Iterator[None]:
-    mounted_fs._mounted_volumes = None
-    yield
-    mounted_fs._mounted_volumes = None
-
-
-@pytest.fixture
-def mounted_volumes(clear_mounted_volumes: None) -> mounted_fs.MountedVolumes:
-    assert mounted_fs._mounted_volumes is None
-    mounted_volumes: mounted_fs.MountedVolumes = mounted_fs.setup_mounted_fs()
-    _assert_same_object(mounted_volumes, mounted_fs.get_mounted_volumes())
-    return mounted_volumes
 
 
 @pytest.fixture
@@ -57,7 +44,7 @@ def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
     assert mounted_volumes
 
 
-def test_expected_paths_and_volumes(
+async def test_expected_paths_and_volumes(
     mounted_volumes: mounted_fs.MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
@@ -66,7 +53,7 @@ def test_expected_paths_and_volumes(
 ) -> None:
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len(set(mounted_volumes.get_state_paths_docker_volumes()))
+        == len({x async for x in mounted_volumes.iter_state_paths_to_docker_volumes()})
         == len(set(mounted_volumes.disk_state_paths()))
     )
 
@@ -98,19 +85,20 @@ def test_expected_paths_and_volumes(
         f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs
     }
 
+    def _get_container_mount(mount_path: str) -> str:
+        return mount_path.split(":")[1]
+
     # check docker_volume
     assert (
-        mounted_volumes.get_inputs_docker_volume()
-        == f"{mounted_volumes.volume_name_inputs}:{mounted_volumes.inputs_path}"
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume())
+        == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        mounted_volumes.get_outputs_docker_volume()
-        == f"{mounted_volumes.volume_name_outputs}:{mounted_volumes.outputs_path}"
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume())
+        == f"{mounted_volumes.outputs_path}"
     )
 
-    assert set(mounted_volumes.get_state_paths_docker_volumes()) == {
-        f"{volume_state_path}:{state_path}"
-        for volume_state_path, state_path in zip(
-            mounted_volumes.volume_name_state_paths(), state_paths_dirs
-        )
-    }
+    assert {
+        _get_container_mount(x)
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes()
+    } == {f"{state_path}" for state_path in state_paths_dirs}

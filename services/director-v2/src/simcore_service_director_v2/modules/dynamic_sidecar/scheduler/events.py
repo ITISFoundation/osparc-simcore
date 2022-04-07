@@ -588,7 +588,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         await app.state.dynamic_sidecar_scheduler.finish_service_removal(
             scheduler_data.node_uuid
         )
-
         scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 

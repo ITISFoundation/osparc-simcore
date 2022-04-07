@@ -7,7 +7,7 @@ from enum import Enum
 from pydantic import BaseModel, Extra, Field, constr
 from pydantic.types import PositiveInt
 
-GroupID = constr(regex=r"^\S+$")
+GroupIDStr = constr(regex=r"^\S+$")
 
 
 class AccessEnum(str, Enum):
