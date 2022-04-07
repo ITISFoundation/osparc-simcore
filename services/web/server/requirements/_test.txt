@@ -4,12 +4,19 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aioboto3==9.5.0
+    # via -r requirements/_test.in
+aiobotocore==2.2.0
+    # via aioboto3
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   aiobotocore
     #   aioresponses
     #   pytest-aiohttp
+aioitertools==0.10.0
+    # via aiobotocore
 aioresponses==0.7.3
     # via -r requirements/_test.in
 aiosignal==1.2.0
@@ -37,6 +44,13 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.0
     # via paramiko
+boto3==1.21.21
+    # via aiobotocore
+botocore==1.24.21
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2021.10.8
     # via requests
 cffi==1.15.0
@@ -126,6 +140,10 @@ iniconfig==1.1.1
     # via pytest
 isort==5.10.1
     # via pylint
+jmespath==1.0.0
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
@@ -228,7 +246,9 @@ pytest-runner==6.0.0
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   botocore
+    #   faker
 python-dotenv==0.20.0
     # via
     #   -r requirements/_test.in
@@ -249,6 +269,8 @@ requests==2.27.1
     #   coveralls
     #   docker
     #   docker-compose
+s3transfer==0.5.2
+    # via boto3
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -281,11 +303,13 @@ tomli==2.0.1
 typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
+    #   aioitertools
     #   astroid
     #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../../requirements/constraints.txt
+    #   botocore
     #   requests
 websocket-client==0.59.0
     # via
@@ -296,6 +320,7 @@ websockets==10.2
 wrapt==1.14.0
     # via
     #   -c requirements/_base.txt
+    #   aiobotocore
     #   astroid
     #   deprecated
 yarl==1.5.1
