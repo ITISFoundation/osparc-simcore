@@ -1,7 +1,0 @@
-version: '3.7'
-services:
-  migrate-utils:
-    build:
-      context: ../../../
-      dockerfile: scripts/maintenance/migrate_project/Dockerfile
-    image: migrate-utils

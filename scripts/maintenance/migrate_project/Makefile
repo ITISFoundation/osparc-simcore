@@ -2,13 +2,13 @@
 
 SHELL := /bin/bash
 
-IMAGE_NAME := migrate-utils
-TAG := latest
-CFG_NAME := cfg.ignore.json
+CFG_NAME	:= cfg.ignore.json
+REPO_DIR	:= $(CURDIR)/../../..
+IMAGE_NAME	:= migrate-utils
+TAG			:= latest
 
 build:
-	# creating python virtual environment
-	docker-compose -f docker-compose-build.yaml build
+	docker build -t ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
 
 shell:
 	docker run -it --rm ${IMAGE_NAME}:${TAG} bash
