@@ -423,8 +423,8 @@ async def remove_guest_user_with_all_its_resources(
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
-        user_role: Optional[UserRole] = await get_user_role(app, user_id)
-        if user_role is None or user_role > UserRole.GUEST:
+        user_role: UserRole = await get_user_role(app, user_id)
+        if user_role > UserRole.GUEST:
             # NOTE: This acts as a protection barrier to avoid removing resources to more
             # priviledge users
             return
