@@ -110,7 +110,6 @@ class DynamicSidecarsScheduler:
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
 
-    # NOTE: used by API
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
 
@@ -147,7 +146,6 @@ class DynamicSidecarsScheduler:
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
-    # NOTE: used by API
     async def mark_service_for_removal(
         self, node_uuid: NodeID, can_save: Optional[bool]
     ) -> None:
@@ -169,7 +167,6 @@ class DynamicSidecarsScheduler:
         self._enqueue_observation_from_service_name(service_name)
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
-    # NOTE: used by EVENTS
     async def finish_service_removal(self, node_uuid: NodeID) -> None:
         """
         directly invoked from RemoveMarkedService once it's finished
@@ -188,7 +185,6 @@ class DynamicSidecarsScheduler:
 
         logger.debug("Removed service '%s' from scheduler", service_name)
 
-    # NOTE: used by API
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
@@ -261,7 +257,6 @@ class DynamicSidecarsScheduler:
             service_message=container_message,
         )
 
-    # NOTE: used by API
     async def retrieve_service_inputs(
         self, node_uuid: NodeID, port_keys: List[str]
     ) -> RetrieveDataOutEnveloped:
@@ -290,7 +285,6 @@ class DynamicSidecarsScheduler:
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
-    # NOTE: used by API indirectly
     async def attach_project_network(
         self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias
     ) -> None:
@@ -312,7 +306,6 @@ class DynamicSidecarsScheduler:
             network_alias=network_alias,
         )
 
-    # NOTE: used by API indirectly
     async def detach_project_network(
         self, node_id: NodeID, project_network: str
     ) -> None:
@@ -332,7 +325,6 @@ class DynamicSidecarsScheduler:
             project_id=scheduler_data.project_id,
         )
 
-    # NOTE: used by API
     async def restart_containers(self, node_uuid: NodeID) -> None:
         """Restarts containers without saving or restoring the state or I/O ports"""
         if node_uuid not in self._inverse_search_mapping:
@@ -440,7 +432,6 @@ class DynamicSidecarsScheduler:
         for scheduler_data in services_to_observe:
             await self.add_service(scheduler_data)
 
-    # NOTE: used in this module
     async def start(self) -> None:
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
@@ -455,7 +446,6 @@ class DynamicSidecarsScheduler:
 
         await self._discover_running_services()
 
-    # NOTE: used in this module
     async def shutdown(self):
         logger.info("Shutting down dynamic-sidecar scheduler")
         self._keep_running = False
@@ -477,7 +467,6 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
-    # NOTE: used by API
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
 
