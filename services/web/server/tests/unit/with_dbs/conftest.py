@@ -361,6 +361,7 @@ async def redis_client(redis_service: RedisSettings):
     yield client
 
     await client.flushall()
+    await client.close()
 
 
 @pytest.fixture
@@ -375,6 +376,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
+    await client.close()
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:

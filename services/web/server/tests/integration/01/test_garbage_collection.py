@@ -75,7 +75,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
         redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
     )
     await client.flushall()
-
+    await client.close()
     yield
     # do nothing on teadown
 
