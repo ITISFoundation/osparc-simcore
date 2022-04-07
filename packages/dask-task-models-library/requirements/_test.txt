@@ -134,6 +134,7 @@ typing-extensions==4.1.1 ; python_version < "3.9"
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   requests
 wrapt==1.14.0
     # via astroid
