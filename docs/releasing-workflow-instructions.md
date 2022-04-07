@@ -55,6 +55,10 @@ then after the review we do a couple of additions and re-release staging ``DAJIA
 
 ### Instructions to generate a staging release
 
+0. THIS IS VERY IMPORTANT:
+- *Make sure the github-actions CI has successfully run on the latest commit on the master-branch! This is mandatory!*
+- Long story: If a CI test fails in the workflow, no docker image is uploaded in the Github-Actions CI to dockerhub. If no image corresponding to the specified commit's SHA exists, no re-tagging can take place and thus no release to staging is possible.
+
 1. Generate *Github*  release tag
 
     ```bash
