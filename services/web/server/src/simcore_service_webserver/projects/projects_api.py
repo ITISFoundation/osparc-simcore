@@ -48,6 +48,7 @@ from ..socketio.events import (
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
+from . import _delete
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -55,6 +56,7 @@ from .project_lock import (
     lock_project,
 )
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_exceptions import ProjectDeleteError, ProjectNotFoundError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -62,7 +64,7 @@ log = logging.getLogger(__name__)
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 
-def _is_node_dynamic(node_key: str) -> bool:
+def is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
@@ -156,8 +158,7 @@ async def start_project_interactive_services(
     project_needed_services = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
-        if _is_node_dynamic(service["key"])
-        and service_uuid not in running_service_uuids
+        if is_node_dynamic(service["key"]) and service_uuid not in running_service_uuids
     }
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
@@ -186,15 +187,20 @@ async def start_project_interactive_services(
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
-    await _delete_project_from_db(app, project_uuid, user_id)
+    """
 
-    async def _remove_services_and_data():
-        await remove_project_dynamic_services(
-            user_id, project_uuid, app, notify_users=False
-        )
-        await storage_api.delete_data_folders_of_project(app, project_uuid, user_id)
+    raises ProjectDeleteError
+    """
+    try:
+        await _delete.mark_project_as_deleted(app, project_uuid)
 
-    fire_and_forget_task(_remove_services_and_data())
+    except ProjectNotFoundError as err:
+        raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
+
+    # fire&forget: this operation can be heavy, specially with data deletion
+    await _delete.create_delete_project_task(
+        app, project_uuid, user_id, remove_project_dynamic_services, log
+    )
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
@@ -357,7 +363,7 @@ async def add_project_node(
         user_id,
     )
     node_uuid = service_id if service_id else str(uuid4())
-    if _is_node_dynamic(service_key):
+    if is_node_dynamic(service_key):
         await director_v2_api.start_service(
             request.app,
             project_id=project_uuid,
@@ -600,7 +606,7 @@ async def trigger_connected_service_retrieve(
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
         # check this node is dynamic
-        if not _is_node_dynamic(node["key"]):
+        if not is_node_dynamic(node["key"]):
             continue
 
         # check whether this node has our updated node as linked inputs

@@ -13,8 +13,7 @@ from ..users_api import UserNameDict
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 
-ProjectLock = Lock
-ProjectLockError = redis.exceptions.LockError
+ProjectLock = aioredlock.Lock
 
 
 @asynccontextmanager
