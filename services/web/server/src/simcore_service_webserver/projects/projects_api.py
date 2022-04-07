@@ -49,14 +49,13 @@ from ..socketio.events import (
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete
-from .project_lock import (
-    ProjectLockError,
-    UserNameDict,
-    get_project_locked_state,
-    lock_project,
-)
+from .project_lock import UserNameDict, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectDeleteError, ProjectNotFoundError
+from .projects_exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)

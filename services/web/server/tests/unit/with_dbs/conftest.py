@@ -210,7 +210,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         side_effect=async_mock,
     )
     return MockedStorageSubsystem(mock, mock1)

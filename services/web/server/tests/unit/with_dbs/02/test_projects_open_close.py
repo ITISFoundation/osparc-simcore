@@ -424,11 +424,7 @@ async def test_close_project(
     expected,
     mocked_director_v2_api,
     fake_services,
-):
-    # POST /v0/projects/{project_id}:close
-    fakes = fake_services(5)
-    assert len(fakes) == 5
-    mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
+):mark_project_as_deleted
 
     # open project
     client_id = client_session_id_factory()
@@ -472,42 +468,7 @@ async def test_close_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_get_active_project(
-    client,
-    logged_user,
-    user_project,
-    client_session_id_factory: Callable,
-    expected,
-    socketio_client_factory: Callable,
-    mocked_director_v2_api,
-):
-    # login with socket using client session id
-    client_id1 = client_session_id_factory()
-    sio = None
-    try:
-        sio = await socketio_client_factory(client_id1)
-        assert sio.sid
-    except SocketConnectionError:
-        if expected == web.HTTPOk:
-            pytest.fail("socket io connection should not fail")
-
-    # get active projects -> empty
-    get_active_projects_url = (
-        client.app.router["get_active_project"]
-        .url_for()
-        .with_query(client_session_id=client_id1)
-    )
-    resp = await client.get(get_active_projects_url)
-    data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    "user_role, expected",mark_project_as_deleted
         assert not data
         assert not error
 
@@ -573,7 +534,7 @@ async def test_project_node_lifetime(
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project_node",
         return_value="",
     )
 
