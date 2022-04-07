@@ -10,7 +10,7 @@ aiofiles==0.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-click==8.0.3
+click==8.1.2
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -19,12 +19,12 @@ cloudpickle==2.0.0
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-dask==2022.2.1
+dask==2022.4.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   distributed
-distributed==2022.2.1
+distributed==2022.4.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -36,7 +36,7 @@ email-validator==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-fsspec==2022.2.0
+fsspec==2022.3.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -46,11 +46,7 @@ heapdict==1.0.1
     #   zict
 idna==2.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   email-validator
 jinja2==2.11.3
     # via
@@ -148,10 +144,16 @@ typing-extensions==3.10.0.2 ; python_version < "3.9"
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   pydantic
+urllib3==1.26.7
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   distributed
 zict==2.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
