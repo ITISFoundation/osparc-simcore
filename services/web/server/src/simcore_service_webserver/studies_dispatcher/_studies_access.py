@@ -79,7 +79,10 @@ async def create_temporary_user(request: web.Request):
     #  1. During construction:
     #     - Prevents GC from deleting this GUEST user while it is being created
     #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
+    #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
+    #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
+    MAX_DELAY_TO_CREATE_USER = 15  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
@@ -98,6 +101,7 @@ async def create_temporary_user(request: web.Request):
     # (1) read details above
     async with redis_locks_client.lock(
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
+        timeout=MAX_DELAY_TO_CREATE_USER,
     ):
         user = await db.create_user(
             {
