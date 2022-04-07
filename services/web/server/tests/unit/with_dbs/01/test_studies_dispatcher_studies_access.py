@@ -273,6 +273,7 @@ async def test_access_study_anonymously(
     catalog_subsystem_mock,
     director_v2_mock,
     mocks_on_projects_api,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     assert not is_user_authenticated(client.session), "Is anonymous"
 
@@ -318,6 +319,7 @@ async def test_access_study_by_logged_user(
     director_v2_mock,
     mocks_on_projects_api,
     auto_delete_projects,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     assert is_user_authenticated(client.session), "Is already logged-in"
 
@@ -344,6 +346,7 @@ async def test_access_cookie_of_expired_user(
     catalog_subsystem_mock,
     director_v2_mock,
     mocks_on_projects_api,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     # emulates issue #1570
     app: web.Application = client.app
