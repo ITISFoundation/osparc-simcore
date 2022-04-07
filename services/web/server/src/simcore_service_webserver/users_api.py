@@ -26,7 +26,7 @@ from .users_utils import convert_user_db_to_schema
 logger = logging.getLogger(__name__)
 
 
-def _parse_as_user(user_id: Any) -> int:
+def _parse_as_user(user_id: Any) -> UserID:
     # analogous to pydantic.parse_obj_as(PositiveInt, user_id) but lighter and
     # raise UserNotFoundError instead of ValidationError
     try:
