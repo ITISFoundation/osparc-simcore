@@ -2028,6 +2028,12 @@ paths:
                                   description: The y position
                                   example:
                                     - '15'
+                            bookmark:
+                              type: string
+                              description: Bookmark's color
+                              example:
+                                - '#FF0000'
+                                - '#0000FF'
                       additionalProperties: true
                     slideshow:
                       type: object
@@ -2044,12 +2050,6 @@ paths:
                               example:
                                 - 0
                                 - 2
-                            bookmark:
-                              type: string
-                              description: Bookmark's color
-                              example:
-                                - '#FF0000'
-                                - '#0000FF'
                       additionalProperties: true
                     currentNodeId:
                       type: string
