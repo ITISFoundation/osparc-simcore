@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from sqlalchemy import and_, literal_column
