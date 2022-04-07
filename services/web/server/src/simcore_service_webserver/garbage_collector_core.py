@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 from aiohttp import web
-from aiopg.sa.result import RowProxy
 from redis.asyncio import Redis
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
