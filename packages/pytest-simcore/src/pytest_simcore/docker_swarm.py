@@ -170,7 +170,9 @@ def docker_swarm(
     ):
         with attempt:
             if not _in_docker_swarm(docker_client):
+                print("--> initializing docker swarm...")
                 docker_client.swarm.init(advertise_addr=get_localhost_ip())
+                print("--> docker swarm initialized.")
             # if still not in swarm, raise an error to try and initialize again
             _in_docker_swarm(docker_client, raise_error=True)
 
@@ -179,7 +181,9 @@ def docker_swarm(
     yield
 
     if not keep_docker_up:
+        print("<-- leaving docker swarm...")
         assert docker_client.swarm.leave(force=True)
+        print("<-- docker swarm left.")
 
     assert _in_docker_swarm(docker_client) is keep_docker_up
 
@@ -255,7 +259,7 @@ def docker_stack(
 
             async def _check_all_services_are_running():
                 async for attempt in AsyncRetrying(
-                    wait=wait_fixed(5),
+                    wait=wait_fixed(1),
                     stop=stop_after_delay(8 * MINUTE),
                     before_sleep=before_sleep_log(log, logging.INFO),
                     reraise=True,

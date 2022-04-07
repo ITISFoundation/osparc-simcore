@@ -527,7 +527,7 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
 RUN_PROJECT = HttpApiCallCapture(
     description="User press run button",
     method="POST",
-    path="/computation/pipeline/18f1938c-567d-11ec-b2f3-02420a000010:start",
+    path="/computations/18f1938c-567d-11ec-b2f3-02420a000010:start",
     request_payload={"subgraph": [], "force_restart": False},
     response_body={
         "data": {

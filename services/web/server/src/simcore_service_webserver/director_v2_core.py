@@ -58,6 +58,18 @@ class DirectorV2ApiClient:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
+    async def get(self, project_id: ProjectID, user_id: UserID) -> Dict[str, Any]:
+        computation_task_out = await _request_director_v2(
+            self._app,
+            "GET",
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(
+                user_id=int(user_id)
+            ),
+            expected_status=web.HTTPOk,
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out
+
     async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
         computation_task_out = await _request_director_v2(
             self._app,
@@ -247,7 +259,7 @@ async def get_computation_task(
     # request to director-v2
     try:
         computation_task_out_dict = await _request_director_v2(
-            app, "GET", backend_url, expected_status=web.HTTPAccepted
+            app, "GET", backend_url, expected_status=web.HTTPOk
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         log.debug("found computation task: %s", f"{task_out=}")
