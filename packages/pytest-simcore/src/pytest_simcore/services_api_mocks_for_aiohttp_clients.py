@@ -120,7 +120,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     node_states = FULL_PROJECT_NODE_STATES
 
     return CallbackResult(
-        status=202,
+        status=200,
         payload={
             "id": Path(url.path).name,
             "state": state,
@@ -128,6 +128,8 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
                 "adjacency_list": pipeline,
                 "node_states": node_states,
             },
+            "iteration": 2,
+            "cluster_id": 23,
         },
     )
 

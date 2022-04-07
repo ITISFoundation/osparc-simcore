@@ -17,14 +17,13 @@ from faker import Faker
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from pydantic import SecretStr
-from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -33,7 +32,6 @@ def clusters_config(
     mock_env: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitSettings,
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
