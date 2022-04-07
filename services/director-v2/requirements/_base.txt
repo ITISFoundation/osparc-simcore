@@ -380,7 +380,7 @@ tornado==6.1
     #   threadloop
 tqdm==4.62.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.4.0
+typer==0.4.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.1.1 ; python_version < "3.9"
     # via
