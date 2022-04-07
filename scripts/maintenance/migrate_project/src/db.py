@@ -171,10 +171,8 @@ def get_project_and_files_to_migrate(
 
 
 def insert_file_meta_data(connection: Connection, data: Dict[str, Any]) -> None:
-    insert_stmt = insert(file_meta_data).values(**data)
-    connection.execute(insert_stmt)
+    connection.execute(insert(file_meta_data).values(**data))
 
 
 def insert_projects(connection: Connection, data: Dict[str, Any]) -> None:
-    insert_stmt = insert(projects).values(**data)
-    connection.execute(insert_stmt)
+    connection.execute(insert(projects).values(**data))
