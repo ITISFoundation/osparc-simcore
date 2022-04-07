@@ -33,7 +33,6 @@ minio
 
 # migration due to pytest_simcore.postgres_service2
 aio_pika
-aioredis
 alembic
 bokeh
 dask-gateway-server[local]
