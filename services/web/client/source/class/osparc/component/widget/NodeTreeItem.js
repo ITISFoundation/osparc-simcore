@@ -120,7 +120,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           part.add(control);
           break;
         }
-        case "options-rename-button": {
+        case "rename-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/10"
@@ -130,7 +130,28 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           optionsMenu.getMenu().add(control);
           break;
         }
-        case "options-info-button": {
+        case "marker-button": {
+          control = new qx.ui.menu.Button().set({
+            icon: "@FontAwesome5Solid/bookmark/10",
+            visibility: "excluded"
+          });
+          this.bind("marker", control, "label", {
+            converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
+          });
+          control.addListener("execute", () => {
+            if (this.getMarker()) {
+              // this.removeMarker();
+              console.log("remove marker");
+            } else {
+              // this.addMarker();
+              console.log("add marker");
+            }
+          });
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
+          break;
+        }
+        case "info-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Information"),
             icon: "@FontAwesome5Solid/info/10"
@@ -140,7 +161,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           optionsMenu.getMenu().add(control);
           break;
         }
-        case "options-delete-button": {
+        case "delete-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
@@ -171,7 +192,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/bookmark/12",
             padding: 4,
-            // visibility: "excluded"
+            visibility: "excluded"
           });
           this.bind("marker", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
@@ -209,9 +230,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       });
 
       this.getChildControl("fullscreen-button");
-      this.getChildControl("options-rename-button");
-      this.getChildControl("options-info-button");
-      this.getChildControl("options-delete-button");
+      this.getChildControl("rename-button");
+      this.getChildControl("marker-button");
+      this.getChildControl("info-button");
+      this.getChildControl("delete-button");
       this.getChildControl("node-id");
       this.getChildControl("marker");
     },
