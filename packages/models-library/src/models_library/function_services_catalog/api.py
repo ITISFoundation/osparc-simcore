@@ -10,9 +10,14 @@ from typing import Iterator, Tuple
 
 from ..services import ServiceDockerData
 from . import _registry
-from ._key_labels import FUNCTION_SERVICE_KEY_PREFIX, is_function_service
+from ._key_labels import (
+    FUNCTION_SERVICE_KEY_PREFIX,
+    is_function_service,
+    is_iterator_service,
+)
 
 assert FUNCTION_SERVICE_KEY_PREFIX  # nosec
+assert is_iterator_service  # nosec
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
@@ -24,7 +29,8 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
 
 
 __all__: Tuple[str, ...] = (
-    "iter_service_docker_data",
     "FUNCTION_SERVICE_KEY_PREFIX",
     "is_function_service",
+    "is_iterator_service",
+    "iter_service_docker_data",
 )
