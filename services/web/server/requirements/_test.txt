@@ -70,7 +70,9 @@ cryptography==36.0.2
     #   -c requirements/_base.txt
     #   paramiko
 deprecated==1.2.13
-    # via redis
+    # via
+    #   -c requirements/_base.txt
+    #   redis
 dill==0.3.4
     # via pylint
 distro==1.7.0
@@ -237,8 +239,10 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   docker-compose
     #   openapi-spec-validator
-redis==4.2.0
-    # via -r requirements/_test.in
+redis==4.2.2
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 requests==2.27.1
     # via
     #   codecov
@@ -279,7 +283,6 @@ typing-extensions==4.1.1
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-    #   redis
 urllib3==1.26.9
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -292,6 +295,7 @@ websockets==10.2
     # via -r requirements/_test.in
 wrapt==1.14.0
     # via
+    #   -c requirements/_base.txt
     #   astroid
     #   deprecated
 yarl==1.5.1
