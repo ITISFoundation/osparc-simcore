@@ -321,7 +321,7 @@ class DaskClient:
         # process, and report when it is finished and properly cancelled.
         logger.debug("cancelling task with %s", f"{job_id=}")
         try:
-            task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+            task_future: distributed.Future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
