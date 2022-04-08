@@ -38,11 +38,15 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
   properties: {
     annotation: {
       check: "osparc.component.workbench.Annotation",
+      init: null,
+      nullable: true,
       apply: "__applyAnnotation"
     },
 
     marker: {
-      check: "Color",
+      check: "Object",
+      init: null,
+      nullable: true,
       apply: "__applyMarker"
     }
   },

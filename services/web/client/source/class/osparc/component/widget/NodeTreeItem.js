@@ -142,17 +142,21 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       const markerBtn = this.getChildControl("marker-button");
       markerBtn.show();
-      this.getNode().bind("marker", markerBtn, "label", {
+      node.bind("marker", markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
 
       const marker = this.getChildControl("marker");
-      node.bind("marker", marker, "visibility", {
-        converter: val => val ? "visible" : "excluded"
-      });
-      node.bind("marker", marker, "textColor", {
-        converter: val => val ? val.color : null
-      });
+      const updateMarker = () => {
+        node.bind("marker", marker, "visibility", {
+          converter: val => val ? "visible" : "excluded"
+        });
+        if (node.getMarker()) {
+          node.getMarker().bind("color", marker, "textColor");
+        }
+      };
+      node.addListener("changeMarker", () => updateMarker());
+      updateMarker();
     },
 
     _createChildControlImpl: function(id) {
@@ -221,7 +225,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "info-button": {
           control = new qx.ui.menu.Button().set({
-            label: this.tr("Information"),
+            label: this.tr("Information..."),
             icon: "@FontAwesome5Solid/info/10"
           });
           control.addListener("execute", () => this.fireDataEvent("infoNode", this.getId()));

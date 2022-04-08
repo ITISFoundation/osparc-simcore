@@ -109,8 +109,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           });
           this.getChildControl("captionbar").add(control, {
             row: 0,
-            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
+            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.MARKER
           });
+          control.addListener("tap", () => this.fireDataEvent("markerClicked", this.getNode().getNodeId()));
           break;
         case "chips": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
@@ -241,12 +242,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
 
       const marker = this.getChildControl("marker");
-      node.bind("marker", marker, "visibility", {
-        converter: val => val ? "visible" : "excluded"
-      });
-      node.bind("marker", marker, "textColor", {
-        converter: val => val ? val.color : null
-      });
+      const updateMarker = () => {
+        node.bind("marker", marker, "visibility", {
+          converter: val => val ? "visible" : "excluded"
+        });
+        if (node.getMarker()) {
+          node.getMarker().bind("color", marker, "textColor");
+        }
+      };
+      node.addListener("changeMarker", () => updateMarker());
+      updateMarker();
     },
 
     __applyType: function(type) {

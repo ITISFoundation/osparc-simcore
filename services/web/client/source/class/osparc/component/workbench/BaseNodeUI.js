@@ -95,7 +95,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       ICON: 0, // from qooxdoo
       TITLE: 1, // from qooxdoo
       LOCK: 2,
-      BOOKMARK: 3,
+      MARKER: 3,
       MENU: 4
     },
 
@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   events: {
     "renameNode": "qx.event.type.Data",
     "infoNode": "qx.event.type.Data",
-    "addMarkerNode": "qx.event.type.Data",
+    "markerClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "edgeDragStart": "qx.event.type.Data",
     "edgeDragOver": "qx.event.type.Data",
@@ -151,7 +151,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       optionsMenu.add(markerBtn);
 
       const infoBtn = new qx.ui.menu.Button().set({
-        label: this.tr("Information"),
+        label: this.tr("Information..."),
         icon: "@FontAwesome5Solid/info/10"
       });
       infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
