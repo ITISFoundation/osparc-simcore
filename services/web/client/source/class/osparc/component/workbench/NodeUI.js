@@ -93,9 +93,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             padding: 4,
             visibility: "excluded"
           });
-          this.getNode().getPropsForm().bind("enabled", control, "visibility", {
-            converter: val => val ? "excluded" : "visible"
-          });
           this.getChildControl("captionbar").add(control, {
             row: 0,
             column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.LOCK
@@ -228,7 +225,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this._optionsMenu.add(convertToParameter);
       }
 
-      this.getChildControl("lock");
+      const lock = this.getChildControl("lock");
+      if (node.getPropsForm()) {
+        node.getPropsForm().bind("enabled", lock, "visibility", {
+          converter: val => val ? "excluded" : "visible"
+        });
+      }
       this._markerBtn.show();
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
