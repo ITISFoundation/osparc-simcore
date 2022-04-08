@@ -16,7 +16,7 @@
 import logging
 from typing import Dict, List, Tuple
 
-import aioredis
+import redis.asyncio as aioredis
 from aiohttp import web
 
 from ..redis import get_redis_client
@@ -67,7 +67,7 @@ class RedisResourceRegistry:
     ) -> None:
         hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
         field, value = resource
-        await self.client.hmset_dict(hash_key, **{field: value})
+        await self.client.hset(hash_key, mapping={field: value})
 
     async def get_resources(self, key: Dict[str, str]) -> Dict[str, str]:
         hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
@@ -83,9 +83,9 @@ class RedisResourceRegistry:
         resources = []
         # the key might only be partialy complete
         partial_hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
-        async for key in self.client.iscan(match=partial_hash_key):
-            if await self.client.hexists(key, resource_name):
-                resources.append(await self.client.hget(key, resource_name))
+        async for scanned_key in self.client.scan_iter(match=partial_hash_key):
+            if await self.client.hexists(scanned_key, resource_name):
+                resources.append(await self.client.hget(scanned_key, resource_name))
         return resources
 
     async def find_keys(self, resource: Tuple[str, str]) -> List[Dict[str, str]]:
@@ -95,7 +95,7 @@ class RedisResourceRegistry:
 
         field, value = resource
 
-        async for hash_key in self.client.iscan(match=f"*:{RESOURCE_SUFFIX}"):
+        async for hash_key in self.client.scan_iter(match=f"*:{RESOURCE_SUFFIX}"):
             if value == await self.client.hget(hash_key, field):
                 keys.append(self._decode_hash_key(hash_key))
         return keys
@@ -104,7 +104,7 @@ class RedisResourceRegistry:
         # setting the timeout to always expire, timeout > 0
         timeout = int(max(1, timeout))
         hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
-        await self.client.set(hash_key, 1, expire=timeout)
+        await self.client.set(hash_key, 1, ex=timeout)
 
     async def is_key_alive(self, key: Dict[str, str]) -> bool:
         hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
@@ -121,11 +121,11 @@ class RedisResourceRegistry:
     ) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
         alive_keys = [
             self._decode_hash_key(hash_key)
-            async for hash_key in self.client.iscan(match=f"*:{ALIVE_SUFFIX}")
+            async for hash_key in self.client.scan_iter(match=f"*:{ALIVE_SUFFIX}")
         ]
         dead_keys = [
             self._decode_hash_key(hash_key)
-            async for hash_key in self.client.iscan(match=f"*:{RESOURCE_SUFFIX}")
+            async for hash_key in self.client.scan_iter(match=f"*:{RESOURCE_SUFFIX}")
             if self._decode_hash_key(hash_key) not in alive_keys
         ]
 

@@ -18,9 +18,9 @@ from typing import AsyncIterator, Callable, Dict, Iterator, List
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-import aioredis
 import pytest
 import redis
+import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
@@ -33,6 +33,7 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
+from settings_library.redis import RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups_api import (
@@ -41,7 +42,6 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -210,7 +210,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project",
         side_effect=async_mock,
     )
     return MockedStorageSubsystem(mock, mock1)
@@ -338,29 +338,45 @@ def postgres_db(
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip) -> URL:
+def redis_service(docker_services, docker_ip) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
-    url = URL(f"redis://{host}:{port}")
+    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port)
 
     docker_services.wait_until_responsive(
         check=lambda: _is_redis_responsive(host, port),
         timeout=30.0,
         pause=0.1,
     )
-    return url
+    return redis_settings
 
 
 @pytest.fixture
-async def redis_client(redis_service: URL):
-    client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
+async def redis_client(redis_service: RedisSettings):
+    client = aioredis.from_url(
+        redis_service.dsn_resources, encoding="utf-8", decode_responses=True
+    )
     yield client
 
     await client.flushall()
-    client.close()
-    await client.wait_closed()
+    await client.close()
+
+
+@pytest.fixture
+async def redis_locks_client(
+    redis_service: RedisSettings,
+) -> AsyncIterator[aioredis.Redis]:
+    """Creates a redis client to communicate with a redis service ready"""
+    client = aioredis.from_url(
+        redis_service.dsn_locks, encoding="utf-8", decode_responses=True
+    )
+
+    yield client
+
+    await client.flushall()
+    await client.close()
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:

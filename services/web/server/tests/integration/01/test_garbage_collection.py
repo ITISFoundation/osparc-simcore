@@ -12,12 +12,12 @@ from uuid import uuid4
 
 import aiopg
 import aiopg.sa
-import aioredis
 import pytest
+import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
+from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
@@ -71,11 +71,11 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 @pytest.fixture(autouse=True)
 async def __delete_all_redis_keys__(redis_settings: RedisSettings):
-    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
+    client = aioredis.from_url(
+        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
+    )
     await client.flushall()
-    client.close()
-    await client.wait_closed()
-
+    await client.close()
     yield
     # do nothing on teadown
 
@@ -181,7 +181,7 @@ async def login_guest_user(client: TestClient):
 
 async def new_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     tests_data_dir: Path,
     access_rights: Optional[Dict[str, Any]] = None,
 ):
@@ -200,7 +200,7 @@ async def new_project(
 
 async def get_template_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     project_data: ProjectDict,
     access_rights=None,
 ):

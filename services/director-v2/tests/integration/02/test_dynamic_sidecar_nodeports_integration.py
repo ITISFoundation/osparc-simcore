@@ -50,7 +50,6 @@ from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -96,7 +95,6 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "rabbit",
-    "redis",
     "storage",
 ]
 
@@ -131,7 +129,6 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitSettings,
@@ -281,7 +278,16 @@ def _is_docker_r_clone_plugin_installed() -> bool:
     return is_plugin_installed
 
 
-@pytest.fixture(scope="session", params={"true", "false"})
+@pytest.fixture(
+    scope="session",
+    params={
+        # NOTE: There is an issue with the docker rclone volume plugin:
+        # SEE https://github.com/rclone/rclone/issues/6059
+        # Disabling rclone test until this is fixed.
+        # "true",
+        "false",
+    },
+)
 def dev_features_enabled(request) -> str:
     if request.param == "true" and not _is_docker_r_clone_plugin_installed():
         pytest.skip("Required docker plugin `rclone` not installed.")

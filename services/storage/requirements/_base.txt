@@ -202,7 +202,7 @@ tenacity==8.0.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-typer==0.4.0
+typer==0.4.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in

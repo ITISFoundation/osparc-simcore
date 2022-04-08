@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict
+from typing import TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -12,9 +12,22 @@ from yarl import URL
 
 from .utils_assert import assert_status
 
-# WARNING: UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDict
-# TODO: move this to future simcore_service_webserver.users_models.py
-AUserDict = Dict[str, Any]
+
+# WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
+# NOTE: this is modified dict version of packages/postgres-database/src/simcore_postgres_database/models/users.py for testing purposes
+class _UserInfoDictRequired(TypedDict, total=True):
+    id: int
+    name: str
+    email: str
+    raw_password: str
+    status: UserStatus
+    role: UserRole
+
+
+class UserInfoDict(_UserInfoDictRequired, total=False):
+    created_ip: int
+    password_hash: str
+
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
@@ -37,7 +50,7 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_user(db: AsyncpgStorage, data=None) -> AUserDict:
+async def create_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     data = data or {}
     password = get_random_string(10)
     params = {
@@ -56,7 +69,7 @@ async def create_user(db: AsyncpgStorage, data=None) -> AUserDict:
 
 async def log_client_in(
     client: TestClient, user_data=None, *, enable_check=True
-) -> AUserDict:
+) -> UserInfoDict:
     # creates user directly in db
     db: AsyncpgStorage = get_plugin_storage(client.app)
     cfg: LoginOptions = get_plugin_options(client.app)
@@ -99,7 +112,7 @@ class LoggedUser(NewUser):
         self.client = client
         self.enable_check = check_if_succeeds
 
-    async def __aenter__(self) -> AUserDict:
+    async def __aenter__(self) -> UserInfoDict:
         self.user = await log_client_in(
             self.client, self.params, enable_check=self.enable_check
         )

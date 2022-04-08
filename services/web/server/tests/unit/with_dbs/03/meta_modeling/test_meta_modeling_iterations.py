@@ -10,7 +10,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import AUserDict
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     NEW_PROJECT,
     REPLACE_PROJECT_ON_MODIFIED,
@@ -42,7 +42,7 @@ REQUEST_MODEL_POLICY = {
 
 
 @pytest.fixture
-async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
+async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict):
 
     yield
 

@@ -22,12 +22,13 @@ EMAIL, PASSWORD = "tester@test.com", "password"
 
 @pytest.fixture
 def login_options(client: TestClient) -> LoginOptions:
+    assert client.app
     options: LoginOptions = get_plugin_options(client.app)
     return options
 
 
 def test_login_plugin_setup_succeeded(client: TestClient):
-
+    assert client.app
     print(client.app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True))
 
     # this should raise AssertionError if not succeedd
@@ -38,6 +39,7 @@ def test_login_plugin_setup_succeeded(client: TestClient):
 async def test_login_with_unknown_email(
     client: TestClient, login_options: LoginOptions
 ):
+    assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
         f"{url}", json={"email": "unknown@email.com", "password": "wrong."}
@@ -45,13 +47,14 @@ async def test_login_with_unknown_email(
     payload = await r.json()
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url_obj.path == url.path
+    assert r.url.path == url.path
     assert login_options.MSG_UNKNOWN_EMAIL in await r.text()
 
 
 async def test_login_with_wrong_password(
     client: TestClient, login_options: LoginOptions
 ):
+    assert client.app
     url = client.app.router["auth_login"].url_for()
 
     r = await client.post(f"{url}")
@@ -69,11 +72,12 @@ async def test_login_with_wrong_password(
         )
         payload = await r.json()
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url_obj.path == url.path
+    assert r.url.path == url.path
     assert login_options.MSG_WRONG_PASSWORD in await r.text()
 
 
 async def test_login_banned_user(client: TestClient, login_options: LoginOptions):
+    assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")
     assert login_options.MSG_USER_BANNED not in await r.text()
@@ -85,11 +89,12 @@ async def test_login_banned_user(client: TestClient, login_options: LoginOptions
         payload = await r.json()
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url_obj.path == url.path
+    assert r.url.path == url.path
     assert login_options.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
 
 
 async def test_login_inactive_user(client: TestClient, login_options: LoginOptions):
+    assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")
     assert login_options.MSG_ACTIVATION_REQUIRED not in await r.text()
@@ -101,11 +106,12 @@ async def test_login_inactive_user(client: TestClient, login_options: LoginOptio
             f"{url}", json={"email": user["email"], "password": user["raw_password"]}
         )
     assert r.status == web.HTTPUnauthorized.status_code
-    assert r.url_obj.path == url.path
+    assert r.url.path == url.path
     assert login_options.MSG_ACTIVATION_REQUIRED in await r.text()
 
 
 async def test_login_successfully(client: TestClient, login_options: LoginOptions):
+    assert client.app
     url = client.app.router["auth_login"].url_for()
 
     async with NewUser(app=client.app) as user:
@@ -126,7 +132,7 @@ async def test_login_successfully(client: TestClient, login_options: LoginOption
 async def test_proxy_login(
     client: TestClient, cookie_enabled: bool, expected: web.HTTPException
 ):
-
+    assert client.app
     restricted_url = client.app.router["get_my_profile"].url_for()
     assert str(restricted_url) == "/v0/me"
 
@@ -135,7 +141,7 @@ async def test_proxy_login(
         # Will be used as temporary solution until common authentication
         # service is in place
         #
-
+        assert client.app
         # Based on aiohttp_session and aiohttp_security
         # HACK to get secret for testing purposes
         session_settings = get_plugin_settings(client.app)
@@ -163,7 +169,7 @@ async def test_proxy_login(
             else {}
         )
 
-        resp = await client.get(restricted_url, cookies=cookies)
+        resp = await client.get(f"{restricted_url}", cookies=cookies)
         data, error = await assert_status(resp, expected)
 
         if not error:

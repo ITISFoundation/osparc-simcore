@@ -24,18 +24,20 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.rest_responses import unwrap_envelope
+from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project
-from simcore_service_webserver.users_api import delete_user, is_user_guest
-from yarl import URL
+from simcore_service_webserver.users_api import delete_user, get_user_role
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable, redis_service: URL
+    default_app_cfg: ConfigDict,
+    unused_tcp_port_factory: Callable,
+    redis_service: RedisSettings,
 ):
     """App's configuration used for every test in this module
 
@@ -88,7 +90,9 @@ def app_cfg(
 
 
 @pytest.fixture
-async def published_project(client, fake_project, tests_data_dir: Path) -> Dict:
+async def published_project(
+    client, fake_project, tests_data_dir: Path
+) -> AsyncIterator[Dict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
@@ -121,7 +125,7 @@ async def unpublished_project(client, fake_project, tests_data_dir: Path):
         yield template_project
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def director_v2_mock(director_v2_service_mock) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock
 
@@ -267,7 +271,9 @@ async def test_access_study_anonymously(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     assert not is_user_authenticated(client.session), "Is anonymous"
 
@@ -310,8 +316,10 @@ async def test_access_study_by_logged_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
     auto_delete_projects,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     assert is_user_authenticated(client.session), "Is already logged-in"
 
@@ -336,7 +344,9 @@ async def test_access_cookie_of_expired_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     # emulates issue #1570
     app: web.Application = client.app
@@ -351,14 +361,14 @@ async def test_access_cookie_of_expired_user(
     resp = await client.get(me_url)
 
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert await is_user_guest(app, data["id"])
+    assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
         #
-        assert await is_user_guest(app, uid)
+        assert await get_user_role(app, uid) == UserRole.GUEST
         projects = await _get_user_projects(client)
         assert len(projects) == 1
 
@@ -381,14 +391,14 @@ async def test_access_cookie_of_expired_user(
     # as a guest user
     resp = await client.get(me_url)
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert await is_user_guest(app, data["id"])
+    assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     # But I am another user
     assert data["id"] != user_id
     assert data["login"] != user_email
 
 
-@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 16, 32, 64])
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 64])
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests,
     web_server,
@@ -396,7 +406,9 @@ async def test_guest_user_is_not_garbage_collected(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    director_v2_mock,
     mocks_on_projects_api,
+    redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
@@ -405,19 +417,19 @@ async def test_guest_user_is_not_garbage_collected(
 
         # TODO: heartbeat is missing here!
         # TODO: reduce GC activation period to 0.1 secs
-
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)
+        assert client.app
         study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
         # clicks link to study
-        resp = await client.get(study_url)
+        resp = await client.get(f"{study_url}")
 
         expected_prj_id = await assert_redirected_to_study(resp, client.session)
 
         # has auto logged in as guest?
         me_url = client.app.router["get_my_profile"].url_for()
-        resp = await client.get(me_url)
+        resp = await client.get(f"{me_url}")
 
         data, _ = await assert_status(resp, web.HTTPOk)
         assert data["login"].endswith("guest-at-osparc.io")
@@ -442,3 +454,5 @@ async def test_guest_user_is_not_garbage_collected(
     ]
 
     await asyncio.gather(*request_tasks)
+
+    # and now the garbage collector shall delete our users since we are done...

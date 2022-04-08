@@ -6,7 +6,7 @@
 #
 astroid==2.11.2
     # via pylint
-black==22.1.0
+black==22.3.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in

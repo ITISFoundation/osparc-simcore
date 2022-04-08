@@ -33,7 +33,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2_api
+from .. import director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -46,11 +46,8 @@ from ..socketio.events import (
     send_group_messages,
     send_messages,
 )
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
-from ..users_api import get_user_name, is_user_guest
+from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_exceptions import UserNotFoundError
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -195,7 +192,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
         await remove_project_interactive_services(
             user_id, project_uuid, app, notify_users=False
         )
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+        await storage_api.delete_data_folders_of_project(app, project_uuid, user_id)
 
     fire_and_forget_task(_remove_services_and_data())
 
@@ -240,7 +237,7 @@ async def lock_with_notification(
     notify_users: bool = True,
 ):
     try:
-        async with await lock_project(
+        async with lock_project(
             app,
             project_uuid,
             status,
@@ -283,6 +280,11 @@ async def remove_project_interactive_services(
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
 ) -> None:
+    """
+
+    :raises UserNotFoundError:
+    """
+
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
     log.debug(
@@ -291,12 +293,27 @@ async def remove_project_interactive_services(
         user_id,
     )
     try:
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+        # TODO: logic around save_state is not ideal, but it remains with the same logic
+        # as before until it is properly refactored
+        user_role: Optional[UserRole] = None
+        try:
+            user_role = await get_user_role(app, user_id)
+        except UserNotFoundError:
+            user_role = None
+
+        save_state: bool = True
+        if user_role is None or user_role <= UserRole.GUEST:
+            save_state = False
+        # -------------------
+
         async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            user_name or await get_user_name(app, user_id),
+            user_name_data,
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
@@ -306,9 +323,7 @@ async def remove_project_interactive_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    save_state=save_state,
                 )
     except ProjectLockError:
         pass
@@ -397,7 +412,7 @@ async def delete_project_node(
             )
             break
     # remove its data if any
-    await delete_data_folders_of_project_node(
+    await storage_api.delete_data_folders_of_project_node(
         request.app, project_uuid, node_uuid, user_id
     )
 

@@ -111,9 +111,8 @@ async def storage_subsystem_mock(mocker):
     mock.side_effect = _mock_copy_data_from_project
 
     # requests storage to delete data
-    # mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project",
         return_value="",
     )
     return mock, mock1

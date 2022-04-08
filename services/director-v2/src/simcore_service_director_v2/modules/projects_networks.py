@@ -3,6 +3,7 @@ import urllib.parse
 from typing import NamedTuple, Set
 from uuid import UUID
 
+from models_library.projects import ProjectAtDB, ProjectID, Workbench
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -11,7 +12,6 @@ from models_library.projects_networks import (
     NetworksWithAliases,
     ProjectsNetworks,
 )
-from models_library.projects import ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -23,8 +23,8 @@ from simcore_service_director_v2.core.errors import ProjectNotFoundError
 from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
 from ..api.dependencies.director_v0 import DirectorV0Client
-from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.db.repositories.projects import ProjectsRepository
+from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
