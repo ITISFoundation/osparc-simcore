@@ -266,7 +266,7 @@ tenacity==8.0.1
     #   -r requirements/_base.in
 tqdm==4.63.1
     # via parfive
-typer==0.4.0
+typer==0.4.1
     # via -r requirements/../../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.1.1
     # via

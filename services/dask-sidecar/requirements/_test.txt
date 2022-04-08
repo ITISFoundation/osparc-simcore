@@ -183,6 +183,7 @@ urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   minio
     #   requests
 websocket-client==0.59.0
