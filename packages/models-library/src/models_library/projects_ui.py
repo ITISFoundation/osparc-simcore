@@ -8,12 +8,12 @@ from pydantic import BaseModel, Extra, Field
 from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
-from .projects_nodes_ui import Position
+from .projects_nodes_ui import Marker, Position
 
 
 class WorkbenchUI(BaseModel):
     position: Position = Field(..., description="The node position in the workbench")
-    marker: Optional[Color] = None
+    marker: Optional[Marker] = None
 
     class Config:
         extra = Extra.forbid
