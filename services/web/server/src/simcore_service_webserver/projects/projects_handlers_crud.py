@@ -11,7 +11,6 @@ Standard methods are
 and the acronym CRUD states for Create+Read(Get&List)+Update+Delete
 
 """
-
 import asyncio
 import json
 import logging
@@ -20,10 +19,12 @@ from uuid import UUID
 
 from aiohttp import web
 from jsonschema import ValidationError
+from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from pydantic import parse_obj_as
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -68,28 +69,31 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
-
 @routes.post(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(
     request: web.Request,
-):  # pylint: disable=too-many-branches, too-many-statements
+):
+    # pylint: disable=too-many-branches, too-many-statements
+
+    # request context params
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-    template_uuid = request.query.get("from_template")
-    as_template = request.query.get("as_template")
-    copy_data: bool = bool(
-        request.query.get("copy_data", "true") in [1, "true", "True"]
-    )
-    hidden: bool = bool(request.query.get("hidden", False))
 
     new_project = {}
-    new_project_was_hidden_before_data_was_copied = hidden
     try:
+        # query params
+        template_uuid: Optional[UUIDStr] = request.query.get("from_template")
+        as_template: Optional[UUIDStr] = request.query.get("as_template")
+        copy_data: bool = parse_obj_as(bool, request.query.get("copy_data", True))
+        hidden: bool = parse_obj_as(bool, request.query.get("hidden", False))
+
+        new_project_was_hidden_before_data_was_copied = hidden
+
         clone_data_coro: Optional[Coroutine] = None
-        source_project: Optional[Dict[str, Any]] = None
+        source_project: Optional[ProjectDict] = None
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
             source_project = await projects_api.get_project_for_user(
@@ -104,6 +108,7 @@ async def create_projects(
                 raise web.HTTPNotFound(
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
+
         if source_project:
             # clone template as user project
             new_project, nodes_map = clone_project_document(
