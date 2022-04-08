@@ -65,7 +65,7 @@ async def redis_client(
     yield client
 
     await client.flushall()
-    await client.close()
+    await client.close(close_connection_pool=True)
 
 
 @pytest.fixture(scope="function")
@@ -78,7 +78,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close()
+    await client.close(close_connection_pool=True)
 
 
 # HELPERS --

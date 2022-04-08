@@ -19,6 +19,7 @@
 
 
 aio-pika
+aiocache[redis,msgpack]
 aiodocker
 aiopg[sa]
 dask-gateway

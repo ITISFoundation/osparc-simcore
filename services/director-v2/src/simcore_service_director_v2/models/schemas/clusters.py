@@ -13,7 +13,15 @@ from models_library.clusters import (
 )
 from models_library.generics import DictModel
 from models_library.users import GroupID
-from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl, root_validator, validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Field,
+    HttpUrl,
+    NonNegativeFloat,
+    root_validator,
+    validator,
+)
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
 
@@ -32,6 +40,7 @@ class Worker(BaseModel):
     id: str
     name: str
     resources: DictModel[str, PositiveFloat]
+    used_resources: DictModel[str, NonNegativeFloat]
     memory_limit: ByteSize
     metrics: WorkerMetrics
 
@@ -52,6 +61,16 @@ class Scheduler(BaseModel):
         return v
 
 
+class ClusterDetails(BaseModel):
+    scheduler: Scheduler = Field(
+        ...,
+        description="This contains dask scheduler information given by the underlying dask library",
+    )
+    dashboard_link: AnyUrl = Field(
+        ..., description="Link to this scheduler's dashboard"
+    )
+
+
 class ClusterGet(Cluster):
     access_rights: Dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
@@ -69,14 +88,8 @@ class ClusterGet(Cluster):
         return values
 
 
-class ClusterDetailsGet(BaseModel):
-    scheduler: Scheduler = Field(
-        ...,
-        description="This contains dask scheduler information given by the underlying dask library",
-    )
-    dashboard_link: AnyUrl = Field(
-        ..., description="Link to this scheduler's dashboard"
-    )
+class ClusterDetailsGet(ClusterDetails):
+    ...
 
 
 class ClusterCreate(BaseCluster):
