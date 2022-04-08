@@ -1102,10 +1102,8 @@ async def test_get_cluster_details(
             ), f"there are no workers in {cluster_details.scheduler=!r}"
             for worker_url, worker_data in cluster_details.scheduler.workers.items():
                 if all(
-                    [
-                        worker_data.used_resources.get(res_name) == res_value
-                        for res_name, res_value in image_params.expected_used_resources.items()
-                    ]
+                    worker_data.used_resources.get(res_name) == res_value
+                    for res_name, res_value in image_params.expected_used_resources.items()
                 ):
                     worker_with_the_task = worker_url
             assert (
