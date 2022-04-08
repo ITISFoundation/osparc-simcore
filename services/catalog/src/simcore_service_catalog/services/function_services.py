@@ -7,13 +7,7 @@ from typing import Any, Dict, Tuple
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from models_library.function_services_catalog import (
-    is_function_service,
-    is_iterator_consumer_service,
-    is_iterator_service,
-    is_parameter_service,
-    iter_service_docker_data,
-)
+from models_library.function_services_catalog import iter_service_docker_data
 from models_library.services import ServiceDockerData
 
 
@@ -46,24 +40,7 @@ def setup_function_services(app: FastAPI):
     """
 
     def _on_startup() -> None:
-        def is_included(key) -> bool:
-            return (
-                app.state.settings.CATALOG_DEV_FEATURES_ENABLED
-                # FIXME: STILL UNDER DEVELOPMENT
-                #  - Parameter services
-                #  - Iterator
-                #  - Iterator consumer
-                or not is_parameter_service(key)
-                or not is_function_service(key)
-                or not is_iterator_service(key)
-                or not is_iterator_consumer_service(key)
-            )
-
-        catalog = [
-            _as_dict(metadata)
-            for metadata in iter_service_docker_data()
-            if is_included(metadata.key)
-        ]
+        catalog = [_as_dict(metadata) for metadata in iter_service_docker_data()]
         app.state.frontend_services_catalog = catalog
 
     app.add_event_handler("startup", _on_startup)
