@@ -68,6 +68,10 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
     __applyAnnotation: function(annotation) {
       this._removeAll();
 
+      if (annotation === null) {
+        return;
+      }
+
       const colorPicker = this.__addColor();
       annotation.bind("color", colorPicker, "color");
       colorPicker.bind("color", annotation, "color");
@@ -99,14 +103,42 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
         });
         row++;
       }
+
+      this.__makeItModal();
     },
 
     __applyMarker: function(marker) {
       this._removeAll();
 
+      if (marker === null) {
+        return;
+      }
+
       const colorPicker = this.__addColor();
       marker.bind("color", colorPicker, "color");
       colorPicker.bind("color", marker, "color");
+
+      this.__makeItModal();
+    },
+
+    __makeItModal: function() {
+      this.show();
+
+      const showHint = () => this.show();
+      const hideHint = () => this.exclude();
+      const tapListener = event => {
+        if (osparc.utils.Utils.isMouseOnElement(this, event)) {
+          return;
+        }
+        hideHint();
+        this.set({
+          annotation: null,
+          marker: null
+        });
+        document.removeEventListener("mousedown", tapListener);
+      };
+      showHint();
+      document.addEventListener("mousedown", tapListener);
     }
   }
 });

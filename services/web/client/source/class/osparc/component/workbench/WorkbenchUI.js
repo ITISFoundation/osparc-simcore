@@ -1219,7 +1219,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (this.__isSelectedItemAnAnnotation()) {
           const annotation = this.__getAnnotation(oldId);
           annotation.setSelected(false);
-          this.__annotationEditor.exclude();
         }
       }
 
@@ -1231,7 +1230,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const annotation = this.__getAnnotation(newID);
         this.__setSelectedAnnotations([annotation]);
         this.__annotationEditor.setAnnotation(annotation);
-        this.__annotationEditor.show();
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1555,7 +1553,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const marker = node.getMarker();
         if (marker) {
           this.__annotationEditor.setMarker(marker);
-          this.__annotationEditor.show();
         }
       }
     },
