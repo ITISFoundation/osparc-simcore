@@ -7,8 +7,13 @@ from typing import Any, Dict, Tuple
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from models_library.function_services_catalog import iter_service_docker_data
+from models_library.function_services_catalog import (
+    is_function_service,
+    iter_service_docker_data,
+)
 from models_library.services import ServiceDockerData
+
+assert is_function_service  # nosec
 
 
 def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
