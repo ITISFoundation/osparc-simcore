@@ -2,9 +2,9 @@ from typing import Any, Dict, List
 
 from pydantic import schema_of
 
-from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import EN, OM, create_fake_thumbnail_url, register
-from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
+from .._utils import EN, OM, create_fake_thumbnail_url, register
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
 

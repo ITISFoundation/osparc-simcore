@@ -1,6 +1,6 @@
-from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import OM, register
-from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
+from .._utils import OM, register
 
 #
 # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
