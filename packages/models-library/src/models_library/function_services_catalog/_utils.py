@@ -1,12 +1,11 @@
 import json
 import logging
 import os
-from typing import Dict, Final, Tuple
+from typing import Dict, Tuple
 from urllib.parse import quote
 
-from pydantic import BaseSettings
-
 from ..services import Author, ServiceDockerData
+from ._settings import SETTINGS
 
 log = logging.getLogger(__name__)
 
@@ -27,25 +26,6 @@ PC = Author.parse_obj(AUTHORS.get("PC", _DEFAULT))
 
 
 _NodeKeyVersionPair = Tuple[str, str]
-
-
-class FunctionServiceSettings(BaseSettings):
-    CATALOG_DEV_FEATURES_ENABLED: bool = False
-    DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
-    WEBSERVER_DEV_FEATURES_ENABLED: bool = False
-
-    def is_dev_feature_enabled(self) -> bool:
-        # NOTE that this is imported in these services
-        # This solution is not ideal but will suffice
-        # until function-services are moved to the database
-        return (
-            self.CATALOG_DEV_FEATURES_ENABLED
-            or self.DIRECTOR_V2_DEV_FEATURES_ENABLED
-            or self.WEBSERVER_DEV_FEATURES_ENABLED
-        )
-
-
-SETTINGS: Final[FunctionServiceSettings] = FunctionServiceSettings()
 
 
 def create_fake_thumbnail_url(label: str) -> str:

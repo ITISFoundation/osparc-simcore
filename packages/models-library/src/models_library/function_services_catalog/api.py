@@ -9,7 +9,9 @@
 import logging
 from typing import Iterator
 
-from .function_service import (
+from ..services import ServiceDockerData
+from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from .services import (
     demo_units,
     file_picker,
     iter_range,
@@ -17,8 +19,6 @@ from .function_service import (
     parameters,
     probes,
 )
-from .function_service.constants import FUNCTION_SERVICE_KEY_PREFIX
-from .services import ServiceDockerData
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # CATALOG REGISTRY ----------------------------------------------------
 
 
-def create_registry(*namespaces):
+def _create_registry(*namespaces):
     _registry = {}
     for namespace in namespaces:
         try:
@@ -45,7 +45,7 @@ def create_registry(*namespaces):
     return _registry
 
 
-_CATALOG_REGISTRY = create_registry(
+_CATALOG_REGISTRY = _create_registry(
     demo_units,
     file_picker,
     iter_range,

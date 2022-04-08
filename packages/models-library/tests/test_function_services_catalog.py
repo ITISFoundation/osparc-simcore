@@ -6,7 +6,7 @@
 from collections import defaultdict
 
 import pytest
-from models_library.function_services_catalog import (
+from models_library.function_services_catalog.api import (
     is_function_service,
     iter_service_docker_data,
 )
