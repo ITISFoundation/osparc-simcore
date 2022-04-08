@@ -650,10 +650,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, data => {
           const d = JSON.parse(data);
-          const studyId = d["project_id"];
-          if (studyId !== this.getStudy().getUuid()) {
-            return;
-          }
           this.getStudy().nodeUpdated(d);
         }, this);
       }

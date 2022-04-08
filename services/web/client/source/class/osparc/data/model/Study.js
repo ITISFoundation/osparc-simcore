@@ -357,6 +357,10 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     nodeUpdated: function(nodeUpdatedData) {
+      const studyId = nodeUpdatedData["project_id"];
+      if (studyId !== this.getUuid()) {
+        return;
+      }
       const nodeId = nodeUpdatedData["node_id"];
       const nodeData = nodeUpdatedData["data"];
       const workbench = this.getWorkbench();
