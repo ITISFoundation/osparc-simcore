@@ -5,7 +5,7 @@ import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Deque, Dict, List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 import httpx
@@ -27,7 +27,6 @@ from ....models.schemas.dynamic_services import (
     LockWithSchedulerData,
     RunningDynamicServiceDetails,
     SchedulerData,
-    ServiceLabelsStoredData,
 )
 from ..client_api import (
     DynamicSidecarClient,
@@ -38,6 +37,7 @@ from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
+    update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -143,7 +143,6 @@ class DynamicSidecarsScheduler:
                 resource_lock=AsyncResourceLock.from_is_locked(False),
                 scheduler_data=scheduler_data,
             )
-
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
@@ -163,6 +162,7 @@ class DynamicSidecarsScheduler:
             current.scheduler_data.dynamic_sidecar.service_removal_state.mark_to_remove(
                 can_save
             )
+            await update_scheduler_data_label(current.scheduler_data)
 
         self._enqueue_observation_from_service_name(service_name)
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
@@ -352,6 +352,7 @@ class DynamicSidecarsScheduler:
                 service_name
             ]
             scheduler_data: SchedulerData = lock_with_scheduler_data.scheduler_data
+            scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
                 await _apply_observation_cycle(self.app, self, scheduler_data)
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
@@ -366,6 +367,8 @@ class DynamicSidecarsScheduler:
                 scheduler_data.dynamic_sidecar.status.update_failing_status(message)
             finally:
                 # when done, always unlock the resource
+                if scheduler_data_copy != scheduler_data:
+                    await update_scheduler_data_label(scheduler_data)
                 await lock_with_scheduler_data.resource_lock.unlock_resource()
 
         service_name: Optional[str]
@@ -418,19 +421,15 @@ class DynamicSidecarsScheduler:
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        services_to_observe: Deque[
-            ServiceLabelsStoredData
+        services_to_observe: List[
+            SchedulerData
         ] = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
 
         logger.info(
             "The following services need to be observed: %s", services_to_observe
         )
 
-        for service_to_observe in services_to_observe:
-            scheduler_data = SchedulerData.from_service_labels_stored_data(
-                service_labels_stored_data=service_to_observe,
-                port=dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-            )
+        for scheduler_data in services_to_observe:
             await self.add_service(scheduler_data)
 
     async def start(self) -> None:

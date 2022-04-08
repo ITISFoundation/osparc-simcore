@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
@@ -121,6 +122,13 @@ def test_path_mappings_none_state_paths() -> None:
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
+
+
+def test_path_mappings_json_encoding() -> None:
+    example = PathMappingsLabel.Config.schema_extra["example"]
+    path_mappings = PathMappingsLabel.parse_obj(example)
+    print(path_mappings)
+    assert json.loads(path_mappings.json()) == example
 
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:

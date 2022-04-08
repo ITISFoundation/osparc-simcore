@@ -56,7 +56,7 @@ async def ensure_volume_cleanup(
             # it once done with it
             async for attempt in AsyncRetrying(
                 reraise=False,
-                stop=stop_after_attempt(15),
+                stop=stop_after_attempt(20),
                 wait=wait_fixed(5),
             ):
                 with attempt:

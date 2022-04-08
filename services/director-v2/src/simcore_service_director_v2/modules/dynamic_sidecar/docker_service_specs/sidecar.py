@@ -5,6 +5,7 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
+from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namepsace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
@@ -102,6 +103,7 @@ def get_dynamic_sidecar_spec(
     ]:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
+                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                 compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
@@ -113,6 +115,7 @@ def get_dynamic_sidecar_spec(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
+                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                     compose_namespace=compose_namespace,
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
@@ -123,6 +126,7 @@ def get_dynamic_sidecar_spec(
         else:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
+                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                     compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
@@ -187,13 +191,8 @@ def get_dynamic_sidecar_spec(
             "user_id": f"{scheduler_data.user_id}",
             # the following are used for scheduling
             "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
-            "service_key": scheduler_data.key,
-            "service_tag": scheduler_data.version,
-            "paths_mapping": scheduler_data.paths_mapping.json(),
-            "compose_spec": json_dumps(scheduler_data.compose_spec),
-            "container_http_entry": scheduler_data.container_http_entry,
-            "restart_policy": scheduler_data.restart_policy,
+            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.json(),
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
