@@ -1,7 +1,8 @@
 import logging
 from asyncio.log import logger
-from typing import List
+from typing import Final, List
 
+from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.users import UserID
@@ -30,6 +31,14 @@ router = APIRouter()
 log = logging.getLogger(__name__)
 
 
+GET_CLUSTER_DETAILS_CACHING_TTL: Final[int] = 3
+
+
+def _build_cache_key(fct, *_, **kwargs):
+    return f"{fct.__name__}_{kwargs['cluster_id']}"
+
+
+@cached(ttl=GET_CLUSTER_DETAILS_CACHING_TTL, key_builder=_build_cache_key)
 async def _get_cluster_details_with_id(
     settings: ComputationalBackendSettings,
     user_id: UserID,
