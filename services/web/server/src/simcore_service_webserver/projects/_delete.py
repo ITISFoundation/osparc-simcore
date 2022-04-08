@@ -118,7 +118,9 @@ def create_delete_project_background_task(
         name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
     )
 
-    assert task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+    assert task.get_name() == DELETE_PROJECT_TASK_NAME.format(  # nosec
+        project_uuid, user_id
+    )
 
     task.add_done_callback(functools.partial(_log_errors, log))
     return task
@@ -139,7 +141,7 @@ def is_delete_project_background_task_running(
     project_uuid: ProjectID, user_id: UserID
 ) -> bool:
     tasks = get_delete_project_background_tasks(project_uuid, user_id)
-    assert len(tasks) <= 1
+    assert len(tasks) <= 1  # nosec
     return len(tasks) > 0
 
 
