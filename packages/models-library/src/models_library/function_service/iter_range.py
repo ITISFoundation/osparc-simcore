@@ -54,4 +54,4 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
 
 META_INT = create_metadata("integer", prefix="int")
 
-REGISTRY = register(META_INT)
+REGISTRY = register(META_INT, is_development_feature=True)

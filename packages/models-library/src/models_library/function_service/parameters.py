@@ -79,5 +79,4 @@ META_ARRAY = ServiceDockerData.parse_obj(
     }
 )
 
-# TODO: PC-> OM register more generic?
 REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY)

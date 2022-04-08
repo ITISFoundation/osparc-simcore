@@ -61,4 +61,4 @@ META = ServiceDockerData.parse_obj(
     }
 )
 
-REGISTRY = register(META)
+REGISTRY = register(META, is_development_feature=True)

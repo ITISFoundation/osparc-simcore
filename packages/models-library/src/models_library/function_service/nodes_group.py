@@ -34,4 +34,4 @@ META = ServiceDockerData.parse_obj(
 assert META.outputs is not None  # nosec
 assert list(META.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
 
-REGISTRY = register(META)
+REGISTRY = register(META, is_development_feature=True)
