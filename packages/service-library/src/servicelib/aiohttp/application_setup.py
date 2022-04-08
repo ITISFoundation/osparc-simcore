@@ -89,7 +89,7 @@ def _is_addon_enabled_from_config(
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
-                return parse_obj_as(bool, f"{searched_config.get(part, True)}")
+                return parse_obj_as(bool, searched_config.get(part, True))
             searched_config = searched_config[part]
 
     except KeyError as ee:
