@@ -322,7 +322,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
-      req.addListener("error", e => {
+      req.addListener("error", () => {
         this.__getStudyLogger().error(null, "Error submitting pipeline");
         startStopButtonsWB.setRunning(false);
       }, this);
@@ -406,15 +406,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStopPipeline: function(studyId) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", e => {
-        this.__getStudyLogger().debug(null, "Pipeline aborting");
-      }, this);
-      req.addListener("error", e => {
-        this.__getStudyLogger().error(null, "Error stopping pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.__getStudyLogger().error(null, "Failed stopping pipeline");
-      }, this);
+      req.addListener("success", () => this.__getStudyLogger().debug(null, "Pipeline aborting"), this);
+      req.addListener("error", () => this.__getStudyLogger().error(null, "Error stopping pipeline"), this);
+      req.addListener("fail", () => this.__getStudyLogger().error(null, "Failed stopping pipeline"), this);
       req.send();
 
       this.__getStudyLogger().info(null, "Stopping pipeline");
