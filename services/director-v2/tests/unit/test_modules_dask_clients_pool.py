@@ -268,7 +268,7 @@ async def test_acquire_default_cluster(
         def just_a_quick_fct(x, y):
             return x + y
 
-        future = dask_client.dask_subsystem.client.submit(just_a_quick_fct, 12, 23)
+        future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
         result = await future.result(timeout=10)  # type: ignore
     assert result == 35

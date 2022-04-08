@@ -100,7 +100,7 @@ UserCallbackInSepThread = Callable[[], None]
 @dataclass
 class DaskClient:
     app: FastAPI
-    dask_subsystem: DaskSubSystem
+    backend: DaskSubSystem
     settings: ComputationalBackendSettings
 
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
@@ -130,13 +130,13 @@ class DaskClient:
                     endpoint,
                     attempt.retry_state.attempt_number,
                 )
-                dask_subsystem = await create_internal_client_based_on_auth(
+                backend = await create_internal_client_based_on_auth(
                     endpoint, authentication
                 )
-                check_scheduler_status(dask_subsystem.client)
+                check_scheduler_status(backend.client)
                 instance = cls(
                     app=app,
-                    dask_subsystem=dask_subsystem,
+                    backend=backend,
                     settings=settings,
                 )
                 logger.info(
@@ -146,7 +146,7 @@ class DaskClient:
                 )
                 logger.info(
                     "Scheduler info:\n%s",
-                    json.dumps(dask_subsystem.client.scheduler_info(), indent=2),
+                    json.dumps(backend.client.scheduler_info(), indent=2),
                 )
                 return instance
         # this is to satisfy pylance
@@ -157,14 +157,14 @@ class DaskClient:
         for task in self._subscribed_tasks:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
-        await self.dask_subsystem.close()
+        await self.backend.close()
         logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _EVENT_CONSUMER_MAP = [
-            (self.dask_subsystem.state_sub, task_handlers.task_change_handler),
-            (self.dask_subsystem.progress_sub, task_handlers.task_progress_handler),
-            (self.dask_subsystem.logs_sub, task_handlers.task_log_handler),
+            (self.backend.state_sub, task_handlers.task_change_handler),
+            (self.backend.progress_sub, task_handlers.task_progress_handler),
+            (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
@@ -224,20 +224,20 @@ class DaskClient:
                 node_image.node_requirements
             )
             check_scheduler_is_still_the_same(
-                self.dask_subsystem.scheduler_id, self.dask_subsystem.client
+                self.backend.scheduler_id, self.backend.client
             )
-            check_communication_with_scheduler_is_open(self.dask_subsystem.client)
-            check_scheduler_status(self.dask_subsystem.client)
+            check_communication_with_scheduler_is_open(self.backend.client)
+            check_scheduler_status(self.backend.client)
             # NOTE: in case it's a gateway we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
             # TODO: one idea is to do a lazy checking. A cluster might take a few seconds to run a
             # sidecar, which will then populate the scheduler with resources available on the cluster
-            if not self.dask_subsystem.gateway:
+            if not self.backend.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
                     node_id=node_id,
-                    scheduler_info=self.dask_subsystem.client.scheduler_info(),
+                    scheduler_info=self.backend.client.scheduler_info(),
                     task_resources=dask_resources,
                     node_image=node_image,
                     cluster_id=cluster_id,
@@ -253,7 +253,7 @@ class DaskClient:
                 user_id, project_id, node_id
             )
             try:
-                task_future = self.dask_subsystem.client.submit(
+                task_future = self.backend.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
                         server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
@@ -274,14 +274,14 @@ class DaskClient:
                 task_future.add_done_callback(lambda _: callback())
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
-                await self.dask_subsystem.client.publish_dataset(
+                await self.backend.client.publish_dataset(
                     task_future, name=job_id
                 )  # type: ignore
 
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
-                check_scheduler_status(self.dask_subsystem.client)
+                check_scheduler_status(self.backend.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
         return list_of_node_id_to_job_id
@@ -291,7 +291,7 @@ class DaskClient:
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
         # try to get the task from the scheduler
-        task_statuses = await self.dask_subsystem.client.run_on_scheduler(
+        task_statuses = await self.backend.client.run_on_scheduler(
             lambda dask_scheduler: dask_scheduler.get_task_status(keys=job_ids)
         )  # type: ignore
         logger.debug("found dask task statuses: %s", f"{task_statuses=}")
@@ -323,7 +323,7 @@ class DaskClient:
         # process, and report when it is finished and properly cancelled.
         logger.debug("cancelling task with %s", f"{job_id=}")
         try:
-            task_future: distributed.Future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+            task_future: distributed.Future = await self.backend.client.get_dataset(name=job_id)  # type: ignore
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
@@ -338,7 +338,7 @@ class DaskClient:
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         logger.debug("getting result of %s", f"{job_id=}")
         try:
-            task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+            task_future = await self.backend.client.get_dataset(name=job_id)  # type: ignore
             return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
@@ -349,16 +349,16 @@ class DaskClient:
         logger.debug("releasing results for %s", f"{job_id=}")
         try:
             # first check if the key exists
-            await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
-            await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
+            await self.backend.client.get_dataset(name=job_id)  # type: ignore
+            await self.backend.client.unpublish_dataset(name=job_id)  # type: ignore
         except KeyError:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
-        scheduler_info = self.dask_subsystem.client.scheduler_info()
-        scheduler_status = self.dask_subsystem.client.status
-        dashboard_link = self.dask_subsystem.client.dashboard_link
-        used_resources = await self.dask_subsystem.client.run_on_scheduler(
+        scheduler_info = self.backend.client.scheduler_info()
+        scheduler_status = self.backend.client.status
+        dashboard_link = self.backend.client.dashboard_link
+        used_resources = await self.backend.client.run_on_scheduler(
             lambda dask_scheduler: dict(dask_scheduler.used_resources)
         )  # type: ignore
         for k, v in used_resources.items():
