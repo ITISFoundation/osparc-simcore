@@ -46,7 +46,7 @@ async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
                 "confirm": NEW_PASSWORD,
             },
         )
-        assert rsp.url_obj.path == url.path
+        assert rsp.url.path == url.path
         assert rsp.status == 422
         assert cfg.MSG_WRONG_PASSWORD in await rsp.text()
         await assert_status(rsp, web.HTTPUnprocessableEntity, cfg.MSG_WRONG_PASSWORD)
@@ -64,7 +64,7 @@ async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
                 "confirm": NEW_PASSWORD.upper(),
             },
         )
-        assert rsp.url_obj.path == url.path
+        assert rsp.url.path == url.path
         assert rsp.status == 409
         await assert_status(rsp, web.HTTPConflict, cfg.MSG_PASSWORD_MISMATCH)
 
@@ -84,7 +84,7 @@ async def test_success(client: TestClient, cfg: LoginOptions):
                 "confirm": NEW_PASSWORD,
             },
         )
-        assert rsp.url_obj.path == url_change_password.path
+        assert rsp.url.path == url_change_password.path
         assert rsp.status == 200
         assert cfg.MSG_PASSWORD_CHANGED in await rsp.text()
         await assert_status(rsp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
@@ -92,7 +92,7 @@ async def test_success(client: TestClient, cfg: LoginOptions):
         # logout
         rsp = await client.post(f"{url_logout}")
         assert rsp.status == 200
-        assert rsp.url_obj.path == url_logout.path
+        assert rsp.url.path == url_logout.path
 
         # login with new password
         rsp = await client.post(
@@ -103,5 +103,5 @@ async def test_success(client: TestClient, cfg: LoginOptions):
             },
         )
         assert rsp.status == 200
-        assert rsp.url_obj.path == url_login.path
+        assert rsp.url.path == url_login.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)

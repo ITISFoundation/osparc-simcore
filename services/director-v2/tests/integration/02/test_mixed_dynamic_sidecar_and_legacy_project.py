@@ -17,7 +17,6 @@ from models_library.projects import ProjectAtDB
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -43,7 +42,6 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "rabbit",
-    "redis",
     "storage",
 ]
 
@@ -57,7 +55,6 @@ def minimal_configuration(
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitSettings,

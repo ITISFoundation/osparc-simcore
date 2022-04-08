@@ -12,8 +12,8 @@ from uuid import uuid4
 
 import aiopg
 import aiopg.sa
-import aioredis
 import pytest
+import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
@@ -71,11 +71,11 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 @pytest.fixture(autouse=True)
 async def __delete_all_redis_keys__(redis_settings: RedisSettings):
-    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
+    client = aioredis.from_url(
+        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
+    )
     await client.flushall()
-    client.close()
-    await client.wait_closed()
-
+    await client.close()
     yield
     # do nothing on teadown
 

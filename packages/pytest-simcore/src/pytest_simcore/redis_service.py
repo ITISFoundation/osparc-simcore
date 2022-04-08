@@ -5,9 +5,9 @@
 import logging
 from typing import AsyncIterator, Dict, Union
 
-import aioredis
 import pytest
 import tenacity
+from redis.asyncio import Redis, from_url
 from settings_library.redis import RedisSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -34,7 +34,7 @@ async def redis_settings(
     )
     # test runner is running on the host computer
     settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=int(port))
-    await wait_till_redis_responsive(settings.dsn)
+    await wait_till_redis_responsive(settings.dsn_resources)
 
     return settings
 
@@ -56,15 +56,29 @@ def redis_service(
 @pytest.fixture(scope="function")
 async def redis_client(
     redis_settings: RedisSettings,
-) -> AsyncIterator[aioredis.Redis]:
+) -> AsyncIterator[Redis]:
     """Creates a redis client to communicate with a redis service ready"""
-    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
+    client = from_url(
+        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
+    )
 
     yield client
 
     await client.flushall()
-    client.close()
-    await client.wait_closed()
+    await client.close()
+
+
+@pytest.fixture(scope="function")
+async def redis_locks_client(
+    redis_settings: RedisSettings,
+) -> AsyncIterator[Redis]:
+    """Creates a redis client to communicate with a redis service ready"""
+    client = from_url(redis_settings.dsn_locks, encoding="utf-8", decode_responses=True)
+
+    yield client
+
+    await client.flushall()
+    await client.close()
 
 
 # HELPERS --
@@ -77,6 +91,7 @@ async def redis_client(
     reraise=True,
 )
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
-    client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
-    client.close()
-    await client.wait_closed()
+    client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
+
+    if not await client.ping():
+        raise ConnectionError(f"{redis_url=} not available")

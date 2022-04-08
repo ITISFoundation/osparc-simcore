@@ -33,7 +33,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2_api
+from .. import director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -45,10 +45,6 @@ from ..socketio.events import (
     SocketMessageDict,
     send_group_messages,
     send_messages,
-)
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
@@ -196,7 +192,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
         await remove_project_interactive_services(
             user_id, project_uuid, app, notify_users=False
         )
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+        await storage_api.delete_data_folders_of_project(app, project_uuid, user_id)
 
     fire_and_forget_task(_remove_services_and_data())
 
@@ -241,7 +237,7 @@ async def lock_with_notification(
     notify_users: bool = True,
 ):
     try:
-        async with await lock_project(
+        async with lock_project(
             app,
             project_uuid,
             status,
@@ -416,7 +412,7 @@ async def delete_project_node(
             )
             break
     # remove its data if any
-    await delete_data_folders_of_project_node(
+    await storage_api.delete_data_folders_of_project_node(
         request.app, project_uuid, node_uuid, user_id
     )
 

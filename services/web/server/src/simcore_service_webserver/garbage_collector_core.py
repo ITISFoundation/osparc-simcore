@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 from aiohttp import web
-from aioredlock import Aioredlock
+from redis.asyncio import Redis
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
@@ -30,7 +30,7 @@ from .projects.projects_api import (
 )
 from .projects.projects_db import APP_PROJECT_DBAPI
 from .projects.projects_exceptions import ProjectNotFoundError
-from .redis import get_redis_lock_manager
+from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import get_guest_user_ids_and_names, get_user, get_user_role
 from .users_exceptions import UserNotFoundError
@@ -87,7 +87,7 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: Aioredlock = get_redis_lock_manager(app)
+    lock_manager: Redis = get_redis_lock_manager_client(app)
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -120,9 +120,9 @@ async def remove_disconnected_user_resources(
 
         # Skip locked keys for the moment
         user_id = int(dead_key["user_id"])
-        if await lock_manager.is_locked(
+        if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
-        ):
+        ).locked():
             logger.debug(
                 "Skipping garbage-collecting user '%d' since it is still locked",
                 user_id,
@@ -236,7 +236,7 @@ async def remove_users_manually_marked_as_guests(
     those accessing via the front-end).
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    lock_manager: Aioredlock = get_redis_lock_manager(app)
+    redis_locks_client: Redis = get_redis_lock_manager_client(app)
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
@@ -259,13 +259,13 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         # Prevents removing GUEST users that are initializating
-        lock_during_construction: bool = await lock_manager.is_locked(
+        lock_during_construction: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
-        )
+        ).locked()
 
-        lock_during_initialization: bool = await lock_manager.is_locked(
+        lock_during_initialization: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_id)
-        )
+        ).locked()
 
         if lock_during_construction or lock_during_initialization:
             logger.debug(
