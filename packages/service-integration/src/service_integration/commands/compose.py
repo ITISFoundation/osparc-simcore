@@ -15,7 +15,13 @@ from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import MetaConfig, DockerComposeOverwriteCfg, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
-FORMAT_UTC = "%Y-%m-%dT%H:%M:%SZ"
+
+def _utc_timestamp() -> str:
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _command_output(command: str) -> str:
+    return check_output(command, shell=True).decode().strip()
 
 
 def create_docker_compose_image_spec(
@@ -70,15 +76,13 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
-        FORMAT_UTC
-    )
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = _utc_timestamp()
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = check_output(
-        "git describe --always --dirty", shell=True
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _command_output(
+        "git describe --always"
     )
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = check_output(
-        "git config --get remote.origin.url", shell=True
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _command_output(
+        "git config --get remote.origin.url"
     )
 
     compose_spec = create_image_spec(
