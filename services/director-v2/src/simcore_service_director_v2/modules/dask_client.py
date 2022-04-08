@@ -30,6 +30,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -42,6 +43,7 @@ from ..core.errors import (
 )
 from ..core.settings import ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
+from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,
@@ -351,3 +353,19 @@ class DaskClient:
             await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
         except KeyError:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+
+    async def get_cluster_details(self) -> ClusterDetails:
+        scheduler_info = self.dask_subsystem.client.scheduler_info()
+        scheduler_status = self.dask_subsystem.client.status
+        dashboard_link = self.dask_subsystem.client.dashboard_link
+        used_resources = await self.dask_subsystem.client.run_on_scheduler(
+            lambda dask_scheduler: dict(dask_scheduler.used_resources)
+        )  # type: ignore
+        for k, v in used_resources.items():
+            scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
+
+        assert dashboard_link  # nosec
+        return ClusterDetails(
+            scheduler=Scheduler(status=scheduler_status, **scheduler_info),
+            dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
+        )

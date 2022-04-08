@@ -5,7 +5,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
 )
@@ -16,11 +15,11 @@ from ...core.errors import ClusterInvalidOperationError, ConfigurationError
 from ...core.settings import ComputationalBackendSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
+    ClusterDetails,
     ClusterDetailsGet,
     ClusterGet,
     ClusterPatch,
     ClusterPing,
-    Scheduler,
 )
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
@@ -37,21 +36,15 @@ async def _get_cluster_details_with_id(
     cluster_id: ClusterID,
     clusters_repo: ClustersRepository,
     dask_clients_pool: DaskClientsPool,
-) -> ClusterDetailsGet:
+) -> ClusterDetails:
     log.debug("Getting details for cluster '%s'", cluster_id)
     cluster: Cluster = settings.default_cluster
     if cluster_id != DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
-        scheduler_info = client.dask_subsystem.client.scheduler_info()
-        scheduler_status = client.dask_subsystem.client.status
-        dashboard_link = client.dask_subsystem.client.dashboard_link
-    assert dashboard_link  # nosec
+        cluster_details = await client.get_cluster_details()
 
-    return ClusterDetailsGet(
-        scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-        dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
-    )
+    return cluster_details
 
 
 @router.post(

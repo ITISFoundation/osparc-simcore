@@ -231,6 +231,7 @@ def node_id() -> NodeID:
 class ImageParams:
     image: Image
     expected_annotations: Dict[str, Any]
+    expected_used_resources: Dict[str, Any]
     fake_tasks: Dict[NodeID, Image]
 
 
@@ -250,6 +251,10 @@ def cpu_image(node_id: NodeID) -> ImageParams:
                 "CPU": 1.0,
                 "RAM": 128 * 1024 * 1024,
             }
+        },
+        expected_used_resources={
+            "CPU": 1.0,
+            "RAM": 128 * 1024 * 1024.0,
         },
         fake_tasks={node_id: image},
     )
@@ -273,6 +278,11 @@ def gpu_image(node_id: NodeID) -> ImageParams:
                 "RAM": 256 * 1024 * 1024,
             },
         },
+        expected_used_resources={
+            "CPU": 1.0,
+            "GPU": 1.0,
+            "RAM": 256 * 1024 * 1024.0,
+        },
         fake_tasks={node_id: image},
     )
 
@@ -294,6 +304,11 @@ def mpi_image(node_id: NodeID) -> ImageParams:
                 "MPI": 1.0,
                 "RAM": 128 * 1024 * 1024,
             },
+        },
+        expected_used_resources={
+            "CPU": 2.0,
+            "MPI": 1.0,
+            "RAM": 128 * 1024 * 1024.0,
         },
         fake_tasks={node_id: image},
     )
@@ -1016,3 +1031,103 @@ async def test_dask_sub_handlers(
             )
             fake_task_handlers.task_log_handler.assert_called_with("my name is logs")
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
+
+
+async def test_get_cluster_details(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    image_params: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    faker: Faker,
+):
+    cluster_details = await dask_client.get_cluster_details()
+    assert cluster_details
+
+    _DASK_EVENT_NAME = faker.pystr()
+    # send a fct that uses resources
+    def fake_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+        expected_annotations,
+    ) -> TaskOutputData:
+        # get the task data
+        worker = get_worker()
+        task = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        assert command == ["run"]
+        event = distributed.Event(_DASK_EVENT_NAME)
+        event.wait(timeout=25)
+
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=functools.partial(
+            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+        ),
+    )
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in image_params.fake_tasks
+
+    # check status goes to PENDING/STARTED
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.STARTED
+    )
+
+    # check we have one worker using the resources
+    # one of the workers should now get the job and use the resources
+    worker_with_the_task: Optional[AnyUrl] = None
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
+        with attempt:
+            cluster_details = await dask_client.get_cluster_details()
+            assert cluster_details
+            assert (
+                cluster_details.scheduler.workers
+            ), f"there are no workers in {cluster_details.scheduler=!r}"
+            for worker_url, worker_data in cluster_details.scheduler.workers.items():
+                if all(
+                    [
+                        worker_data.used_resources.get(res_name) == res_value
+                        for res_name, res_value in image_params.expected_used_resources.items()
+                    ]
+                ):
+                    worker_with_the_task = worker_url
+            assert (
+                worker_with_the_task is not None
+            ), f"there is no worker in {cluster_details.scheduler.workers.keys()=} consuming {image_params.expected_annotations=!r}"
+
+    # using the event we let the remote fct continue
+    event = distributed.Event(_DASK_EVENT_NAME)
+    await event.set()  # type: ignore
+
+    # wait for the task to complete
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.SUCCESS
+    )
+
+    # check the resources are released
+    cluster_details = await dask_client.get_cluster_details()
+    assert cluster_details
+    assert cluster_details.scheduler.workers
+    assert worker_with_the_task
+    currently_used_resources = cluster_details.scheduler.workers[
+        worker_with_the_task
+    ].used_resources
+
+    assert all(res == 0.0 for res in currently_used_resources.values())
