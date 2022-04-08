@@ -124,8 +124,8 @@ async def send_mail(app: web.Application, msg: MIMEText):
     smtp_args = dict(
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=cfg.SMTP_TLS_ENABLED,
-        start_tls=cfg.SMTP_STARTTLS_ENABLED,
+        use_tls=cfg.SMTP_PROTOCOL == "TLS",
+        start_tls=cfg.SMTP_PROTOCOL == "STARTTLS",
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
     if cfg.SMTP_PORT == 587:
@@ -133,23 +133,26 @@ async def send_mail(app: web.Application, msg: MIMEText):
         # plaintext first, then use starttls
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
-        if cfg.SMTP_STARTTLS_ENABLED:
-            log.info("Unencrypted connection attempt to mailserver ...")
+        if cfg.SMTP_PROTOCOL == "STARTTLS":
+            log.debug("Unencrypted connection attempt to mailserver ...")
             await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-            log.info("Starting STARTTLS ...")
-            log.warning("Certificates are not validated for STARTTLS on port 587!")
+            log.debug("Starting STARTTLS ...")
+            log.warning(
+                "Certificates are not validated for STARTTLS (as it happens for TLS) on port %s!",
+                str(cfg.SMTP_PORT),
+            )
             await smtp.starttls(validate_certs=False)
-        elif cfg.SMTP_TLS_ENABLED:
+        elif cfg.SMTP_PROTOCOL == "TLS":
             await smtp.connect(use_tls=True, port=cfg.SMTP_PORT)
         if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
-            log.info("Login email server ...")
+            log.debug("Login email server ...")
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
             if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
-                log.info("Login email server ...")
+                log.debug("Login email server ...")
                 await smtp.login(
                     cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value()
                 )

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.email import EmailProtocol
 
 from .._constants import APP_SETTINGS_KEY
 
@@ -45,8 +46,7 @@ class LoginOptions(BaseModel):
     SMTP_SENDER: str
     SMTP_HOST: str
     SMTP_PORT: int
-    SMTP_TLS_ENABLED: bool
-    SMTP_STARTTLS_ENABLED: bool
+    SMTP_PROTOCOL: EmailProtocol
     SMTP_USERNAME: Optional[str] = Field(...)
     SMTP_PASSWORD: Optional[SecretStr] = Field(...)
 
