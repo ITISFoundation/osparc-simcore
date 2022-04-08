@@ -7,28 +7,13 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
 
 from aiohttp import web
+from pydantic import parse_obj_as
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
 APP_SETUP_COMPLETED_KEY = f"{__name__ }.setup"
-
-
-def strtobool(val):
-    # distutils.util is deprecated in python 3.10 so the fct strtobool was copied here for convenience
-    """Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
-        return 1
-    elif val in ("n", "no", "f", "false", "off", "0"):
-        return 0
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
 
 
 class _SetupFunc(Protocol):
@@ -104,7 +89,7 @@ def _is_addon_enabled_from_config(
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
-                return bool(strtobool(f"{searched_config.get(part, True)}"))
+                return parse_obj_as(bool, f"{searched_config.get(part, True)}")
             searched_config = searched_config[part]
 
     except KeyError as ee:
