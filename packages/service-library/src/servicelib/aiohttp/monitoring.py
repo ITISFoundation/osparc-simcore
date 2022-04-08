@@ -65,7 +65,7 @@ log = logging.getLogger(__name__)
 # process_max_fds 1.048576e+06
 # # HELP python_info Python platform information
 # # TYPE python_info gauge
-# python_info{implementation="CPython",major="3",minor="8",patchlevel="10",version="3.8.10"} 1.0
+# python_info{implementation="CPython",major="3",minor="8",patchlevel="10",version="3.9.12"} 1.0
 # # HELP python_gc_objects_collected_total Objects collected during gc
 # # TYPE python_gc_objects_collected_total counter
 # python_gc_objects_collected_total{generation="0"} 7328.0

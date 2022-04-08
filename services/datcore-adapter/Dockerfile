@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.8.10"
+ARG PYTHON_VERSION="3.9.12"
 ARG PENNSIEVE_VERSION="0.3.5"
 FROM itisfoundation/pennsieve-agent:${PYTHON_VERSION}-${PENNSIEVE_VERSION} as pennsieve-agent
 FROM python:${PYTHON_VERSION}-slim-buster as base
