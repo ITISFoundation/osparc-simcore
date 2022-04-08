@@ -1,5 +1,8 @@
 from pathlib import Path
 from typing import Dict, List
+from datetime import datetime
+from subprocess import check_output
+
 
 import click
 import yaml
@@ -11,6 +14,8 @@ from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import MetaConfig, DockerComposeOverwriteCfg, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
+
+FORMAT_UTC = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def create_docker_compose_image_spec(
@@ -64,6 +69,17 @@ def create_docker_compose_image_spec(
             click.echo(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
+    # add required labels
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
+        FORMAT_UTC
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = check_output(
+        "git describe --always --dirty", shell=True
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = check_output(
+        "git config --get remote.origin.url", shell=True
+    )
 
     compose_spec = create_image_spec(
         integration_context,
