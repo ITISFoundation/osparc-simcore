@@ -198,7 +198,7 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typer==0.4.0
+typer==0.4.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
     # via
