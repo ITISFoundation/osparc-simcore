@@ -896,9 +896,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         const node = nodes[nodeId];
         workbenchUI[nodeId] = {};
         workbenchUI[nodeId]["position"] = node.getPosition();
-        const bm = node.getMarker();
-        if (bm) {
-          workbenchUI[nodeId]["marker"] = bm;
+        const marker = node.getMarker();
+        if (marker) {
+          workbenchUI[nodeId]["marker"] = marker;
         }
       }
       return workbenchUI;

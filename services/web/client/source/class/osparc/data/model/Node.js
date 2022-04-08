@@ -165,7 +165,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     marker: {
-      check: "Color",
+      check: "Object",
       init: null,
       nullable: true,
       event: "changeMarker"
@@ -623,11 +623,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    addMarker: function(color) {
-      if (color === undefined) {
-        color = osparc.utils.Utils.getRandomColor();
+    addMarker: function(marker) {
+      if (marker === undefined) {
+        marker = {
+          color: osparc.utils.Utils.getRandomColor()
+        };
       }
-      this.setMarker(color);
+      this.setMarker(marker);
     },
 
     removeMarker: function() {

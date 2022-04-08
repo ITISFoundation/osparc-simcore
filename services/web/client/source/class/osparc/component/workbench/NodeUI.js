@@ -244,7 +244,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       node.bind("marker", marker, "visibility", {
         converter: val => val ? "visible" : "excluded"
       });
-      node.bind("marker", marker, "textColor");
+      node.bind("marker", marker, "textColor", {
+        converter: val => val ? val.color : null
+      });
     },
 
     __applyType: function(type) {

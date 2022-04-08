@@ -132,9 +132,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         node.getStatus().bind("running", this.getChildControl("icon"), "textColor", {
           converter: status => osparc.utils.StatusUI.getColor(status)
         });
-        node.getStatus().addListener("changeRunning", () => {
-          console.log(node, this.getId());
-        });
       }
 
       node.bind("label", this, "label");
@@ -143,11 +140,19 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         this.getChildControl("fullscreen-button").show();
       }
 
+      const markerBtn = this.getChildControl("marker-button");
+      markerBtn.show();
+      this.getNode().bind("marker", markerBtn, "label", {
+        converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
+      });
+
       const marker = this.getChildControl("marker");
       node.bind("marker", marker, "visibility", {
         converter: val => val ? "visible" : "excluded"
       });
-      node.bind("marker", marker, "textColor");
+      node.bind("marker", marker, "textColor", {
+        converter: val => val ? val.color : null
+      });
     },
 
     _createChildControlImpl: function(id) {
@@ -203,18 +208,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             icon: "@FontAwesome5Solid/bookmark/10",
             visibility: "excluded"
           });
-          /*
-          this.bind("marker", control, "label", {
-            converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
-          });
-          */
           control.addListener("execute", () => {
-            if (this.getMarker()) {
-              // this.removeMarker();
-              console.log("remove marker");
+            if (this.getNode().getMarker()) {
+              this.getNode().removeMarker();
             } else {
-              // this.addMarker();
-              console.log("add marker");
+              this.getNode().addMarker();
             }
           });
           const optionsMenu = this.getChildControl("options-menu-button");
