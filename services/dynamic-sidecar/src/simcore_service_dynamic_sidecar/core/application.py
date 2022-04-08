@@ -6,10 +6,12 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
-from ..core.docker_logs import setup_background_log_fetcher
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import setup_directory_watcher
+from .docker_logs import setup_background_log_fetcher
+from .error_handlers import http_error_handler
+from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
@@ -75,12 +77,16 @@ def assemble_application() -> FastAPI:
     # add routing paths
     application.include_router(main_router)
 
+    # error handlers
+    application.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+
+    # also sets up mounted_volumes
     setup_directory_watcher(application)
 
     def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
             await login_registry(application.state.settings.REGISTRY_SETTINGS)
-            await volumes_fix_permissions()
+            await volumes_fix_permissions(application.state.mounted_volumes)
 
             print(WELCOME_MSG, flush=True)
 

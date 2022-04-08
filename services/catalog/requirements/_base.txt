@@ -10,19 +10,12 @@ aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiofiles==0.5.0
+aiofiles==0.8.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aioredis==1.3.1
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   aiocache
+aioredis==2.0.1
+    # via aiocache
 alembic==1.7.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.5.0
@@ -67,8 +60,6 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-hiredis==2.0.0
-    # via aioredis
 httpcore==0.14.4
     # via httpx
 httptools==0.2.0
@@ -77,9 +68,6 @@ httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
@@ -210,10 +198,12 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typer==0.4.0
+typer==0.4.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
-    # via pydantic
+    # via
+    #   aioredis
+    #   pydantic
 ujson==4.0.2
     # via fastapi
 urllib3==1.26.7

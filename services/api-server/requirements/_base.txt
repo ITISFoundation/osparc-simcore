@@ -294,7 +294,7 @@ tornado==6.1
     #   threadloop
 tqdm==4.63.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.4.0
+typer==0.4.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in

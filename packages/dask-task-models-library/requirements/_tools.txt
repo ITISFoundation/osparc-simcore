@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-black==22.1.0
+black==22.3.0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==8.0.4
+click==8.1.2
     # via
     #   -c requirements/_base.txt
     #   black

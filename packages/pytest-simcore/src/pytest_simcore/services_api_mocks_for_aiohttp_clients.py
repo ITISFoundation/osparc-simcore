@@ -120,7 +120,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     node_states = FULL_PROJECT_NODE_STATES
 
     return CallbackResult(
-        status=202,
+        status=200,
         payload={
             "id": Path(url.path).name,
             "state": state,
@@ -128,6 +128,8 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
                 "adjacency_list": pipeline,
                 "node_states": node_states,
             },
+            "iteration": 2,
+            "cluster_id": 23,
         },
     )
 
@@ -222,6 +224,13 @@ async def director_v2_service_mock(
     delete_computation_pattern = get_computation_pattern
     projects_networks_pattern = re.compile(
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
+    )
+
+    get_services_pattern = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services$"
+    )
+    aioresponses_mocker.get(
+        get_services_pattern, status=web.HTTPOk.status_code, repeat=True
     )
 
     aioresponses_mocker.post(

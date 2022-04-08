@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE
-from .projects_access import AccessRights, GroupID
+from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
@@ -121,7 +121,7 @@ class Project(BaseProjectModel):
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",
     )
-    access_rights: Dict[GroupID, AccessRights] = Field(
+    access_rights: Dict[GroupIDStr, AccessRights] = Field(
         ...,
         description="object containing the GroupID as key and read/write/execution permissions as value",
         alias="accessRights",

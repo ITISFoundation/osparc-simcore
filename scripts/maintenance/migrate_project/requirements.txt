@@ -1,0 +1,4 @@
+pydantic
+typer
+sqlalchemy
+psycopg2

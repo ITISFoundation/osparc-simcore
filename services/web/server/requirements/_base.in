@@ -36,8 +36,6 @@ aiohttp_security
 aiohttp_session[secure]
 aiohttp-swagger[performance]
 aiopg[sa] # db
-aioredis # redis
-aioredlock # redis
 aiosmtplib # email
 asyncpg # db
 change_case
@@ -54,5 +52,6 @@ passlib
 pint # units
 pydantic[email] # models
 python-magic # excel
+redis
 semantic_version
 tenacity

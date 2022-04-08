@@ -28,10 +28,7 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.mounted_fs import (
-    MountedVolumes,
-    get_mounted_volumes,
-)
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
@@ -470,19 +467,23 @@ async def test_container_docker_error(
     started_containers: List[str],
     mock_containers_get: int,
 ) -> None:
-    def _expected_error_string() -> Dict[str, str]:
-        return dict(detail="aiodocker_mocked_error")
+    def _expected_error_string(status_code: int) -> Dict[str, Any]:
+        return {
+            "errors": [
+                f"An unexpected Docker error occurred status={status_code}, message='aiodocker_mocked_error'"
+            ]
+        }
 
     for container in started_containers:
         # get container logs
         response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string()
+        assert response.json() == _expected_error_string(mock_containers_get)
 
         # inspect container
         response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string()
+        assert response.json() == _expected_error_string(mock_containers_get)
 
 
 async def test_container_save_state(
@@ -512,10 +513,11 @@ async def test_container_pull_input_ports(
 
 
 async def test_directory_watcher_disabling(
-    test_client: TestClient, mock_dir_watcher_on_any_event: AsyncMock
+    test_client: TestClient,
+    mock_dir_watcher_on_any_event: AsyncMock,
+    mounted_volumes: MountedVolumes,
 ) -> None:
     def _create_random_dir_in_inputs() -> int:
-        mounted_volumes: MountedVolumes = get_mounted_volumes()
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
         dir_count = len(
@@ -556,6 +558,7 @@ async def test_container_create_outputs_dirs(
     test_client: TestClient,
     mock_outputs_labels: Dict[str, ServiceOutput],
     mock_dir_watcher_on_any_event: AsyncMock,
+    mounted_volumes: MountedVolumes,
 ) -> None:
     # by default directory-watcher it is disabled
     await _assert_enable_directory_watcher(test_client)
@@ -572,7 +575,6 @@ async def test_container_create_outputs_dirs(
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     for dir_name in mock_outputs_labels.keys():
         assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
 

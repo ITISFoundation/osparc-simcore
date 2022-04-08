@@ -6,8 +6,8 @@ from random import randint
 from typing import Callable, Dict, List
 from uuid import uuid4
 
-import aioredis
 import pytest
+import redis.asyncio as aioredis
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application

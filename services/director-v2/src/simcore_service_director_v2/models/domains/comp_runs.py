@@ -2,7 +2,7 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Optional
 
-from models_library.clusters import ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -34,6 +34,13 @@ class CompRunsAtDB(BaseModel):
                 v = StateType(v)
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
+        return v
+
+    @validator("cluster_id", pre=True)
+    @classmethod
+    def concert_null_to_default_cluster_id(cls, v):
+        if v is None:
+            v = DEFAULT_CLUSTER_ID
         return v
 
     class Config:

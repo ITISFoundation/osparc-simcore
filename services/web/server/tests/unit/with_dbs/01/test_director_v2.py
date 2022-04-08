@@ -3,22 +3,19 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
-from aiohttp import web
 from aioresponses import aioresponses
 from faker import Faker
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
+from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver import director_v2_api
-from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director_v2_models import (
     ClusterCreate,
     ClusterPatch,
@@ -48,72 +45,6 @@ def cluster_id(faker: Faker) -> ClusterID:
     return ClusterID(faker.pyint(min_value=0))
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_pipeline(
-    mocked_director_v2,
-    client,
-    logged_user: Dict,
-    project_id: ProjectID,
-    user_role: UserRole,
-    expected: ExpectedResponse,
-):
-    url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url)
-    data, error = await assert_status(
-        rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
-    )
-
-    if user_role != UserRole.ANONYMOUS:
-        assert not error, f"error received: {error}"
-    if data:
-        assert "pipeline_id" in data
-        assert (
-            data["pipeline_id"] == f"{project_id}"
-        ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
-
-
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_partial_pipeline(
-    mocked_director_v2,
-    client,
-    logged_user: Dict,
-    project_id: ProjectID,
-    user_role: UserRole,
-    expected: ExpectedResponse,
-):
-    url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(
-        url, json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
-    )
-    data, error = await assert_status(
-        rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
-    )
-
-    if user_role != UserRole.ANONYMOUS:
-        assert not error, f"error received: {error}"
-    if data:
-        assert "pipeline_id" in data
-        assert (
-            data["pipeline_id"] == f"{project_id}"
-        ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
-
-
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_stop_pipeline(
-    mocked_director_v2,
-    client,
-    logged_user: Dict,
-    project_id: ProjectID,
-    user_role: UserRole,
-    expected: ExpectedResponse,
-):
-    url = client.app.router["stop_pipeline"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url)
-    await assert_status(
-        rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
-    )
-
-
 async def test_create_pipeline(
     mocked_director_v2, client, user_id: UserID, project_id: ProjectID
 ):
@@ -121,6 +52,7 @@ async def test_create_pipeline(
         client.app, user_id, project_id
     )
     assert task_out
+    assert isinstance(task_out, dict)
     assert task_out["state"] == RunningState.NOT_STARTED
 
 
@@ -134,6 +66,7 @@ async def test_get_computation_task(
         client.app, user_id, project_id
     )
     assert task_out
+    assert isinstance(task_out, ComputationTask)
     assert task_out.state == RunningState.NOT_STARTED
 
 
