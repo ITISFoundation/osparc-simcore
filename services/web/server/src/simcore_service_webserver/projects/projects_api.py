@@ -197,7 +197,12 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     except ProjectNotFoundError as err:
         raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
 
-    if not _delete.is_background_task_running(project_uuid, user_id):
+    # If you have multiple tasks deleting the same project then one will atmost succeed and
+    # the rest always fail (because the project is deleted).
+    in_progress: bool = _delete.is_background_task_running(project_uuid, user_id)
+
+    # This avoids having a burst of background tasks that were fire&forget failing
+    if not in_progress:
         await _delete.create_background_task(
             app, project_uuid, user_id, remove_project_dynamic_services, log
         )
