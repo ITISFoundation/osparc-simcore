@@ -110,30 +110,6 @@ async def get_project_for_user(
     return project
 
 
-# NOTE: Needs refactoring after access-layer in storage. DO NOT USE but keep
-#       here since it documents well the concept
-#
-# async def clone_project(
-#     request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str = ""
-# ) -> Dict:
-#     """Clones both document and data folders of a project
-#
-#     - document
-#         - get new identifiers for project and nodes
-#     - data folders
-#         - folder name composes as project_uuid/node_uuid
-#         - data is deep-copied to new folder corresponding to new identifiers
-#         - managed by storage uservice
-#     """
-#     cloned_project, nodes_map = clone_project_document(project, forced_copy_project_id)
-#
-#     updated_project = await copy_data_folders_from_project(
-#         request.app, project, cloned_project, nodes_map, user_id
-#     )
-#
-#     return updated_project
-
-
 async def start_project_interactive_services(
     request: web.Request, project: Dict, user_id: PositiveInt
 ) -> None:
