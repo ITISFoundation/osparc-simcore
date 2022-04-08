@@ -425,6 +425,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*generated_code*" \
 											-not -path "*build*" \
 											-not -path "*datcore.py" \
+											-not -path "*/director/*" \
 											-not -path "*web/server*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
