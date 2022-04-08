@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     this.set({
       decorator: "service-tree",
+      hideRoot: true,
       openMode: "none",
       contentPadding: 0,
       padding: 0
@@ -78,18 +79,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return osparc.utils.Services.getSorting(node.getMetaData().type);
     },
 
-    convertModel: function(nodes) {
+    nodesToModel: function(nodes) {
       const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         const nodeInTree = {
           label: node.getLabel(),
-          children: node.isContainer() ? this.convertModel(node.getInnerNodes()) : [],
-          isContainer: node.isContainer(),
-          nodeId: node.getNodeId(),
+          children: [],
           sortingValue: this.self().getSortingValue(node),
           statusColor: null,
-          marker: node.getMarker() ? node.getMarker() : null
+          id: node.getNodeId(),
+          node
         };
         children.push(nodeInTree);
       }
@@ -100,142 +100,80 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __currentNodeId: null,
 
-    _applyStudy: function() {
-      this.populateTree();
-    },
-
     getCurrentNodeId: function() {
       return this.__currentNodeId;
     },
-
 
     setCurrentNodeId: function(nodeId) {
       this.__currentNodeId = nodeId;
     },
 
-    __getOneSelectedRow: function() {
-      const selection = this.getSelection();
-      if (selection && selection.toArray().length > 0) {
-        return selection.toArray()[0];
-      }
-      return null;
+    _applyStudy: function() {
+      this.populateTree();
     },
 
     populateTree: function() {
-      const data = this.__getModelData();
-      let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.getModel();
-      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
-        const study = this.getStudy();
-        study.bind("name", newModel, "label");
-        this.setModel(newModel);
-        this.setDelegate({
-          createItem: () => {
-            const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
-            nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
-            nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
-            nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
-            nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
-            return nodeTreeItem;
-          },
-          bindItem: (c, item, id) => {
-            c.bindDefaultProperties(item, id);
-            c.bindProperty("nodeId", "nodeId", null, item, id);
-            c.bindProperty("label", "label", null, item, id);
-            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
-            if (item.getModel().getNodeId() === study.getUuid()) {
-              item.setIcon("@FontAwesome5Solid/home/14");
-              item.getChildControl("delete-button").exclude();
-            } else if (node) {
-              node.bind("label", item.getModel(), "label");
-              c.bindProperty("marker", "marker", null, item, id);
-
-              // set icon
-              if (node.isFilePicker()) {
-                const icon = osparc.utils.Services.getIcon("file");
-                item.setIcon(icon+"14");
-              } else if (node.isParameter()) {
-                const icon = osparc.utils.Services.getIcon("parameter");
-                item.setIcon(icon+"14");
-              } else if (node.isIterator()) {
-                const icon = osparc.utils.Services.getIcon("iterator");
-                item.setIcon(icon+"14");
-              } else if (node.isProbe()) {
-                const icon = osparc.utils.Services.getIcon("probe");
-                item.setIcon(icon+"14");
-              } else {
-                const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
-                if (icon) {
-                  item.setIcon(icon+"14");
-                }
-              }
-
-              // "bind" running/interactive status to icon color
-              if (node.isDynamic()) {
-                node.getStatus().addListener("changeInteractive", e => this.__updateColor(node.getNodeId(), e.getData()));
-                this.__updateColor(node.getNodeId(), node.getStatus().getInteractive());
-              } else if (node.isComputational()) {
-                node.getStatus().addListener("changeRunning", e => this.__updateColor(node.getNodeId(), e.getData()));
-                this.__updateColor(node.getNodeId(), node.getStatus().getRunning());
-              }
-              c.bindProperty("statusColor", "textColor", {
-                converter: statusColor => osparc.utils.StatusUI.getColor(statusColor)
-              }, item.getChildControl("icon"), id);
-
-              // add fullscreen
-              if (node.isDynamic()) {
-                item.getChildControl("fullscreen-button").show();
-              }
-
-              node.addListener("keyChanged", () => this.populateTree(), this);
-            }
-          },
-          configureItem: item => {
-            item.addListener("tap", () => {
-              this.__openItem(item.getModel().getNodeId());
-              this.nodeSelected(item.getModel().getNodeId());
-            }, this);
-            // This is needed to keep the label flexible
-            item.addListener("resize", e => item.setMaxWidth(100), this);
-          },
-          sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
-        });
-        const nChildren = newModel.getChildren().length;
-        this.setHeight(nChildren*21 + 12);
-      }
+      const data = this.__getNodesModelData();
+      const newModel = qx.data.marshal.Json.createModel(data, true);
+      this.setModel(newModel);
+      const study = this.getStudy();
+      this.setDelegate(this._getDelegate(study));
+      const nChildren = newModel.getChildren().length;
+      this.setHeight(nChildren*21 + 12);
     },
 
-    __getModelData: function() {
+    __getNodesModelData: function() {
       const study = this.getStudy();
-      const topLevelNodes = study.getWorkbench().getNodes();
-      const data = this.__getRootModelData();
-      data.children = this.self().convertModel(topLevelNodes);
-      return data;
-    },
-
-    __getRootModelData: function() {
-      const study = this.getStudy();
+      const nodes = study.getWorkbench().getNodes();
       const data = {
-        label: study.getName(),
-        children: [],
-        isContainer: true,
-        nodeId: study.getUuid(),
-        sortingValue: 0
+        label: "Study",
+        children: this.self().nodesToModel(nodes),
+        sortingValue: 0,
+        id: study.getUuid()
       };
       return data;
     },
 
-    __updateColor: function(nodeId, status) {
-      const nodeInTree = this.__getNodeModel(this.getModel(), nodeId);
-      if (nodeInTree) {
-        nodeInTree.setStatusColor(status);
-      }
+    _getDelegate: function(study) {
+      return {
+        createItem: () => {
+          const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
+          nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
+          nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
+          nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
+          nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
+          return nodeTreeItem;
+        },
+        bindItem: (c, item, id) => {
+          console.log(item.getModel());
+          c.bindDefaultProperties(item, id);
+          c.bindProperty("label", "label", null, item, id);
+          c.bindProperty("id", "id", null, item, id);
+          c.bindProperty("study", "study", null, item, id);
+          c.bindProperty("node", "node", null, item, id);
+          const node = study.getWorkbench().getNode(item.getModel().getId());
+          if (item.getModel().getId() === study.getUuid()) {
+            item.getChildControl("delete-button").exclude();
+          } else if (node) {
+            node.addListener("keyChanged", () => this.populateTree(), this);
+          }
+        },
+        configureItem: item => {
+          item.addListener("tap", () => {
+            this.__openItem(item.getModel().getId());
+            this.nodeSelected(item.getModel().getId());
+          }, this);
+          // This is needed to keep the label flexible
+          item.addListener("resize", e => item.setMaxWidth(100), this);
+        },
+        sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
+      };
     },
 
     __getNodeModel: function(model, nodeId) {
-      if (model.getNodeId() === nodeId) {
+      if (model.getId() === nodeId) {
         return model;
-      } else if (model.getIsContainer() && model.getChildren() !== null) {
+      } else if (model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
         for (let i = 0; node === null && i < children.length; i++) {
@@ -269,7 +207,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     _openItemRenamer: function(nodeId) {
       if (nodeId === undefined && this.__getSelection()) {
-        nodeId = this.__getSelection().getNodeId();
+        nodeId = this.__getSelection().getId();
       }
       if (nodeId) {
         const study = this.getStudy();
@@ -295,7 +233,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openNodeInfo: function(nodeId) {
       if (nodeId === undefined && this.__getSelection()) {
-        nodeId = this.__getSelection().getNodeId();
+        nodeId = this.__getSelection().getId();
       }
       if (nodeId) {
         const study = this.getStudy();
@@ -318,7 +256,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __deleteNode: function(nodeId) {
       if (nodeId === undefined && this.__getSelection()) {
-        nodeId = this.__getSelection().getNodeId();
+        nodeId = this.__getSelection().getId();
       }
       if (nodeId) {
         this.fireDataEvent("removeNode", nodeId);

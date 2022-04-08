@@ -317,7 +317,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
         backgroundColor: primaryColumnBGColor,
-        hideRoot: true,
         allowGrowY: true,
         minHeight: 5
       });
