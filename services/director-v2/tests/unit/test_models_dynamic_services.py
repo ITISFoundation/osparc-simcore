@@ -9,7 +9,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     SchedulerData,
     ServiceBootType,
-    ServiceLabelsStoredData,
     ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
@@ -149,11 +148,6 @@ def test_running_service_details_make_status(
     }
 
     assert running_service_details_dict == expected_running_service_details
-
-
-def test_service_labels_stored_data() -> None:
-    sample = ServiceLabelsStoredData.Config.schema_extra["example"]
-    assert ServiceLabelsStoredData(**sample)
 
 
 def test_all_states_are_mapped():
