@@ -37,7 +37,7 @@ class ProjectNotFoundError(ProjectsException):
 
 
 class ProjectDeleteError(ProjectsException):
-    def __init__(self, project_uuid, reason="Unknown"):
+    def __init__(self, project_uuid, reason):
         super().__init__(f"Failed to complete deletion of {project_uuid=}: {reason}")
         self.project_uuid = project_uuid
 
