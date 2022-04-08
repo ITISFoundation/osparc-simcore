@@ -87,6 +87,31 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "lock":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/lock/12",
+            padding: 4,
+            visibility: "excluded"
+          });
+          this.getNode().getPropsForm().bind("enabled", control, "visibility", {
+            converter: val => val ? "excluded" : "visible"
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.LOCK
+          });
+          break;
+        case "marker":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/bookmark/12",
+            padding: 4,
+            visibility: "excluded"
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
+          });
+          break;
         case "chips": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
             alignY: "middle"
@@ -202,6 +227,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this._optionsMenu.add(convertToParameter);
       }
 
+      this.getChildControl("lock");
       this._markerBtn.show();
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
@@ -214,14 +240,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       });
 
-      const marker = new qx.ui.basic.Image().set({
-        source: "@FontAwesome5Solid/bookmark/12",
-        padding: 4
-      });
-      this.getChildControl("captionbar").add(marker, {
-        row: 0,
-        column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.BOOKMARK
-      });
+      const marker = this.getChildControl("marker");
       node.bind("marker", marker, "visibility", {
         converter: val => val ? "visible" : "excluded"
       });

@@ -94,8 +94,9 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     CAPTION_POS: {
       ICON: 0, // from qooxdoo
       TITLE: 1, // from qooxdoo
-      BOOKMARK: 2,
-      MENU: 3
+      LOCK: 2,
+      BOOKMARK: 3,
+      MENU: 4
     },
 
     captionHeight: function() {
