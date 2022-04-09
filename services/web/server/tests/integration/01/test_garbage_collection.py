@@ -8,7 +8,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterable, Callable, Dict, List, Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import aiopg
 import aiopg.sa
@@ -34,6 +34,9 @@ from simcore_service_webserver.groups_api import (
     list_user_groups,
 )
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects._delete import (
+    get_delete_project_background_tasks,
+)
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -306,7 +309,7 @@ def assert_dicts_match_by_common_keys(first_dict, second_dict) -> bool:
     return True
 
 
-async def query_user_from_db(aiopg_engine: aiopg.sa.Engine, user: Dict):
+async def query_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict):
     """returns a user from the db"""
     async with aiopg_engine.acquire() as conn:
         user_result = await conn.execute(
@@ -324,7 +327,7 @@ async def query_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: Dic
 
 
 async def assert_user_in_database(
-    aiopg_engine: aiopg.sa.Engine, logged_user: Dict
+    aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict
 ) -> bool:
     user = await query_user_from_db(aiopg_engine, logged_user)
     user_as_dict = dict(user)
@@ -339,10 +342,10 @@ async def assert_user_in_database(
 
 
 async def assert_user_not_in_database(
-    aiopg_engine: aiopg.sa.Engine, user: Dict
+    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict
 ) -> bool:
-    user = await query_user_from_db(aiopg_engine, user)
-    assert user is None
+    user_db = await query_user_from_db(aiopg_engine, user)
+    assert user_db is None
 
     return True
 
@@ -359,7 +362,7 @@ async def assert_project_in_database(
 
 
 async def assert_user_is_owner_of_project(
-    aiopg_engine: aiopg.sa.Engine, owner_user: Dict, owner_project: Dict
+    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: Dict
 ) -> bool:
     user = await query_user_from_db(aiopg_engine, owner_user)
     project = await query_project_from_db(aiopg_engine, owner_project)
@@ -370,7 +373,7 @@ async def assert_user_is_owner_of_project(
 
 
 async def assert_one_owner_for_project(
-    aiopg_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[Dict]
+    aiopg_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[UserInfoDict]
 ) -> bool:
     q_owners = [
         await query_user_from_db(aiopg_engine, owner) for owner in possible_owners
@@ -453,6 +456,13 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(app=client.app)
 
+    # ensures all project delete tasks are done
+    delete_tasks = get_delete_project_background_tasks(
+        project_uuid=UUID(empty_guest_user_project["uuid"]),
+        user_id=logged_guest_user["id"],
+    )
+    assert not delete_tasks or all(t.done() for t in delete_tasks)
+
     # check user and project are no longer in the DB
     async with aiopg_engine.acquire() as conn:
         user_result = await conn.execute(users.select())
@@ -460,8 +470,8 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
         project_result = await conn.execute(projects.select())
         project = await project_result.first()
 
-        assert user is None
         assert project is None
+        assert user is None
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(

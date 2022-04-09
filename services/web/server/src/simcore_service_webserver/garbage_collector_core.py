@@ -2,6 +2,7 @@
 
 """
 
+import asyncio
 import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -433,7 +434,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting all projects of user with %s because it is a GUEST",
             f"{user_id=}",
         )
-        await remove_all_projects_for_user(app=app, user_id=user_id)
+        await _delete_all_projects_for_user(app=app, user_id=user_id)
 
         logger.debug(
             "Deleting user %s because it is a GUEST",
@@ -454,7 +455,7 @@ async def remove_guest_user_with_all_its_resources(
         )
 
 
-async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
+async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
     the project is shared with others.
@@ -491,6 +492,8 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
         f"{user_project_uuids=}",
     )
 
+    delete_tasks: List[asyncio.Task] = []
+
     for project_uuid in user_project_uuids:
         try:
             project: Dict = await get_project_for_user(
@@ -499,11 +502,12 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 user_id=user_id,
                 include_templates=True,
             )
-        except web.HTTPNotFound:
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:
             logger.warning(
-                "Could not find project %s for user with %s to be removed. Skipping.",
+                "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",
                 f"{user_id=}",
+                f"{err}",
             )
             continue
 
@@ -526,7 +530,8 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                     f"{user_id=}",
                 )
 
-                await delete_project(app, project_uuid, user_id)
+                del_task = await delete_project(app, project_uuid, user_id)
+                delete_tasks.append(del_task)
 
             except ProjectNotFoundError:
                 logging.warning(
@@ -551,3 +556,8 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 new_project_owner_gid=new_project_owner_gid,
                 project=project,
             )
+
+    # NOTE: ensures deletiong happens before returning,
+    # otherwise user cannot be deleted aftewards
+    # - Currently fails-fast
+    await asyncio.gather(*delete_tasks)
