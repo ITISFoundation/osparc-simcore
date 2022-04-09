@@ -192,9 +192,12 @@ async def delete_project(
     app: web.Application, project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task:
     """
-    Returns the background task to delete project using user permissions. If the
-    task is already running, it returns existing task otherwise it creates a new one.
-    The returned task can be ignored to implement a fire&forget or followed up with add_done_callback
+    Returns the task scheduled to delete, using user_id's permissions, a given project project_uuid.
+
+    If this task is already scheduled, it returns it otherwise it creates a new one.
+
+    The returned task can be ignored to implement a fire&forget or
+    followed up with add_done_callback.
 
     raises ProjectDeleteError
     """

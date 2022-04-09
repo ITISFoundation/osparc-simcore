@@ -1,5 +1,8 @@
 """ Implements logic to delete a project (and all associated services, data, etc)
 
+
+NOTE: this entire module is protected within the `projects` package
+    and ONLY to be used in the implementation of the project_api module's functions
 """
 
 import asyncio
@@ -22,7 +25,7 @@ from .projects_exceptions import (
 
 log = logging.getLogger(__name__)
 
-DELETE_PROJECT_TASK_NAME = "fire_and_forget.delete_project.project_uuid={0}.user_id={1}"
+DELETE_PROJECT_TASK_NAME = "projects._delete.project_uuid={0}.user_id={1}"
 
 
 async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID):
@@ -104,6 +107,8 @@ def create_delete_project_background_task(
     """
 
     def _log_errors(fut: asyncio.Future):
+        # this task is typically used as fire&forget therefore
+        # it adds a logger to log all errors.
         try:
             fut.result()
         except Exception:  # pylint: disable=broad-except
@@ -127,7 +132,7 @@ def create_delete_project_background_task(
 def get_delete_project_background_tasks(
     project_uuid: ProjectID, user_id: UserID
 ) -> List[asyncio.Task]:
-    """Returns delete-project task if not yet finished"""
+    """Returns tasks matching delete-project task's name."""
     return [
         task
         for task in asyncio.all_tasks()
