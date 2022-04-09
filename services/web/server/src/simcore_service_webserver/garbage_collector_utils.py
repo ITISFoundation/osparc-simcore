@@ -12,7 +12,7 @@ from .db_models import GroupType
 from .groups_api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
-from .users_api import delete_user, get_user, get_user_id_from_gid
+from .users_api import get_user, get_user_id_from_gid
 from .users_exceptions import UserNotFoundError
 from .users_to_groups_api import get_users_for_gid
 
@@ -172,19 +172,4 @@ async def replace_current_owner(
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
-        )
-
-
-async def remove_user(app: web.Application, user_id: UserID) -> None:
-    """Tries to remove a user, if the users still exists a warning message will be displayed"""
-    try:
-        await delete_user(app, user_id)
-    except (
-        DatabaseError,
-        asyncpg.exceptions.PostgresError,
-        ProjectNotFoundError,
-        UserNotFoundError,
-    ) as err:
-        logger.warning(
-            "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )
