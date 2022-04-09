@@ -165,10 +165,10 @@ async def user_project(
 
 
 @pytest.fixture
-def do_update_user_project(
-    logged_user: UserInfoDict, client: TestClient, faker: Faker
-) -> Callable[[UUID], Awaitable]:
-    async def _doit(project_uuid: UUID) -> None:
+def request_update_project(
+    logged_user: UserInfoDict, faker: Faker
+) -> Callable[[TestClient, UUID], Awaitable]:
+    async def _go(client: TestClient, project_uuid: UUID) -> None:
         resp: aiohttp.ClientResponse = await client.get(f"{VX}/projects/{project_uuid}")
 
         assert resp.status == 200
@@ -188,31 +188,36 @@ def do_update_user_project(
         body = await resp.json()
         assert resp.status == 200, str(body)
 
-    return _doit
+    return _go
 
 
 @pytest.fixture
-async def do_delete_user_project(
-    logged_user: UserInfoDict, client: TestClient, mocker
-) -> AsyncIterator[Callable[[UUID], Awaitable]]:
-    direct_call_to_director_v2: mock.Mock = mocker.patch(
+async def request_delete_project(
+    logged_user: UserInfoDict,
+    mocker,
+) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
+    director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
     )
+    director_v2_api_stop_services: mock.AsyncMock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_services",
+    )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
     )
 
-    async def _doit(project_uuid: UUID) -> None:
+    async def _go(client: TestClient, project_uuid: UUID) -> None:
 
         resp: aiohttp.ClientResponse = await client.delete(
             f"{VX}/projects/{project_uuid}"
         )
         assert resp.status == 204
 
-    yield _doit
+    yield _go
 
     # ensure the call to delete data was completed
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
         with attempt:
-            direct_call_to_director_v2.assert_called()
+            director_v2_api_delete_pipeline.assert_called()
+            director_v2_api_stop_services.assert_awaited()
             fire_and_forget_call_to_storage.assert_called()

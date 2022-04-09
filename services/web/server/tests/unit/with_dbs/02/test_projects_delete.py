@@ -1,29 +1,25 @@
 # pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
+
 from typing import Any, Callable, Dict, Type
 from unittest.mock import MagicMock, call
 
 import pytest
-from _helpers import ExpectedResponse  # type: ignore
-from _helpers import MockedStorageSubsystem  # type: ignore
-from _helpers import standard_role_response  # type: ignore
+from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
-
-# TESTS -----------------------------------------------------------------------------------------
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects import _delete
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 # HELPERS -----------------------------------------------------------------------------------------
 
 
-async def _delete_project(
+async def _request_delete_project(
     client, project: Dict, expected: Type[web.HTTPException]
 ) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
@@ -31,6 +27,9 @@ async def _delete_project(
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
+
+
+# TESTS -----------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -45,20 +44,31 @@ async def test_delete_project(
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
 ):
-    # DELETE /v0/projects/{project_id}
+    assert client.app
 
+    # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
-    await _delete_project(client, user_project, expected.no_content)
-    await asyncio.sleep(2)  # let some time fly for the background tasks to run
+    await _request_delete_project(client, user_project, expected.no_content)
+
+    tasks = _delete.get_scheduled_tasks(
+        project_uuid=user_project["uuid"], user_id=logged_user["id"]
+    )
 
     if expected.no_content == web.HTTPNoContent:
+        # Waits until deletion tasks are done
+        assert (
+            len(tasks) == 1
+        ), f"Only one delete fire&forget task expected, got {tasks=}"
+        # might have finished, and therefore there is no need to waith
+        await tasks[0]
+
         mocked_director_v2_api["director_v2_core.get_services"].assert_called_once()
 
         expected_calls = [
             call(
-                app=client.server.app,
+                app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
             )
@@ -68,10 +78,12 @@ async def test_delete_project(
             expected_calls
         )
 
-        # wait for the fire&forget to run
-        await asyncio.sleep(2)
-
         await assert_get_same_project_caller(client, user_project, web.HTTPNotFound)
+
+    else:
+        assert (
+            len(tasks) == 0
+        ), f"NO delete fire&forget tasks expected when response is {expected.no_content}, got {tasks=}"
 
 
 @pytest.mark.parametrize(
@@ -95,7 +107,7 @@ async def test_delete_multiple_opened_project_forbidden(
     expected_ok,
     expected_forbidden,
 ):
-    # service in project = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
+    # service in project
     service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
 
     # open project in tab1
@@ -105,6 +117,7 @@ async def test_delete_multiple_opened_project_forbidden(
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
+
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
     await assert_status(resp, expected_ok)
@@ -116,4 +129,5 @@ async def test_delete_multiple_opened_project_forbidden(
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
-    await _delete_project(client, user_project, expected_forbidden)
+
+    await _request_delete_project(client, user_project, expected_forbidden)

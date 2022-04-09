@@ -27,7 +27,7 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
-from simcore_service_webserver.projects.projects_api import delete_project
+from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
@@ -364,6 +364,7 @@ async def test_access_cookie_of_expired_user(
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
+        # TODO: can be replaced now by actual GC
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
@@ -373,7 +374,10 @@ async def test_access_cookie_of_expired_user(
         assert len(projects) == 1
 
         prj_id = projects[0]["uuid"]
-        await delete_project(app, prj_id, uid)
+
+        delete_task = await submit_delete_project_task(app, prj_id, uid)
+        await delete_task
+
         await delete_user(app, uid)
         return uid
 

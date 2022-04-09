@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Callable, Dict
+from typing import Any, Awaitable, Callable, Dict
 from uuid import UUID
 
 import pytest
@@ -40,12 +40,13 @@ def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
 
 @pytest.mark.acceptance_test
 async def test_workflow(
+    client: TestClient,
     project_uuid: UUID,
     faker: Faker,
     user_id: int,
     user_project: ProjectDict,
     aiohttp_mocked_request: web.Request,
-    do_update_user_project: Callable,
+    request_update_project: Callable[[TestClient, UUID], Awaitable],
     director_v2_service_mock: None,
 ):
     vc_repo = VersionControlRepository(aiohttp_mocked_request)
@@ -60,7 +61,7 @@ async def test_workflow(
     assert checkpoint1.message == "first commit"
 
     # -------------------------------------
-    await do_update_user_project(project_uuid)
+    await request_update_project(client, project_uuid)
 
     checkpoint2 = await create_checkpoint(
         vc_repo, project_uuid, tag="v1", message="second commit"
@@ -96,7 +97,7 @@ async def test_workflow(
 
     # -------------------------------------
     # creating branches
-    await do_update_user_project(project_uuid)
+    await request_update_project(client, project_uuid)
 
     checkpoint3 = await create_checkpoint(
         vc_repo,

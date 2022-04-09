@@ -17,7 +17,7 @@ from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.projects_handlers import (
+from simcore_service_webserver.projects.projects_handlers_crud import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
 from simcore_service_webserver.utils import now_str, to_datetime

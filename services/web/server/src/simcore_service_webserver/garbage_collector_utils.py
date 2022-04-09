@@ -12,7 +12,7 @@ from .db_models import GroupType
 from .groups_api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
-from .users_api import delete_user, get_user, get_user_id_from_gid
+from .users_api import get_user, get_user_id_from_gid
 from .users_exceptions import UserNotFoundError
 from .users_to_groups_api import get_users_for_gid
 
@@ -31,7 +31,7 @@ async def _fetch_new_project_owner_from_groups(
     for group_gid in standard_groups.keys():
         # remove the current owner from the bunch
         target_group_users = await get_users_for_gid(app=app, gid=group_gid) - {user_id}
-        logger.error("Found group users '%s'", target_group_users)
+        logger.info("Found group users '%s'", target_group_users)
 
         for possible_user_id in target_group_users:
             # check if the possible_user is still present in the db
@@ -63,7 +63,7 @@ async def get_new_project_owner_gid(
     # A Set[str] is prefered over Set[int] because access_writes
     # is a Dict with only key,valus in {str, None}
     other_users_access_rights: Set[str] = set(access_rights.keys()) - {
-        str(user_primary_gid)
+        f"{user_primary_gid}"
     }
     logger.debug(
         "Processing other user and groups access rights '%s'",
@@ -151,11 +151,11 @@ async def replace_current_owner(
     # unseting the project owner and saving the project back
     project["prj_owner"] = int(new_project_owner_id)
     # removing access rights entry
-    del project["accessRights"][str(user_primary_gid)]
+    del project["accessRights"][f"{user_primary_gid}"]
     project["accessRights"][
-        str(new_project_owner_gid)
+        f"{new_project_owner_gid}"
     ] = ProjectAccessRights.OWNER.value
-    logger.error("Syncing back project %s", project)
+    logger.info("Syncing back project %s", project)
 
     # syncing back project data
     try:
@@ -172,19 +172,4 @@ async def replace_current_owner(
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
-        )
-
-
-async def remove_user(app: web.Application, user_id: UserID) -> None:
-    """Tries to remove a user, if the users still exists a warning message will be displayed"""
-    try:
-        await delete_user(app, user_id)
-    except (
-        DatabaseError,
-        asyncpg.exceptions.PostgresError,
-        ProjectNotFoundError,
-        UserNotFoundError,
-    ) as err:
-        logger.warning(
-            "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )

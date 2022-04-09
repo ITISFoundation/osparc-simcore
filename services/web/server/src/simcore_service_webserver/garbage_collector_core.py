@@ -2,6 +2,7 @@
 
 """
 
+import asyncio
 import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -16,23 +17,24 @@ from simcore_postgres_database.models.users import UserRole
 from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import (
-    get_new_project_owner_gid,
-    remove_user,
-    replace_current_owner,
-)
+from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
-    delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
+    submit_delete_project_task,
 )
 from .projects.projects_db import APP_PROJECT_DBAPI
-from .projects.projects_exceptions import ProjectNotFoundError
+from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
-from .users_api import get_guest_user_ids_and_names, get_user, get_user_role
+from .users_api import (
+    delete_user,
+    get_guest_user_ids_and_names,
+    get_user,
+    get_user_role,
+)
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -183,7 +185,7 @@ async def remove_disconnected_user_resources(
                     # inform that the project can be closed on the backend side
                     #
                     try:
-                        await remove_project_interactive_services(
+                        await remove_project_dynamic_services(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
@@ -417,44 +419,7 @@ async def remove_orphaned_services(
     logger.debug("Finished orphaned services removal")
 
 
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
-    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
-
-    try:
-        user_role: UserRole = await get_user_role(app, user_id)
-        if user_role > UserRole.GUEST:
-            # NOTE: This acts as a protection barrier to avoid removing resources to more
-            # priviledge users
-            return
-
-        logger.debug(
-            "Deleting all projects of user with %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_all_projects_for_user(app=app, user_id=user_id)
-
-        logger.debug(
-            "Deleting user %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_user(app=app, user_id=user_id)
-
-    except (
-        DatabaseError,
-        asyncpg.exceptions.PostgresError,
-        ProjectNotFoundError,
-        UserNotFoundError,
-    ) as error:
-        logger.warning(
-            "Failure in database while removing user (%s) and its resources with %s",
-            f"{user_id=}",
-            f"{error}",
-        )
-
-
-async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
+async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
     the project is shared with others.
@@ -491,6 +456,8 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
         f"{user_project_uuids=}",
     )
 
+    delete_tasks: List[asyncio.Task] = []
+
     for project_uuid in user_project_uuids:
         try:
             project: Dict = await get_project_for_user(
@@ -499,11 +466,12 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 user_id=user_id,
                 include_templates=True,
             )
-        except web.HTTPNotFound:
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:
             logger.warning(
-                "Could not find project %s for user with %s to be removed. Skipping.",
+                "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",
                 f"{user_id=}",
+                f"{err}",
             )
             continue
 
@@ -525,8 +493,9 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-
-                await delete_project(app, project_uuid, user_id)
+                task = await submit_delete_project_task(app, project_uuid, user_id)
+                assert task  # nosec
+                delete_tasks.append(task)
 
             except ProjectNotFoundError:
                 logging.warning(
@@ -551,3 +520,45 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 new_project_owner_gid=new_project_owner_gid,
                 project=project,
             )
+
+    # NOTE: ensures all delete_task tasks complete or fails fast
+    # can raise ProjectDeleteError, CancellationError
+    await asyncio.gather(*delete_tasks)
+
+
+async def remove_guest_user_with_all_its_resources(
+    app: web.Application, user_id: int
+) -> None:
+    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
+
+    try:
+        user_role: UserRole = await get_user_role(app, user_id)
+        if user_role > UserRole.GUEST:
+            # NOTE: This acts as a protection barrier to avoid removing resources to more
+            # priviledge users
+            return
+
+        logger.debug(
+            "Deleting all projects of user with %s because it is a GUEST",
+            f"{user_id=}",
+        )
+        await _delete_all_projects_for_user(app=app, user_id=user_id)
+
+        logger.debug(
+            "Deleting user %s because it is a GUEST",
+            f"{user_id=}",
+        )
+        await delete_user(app, user_id)
+
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+        ProjectDeleteError,
+    ) as error:
+        logger.warning(
+            "Failed to delete user %s and its resources: %s",
+            f"{user_id=}",
+            f"{error}",
+        )

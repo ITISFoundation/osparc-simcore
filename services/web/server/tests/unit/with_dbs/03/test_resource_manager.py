@@ -36,8 +36,8 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
-    delete_project,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
+    submit_delete_project_task,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -140,7 +140,7 @@ def client(
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         return_value=None,
     )
 
@@ -789,22 +789,23 @@ async def test_regression_removing_unexisting_user(
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
     assert client.app
     # remove project
-    await delete_project(
+    delete_task = await submit_delete_project_task(
         app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
     )
+    await delete_task
     # remove user
     await delete_user(app=client.app, user_id=logged_user["id"])
 
     with pytest.raises(UserNotFoundError):
-        await remove_project_interactive_services(
+        await remove_project_dynamic_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,
         )
     with pytest.raises(ProjectNotFoundError):
-        await remove_project_interactive_services(
+        await remove_project_dynamic_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,
