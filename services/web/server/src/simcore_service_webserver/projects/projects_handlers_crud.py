@@ -18,13 +18,13 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 from uuid import UUID
 
 from aiohttp import web
-from jsonschema import ValidationError
+from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import parse_obj_as
+from pydantic import BaseModel, ValidationError
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -69,44 +69,50 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
+
+class ProjectCreateQuery(BaseModel):
+    template_uuid: Optional[UUIDStr] = None
+    as_template: Optional[UUIDStr] = None
+    copy_data: bool = True
+    hidden: bool = False
+
+
 @routes.post(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(
-    request: web.Request,
-):
+async def create_projects(request: web.Request):
     # pylint: disable=too-many-branches, too-many-statements
 
     # request context params
     user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+
+    # query params
+    try:
+        q = ProjectCreateQuery.parse_obj(*request.query)
+    except ValidationError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid query parameters: {err}")
 
     new_project = {}
     try:
-        # query params
-        template_uuid: Optional[UUIDStr] = request.query.get("from_template")
-        as_template: Optional[UUIDStr] = request.query.get("as_template")
-        copy_data: bool = parse_obj_as(bool, request.query.get("copy_data", True))
-        hidden: bool = parse_obj_as(bool, request.query.get("hidden", False))
-
-        new_project_was_hidden_before_data_was_copied = hidden
+        new_project_was_hidden_before_data_was_copied = q.hidden
 
         clone_data_coro: Optional[Coroutine] = None
         source_project: Optional[ProjectDict] = None
-        if as_template:  # create template from
+        if q.as_template:  # create template from
             await check_permission(request, "project.template.create")
             source_project = await projects_api.get_project_for_user(
                 request.app,
-                project_uuid=as_template,
+                project_uuid=q.as_template,
                 user_id=user_id,
                 include_templates=False,
             )
-        elif template_uuid:  # create from template
-            source_project = await db.get_template_project(template_uuid)
+        elif q.template_uuid:  # create from template
+            source_project = await db.get_template_project(q.template_uuid)
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason="Invalid template uuid {}".format(template_uuid)
+                    reason="Invalid template uuid {}".format(q.template_uuid)
                 )
 
         if source_project:
@@ -114,18 +120,18 @@ async def create_projects(
             new_project, nodes_map = clone_project_document(
                 source_project,
                 forced_copy_project_id=None,
-                clean_output_data=(copy_data == False),
+                clean_output_data=(q.copy_data == False),
             )
-            if template_uuid:
+            if q.template_uuid:
                 # remove template access rights
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
-            hidden = copy_data
+            q.hidden = q.copy_data
             clone_data_coro = (
                 copy_data_folders_from_project(
                     request.app, source_project, new_project, nodes_map, user_id
                 )
-                if copy_data
+                if q.copy_data
                 else None
             )
             # FIXME: parameterized inputs should get defaults provided by service
@@ -149,14 +155,14 @@ async def create_projects(
         new_project = await db.add_project(
             new_project,
             user_id,
-            force_as_template=as_template is not None,
-            hidden=hidden,
+            force_as_template=q.as_template is not None,
+            hidden=q.hidden,
         )
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
-            if as_template:
+            if q.as_template:
                 # we need to lock the original study while copying the data
                 async with projects_api.lock_with_notification(
                     request.app,
@@ -188,11 +194,11 @@ async def create_projects(
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
-            is_template=as_template is not None,
+            is_template=q.as_template is not None,
             app=request.app,
         )
 
-    except ValidationError as exc:
+    except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc

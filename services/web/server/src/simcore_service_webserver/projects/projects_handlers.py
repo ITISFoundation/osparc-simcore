@@ -25,7 +25,7 @@ from .projects_handlers_crud import routes
 log = logging.getLogger(__name__)
 
 #
-# Singleton per-user resources https://google.aip.dev/156
+# Singleton per-session resources https://google.aip.dev/156
 #
 
 
