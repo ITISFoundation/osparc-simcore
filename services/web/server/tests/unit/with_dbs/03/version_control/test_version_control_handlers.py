@@ -57,7 +57,7 @@ async def assert_status_and_body(
 async def test_workflow(
     client: TestClient,
     user_project: ProjectDict,
-    do_update_user_project: Callable[[UUID], Awaitable],
+    request_update_project: Callable[[TestClient, UUID], Awaitable],
     director_v2_service_mock: None,
 ):
 
@@ -152,7 +152,7 @@ async def test_workflow(
     )
 
     # do some changes in project
-    await do_update_user_project(project.uuid)
+    await request_update_project(client, project.uuid)
 
     # CREATE new checkpoint
     resp = await client.post(
@@ -219,7 +219,7 @@ async def test_create_checkpoint_without_changes(
 async def test_delete_project_and_repo(
     client: TestClient,
     project_uuid: UUID,
-    do_delete_user_project: Callable[[UUID], Awaitable],
+    request_delete_project: Callable[[TestClient, UUID], Awaitable],
 ):
 
     # CREATE a checkpoint
@@ -239,7 +239,7 @@ async def test_delete_project_and_repo(
     )
 
     # DELETE project -> projects_vc_*  deletion follow
-    await do_delete_user_project(project_uuid)
+    await request_delete_project(client, project_uuid)
 
     # LIST empty
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
