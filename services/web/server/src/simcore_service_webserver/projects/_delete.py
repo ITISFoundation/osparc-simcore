@@ -106,15 +106,32 @@ def create_delete_project_background_task(
     Return the scheduled Task
     """
 
-    def _log_errors(fut: asyncio.Future):
-        # this task is typically used as fire&forget therefore
-        # it adds a logger to log all errors.
+    def _log_state_when_done(fut: asyncio.Future):
+        # the task created in the parent function is typically used
+        # to fire&forget therefore this internal function will be used as
+        # callback to provide a minimal log that informs about the
+        # state of the task when completed.
         try:
             fut.result()
+            logger.info(f"Deleted {project_uuid=} using {user_id=} permissions")
+
+        except asyncio.exceptions.CancelledError:
+            logger.warning(
+                f"Canceled deletion of {project_uuid=} using {user_id=} permissions"
+            )
+            raise
+
+        except ProjectDeleteError as err:
+            logger.error(
+                f"Failed to delete {project_uuid=} using {user_id=} permissions: {err}"
+            )
+
         except Exception:  # pylint: disable=broad-except
             logger.exception(
-                f"Error while deleting {project_uuid=} owned by {user_id=}"
+                f"Unexpected error while deleting {project_uuid=} with {user_id=} permissions"
             )
+
+    # ------
 
     task = asyncio.create_task(
         delete_project(app, project_uuid, user_id, remove_project_dynamic_services),
@@ -125,7 +142,7 @@ def create_delete_project_background_task(
         project_uuid, user_id
     )
 
-    task.add_done_callback(_log_errors)
+    task.add_done_callback(_log_state_when_done)
     return task
 
 
