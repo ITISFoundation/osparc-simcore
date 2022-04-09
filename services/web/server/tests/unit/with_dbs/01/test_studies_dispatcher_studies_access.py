@@ -364,6 +364,7 @@ async def test_access_cookie_of_expired_user(
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
+        # TODO: can be replaced now by actual GC
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
@@ -373,7 +374,10 @@ async def test_access_cookie_of_expired_user(
         assert len(projects) == 1
 
         prj_id = projects[0]["uuid"]
-        await delete_project(app, prj_id, uid)
+
+        delete_task = await delete_project(app, prj_id, uid)
+        await delete_task
+
         await delete_user(app, uid)
         return uid
 

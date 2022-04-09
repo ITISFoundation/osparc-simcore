@@ -789,11 +789,12 @@ async def test_regression_removing_unexisting_user(
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
     assert client.app
     # remove project
-    await delete_project(
+    delete_task = await delete_project(
         app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
     )
+    await delete_task
     # remove user
     await delete_user(app=client.app, user_id=logged_user["id"])
 

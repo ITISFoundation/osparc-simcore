@@ -558,7 +558,7 @@ async def remove_guest_user_with_all_its_resources(
         ProjectDeleteError,
     ) as error:
         logger.warning(
-            "Failure in database while removing user (%s) and its resources with %s",
+            "Failed to delete user %s and its resources: %s",
             f"{user_id=}",
             f"{error}",
         )
