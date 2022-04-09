@@ -207,17 +207,16 @@ async def delete_project(
     except ProjectNotFoundError as err:
         raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
 
-    # Ensures
-    tasks: List[asyncio.Task] = _delete.get_delete_project_background_tasks(
-        project_uuid, user_id
-    )
-    assert len(tasks) <= 1, f"{tasks=}"  # nosec
-    if tasks:
-        return tasks[0]
+    # Ensures ONE delete task per (project,user) pair
+    if tasks := _delete.get_delete_project_background_tasks(project_uuid, user_id):
+        assert len(tasks) == 1, f"{tasks=}"  # nosec
+        task = tasks[0]
+    else:
+        task = _delete.create_delete_project_background_task(
+            app, project_uuid, user_id, remove_project_dynamic_services, log
+        )
 
-    return await _delete.create_delete_project_background_task(
-        app, project_uuid, user_id, remove_project_dynamic_services, log
-    )
+    return task
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")

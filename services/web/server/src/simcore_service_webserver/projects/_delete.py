@@ -25,7 +25,7 @@ from .projects_exceptions import (
 
 log = logging.getLogger(__name__)
 
-DELETE_PROJECT_TASK_NAME = "projects._delete.project_uuid={0}.user_id={1}"
+DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user_id={1}"
 
 
 async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID):
@@ -155,11 +155,3 @@ def get_delete_project_background_tasks(
         for task in asyncio.all_tasks()
         if task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
     ]
-
-
-def is_delete_project_background_task_running(
-    project_uuid: ProjectID, user_id: UserID
-) -> bool:
-    tasks = get_delete_project_background_tasks(project_uuid, user_id)
-    assert len(tasks) <= 1  # nosec
-    return len(tasks) > 0

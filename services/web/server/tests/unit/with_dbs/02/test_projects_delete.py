@@ -46,6 +46,8 @@ async def test_delete_project(
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
 ):
+    assert client.app
+
     # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
@@ -69,7 +71,7 @@ async def test_delete_project(
 
         expected_calls = [
             call(
-                app=client.server.app,
+                app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
             )

@@ -493,9 +493,9 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-
-                del_task = await delete_project(app, project_uuid, user_id)
-                delete_tasks.append(del_task)
+                task = await delete_project(app, project_uuid, user_id)
+                assert task  # nosec
+                delete_tasks.append(task)
 
             except ProjectNotFoundError:
                 logging.warning(
@@ -521,9 +521,9 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 project=project,
             )
 
-    # NOTE: ensures deletion tasks complete or fail fast
+    # NOTE: ensures all delete_task tasks complete or fails fast
     # can raise ProjectDeleteError, CancellationError
-    await asyncio.gather(*[t for t in delete_tasks if not t.done()])
+    await asyncio.gather(*delete_tasks)
 
 
 async def remove_guest_user_with_all_its_resources(
