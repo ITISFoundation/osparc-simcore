@@ -196,8 +196,11 @@ async def request_delete_project(
     logged_user: UserInfoDict,
     mocker,
 ) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
-    direct_call_to_director_v2: mock.Mock = mocker.patch(
+    director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
+    )
+    director_v2_api_stop_services: mock.AsyncMock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_services",
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
@@ -215,5 +218,6 @@ async def request_delete_project(
     # ensure the call to delete data was completed
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
         with attempt:
-            direct_call_to_director_v2.assert_called()
+            director_v2_api_delete_pipeline.assert_called()
+            director_v2_api_stop_services.assert_awaited()
             fire_and_forget_call_to_storage.assert_called()
