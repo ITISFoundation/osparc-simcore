@@ -1,15 +1,6 @@
 """ Handlers for STANDARD methods on /projects colletions
 
 
-Standard methods are
-- Get https://google.aip.dev/131
-- List https://google.aip.dev/132
-- Create https://google.aip.dev/133
-- Update https://google.aip.dev/134
-- Delete https://google.aip.dev/135
-
-and the acronym CRUD states for Create+Read(Get&List)+Update+Delete
-
 """
 import asyncio
 import json
@@ -25,6 +16,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ValidationError
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -69,8 +61,15 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
-
-class ProjectCreateQuery(BaseModel):
+#
+# Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
+# - Get https://google.aip.dev/131
+# - List https://google.aip.dev/132
+# - Create https://google.aip.dev/133
+# - Update https://google.aip.dev/134
+# - Delete https://google.aip.dev/135
+#
+class _ProjectCreateQuery(BaseModel):
     template_uuid: Optional[UUIDStr] = None
     as_template: Optional[UUIDStr] = None
     copy_data: bool = True
@@ -82,7 +81,8 @@ class ProjectCreateQuery(BaseModel):
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
-    # pylint: disable=too-many-branches, too-many-statements
+    # FIXME: too-many-branches
+    # FIXME: too-many-statements
 
     # request context params
     user_id: int = request[RQT_USERID_KEY]
@@ -90,7 +90,7 @@ async def create_projects(request: web.Request):
 
     # query params
     try:
-        q = ProjectCreateQuery.parse_obj(*request.query)
+        q = _ProjectCreateQuery.parse_obj(*request.query)
     except ValidationError as err:
         raise web.HTTPBadRequest(reason=f"Invalid query parameters: {err}")
 
@@ -238,7 +238,7 @@ async def list_projects(request: web.Request):
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     async def set_all_project_states(
-        projects: List[Dict[str, Any]], project_types: List[bool]
+        projects: List[Dict[str, Any]], project_types: List[ProjectTypeDB]
     ):
         await logged_gather(
             *[
@@ -278,7 +278,10 @@ async def list_projects(request: web.Request):
             offset=offset,
         )
     )
-    return page.dict(**RESPONSE_MODEL_POLICY)
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type="application/json",
+    )
 
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}")
@@ -325,7 +328,7 @@ async def get_project(request: web.Request):
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
 
-        return {"data": project}
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
@@ -440,7 +443,7 @@ async def replace_project(request: web.Request):
             app=request.app,
         )
 
-    except ValidationError as exc:
+    except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(
             reason=f"Invalid project update: {exc.message}"
         ) from exc
@@ -453,7 +456,7 @@ async def replace_project(request: web.Request):
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound from exc
 
-    return {"data": new_project}
+    return web.json_response({"data": new_project}, dumps=json_dumps)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
