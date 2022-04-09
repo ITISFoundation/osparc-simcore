@@ -94,14 +94,15 @@ async def delete_project(
         ) from err
 
 
-def create_delete_project_background_task(
+def schedule_task(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
     remove_project_dynamic_services: Callable,
     logger: logging.Logger,
 ) -> asyncio.Task:
-    """Wrap `delete_project` for a `project_uuid` and `user_id` into a Task and schedule its execution in the event loop.
+    """Wrap `delete_project` for a `project_uuid` and `user_id` into a Task
+        and schedule its execution in the event loop.
 
     Return the scheduled Task
     """
@@ -146,9 +147,7 @@ def create_delete_project_background_task(
     return task
 
 
-def get_delete_project_background_tasks(
-    project_uuid: ProjectID, user_id: UserID
-) -> List[asyncio.Task]:
+def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> List[asyncio.Task]:
     """Returns tasks matching delete-project task's name."""
     return [
         task

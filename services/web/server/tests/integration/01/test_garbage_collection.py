@@ -34,9 +34,7 @@ from simcore_service_webserver.groups_api import (
     list_user_groups,
 )
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.projects._delete import (
-    get_delete_project_background_tasks,
-)
+from simcore_service_webserver.projects._delete import get_scheduled_tasks
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -439,7 +437,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await garbage_collector_core.collect_garbage(app=client.app)
 
     # ensures all project delete tasks are
-    delete_tasks = get_delete_project_background_tasks(
+    delete_tasks = get_scheduled_tasks(
         project_uuid=UUID(empty_guest_user_project["uuid"]),
         user_id=logged_guest_user["id"],
     )

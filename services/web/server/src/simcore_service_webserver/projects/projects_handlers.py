@@ -190,7 +190,9 @@ async def create_projects(
         log.warning(
             "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
         )
-        await projects_api.delete_project(request.app, new_project["uuid"], user_id)
+        await projects_api.submit_delete_project_task(
+            request.app, new_project["uuid"], user_id
+        )
         raise
     else:
         log.debug("project created successfuly")
@@ -508,7 +510,9 @@ async def delete_project(request: web.Request):
                 reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
             )
 
-        await projects_api.delete_project(request.app, project_uuid, user_id)
+        await projects_api.submit_delete_project_task(
+            request.app, ProjectID(project_uuid), user_id
+        )
 
     except ProjectInvalidRightsError as err:
         raise web.HTTPForbidden(

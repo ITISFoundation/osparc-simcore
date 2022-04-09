@@ -8,6 +8,7 @@ from itertools import chain
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Tuple
+from uuid import UUID
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
@@ -16,7 +17,7 @@ from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 
 from ...director_v2_api import create_or_update_pipeline
-from ...projects.projects_api import delete_project, get_project_for_user
+from ...projects.projects_api import get_project_for_user, submit_delete_project_task
 from ...projects.projects_db import APP_PROJECT_DBAPI
 from ...projects.projects_exceptions import ProjectsException
 from ...storage_handlers import (
@@ -419,7 +420,9 @@ async def import_files_and_validate_project(
             "Removing project %s, because there was an error while importing it."
         )
         try:
-            await delete_project(app=app, project_uuid=project_uuid, user_id=user_id)
+            await submit_delete_project_task(
+                app=app, project_uuid=UUID(project_uuid), user_id=user_id
+            )
         except ProjectsException:
             # no need to raise an error here
             log.exception(

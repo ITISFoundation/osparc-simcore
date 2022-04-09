@@ -188,11 +188,12 @@ async def start_project_interactive_services(
                 log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
-async def delete_project(
+async def submit_delete_project_task(
     app: web.Application, project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task:
     """
-    Returns the task scheduled to delete, using user_id's permissions, a given project project_uuid.
+    Marks a project as deleted and schedules a task to performe the entire removal workflow
+    using user_id's permissions.
 
     If this task is already scheduled, it returns it otherwise it creates a new one.
 
@@ -208,11 +209,11 @@ async def delete_project(
         raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
 
     # Ensures ONE delete task per (project,user) pair
-    if tasks := _delete.get_delete_project_background_tasks(project_uuid, user_id):
+    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
     else:
-        task = _delete.create_delete_project_background_task(
+        task = _delete.schedule_task(
             app, project_uuid, user_id, remove_project_dynamic_services, log
         )
 
@@ -349,15 +350,6 @@ async def remove_project_dynamic_services(
                 )
     except ProjectLockError:
         pass
-
-
-async def _delete_project_from_db(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
-    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
-    db = app[APP_PROJECT_DBAPI]
-    await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
-    await db.delete_user_project(user_id, project_uuid)
 
 
 ## PROJECT NODES -----------------------------------------------------

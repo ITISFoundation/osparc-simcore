@@ -13,9 +13,7 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects._delete import (
-    get_delete_project_background_tasks,
-)
+from simcore_service_webserver.projects import _delete
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 # HELPERS -----------------------------------------------------------------------------------------
@@ -54,18 +52,17 @@ async def test_delete_project(
 
     await _request_delete_project(client, user_project, expected.no_content)
 
-    tasks = get_delete_project_background_tasks(
+    tasks = _delete.get_scheduled_tasks(
         project_uuid=user_project["uuid"], user_id=logged_user["id"]
     )
 
     if expected.no_content == web.HTTPNoContent:
         # Waits until deletion tasks are done
         assert (
-            len(tasks) <= 1
+            len(tasks) == 1
         ), f"Only one delete fire&forget task expected, got {tasks=}"
-        if tasks:
-            # might have finished, and therefore there is no need to waith
-            await tasks[0]
+        # might have finished, and therefore there is no need to waith
+        await tasks[0]
 
         mocked_director_v2_api["director_v2_core.get_services"].assert_called_once()
 

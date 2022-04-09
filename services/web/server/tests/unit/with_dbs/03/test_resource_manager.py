@@ -36,8 +36,8 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
-    delete_project,
     remove_project_dynamic_services,
+    submit_delete_project_task,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -789,7 +789,7 @@ async def test_regression_removing_unexisting_user(
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
     assert client.app
     # remove project
-    delete_task = await delete_project(
+    delete_task = await submit_delete_project_task(
         app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],

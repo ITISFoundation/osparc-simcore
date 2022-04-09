@@ -19,11 +19,11 @@ from .director.director_exceptions import DirectorException, ServiceNotFoundErro
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
-    delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
     remove_project_dynamic_services,
+    submit_delete_project_task,
 )
 from .projects.projects_db import APP_PROJECT_DBAPI
 from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
@@ -493,7 +493,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-                task = await delete_project(app, project_uuid, user_id)
+                task = await submit_delete_project_task(app, project_uuid, user_id)
                 assert task  # nosec
                 delete_tasks.append(task)
 
