@@ -3,10 +3,8 @@
 """
 
 import asyncio
-import functools
 import logging
 from typing import Callable, List
-from uuid import UUID
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -39,13 +37,13 @@ async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID)
     # TODO: note that if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
-    await db.set_hidden_flag(f"{project_uuid}", enabled=True)
+    await db.set_hidden_flag(project_uuid, enabled=True)
 
 
 async def delete_project(
     app: web.Application,
-    project_uuid: str,
-    user_id: int,
+    project_uuid: ProjectID,
+    user_id: UserID,
     # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
     remove_project_dynamic_services: Callable,
 ) -> None:
@@ -64,7 +62,7 @@ async def delete_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     try:
-        mark_project_as_deleted(app, project_uuid)
+        await mark_project_as_deleted(app, project_uuid)
 
         # stops dynamic services
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
@@ -74,13 +72,13 @@ async def delete_project(
 
         # stops computational services
         # - raises DirectorServiceError
-        await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
+        await director_v2_api.delete_pipeline(app, user_id, project_uuid)
 
         # rm data from storage
         await delete_data_folders_of_project(app, project_uuid, user_id)
 
         # rm project from database
-        await db.delete_user_project(user_id, project_uuid)
+        await db.delete_user_project(user_id, f"{project_uuid}")
 
     except ProjectLockError as err:
         raise ProjectDeleteError(
@@ -95,8 +93,8 @@ async def delete_project(
 
 def create_delete_project_background_task(
     app: web.Application,
-    project_uuid: str,
-    user_id: int,
+    project_uuid: ProjectID,
+    user_id: UserID,
     remove_project_dynamic_services: Callable,
     logger: logging.Logger,
 ) -> asyncio.Task:
@@ -122,7 +120,7 @@ def create_delete_project_background_task(
         project_uuid, user_id
     )
 
-    task.add_done_callback(functools.partial(_log_errors, log))
+    task.add_done_callback(_log_errors)
     return task
 
 
@@ -143,8 +141,3 @@ def is_delete_project_background_task_running(
     tasks = get_delete_project_background_tasks(project_uuid, user_id)
     assert len(tasks) <= 1  # nosec
     return len(tasks) > 0
-
-
-# alias
-create_background_task = create_delete_project_background_task
-is_background_task_running = is_delete_project_background_task_running

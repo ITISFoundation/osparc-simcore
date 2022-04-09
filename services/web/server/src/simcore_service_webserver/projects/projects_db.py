@@ -21,7 +21,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
-from models_library.projects import ProjectAtDB, ProjectIDStr
+from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -864,12 +864,12 @@ class ProjectDBAPI:
             )
             return result.rowcount == 1
 
-    async def set_hidden_flag(self, project_uuid: str, enabled: bool):
+    async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
         async with self.engine.acquire() as conn:
             stmt = (
                 projects.update()
                 .values(hidden=enabled)
-                .where(projects.c.uuid == project_uuid)
+                .where(projects.c.uuid == f"{project_uuid}")
             )
             await conn.execute(stmt)
 

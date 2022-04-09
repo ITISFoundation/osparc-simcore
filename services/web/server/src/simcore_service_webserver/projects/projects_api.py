@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -26,6 +27,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
@@ -186,8 +188,13 @@ async def start_project_interactive_services(
                 log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
-async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
+async def delete_project(
+    app: web.Application, project_uuid: ProjectID, user_id: UserID
+) -> asyncio.Task:
     """
+    Returns the background task to delete project using user permissions. If the
+    task is already running, it returns existing task otherwise it creates a new one.
+    The returned task can be ignored to implement a fire&forget or followed up with add_done_callback
 
     raises ProjectDeleteError
     """
@@ -197,15 +204,17 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
     except ProjectNotFoundError as err:
         raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
 
-    # If you have multiple tasks deleting the same project then one will atmost succeed and
-    # the rest always fail (because the project is deleted).
-    in_progress: bool = _delete.is_background_task_running(project_uuid, user_id)
+    # Ensures
+    tasks: List[asyncio.Task] = _delete.get_delete_project_background_tasks(
+        project_uuid, user_id
+    )
+    assert len(tasks) <= 1, f"{tasks=}"  # nosec
+    if tasks:
+        return tasks[0]
 
-    # This avoids having a burst of background tasks that were fire&forget failing
-    if not in_progress:
-        await _delete.create_background_task(
-            app, project_uuid, user_id, remove_project_dynamic_services, log
-        )
+    return await _delete.create_delete_project_background_task(
+        app, project_uuid, user_id, remove_project_dynamic_services, log
+    )
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
