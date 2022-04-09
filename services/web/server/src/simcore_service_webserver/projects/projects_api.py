@@ -223,8 +223,8 @@ def get_delete_project_task(
     if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
-        assert task  # nosec
         return task
+    return None
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
