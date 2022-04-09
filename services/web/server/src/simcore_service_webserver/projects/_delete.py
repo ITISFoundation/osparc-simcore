@@ -7,7 +7,7 @@ NOTE: this entire module is protected within the `projects` package
 
 import asyncio
 import logging
-from typing import Callable, List
+from typing import List, Optional, Protocol
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -15,6 +15,7 @@ from models_library.users import UserID
 
 from .. import director_v2_api
 from ..storage_api import delete_data_folders_of_project
+from ..users_api import UserNameDict
 from ..users_exceptions import UserNotFoundError
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
@@ -26,6 +27,19 @@ from .projects_exceptions import (
 log = logging.getLogger(__name__)
 
 DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user_id={1}"
+
+
+class RemoveProjectServicesCallable(Protocol):
+    # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
+    async def __call__(
+        self,
+        user_id: int,
+        project_uuid: str,
+        app: web.Application,
+        notify_users: bool = True,
+        user_name: Optional[UserNameDict] = None,
+    ) -> None:
+        ...
 
 
 async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID):
@@ -48,7 +62,7 @@ async def delete_project(
     project_uuid: ProjectID,
     user_id: UserID,
     # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
-    remove_project_dynamic_services: Callable,
+    remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
 
@@ -70,7 +84,7 @@ async def delete_project(
         # stops dynamic services
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
         await remove_project_dynamic_services(
-            user_id, project_uuid, app, notify_users=False
+            user_id, f"{project_uuid}", app, notify_users=False
         )
 
         # stops computational services
@@ -98,7 +112,7 @@ def schedule_task(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
-    remove_project_dynamic_services: Callable,
+    remove_project_dynamic_services: RemoveProjectServicesCallable,
     logger: logging.Logger,
 ) -> asyncio.Task:
     """Wrap `delete_project` for a `project_uuid` and `user_id` into a Task

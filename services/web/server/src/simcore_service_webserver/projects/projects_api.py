@@ -209,15 +209,22 @@ async def submit_delete_project_task(
         raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
 
     # Ensures ONE delete task per (project,user) pair
-    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
-        assert len(tasks) == 1, f"{tasks=}"  # nosec
-        task = tasks[0]
-    else:
+    task = get_delete_project_task(project_uuid, user_id)
+    if not task:
         task = _delete.schedule_task(
             app, project_uuid, user_id, remove_project_dynamic_services, log
         )
-
     return task
+
+
+def get_delete_project_task(
+    project_uuid: ProjectID, user_id: UserID
+) -> Optional[asyncio.Task]:
+    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
+        assert len(tasks) == 1, f"{tasks=}"  # nosec
+        task = tasks[0]
+        assert task  # nosec
+        return task
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
