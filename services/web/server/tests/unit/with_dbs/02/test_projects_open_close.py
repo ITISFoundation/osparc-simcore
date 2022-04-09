@@ -13,7 +13,7 @@ from unittest.mock import call
 import pytest
 import socketio
 from _helpers import ExpectedResponse, standard_role_response
-from aiohttp import web
+from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from models_library.projects_access import Owner
 from models_library.projects_state import (
@@ -285,13 +285,11 @@ async def _assert_project_state_updated(
         handler.reset_mock()
 
 
-async def _delete_project(
-    client, project: Dict, expected: Type[web.HTTPException]
-) -> None:
+async def _delete_project(client, project: Dict) -> ClientResponse:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
-    await assert_status(resp, expected)
+    return resp
 
 
 # TESTS ----------------------------------------------------------------------------------------------------
@@ -361,10 +359,12 @@ async def test_share_project(
             expected.ok if share_rights["write"] else expected.forbidden,
         )
         # user 2 can only delete projects if user 2 has delete access
-        await _delete_project(
-            client,
-            new_project,
-            expected.no_content if share_rights["delete"] else expected.forbidden,
+        resp = await _delete_project(client, new_project)
+        await assert_status(
+            resp,
+            expected_cls=expected.no_content
+            if share_rights["delete"]
+            else expected.forbidden,
         )
 
 

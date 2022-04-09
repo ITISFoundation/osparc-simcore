@@ -20,6 +20,7 @@ from ..users_exceptions import UserNotFoundError
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
+    ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNotFoundError,
 )
@@ -42,14 +43,18 @@ class RemoveProjectServicesCallable(Protocol):
         ...
 
 
-async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID):
+async def mark_project_as_deleted(
+    app: web.Application, project_uuid: ProjectID, user_id: UserID
+):
     """
+    ::raises ProjectInvalidRightsError
     ::raises ProjectNotFoundError
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     # TODO: tmp using invisible as a "deletion mark"
     # Even if any of the steps below fail, the project will remain invisible
     # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+    await db.check_delete_project_permission(user_id, f"{project_uuid}")
 
     # TODO: note that if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
@@ -79,7 +84,7 @@ async def delete_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     try:
-        await mark_project_as_deleted(app, project_uuid)
+        await mark_project_as_deleted(app, project_uuid, user_id)
 
         # stops dynamic services
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
@@ -139,6 +144,11 @@ def schedule_task(
         except ProjectDeleteError as err:
             logger.error(
                 f"Failed to delete {project_uuid=} using {user_id=} permissions: {err}"
+            )
+
+        except ProjectInvalidRightsError as err:
+            logger.error(
+                f"{user_id=} does not have permission to delete {project_uuid=}: {err}"
             )
 
         except Exception:  # pylint: disable=broad-except

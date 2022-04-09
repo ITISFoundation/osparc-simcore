@@ -53,11 +53,7 @@ from ..users_exceptions import UserNotFoundError
 from . import _delete
 from .project_lock import UserNameDict, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import (
-    ProjectDeleteError,
-    ProjectLockError,
-    ProjectNotFoundError,
-)
+from .projects_exceptions import ProjectLockError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -201,12 +197,10 @@ async def submit_delete_project_task(
     followed up with add_done_callback.
 
     raises ProjectDeleteError
+    raises ProjectInvalidRightsError
+    raises ProjectNotFoundError
     """
-    try:
-        await _delete.mark_project_as_deleted(app, project_uuid)
-
-    except ProjectNotFoundError as err:
-        raise ProjectDeleteError(project_uuid, reason=f"Invalid project {err}") from err
+    await _delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
