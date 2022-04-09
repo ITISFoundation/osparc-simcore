@@ -28,7 +28,7 @@ from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.projects_handlers import (
+from simcore_service_webserver.projects.projects_handlers_crud import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
