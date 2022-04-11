@@ -116,6 +116,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       const resources = {
         cpu: {
           metric: "cpu",
+          usedResource: "CPU",
           resource: "CPU",
           icon: "@FontAwesome5Solid/microchip/10",
           available: 0,
@@ -123,6 +124,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         },
         ram: {
           metric: "memory",
+          usedResource: "RAM",
           resource: "RAM",
           icon: "@MaterialIcons/memory/10",
           available: 0,
@@ -130,6 +132,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         },
         gpu: {
           metric: "gpu",
+          usedResource: "GPU",
           resource: "GPU",
           icon: "@FontAwesome5Solid/server/10",
           available: 0,
@@ -178,9 +181,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           return;
         }
         text += resourceInfo.resource + ": ";
-        if (resourceKey === "cpu") {
-          text += osparc.utils.Utils.toTwoDecimals(resourceInfo.used*resourceInfo.available/100) + " / " + resourceInfo.available;
-        } else if (resourceKey === "ram") {
+        if (resourceKey === "ram") {
           text += osparc.utils.Utils.bytesToGB(resourceInfo.used) + "GB / " + osparc.utils.Utils.bytesToGB(resourceInfo.available) + "GB";
         } else {
           text += resourceInfo.used + " / " + resourceInfo.available;

@@ -54,18 +54,21 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
       const plots = {
         cpu: {
           metric: "cpu",
+          usedResource: "CPU",
           resource: "CPU",
           label: this.tr("CPU"),
           column: this.self().GRID_POS.CPU
         },
         ram: {
           metric: "memory",
+          usedResource: "RAM",
           resource: "RAM",
           label: this.tr("Memory (GB)"),
           column: this.self().GRID_POS.RAM
         },
         gpu: {
           metric: "gpu",
+          usedResource: "GPU",
           resource: "GPU",
           label: this.tr("GPU"),
           column: this.self().GRID_POS.GPU
@@ -93,16 +96,23 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
           const gaugeData = gaugeDatas[0];
           gaugeData.title.text = plotInfo.label.toLocaleString();
-          const used = osparc.utils.Clusters.getMetricsAttribute(worker, plotInfo.metric);
-          const available = osparc.utils.Clusters.getResourcesAttribute(worker, plotInfo.resource);
+          let used = osparc.utils.Clusters.getUsedResourcesAttribute(worker, plotInfo.usedResource);
+          let available = osparc.utils.Clusters.getAvailableResourcesAttribute(worker, plotInfo.resource);
+          if (plotKey === "ram") {
+            used = osparc.utils.Utils.bytesToGB(used);
+            available = osparc.utils.Utils.bytesToGB(available);
+          }
+          if (qx.lang.Type.isNumber(available)) {
+            // red > 80%
+            gaugeData.gauge.steps = [{
+              range: [0.8*available, available],
+              color: qx.theme.manager.Color.getInstance().resolve("busy-orange"),
+              thickness: 0.5
+            }];
+          }
+          console.log("steps", gaugeData.gauge.steps);
           if (available === "-") {
             gaugeData.value = "-";
-          } else if (plotKey === "cpu") {
-            gaugeData.value = osparc.utils.Utils.toTwoDecimals(used*available/100);
-            gaugeData.gauge.axis.range[1] = available;
-          } else if (plotKey === "ram") {
-            gaugeData.value = osparc.utils.Utils.bytesToGB(used);
-            gaugeData.gauge.axis.range[1] = osparc.utils.Utils.bytesToGB(available);
           } else {
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;
