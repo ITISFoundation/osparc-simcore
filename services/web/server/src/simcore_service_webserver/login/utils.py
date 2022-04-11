@@ -17,6 +17,7 @@ from aiohttp_jinja2 import render_string
 from passlib import pwd
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
+from settings_library.email import EmailProtocol
 
 from .._resources import resources
 from .settings import LoginOptions, get_plugin_options
@@ -124,8 +125,8 @@ async def send_mail(app: web.Application, msg: MIMEText):
     smtp_args = dict(
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=cfg.SMTP_PROTOCOL == "TLS",
-        start_tls=cfg.SMTP_PROTOCOL == "STARTTLS",
+        use_tls=cfg.SMTP_PROTOCOL == EmailProtocol.TLS,
+        start_tls=cfg.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
     if cfg.SMTP_PORT == 587:
@@ -133,7 +134,7 @@ async def send_mail(app: web.Application, msg: MIMEText):
         # plaintext first, then use starttls
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
-        if cfg.SMTP_PROTOCOL == "STARTTLS":
+        if cfg.SMTP_PROTOCOL == EmailProtocol.STARTTLS:
             log.debug("Unencrypted connection attempt to mailserver ...")
             await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
             log.debug("Starting STARTTLS ...")
@@ -142,7 +143,7 @@ async def send_mail(app: web.Application, msg: MIMEText):
                 str(cfg.SMTP_PORT),
             )
             await smtp.starttls(validate_certs=False)
-        elif cfg.SMTP_PROTOCOL == "TLS":
+        elif cfg.SMTP_PROTOCOL == EmailProtocol.TLS:
             await smtp.connect(use_tls=True, port=cfg.SMTP_PORT)
         if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
             log.debug("Login email server ...")

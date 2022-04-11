@@ -9,7 +9,7 @@ from .base import BaseCustomSettings
 from .basic_types import PortInt
 
 
-class EmailProtocol(Enum):
+class EmailProtocol(str, Enum):
     UNENCRYPTED = "UNENCRYPTED"
     TLS = "TLS"
     STARTTLS = "STARTTLS"
@@ -48,10 +48,12 @@ class SMTPSettings(BaseCustomSettings):
     @classmethod
     def enabled_tls_required_authentication(cls, values):
         smtp_protocol = values.get("SMTP_PROTOCOL")
-        tls_enabled = smtp_protocol == EmailProtocol.TLS
-        starttls_enabled = smtp_protocol == EmailProtocol.STARTTLS
+
         username = values.get("SMTP_USERNAME")
         password = values.get("SMTP_PASSWORD")
+
+        tls_enabled = smtp_protocol == EmailProtocol.TLS
+        starttls_enabled = smtp_protocol == EmailProtocol.STARTTLS
 
         if (tls_enabled or starttls_enabled) and not (username or password):
             raise ValueError(
