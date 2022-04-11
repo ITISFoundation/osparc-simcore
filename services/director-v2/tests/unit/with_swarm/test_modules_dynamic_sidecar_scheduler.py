@@ -75,7 +75,7 @@ def _mock_containers_docker_status(
     with respx.mock as mock:
         mock.get(
             re.compile(
-                fr"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(**mocked_params)
@@ -128,7 +128,7 @@ def mocked_director_v0(
     with respx.mock as mock:
         mock.get(
             re.compile(
-                fr"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
+                rf"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
             ),
             name="service labels",
         ).respond(
@@ -241,7 +241,7 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 
 
 @pytest.fixture
-def mocked_client_api(scheduler_data: SchedulerData) -> MockRouter:
+def mocked_client_api(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
     service_endpoint = scheduler_data.dynamic_sidecar.endpoint
     with respx.mock as mock:
         mock.get(get_url(service_endpoint, "/health"), name="is_healthy").respond(
@@ -256,7 +256,7 @@ def mocked_client_api(scheduler_data: SchedulerData) -> MockRouter:
 
 
 @pytest.fixture
-def mock_service_running(mocker: MockerFixture) -> AsyncMock:
+def mock_service_running(mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.docker_api.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
@@ -264,6 +264,17 @@ def mock_service_running(mocker: MockerFixture) -> AsyncMock:
     reload(task)
 
     yield mock
+
+
+@pytest.fixture
+def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.docker_api.update_scheduler_data_label",
+        return_value=None,
+    )
+    reload(task)
+
+    yield None
 
 
 @pytest.fixture
@@ -284,6 +295,7 @@ async def test_scheduler_add_remove(
     mocked_client_api: MockRouter,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
+    mock_update_label: None,
 ) -> None:
     await ensure_scheduler_runs_once()
     await scheduler.add_service(scheduler_data)
@@ -441,6 +453,7 @@ async def test_get_stack_status_report_missing_statuses(
     mock_service_running: AsyncMock,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
+    mock_update_label: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         scheduler,
@@ -462,6 +475,7 @@ async def test_get_stack_status_containers_are_starting(
     mock_service_running: AsyncMock,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
+    mock_update_label: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         scheduler,
@@ -483,6 +497,7 @@ async def test_get_stack_status_ok(
     mock_service_running: AsyncMock,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
+    mock_update_label: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         scheduler,

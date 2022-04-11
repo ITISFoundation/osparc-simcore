@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.8.10"
+ARG PYTHON_VERSION="3.9.12"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
@@ -33,8 +33,8 @@ FROM base as build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
+  build-essential \
+  git \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 

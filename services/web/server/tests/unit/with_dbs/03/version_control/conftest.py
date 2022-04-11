@@ -6,6 +6,7 @@ import logging
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from unittest import mock
 from uuid import UUID
 
 import aiohttp
@@ -15,7 +16,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project
-from pytest_simcore.helpers.utils_login import AUserDict
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_repos,
@@ -26,6 +27,7 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
+from tenacity import AsyncRetrying, stop_after_delay
 
 ProjectDict = Dict[str, Any]
 
@@ -132,7 +134,7 @@ def app_cfg(
 
 
 @pytest.fixture
-async def user_id(logged_user: AUserDict) -> UserID:
+async def user_id(logged_user: UserInfoDict) -> UserID:
     return logged_user["id"]
 
 
@@ -163,10 +165,10 @@ async def user_project(
 
 
 @pytest.fixture
-def do_update_user_project(
-    logged_user: AUserDict, client: TestClient, faker: Faker
-) -> Callable[[UUID], Awaitable]:
-    async def _doit(project_uuid: UUID) -> None:
+def request_update_project(
+    logged_user: UserInfoDict, faker: Faker
+) -> Callable[[TestClient, UUID], Awaitable]:
+    async def _go(client: TestClient, project_uuid: UUID) -> None:
         resp: aiohttp.ClientResponse = await client.get(f"{VX}/projects/{project_uuid}")
 
         assert resp.status == 200
@@ -186,25 +188,36 @@ def do_update_user_project(
         body = await resp.json()
         assert resp.status == 200, str(body)
 
-    return _doit
+    return _go
 
 
 @pytest.fixture
-def do_delete_user_project(
-    logged_user: AUserDict, client: TestClient, mocker
-) -> Callable[[UUID], Awaitable]:
-    mocker.patch(
+async def request_delete_project(
+    logged_user: UserInfoDict,
+    mocker,
+) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
+    director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
     )
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+    director_v2_api_stop_services: mock.AsyncMock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_services",
+    )
+    fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
     )
 
-    async def _doit(project_uuid: UUID) -> None:
+    async def _go(client: TestClient, project_uuid: UUID) -> None:
 
         resp: aiohttp.ClientResponse = await client.delete(
             f"{VX}/projects/{project_uuid}"
         )
         assert resp.status == 204
 
-    return _doit
+    yield _go
+
+    # ensure the call to delete data was completed
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
+        with attempt:
+            director_v2_api_delete_pipeline.assert_called()
+            director_v2_api_stop_services.assert_awaited()
+            fire_and_forget_call_to_storage.assert_called()

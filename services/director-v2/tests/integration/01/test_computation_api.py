@@ -17,13 +17,13 @@ import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     COMPUTATION_URL,
     assert_and_wait_for_pipeline_status,
@@ -43,7 +43,6 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "rabbit",
-    "redis",
     "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
@@ -80,7 +79,6 @@ def minimal_configuration(
     jupyter_service: Dict[str, str],
     dask_scheduler_service: str,
     dask_sidecar_service: None,
-    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitSettings,
@@ -404,11 +402,12 @@ async def test_run_partial_computation(
     task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # now wait for the computation to finish
@@ -419,11 +418,12 @@ async def test_run_partial_computation(
         sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
     )
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=expected_pipeline_details_after_run,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
@@ -466,11 +466,12 @@ async def test_run_partial_computation(
     task_out = ComputationTaskGet.parse_obj(response.json())
 
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,
+        iteration=2,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # now wait for the computation to finish
@@ -503,11 +504,12 @@ async def test_run_computation(
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to start
@@ -525,11 +527,12 @@ async def test_run_computation(
     )
 
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
@@ -565,11 +568,12 @@ async def test_run_computation(
     task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correct
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
+        iteration=2,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to finish
@@ -577,11 +581,12 @@ async def test_run_computation(
         async_client, task_out.url, user["id"], sleepers_project.uuid
     )
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        iteration=2,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
 
@@ -613,11 +618,12 @@ async def test_abort_computation(
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait until the pipeline is started
@@ -631,14 +637,10 @@ async def test_abort_computation(
     assert (
         task_out.state == RunningState.STARTED
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
-    assert (
-        task_out.url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
-    )
-    assert (
-        task_out.stop_url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
-    )
+    assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url
+    assert task_out.stop_url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
+    get_computation_state_url = deepcopy(task_out.url)
     # wait a bit till it has some momentum
     await asyncio.sleep(5)
 
@@ -650,16 +652,13 @@ async def test_abort_computation(
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationTaskGet.parse_obj(response.json())
-    assert (
-        str(task_out.url)
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
-    )
+    assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
     task_out = await assert_and_wait_for_pipeline_status(
         async_client,
-        task_out.url,
+        get_computation_state_url,
         user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.ABORTED],
@@ -692,11 +691,12 @@ async def test_update_and_delete_computation(
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        iteration=None,
+        cluster_id=None,
     )
 
     # update the pipeline
@@ -711,11 +711,12 @@ async def test_update_and_delete_computation(
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        iteration=None,
+        cluster_id=None,
     )
 
     # update the pipeline
@@ -730,11 +731,12 @@ async def test_update_and_delete_computation(
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        iteration=None,
+        cluster_id=None,
     )
 
     # start it now
@@ -748,11 +750,12 @@ async def test_update_and_delete_computation(
     task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
-        async_client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        iteration=1,
+        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait until the pipeline is started

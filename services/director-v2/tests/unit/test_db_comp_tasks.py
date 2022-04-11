@@ -60,6 +60,7 @@ def test_only_filepicker_service_gets_some_service_details(
         "simcore/services/frontend/nodes-group/macros/",  # FIXME: PC->OM: This front-end service needs to be re-defined
         "simcore/services/frontend/nodes-group",
         "simcore/services/frontend/parameter/",
+        "simcore/services/frontend/iterator-consumer/probe/",
     ]
     for frontend_service_key in all_frontend_services:
         if frontend_service_key in EXCLUDE:

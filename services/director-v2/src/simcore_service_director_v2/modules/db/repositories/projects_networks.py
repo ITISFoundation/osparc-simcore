@@ -2,8 +2,8 @@ import json
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.projects_networks import NetworksWithAliases, ProjectsNetworks
 from models_library.projects import ProjectID
+from models_library.projects_networks import NetworksWithAliases, ProjectsNetworks
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ....core.errors import ProjectNotFoundError

@@ -66,7 +66,7 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
                 "email": NEW_EMAIL,
             },
         )
-        assert rsp.url_obj.path == url.path
+        assert rsp.url.path == url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
@@ -75,14 +75,14 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
 
         # try new email but logout first
         rsp = await client.post(logout_url)
-        assert rsp.url_obj.path == logout_url.path
+        assert rsp.url.path == logout_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
 
         # click email's link
         rsp = await client.get(link)
         txt = await rsp.text()
 
-        assert rsp.url_obj.path == index_url.path
+        assert rsp.url.path == index_url.path
         assert (
             "This is a result of disable_static_webserver fixture for product OSPARC"
             in txt
@@ -96,5 +96,5 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
             },
         )
         payload = await rsp.json()
-        assert rsp.url_obj.path == login_url.path
+        assert rsp.url.path == login_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)

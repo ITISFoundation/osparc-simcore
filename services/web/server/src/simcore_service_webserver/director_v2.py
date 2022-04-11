@@ -44,8 +44,9 @@ def setup_director_v2(app: web.Application):
         specs = app[APP_OPENAPI_SPECS_KEY]
         routes = map_handlers_with_operations(
             {
-                "start_pipeline": director_v2_handlers.start_pipeline,
-                "stop_pipeline": director_v2_handlers.stop_pipeline,
+                "get_computation": director_v2_handlers.get_computation,
+                "start_computation": director_v2_handlers.start_computation,
+                "stop_computation": director_v2_handlers.stop_computation,
             },
             filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
             strict=True,

@@ -9,13 +9,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional
 
-import aiodocker
 import aiofiles
 import httpx
 import yaml
 from aiofiles import os as aiofiles_os
 from async_timeout import timeout
-from fastapi import HTTPException
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -23,7 +21,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..modules.mounted_fs import MountedVolumes
 
 CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_stdout")
 
@@ -108,18 +106,6 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles_os.remove(file_path)
 
 
-@asynccontextmanager
-async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
-    docker = aiodocker.Docker()
-    try:
-        yield docker
-    except aiodocker.exceptions.DockerError as error:
-        logger.debug("An unexpected Docker error occurred", stack_info=True)
-        raise HTTPException(error.status, detail=error.message) from error
-    finally:
-        await docker.close()
-
-
 async def async_command(
     command: str, command_timeout: Optional[float]
 ) -> CommandResult:
@@ -162,11 +148,10 @@ def assemble_container_names(validated_compose_content: str) -> List[str]:
     ]
 
 
-async def volumes_fix_permissions() -> None:
+async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
     for volume_path in [
         mounted_volumes.disk_inputs_path,
         mounted_volumes.disk_outputs_path,

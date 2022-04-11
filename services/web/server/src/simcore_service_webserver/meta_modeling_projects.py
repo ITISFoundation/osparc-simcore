@@ -22,7 +22,7 @@ from .meta_modeling_iterations import (
     get_runnable_projects_ids,
 )
 from .meta_modeling_version_control import CommitID, VersionControlForMetaModeling
-from .projects.projects_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
+from .projects.projects_handlers_crud import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
     if URL_PATTERN.match(f"{request.rel_url}"):
         #
         # TODO: because hierarchical design is not guaranteed, we find ourselves with
-        # entries like /v0/computation/pipeline/{project_id}:start which might also neeed
+        # entries like /v0/computations/{project_id}:start which might also neeed
         # indirection
         #
 

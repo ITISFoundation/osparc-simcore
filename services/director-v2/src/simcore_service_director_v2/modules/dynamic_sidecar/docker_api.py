@@ -2,14 +2,16 @@
 
 
 import asyncio
+import json
 import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
+from copy import deepcopy
+from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
-from aiodocker.utils import clean_filters
+from aiodocker.utils import clean_filters, clean_map
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -17,12 +19,11 @@ from packaging import version
 from servicelib.utils import logged_gather
 
 from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from ...models.schemas.dynamic_services import (
-    ServiceLabelsStoredData,
-    ServiceState,
-    ServiceType,
+from ...models.schemas.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
+from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -161,10 +162,12 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
 
 async def get_dynamic_sidecars_to_observe(
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> Deque[ServiceLabelsStoredData]:
+) -> List[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services = await client.services.list(
+        running_dynamic_sidecar_services: List[
+            Mapping[str, Any]
+        ] = await client.services.list(
             filters={
                 "label": [
                     f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}"
@@ -172,13 +175,9 @@ async def get_dynamic_sidecars_to_observe(
                 "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }
         )
-
-    dynamic_sidecar_services: Deque[ServiceLabelsStoredData] = Deque()
-
-    for service in running_dynamic_sidecar_services:
-        dynamic_sidecar_services.append(ServiceLabelsStoredData.from_service(service))
-
-    return dynamic_sidecar_services
+    return [
+        SchedulerData.from_service_inspect(x) for x in running_dynamic_sidecar_services
+    ]
 
 
 async def _extract_task_data_from_service_for_state(
@@ -374,10 +373,17 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> Set[str]:
+async def remove_dynamic_sidecar_volumes(
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> Set[str]:
     async with docker_client() as client:
         volumes_response = await client.volumes.list(
-            filters={"label": f"uuid={node_uuid}"}
+            filters={
+                "label": [
+                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"uuid={node_uuid}",
+                ]
+            }
         )
         volumes = volumes_response["Volumes"]
         log.debug("Removing volumes: %s", [v["Name"] for v in volumes])
@@ -506,3 +512,43 @@ async def try_to_remove_network(network_name: str) -> None:
             return await network.delete()
         except aiodocker.exceptions.DockerError:
             log.warning("Could not remove network %s", network_name)
+
+
+async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+    async with docker_client() as client:
+        # NOTE: builtin `DockerServices.update` function is very limited.
+        # Using the same pattern but updating labels
+
+        try:
+            # fetch information from service name
+            service_inspect = await client.services.inspect(scheduler_data.service_name)
+            service_version = service_inspect["Version"]["Index"]
+            service_id = service_inspect["ID"]
+            spec = service_inspect["Spec"]
+
+            # compose_spec needs to be json encoded
+            # before encoding it to json and storing it
+            # in the label
+            scheduler_data_copy = deepcopy(scheduler_data)
+            scheduler_data_copy.compose_spec = json.dumps(
+                scheduler_data_copy.compose_spec
+            )
+            label_data = scheduler_data_copy.json()
+            spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+
+            await client._query_json(  # pylint: disable=protected-access
+                f"services/{service_id}/update",
+                method="POST",
+                data=json.dumps(clean_map(spec)),
+                params={"version": service_version},
+            )
+        except aiodocker.exceptions.DockerError as e:
+            if not (
+                e.status == 404
+                and e.message == f"service {scheduler_data.service_name} not found"
+            ):
+                raise e
+            log.debug(
+                "Skip update for service '%s' which could not be found",
+                scheduler_data.service_name,
+            )

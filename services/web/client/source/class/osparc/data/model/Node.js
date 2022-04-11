@@ -164,6 +164,13 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    marker: {
+      check: "qx.core.Object",
+      init: null,
+      nullable: true,
+      event: "changeMarker"
+    },
+
     inputConnected: {
       check: "Boolean",
       init: false,
@@ -205,6 +212,7 @@ qx.Class.define("osparc.data.model.Node", {
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
+    "probeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -442,6 +450,9 @@ qx.Class.define("osparc.data.model.Node", {
       if ("position" in nodeUIData) {
         this.setPosition(nodeUIData.position);
       }
+      if ("marker" in nodeUIData) {
+        this.addMarker(nodeUIData.marker);
+      }
     },
 
     populateInputOutputData: function(nodeData) {
@@ -610,6 +621,20 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       }
+    },
+
+    addMarker: function(marker) {
+      if (marker === undefined) {
+        marker = {
+          color: osparc.utils.Utils.getRandomColor()
+        };
+      }
+      const markerModel = qx.data.marshal.Json.createModel(marker, true);
+      this.setMarker(markerModel);
+    },
+
+    removeMarker: function() {
+      this.setMarker(null);
     },
 
     __setInputData: function(inputs) {

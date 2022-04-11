@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -26,6 +27,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
@@ -33,7 +35,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2_api
+from .. import director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -46,18 +48,12 @@ from ..socketio.events import (
     send_group_messages,
     send_messages,
 )
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
-from ..users_api import get_user_name, is_user_guest
-from .project_lock import (
-    ProjectLockError,
-    UserNameDict,
-    get_project_locked_state,
-    lock_project,
-)
+from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_exceptions import UserNotFoundError
+from . import _delete
+from .project_lock import UserNameDict, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_exceptions import ProjectLockError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -188,16 +184,41 @@ async def start_project_interactive_services(
                 log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
-async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
-    await _delete_project_from_db(app, project_uuid, user_id)
+async def submit_delete_project_task(
+    app: web.Application, project_uuid: ProjectID, user_id: UserID
+) -> asyncio.Task:
+    """
+    Marks a project as deleted and schedules a task to performe the entire removal workflow
+    using user_id's permissions.
 
-    async def _remove_services_and_data():
-        await remove_project_interactive_services(
-            user_id, project_uuid, app, notify_users=False
+    If this task is already scheduled, it returns it otherwise it creates a new one.
+
+    The returned task can be ignored to implement a fire&forget or
+    followed up with add_done_callback.
+
+    raises ProjectDeleteError
+    raises ProjectInvalidRightsError
+    raises ProjectNotFoundError
+    """
+    await _delete.mark_project_as_deleted(app, project_uuid, user_id)
+
+    # Ensures ONE delete task per (project,user) pair
+    task = get_delete_project_task(project_uuid, user_id)
+    if not task:
+        task = _delete.schedule_task(
+            app, project_uuid, user_id, remove_project_dynamic_services, log
         )
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+    return task
 
-    fire_and_forget_task(_remove_services_and_data())
+
+def get_delete_project_task(
+    project_uuid: ProjectID, user_id: UserID
+) -> Optional[asyncio.Task]:
+    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
+        assert len(tasks) == 1, f"{tasks=}"  # nosec
+        task = tasks[0]
+        return task
+    return None
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
@@ -240,7 +261,7 @@ async def lock_with_notification(
     notify_users: bool = True,
 ):
     try:
-        async with await lock_project(
+        async with lock_project(
             app,
             project_uuid,
             status,
@@ -276,13 +297,18 @@ async def lock_with_notification(
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
-async def remove_project_interactive_services(
+async def remove_project_dynamic_services(
     user_id: int,
     project_uuid: str,
     app: web.Application,
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
 ) -> None:
+    """
+
+    :raises UserNotFoundError:
+    """
+
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
     log.debug(
@@ -291,12 +317,27 @@ async def remove_project_interactive_services(
         user_id,
     )
     try:
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+        # TODO: logic around save_state is not ideal, but it remains with the same logic
+        # as before until it is properly refactored
+        user_role: Optional[UserRole] = None
+        try:
+            user_role = await get_user_role(app, user_id)
+        except UserNotFoundError:
+            user_role = None
+
+        save_state: bool = True
+        if user_role is None or user_role <= UserRole.GUEST:
+            save_state = False
+        # -------------------
+
         async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            user_name or await get_user_name(app, user_id),
+            user_name_data,
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
@@ -306,21 +347,10 @@ async def remove_project_interactive_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    save_state=save_state,
                 )
     except ProjectLockError:
         pass
-
-
-async def _delete_project_from_db(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
-    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
-    db = app[APP_PROJECT_DBAPI]
-    await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
-    await db.delete_user_project(user_id, project_uuid)
 
 
 ## PROJECT NODES -----------------------------------------------------
@@ -397,7 +427,7 @@ async def delete_project_node(
             )
             break
     # remove its data if any
-    await delete_data_folders_of_project_node(
+    await storage_api.delete_data_folders_of_project_node(
         request.app, project_uuid, node_uuid, user_id
     )
 
@@ -722,7 +752,7 @@ async def try_close_project_for_user(
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
-            remove_project_interactive_services(user_id, project_uuid, app)
+            remove_project_dynamic_services(user_id, project_uuid, app)
         )
     else:
         log.warning(

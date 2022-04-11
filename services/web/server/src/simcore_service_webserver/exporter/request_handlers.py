@@ -40,9 +40,9 @@ async def export_project(request: web.Request):
     project_uuid = request.match_info.get("project_id")
 
     temp_dir: str = await get_empty_tmp_dir()
-
+    assert project_uuid  # nosec
     try:
-        async with await lock_project(
+        async with lock_project(
             request.app,
             project_uuid,
             ProjectStatus.EXPORTING,
@@ -119,9 +119,10 @@ async def import_project(request: web.Request):
 async def duplicate_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    assert project_uuid  # nosec
     try:
         with TemporaryDirectory() as temp_dir:
-            async with await lock_project(
+            async with lock_project(
                 request.app,
                 project_uuid,
                 ProjectStatus.CLONING,

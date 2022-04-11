@@ -85,22 +85,32 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def mount_entry(
-        cls, compose_namespace: str, path: Path, node_uuid: NodeID
+        cls,
+        swarm_stack_name: str,
+        compose_namespace: str,
+        path: Path,
+        node_uuid: NodeID,
     ) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
         """
         return {
-            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
-            "VolumeOptions": {"Labels": {"uuid": f"{node_uuid}"}},
+            "VolumeOptions": {
+                "Labels": {
+                    "source": cls.source(compose_namespace, path),
+                    "uuid": f"{node_uuid}",
+                    "swarm_stack_name": swarm_stack_name,
+                }
+            },
         }
 
     @classmethod
     def mount_r_clone(
         cls,
+        swarm_stack_name: str,
         compose_namespace: str,
         path: Path,
         project_id: ProjectID,
@@ -108,12 +118,13 @@ class DynamicSidecarVolumesPathsResolver:
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
-            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
+                    "source": cls.source(compose_namespace, path),
                     "uuid": f"{node_uuid}",
+                    "swarm_stack_name": swarm_stack_name,
                 },
                 "DriverConfig": _get_s3_volume_driver_config(
                     r_clone_settings=r_clone_settings,

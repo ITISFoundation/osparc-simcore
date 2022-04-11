@@ -231,19 +231,23 @@ rows="%-24s | %90s | %12s | %12s\n";\
 TableWidth=140;\
 printf "%24s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
-printf "$$rows" 'oSparc platform' 'http://$(get_my_ip).nip.io:9081';\
-printf "$$rows" 'oSparc web API doc' 'http://$(get_my_ip).nip.io:9081/dev/doc';\
-printf "$$rows" 'oSparc public API doc' 'http://$(get_my_ip).nip.io:8006/dev/doc';\
-printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username='$${POSTGRES_USER}'&db='$${POSTGRES_DB}'&ns=public' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
-printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
+printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
+printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
+printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
+printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
+printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15762" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
+printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
+printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
 echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
 endef
+
 
 show-endpoints:
 	@$(_show_endpoints)
@@ -421,6 +425,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*generated_code*" \
 											-not -path "*build*" \
 											-not -path "*datcore.py" \
+											-not -path "*/director/*" \
 											-not -path "*web/server*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 

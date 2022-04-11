@@ -38,28 +38,45 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
   properties: {
     annotation: {
       check: "osparc.component.workbench.Annotation",
+      init: null,
+      nullable: true,
       apply: "__applyAnnotation"
+    },
+
+    marker: {
+      check: "Object",
+      init: null,
+      nullable: true,
+      apply: "__applyMarker"
     }
   },
 
   members: {
-    __applyAnnotation: function(annotation) {
-      this._removeAll();
-
-      let row = 0;
+    __addColor: function() {
       this._add(new qx.ui.basic.Label(this.tr("Color")), {
-        row,
+        row: 0,
         column: 0
       });
       const colorPicker = new osparc.component.form.ColorPicker();
-      annotation.bind("color", colorPicker, "color");
-      colorPicker.bind("color", annotation, "color");
       this._add(colorPicker, {
-        row,
+        row: 0,
         column: 1
       });
-      row++;
+      return colorPicker;
+    },
 
+    __applyAnnotation: function(annotation) {
+      this._removeAll();
+
+      if (annotation === null) {
+        return;
+      }
+
+      const colorPicker = this.__addColor();
+      annotation.bind("color", colorPicker, "color");
+      colorPicker.bind("color", annotation, "color");
+
+      let row = 1;
       if (annotation.getType() === "text") {
         const attrs = annotation.getAttributes();
         this._add(new qx.ui.basic.Label(this.tr("Text")), {
@@ -86,6 +103,42 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
         });
         row++;
       }
+
+      this.__makeItModal();
+    },
+
+    __applyMarker: function(marker) {
+      this._removeAll();
+
+      if (marker === null) {
+        return;
+      }
+
+      const colorPicker = this.__addColor();
+      marker.bind("color", colorPicker, "color");
+      colorPicker.bind("color", marker, "color");
+
+      this.__makeItModal();
+    },
+
+    __makeItModal: function() {
+      this.show();
+
+      const showHint = () => this.show();
+      const hideHint = () => this.exclude();
+      const tapListener = event => {
+        if (osparc.utils.Utils.isMouseOnElement(this, event)) {
+          return;
+        }
+        hideHint();
+        this.set({
+          annotation: null,
+          marker: null
+        });
+        document.removeEventListener("mousedown", tapListener);
+      };
+      showHint();
+      document.addEventListener("mousedown", tapListener);
     }
   }
 });

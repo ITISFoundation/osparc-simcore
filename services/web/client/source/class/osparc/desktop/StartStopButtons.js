@@ -150,6 +150,20 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       return null;
     },
 
+    __setClusterId: function(clusterId) {
+      if (clusterId === null) {
+        return;
+      }
+      const clustersBox = this.__clustersSelectBox;
+      if (clustersBox.isVisible()) {
+        clustersBox.getSelectables().forEach(selectable => {
+          if (selectable.id === clusterId) {
+            clustersBox.setSelection([selectable]);
+          }
+        });
+      }
+    },
+
     getClusterMiniView: function() {
       return this.__clusterMiniView;
     },
@@ -191,6 +205,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       study.addListener("changeState", this.__updateRunButtonsStatus, this);
       this.__populateClustersSelectBox();
       this.__checkButtonsVisible();
+      this.__getComputations();
     },
 
     __checkButtonsVisible: function() {
@@ -211,6 +226,26 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       if (study) {
         this.setRunning(study.isPipelineRunning());
       }
+    },
+
+    __getComputations: function() {
+      const studyId = this.getStudy().getUuid();
+      const url = "/computations/" + encodeURIComponent(studyId);
+      const req = new osparc.io.request.ApiRequest(url, "GET");
+      req.addListener("success", e => {
+        const res = e.getTarget().getResponse();
+        if (res && res.data && "cluster_id" in res.data) {
+          const clusterId = res.data["cluster_id"];
+          this.__setClusterId(clusterId);
+        }
+      }, this);
+      req.addListener("fail", e => {
+        const res = e.getTarget().getResponse();
+        if (res && res.error) {
+          console.error(res.error);
+        }
+      });
+      req.send();
     }
   }
 });

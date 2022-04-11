@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.8]
+        python: ["3.9"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
       - name: find branch name
         shell: bash
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+        run: echo "BRANCH_NAME=$(git name-rev --refs="refs/remotes/origin/master" --refs="refs/remotes/origin/hotfix_v*" --refs="refs/remotes/origin/hotfix_staging_*" --name-only ${GITHUB_SHA})" >> $GITHUB_ENV
 
       - name: setup docker buildx
         id: buildx
@@ -50,12 +50,12 @@ jobs:
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
-      - if: contains(env.BRANCH_NAME, 'master')
+      - if: contains(env.BRANCH_NAME, 'remotes/origin/master')
         env:
           FROM_TAG_PREFIX: master-github
         name: deploy from master to staging
         run: ./ci/deploy/dockerhub-tag-version.bash
-      - if: contains(env.BRANCH_NAME, 'hotfix_staging_')
+      - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_staging_')
         env:
           FROM_TAG_PREFIX: hotfix-staging-github
         name: deploy from hotfix staging to staging

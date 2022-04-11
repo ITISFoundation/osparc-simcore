@@ -2,47 +2,40 @@
 
 """
 
+import asyncio
 import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 from aiohttp import web
-from aiopg.sa.result import RowProxy
-from aioredlock import Aioredlock
+from redis.asyncio import Redis
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.models.users import UserRole
 
 from . import director_v2_api, users_exceptions
-from .db_models import GroupType
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .groups_api import get_group_from_gid
+from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
-    delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
+    submit_delete_project_task,
 )
-from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
-from .projects.projects_exceptions import ProjectNotFoundError
-from .redis import get_redis_lock_manager
+from .projects.projects_db import APP_PROJECT_DBAPI
+from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
+from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
-    get_user_id_from_gid,
-    is_user_guest,
+    get_user_role,
 )
-from .users_to_groups_api import get_users_for_gid
-
-_DATABASE_ERRORS = (
-    DatabaseError,
-    asyncpg.exceptions.PostgresError,
-    ProjectNotFoundError,
-)
+from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +89,7 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: Aioredlock = get_redis_lock_manager(app)
+    lock_manager: Redis = get_redis_lock_manager_client(app)
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -129,9 +122,9 @@ async def remove_disconnected_user_resources(
 
         # Skip locked keys for the moment
         user_id = int(dead_key["user_id"])
-        if await lock_manager.is_locked(
+        if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
-        ):
+        ).locked():
             logger.debug(
                 "Skipping garbage-collecting user '%d' since it is still locked",
                 user_id,
@@ -192,7 +185,7 @@ async def remove_disconnected_user_resources(
                     # inform that the project can be closed on the backend side
                     #
                     try:
-                        await remove_project_interactive_services(
+                        await remove_project_dynamic_services(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
@@ -245,7 +238,7 @@ async def remove_users_manually_marked_as_guests(
     those accessing via the front-end).
     If the user defined a TEMPLATE, this one also gets removed.
     """
-    lock_manager: Aioredlock = get_redis_lock_manager(app)
+    redis_locks_client: Redis = get_redis_lock_manager_client(app)
 
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
@@ -268,13 +261,13 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         # Prevents removing GUEST users that are initializating
-        lock_during_construction: bool = await lock_manager.is_locked(
+        lock_during_construction: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
-        )
+        ).locked()
 
-        lock_during_initialization: bool = await lock_manager.is_locked(
+        lock_during_initialization: bool = await redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_id)
-        )
+        ).locked()
 
         if lock_during_construction or lock_during_initialization:
             logger.debug(
@@ -349,12 +342,21 @@ async def _remove_single_orphaned_service(
             # let's be conservative here.
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
-            user_id = int(interactive_service.get("user_id", -1))
-            is_invalid_user_id = user_id <= 0
-            save_state = True
 
-            if is_invalid_user_id or await is_user_guest(app, user_id):
+            # TODO: logic around save_state is not ideal, but it remains
+            # with the same logic as before until it is properly refactored
+            user_role: Optional[UserRole] = None
+            try:
+                user_role = await get_user_role(
+                    app, user_id=int(interactive_service.get("user_id", -1))
+                )
+            except (UserNotFoundError, ValueError):
+                user_role = None
+
+            save_state = True
+            if user_role is None or user_role <= UserRole.GUEST:
                 save_state = False
+            # -------------------------------------------
 
             await director_v2_api.stop_service(app, service_uuid, save_state)
 
@@ -417,36 +419,7 @@ async def remove_orphaned_services(
     logger.debug("Finished orphaned services removal")
 
 
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
-    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
-
-    try:
-        if not await is_user_guest(app, user_id):
-            return
-
-        logger.debug(
-            "Deleting all projects of user with %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_all_projects_for_user(app=app, user_id=user_id)
-
-        logger.debug(
-            "Deleting user %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_user(app=app, user_id=user_id)
-
-    except _DATABASE_ERRORS as error:
-        logger.warning(
-            "Failure in database while removing user (%s) and its resources with %s",
-            f"{user_id=}",
-            f"{error}",
-        )
-
-
-async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
+async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
     the project is shared with others.
@@ -483,6 +456,8 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
         f"{user_project_uuids=}",
     )
 
+    delete_tasks: List[asyncio.Task] = []
+
     for project_uuid in user_project_uuids:
         try:
             project: Dict = await get_project_for_user(
@@ -491,11 +466,12 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 user_id=user_id,
                 include_templates=True,
             )
-        except web.HTTPNotFound:
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:
             logger.warning(
-                "Could not find project %s for user with %s to be removed. Skipping.",
+                "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",
                 f"{user_id=}",
+                f"{err}",
             )
             continue
 
@@ -517,8 +493,9 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-
-                await delete_project(app, project_uuid, user_id)
+                task = await submit_delete_project_task(app, project_uuid, user_id)
+                assert task  # nosec
+                delete_tasks.append(task)
 
             except ProjectNotFoundError:
                 logging.warning(
@@ -544,157 +521,44 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 project=project,
             )
 
-
-async def get_new_project_owner_gid(
-    app: web.Application,
-    project_uuid: str,
-    user_id: int,
-    user_primary_gid: int,
-    project: Dict,
-) -> Optional[int]:
-    """Goes through the access rights and tries to find a new suitable owner.
-    The first viable user is selected as a new owner.
-    In order to become a new owner the user must have write access right.
-    """
-
-    access_rights = project["accessRights"]
-    # A Set[str] is prefered over Set[int] because access_writes
-    # is a Dict with only key,valus in {str, None}
-    other_users_access_rights: Set[str] = set(access_rights.keys()) - {
-        str(user_primary_gid)
-    }
-    logger.debug(
-        "Processing other user and groups access rights '%s'",
-        other_users_access_rights,
-    )
-
-    # Selecting a new project owner
-    # divide permissions between types of groups
-    standard_groups = {}  # groups of users, multiple users can be part of this
-    primary_groups = {}  # each individual user has a unique primary group
-    for other_gid in other_users_access_rights:
-        group: Optional[RowProxy] = await get_group_from_gid(
-            app=app, gid=int(other_gid)
-        )
-
-        # only process for users and groups with write access right
-        if group is None:
-            continue
-        if access_rights[other_gid]["write"] is not True:
-            continue
-
-        if group.type == GroupType.STANDARD:
-            standard_groups[other_gid] = access_rights[other_gid]
-        elif group.type == GroupType.PRIMARY:
-            primary_groups[other_gid] = access_rights[other_gid]
-
-    logger.debug(
-        "Possible new owner groups: standard='%s', primary='%s'",
-        standard_groups,
-        primary_groups,
-    )
-
-    new_project_owner_gid = None
-    # the primary group contains the users which which the project was directly shared
-    if len(primary_groups) > 0:
-        # fetch directly from the direct users with which the project is shared with
-        new_project_owner_gid = int(list(primary_groups.keys())[0])
-    # fallback to the groups search if the user does not exist
-    if len(standard_groups) > 0 and new_project_owner_gid is None:
-        new_project_owner_gid = await fetch_new_project_owner_from_groups(
-            app=app,
-            standard_groups=standard_groups,
-            user_id=user_id,
-        )
-
-    logger.info(
-        "Will move project '%s' to user with gid '%s', if user exists",
-        project_uuid,
-        new_project_owner_gid,
-    )
-
-    return new_project_owner_gid
+    # NOTE: ensures all delete_task tasks complete or fails fast
+    # can raise ProjectDeleteError, CancellationError
+    await asyncio.gather(*delete_tasks)
 
 
-async def fetch_new_project_owner_from_groups(
-    app: web.Application, standard_groups: Dict, user_id: int
-) -> Optional[int]:
-    """Iterate over all the users in a group and if the users exists in the db
-    return its gid"""
-
-    # fetch all users in the group and then get their gid to put in here
-    # go through user_to_groups table and fetch all uid for matching gid
-    for group_gid in standard_groups.keys():
-        # remove the current owner from the bunch
-        target_group_users = await get_users_for_gid(app=app, gid=group_gid) - {user_id}
-        logger.error("Found group users '%s'", target_group_users)
-
-        for possible_user_id in target_group_users:
-            # check if the possible_user is still present in the db
-            try:
-                possible_user = await get_user(app=app, user_id=possible_user_id)
-                return int(possible_user["primary_gid"])
-            except users_exceptions.UserNotFoundError:
-                logger.warning(
-                    "Could not find new owner '%s' will try a new one",
-                    possible_user_id,
-                )
-
-        return None
-
-
-async def replace_current_owner(
-    app: web.Application,
-    project_uuid: str,
-    user_primary_gid: int,
-    new_project_owner_gid: int,
-    project: Dict,
+async def remove_guest_user_with_all_its_resources(
+    app: web.Application, user_id: int
 ) -> None:
+    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
+
     try:
-        new_project_owner_id = await get_user_id_from_gid(
-            app=app, primary_gid=new_project_owner_gid
+        user_role: UserRole = await get_user_role(app, user_id)
+        if user_role > UserRole.GUEST:
+            # NOTE: This acts as a protection barrier to avoid removing resources to more
+            # priviledge users
+            return
+
+        logger.debug(
+            "Deleting all projects of user with %s because it is a GUEST",
+            f"{user_id=}",
         )
+        await _delete_all_projects_for_user(app=app, user_id=user_id)
 
-    except _DATABASE_ERRORS:
-        logger.exception(
-            "Could not recover new user id from gid %s", new_project_owner_gid
+        logger.debug(
+            "Deleting user %s because it is a GUEST",
+            f"{user_id=}",
         )
-        return
-
-    # the result might me none
-    if new_project_owner_id is None:
-        logger.warning(
-            "Could not recover a new user id from gid %s", new_project_owner_gid
-        )
-        return
-
-    # unseting the project owner and saving the project back
-    project["prj_owner"] = int(new_project_owner_id)
-    # removing access rights entry
-    del project["accessRights"][str(user_primary_gid)]
-    project["accessRights"][
-        str(new_project_owner_gid)
-    ] = ProjectAccessRights.OWNER.value
-    logger.error("Syncing back project %s", project)
-
-    # syncing back project data
-    try:
-        await app[APP_PROJECT_DBAPI].update_project_without_checking_permissions(
-            project_data=project,
-            project_uuid=project_uuid,
-        )
-    except _DATABASE_ERRORS:
-        logger.exception(
-            "Could not remove old owner and replaced it with user %s",
-            new_project_owner_id,
-        )
-
-
-async def remove_user(app: web.Application, user_id: int) -> None:
-    """Tries to remove a user, if the users still exists a warning message will be displayed"""
-    try:
         await delete_user(app, user_id)
-    except _DATABASE_ERRORS as err:
+
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+        ProjectDeleteError,
+    ) as error:
         logger.warning(
-            "User '%s' still has some projects, could not be deleted [%s]", user_id, err
+            "Failed to delete user %s and its resources: %s",
+            f"{user_id=}",
+            f"{error}",
         )

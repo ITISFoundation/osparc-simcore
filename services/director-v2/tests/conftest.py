@@ -33,7 +33,6 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.rabbit_service",
-    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_dask_service",
@@ -103,6 +102,8 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
     monkeypatch.setenv("REGISTRY_USER", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")
     monkeypatch.setenv("REGISTRY_SSL", "false")
+
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")

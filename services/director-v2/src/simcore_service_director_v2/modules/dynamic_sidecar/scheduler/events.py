@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.projects_networks import ProjectsNetworks
 from models_library.projects import ProjectAtDB
+from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
@@ -22,8 +22,8 @@ from tenacity.wait import wait_exponential, wait_fixed
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
-from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ...db.repositories.projects import ProjectsRepository
+from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
@@ -541,7 +541,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
         async for attempt in AsyncRetrying(
             wait=wait_exponential(min=1),
-            stop=stop_after_delay(20),
+            stop=stop_after_delay(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S
+            ),
             retry_error_cls=GenericDockerError,
         ):
             with attempt:
@@ -550,7 +552,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
 
                 removed_volumes = await remove_dynamic_sidecar_volumes(
-                    scheduler_data.node_uuid
+                    scheduler_data.node_uuid, dynamic_sidecar_settings
                 )
 
                 if expected_volumes_to_remove != removed_volumes:
@@ -586,7 +588,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         await app.state.dynamic_sidecar_scheduler.finish_service_removal(
             scheduler_data.node_uuid
         )
-
         scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 
