@@ -110,7 +110,6 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
               thickness: 0.5
             }];
           }
-          console.log("steps", gaugeData.gauge.steps);
           if (available === "-") {
             gaugeData.value = "-";
           } else {
@@ -121,7 +120,6 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
           const plotId = "ClusterDetails_" + plotKey + "-" + row;
           const w = parseInt(gridW/Object.keys(plots).length);
           const h = parseInt(w*0.75);
-          console.log(gridW, w, h);
           const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
             width: w,
             height: h

@@ -145,7 +145,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           return nodeTreeItem;
         },
         bindItem: (c, item, id) => {
-          console.log(item.getModel());
           c.bindDefaultProperties(item, id);
           c.bindProperty("label", "label", null, item, id);
           c.bindProperty("id", "id", null, item, id);
