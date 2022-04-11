@@ -1,6 +1,6 @@
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, register
+from .._utils import OM, FunctionServices
 
 #
 # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
@@ -34,4 +34,6 @@ META = ServiceDockerData.parse_obj(
 assert META.outputs is not None  # nosec
 assert list(META.outputs.keys()) == ["outFile"], "name used in front-end"  # nosec
 
-REGISTRY = register(META, is_development_feature=True)
+
+services = FunctionServices()
+services.add_function_service(meta=META, is_under_development=True)

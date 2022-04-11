@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Iterator, Optional
+
+from models_library.projects_nodes import Outputs
 
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, create_fake_thumbnail_url, register
+from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
 def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
@@ -52,6 +54,23 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
     )
 
 
-META_INT = create_metadata("integer", prefix="int")
+def _linspace_func(
+    linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1
+) -> Iterator[int]:
+    for value in range(linspace_start, linspace_stop, linspace_step):
+        yield value
 
-REGISTRY = register(META_INT, is_development_feature=True)
+
+def _linspace_generator(**kwargs) -> Iterator[Outputs]:
+    # Maps generator with iterable outputs.
+    # Can have non-iterable outputs as well
+    for value in _linspace_func(**kwargs):
+        yield {"out_1": value}
+
+
+services = FunctionServices()
+services.add_function_service(
+    meta=create_metadata("integer", prefix="int"),
+    implementation=_linspace_generator,
+    is_under_development=True,
+)

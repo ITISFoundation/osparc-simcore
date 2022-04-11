@@ -7,8 +7,11 @@
 """
 
 import logging
-from typing import Dict
 
+from models_library.function_services_catalog.services import nodes_group
+
+from ._settings import FunctionServiceSettings
+from ._utils import FunctionServices
 from .services import (
     demo_units,
     file_picker,
@@ -21,30 +24,11 @@ from .services import (
 logger = logging.getLogger(__name__)
 
 
-def _create_registry(*namespaces):
-    _registry = {}
-    for namespace in namespaces:
-        try:
-            for (node_key, node_version), meta in namespace.REGISTRY.items():
-
-                if (node_key, node_version) in _registry:
-                    raise ValueError(
-                        f"{(node_key, node_version)=} is already registered"
-                    )
-
-                _registry[
-                    (node_key, node_version),
-                ] = meta
-        except (ValueError, AttributeError):
-            logger.error("Failed to register functions in %s. Skipping", namespace)
-    return _registry
-
-
-CATALOG_REGISTRY: Dict = _create_registry(
-    demo_units,
-    file_picker,
-    iter_range,
-    iter_sensitivity,
-    parameters,
-    probes,
-)
+catalog = FunctionServices(settings=FunctionServiceSettings())
+catalog.extend(demo_units.services)
+catalog.extend(file_picker.services)
+catalog.extend(iter_range.services)
+catalog.extend(iter_sensitivity.services)
+catalog.extend(nodes_group.services)
+catalog.extend(parameters.services)
+catalog.extend(probes.services)

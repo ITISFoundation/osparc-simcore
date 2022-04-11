@@ -21,7 +21,7 @@ assert is_iterator_service  # nosec
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for meta_obj in _registry.CATALOG_REGISTRY.values():
+    for meta_obj in _registry.catalog.iter_metadata():
         # NOTE: the originals are this way not modified from outside
         copied_meta_obj = meta_obj.copy(deep=True)
         assert is_function_service(copied_meta_obj.key)  # nosec

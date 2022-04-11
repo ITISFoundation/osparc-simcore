@@ -1,6 +1,13 @@
-from typing import Final
+import json
+import os
 
 from pydantic import BaseSettings
+
+# Expects env var: FUNCTION_SERVICES_AUTHORS='{"OM":{"name": ...}, "EN":{...} }'
+try:
+    AUTHORS = json.loads(os.environ.get("FUNCTION_SERVICES_AUTHORS", "{}"))
+except json.decoder.JSONDecodeError:
+    AUTHORS = {}
 
 
 class FunctionServiceSettings(BaseSettings):
@@ -17,6 +24,3 @@ class FunctionServiceSettings(BaseSettings):
             or self.DIRECTOR_V2_DEV_FEATURES_ENABLED
             or self.WEBSERVER_DEV_FEATURES_ENABLED
         )
-
-
-SETTINGS: Final[FunctionServiceSettings] = FunctionServiceSettings()

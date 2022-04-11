@@ -2,7 +2,7 @@ from typing import Optional
 
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, create_fake_thumbnail_url, register
+from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
 def create_metadata(
@@ -79,4 +79,7 @@ META_ARRAY = ServiceDockerData.parse_obj(
     }
 )
 
-REGISTRY = register(META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY)
+
+services = FunctionServices()
+for m in (META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY):
+    services.add_function_service(meta=m)

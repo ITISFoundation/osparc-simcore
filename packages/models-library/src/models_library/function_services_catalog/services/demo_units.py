@@ -1,6 +1,6 @@
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, PC, create_fake_thumbnail_url, register
+from .._utils import OM, PC, FunctionServices, create_fake_thumbnail_url
 
 
 def build_input(schema):
@@ -197,4 +197,8 @@ META = ServiceDockerData.parse_obj(
 )
 
 
-REGISTRY = register(META, is_development_feature=True)
+services = FunctionServices()
+services.add_function_service(
+    meta=META,
+    is_under_development=True,
+)

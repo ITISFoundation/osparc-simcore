@@ -1,16 +1,22 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from collections import defaultdict
 
 import pytest
+from models_library.function_services_catalog._registry import (
+    FunctionServices,
+    FunctionServiceSettings,
+    catalog,
+)
 from models_library.function_services_catalog.api import (
     is_function_service,
     iter_service_docker_data,
 )
 from models_library.services import ServiceDockerData
+from pytest import MonkeyPatch
 
 
 @pytest.mark.parametrize(
@@ -34,3 +40,38 @@ def test_catalog_frontend_services_registry():
         versions_per_service[s.key].append(s.version)
 
     assert not any(len(v) > 1 for v in versions_per_service.values())
+
+
+def test_catalog_registry(monkeypatch: MonkeyPatch):
+    assert catalog._functions
+    assert catalog.settings
+
+    # with dev features
+    with monkeypatch.context() as patch:
+        patch.setenv("CATALOG_DEV_FEATURES_ENABLED", "1")
+        patch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", "0")
+        patch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "0")
+
+        dev_catalog = FunctionServices(settings=FunctionServiceSettings())
+        dev_catalog.extend(catalog)
+
+        assert not dev_catalog.skip_dev()
+        assert dev_catalog._functions == catalog._functions
+
+    # without dev features
+    with monkeypatch.context() as patch:
+        patch.setenv("CATALOG_DEV_FEATURES_ENABLED", "0")
+        patch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", "0")
+        patch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "0")
+
+        prod_catalog = FunctionServices(settings=FunctionServiceSettings())
+        prod_catalog.extend(catalog)
+
+        assert prod_catalog.skip_dev()
+        assert prod_catalog._functions == catalog._functions
+
+        prod_services = set(prod_catalog.iter_services_key_version())
+        dev_services = set(dev_catalog.iter_services_key_version())
+
+        assert len(prod_services) < len(dev_services)
+        assert prod_services.issubset(dev_services)

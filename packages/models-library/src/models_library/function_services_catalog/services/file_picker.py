@@ -2,7 +2,7 @@ from typing import Final
 
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, register
+from .._utils import OM, FunctionServices
 
 META: Final = ServiceDockerData.parse_obj(
     {
@@ -29,4 +29,7 @@ META: Final = ServiceDockerData.parse_obj(
 )
 
 
-REGISTRY = register(META)
+services = FunctionServices()
+services.add_function_service(
+    meta=META,
+)
