@@ -1,7 +1,7 @@
-FROM python:3.8.12-buster
+FROM python:3.9.12-buster
 
 RUN curl https://rclone.org/install.sh | bash && \
-    rclone --version
+  rclone --version
 
 WORKDIR /scripts
 
@@ -12,4 +12,3 @@ COPY scripts/maintenance/migrate_project/requirements.txt /scripts/requirements.
 RUN pip install -r /scripts/requirements.txt
 
 COPY scripts/maintenance/migrate_project/src/*.py /scripts/
-

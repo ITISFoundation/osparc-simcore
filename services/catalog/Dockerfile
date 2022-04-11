@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.8.10"
+ARG PYTHON_VERSION="3.9.12"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #
@@ -20,17 +20,17 @@ RUN set -eux && \
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-    SC_USER_NAME=scu \
-    SC_BUILD_TARGET=base \
-    SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser \
-    --uid ${SC_USER_ID} \
-    --disabled-password \
-    --gecos "" \
-    --shell /bin/sh \
-    --home /home/${SC_USER_NAME} \
-    ${SC_USER_NAME}
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
 
 # Sets utf-8 encoding for Python et al
@@ -38,7 +38,7 @@ ENV LANG=C.UTF-8
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
@@ -57,19 +57,19 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip install --no-cache-dir --upgrade \
-    pip~=22.0  \
-    wheel \
-    setuptools
+  pip~=22.0  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -95,7 +95,7 @@ COPY --chown=scu:scu services/catalog /build/services/catalog
 WORKDIR /build/services/catalog
 
 RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
-    pip3 --no-cache-dir list -v
+  pip3 --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -108,7 +108,7 @@ RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-    SC_BOOT_MODE=production
+  SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
 
@@ -123,10 +123,10 @@ RUN chmod +x services/catalog/docker/*.sh
 
 
 HEALTHCHECK --interval=30s \
-    --timeout=20s \
-    --start-period=30s \
-    --retries=3 \
-    CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
+  --timeout=20s \
+  --start-period=30s \
+  --retries=3 \
+  CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/catalog/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/catalog/docker/boot.sh"]
