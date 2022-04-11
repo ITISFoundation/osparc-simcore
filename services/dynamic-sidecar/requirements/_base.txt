@@ -177,8 +177,19 @@ packaging==21.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pamqp==2.3.0
     # via aiormq
-paramiko==2.7.2
-    # via docker
+paramiko==2.10.3
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
 psycopg2-binary==2.9.1
     # via
     #   aiopg
@@ -252,6 +263,7 @@ six==1.16.0
     #   bcrypt
     #   dockerpty
     #   jsonschema
+    #   paramiko
     #   pynacl
     #   thrift
     #   websocket-client
