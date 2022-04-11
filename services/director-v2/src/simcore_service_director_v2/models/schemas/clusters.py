@@ -44,6 +44,17 @@ class Worker(BaseModel):
     memory_limit: ByteSize
     metrics: WorkerMetrics
 
+    @validator("used_resources", pre=True)
+    @classmethod
+    def ensure_negative_value_is_zero(cls, v):
+        # dasks adds/remove resource values and sometimes
+        # they end up being negative instead of 0
+        if v is not None:
+            for res_key, res_value in v.items():
+                if res_value < 0:
+                    v[res_key] = 0
+        return v
+
 
 class WorkersDict(DictModel[AnyUrl, Worker]):
     ...
