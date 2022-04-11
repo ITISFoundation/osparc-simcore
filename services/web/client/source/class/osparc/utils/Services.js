@@ -93,7 +93,7 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getSorting(type) {
+    getSorting: function(type) {
       const typeInfo = this.getType(type);
       if (typeInfo) {
         return typeInfo["sorting"];
@@ -288,6 +288,10 @@ qx.Class.define("osparc.utils.Services", {
 
     getParameterMetadata: function(type) {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
+    },
+
+    getProbeMetadata: function(type) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
     getNodesGroup: function() {

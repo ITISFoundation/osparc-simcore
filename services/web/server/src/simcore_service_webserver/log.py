@@ -9,6 +9,14 @@ from aiohttp.log import access_logger
 from servicelib.logging_utils import config_all_loggers
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+NOISY_LOGGERS = (
+    "engineio",
+    "openapi_spec_validator",
+    "sqlalchemy",
+    "sqlalchemy.engine",
+    "inotify.adapters",
+    "servicelib.aiohttp.monitoring",
+)
 
 
 def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = None):
@@ -27,11 +35,8 @@ def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = No
         min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
     )
 
-    logging.getLogger("engineio").setLevel(quiet_level)
-    logging.getLogger("openapi_spec_validator").setLevel(quiet_level)
-    logging.getLogger("sqlalchemy").setLevel(quiet_level)
-    logging.getLogger("sqlalchemy.engine").setLevel(quiet_level)
-    logging.getLogger("inotify.adapters").setLevel(quiet_level)
+    for name in NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
 
     if slow_duration:
         # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning

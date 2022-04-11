@@ -746,7 +746,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
-      this.getControlLink(toPortId).setEnabled(false);
+      const ctrlLink = this.getControlLink(toPortId);
+      ctrlLink.setEnabled(false);
       this._form.getControl(toPortId)["link"] = {
         nodeUuid: fromNodeId,
         output: fromPortId
@@ -756,9 +757,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const fromNode = workbench.getNode(fromNodeId);
       const port = fromNode.getOutput(fromPortId);
       const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", this.getControlLink(toPortId), "value", {
+      fromNode.bind("label", ctrlLink, "value", {
         converter: label => label + ": " + fromPortLabel
       });
+      // Hack: Show tooltip if element is disabled
+      const addToolTip = () => {
+        ctrlLink.getContentElement().removeAttribute("title");
+        const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
+        ctrlLink.getContentElement().setAttribute("title", toolTipText);
+      };
+      fromNode.addListener("changeLabel", () => addToolTip());
+      addToolTip();
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 

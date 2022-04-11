@@ -156,7 +156,7 @@ def _default_app_config_for_integration_tests(
 @pytest.fixture(scope="function")
 def app_config(
     _default_app_config_for_integration_tests: ConfigDict, unused_tcp_port_factory
-) -> Dict:
+) -> ConfigDict:
     """
     Swarm with integration stack already started
     This fixture can be safely modified during test since it is renovated on every call

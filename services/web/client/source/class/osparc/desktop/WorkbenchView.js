@@ -317,7 +317,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
         backgroundColor: primaryColumnBGColor,
-        hideRoot: true,
         allowGrowY: true,
         minHeight: 5
       });
@@ -651,10 +650,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, data => {
           const d = JSON.parse(data);
-          const studyId = d["project_id"];
-          if (studyId !== this.getStudy().getUuid()) {
-            return;
-          }
           this.getStudy().nodeUpdated(d);
         }, this);
       }
@@ -1025,7 +1020,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs);
+        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs).set({
+          offerProbes: true
+        });
         this.__outputsPage.add(nodeOutputs);
       }
 

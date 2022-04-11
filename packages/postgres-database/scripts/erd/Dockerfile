@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.8.10"
+ARG PYTHON_VERSION="3.9.12"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 RUN apt-get update \
@@ -22,7 +22,7 @@ RUN pip --no-cache-dir install --upgrade \
 
 # devenv
 RUN pip install --no-cache-dir \
-    pyparsing \
-    pydot \
-    eralchemy \
-    sqlalchemy_schemadisplay
+  pyparsing \
+  pydot \
+  eralchemy \
+  sqlalchemy_schemadisplay

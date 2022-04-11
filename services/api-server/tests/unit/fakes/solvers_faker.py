@@ -1,11 +1,11 @@
 from dataclasses import dataclass
+from importlib.resources import files
 from pathlib import Path
 from typing import Callable, Dict, Iterator, Tuple
 
 import packaging.version
 import yaml
 from fastapi import HTTPException, status
-from importlib_resources import files
 from models_library.services import ServiceDockerData
 from simcore_service_api_server.models.schemas.solvers import (
     LATEST_VERSION,

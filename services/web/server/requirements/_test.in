@@ -7,13 +7,21 @@
 #
 --constraint _base.txt
 
-# testing
 
-# fixtures
-hypothesis
+aioresponses
+alembic
+click
+codecov
 coverage
+coveralls
+docker
 Faker
 flaky
+hypothesis
+jsonschema
+openapi-spec-validator
+ptvsd
+pylint
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -23,21 +31,7 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-
-# helpers
-aioresponses
-alembic
-click
-docker
-jsonschema
-openapi-spec-validator
 python-dotenv
 redis
 tenacity
 websockets
-
-# tools
-codecov
-coveralls
-ptvsd
-pylint

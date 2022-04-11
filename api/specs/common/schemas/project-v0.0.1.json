@@ -513,6 +513,23 @@
                       ]
                     }
                   }
+                },
+                "marker": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "color"
+                  ],
+                  "properties": {
+                    "color": {
+                      "type": "string",
+                      "description": "Marker's color",
+                      "examples": [
+                        "#FF0000",
+                        "#0000FF"
+                      ]
+                    }
+                  }
                 }
               }
             }

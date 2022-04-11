@@ -183,15 +183,6 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-def computational_system_mock(mocker):
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value="",
-    )
-    return mock_fun
-
-
-@pytest.fixture
 async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
@@ -203,14 +194,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         return args[2]
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
+        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         side_effect=async_mock,
     )
     return MockedStorageSubsystem(mock, mock1)
@@ -361,7 +352,7 @@ async def redis_client(redis_service: RedisSettings):
     yield client
 
     await client.flushall()
-    await client.close()
+    await client.close(close_connection_pool=True)
 
 
 @pytest.fixture
@@ -376,7 +367,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close()
+    await client.close(close_connection_pool=True)
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:

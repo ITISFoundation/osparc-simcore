@@ -38,10 +38,14 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     getPortType: function(portsMetadata, portId) {
+      let portType = null;
       if (portId in portsMetadata) {
-        return portsMetadata[portId]["type"];
+        portType = portsMetadata[portId]["type"];
+        if (portType === "ref_contentSchema" && "contentSchema" in portsMetadata[portId]) {
+          portType = portsMetadata[portId]["contentSchema"]["type"];
+        }
       }
-      return null;
+      return portType;
     }
   }
 });

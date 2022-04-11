@@ -50,7 +50,7 @@ async def setup_redis_client(app: web.Application):
                     address, encoding="utf-8", decode_responses=True
                 )
                 if not await client.ping():
-                    await client.close()
+                    await client.close(close_connection_pool=True)
                     raise ConnectionError(f"Connection to {address!r} failed")
                 log.info(
                     "Connection to %s succeeded with %s [%s]",
@@ -76,10 +76,10 @@ async def setup_redis_client(app: web.Application):
 
     if client is not app[APP_CLIENT_REDIS_CLIENT_KEY]:
         log.critical("Invalid redis client in app")
-        await client.close()
+        await client.close(close_connection_pool=True)
     if client_lock_db is not app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]:
         log.critical("Invalid redis client for lock db in app")
-        await client_lock_db.close()
+        await client_lock_db.close(close_connection_pool=True)
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:

@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+import redis.exceptions
 
 
 class ProjectsException(Exception):
@@ -35,6 +36,12 @@ class ProjectNotFoundError(ProjectsException):
         self.project_uuid = project_uuid
 
 
+class ProjectDeleteError(ProjectsException):
+    def __init__(self, project_uuid, reason):
+        super().__init__(f"Failed to complete deletion of {project_uuid=}: {reason}")
+        self.project_uuid = project_uuid
+
+
 class NodeNotFoundError(ProjectsException):
     """Node was not found in project"""
 
@@ -42,3 +49,6 @@ class NodeNotFoundError(ProjectsException):
         super().__init__(f"Node {node_uuid} not found in project {project_uuid}")
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
+
+
+ProjectLockError = redis.exceptions.LockError

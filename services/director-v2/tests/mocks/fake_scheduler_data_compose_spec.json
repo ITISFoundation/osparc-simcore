@@ -1,0 +1,55 @@
+{
+    "paths_mapping": {
+        "inputs_path": "/home/smu/work/inputs",
+        "outputs_path": "/home/smu/work/outputs",
+        "state_paths": [
+            "/home/smu/work/workspace"
+        ],
+        "state_exclude": null
+    },
+    "compose_spec": "{\"version\": \"2.3\", \"services\": {\"rt-web-dy\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life-dy:${SERVICE_VERSION}\", \"init\": true, \"depends_on\": [\"s4l-core\"]}, \"s4l-core\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core-dy:${SERVICE_VERSION}\", \"runtime\": \"nvidia\", \"init\": true, \"environment\": [\"DISPLAY=\"], \"volumes\": [\"/tmp/.X11-unix:/tmp/.X11-unix\"]}, \"sym-server\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/sym-server:${SERVICE_VERSION}\", \"init\": true}}}",
+    "container_http_entry": "rt-web-dy",
+    "restart_policy": "no-restart",
+    "key": "simcore/services/dynamic/sim4life-dy",
+    "version": "2.0.3",
+    "user_id": 1,
+    "project_id": "536e7ed8-b4df-11ec-9a17-02420a000016",
+    "node_uuid": "dd2b8ceb-4408-4bfb-a953-46178836e12d",
+    "service_name": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
+    "dynamic_sidecar": {
+        "status": {
+            "current": "ok",
+            "info": ""
+        },
+        "hostname": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
+        "port": 8000,
+        "is_available": false,
+        "was_compose_spec_submitted": false,
+        "containers_inspect": [
+            {
+                "status": "running",
+                "name": "/dy-sidecar-3e68d1f6-be3e-414e-a468-4a2bf415f756-0-container",
+                "id": "c2f5f363cfa1bd4d16beb2086d2b7573fd4ebfb4fcf72bc7cda235efaaf5540b"
+            }
+        ],
+        "was_dynamic_sidecar_started": true,
+        "were_services_created": false,
+        "is_project_network_attached": false,
+        "service_environment_prepared": false,
+        "service_removal_state": {
+            "can_remove": false,
+            "can_save": null,
+            "was_removed": false
+        },
+        "dynamic_sidecar_id": "mz4vljrbwcnj6ffoiu7rozkqb",
+        "dynamic_sidecar_network_id": "4unrsnpwn5h7y0xa69oot8rda",
+        "swarm_network_id": "viqys7lieb0zjqoj00h0w5662",
+        "swarm_network_name": "master-simcore_interactive_services_subnet"
+    },
+    "dynamic_sidecar_network_name": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
+    "simcore_traefik_zone": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
+    "service_port": "80",
+    "request_dns": "localhost",
+    "request_scheme": "http",
+    "proxy_service_name": "dy-proxy_dd2b8ceb-4408-4bfb-a953-46178836e12d"
+}

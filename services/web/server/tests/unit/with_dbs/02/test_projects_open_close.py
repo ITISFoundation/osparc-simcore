@@ -13,7 +13,7 @@ from unittest.mock import call
 import pytest
 import socketio
 from _helpers import ExpectedResponse, standard_role_response
-from aiohttp import web
+from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from models_library.projects_access import Owner
 from models_library.projects_state import (
@@ -28,7 +28,7 @@ from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.projects_handlers import (
+from simcore_service_webserver.projects.projects_handlers_crud import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -285,13 +285,11 @@ async def _assert_project_state_updated(
         handler.reset_mock()
 
 
-async def _delete_project(
-    client, project: Dict, expected: Type[web.HTTPException]
-) -> None:
+async def _delete_project(client, project: Dict) -> ClientResponse:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
-    await assert_status(resp, expected)
+    return resp
 
 
 # TESTS ----------------------------------------------------------------------------------------------------
@@ -361,10 +359,12 @@ async def test_share_project(
             expected.ok if share_rights["write"] else expected.forbidden,
         )
         # user 2 can only delete projects if user 2 has delete access
-        await _delete_project(
-            client,
-            new_project,
-            expected.no_content if share_rights["delete"] else expected.forbidden,
+        resp = await _delete_project(client, new_project)
+        await assert_status(
+            resp,
+            expected_cls=expected.no_content
+            if share_rights["delete"]
+            else expected.forbidden,
         )
 
 
@@ -573,7 +573,7 @@ async def test_project_node_lifetime(
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects.projects_handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
 
