@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import logging
-from distutils.util import strtobool
 from typing import Dict, Iterator
 
 import pytest
@@ -12,6 +11,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
+from pydantic import parse_obj_as
 from tenacity import Retrying
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
@@ -50,7 +50,7 @@ def minio_config(
             "endpoint": f"{get_localhost_ip()}:{get_service_published_port('minio')}",
             "access_key": testing_environ_vars["S3_ACCESS_KEY"],
             "secret_key": testing_environ_vars["S3_SECRET_KEY"],
-            "secure": strtobool(testing_environ_vars["S3_SECURE"]) != 0,
+            "secure": parse_obj_as(bool, testing_environ_vars["S3_SECURE"]),
         },
         "bucket_name": testing_environ_vars["S3_BUCKET_NAME"],
     }

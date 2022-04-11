@@ -3,11 +3,11 @@ import inspect
 import logging
 from copy import deepcopy
 from datetime import datetime
-from distutils.util import strtobool
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
 
 from aiohttp import web
+from pydantic import parse_obj_as
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
@@ -89,7 +89,7 @@ def _is_addon_enabled_from_config(
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
-                return strtobool(f"{searched_config.get(part, True)}")
+                return parse_obj_as(bool, searched_config.get(part, True))
             searched_config = searched_config[part]
 
     except KeyError as ee:
