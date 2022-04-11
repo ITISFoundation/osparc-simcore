@@ -97,6 +97,17 @@ class FunctionServices:
 
     def get_implementation(
         self, service_key: ServiceKey, service_version: ServiceVersion
-    ):
+    ) -> Optional[Callable]:
+        # raises KeyError if not found
         func = self._functions[(service_key, service_version)]
         return func.implementation
+
+    def get_metadata(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceDockerData:
+        # raises KeyError if not found
+        func = self._functions[(service_key, service_version)]
+        return func.meta
+
+    def __len__(self):
+        return len(self._functions)

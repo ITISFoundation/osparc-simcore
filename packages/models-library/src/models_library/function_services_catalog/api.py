@@ -9,19 +9,15 @@
 from typing import Iterator, Tuple
 
 from ..services import ServiceDockerData
-from . import _registry
-from ._key_labels import (
-    FUNCTION_SERVICE_KEY_PREFIX,
-    is_function_service,
-    is_iterator_service,
-)
+from ._key_labels import is_function_service, is_iterator_service
+from ._registry import catalog
 
-assert FUNCTION_SERVICE_KEY_PREFIX  # nosec
+assert catalog  # nosec
 assert is_iterator_service  # nosec
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for meta_obj in _registry.catalog.iter_metadata():
+    for meta_obj in catalog.iter_metadata():
         # NOTE: the originals are this way not modified from outside
         copied_meta_obj = meta_obj.copy(deep=True)
         assert is_function_service(copied_meta_obj.key)  # nosec
@@ -29,7 +25,7 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
 
 
 __all__: Tuple[str, ...] = (
-    "FUNCTION_SERVICE_KEY_PREFIX",
+    "catalog",
     "is_function_service",
     "is_iterator_service",
     "iter_service_docker_data",
