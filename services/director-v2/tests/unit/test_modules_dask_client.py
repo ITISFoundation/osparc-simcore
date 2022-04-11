@@ -145,10 +145,10 @@ async def create_dask_client_from_scheduler(
         )
         assert not client._subscribed_tasks
 
-        assert client.dask_subsystem.client
-        assert not client.dask_subsystem.gateway
-        assert not client.dask_subsystem.gateway_cluster
-        scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
+        assert client.backend.client
+        assert not client.backend.gateway
+        assert not client.backend.gateway_cluster
+        scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
         print(
             f"--> Connected to scheduler via client {client=} to scheduler {scheduler_infos=}"
         )
@@ -186,16 +186,16 @@ async def create_dask_client_from_gateway(
         )
         assert not client._subscribed_tasks
 
-        assert client.dask_subsystem.client
-        assert client.dask_subsystem.gateway
-        assert client.dask_subsystem.gateway_cluster
+        assert client.backend.client
+        assert client.backend.gateway
+        assert client.backend.gateway_cluster
 
-        scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
-        print(f"--> Connected to gateway {client.dask_subsystem.gateway=}")
-        print(f"--> Cluster {client.dask_subsystem.gateway_cluster=}")
+        scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
+        print(f"--> Connected to gateway {client.backend.gateway=}")
+        print(f"--> Cluster {client.backend.gateway_cluster=}")
         print(f"--> Client {client=}")
         print(
-            f"--> Cluster dashboard link {client.dask_subsystem.gateway_cluster.dashboard_link}"
+            f"--> Cluster dashboard link {client.backend.gateway_cluster.dashboard_link}"
         )
         created_clients.append(client)
         return client
@@ -231,6 +231,7 @@ def node_id() -> NodeID:
 class ImageParams:
     image: Image
     expected_annotations: Dict[str, Any]
+    expected_used_resources: Dict[str, Any]
     fake_tasks: Dict[NodeID, Image]
 
 
@@ -250,6 +251,10 @@ def cpu_image(node_id: NodeID) -> ImageParams:
                 "CPU": 1.0,
                 "RAM": 128 * 1024 * 1024,
             }
+        },
+        expected_used_resources={
+            "CPU": 1.0,
+            "RAM": 128 * 1024 * 1024.0,
         },
         fake_tasks={node_id: image},
     )
@@ -273,6 +278,11 @@ def gpu_image(node_id: NodeID) -> ImageParams:
                 "RAM": 256 * 1024 * 1024,
             },
         },
+        expected_used_resources={
+            "CPU": 1.0,
+            "GPU": 1.0,
+            "RAM": 256 * 1024 * 1024.0,
+        },
         fake_tasks={node_id: image},
     )
 
@@ -294,6 +304,11 @@ def mpi_image(node_id: NodeID) -> ImageParams:
                 "MPI": 1.0,
                 "RAM": 128 * 1024 * 1024,
             },
+        },
+        expected_used_resources={
+            "CPU": 2.0,
+            "MPI": 1.0,
+            "RAM": 128 * 1024 * 1024.0,
         },
         fake_tasks={node_id: image},
     )
@@ -335,7 +350,7 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
     def test_fct_add(x: int, y: int) -> int:
         return x + y
 
-    future = dask_client.dask_subsystem.client.submit(test_fct_add, 2, 5)
+    future = dask_client.backend.client.submit(test_fct_add, 2, 5)
     assert future
 
     result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
@@ -356,7 +371,7 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 
         raise asyncio.CancelledError("task was cancelled, but dask does not care...")
 
-    future = dask_client.dask_subsystem.client.submit(fct_that_raise_cancellation_error)
+    future = dask_client.backend.client.submit(fct_that_raise_cancellation_error)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
     # this goes through...
     # The day this is fixed, this test should detect it... SAN would be happy to know about it.
@@ -377,7 +392,7 @@ async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClie
 
         raise BaseException("task triggers a base exception, but dask does not care...")
 
-    future = dask_client.dask_subsystem.client.submit(fct_that_raise_base_exception)
+    future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
     # this goes through...
     # The day this is fixed, this test should detect it... SAN would be happy to know about it.
@@ -397,7 +412,7 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
     def fct_that_raise_exception():
         raise exc
 
-    future = dask_client.dask_subsystem.client.submit(fct_that_raise_exception)
+    future = dask_client.backend.client.submit(fct_that_raise_exception)
     # NOTE: Since asyncio.CancelledError does not work we define our own Exception derived cancellation
     task_exception = await future.exception(
         timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
@@ -555,14 +570,14 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert not distributed.Future(job_id).done()
 
     # as the task is published on the dask-scheduler when sending, it shall still be published on the dask scheduler
-    list_of_persisted_datasets = await dask_client.dask_subsystem.client.list_datasets()  # type: ignore
+    list_of_persisted_datasets = await dask_client.backend.client.list_datasets()  # type: ignore
     assert list_of_persisted_datasets
     assert isinstance(list_of_persisted_datasets, tuple)
     assert len(list_of_persisted_datasets) == 1
     assert job_id in list_of_persisted_datasets
     assert list_of_persisted_datasets[0] == job_id
     # get the persisted future from the scheduler back
-    task_future = await dask_client.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+    task_future = await dask_client.backend.client.get_dataset(name=job_id)  # type: ignore
     assert task_future
     assert isinstance(task_future, distributed.Future)
     assert task_future.key == job_id
@@ -730,7 +745,7 @@ async def test_missing_resource_send_computation_task(
 ):
 
     # remove the workers that can handle mpi
-    scheduler_info = dask_client.dask_subsystem.client.scheduler_info()
+    scheduler_info = dask_client.backend.client.scheduler_info()
     assert scheduler_info
     # find mpi workers
     workers_to_remove = [
@@ -738,7 +753,7 @@ async def test_missing_resource_send_computation_task(
         for worker_key, worker_info in scheduler_info["workers"].items()
         if "MPI" in worker_info["resources"]
     ]
-    await dask_client.dask_subsystem.client.retire_workers(workers=workers_to_remove)  # type: ignore
+    await dask_client.backend.client.retire_workers(workers=workers_to_remove)  # type: ignore
     await asyncio.sleep(5)  # a bit of time is needed so the cluster adapts
 
     # now let's adapt the task so it needs mpi
@@ -914,7 +929,7 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
 
     # let the remote fct run through now
-    start_event = Event(_DASK_EVENT_NAME, dask_client.dask_subsystem.client)
+    start_event = Event(_DASK_EVENT_NAME, dask_client.backend.client)
     await start_event.set()  # type: ignore
     # it will become successful hopefuly
     await _assert_wait_for_task_status(
@@ -1016,3 +1031,101 @@ async def test_dask_sub_handlers(
             )
             fake_task_handlers.task_log_handler.assert_called_with("my name is logs")
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
+
+
+async def test_get_cluster_details(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    image_params: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    faker: Faker,
+):
+    cluster_details = await dask_client.get_cluster_details()
+    assert cluster_details
+
+    _DASK_EVENT_NAME = faker.pystr()
+    # send a fct that uses resources
+    def fake_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+        expected_annotations,
+    ) -> TaskOutputData:
+        # get the task data
+        worker = get_worker()
+        task = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        assert command == ["run"]
+        event = distributed.Event(_DASK_EVENT_NAME)
+        event.wait(timeout=25)
+
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=functools.partial(
+            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+        ),
+    )
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in image_params.fake_tasks
+
+    # check status goes to PENDING/STARTED
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.STARTED
+    )
+
+    # check we have one worker using the resources
+    # one of the workers should now get the job and use the resources
+    worker_with_the_task: Optional[AnyUrl] = None
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
+        with attempt:
+            cluster_details = await dask_client.get_cluster_details()
+            assert cluster_details
+            assert (
+                cluster_details.scheduler.workers
+            ), f"there are no workers in {cluster_details.scheduler=!r}"
+            for worker_url, worker_data in cluster_details.scheduler.workers.items():
+                if all(
+                    worker_data.used_resources.get(res_name) == res_value
+                    for res_name, res_value in image_params.expected_used_resources.items()
+                ):
+                    worker_with_the_task = worker_url
+            assert (
+                worker_with_the_task is not None
+            ), f"there is no worker in {cluster_details.scheduler.workers.keys()=} consuming {image_params.expected_annotations=!r}"
+
+    # using the event we let the remote fct continue
+    event = distributed.Event(_DASK_EVENT_NAME)
+    await event.set()  # type: ignore
+
+    # wait for the task to complete
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.SUCCESS
+    )
+
+    # check the resources are released
+    cluster_details = await dask_client.get_cluster_details()
+    assert cluster_details
+    assert cluster_details.scheduler.workers
+    assert worker_with_the_task
+    currently_used_resources = cluster_details.scheduler.workers[
+        worker_with_the_task
+    ].used_resources
+
+    assert all(res == 0.0 for res in currently_used_resources.values())

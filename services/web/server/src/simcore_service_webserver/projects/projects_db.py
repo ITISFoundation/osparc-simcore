@@ -12,7 +12,7 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -21,24 +21,19 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
-from models_library.projects import ProjectAtDB, ProjectIDStr
+from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.webserver_models import ProjectType, projects
-
-# TODO: test all function return schema-compatible data
-# TODO: is user_id str or int?
-# TODO: systemaic user_id, project
-# TODO: rename add_projects by create_projects
-# FIXME: not clear when data is schema-compliant and db-compliant
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..users_exceptions import UserNotFoundError
 from ..utils import format_datetime, now_str
+from .project_models import ProjectDict, ProjectProxy
 from .projects_exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
@@ -61,9 +56,9 @@ class ProjectAccessRights(Enum):
 
 
 def _check_project_permissions(
-    project: Dict[str, Any],
+    project: Union[ProjectProxy, ProjectDict],
     user_id: int,
-    user_groups: List[Dict[str, Any]],
+    user_groups: List[RowProxy],
     permission: str,
 ) -> None:
     if not permission:
@@ -762,6 +757,21 @@ class ProjectDBAPI:
                     projects.delete().where(projects.c.uuid == project_uuid)
                 )
 
+    async def check_delete_project_permission(self, user_id: int, project_uuid: str):
+        """
+        raises ProjectInvalidRightsError
+        """
+        async with self.engine.acquire() as conn:
+            async with conn.begin() as _transaction:
+                project = await self._get_project(
+                    conn, user_id, project_uuid, include_templates=True, for_update=True
+                )
+                # if we have delete access we delete the project
+                user_groups: List[RowProxy] = await self.__load_user_groups(
+                    conn, user_id
+                )
+                _check_project_permissions(project, user_id, user_groups, "delete")
+
     async def make_unique_project_uuid(self) -> str:
         """Generates a project identifier still not used in database
 
@@ -863,6 +873,15 @@ class ProjectDBAPI:
                 .where(projects.c.uuid == project_uuid)
             )
             return result.rowcount == 1
+
+    async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
+        async with self.engine.acquire() as conn:
+            stmt = (
+                projects.update()
+                .values(hidden=enabled)
+                .where(projects.c.uuid == f"{project_uuid}")
+            )
+            await conn.execute(stmt)
 
 
 def setup_projects_db(app: web.Application):

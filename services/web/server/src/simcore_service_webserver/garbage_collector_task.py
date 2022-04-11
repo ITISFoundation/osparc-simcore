@@ -15,7 +15,7 @@ from .garbage_collector_settings import GarbageCollectorSettings, get_plugin_set
 logger = logging.getLogger(__name__)
 
 
-GC_TASK_NAME = f"{__name__}.collect_garbage_periodically"
+GC_TASK_NAME = f"background-task.{__name__}.collect_garbage_periodically"
 GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
 
 

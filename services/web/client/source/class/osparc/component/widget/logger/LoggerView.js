@@ -202,9 +202,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       toolbar.add(logLevelSelectBox);
 
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
-      copyToClipboardButton.addListener("execute", e => {
-        this.__copyLogsToClipboard();
-      }, this);
+      copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
       toolbar.add(copyToClipboardButton);
 
       return toolbar;

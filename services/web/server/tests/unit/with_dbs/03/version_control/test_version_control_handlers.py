@@ -9,8 +9,9 @@ import aiohttp
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.projects import Project
+from models_library.projects import Project, ProjectID
 from models_library.rest_pagination import Page
+from models_library.users import UserID
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import API_VTAG as VX
@@ -57,7 +58,7 @@ async def assert_status_and_body(
 async def test_workflow(
     client: TestClient,
     user_project: ProjectDict,
-    do_update_user_project: Callable[[UUID], Awaitable],
+    request_update_project: Callable[[TestClient, UUID], Awaitable],
     director_v2_service_mock: None,
 ):
 
@@ -152,7 +153,7 @@ async def test_workflow(
     )
 
     # do some changes in project
-    await do_update_user_project(project.uuid)
+    await request_update_project(client, project.uuid)
 
     # CREATE new checkpoint
     resp = await client.post(
@@ -218,8 +219,9 @@ async def test_create_checkpoint_without_changes(
 
 async def test_delete_project_and_repo(
     client: TestClient,
-    project_uuid: UUID,
-    do_delete_user_project: Callable[[UUID], Awaitable],
+    user_id: UserID,
+    project_uuid: ProjectID,
+    request_delete_project: Callable[[TestClient, UUID], Awaitable],
 ):
 
     # CREATE a checkpoint
@@ -239,7 +241,16 @@ async def test_delete_project_and_repo(
     )
 
     # DELETE project -> projects_vc_*  deletion follow
-    await do_delete_user_project(project_uuid)
+    await request_delete_project(client, project_uuid)
+
+    # TMP fix here waits ------------
+    # FIXME: mark as deleted, still gets entrypoints!!
+    from simcore_service_webserver.projects import projects_api
+
+    delete_task = projects_api.get_delete_project_task(project_uuid, user_id)
+    assert delete_task
+    await delete_task
+    # --------------------------------
 
     # LIST empty
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")

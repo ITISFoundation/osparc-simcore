@@ -472,14 +472,14 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
     "flash": {
-      style: state => ({
-        padding: 10,
-        backgroundColor: "background-main-2",
+      style: () => ({
+        padding: 12,
+        backgroundColor: "background-main-3",
         decorator: "flash"
       })
     },
     "flash/badge": {
-      style: state => ({
+      style: () => ({
         decorator: "flash-badge"
       })
     },

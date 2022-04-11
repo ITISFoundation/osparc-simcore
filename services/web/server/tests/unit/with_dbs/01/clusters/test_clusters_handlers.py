@@ -187,7 +187,11 @@ async def test_get_cluster_details(
 @hypothesis.settings(
     # hypothesis does not play well with fixtures, hence the warning
     # it will create several tests but not replay the fixtures
-    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture]
+    suppress_health_check=[
+        hypothesis.HealthCheck.function_scoped_fixture,
+        hypothesis.HealthCheck.too_slow,
+    ],
+    deadline=None,
 )
 async def test_update_cluster(
     enable_dev_features: None,
@@ -231,7 +235,11 @@ async def test_delete_cluster(
 @hypothesis.settings(
     # hypothesis does not play well with fixtures, hence the warning
     # it will create several tests but not replay the fixtures
-    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture]
+    suppress_health_check=[
+        hypothesis.HealthCheck.function_scoped_fixture,
+        hypothesis.HealthCheck.too_slow,
+    ],
+    deadline=None,
 )
 async def test_ping_cluster(
     enable_dev_features: None,

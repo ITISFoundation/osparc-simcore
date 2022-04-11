@@ -378,6 +378,18 @@ properties:
                     description: The y position
                     example:
                       - '15'
+              marker:
+                type: object
+                additionalProperties: false
+                required:
+                  - color
+                properties:
+                  color:
+                    type: string
+                    description: Marker's color
+                    example:
+                      - '#FF0000'
+                      - '#0000FF'
         additionalProperties: true
       slideshow:
         type: object

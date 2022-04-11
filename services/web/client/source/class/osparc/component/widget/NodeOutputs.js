@@ -34,10 +34,13 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
   construct: function(node, ports) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(5, 5);
-    layout.setColumnFlex(1, 1);
-    layout.setColumnMaxWidth(1, 130);
-    this._setLayout(layout);
+    const grid = new qx.ui.layout.Grid(5, 5);
+    grid.setColumnMaxWidth(this.self().POS.NAME, 140);
+    grid.setColumnFlex(this.self().POS.VALUE, 1);
+    Object.keys(this.self().POS).forEach((_, idx) => {
+      grid.setColumnAlign(idx, "left", "middle");
+    });
+    this._setLayout(grid);
 
     this.set({
       node,
@@ -56,7 +59,17 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
     ports: {
       nullable: false,
       apply: "__populateLayout"
+    },
+
+    offerProbes: {
+      check: "Boolean",
+      init: false,
+      event: "changeOfferProbes"
     }
+  },
+
+  events: {
+    "probeRequested": "qx.event.type.Data"
   },
 
   statics: {
@@ -78,6 +91,9 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
       },
       UNIT: {
         col: 5
+      },
+      PROBE: {
+        col: 6
       }
     }
   },
@@ -86,9 +102,11 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
     __populateLayout: function() {
       this._removeAll();
 
-      const ports = Object.values(this.getPorts());
-      for (let i=0; i<ports.length; i++) {
-        const port = ports[i];
+      const ports = this.getPorts();
+      const portKeys = Object.keys(ports);
+      for (let i=0; i<portKeys.length; i++) {
+        const portKey = portKeys[i];
+        const port = ports[portKey];
 
         const name = new qx.ui.basic.Label(port.label).set({
           toolTipText: port.label
@@ -153,6 +171,24 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
         this._add(unit, {
           row: i,
           column: this.self().POS.UNIT.col
+        });
+
+        const probeBtn = new qx.ui.form.Button().set({
+          icon: osparc.utils.Services.TYPES["probe"].icon + "12",
+          height: 23,
+          focusable: false,
+          toolTipText: this.tr("Connects a Probe to this output")
+        });
+        this.bind("offerProbes", probeBtn, "visibility", {
+          converter: val => val ? "visible" : "excluded"
+        });
+        probeBtn.addListener("execute", () => this.getNode().fireDataEvent("probeRequested", {
+          portId: portKey,
+          nodeId: this.getNode().getNodeId()
+        }));
+        this._add(probeBtn, {
+          row: i,
+          column: this.self().POS.PROBE.col
         });
       }
     }

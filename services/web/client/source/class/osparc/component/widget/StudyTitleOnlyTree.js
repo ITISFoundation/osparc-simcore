@@ -18,19 +18,42 @@
 qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
   extend: osparc.component.widget.NodesTree,
 
+  construct: function() {
+    this.base(arguments, null, "label", "children");
+
+    this.set({
+      hideRoot: false
+    });
+  },
+
   members: {
+    // override
     populateTree: function() {
-      this.base(arguments);
-      this.getModel().getChildren().removeAll();
+      const data = this.__getStudyModelData();
+      const newModel = qx.data.marshal.Json.createModel(data, true);
+      this.setModel(newModel);
+      const study = this.getStudy();
       this.setDelegate({
-        ...this.getDelegate(),
+        ...this._getDelegate(study),
         createItem: () => {
           const studyTreeItem = new osparc.component.widget.NodeTreeItem();
-          studyTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
-          studyTreeItem.addListener("infoNode", e => this.__openStudyInfo());
+          studyTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
+          studyTreeItem.addListener("infoNode", () => this.__openStudyInfo());
           return studyTreeItem;
         }
       });
+    },
+
+    __getStudyModelData: function() {
+      const study = this.getStudy();
+      const data = {
+        label: study.getName(),
+        children: [],
+        sortingValue: 0,
+        id: study.getUuid(),
+        study
+      };
+      return data;
     },
 
     __openStudyInfo: function() {
@@ -43,7 +66,7 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
 
     selectStudyItem: function() {
       this.setSelection(new qx.data.Array([this.getModel()]));
-      this.fireDataEvent("nodeSelected", this.getModel().getNodeId());
+      this.fireDataEvent("nodeSelected", this.getModel().getId());
     }
   }
 });

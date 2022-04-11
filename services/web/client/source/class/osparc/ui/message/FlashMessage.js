@@ -12,6 +12,7 @@
 
    Authors:
      * Ignacio Pascual (ignapas)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -32,13 +33,16 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.set({
-      maxWidth: 340,
+      maxWidth: 350,
       allowStretchX: false,
       alignX: "center"
     });
 
     const badge = this.getChildControl("badge");
-    badge.setBackgroundColor(this.self().LOG_LEVEL_COLOR_MAP[level]);
+    badge.set({
+      source: this.self().LOG_LEVEL_COLOR_MAP[level].icon+"16",
+      textColor: this.self().LOG_LEVEL_COLOR_MAP[level].color
+    });
 
     if (message) {
       this.setMessage(message);
@@ -61,10 +65,22 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
 
   statics: {
     LOG_LEVEL_COLOR_MAP: {
-      "INFO": "blue",
-      "DEBUG": "yellow",
-      "WARNING": "orange",
-      "ERROR": "red"
+      "INFO": {
+        color: "ready-green",
+        icon: "@FontAwesome5Solid/check/"
+      },
+      "DEBUG": {
+        color: "warning-yellow",
+        icon: "@FontAwesome5Solid/info/"
+      },
+      "WARNING": {
+        color: "busy-orange",
+        icon: "@FontAwesome5Solid/exclamation-triangle/"
+      },
+      "ERROR": {
+        color: "failed-red",
+        icon: "@FontAwesome5Solid/exclamation-/"
+      }
     }
   },
 
@@ -77,6 +93,12 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "badge":
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
         case "message":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
@@ -88,16 +110,6 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           break;
         case "closebutton":
           control = new osparc.ui.basic.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
-            alignY: "middle"
-          });
-          this._add(control);
-          break;
-        case "badge":
-          control = new qx.ui.core.Widget().set({
-            height: 10,
-            width: 10,
-            allowStretchX: false,
-            allowStretchY: false,
             alignY: "middle"
           });
           this._add(control);
