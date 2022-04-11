@@ -94,11 +94,12 @@ def eval_sensitivity(
         yield (i, paramtestplus, paramtestminus)
 
 
-# @register_implementation(
-#    f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/sensitivity", "1.0.0"
-# )
-def _sensitivity_generator(**kwargs) -> Iterator[Outputs]:
-    for i, paramtestplus, paramtestminus in eval_sensitivity(**kwargs):
+def _sensitivity_generator(
+    paramrefs: List[float], paramdiff: List[float], diff_or_fact: bool
+) -> Iterator[Outputs]:
+    for i, paramtestplus, paramtestminus in eval_sensitivity(
+        paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
+    ):
         yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
 
 
