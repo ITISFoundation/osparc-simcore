@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -879,3 +880,9 @@ async def add_project_states_for_user(
         locked=lock_state, state=ProjectRunningState(value=running_state)
     ).dict(by_alias=True, exclude_unset=True)
     return project
+
+
+async def get_project_node_resources(
+    app: web.Application, project_id: ProjectID, node_id: NodeID
+):
+    raise NotImplementedError

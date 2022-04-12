@@ -7,6 +7,9 @@ import logging
 from typing import Dict, List, Union
 
 from aiohttp import web
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 
 from .. import director_v2_api
@@ -76,7 +79,6 @@ async def get_node(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-
         await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
@@ -95,6 +97,62 @@ async def get_node(request: web.Request) -> web.Response:
 
         # LEGACY-service NODE STATE
         return web.json_response({"data": reply["data"]}, dumps=json_dumps)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+
+
+@routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
+@login_required
+@permission_required("project.node.read")
+async def get_node_resources(request: web.Request) -> web.Response:
+    user_id: UserID = request[RQT_USERID_KEY]
+
+    try:
+        project_uuid = ProjectID(request.match_info["project_id"])
+        node_uuid = NodeID(request.match_info["node_id"])
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{project_uuid}",
+            user_id=user_id,
+            include_templates=True,
+        )
+
+        resources = await projects_api.get_project_node_resources(
+            request.app, project_id=project_uuid, node_id=node_uuid
+        )
+        return web.json_response({"data": resources}, dumps=json_dumps)
+
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+
+
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}/resources")
+@login_required
+@permission_required("project.node.write")
+async def replace_node_resources(request: web.Request) -> web.Response:
+    user_id: UserID = request[RQT_USERID_KEY]
+
+    try:
+        project_uuid = ProjectID(request.match_info["project_id"])
+        node_uuid = NodeID(request.match_info["node_id"])
+        body = await request.json()
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{project_uuid}",
+            user_id=user_id,
+            include_templates=True,
+        )
+
+        raise NotImplementedError
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
