@@ -6,7 +6,7 @@ import itertools
 from typing import Any, Dict
 
 import pytest
-from models_library.function_service import demo_units
+from models_library.function_services_catalog.services import demo_units
 from models_library.services import ServiceInput, ServiceOutput
 from pint import UnitRegistry
 from pydantic import Field, create_model

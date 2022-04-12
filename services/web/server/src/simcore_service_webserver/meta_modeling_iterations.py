@@ -19,10 +19,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
-from .meta_modeling_function_nodes import (
-    FUNCTION_SERVICE_TO_CALLABLE,
-    FUNCTION_SERVICES_CATALOG,
-)
+from . import meta_modeling_function_nodes
 from .meta_modeling_version_control import (
     CommitID,
     ProjectDict,
@@ -59,7 +56,9 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
-            node_def = FUNCTION_SERVICES_CATALOG[(node.key, node.version)]
+            node_def = meta_modeling_function_nodes.catalog.get_metadata(
+                node.key, node.version
+            )
             # save
             iterable_nodes_defs.append(node_def)
             iterable_nodes.append(node)
@@ -72,7 +71,9 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
         assert node.inputs  # nosec
         assert node_def.inputs  # nosec
 
-        node_call = FUNCTION_SERVICE_TO_CALLABLE[(node.key, node.version)]
+        node_call = meta_modeling_function_nodes.catalog.get_implementation(
+            node.key, node.version
+        )
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )
