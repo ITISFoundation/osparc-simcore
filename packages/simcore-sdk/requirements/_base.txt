@@ -27,9 +27,8 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.4.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
 charset-normalizer==2.0.12
