@@ -34,7 +34,7 @@ heapdict==1.0.1
     # via
     #   -c requirements/./_base.txt
     #   zict
-jinja2==2.11.3
+jinja2==3.1.1
     # via
     #   -c requirements/./_base.txt
     #   distributed
@@ -46,7 +46,7 @@ lz4==4.0.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/./_base.txt
     #   jinja2
@@ -54,7 +54,7 @@ msgpack==1.0.3
     # via
     #   -c requirements/./_base.txt
     #   distributed
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -63,11 +63,11 @@ partd==1.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-psutil==5.8.0
+psutil==5.9.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-pyparsing==2.4.7
+pyparsing==3.0.8
     # via
     #   -c requirements/./_base.txt
     #   packaging
@@ -76,10 +76,6 @@ pyyaml==5.4.1
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-six==1.15.0
-    # via
-    #   -c requirements/./_base.txt
-    #   packaging
 sortedcontainers==2.4.0
     # via
     #   -c requirements/./_base.txt
@@ -88,7 +84,7 @@ tblib==1.7.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-toolz==0.11.1
+toolz==0.11.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -98,11 +94,11 @@ tornado==6.1
     # via
     #   -c requirements/./_base.txt
     #   distributed
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/./_base.txt
     #   distributed
-zict==2.0.0
+zict==2.1.0
     # via
     #   -c requirements/./_base.txt
     #   distributed

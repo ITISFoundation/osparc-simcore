@@ -13,10 +13,3 @@
 #
 # Compatibility/coordination
 #
-
-# FIXME: for fastapi-based services this constraint is needed remove that when fastapi stops having it
-jinja2<3.0.0
-
-
-# allows to put files in the HTTP file system
-fsspec>=2021.10.1

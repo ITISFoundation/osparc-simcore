@@ -38,7 +38,7 @@ heapdict==1.0.1
     # via
     #   -c requirements/./_base.txt
     #   zict
-jinja2==2.11.3
+jinja2==3.1.1
     # via
     #   -c requirements/./_base.txt
     #   bokeh
@@ -52,7 +52,7 @@ lz4==4.0.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/./_base.txt
     #   jinja2
@@ -66,13 +66,13 @@ numpy==1.22.3
     #   bokeh
     #   dask
     #   pandas
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/./_base.txt
     #   bokeh
     #   dask
     #   distributed
-pandas==1.2.4
+pandas==1.4.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -80,23 +80,23 @@ partd==1.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-pillow==9.0.1
+pillow==9.1.0
     # via
     #   -c requirements/./_base.txt
     #   bokeh
-psutil==5.8.0
+psutil==5.9.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-pyparsing==2.4.7
+pyparsing==3.0.8
     # via
     #   -c requirements/./_base.txt
     #   packaging
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -c requirements/./_base.txt
     #   pandas
-pytz==2020.1
+pytz==2022.1
     # via
     #   -c requirements/./_base.txt
     #   pandas
@@ -106,10 +106,9 @@ pyyaml==5.4.1
     #   bokeh
     #   dask
     #   distributed
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/./_base.txt
-    #   packaging
     #   python-dateutil
 sortedcontainers==2.4.0
     # via
@@ -119,7 +118,7 @@ tblib==1.7.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-toolz==0.11.1
+toolz==0.11.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -130,15 +129,15 @@ tornado==6.1
     #   -c requirements/./_base.txt
     #   bokeh
     #   distributed
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   -c requirements/./_base.txt
     #   bokeh
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/./_base.txt
     #   distributed
-zict==2.0.0
+zict==2.1.0
     # via
     #   -c requirements/./_base.txt
     #   distributed

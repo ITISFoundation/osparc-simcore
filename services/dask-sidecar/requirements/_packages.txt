@@ -28,11 +28,11 @@ distributed==2022.4.0
     # via
     #   -c requirements/_base.txt
     #   dask
-dnspython==2.0.0
+dnspython==2.2.1
     # via
     #   -c requirements/_base.txt
     #   email-validator
-email-validator==1.1.1
+email-validator==1.1.3
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -44,11 +44,11 @@ heapdict==1.0.1
     # via
     #   -c requirements/_base.txt
     #   zict
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   email-validator
-jinja2==2.11.3
+jinja2==3.1.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -61,7 +61,7 @@ locket==0.2.1
     # via
     #   -c requirements/_base.txt
     #   partd
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -69,7 +69,7 @@ msgpack==1.0.3
     # via
     #   -c requirements/_base.txt
     #   distributed
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -78,7 +78,7 @@ partd==1.2.0
     # via
     #   -c requirements/_base.txt
     #   dask
-psutil==5.8.0
+psutil==5.9.0
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -94,11 +94,9 @@ pydantic==1.9.0
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-pyinstrument==3.4.2
+pyinstrument==4.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pyinstrument-cext==0.2.4
-    # via pyinstrument
-pyparsing==2.4.7
+pyparsing==3.0.8
     # via
     #   -c requirements/_base.txt
     #   packaging
@@ -114,11 +112,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   dask
     #   distributed
-six==1.15.0
-    # via
-    #   -c requirements/_base.txt
-    #   packaging
-    #   tenacity
 sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
@@ -127,9 +120,9 @@ tblib==1.7.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-tenacity==6.2.0
+tenacity==8.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-toolz==0.11.1
+toolz==0.11.2
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -139,12 +132,12 @@ tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   distributed
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   aiodebug
     #   pydantic
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -153,7 +146,7 @@ urllib3==1.26.7
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   distributed
-zict==2.0.0
+zict==2.1.0
     # via
     #   -c requirements/_base.txt
     #   distributed

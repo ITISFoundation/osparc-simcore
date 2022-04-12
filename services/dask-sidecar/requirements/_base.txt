@@ -24,32 +24,31 @@ aiohttp==3.8.1
     #   jupyter-server-proxy
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.2.0
+anyio==3.5.0
     # via jupyter-server
-argon2-cffi==20.1.0
+argon2-cffi==21.3.0
     # via jupyter-server
-async-generator==1.10
-    # via nbclient
-async-timeout==4.0.1
+argon2-cffi-bindings==21.2.0
+    # via argon2-cffi
+async-timeout==4.0.2
     # via aiohttp
-attrs==20.2.0
+attrs==21.4.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
-beautifulsoup4==4.10.0
+beautifulsoup4==4.11.1
     # via nbconvert
-bleach==3.3.0
+bleach==5.0.0
     # via nbconvert
 blosc==1.10.6
     # via -r requirements/_base.in
 bokeh==2.4.2
     # via dask
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
-cffi==1.14.5
-    # via argon2-cffi
-charset-normalizer==2.0.6
+cffi==1.15.0
+    # via argon2-cffi-bindings
+charset-normalizer==2.0.12
     # via
     #   aiohttp
     #   requests
@@ -59,7 +58,7 @@ cloudpickle==2.0.0
     # via
     #   dask
     #   distributed
-cytoolz==0.11.0
+cytoolz==0.11.2
     # via -r requirements/_base.in
 dask==2022.4.0
     # via
@@ -75,31 +74,31 @@ distributed==2022.4.0
     # via
     #   dask
     #   dask-gateway
-dnspython==2.0.0
+dnspython==2.2.1
     # via email-validator
-email-validator==1.1.1
+email-validator==1.1.3
     # via pydantic
-entrypoints==0.3
-    # via nbconvert
+entrypoints==0.4
+    # via
+    #   jupyter-client
+    #   nbconvert
 fastjsonschema==2.15.3
     # via nbformat
-frozenlist==1.2.0
+frozenlist==1.3.0
     # via
     #   aiohttp
     #   aiosignal
 fsspec==2022.3.0
-    # via
-    #   -c requirements/constraints.txt
-    #   dask
+    # via dask
 heapdict==1.0.1
     # via zict
-idna==2.10
+idna==3.3
     # via
     #   anyio
     #   email-validator
     #   requests
     #   yarl
-jinja2==2.11.3
+jinja2==3.1.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -107,7 +106,6 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/constraints.txt
     #   bokeh
     #   dask
     #   distributed
@@ -117,11 +115,11 @@ jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   nbformat
-jupyter-client==6.1.12
+jupyter-client==7.2.2
     # via
     #   jupyter-server
     #   nbclient
-jupyter-core==4.7.1
+jupyter-core==4.9.2
     # via
     #   jupyter-client
     #   jupyter-server
@@ -131,13 +129,13 @@ jupyter-server==1.16.0
     # via jupyter-server-proxy
 jupyter-server-proxy==3.2.1
     # via -r requirements/_base.in
-jupyterlab-pygments==0.1.2
+jupyterlab-pygments==0.2.1
     # via nbconvert
 locket==0.2.1
     # via partd
 lz4==4.0.0
     # via -r requirements/_base.in
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   jinja2
     #   nbconvert
@@ -145,51 +143,53 @@ mistune==0.8.4
     # via nbconvert
 msgpack==1.0.3
     # via distributed
-multidict==5.1.0
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-nbclient==0.5.3
+nbclient==0.5.13
     # via nbconvert
-nbconvert==6.4.5
+nbconvert==6.5.0
     # via jupyter-server
 nbformat==5.3.0
     # via
     #   jupyter-server
     #   nbclient
     #   nbconvert
-nest-asyncio==1.5.1
-    # via nbclient
+nest-asyncio==1.5.5
+    # via
+    #   jupyter-client
+    #   nbclient
 numpy==1.22.3
     # via
     #   -r requirements/_base.in
     #   bokeh
     #   dask
     #   pandas
-packaging==20.4
+packaging==21.3
     # via
-    #   bleach
     #   bokeh
     #   dask
     #   distributed
     #   jupyter-server
-pandas==1.2.4
+    #   nbconvert
+pandas==1.4.2
     # via
     #   -r requirements/_base.in
     #   dask
-pandocfilters==1.4.3
+pandocfilters==1.5.0
     # via nbconvert
 partd==1.2.0
     # via dask
-pillow==9.0.1
+pillow==9.1.0
     # via bokeh
-prometheus-client==0.11.0
+prometheus-client==0.14.1
     # via jupyter-server
-psutil==5.8.0
+psutil==5.9.0
     # via distributed
 ptyprocess==0.7.0
     # via terminado
-pycparser==2.20
+pycparser==2.21
     # via cffi
 pydantic==1.9.0
     # via
@@ -205,21 +205,19 @@ pydantic==1.9.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
-pygments==2.9.0
-    # via
-    #   jupyterlab-pygments
-    #   nbconvert
-pyparsing==2.4.7
+pygments==2.11.2
+    # via nbconvert
+pyparsing==3.0.8
     # via packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.1
     # via jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   jupyter-client
     #   pandas
-python-dotenv==0.19.0
+python-dotenv==0.20.0
     # via pydantic
-pytz==2020.1
+pytz==2022.1
     # via pandas
 pyyaml==5.4.1
     # via
@@ -234,24 +232,21 @@ pyyaml==5.4.1
     #   bokeh
     #   dask
     #   distributed
-pyzmq==22.1.0
+pyzmq==22.3.0
     # via
     #   jupyter-client
     #   jupyter-server
-requests==2.26.0
+requests==2.27.1
     # via -r requirements/_base.in
-send2trash==1.7.1
+send2trash==1.8.0
     # via jupyter-server
 simpervisor==0.4
     # via jupyter-server-proxy
-six==1.15.0
+six==1.16.0
     # via
-    #   argon2-cffi
     #   bleach
     #   jsonschema
-    #   packaging
     #   python-dateutil
-    #   websocket-client
 sniffio==1.2.0
     # via anyio
 sortedcontainers==2.4.0
@@ -260,11 +255,11 @@ soupsieve==2.3.2
     # via beautifulsoup4
 tblib==1.7.0
     # via distributed
-terminado==0.10.1
+terminado==0.13.3
     # via jupyter-server
-testpath==0.5.0
+tinycss2==1.1.1
     # via nbconvert
-toolz==0.11.1
+toolz==0.11.2
     # via
     #   cytoolz
     #   dask
@@ -285,13 +280,12 @@ traitlets==5.1.1
     #   nbclient
     #   nbconvert
     #   nbformat
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   aiodocker
-    #   async-timeout
     #   bokeh
     #   pydantic
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -302,12 +296,14 @@ urllib3==1.26.7
     #   distributed
     #   requests
 webencodings==0.5.1
-    # via bleach
-websocket-client==0.59.0
+    # via
+    #   bleach
+    #   tinycss2
+websocket-client==1.3.2
     # via jupyter-server
-yarl==1.6.3
+yarl==1.7.2
     # via aiohttp
-zict==2.0.0
+zict==2.1.0
     # via distributed
 
 # The following packages are considered to be unsafe in a requirements file:
