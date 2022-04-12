@@ -386,25 +386,6 @@ async def add_project_node(
     return node_uuid
 
 
-async def get_project_node(
-    request: web.Request, project_uuid: str, user_id: int, node_id: str
-):
-    log.debug(
-        "getting node %s in project %s for user %s", node_id, project_uuid, user_id
-    )
-
-    list_of_interactive_services = await director_v2_api.get_services(
-        request.app, project_id=project_uuid, user_id=user_id
-    )
-    # get the project if it is running
-    for service in list_of_interactive_services:
-        if service["service_uuid"] == node_id:
-            return service
-    # the service is not running, it's a computational service maybe
-    # TODO: find out if computational service is running if not throw a 404 since it's not around
-    return {"service_uuid": node_id, "service_state": "idle"}
-
-
 async def delete_project_node(
     request: web.Request, project_uuid: str, user_id: int, node_uuid: str
 ) -> None:
