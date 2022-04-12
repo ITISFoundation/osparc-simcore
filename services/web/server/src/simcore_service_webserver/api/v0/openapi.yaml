@@ -2707,6 +2707,40 @@ paths:
           description: Restarts containers started by the dynamic-sidecar
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/{node_id}/resources':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      description: Returns the node resources
+      operationId: get_node_resources
+      responses:
+        '200':
+          description: Returns the node needed resources.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:

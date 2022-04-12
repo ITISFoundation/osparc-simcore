@@ -1,0 +1,14 @@
+components:
+  schemas:
+    NodeResourcesEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/NodeResources"
+        error:
+          nullable: true
+          default: null
+    NodeResources:
+      type: object

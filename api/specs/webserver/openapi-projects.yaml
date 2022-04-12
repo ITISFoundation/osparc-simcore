@@ -401,6 +401,34 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/nodes/{node_id}/resources:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      description: Returns the node resources
+      operationId: get_node_resources
+      responses:
+        "200":
+          description: Returns the node needed resources.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeResourcesEnveloped"
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/{project_id}/nodes/{node_id}/retrieve:
     parameters:
       - name: project_id
@@ -558,6 +586,9 @@ components:
 
     RunningServiceEnveloped:
       $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+
+    NodeResourcesEnveloped:
+      $ref: "./components/schemas/node_resources.yaml#/components/schemas/NodeResourcesEnveloped"
 
     HTTPValidationError:
       title: HTTPValidationError
