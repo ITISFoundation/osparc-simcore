@@ -112,7 +112,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -162,7 +162,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -212,7 +212,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -299,7 +299,7 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -355,7 +355,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -411,7 +411,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -462,7 +462,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -518,7 +518,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -570,7 +570,7 @@ jobs:
         run: ./ci/github/unit-testing/dask-task-models-library.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -620,7 +620,7 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -672,7 +672,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -720,7 +720,7 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
     # no coverage here??
-    # - uses: codecov/codecov-action@v2.1.0
+    # - uses: codecov/codecov-action@v3.0.0
     #   with:
     #     flags: unittests #optional
 
@@ -797,7 +797,7 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -848,7 +848,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -898,7 +898,7 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -948,7 +948,7 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -998,7 +998,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1048,7 +1048,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1098,7 +1098,7 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
@@ -1164,7 +1164,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1230,7 +1230,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1296,7 +1296,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1365,7 +1365,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
@@ -1431,7 +1431,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v2.1.0
+      - uses: codecov/codecov-action@v3.0.0
         with:
           flags: integrationtests
       - name: prepare codeclimate coverage file
