@@ -76,7 +76,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
+      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
+        backgroundColor: "strong-main"
+      });
       loginBtn.addListener("execute", () => this.__login(), this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
