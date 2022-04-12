@@ -55,14 +55,14 @@ docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==13.3.3
+faker==13.3.4
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==2.10
     # via
@@ -109,7 +109,7 @@ pycparser==2.20
     #   cffi
 pyftpdlib==1.5.6
     # via pytest-localftpserver
-pylint==2.13.2
+pylint==2.13.5
     # via -r requirements/_test.in
 pyopenssl==22.0.0
     # via pytest-localftpserver

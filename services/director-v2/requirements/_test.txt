@@ -8,9 +8,9 @@ aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==9.4.0
+aioboto3==9.5.0
     # via -r requirements/_test.in
-aiobotocore==2.1.2
+aiobotocore==2.2.0
     # via aioboto3
 aiohttp==3.8.1
     # via
@@ -58,9 +58,9 @@ bcrypt==3.2.0
     # via paramiko
 bokeh==2.4.2
     # via -r requirements/_test.in
-boto3==1.20.24
+boto3==1.21.21
     # via aiobotocore
-botocore==1.23.24
+botocore==1.24.21
     # via
     #   aiobotocore
     #   boto3
@@ -124,7 +124,7 @@ docopt==0.6.2
     #   docker-compose
 execnet==1.9.0
     # via pytest-xdist
-faker==13.3.3
+faker==13.3.4
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -149,7 +149,7 @@ httpx==0.21.3
     # via
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==2.10
     # via
@@ -167,7 +167,7 @@ jinja2==2.11.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   bokeh
-jmespath==0.10.0
+jmespath==1.0.0
     # via
     #   boto3
     #   botocore
@@ -210,8 +210,10 @@ pamqp==2.3.0
     #   -c requirements/_base.txt
     #   aiormq
 paramiko==2.10.3
-    # via docker
-pillow==9.0.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
+pillow==9.1.0
     # via bokeh
 platformdirs==2.5.1
     # via pylint
@@ -229,7 +231,7 @@ py==1.11.0
     #   pytest-forked
 pycparser==2.21
     # via cffi
-pylint==2.13.2
+pylint==2.13.5
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -258,7 +260,7 @@ pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.11.0
+pytest-docker==0.12.0
     # via -r requirements/_test.in
 pytest-forked==1.4.0
     # via pytest-xdist

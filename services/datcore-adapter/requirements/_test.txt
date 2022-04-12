@@ -57,7 +57,7 @@ httpx==0.22.0
     # via
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==3.3
     # via
@@ -87,9 +87,9 @@ py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.13.4
+pylint==2.13.5
     # via -r requirements/_test.in
-pyparsing==3.0.7
+pyparsing==3.0.8
     # via packaging
 pytest==7.1.1
     # via

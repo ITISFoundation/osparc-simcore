@@ -82,7 +82,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==13.3.3
+faker==13.3.4
     # via -r requirements/_test.in
 greenlet==1.1.2
     # via
@@ -136,7 +136,10 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   pytest
 paramiko==2.10.3
-    # via docker
+    # via
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
 passlib==1.7.4
     # via -r requirements/_test.in
 platformdirs==2.5.1
@@ -153,7 +156,7 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.13.2
+pylint==2.13.5
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -176,7 +179,7 @@ pytest-asyncio==0.18.3
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.11.0
+pytest-docker==0.12.0
     # via -r requirements/_test.in
 pytest-mock==3.7.0
     # via -r requirements/_test.in

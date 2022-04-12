@@ -12,7 +12,7 @@ certifi==2021.10.8
     # via requests
 charset-normalizer==2.0.12
     # via requests
-click==8.0.4
+click==8.1.2
     # via -r requirements/_migration.in
 docker==5.0.3
     # via -r requirements/_migration.in
@@ -40,7 +40,7 @@ requests==2.27.1
     # via docker
 six==1.16.0
     # via websocket-client
-sqlalchemy==1.4.32
+sqlalchemy==1.4.35
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
