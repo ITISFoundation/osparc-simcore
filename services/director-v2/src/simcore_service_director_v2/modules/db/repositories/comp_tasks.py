@@ -34,9 +34,7 @@ logger = logging.getLogger(__name__)
 # Examples are nodes like file-picker or parameter/*
 #
 _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
-    meta.key: meta
-    for meta in iter_service_docker_data()
-    if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
+    meta.key: meta for meta in iter_service_docker_data()
 }
 
 

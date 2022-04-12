@@ -1,6 +1,6 @@
-from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import OM, PC, create_fake_thumbnail_url, register
-from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
+from .._utils import OM, PC, FunctionServices, create_fake_thumbnail_url
 
 
 def build_input(schema):
@@ -187,7 +187,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "radiation": build_input(
                 {
-                    "title": "Radiati0n", # it's not a typo
+                    "title": "Radiati0n",  # it's not a typo
                     "x_unit": "curie",
                     "type": "number",
                 }
@@ -197,5 +197,8 @@ META = ServiceDockerData.parse_obj(
 )
 
 
-# TODO: register ONLY when dev-feature is enabled
-REGISTRY = register(META)
+services = FunctionServices()
+services.add_function_service(
+    meta=META,
+    is_under_development=True,
+)
