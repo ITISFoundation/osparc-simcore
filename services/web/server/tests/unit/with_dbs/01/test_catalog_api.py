@@ -131,3 +131,22 @@ async def test_dag_entrypoints(
     )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_get_service_resources(
+    client,
+    logged_user,
+    api_version_prefix,
+    mock_catalog_service_api_responses,
+    expected,
+):
+    assert client.app.router
