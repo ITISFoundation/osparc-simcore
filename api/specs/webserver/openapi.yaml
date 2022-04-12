@@ -290,6 +290,8 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
   /catalog/services/{service_key}/{service_version}/outputs:match:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
+  /catalog/services/{service_key}/{service_version}/resources:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_resources"
 
   # CLUSTER -------------------------------------------------------------------------
   /clusters:ping:
