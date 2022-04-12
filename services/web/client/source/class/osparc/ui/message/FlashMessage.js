@@ -79,7 +79,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       },
       "ERROR": {
         color: "failed-red",
-        icon: "@FontAwesome5Solid/exclamation-/"
+        icon: "@FontAwesome5Solid/exclamation/"
       }
     }
   },
