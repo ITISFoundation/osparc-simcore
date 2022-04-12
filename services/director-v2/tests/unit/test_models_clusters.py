@@ -3,11 +3,15 @@ from typing import Any, Dict, Type
 
 import pytest
 from faker import Faker
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 from simcore_service_director_v2.models.schemas.clusters import (
+    AvailableResources,
     ClusterCreate,
     ClusterPatch,
     Scheduler,
+    UsedResources,
+    Worker,
+    WorkerMetrics,
     WorkersDict,
 )
 
@@ -52,3 +56,27 @@ def test_scheduler_constructor_with_no_workers_has_correct_dict(faker: Faker):
     scheduler = Scheduler(status=faker.text(), workers=None)
     assert isinstance(scheduler.workers, WorkersDict)
     assert len(scheduler.workers) == 0
+
+
+def test_worker_constructor_corrects_negative_used_resources(faker: Faker):
+    worker = Worker(
+        id=faker.pyint(min_value=1),
+        name=faker.name(),
+        resources=parse_obj_as(AvailableResources, {}),
+        used_resources=parse_obj_as(UsedResources, {"CPU": -0.0000234}),
+        memory_limit=faker.pyint(min_value=1),
+        metrics=parse_obj_as(
+            WorkerMetrics,
+            {
+                "cpu": faker.pyfloat(min_value=0),
+                "memory": faker.pyint(min_value=0),
+                "num_fds": faker.pyint(),
+                "ready": faker.pyint(min_value=0),
+                "executing": faker.pyint(min_value=0),
+                "in_flight": faker.pyint(min_value=0),
+                "in_memory": faker.pyint(min_value=0),
+            },
+        ),
+    )
+    assert worker
+    assert worker.used_resources["CPU"] == 0
