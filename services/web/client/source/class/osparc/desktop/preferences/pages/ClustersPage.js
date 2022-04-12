@@ -535,7 +535,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         return;
       }
 
-      delete accessRights[clusterMember["key"]];
+      accessRights[clusterMember["key"]] = {
+        "read": false,
+        "write": false,
+        "delete": false
+      };
       const params = {
         url: {
           "cid": this.__currentCluster.getKey()
