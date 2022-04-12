@@ -1,10 +1,12 @@
-from typing import Any, Dict, List
+from copy import deepcopy
+from typing import Any, Dict, Iterator, List, Tuple
 
+from models_library.projects_nodes import Outputs
 from pydantic import schema_of
 
-from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import EN, OM, create_fake_thumbnail_url, register
-from .constants import FUNCTION_SERVICE_KEY_PREFIX
+from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
+from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
 
@@ -61,4 +63,49 @@ META = ServiceDockerData.parse_obj(
     }
 )
 
-REGISTRY = register(META)
+
+def eval_sensitivity(
+    *,
+    paramrefs: List[float],
+    paramdiff: List[float],
+    diff_or_fact: bool,
+) -> Iterator[Tuple[int, List[float], List[float]]]:
+
+    # This code runs in the backend
+    assert len(paramrefs) == len(paramdiff)  # nosec
+
+    n_dims = len(paramrefs)
+
+    for i in range(n_dims):
+        paramtestplus = deepcopy(paramrefs)
+        paramtestminus = deepcopy(paramrefs)
+
+        # inc/dec one dimension at a time
+        if diff_or_fact:
+            paramtestplus[i] += paramdiff[i]
+        else:
+            paramtestplus[i] *= paramdiff[i]
+
+        if diff_or_fact:
+            paramtestminus[i] -= paramdiff[i]
+        else:
+            paramtestminus[i] /= paramdiff[i]  # check that not zero
+
+        yield (i, paramtestplus, paramtestminus)
+
+
+def _sensitivity_generator(
+    paramrefs: List[float], paramdiff: List[float], diff_or_fact: bool
+) -> Iterator[Outputs]:
+    for i, paramtestplus, paramtestminus in eval_sensitivity(
+        paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
+    ):
+        yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
+
+
+services = FunctionServices()
+services.add_function_service(
+    meta=META,
+    implementation=_sensitivity_generator,
+    is_under_development=True,
+)
