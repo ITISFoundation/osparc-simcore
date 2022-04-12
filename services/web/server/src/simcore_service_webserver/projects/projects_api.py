@@ -886,3 +886,9 @@ async def get_project_node_resources(
     app: web.Application, project_id: ProjectID, node_id: NodeID
 ):
     raise NotImplementedError
+
+
+async def set_project_node_resources(
+    app: web.Application, project_id: ProjectID, node_id: NodeID
+):
+    raise NotImplementedError

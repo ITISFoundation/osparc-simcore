@@ -132,7 +132,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 
 @routes.put(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}/resources")
 @login_required
-@permission_required("project.node.write")
+@permission_required("project.node.update")
 async def replace_node_resources(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
 
@@ -151,7 +151,11 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             include_templates=True,
         )
 
-        raise NotImplementedError
+        new_node_resources = await projects_api.set_project_node_resources(
+            request.app, project_id=project_uuid, node_id=node_uuid
+        )
+
+        return web.json_response({"data": new_node_resources}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
