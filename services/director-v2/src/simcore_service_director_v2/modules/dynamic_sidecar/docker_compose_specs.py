@@ -26,10 +26,10 @@ _NANO_UNIT: Final[int] = int(1e9)
 _MB: Final[int] = 1_048_576
 # defaults to use when these values are not defined or found
 # TODO: ANE -> SAN, PC: let's make these are sensible for when a service does not define them
-DEFAULT_RESERVATION_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
-DEFAULT_RESERVATION_MEMORY_BYTES: Final[int] = 100 * _MB
-DEFAULT_LIMIT_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
 DEFAULT_LIMIT_MEMORY_BYTES: Final[int] = 100 * _MB
+DEFAULT_LIMIT_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
+DEFAULT_RESERVATION_MEMORY_BYTES: Final[int] = 100 * _MB
+DEFAULT_RESERVATION_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
 assert DEFAULT_RESERVATION_NANO_CPUS <= DEFAULT_LIMIT_NANO_CPUS  # nosec
 assert DEFAULT_RESERVATION_MEMORY_BYTES <= DEFAULT_LIMIT_MEMORY_BYTES  # nosec
 
