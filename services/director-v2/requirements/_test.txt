@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==6.8.0
+aio-pika==7.1.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -21,7 +21,7 @@ aiohttp==3.8.1
     #   pytest-aiohttp
 aioitertools==0.10.0
     # via aiobotocore
-aiormq==3.3.1
+aiormq==6.2.3
     # via
     #   -c requirements/_base.txt
     #   aio-pika
@@ -29,11 +29,11 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.7.5
+alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.2.1
+anyio==3.5.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -47,7 +47,7 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -65,7 +65,7 @@ botocore==1.24.21
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2021.5.30
+certifi==2021.10.8
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -77,15 +77,12 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
-charset-normalizer==2.0.10
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   httpx
+    #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
@@ -141,17 +138,17 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.14.4
+httpcore==0.14.7
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.21.3
+httpx==0.22.0
     # via
     #   -c requirements/_base.txt
     #   respx
 icdiff==2.0.5
     # via pytest-icdiff
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -162,7 +159,7 @@ iniconfig==1.1.1
     # via pytest
 isort==5.10.1
     # via pylint
-jinja2==2.11.3
+jinja2==3.1.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -177,11 +174,11 @@ jsonschema==3.2.0
     #   docker-compose
 lazy-object-proxy==1.7.1
     # via astroid
-mako==1.1.5
+mako==1.2.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -192,7 +189,7 @@ minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -200,12 +197,12 @@ multidict==5.2.0
     #   yarl
 numpy==1.22.3
     # via bokeh
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   bokeh
     #   pytest
-pamqp==2.3.0
+pamqp==3.1.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
@@ -221,7 +218,7 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -235,7 +232,7 @@ pylint==2.13.5
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
-pyparsing==2.4.7
+pyparsing==3.0.8
     # via
     #   -c requirements/_base.txt
     #   packaging
@@ -276,7 +273,7 @@ python-dateutil==2.8.2
     # via
     #   botocore
     #   faker
-python-dotenv==0.18.0
+python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
@@ -286,7 +283,7 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   bokeh
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -296,19 +293,18 @@ requests==2.25.1
     #   docker-compose
 respx==0.19.2
     # via -r requirements/_test.in
-rfc3986==1.4.0
+rfc3986==1.5.0
     # via
     #   -c requirements/_base.txt
     #   httpx
 s3transfer==0.5.2
     # via boto3
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
     #   dockerpty
     #   jsonschema
-    #   packaging
     #   paramiko
     #   python-dateutil
     #   websocket-client
@@ -319,7 +315,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.31
+sqlalchemy==1.4.35
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -345,7 +341,7 @@ typing-extensions==4.1.1
     #   astroid
     #   bokeh
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

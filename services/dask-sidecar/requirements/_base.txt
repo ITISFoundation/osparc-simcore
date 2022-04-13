@@ -147,7 +147,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-nbclient==0.5.13
+nbclient==0.6.0
     # via nbconvert
 nbconvert==6.5.0
     # via jupyter-server

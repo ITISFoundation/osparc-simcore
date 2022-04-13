@@ -46,10 +46,8 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.4.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
@@ -60,7 +58,7 @@ certifi==2021.10.8
     # via minio
 charset-normalizer==2.0.12
     # via aiohttp
-click==8.0.4
+click==8.1.2
     # via typer
 dnspython==2.2.1
     # via email-validator
@@ -125,7 +123,7 @@ openapi-schema-validator==0.2.3
     # via openapi-spec-validator
 openapi-spec-validator==0.4.0
     # via openapi-core
-prometheus-client==0.13.1
+prometheus-client==0.14.1
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 psycopg2-binary==2.9.3
     # via
@@ -173,7 +171,7 @@ six==1.16.0
     #   jsonschema
     #   openapi-core
     #   python-dateutil
-sqlalchemy==1.4.32
+sqlalchemy==1.4.35
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -200,7 +198,7 @@ typing-extensions==4.1.1
     #   aiodebug
     #   aioitertools
     #   pydantic
-ujson==5.1.0
+ujson==5.2.0
     # via aiohttp-swagger
 urllib3==1.26.9
     # via
@@ -212,7 +210,7 @@ urllib3==1.26.9
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   minio
-werkzeug==2.0.3
+werkzeug==2.1.1
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.14.0
     # via aiobotocore

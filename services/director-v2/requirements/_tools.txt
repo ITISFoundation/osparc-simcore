@@ -49,7 +49,7 @@ pyyaml==5.4.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

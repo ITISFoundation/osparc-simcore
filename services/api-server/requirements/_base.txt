@@ -50,11 +50,8 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.4.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
 certifi==2021.10.8
@@ -69,7 +66,7 @@ charset-normalizer==2.0.12
     #   aiohttp
     #   httpx
     #   requests
-click==8.0.4
+click==8.1.2
     # via
     #   typer
     #   uvicorn
@@ -92,7 +89,7 @@ email-validator==1.1.3
     # via
     #   fastapi
     #   pydantic
-fastapi==0.75.0
+fastapi==0.75.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -199,7 +196,7 @@ pyinstrument==4.1.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.7
+pyparsing==3.0.8
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
@@ -244,7 +241,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.35
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -271,13 +268,13 @@ tenacity==8.0.1
     #   -r requirements/_base.in
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.15.0
+thrift==0.16.0
     # via jaeger-client
 tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-tqdm==4.63.1
+tqdm==4.64.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.1
     # via
@@ -306,7 +303,7 @@ uvicorn==0.15.0
     # via fastapi
 uvloop==0.16.0
     # via uvicorn
-watchgod==0.8.1
+watchgod==0.8.2
     # via uvicorn
 websockets==10.2
     # via uvicorn
