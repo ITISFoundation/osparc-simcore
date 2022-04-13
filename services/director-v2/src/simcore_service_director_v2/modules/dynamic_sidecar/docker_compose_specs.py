@@ -142,6 +142,12 @@ async def _inject_resource_limits_and_reservations(
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
 
     for spec_service_key, spec in service_spec["services"].items():
+        if spec_service_key not in labels_for_involved_services:
+            logger.info(
+                "No labels found for service %s, service may not be an osparc service",
+                spec_service_key,
+            )
+            continue
         labels = labels_for_involved_services[spec_service_key]
 
         settings_list: List[SimcoreServiceSettingLabelEntry] = labels.settings
