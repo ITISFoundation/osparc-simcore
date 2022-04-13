@@ -23,15 +23,24 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__populateClustersBox(selectClusterId);
+    if (selectClusterId === undefined) {
+      selectClusterId = 0;
+    }
+    this.__clusterId = selectClusterId;
+    this.__populateClustersLayout();
+    this.__addClusterWorkersLayout();
+    this.__startFetchingDetails();
   },
 
   members: {
     __clustersSelectBox: null,
-    __clusterDetails: null,
+    __clusterId: null,
+    __clusterWorkers: null,
 
-    __populateClustersBox: function(selectClusterId) {
-      const clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    __populateClustersLayout: function() {
+      const clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
 
       const clustersLabel = new qx.ui.basic.Label(this.tr("Connected clusters"));
       clustersLayout.add(clustersLabel);
@@ -42,31 +51,61 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       osparc.utils.Clusters.populateClustersSelectBox(selectBox);
       selectBox.addListener("changeSelection", e => {
         const clusterId = e.getData()[0].id;
-        this.__updateClusterDetails(clusterId);
+        this.__selectedClusterChanged(clusterId);
       }, this);
       clustersLayout.add(selectBox);
 
+      clustersLayout.add(new qx.ui.core.Spacer(10, null));
+
+      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status:"));
+      clustersLayout.add(clusterStatusLabel);
+
+      const clusterStatus = this.__clusterStatus = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/lightbulb/16"
+      });
+      clustersLayout.add(clusterStatus);
+
       this._add(clustersLayout);
-      if (selectClusterId === undefined) {
-        selectClusterId = 0;
-      }
+
       selectBox.getSelectables().forEach(selectable => {
-        if (selectable.id === selectClusterId) {
+        if (selectable.id === this.__clusterId) {
           selectBox.setSelection([selectable]);
         }
       });
-      this.__updateClusterDetails(selectClusterId);
     },
 
-    __updateClusterDetails: function(clusterId) {
-      if (this._getChildren().includes(this.__clusterDetails)) {
-        this._remove(this.__clusterDetails);
-        this.__clusterDetails.dispose();
-      }
-      const clusterDetailsView = this.__clusterDetails = new osparc.component.cluster.ClusterDetails(clusterId);
-      this._add(clusterDetailsView, {
+    __addClusterWorkersLayout: function() {
+      const clusterWorkers = this.__clusterWorkers = new osparc.component.cluster.ClusterWorkers();
+      this._add(clusterWorkers, {
         flex: 1
       });
+    },
+
+    __selectedClusterChanged: function(clusterId) {
+      osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
+      this.__clusterId = clusterId;
+      this.__startFetchingDetails();
+    },
+
+    __startFetchingDetails: function() {
+      const clusters = osparc.utils.Clusters.getInstance();
+      clusters.addListener("clusterDetailsReceived", e => {
+        const data = e.getData();
+        if (this.__clusterId === data.clusterId) {
+          if ("error" in data) {
+            this.__clusterStatus.setTextColor("failed-red");
+            this.__clusterWorkers.populateWorkersDetails(null);
+          } else {
+            this.__clusterStatus.setTextColor("ready-green");
+            this.__clusterWorkers.populateWorkersDetails(data.clusterDetails);
+          }
+        }
+      });
+      clusters.startFetchingDetails(this.__clusterId);
     }
+  },
+
+  destruct: function() {
+    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });
