@@ -1,23 +1,23 @@
 import json
-from copy import deepcopy
-from typing import Dict, List, Optional, Union, Any, Final
 import logging
+from copy import deepcopy
+from typing import Any, Dict, Final, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    PathMappingsLabel,
+    SimcoreServiceLabels,
+    SimcoreServiceSettingLabelEntry,
+)
 from settings_library.docker_registry import RegistrySettings
 
+from ...modules.director_v0 import DirectorV0Client
 from ._constants import CONTAINER_NAME
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 from .docker_service_specs.settings import get_labels_for_involved_services
 from .scheduler.events_utils import get_director_v0_client
-from ...modules.director_v0 import DirectorV0Client
-from ...api.dependencies.director_v0 import DirectorV0Client
-from models_library.service_settings_labels import (
-    SimcoreServiceLabels,
-    SimcoreServiceSettingLabelEntry,
-)
 
 EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
@@ -138,19 +138,11 @@ async def _inject_resource_limits_and_reservations(
         service_tag=service_tag,
     )
 
-    import json
-
-    logger.debug("Injecting resource limits and reservations")
-    logger.debug("%s", service_spec)
-    logger.debug(
-        "%s", {k: json.loads(v.json()) for k, v in labels_for_involved_services.items()}
-    )
-
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
 
-    for service_key, spec in service_spec["services"].items():
-        labels = labels_for_involved_services[service_key]
+    for spec_service_key, spec in service_spec["services"].items():
+        labels = labels_for_involved_services[spec_service_key]
 
         settings_list: List[SimcoreServiceSettingLabelEntry] = labels.settings
 
