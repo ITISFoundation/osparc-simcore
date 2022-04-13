@@ -381,13 +381,9 @@ def _assemble_env_vars_for_boot_options(
     )
 
 
-async def merge_settings_before_use(
-    director_v0_client: DirectorV0Client,
-    service_key: str,
-    service_tag: str,
-    service_user_selection_boot_options: Dict[EnvVarKey, str],
-) -> SimcoreServiceSettingsLabel:
-
+async def get_labels_for_involved_services(
+    director_v0_client: DirectorV0Client, service_key: str, service_tag: str
+) -> Dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service_key, version=service_tag)
@@ -409,6 +405,20 @@ async def merge_settings_before_use(
         service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+    return labels_for_involved_services
+
+
+async def merge_settings_before_use(
+    director_v0_client: DirectorV0Client,
+    service_key: str,
+    service_tag: str,
+    service_user_selection_boot_options: Dict[EnvVarKey, str],
+) -> SimcoreServiceSettingsLabel:
+    labels_for_involved_services = await get_labels_for_involved_services(
+        director_v0_client=director_v0_client,
+        service_key=service_key,
+        service_tag=service_tag,
+    )
 
     # merge the settings from the all the involved services
     settings: Deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
