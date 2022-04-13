@@ -299,7 +299,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
 
-        compose_spec = assemble_spec(
+        compose_spec = await assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
