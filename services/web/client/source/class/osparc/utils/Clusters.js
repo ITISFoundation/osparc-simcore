@@ -37,16 +37,16 @@ qx.Class.define("osparc.utils.Clusters", {
       osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 600);
     },
 
-    getResourcesAttribute: function(worker, attributeKey) {
-      if (attributeKey in worker.resources) {
-        return worker.resources[attributeKey];
+    getUsedResourcesAttribute: function(worker, attributeKey) {
+      if (attributeKey in worker["used_resources"]) {
+        return osparc.utils.Utils.toTwoDecimals(worker["used_resources"][attributeKey]);
       }
       return "-";
     },
 
-    getMetricsAttribute: function(worker, attributeKey) {
-      if (attributeKey in worker.metrics) {
-        return worker.metrics[attributeKey];
+    getAvailableResourcesAttribute: function(worker, attributeKey) {
+      if (attributeKey in worker.resources) {
+        return worker.resources[attributeKey];
       }
       return "-";
     },
@@ -54,17 +54,13 @@ qx.Class.define("osparc.utils.Clusters", {
     accumulateWorkersResources: function(workers, resource) {
       Object.keys(workers).forEach(workerUrl => {
         const worker = workers[workerUrl];
-        const available = this.getResourcesAttribute(worker, resource.resource);
+        const available = this.getAvailableResourcesAttribute(worker, resource.resource);
         if (available === "-") {
           return;
         }
         resource.available += available;
-        const used = this.getMetricsAttribute(worker, resource.metric);
-        if (resource.metric === "cpu") {
-          resource.used += osparc.utils.Utils.toTwoDecimals(used*available/100);
-        } else {
-          resource.used += used;
-        }
+        const used = this.getUsedResourcesAttribute(worker, resource.usedResource);
+        resource.used += used;
       });
     },
 
