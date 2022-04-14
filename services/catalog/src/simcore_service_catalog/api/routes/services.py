@@ -4,13 +4,19 @@ import asyncio
 import logging
 import urllib.parse
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from typing import Any, Deque, Dict, Final, List, Optional, Set, Tuple, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
+from models_library.services import (
+    ServiceKey,
+    ServiceResources,
+    ServiceType,
+    ServiceVersion,
+)
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_raw_as
 from pydantic.types import PositiveInt
 from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
@@ -22,6 +28,13 @@ from ...services.function_services import get_function_service, is_function_serv
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
+
+# @router.get(
+#     "/services/resources/default",
+#     response_model=ServiceResources,
+#     **RESPONSE_MODEL_POLICY,
+# )
+from ..dependencies.services import get_default_service_resources
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -182,6 +195,91 @@ async def list_services(
         ]
     )
     return [s for s in services_details if s is not None]
+
+
+SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
+
+
+@router.get(
+    "/{service_key:path}/{service_version}/resources",
+    response_model=ServiceResources,
+    **RESPONSE_MODEL_POLICY,
+)
+async def get_service_resources(
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    director_client: DirectorApi = Depends(get_director_api),
+    default_service_resources: ServiceResources = Depends(
+        get_default_service_resources
+    ),
+):
+    if is_function_service(service_key):
+        raise NotImplementedError
+
+    service_labels: Dict[str, Any] = cast(
+        Dict[str, Any],
+        await director_client.get(
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
+        ),
+    )
+    service_settings = parse_raw_as(
+        List[SimcoreServiceSettingLabelEntry],
+        service_labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+    )
+    logger.debug("received %s", f"{service_settings}")
+
+    def _from_service_settings(
+        settings: List[SimcoreServiceSettingLabelEntry],
+    ) -> ServiceResources:
+        # filter resource entries
+        resource_entries = filter(
+            lambda entry: entry.name.lower() == "resources", settings
+        )
+        # get the service resources
+        service_resources = default_service_resources.copy(
+            deep=True,
+        )
+        for entry in resource_entries:
+            if not isinstance(entry.value, dict):
+                logger.warning(
+                    "resource %s for %s got invalid type",
+                    f"{entry.dict()!r}",
+                    f"{service_key}:{service_version}",
+                )
+                continue
+            if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
+                service_resources.limits.cpu = nano_cpu_limit / 1.0e09
+            if nano_cpu_reservation := entry.value.get("Reservations", {}).get(
+                "NanoCPUs"
+            ):
+                service_resources.reservations.cpu = nano_cpu_reservation / 1.0e09
+            if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
+                service_resources.limits.ram = ram_limit
+            if ram_reservation := entry.value.get("Reservations", {}).get(
+                "MemoryBytes"
+            ):
+                service_resources.reservations.ram = ram_reservation
+
+            if generic_resources := entry.value.get("Reservations", {}).get(
+                "GenericResources", []
+            ):
+                for res in generic_resources:
+                    if not isinstance(res, dict):
+                        continue
+                    if named_resource_spec := res.get("NamedResourceSpec"):
+                        service_resources.reservations.generic[
+                            named_resource_spec["Kind"]
+                        ] = named_resource_spec["Value"]
+                    if discrete_resource_spec := res.get("DiscreteResourceSpec"):
+                        service_resources.reservations.generic[
+                            discrete_resource_spec["Kind"]
+                        ] = discrete_resource_spec["Value"]
+
+        return service_resources
+
+    service_resources = _from_service_settings(service_settings)
+    logger.debug("%s", f"{service_resources}")
+    return service_resources
 
 
 @router.get(

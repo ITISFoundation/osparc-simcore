@@ -3,7 +3,8 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from pydantic import Field, PositiveInt
+from models_library.services import GenericResources, Limitations, Reservations
+from pydantic import ByteSize, Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -21,6 +22,12 @@ class DirectorSettings(BaseCustomSettings):
     @cached_property
     def base_url(self) -> str:
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
+
+
+_DEFAULT_SERVICE_LIMITATIONS = Limitations(cpu=0.1, ram=ByteSize(2 * 1024**3))
+_DEFAULT_SERVICE_RESERVATIONS = Reservations(
+    **_DEFAULT_SERVICE_LIMITATIONS.dict(), generic=GenericResources(__root__={})
+)
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -51,3 +58,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME: str = "osparc"
 
     CATALOG_TRACING: Optional[TracingSettings] = None
+
+    CATALOG_SERVICES_DEFAULT_LIMITS: Limitations = _DEFAULT_SERVICE_LIMITATIONS
+    CATALOG_SERVICES_DEFAULT_RESERVATIONS: Reservations = _DEFAULT_SERVICE_RESERVATIONS
