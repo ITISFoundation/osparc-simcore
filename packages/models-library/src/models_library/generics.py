@@ -3,6 +3,7 @@ from typing import (
     Dict,
     Generic,
     ItemsView,
+    Iterable,
     Iterator,
     KeysView,
     List,
@@ -34,6 +35,9 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
 
     def values(self) -> ValuesView[DictValue]:
         return self.__root__.values()
+
+    def update(self, *s: Iterable[tuple[DictKey, DictValue]]) -> None:
+        return self.__root__.update(*s)
 
     def __iter__(self) -> Iterator[DictKey]:
         return self.__root__.__iter__()
