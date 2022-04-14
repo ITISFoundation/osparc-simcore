@@ -6,11 +6,12 @@
 # pylint: disable=unused-variable
 
 import re
-from typing import Callable, List
+from typing import Any, Callable, List
 
 import httpx
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from respx.router import MockRouter
@@ -23,20 +24,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def mock_director_services(
-    director_mockup: respx.MockRouter, app: FastAPI
-) -> MockRouter:
-    mock_route = director_mockup.get(
-        f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services",
-        name="list_services",
-    ).respond(200, json={"data": ["blahblah"]})
-    response = httpx.get(f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services")
-    assert mock_route.called
-    assert response.json() == {"data": ["blahblah"]}
-    return director_mockup
 
 
 async def test_list_services_with_details(
@@ -233,6 +220,43 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     response = client.get(
         f"{url}", headers={"x-simcore-products-name": "no valid product"}
     )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+
+
+# RESOURCES
+
+
+@pytest.fixture
+def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
+    def creator():
+        return {faker.get_label(): faker.text()}
+
+    return creator
+
+
+@pytest.fixture
+def mock_director_service_labels(
+    director_mockup: respx.MockRouter, app: FastAPI
+) -> MockRouter:
+    mock_route = director_mockup.get(
+        f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services",
+        name="get_service_labels",
+    ).respond(200, json={"data": ["blahblah"]})
+    response = httpx.get(f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services")
+    assert mock_route.called
+    assert response.json() == {"data": ["blahblah"]}
+    return director_mockup
+
+
+async def test_get_service_resources(
+    mock_catalog_background_task,
+    director_mockup: MockRouter,
+    client: TestClient,
+):
+    url = URL("/v0/services")
+    response = client.get(f"{url}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
