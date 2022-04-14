@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
+from .generics import ListModel
+
 
 class _BaseConfig:
     extra = Extra.forbid
@@ -70,17 +72,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         }
 
 
-class SimcoreServiceSettingsLabel(BaseModel):
-    __root__: List[SimcoreServiceSettingLabelEntry]
-
-    def __iter__(self):
-        return iter(self.__root__)
-
-    def __getitem__(self, item):
-        return self.__root__[item]
-
-    def __len__(self):
-        return len(self.__root__)
+class SimcoreServiceSettingsLabel(ListModel[SimcoreServiceSettingLabelEntry]):
+    ...
 
 
 class PathMappingsLabel(BaseModel):
