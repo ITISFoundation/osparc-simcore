@@ -28,12 +28,6 @@ from ...services.function_services import get_function_service, is_function_serv
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
-
-# @router.get(
-#     "/services/resources/default",
-#     response_model=ServiceResources,
-#     **RESPONSE_MODEL_POLICY,
-# )
 from ..dependencies.services import get_default_service_resources
 
 router = APIRouter()
