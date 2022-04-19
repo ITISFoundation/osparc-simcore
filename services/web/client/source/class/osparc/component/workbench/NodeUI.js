@@ -68,8 +68,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
   statics: {
     NODE_WIDTH: 180,
-    NODE_HEIGHT: 80,
-    CIRCLED_RADIUS: 16
+    NODE_HEIGHT: 80
   },
 
   members: {
@@ -158,9 +157,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         width: this.self(arguments).NODE_WIDTH,
         maxWidth: this.self(arguments).NODE_WIDTH,
         minWidth: this.self(arguments).NODE_WIDTH
-      });
-      this.getContentElement().setStyles({
-        "border-radius": "0px"
       });
       this.resetThumbnail();
 
@@ -275,15 +271,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    __turnIntoCircledUI: function(width) {
+    __setNodeUIWidth: function(width) {
       this.set({
         width: width,
         maxWidth: width,
         minWidth: width,
         minHeight: 60
-      });
-      this.getContentElement().setStyles({
-        "border-radius": this.self().CIRCLED_RADIUS+"px"
       });
     },
 
@@ -298,7 +291,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __turnIntoFileUI: function() {
       const width = 120;
-      this.__turnIntoCircledUI(width);
+      this.__setNodeUIWidth(width);
 
       const chipContainer = this.getChildControl("chips");
       chipContainer.exclude();
@@ -329,7 +322,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __turnIntoParameterUI: function() {
       const width = 100;
-      this.__turnIntoCircledUI(width);
+      this.__setNodeUIWidth(width);
 
       const label = new qx.ui.basic.Label().set({
         font: "text-18"
@@ -352,27 +345,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
-    __checkTurnIntoIteratorUI: function() {
-      const outputs = this.getNode().getOutputs();
-      const portKey = "out_1";
-      if (portKey in outputs && "value" in outputs[portKey]) {
-        this.__turnIntoIteratorIteratedUI();
-      } else {
-        this.__turnIntoIteratorUI();
-      }
-    },
-
     __turnIntoIteratorUI: function() {
       const width = 150;
       const height = 69;
-      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+      this.__setNodeUIWidth(width);
 
       // add shadows
       if (this.__svgWorkbenchCanvas) {
         const nShadows = 2;
         this.shadows = [];
         for (let i=0; i<nShadows; i++) {
-          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height);
           this.shadows.push(nodeUIShadow);
         }
       }
@@ -387,18 +370,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.getNode().getPropsForm().setEnabled(false);
     },
 
-    removeShadows: function() {
-      if (this.__svgWorkbenchCanvas && "shadows" in this) {
-        this.shadows.forEach(shadow => {
-          osparc.wrapper.Svg.removeItem(shadow);
-        });
-        delete this["shadows"];
-      }
-    },
-
     __turnIntoProbeUI: function() {
       const width = 150;
-      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+      this.__setNodeUIWidth(width);
 
       const label = new qx.ui.basic.Label().set({
         paddingLeft: 5,
@@ -409,6 +383,25 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
       this.__setProbeValue(label);
+    },
+
+    __checkTurnIntoIteratorUI: function() {
+      const outputs = this.getNode().getOutputs();
+      const portKey = "out_1";
+      if (portKey in outputs && "value" in outputs[portKey]) {
+        this.__turnIntoIteratorIteratedUI();
+      } else {
+        this.__turnIntoIteratorUI();
+      }
+    },
+
+    removeShadows: function() {
+      if (this.__svgWorkbenchCanvas && "shadows" in this) {
+        this.shadows.forEach(shadow => {
+          osparc.wrapper.Svg.removeItem(shadow);
+        });
+        delete this["shadows"];
+      }
     },
 
     __setProbeValue: function(label) {

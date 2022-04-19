@@ -35,7 +35,11 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      contentPadding: 0
+      contentPadding: 2
+    });
+
+    this.getContentElement().setStyles({
+      "border-radius": "4px"
     });
 
     this.subscribeToFilterGroup("workbench");
@@ -193,7 +197,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     _createPort: function(isInput, placeholder = false) {
       let port = null;
       const width = this.self().PORT_HEIGHT;
-      const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH;
+      const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH + 2;
       if (placeholder) {
         port = new qx.ui.core.Spacer(width, width);
       } else {
@@ -256,7 +260,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       const bounds = this.getCurrentBounds();
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
-      let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2;
+      const y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 2;
       return [x, y];
     },
 
