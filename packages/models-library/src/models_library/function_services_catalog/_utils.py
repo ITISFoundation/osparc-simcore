@@ -37,7 +37,7 @@ class FunctionServices:
         self._functions: Dict[Tuple[ServiceKey, ServiceVersion], _Record] = {}
         self.settings = settings
 
-    def add_function_service(
+    def add(
         self,
         meta: ServiceDockerData,
         implementation: Optional[Callable] = None,
@@ -63,7 +63,7 @@ class FunctionServices:
     def extend(self, other: "FunctionServices"):
         # pylint: disable=protected-access
         for f in other._functions.values():
-            self.add_function_service(f.meta, f.implementation, f.is_under_development)
+            self.add(f.meta, f.implementation, f.is_under_development)
 
     def skip_dev(self):
         skip = True
