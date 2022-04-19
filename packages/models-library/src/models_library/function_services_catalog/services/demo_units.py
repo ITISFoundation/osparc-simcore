@@ -25,7 +25,8 @@ META = ServiceDockerData.parse_obj(
         # - 0.2.0: reverted order of first 5 outputs
         "type": ServiceType.BACKEND,
         "name": "Demo Units",
-        "description": "Demo that takes base units as inputs and transform them in the outputs",
+        "description": "This service is for demo purposes."
+        "It takes base units as inputs and transform them in the outputs.",
         "authors": [PC, OM],
         "contact": PC.email,
         "thumbnail": create_fake_thumbnail_url("demo-units"),
@@ -187,7 +188,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "radiation": build_input(
                 {
-                    "title": "Radiati0n",  # it's not a typo
+                    "title": "Radiation",
                     "x_unit": "curie",
                     "type": "number",
                 }
