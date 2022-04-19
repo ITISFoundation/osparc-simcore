@@ -68,7 +68,7 @@ def _linspace_generator(**kwargs) -> Iterator[Outputs]:
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=create_metadata("integer", prefix="int"),
     implementation=_linspace_generator,
     is_under_development=True,

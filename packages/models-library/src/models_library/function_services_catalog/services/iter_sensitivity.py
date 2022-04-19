@@ -104,7 +104,7 @@ def _sensitivity_generator(
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=META,
     implementation=_sensitivity_generator,
     is_under_development=True,

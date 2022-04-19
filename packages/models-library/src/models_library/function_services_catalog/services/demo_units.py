@@ -198,7 +198,7 @@ META = ServiceDockerData.parse_obj(
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=META,
     is_under_development=True,
 )
