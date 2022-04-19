@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, Optional, Tuple
+from typing import Callable, Dict, Iterator, Optional, Tuple
 from urllib.parse import quote
 
 from ..services import Author, ServiceDockerData, ServiceKey, ServiceVersion
@@ -65,39 +65,39 @@ class FunctionServices:
         for f in other._functions.values():
             self.add(f.meta, f.implementation, f.is_under_development)
 
-    def skip_dev(self):
+    def _skip_dev(self):
         skip = True
         if self.settings:
             skip = not self.settings.is_dev_feature_enabled()
         return skip
 
-    def iter_items(self) -> Iterable[Tuple[Tuple[ServiceKey, ServiceVersion], _Record]]:
-        skip_dev = self.skip_dev()
+    def _items(self) -> Iterator[Tuple[Tuple[ServiceKey, ServiceVersion], _Record]]:
+        skip_dev = self._skip_dev()
         for key, value in self._functions.items():
             if value.is_under_development and skip_dev:
                 continue
             yield key, value
 
-    def iter_metadata(self) -> Iterable[ServiceDockerData]:
-        for _, f in self.iter_items():
+    def iter_metadata(self) -> Iterator[ServiceDockerData]:
+        for _, f in self._items():
             yield f.meta
 
-    def iter_services_key_version(self) -> Iterable[Tuple[ServiceKey, ServiceVersion]]:
-        for kv, f in self.iter_items():
+    def iter_services_key_version(self) -> Iterator[Tuple[ServiceKey, ServiceVersion]]:
+        for kv, f in self._items():
             assert kv == (f.meta.key, f.meta.version)  # nosec
             yield kv
 
     def get_implementation(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> Optional[Callable]:
-        # raises KeyError if not found
+        """raises KeyError if not found"""
         func = self._functions[(service_key, service_version)]
         return func.implementation
 
     def get_metadata(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> ServiceDockerData:
-        # raises KeyError if not found
+        """raises KeyError if not found"""
         func = self._functions[(service_key, service_version)]
         return func.meta
 
