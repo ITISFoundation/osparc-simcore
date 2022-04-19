@@ -3,11 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Optional, Tuple
 from urllib.parse import quote
 
-from models_library.basic_regex import VERSION_RE
-from models_library.services import SERVICE_KEY_RE
-from pydantic import constr
-
-from ..services import Author, ServiceDockerData
+from ..services import Author, ServiceDockerData, ServiceKey, ServiceVersion
 from ._settings import AUTHORS, FunctionServiceSettings
 
 log = logging.getLogger(__name__)
@@ -25,10 +21,6 @@ PC = Author.parse_obj(AUTHORS.get("PC", _DEFAULT))
 
 def create_fake_thumbnail_url(label: str) -> str:
     return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
-
-
-ServiceKey = constr(regex=SERVICE_KEY_RE)
-ServiceVersion = constr(regex=VERSION_RE)
 
 
 @dataclass

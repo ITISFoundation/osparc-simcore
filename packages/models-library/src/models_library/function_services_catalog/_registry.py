@@ -8,8 +8,7 @@
 
 import logging
 
-from models_library.function_services_catalog.services import nodes_group
-
+from ..function_services_catalog.services import nodes_group
 from ._settings import FunctionServiceSettings
 from ._utils import FunctionServices
 from .services import (
