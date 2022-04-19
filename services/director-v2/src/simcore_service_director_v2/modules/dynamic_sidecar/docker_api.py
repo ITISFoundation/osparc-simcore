@@ -17,6 +17,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
 from servicelib.utils import logged_gather
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import (
@@ -77,6 +81,10 @@ def _monkey_patch_aiodocker() -> None:
 
 
 _monkey_patch_aiodocker()
+
+
+class _RetryError(Exception):
+    pass
 
 
 @asynccontextmanager
@@ -519,36 +527,54 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
 
-        try:
-            # fetch information from service name
-            service_inspect = await client.services.inspect(scheduler_data.service_name)
-            service_version = service_inspect["Version"]["Index"]
-            service_id = service_inspect["ID"]
-            spec = service_inspect["Spec"]
+        # THe docker service update API is async, so `update out of sequence` error
+        # might get raised. Retry the entire operation to make sure it finishes
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(4),
+            wait=wait_exponential(),
+            retry=retry_if_exception_type(_RetryError),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    # fetch information from service name
+                    service_inspect = await client.services.inspect(
+                        scheduler_data.service_name
+                    )
+                    service_version = service_inspect["Version"]["Index"]
+                    service_id = service_inspect["ID"]
+                    spec = service_inspect["Spec"]
 
-            # compose_spec needs to be json encoded
-            # before encoding it to json and storing it
-            # in the label
-            scheduler_data_copy = deepcopy(scheduler_data)
-            scheduler_data_copy.compose_spec = json.dumps(
-                scheduler_data_copy.compose_spec
-            )
-            label_data = scheduler_data_copy.json()
-            spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+                    # compose_spec needs to be json encoded
+                    # before encoding it to json and storing it
+                    # in the label
+                    scheduler_data_copy = deepcopy(scheduler_data)
+                    scheduler_data_copy.compose_spec = json.dumps(
+                        scheduler_data_copy.compose_spec
+                    )
+                    label_data = scheduler_data_copy.json()
+                    spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
 
-            await client._query_json(  # pylint: disable=protected-access
-                f"services/{service_id}/update",
-                method="POST",
-                data=json.dumps(clean_map(spec)),
-                params={"version": service_version},
-            )
-        except aiodocker.exceptions.DockerError as e:
-            if not (
-                e.status == 404
-                and e.message == f"service {scheduler_data.service_name} not found"
-            ):
-                raise e
-            log.debug(
-                "Skip update for service '%s' which could not be found",
-                scheduler_data.service_name,
-            )
+                    await client._query_json(  # pylint: disable=protected-access
+                        f"services/{service_id}/update",
+                        method="POST",
+                        data=json.dumps(clean_map(spec)),
+                        params={"version": service_version},
+                    )
+                except aiodocker.exceptions.DockerError as e:
+                    if not (
+                        e.status == 404
+                        and e.message
+                        == f"service {scheduler_data.service_name} not found"
+                    ):
+                        raise e
+                    if (
+                        e.status == 500
+                        and e.message
+                        == f"rpc error: code = Unknown desc = update out of sequence"
+                    ):
+                        raise _RetryError()
+                    log.debug(
+                        "Skip update for service '%s' which could not be found",
+                        scheduler_data.service_name,
+                    )
