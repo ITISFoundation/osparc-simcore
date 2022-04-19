@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import aiodocker
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
@@ -368,7 +369,13 @@ class DynamicSidecarsScheduler:
             finally:
                 # when done, always unlock the resource
                 if scheduler_data_copy != scheduler_data:
-                    await update_scheduler_data_label(scheduler_data)
+                    try:
+                        await update_scheduler_data_label(scheduler_data)
+                    except aiodocker.exceptions.DockerError as e:
+                        logger.warning(
+                            f"Skipped labels update, please check:\n %s", f"{e}"
+                        )
+                        pass
                 await lock_with_scheduler_data.resource_lock.unlock_resource()
 
         service_name: Optional[str]
