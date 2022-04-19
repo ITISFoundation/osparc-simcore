@@ -1,7 +1,6 @@
 from typing import Iterator, Optional
 
-from models_library.projects_nodes import Outputs
-
+from ...projects_nodes import Outputs
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
@@ -69,7 +68,7 @@ def _linspace_generator(**kwargs) -> Iterator[Outputs]:
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=create_metadata("integer", prefix="int"),
     implementation=_linspace_generator,
     is_under_development=True,

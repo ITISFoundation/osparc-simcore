@@ -36,4 +36,4 @@ assert list(META.outputs.keys()) == ["outFile"], "name used in front-end"  # nos
 
 
 services = FunctionServices()
-services.add_function_service(meta=META, is_under_development=True)
+services.add(meta=META, is_under_development=True)
