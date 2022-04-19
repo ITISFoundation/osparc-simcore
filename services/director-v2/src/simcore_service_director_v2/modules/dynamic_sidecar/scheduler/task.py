@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import logging
-import aiodocker
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
@@ -9,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from uuid import UUID
 
+import aiodocker
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI

@@ -546,15 +546,9 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
                     service_id = service_inspect["ID"]
                     spec = service_inspect["Spec"]
 
-                    # compose_spec needs to be json encoded
-                    # before encoding it to json and storing it
-                    # in the label
-                    scheduler_data_copy = deepcopy(scheduler_data)
-                    scheduler_data_copy.compose_spec = json.dumps(
-                        scheduler_data_copy.compose_spec
-                    )
-                    label_data = scheduler_data_copy.json()
-                    spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+                    spec["Labels"][
+                        DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
+                    ] = scheduler_data.as_label_data()
 
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",

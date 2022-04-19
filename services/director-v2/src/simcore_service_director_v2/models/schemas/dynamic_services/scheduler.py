@@ -1,6 +1,7 @@
 import json
 import logging
 from asyncio import Lock
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 from uuid import UUID
@@ -374,6 +375,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     ) -> "SchedulerData":
         labels = service_inspect["Spec"]["Labels"]
         return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
+
+    def as_label_data(self) -> str:
+        # compose_spec needs to be json encoded
+        # before encoding it to json and storing it
+        # in the label
+        scheduler_data_copy = deepcopy(self)
+        scheduler_data_copy.compose_spec = json.dumps(scheduler_data_copy.compose_spec)
+        return scheduler_data_copy.json()
 
     class Config:
         extra = Extra.allow
