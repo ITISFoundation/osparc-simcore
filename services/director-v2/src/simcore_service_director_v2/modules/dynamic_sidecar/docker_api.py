@@ -527,8 +527,9 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
 
-        # THe docker service update API is async, so `update out of sequence` error
-        # might get raised. Retry the entire operation to make sure it finishes
+        # The docker service update API is async, so `update out of sequence` error
+        # might get raised. This is caused by the `service_version` being out of sync
+        # with what is currently stored in the docker daemon.
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(4),
             wait=wait_exponential(),
