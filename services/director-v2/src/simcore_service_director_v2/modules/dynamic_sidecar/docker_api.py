@@ -572,9 +572,9 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
                     if (
                         e.status == 500
                         and e.message
-                        == f"rpc error: code = Unknown desc = update out of sequence"
+                        == "rpc error: code = Unknown desc = update out of sequence"
                     ):
-                        raise _RetryError()
+                        raise _RetryError() from e
                     log.debug(
                         "Skip update for service '%s' which could not be found",
                         scheduler_data.service_name,
