@@ -10,6 +10,7 @@ import urllib.parse
 from random import choice, randint
 from typing import Any, Callable, Dict, List
 
+import httpx
 import pytest
 import respx
 from faker import Faker
@@ -366,7 +367,6 @@ async def test_get_service_resources(
     client: TestClient,
     director_labels: Dict[str, Any],
     expected_resources: ServiceResources,
-    faker: Faker,
 ):
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
@@ -377,3 +377,23 @@ async def test_get_service_resources(
     data = response.json()
     received_resources = ServiceResources.parse_obj(data)
     assert received_resources == expected_resources
+
+
+async def test_get_service_resources_raises_errors(
+    mock_catalog_background_task,
+    mock_director_service_labels: Route,
+    client: TestClient,
+):
+    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
+    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+    url = URL(f"/v0/services/{service_key}/{service_version}/resources")
+    # simulate a communication error
+    mock_director_service_labels.side_effect = httpx.HTTPError
+    response = client.get(f"{url}")
+    assert response.status_code == httpx.codes.SERVICE_UNAVAILABLE, f"{response.text}"
+    # simulate a missing service
+    mock_director_service_labels.respond(
+        httpx.codes.NOT_FOUND, json={"error": "service not found"}
+    )
+    response = client.get(f"{url}")
+    assert response.status_code == httpx.codes.NOT_FOUND, f"{response.text}"
