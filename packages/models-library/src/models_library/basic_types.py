@@ -20,7 +20,7 @@ MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
 # env var
 EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
 
-# e.g.
+# e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
 UUIDStr = constr(regex=UUID_RE)
 
 
