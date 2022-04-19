@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from uuid import UUID
 
-import aiodocker
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
@@ -41,7 +40,11 @@ from ..docker_api import (
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
-from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
+from ..errors import (
+    DynamicSidecarError,
+    DynamicSidecarNotFoundError,
+    GenericDockerError,
+)
 from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
@@ -371,7 +374,7 @@ class DynamicSidecarsScheduler:
                 if scheduler_data_copy != scheduler_data:
                     try:
                         await update_scheduler_data_label(scheduler_data)
-                    except aiodocker.exceptions.DockerError as e:
+                    except GenericDockerError as e:
                         logger.warning(
                             "Skipped labels update, please check:\n %s", f"{e}"
                         )
