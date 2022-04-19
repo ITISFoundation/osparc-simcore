@@ -7,7 +7,6 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from copy import deepcopy
 from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
