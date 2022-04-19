@@ -11,13 +11,5 @@ def is_function_service(service_key: ServiceKey) -> bool:
     return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/")
 
 
-def is_parameter_service(service_key: ServiceKey) -> bool:
-    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/")
-
-
 def is_iterator_service(service_key: ServiceKey) -> bool:
     return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/")
-
-
-def is_iterator_consumer_service(service_key: ServiceKey) -> bool:
-    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/")
