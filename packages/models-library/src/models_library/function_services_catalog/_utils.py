@@ -23,6 +23,10 @@ def create_fake_thumbnail_url(label: str) -> str:
     return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
 
 
+class ServiceNotFound(KeyError):
+    pass
+
+
 @dataclass
 class _Record:
     meta: ServiceDockerData
@@ -43,7 +47,9 @@ class FunctionServices:
         implementation: Optional[Callable] = None,
         is_under_development: bool = False,
     ):
-
+        """
+        raises ValueError
+        """
         if not isinstance(meta, ServiceDockerData):
             raise ValueError(f"Expected ServiceDockerData, got {type(meta)}")
 
@@ -90,15 +96,25 @@ class FunctionServices:
     def get_implementation(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> Optional[Callable]:
-        """raises KeyError if not found"""
-        func = self._functions[(service_key, service_version)]
+        """raises ServiceNotFound"""
+        try:
+            func = self._functions[(service_key, service_version)]
+        except KeyError as err:
+            raise ServiceNotFound(
+                f"{service_key}:{service_version} not found in registry"
+            ) from err
         return func.implementation
 
     def get_metadata(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> ServiceDockerData:
-        """raises KeyError if not found"""
-        func = self._functions[(service_key, service_version)]
+        """raises ServiceNotFound"""
+        try:
+            func = self._functions[(service_key, service_version)]
+        except KeyError as err:
+            raise ServiceNotFound(
+                f"{service_key}:{service_version} not found in registry"
+            ) from err
         return func.meta
 
     def __len__(self):
