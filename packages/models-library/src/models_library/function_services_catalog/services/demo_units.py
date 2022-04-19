@@ -15,6 +15,11 @@ def build_input(schema):
 
 
 # SEE https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
+#
+# NOTE: this service is also used as fixture in test_catalog_utils.py::test_can_connect_with_units
+#       and assumes for convenience that matching 'Titles' correspond to compatible units.
+#       If this assumption cannot be guaranteed anymore the test must be updated.
+#
 
 META = ServiceDockerData.parse_obj(
     {
@@ -112,7 +117,7 @@ META = ServiceDockerData.parse_obj(
             "radiation": build_input(
                 {
                     "title": "Radiation",
-                    "x_unit": "roentgen",
+                    "x_unit": "rutherford",
                     "type": "number",
                 }
             ),
