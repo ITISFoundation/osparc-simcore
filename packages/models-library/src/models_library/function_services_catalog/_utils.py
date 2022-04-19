@@ -71,7 +71,7 @@ class FunctionServices:
             skip = not self.settings.is_dev_feature_enabled()
         return skip
 
-    def iter_items(self):
+    def iter_items(self) -> Iterable[Tuple[Tuple[ServiceKey, ServiceVersion], _Record]]:
         skip_dev = self.skip_dev()
         for key, value in self._functions.items():
             if value.is_under_development and skip_dev:
