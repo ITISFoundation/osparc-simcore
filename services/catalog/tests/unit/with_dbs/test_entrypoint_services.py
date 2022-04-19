@@ -6,15 +6,28 @@
 # pylint: disable=unused-variable
 
 import re
-from typing import Any, Callable, List
+import urllib.parse
+from random import choice, randint
+from typing import Any, Callable, Dict, List
 
-import httpx
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import ServiceDockerData
+from models_library.services import (
+    GenericResources,
+    Limitations,
+    Reservations,
+    ServiceDockerData,
+    ServiceResources,
+)
+from pydantic import ByteSize
+from respx.models import Route
 from respx.router import MockRouter
+from simcore_service_catalog.core.settings import (
+    _DEFAULT_SERVICE_LIMITATIONS,
+    _DEFAULT_SERVICE_RESERVATIONS,
+)
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -237,26 +250,116 @@ def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
 
 
 @pytest.fixture
+def service_key(faker: Faker) -> str:
+    return f"simcore/services/{choice(['comp', 'dynamic','frontend'])}/jupyter-math"
+
+
+@pytest.fixture
+def service_version() -> str:
+    return f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+
+
+@pytest.fixture
+def mock_service_labels(faker: Faker) -> Dict[str, Any]:
+    return {
+        "simcore.service.settings": '[ {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
+    }
+
+
+@pytest.fixture
 def mock_director_service_labels(
     director_mockup: respx.MockRouter, app: FastAPI
-) -> MockRouter:
+) -> Route:
+    slash = urllib.parse.quote_plus("/")
     mock_route = director_mockup.get(
-        f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services",
+        url__regex=rf"v0/services/simcore{slash}services{slash}(comp|dynamic|frontend)({slash}[\w{slash}-]+)+/[0-9]+.[0-9]+.[0-9]+/labels",
         name="get_service_labels",
-    ).respond(200, json={"data": ["blahblah"]})
-    response = httpx.get(f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services")
-    assert mock_route.called
-    assert response.json() == {"data": ["blahblah"]}
-    return director_mockup
+    ).respond(200, json={"data": {}})
+
+    return mock_route
 
 
+@pytest.mark.parametrize(
+    "director_labels, expected_resources",
+    [
+        pytest.param(
+            {},
+            ServiceResources(
+                limits=_DEFAULT_SERVICE_LIMITATIONS,
+                reservations=_DEFAULT_SERVICE_RESERVATIONS,
+            ),
+            id="nothing_defined_returns_default_resources",
+        ),
+        pytest.param(
+            {
+                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
+            },
+            ServiceResources(
+                limits=Limitations(cpu=4.0, ram=ByteSize(17179869184)),
+                reservations=_DEFAULT_SERVICE_RESERVATIONS,
+            ),
+            id="only_limits_defined_returns_default_reservations",
+        ),
+        pytest.param(
+            {
+                "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "SOME_STUFF", "Value": "some_string" } } ] } } } ]'
+            },
+            ServiceResources(
+                limits=Limitations(cpu=4.0, ram=ByteSize(17179869184)),
+                reservations=Reservations(
+                    cpu=0.1,
+                    ram=ByteSize(536870912),
+                    generic=GenericResources.parse_obj(
+                        {"VRAM": 1, "SOME_STUFF": "some_string"}
+                    ),
+                ),
+            ),
+            id="everything_rightly_defined",
+        ),
+        pytest.param(
+            {
+                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
+            },
+            ServiceResources(
+                limits=_DEFAULT_SERVICE_LIMITATIONS,
+                reservations=Reservations(
+                    cpu=0.1,
+                    ram=ByteSize(536870912),
+                    generic=GenericResources.parse_obj({"VRAM": 1}),
+                ),
+            ),
+            id="no_limits_defined_returns_default_limits",
+        ),
+        pytest.param(
+            {
+                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
+            },
+            ServiceResources(
+                limits=Limitations(cpu=10.0, ram=ByteSize(53687091232)),
+                reservations=Reservations(
+                    cpu=10.0,
+                    ram=ByteSize(53687091232),
+                    generic=GenericResources.parse_obj({"VRAM": 1}),
+                ),
+            ),
+            id="no_limits_with_reservations_above_default_returns_same_as_reservation",
+        ),
+    ],
+)
 async def test_get_service_resources(
     mock_catalog_background_task,
-    director_mockup: MockRouter,
+    mock_director_service_labels: Route,
     client: TestClient,
+    director_labels: Dict[str, Any],
+    expected_resources: ServiceResources,
+    faker: Faker,
 ):
-    url = URL("/v0/services")
+    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
+    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+    mock_director_service_labels.respond(json={"data": director_labels})
+    url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     response = client.get(f"{url}")
-    assert response.status_code == 200
+    assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    assert len(data) == 0
+    received_resources = ServiceResources.parse_obj(data)
+    assert received_resources == expected_resources

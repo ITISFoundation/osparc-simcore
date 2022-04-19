@@ -19,6 +19,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     constr,
+    root_validator,
     validator,
 )
 
@@ -80,6 +81,16 @@ class ServiceResources(BaseModel):
     reservations: Reservations = Field(
         ..., description="resource reservations for scheduling service on a node"
     )
+
+    @root_validator()
+    @classmethod
+    def ensure_limits_are_equal_or_above_reservations(cls, values):
+
+        if values["limits"].cpu < values["reservations"].cpu:
+            values["limits"].cpu = values["reservations"].cpu
+        if values["limits"].ram < values["reservations"].ram:
+            values["limits"].ram = values["reservations"].ram
+        return values
 
 
 class ServiceType(str, Enum):

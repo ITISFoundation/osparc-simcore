@@ -208,7 +208,7 @@ async def get_service_resources(
     ),
 ):
     if is_function_service(service_key):
-        raise NotImplementedError
+        return default_service_resources
 
     service_labels: Dict[str, Any] = cast(
         Dict[str, Any],
@@ -216,6 +216,9 @@ async def get_service_resources(
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
         ),
     )
+    if not service_labels:
+        return default_service_resources
+
     service_settings = parse_raw_as(
         List[SimcoreServiceSettingLabelEntry],
         service_labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
@@ -230,9 +233,7 @@ async def get_service_resources(
             lambda entry: entry.name.lower() == "resources", settings
         )
         # get the service resources
-        service_resources = default_service_resources.copy(
-            deep=True,
-        )
+        service_resources = default_service_resources.dict()
         for entry in resource_entries:
             if not isinstance(entry.value, dict):
                 logger.warning(
@@ -242,17 +243,17 @@ async def get_service_resources(
                 )
                 continue
             if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
-                service_resources.limits.cpu = nano_cpu_limit / 1.0e09
+                service_resources["limits"]["cpu"] = nano_cpu_limit / 1.0e09
             if nano_cpu_reservation := entry.value.get("Reservations", {}).get(
                 "NanoCPUs"
             ):
-                service_resources.reservations.cpu = nano_cpu_reservation / 1.0e09
+                service_resources["reservations"]["cpu"] = nano_cpu_reservation / 1.0e09
             if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
-                service_resources.limits.ram = ram_limit
+                service_resources["limits"]["ram"] = ram_limit
             if ram_reservation := entry.value.get("Reservations", {}).get(
                 "MemoryBytes"
             ):
-                service_resources.reservations.ram = ram_reservation
+                service_resources["reservations"]["ram"] = ram_reservation
 
             if generic_resources := entry.value.get("Reservations", {}).get(
                 "GenericResources", []
@@ -261,15 +262,15 @@ async def get_service_resources(
                     if not isinstance(res, dict):
                         continue
                     if named_resource_spec := res.get("NamedResourceSpec"):
-                        service_resources.reservations.generic[
+                        service_resources["reservations"]["generic"][
                             named_resource_spec["Kind"]
                         ] = named_resource_spec["Value"]
                     if discrete_resource_spec := res.get("DiscreteResourceSpec"):
-                        service_resources.reservations.generic[
+                        service_resources["reservations"]["generic"][
                             discrete_resource_spec["Kind"]
                         ] = discrete_resource_spec["Value"]
 
-        return service_resources
+        return ServiceResources.parse_obj(service_resources)
 
     service_resources = _from_service_settings(service_settings)
     logger.debug("%s", f"{service_resources}")
