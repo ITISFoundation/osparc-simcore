@@ -2,6 +2,7 @@ from typing import Optional
 
 from models_library.services import ServiceDockerData, ServiceMetaData
 from models_library.services_access import ServiceAccessRights
+from models_library.services_resources import ServiceResources
 from pydantic import EmailStr, Extra
 from pydantic.main import BaseModel
 
@@ -132,3 +133,7 @@ class ServiceItem(BaseModel):
                 "url": "https://catalog:8080/services/a8f5a503-01d5-40bc-b416-f5b7cc5d1fa4",  # NEW self
             }
         }
+
+
+class ServiceResourcesGet(ServiceResources):
+    ...

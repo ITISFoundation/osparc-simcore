@@ -14,20 +14,12 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import (
-    GenericResources,
-    Limitations,
-    Reservations,
-    ServiceDockerData,
-    ServiceResources,
-)
+from models_library.services import ServiceDockerData
+from models_library.services_resources import ResourcesDict, ServiceResources
 from pydantic import ByteSize
 from respx.models import Route
 from respx.router import MockRouter
-from simcore_service_catalog.core.settings import (
-    _DEFAULT_SERVICE_LIMITATIONS,
-    _DEFAULT_SERVICE_RESERVATIONS,
-)
+from simcore_service_catalog.core.settings import _DEFAULT_SERVICE_RESOURCES
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -284,19 +276,19 @@ def mock_director_service_labels(
     [
         pytest.param(
             {},
-            ServiceResources(
-                limits=_DEFAULT_SERVICE_LIMITATIONS,
-                reservations=_DEFAULT_SERVICE_RESERVATIONS,
-            ),
+            _DEFAULT_SERVICE_RESOURCES,
             id="nothing_defined_returns_default_resources",
         ),
         pytest.param(
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
             },
-            ServiceResources(
-                limits=Limitations(cpu=4.0, ram=ByteSize(17179869184)),
-                reservations=_DEFAULT_SERVICE_RESERVATIONS,
+            _DEFAULT_SERVICE_RESOURCES.copy(
+                update={
+                    "limits": ResourcesDict.parse_obj(
+                        {"cpu": 4.0, "ram": ByteSize(17179869184)}
+                    )
+                }
             ),
             id="only_limits_defined_returns_default_reservations",
         ),
@@ -304,29 +296,41 @@ def mock_director_service_labels(
             {
                 "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "SOME_STUFF", "Value": "some_string" } } ] } } } ]'
             },
-            ServiceResources(
-                limits=Limitations(cpu=4.0, ram=ByteSize(17179869184)),
-                reservations=Reservations(
-                    cpu=0.1,
-                    ram=ByteSize(536870912),
-                    generic=GenericResources.parse_obj(
-                        {"VRAM": 1, "SOME_STUFF": "some_string"}
+            _DEFAULT_SERVICE_RESOURCES.copy(
+                update={
+                    "limits": ResourcesDict.parse_obj(
+                        {
+                            "cpu": 4.0,
+                            "ram": ByteSize(17179869184),
+                            "VRAM": 1,
+                            "SOME_STUFF": "some_string",
+                        }
                     ),
-                ),
+                    "reservations": ResourcesDict.parse_obj(
+                        {
+                            "cpu": 0.1,
+                            "ram": ByteSize(536870912),
+                            "VRAM": 1,
+                            "SOME_STUFF": "some_string",
+                        }
+                    ),
+                }
             ),
             id="everything_rightly_defined",
         ),
         pytest.param(
             {
-                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
+                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [  ] } } } ]'
             },
-            ServiceResources(
-                limits=_DEFAULT_SERVICE_LIMITATIONS,
-                reservations=Reservations(
-                    cpu=0.1,
-                    ram=ByteSize(536870912),
-                    generic=GenericResources.parse_obj({"VRAM": 1}),
-                ),
+            _DEFAULT_SERVICE_RESOURCES.copy(
+                update={
+                    "reservations": ResourcesDict.parse_obj(
+                        {
+                            "cpu": 0.1,
+                            "ram": ByteSize(536870912),
+                        }
+                    ),
+                }
             ),
             id="no_limits_defined_returns_default_limits",
         ),
@@ -334,13 +338,23 @@ def mock_director_service_labels(
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
             },
-            ServiceResources(
-                limits=Limitations(cpu=10.0, ram=ByteSize(53687091232)),
-                reservations=Reservations(
-                    cpu=10.0,
-                    ram=ByteSize(53687091232),
-                    generic=GenericResources.parse_obj({"VRAM": 1}),
-                ),
+            _DEFAULT_SERVICE_RESOURCES.copy(
+                update={
+                    "limits": ResourcesDict.parse_obj(
+                        {
+                            "cpu": 10.0,
+                            "ram": ByteSize(53687091232),
+                            "VRAM": 1,
+                        }
+                    ),
+                    "reservations": ResourcesDict.parse_obj(
+                        {
+                            "cpu": 10.0,
+                            "ram": ByteSize(53687091232),
+                            "VRAM": 1,
+                        }
+                    ),
+                }
             ),
             id="no_limits_with_reservations_above_default_returns_same_as_reservation",
         ),

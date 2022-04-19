@@ -9,12 +9,7 @@ from typing import Any, Deque, Dict, Final, List, Optional, Set, Tuple, cast
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
-from models_library.services import (
-    ServiceKey,
-    ServiceResources,
-    ServiceType,
-    ServiceVersion,
-)
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError, parse_raw_as
 from pydantic.types import PositiveInt
@@ -23,7 +18,7 @@ from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.services import ServiceOut, ServiceUpdate
+from ...models.schemas.services import ServiceOut, ServiceResourcesGet, ServiceUpdate
 from ...services.function_services import get_function_service, is_function_service
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
@@ -196,14 +191,14 @@ SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 
 @router.get(
     "/{service_key:path}/{service_version}/resources",
-    response_model=ServiceResources,
+    response_model=ServiceResourcesGet,
     **RESPONSE_MODEL_POLICY,
 )
 async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
-    default_service_resources: ServiceResources = Depends(
+    default_service_resources: ServiceResourcesGet = Depends(
         get_default_service_resources
     ),
 ):
@@ -227,7 +222,7 @@ async def get_service_resources(
 
     def _from_service_settings(
         settings: List[SimcoreServiceSettingLabelEntry],
-    ) -> ServiceResources:
+    ) -> ServiceResourcesGet:
         # filter resource entries
         resource_entries = filter(
             lambda entry: entry.name.lower() == "resources", settings
@@ -262,15 +257,15 @@ async def get_service_resources(
                     if not isinstance(res, dict):
                         continue
                     if named_resource_spec := res.get("NamedResourceSpec"):
-                        service_resources["reservations"]["generic"][
+                        service_resources["reservations"][
                             named_resource_spec["Kind"]
                         ] = named_resource_spec["Value"]
                     if discrete_resource_spec := res.get("DiscreteResourceSpec"):
-                        service_resources["reservations"]["generic"][
+                        service_resources["reservations"][
                             discrete_resource_spec["Kind"]
                         ] = discrete_resource_spec["Value"]
 
-        return ServiceResources.parse_obj(service_resources)
+        return ServiceResourcesGet.parse_obj(service_resources)
 
     service_resources = _from_service_settings(service_settings)
     logger.debug("%s", f"{service_resources}")

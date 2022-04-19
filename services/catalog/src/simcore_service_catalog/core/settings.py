@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from models_library.services import GenericResources, Limitations, Reservations
+from models_library.services_resources import ResourcesDict, ServiceResources
 from pydantic import ByteSize, Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -24,9 +24,9 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_SERVICE_LIMITATIONS = Limitations(cpu=0.1, ram=ByteSize(2 * 1024**3))
-_DEFAULT_SERVICE_RESERVATIONS = Reservations(
-    **_DEFAULT_SERVICE_LIMITATIONS.dict(), generic=GenericResources(__root__={})
+_DEFAULT_SERVICE_RESOURCES = ServiceResources(
+    limits=ResourcesDict.parse_obj({"cpu": 0.1, "ram": ByteSize(2 * 1024**3)}),
+    reservations=ResourcesDict.parse_obj({"cpu": 0.1, "ram": ByteSize(2 * 1024**3)}),
 )
 
 
@@ -59,5 +59,4 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_TRACING: Optional[TracingSettings] = None
 
-    CATALOG_SERVICES_DEFAULT_LIMITS: Limitations = _DEFAULT_SERVICE_LIMITATIONS
-    CATALOG_SERVICES_DEFAULT_RESERVATIONS: Reservations = _DEFAULT_SERVICE_RESERVATIONS
+    CATALOG_SERVICES_DEFAULT_RESOURCE: ServiceResources = _DEFAULT_SERVICE_RESOURCES

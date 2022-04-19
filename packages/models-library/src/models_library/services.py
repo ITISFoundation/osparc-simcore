@@ -6,20 +6,16 @@ NOTE: to dump json-schema from CLI use
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from models_library.generics import DictModel
 from pydantic import (
     BaseModel,
-    ByteSize,
     EmailStr,
     Extra,
     Field,
     HttpUrl,
-    PositiveFloat,
     StrictBool,
     StrictFloat,
     StrictInt,
     constr,
-    root_validator,
     validator,
 )
 
@@ -55,42 +51,6 @@ FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
-
-
-GenericResourceName = str
-GenericResourceValue = Union[float, str]
-
-
-class Limitations(BaseModel):
-    cpu: PositiveFloat
-    ram: ByteSize
-
-
-class GenericResources(DictModel[GenericResourceName, GenericResourceValue]):
-    ...
-
-
-class Reservations(Limitations):
-    generic: GenericResources
-
-
-class ServiceResources(BaseModel):
-    limits: Limitations = Field(
-        ..., description="resource limits the service shall not go above"
-    )
-    reservations: Reservations = Field(
-        ..., description="resource reservations for scheduling service on a node"
-    )
-
-    @root_validator()
-    @classmethod
-    def ensure_limits_are_equal_or_above_reservations(cls, values):
-
-        if values["limits"].cpu < values["reservations"].cpu:
-            values["limits"].cpu = values["reservations"].cpu
-        if values["limits"].ram < values["reservations"].ram:
-            values["limits"].ram = values["reservations"].ram
-        return values
 
 
 class ServiceType(str, Enum):

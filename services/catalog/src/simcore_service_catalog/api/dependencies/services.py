@@ -1,12 +1,11 @@
 from fastapi.requests import Request
-from models_library.services import ServiceResources
 
 from ...core.settings import AppSettings
+from ...models.schemas.services import ServiceResourcesGet
 
 
-def get_default_service_resources(request: Request) -> ServiceResources:
+def get_default_service_resources(request: Request) -> ServiceResourcesGet:
     app_settings: AppSettings = request.app.state.settings
-    return ServiceResources(
-        limits=app_settings.CATALOG_SERVICES_DEFAULT_LIMITS,
-        reservations=app_settings.CATALOG_SERVICES_DEFAULT_RESERVATIONS,
+    return ServiceResourcesGet.construct(
+        **app_settings.CATALOG_SERVICES_DEFAULT_RESOURCE.dict()
     )
