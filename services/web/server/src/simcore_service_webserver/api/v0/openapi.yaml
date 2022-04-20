@@ -2752,6 +2752,22 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties:
+                type: object
+                required:
+                  - limit
+                  - reservation
+                properties:
+                  limit:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
+                  reservation:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
       responses:
         '200':
           description: Returns the udpated node resources.
