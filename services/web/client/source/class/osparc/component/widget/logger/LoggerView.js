@@ -83,19 +83,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       error: 2
     },
 
-    getLevelColorTag: function(logLevel) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      let logColor = null;
-      Object.keys(this.LOG_LEVELS).forEach(logLevelKey => {
-        const logString = logLevelKey;
-        const logNumber = this.LOG_LEVELS[logLevelKey];
-        if (logNumber === logLevel) {
-          logColor = colorManager.resolve("logger-"+logString+"-message");
-        }
-      });
-      return logColor ? logColor : colorManager.resolve("logger-info-message");
-    },
-
     getNewColor: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
@@ -310,7 +297,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       }
 
       const nodeColor = this.__getNodesColor(nodeId);
-      const msgColor = osparc.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
+      const msgColor = osparc.component.widget.logger.LoggerTable.getLevelColor(logLevel);
       const msgLogs = [];
       msgs.forEach(msg => {
         const msgLog = {

@@ -57,6 +57,9 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
     ]);
 
     this.__rawData = [];
+
+    const themeManager = qx.theme.manager.Meta.getInstance();
+    themeManager.addListener("changeTheme", () => this.__themeChanged());
   },
 
   properties: {
@@ -76,6 +79,20 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
   statics: {
     addColorTag: function(msg, color) {
       return ("<font color=" + color +">" + msg + "</font>");
+    },
+
+    getLevelColor: function(logLevel) {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      let logColor = null;
+      const logLevels = osparc.component.widget.logger.LoggerView.LOG_LEVELS;
+      Object.keys(logLevels).forEach(logLevelKey => {
+        const logString = logLevelKey;
+        const logNumber = logLevels[logLevelKey];
+        if (logNumber === logLevel) {
+          logColor = colorManager.resolve("logger-"+logString+"-message");
+        }
+      });
+      return logColor ? logColor : colorManager.resolve("logger-info-message");
     }
   },
 
@@ -83,27 +100,32 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
     __rawData: null,
     __filteredData: null,
 
-    addRows: function(newRows) {
-      for (let i=0; i<newRows.length; i++) {
-        const newRow = newRows[i];
-        newRow["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.label, newRow.nodeColor);
-        newRow["msgRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.msg, newRow.msgColor);
-        this.__rawData.push(newRow);
-      }
-    },
-
     getRows: function() {
       return this.__rawData;
     },
 
+    addRows: function(newRows) {
+      newRows.forEach(newRow => {
+        newRow["whoRich"] = this.self().addColorTag(newRow.label, newRow.nodeColor);
+        newRow["msgRich"] = this.self().addColorTag(newRow.msg, newRow.msgColor);
+        this.__rawData.push(newRow);
+      });
+    },
+
     nodeLabelChanged: function(nodeId, newLabel) {
-      for (let i=0; i<this.__rawData.length; i++) {
-        const row = this.__rawData[i];
+      this.__rawData.forEach(row => {
         if (row.nodeId === nodeId) {
           row.label = newLabel;
-          row["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(row.label, row.nodeColor);
+          row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
         }
-      }
+      });
+    },
+
+    __themeChanged: function() {
+      this.__rawData.forEach(row => {
+        row["msgColor"] = osparc.component.widget.logger.LoggerTable.getLevelColor(row.logLevel);
+        row["msgRich"] = this.self().addColorTag(row.msg, row.msgColor);
+      });
     },
 
     clearTable: function() {
