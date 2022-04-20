@@ -30,6 +30,6 @@ META: Final = ServiceDockerData.parse_obj(
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=META,
 )

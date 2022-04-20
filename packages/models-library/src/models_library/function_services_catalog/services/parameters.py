@@ -82,4 +82,4 @@ META_ARRAY = ServiceDockerData.parse_obj(
 
 services = FunctionServices()
 for m in (META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY):
-    services.add_function_service(meta=m)
+    services.add(meta=m)
