@@ -53,6 +53,8 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
   },
 
   statics: {
+    CARET_WIDTH: 15,
+
     styleCollapseExpandButton: function(btn) {
       btn.set({
         backgroundColor: "transparent",
@@ -93,7 +95,7 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
           break;
         case "caret-collapsed-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            width: 15
+            width: this.self().CARET_WIDTH
           });
           const expandBtn = this.getChildControl("expand-button");
           control.add(expandBtn, {
@@ -107,7 +109,7 @@ qx.Class.define("osparc.component.widget.CollapsibleViewLight", {
         }
         case "caret-expanded-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            width: 15
+            width: this.self().CARET_WIDTH
           });
           const collapseBtn = this.getChildControl("collapse-button");
           control.add(collapseBtn, {
