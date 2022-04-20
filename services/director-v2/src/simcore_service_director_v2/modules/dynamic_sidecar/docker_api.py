@@ -11,6 +11,7 @@ from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
+from fastapi import status
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -530,6 +531,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # might get raised. This is caused by the `service_version` being out of sync
         # with what is currently stored in the docker daemon.
         async for attempt in AsyncRetrying(
+            # equivalent  of waiting 1, 4, 8, 16
             stop=stop_after_attempt(4),
             wait=wait_exponential(),
             retry=retry_if_exception_type(_RetryError),
@@ -557,13 +559,13 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
                     )
                 except aiodocker.exceptions.DockerError as e:
                     if not (
-                        e.status == 404
+                        e.status == status.HTTP_404_NOT_FOUND
                         and e.message
                         == f"service {scheduler_data.service_name} not found"
                     ):
                         raise e
                     if (
-                        e.status == 500
+                        e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and e.message
                         == "rpc error: code = Unknown desc = update out of sequence"
                     ):
