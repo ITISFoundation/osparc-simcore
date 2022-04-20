@@ -50,7 +50,7 @@ def test_clone_project(project_uuid: UUID):
 
 
 @pytest.mark.skip(reason="UNDER DEV")
-def test_long_running_copy_project(heavy_project_uuid):
+def test_long_running_copy_project(app, user_id, heavy_project_uuid):
 
     task = _create.schedule_task(app, user_id, heavy_project_uuid)
 
