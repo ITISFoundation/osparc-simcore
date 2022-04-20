@@ -1,6 +1,7 @@
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 import json
 from copy import deepcopy
+
+from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 
 
 def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
