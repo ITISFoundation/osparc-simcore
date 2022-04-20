@@ -531,7 +531,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # might get raised. This is caused by the `service_version` being out of sync
         # with what is currently stored in the docker daemon.
         async for attempt in AsyncRetrying(
-            # equivalent  of waiting 1, 4, 8, 16
+            # waits 1, 4, 8, 16 seconds and gives up
             stop=stop_after_attempt(4),
             wait=wait_exponential(),
             retry=retry_if_exception_type(_RetryError),
