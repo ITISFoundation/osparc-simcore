@@ -27,6 +27,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
+from settings_library.r_clone import S3Provider
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
@@ -48,12 +49,6 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
-
-
-class S3Provider(str, Enum):
-    AWS = "AWS"
-    CEPH = "CEPH"
-    MINIO = "MINIO"
 
 
 class VFSCacheMode(str, Enum):
