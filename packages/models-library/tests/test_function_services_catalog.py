@@ -55,7 +55,7 @@ def test_catalog_registry(monkeypatch: MonkeyPatch):
         dev_catalog = FunctionServices(settings=FunctionServiceSettings())
         dev_catalog.extend(catalog)
 
-        assert not dev_catalog.skip_dev()
+        assert not dev_catalog._skip_dev()
         assert dev_catalog._functions == catalog._functions
 
     # without dev features
@@ -67,7 +67,7 @@ def test_catalog_registry(monkeypatch: MonkeyPatch):
         prod_catalog = FunctionServices(settings=FunctionServiceSettings())
         prod_catalog.extend(catalog)
 
-        assert prod_catalog.skip_dev()
+        assert prod_catalog._skip_dev()
         assert prod_catalog._functions == catalog._functions
 
         prod_services = set(prod_catalog.iter_services_key_version())

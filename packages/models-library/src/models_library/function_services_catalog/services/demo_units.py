@@ -15,6 +15,11 @@ def build_input(schema):
 
 
 # SEE https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
+#
+# NOTE: this service is also used as fixture in test_catalog_utils.py::test_can_connect_with_units
+#       and assumes for convenience that matching 'Titles' correspond to compatible units.
+#       If this assumption cannot be guaranteed anymore the test must be updated.
+#
 
 META = ServiceDockerData.parse_obj(
     {
@@ -25,7 +30,8 @@ META = ServiceDockerData.parse_obj(
         # - 0.2.0: reverted order of first 5 outputs
         "type": ServiceType.BACKEND,
         "name": "Demo Units",
-        "description": "Demo that takes base units as inputs and transform them in the outputs",
+        "description": "This service is for demo purposes."
+        "It takes base units as inputs and transform them in the outputs.",
         "authors": [PC, OM],
         "contact": PC.email,
         "thumbnail": create_fake_thumbnail_url("demo-units"),
@@ -111,7 +117,7 @@ META = ServiceDockerData.parse_obj(
             "radiation": build_input(
                 {
                     "title": "Radiation",
-                    "x_unit": "roentgen",
+                    "x_unit": "rutherford",
                     "type": "number",
                 }
             ),
@@ -187,7 +193,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "radiation": build_input(
                 {
-                    "title": "Radiati0n",  # it's not a typo
+                    "title": "Radiation",
                     "x_unit": "curie",
                     "type": "number",
                 }
@@ -198,7 +204,7 @@ META = ServiceDockerData.parse_obj(
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=META,
     is_under_development=True,
 )
