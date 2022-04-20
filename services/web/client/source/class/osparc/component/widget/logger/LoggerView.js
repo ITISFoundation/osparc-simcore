@@ -56,8 +56,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     this._add(table, {
       flex: 1
     });
-
-    this.__messengerColors = new Set();
   },
 
   properties: {
@@ -81,18 +79,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       info: 0,
       warning: 1,
       error: 2
-    },
-
-    getNewColor: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
-      let luminanceText = null;
-      let color = null;
-      do {
-        color = osparc.utils.Utils.getRandomColor();
-        luminanceText = osparc.utils.Utils.getColorLuminance(color);
-      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
-      return color;
     }
   },
 
@@ -100,7 +86,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __textFilterField: null,
     __loggerModel: null,
     __logView: null,
-    __messengerColors: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -296,17 +281,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         label = "Workbench";
       }
 
-      const nodeColor = this.__getNodesColor(nodeId);
-      const msgColor = osparc.component.widget.logger.LoggerTable.getLevelColor(logLevel);
       const msgLogs = [];
       msgs.forEach(msg => {
         const msgLog = {
           nodeId,
           label,
           msg,
-          logLevel,
-          nodeColor,
-          msgColor
+          logLevel
         };
         msgLogs.push(msgLog);
       });
@@ -319,17 +300,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       this.__loggerModel.reloadData();
       const nFilteredRows = this.__loggerModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
-    },
-
-    __getNodesColor: function(nodeId) {
-      for (const item of this.__messengerColors) {
-        if (item[0] === nodeId) {
-          return item[1];
-        }
-      }
-      const color = osparc.component.widget.logger.LoggerView.getNewColor();
-      this.__messengerColors.add([nodeId, color]);
-      return color;
     },
 
     __applyFilters: function() {
