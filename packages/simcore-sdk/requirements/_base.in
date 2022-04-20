@@ -4,11 +4,14 @@
 --constraint ../../../requirements/constraints.txt
 --requirement ../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 
+aioboto3
 aiofiles
 aiohttp
 aiopg[sa]
+async-cache
 jsonschema
 packaging
 pydantic[email]
