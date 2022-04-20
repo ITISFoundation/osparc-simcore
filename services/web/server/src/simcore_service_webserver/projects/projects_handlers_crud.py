@@ -5,17 +5,20 @@
 import asyncio
 import json
 import logging
+from dataclasses import Field
 from typing import Any, Coroutine, Dict, List, Optional, Set
 from uuid import UUID
 
+import orjson
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
+from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, ValidationError
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
@@ -30,6 +33,7 @@ from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
+from ..utils import snake_to_camel
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -69,6 +73,9 @@ routes = web.RouteTableDef()
 # - Update https://google.aip.dev/134
 # - Delete https://google.aip.dev/135
 #
+
+
+# API MODELS ------------------------
 class _ProjectCreateQuery(BaseModel):
     template_uuid: Optional[UUIDStr] = None
     as_template: Optional[UUIDStr] = None
@@ -76,11 +83,61 @@ class _ProjectCreateQuery(BaseModel):
     hidden: bool = False
 
 
+class ProjectCreate(BaseModel):
+    """
+        -> POST /projects (ProjectCreate)
+
+    - resource ID (i.e. project's uuid) is defined in the *backend* on creation
+
+    """
+
+    name: str
+    description: str
+    thumbnail: Optional[HttpUrl] = None
+
+    # TODO: why these are necessary?
+    prj_owner: EmailStr = Field(..., description="user's email of owner")
+    access_rights: Dict[GroupIDStr, AccessRights] = Field(...)
+
+    class Config:
+        extra = Extra.ignore  # error tolerant
+        alias_generator = snake_to_camel
+        json_loads = orjson.loads
+        json_dumps = json_dumps
+
+
+class ProjectGet(BaseModel):
+    name: str
+    description: str
+    thumbnail: HttpUrl = ""
+    prj_owner: EmailStr = Field(..., description="user's email of owner")
+    access_rights: Dict[GroupIDStr, AccessRights] = Field(...)
+
+    class Config:
+        extra = Extra.allow
+        alias_generator = snake_to_camel
+        json_dumps = json_dumps
+
+
+# HANDLERS ------------------------
+
+
 @routes.post(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
+    """
+
+    :raises web.HTTPBadRequest
+    :raises web.HTTPNotFound
+    :raises web.HTTPBadRequest
+    :raises web.HTTPNotFound
+    :raises web.HTTPUnauthorized
+    :raises web.HTTPCreated
+    """
+    # SEE https://google.aip.dev/133
+
     # FIXME: too-many-branches
     # FIXME: too-many-statements
 
@@ -92,6 +149,7 @@ async def create_projects(request: web.Request):
     try:
         q = _ProjectCreateQuery.parse_obj(*request.query)
     except ValidationError as err:
+        # TODO: impove error. which parameter failed and why?
         raise web.HTTPBadRequest(reason=f"Invalid query parameters: {err}")
 
     new_project = {}
