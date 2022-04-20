@@ -5,10 +5,11 @@
 import logging
 from copy import deepcopy
 from typing import Any, Dict, Optional, Tuple
-from uuid import UUID, uuid1, uuid5
+from uuid import UUID, uuid4, uuid5
 
 from aiohttp import web
 from models_library.basic_types import UUIDStr
+from models_library.projects import ProjectID
 from models_library.users import UserID
 
 from ..storage_api import copy_data_folders_from_project
@@ -18,6 +19,8 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 log = logging.getLogger(__name__)
 
 NodesMap = Dict[UUIDStr, UUIDStr]
+
+AUTO_CREATE_UUID = None
 
 
 def _replace_uuids(entity: Any, project_map, nodes_map) -> Any:
@@ -47,9 +50,9 @@ def _replace_uuids(entity: Any, project_map, nodes_map) -> Any:
 
 
 def _clone_project_from(
-    project: ProjectDict,
+    source_project: ProjectDict,
     *,
-    new_project_id: Optional[UUID],
+    new_project_id: ProjectID,
     clean_output_data: bool = False,
 ) -> Tuple[ProjectDict, NodesMap]:
     """
@@ -59,62 +62,60 @@ def _clone_project_from(
     - w/ or w/o outputs
     """
     #
-    # TODO: not robust to changes in project schema
+    # TODO: Not robust to changes in project schema
+    #   e.g. how to guarantee these are the outputs?
+    #        should we mark these fields?
     #
 
-    project_copy = deepcopy(project)
-
-    # Update project id
-    # NOTE: this can be re-assigned by dbapi if not unique
-    if new_project_id:
-        assert isinstance(new_project_id, UUID)  # nosec
-        project_copy_uuid = new_project_id
-    else:
-        project_copy_uuid = uuid1()  # random project id
-
-    project_copy["uuid"] = str(project_copy_uuid)
+    cloned_project = deepcopy(source_project)
+    cloned_project["uuid"] = f"{new_project_id}"
 
     # Workbench nodes shall be unique within the project context
-    def _create_new_node_uuid(old_uuid):
-        return str(uuid5(project_copy_uuid, str(old_uuid)))
+    def _create_new_node_uuid(previous_uuid):
+        return f"{uuid5(new_project_id, f'{previous_uuid}')}"
 
-    nodes_map = {}
-    for node_uuid in project.get("workbench", {}).keys():
+    nodes_map: NodesMap = {}
+    for node_uuid in source_project.get("workbench", {}).keys():
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
-    project_map = {project["uuid"]: project_copy["uuid"]}
+    project_map = {source_project["uuid"]: cloned_project["uuid"]}
 
-    project_copy["workbench"] = _replace_uuids(
-        project_copy.get("workbench", {}), project_map, nodes_map
+    cloned_project["workbench"] = _replace_uuids(
+        cloned_project.get("workbench", {}), project_map, nodes_map
     )
-    if "ui" in project_copy:
-        project_copy["ui"]["workbench"] = _replace_uuids(
-            project_copy["ui"].get("workbench", {}), project_map, nodes_map
+
+    if "ui" in cloned_project:
+        cloned_project["ui"]["workbench"] = _replace_uuids(
+            cloned_project["ui"].get("workbench", {}), project_map, nodes_map
         )
-        project_copy["ui"]["slideshow"] = _replace_uuids(
-            project_copy["ui"].get("slideshow", {}), project_map, nodes_map
+        cloned_project["ui"]["slideshow"] = _replace_uuids(
+            cloned_project["ui"].get("slideshow", {}), project_map, nodes_map
         )
-        if "mode" in project_copy["ui"]:
-            project_copy["ui"]["mode"] = project_copy["ui"]["mode"]
+        if "mode" in cloned_project["ui"]:
+            cloned_project["ui"]["mode"] = cloned_project["ui"]["mode"]
 
     if clean_output_data:
         FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
-        for node_data in project_copy.get("workbench", {}).values():
+        for node_data in cloned_project.get("workbench", {}).values():
             for field in FIELDS_TO_DELETE:
                 node_data.pop(field, None)
 
-    return project_copy, nodes_map
+    return cloned_project, nodes_map
 
 
-async def copy_project(
+async def clone_project(
     app: web.Application,
-    project: ProjectDict,
     user_id: UserID,
-    new_project_id: Optional[UUID] = None,
+    project: ProjectDict,
+    *,
+    new_project_id: Optional[UUID] = AUTO_CREATE_UUID,
 ) -> ProjectDict:
-    """Clones both document and data folders of a project
+    """
+    Let's define clone as a copy with potentially some field
+    updates (e.g. new identifiers, etc).
 
-    - document
+    Clones both project in db and its associated data-folders
+    - project
         - get new identifiers for project and nodes
     - data folders
         - folder name composes as project_uuid/node_uuid
@@ -124,7 +125,14 @@ async def copy_project(
     # TODO: set as invisible and set visible when copied so it can be used?
     # TODO: atomic operation?
 
+    # TODO: can perform action? check whether user_id can clone project
+    # TODO: perform action?
+
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # Update project id
+    new_project_id = new_project_id or uuid4()
+    assert isinstance(new_project_id, UUID)  # nosec
 
     # creates clone
     project_copy, nodes_map = _clone_project_from(
@@ -146,4 +154,6 @@ async def copy_project(
     return updated_project
 
 
-# def create_project( source_project: ProjectID, )
+# TODO: schedule task
+# TODO: long running https://google.aip.dev/151
+# TODO: create_project(...)
