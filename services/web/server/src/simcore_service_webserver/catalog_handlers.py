@@ -288,22 +288,13 @@ async def get_service_resources_handler(request: Request):
 
     Returns compatible output port of a connected node for a given input
     """
-    with parameters_validation(request) as ctx:
+    with parameters_validation(request):
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
-        to_service_key: ServiceKey = request.query["toService"]
-        to_service_version: ServiceVersion = request.query["toVersion"]
-        to_input_key: ServiceInputKey = request.query["toInput"]
 
-    # Evaluate and return validated model
-    data = await get_compatible_outputs_given_target_input(
-        service_key,
-        service_version,
-        to_service_key,
-        to_service_version,
-        to_input_key,
-        ctx,
+    data = await catalog_client.get_service_resources(
+        request.app, service_key=service_key, service_version=service_version
     )
 
     # format response

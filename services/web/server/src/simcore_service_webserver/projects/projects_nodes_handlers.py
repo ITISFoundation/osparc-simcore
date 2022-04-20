@@ -17,7 +17,7 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import ProjectNotFoundError
+from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     try:
         # ensure the project exists
-        await projects_api.get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{project_uuid}",
             user_id=user_id,
@@ -122,12 +122,14 @@ async def get_node_resources(request: web.Request) -> web.Response:
         )
 
         resources = await projects_api.get_project_node_resources(
-            request.app, project_id=project_uuid, node_id=node_uuid
+            request.app, project=project, node_id=node_uuid
         )
         return web.json_response({"data": resources}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Node {node_uuid} not found in project") from exc
 
 
 @routes.put(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}/resources")
@@ -144,7 +146,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     try:
         # ensure the project exists
-        await projects_api.get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{project_uuid}",
             user_id=user_id,
@@ -152,13 +154,15 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         )
 
         new_node_resources = await projects_api.set_project_node_resources(
-            request.app, project_id=project_uuid, node_id=node_uuid
+            request.app, project=project, node_id=node_uuid
         )
 
         return web.json_response({"data": new_node_resources}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Node {node_uuid} not found in project") from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}:retrieve")

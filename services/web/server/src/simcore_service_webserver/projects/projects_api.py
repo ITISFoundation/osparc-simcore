@@ -36,7 +36,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2_api, storage_api
+from .. import catalog_client, director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -54,7 +54,7 @@ from ..users_exceptions import UserNotFoundError
 from . import _delete
 from .project_lock import UserNameDict, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectLockError
+from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -883,12 +883,16 @@ async def add_project_states_for_user(
 
 
 async def get_project_node_resources(
-    app: web.Application, project_id: ProjectID, node_id: NodeID
-):
-    raise NotImplementedError
+    app: web.Application, project: dict[str, Any], node_id: NodeID
+) -> Dict[str, Any]:
+    if project_node := project.get("workbench", {}).get(f"{node_id}"):
+        return await catalog_client.get_service_resources(
+            app, project_node["key"], project_node["version"]
+        )
+    raise NodeNotFoundError(project["uuid"], f"{node_id}")
 
 
 async def set_project_node_resources(
-    app: web.Application, project_id: ProjectID, node_id: NodeID
+    app: web.Application, project: dict[str, Any], node_id: NodeID
 ):
     raise NotImplementedError
