@@ -199,6 +199,10 @@ SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
     response_model=Dict[ResourceName, ResourceValue],
     **RESPONSE_MODEL_POLICY,
 )
+@cached(
+    ttl=DIRECTOR_CACHING_TTL,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['service_key']}_{kwargs['service_version']}",
+)
 async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
