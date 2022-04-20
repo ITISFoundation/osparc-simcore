@@ -8,7 +8,7 @@ import aioboto3
 import pytest
 from faker import Faker
 from settings_library.r_clone import RCloneSettings, S3Provider
-from simcore_sdk.node_ports_v2.r_clone import is_r_clone_installed, sync_to_s3
+from simcore_sdk.node_ports_v2.r_clone import is_r_clone_installed, sync_local_to_s3
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -51,13 +51,17 @@ def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
 @pytest.fixture
 async def r_clone_settings(minio_config: Dict[str, Any]) -> RCloneSettings:
     client = minio_config["client"]
-    settings = RCloneSettings(
-        S3_ENDPOINT=f"http://{client['endpoint']}",  # TODO: timeout check of the command
-        S3_ACCESS_KEY=client["access_key"],
-        S3_SECRET_KEY=client["secret_key"],
-        S3_BUCKET_NAME=minio_config["bucket_name"],
-        S3_SECURE=client["secure"],
-        R_CLONE_S3_PROVIDER=S3Provider.MINIO,
+    settings = RCloneSettings.parse_obj(
+        dict(
+            R_CLONE_S3=dict(
+                S3_ENDPOINT=f"http://{client['endpoint']}",  # TODO: timeout check of the command
+                S3_ACCESS_KEY=client["access_key"],
+                S3_SECRET_KEY=client["secret_key"],
+                S3_BUCKET_NAME=minio_config["bucket_name"],
+                S3_SECURE=client["secure"],
+            ),
+            R_CLONE_PROVIDER=S3Provider.MINIO,
+        )
     )
     if not await is_r_clone_installed(settings):
         pytest.skip("rclone not installed")
@@ -81,7 +85,7 @@ def s3_object(
 ) -> str:
 
     s3_path = (
-        Path(r_clone_settings.S3_BUCKET_NAME)
+        Path(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
         / f"{project_id}"
         / f"{node_uuid}"
         / file_name
@@ -106,13 +110,13 @@ async def _get_s3_object(
     r_clone_settings: RCloneSettings, s3_path: str
 ) -> AsyncGenerator["aioboto3.resources.factory.s3.Object", None]:
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.S3_ENDPOINT) as s3:
+    async with session.resource("s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT) as s3:
         s3_object = await s3.Object(
-            bucket_name=r_clone_settings.S3_BUCKET_NAME,
-            key=s3_path.lstrip(r_clone_settings.S3_BUCKET_NAME),
+            bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
+            key=s3_path.lstrip(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME),
         )
         yield s3_object
 
@@ -127,14 +131,14 @@ async def _download_s3_object(
 # TESTS
 
 
-async def test_sync_to_s3(
+async def test_sync_local_to_s3(
     r_clone_settings: RCloneSettings,
     s3_object: str,
     file_to_upload: Path,
     local_file_for_download: Path,
     cleanup_s3: None,
 ) -> None:
-    etag = await sync_to_s3(
+    etag = await sync_local_to_s3(
         r_clone_settings=r_clone_settings,
         s3_path=s3_object,
         local_file_path=file_to_upload,

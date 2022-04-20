@@ -23,7 +23,12 @@ def s3_provider(request) -> S3Provider:
 def r_clone_settings(
     monkeypatch: MonkeyPatch, s3_provider: S3Provider
 ) -> RCloneSettings:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", s3_provider.value)
+    monkeypatch.setenv("R_CLONE_PROVIDER", s3_provider.value)
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
     return RCloneSettings()
 
 
