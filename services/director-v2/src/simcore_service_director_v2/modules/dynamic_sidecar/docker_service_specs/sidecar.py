@@ -192,7 +192,7 @@ def get_dynamic_sidecar_spec(
             # the following are used for scheduling
             "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
-            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.json(),
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
