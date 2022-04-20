@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path

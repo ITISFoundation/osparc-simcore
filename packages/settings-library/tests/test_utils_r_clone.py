@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import pytest
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.utils_r_clone import _COMMON_ENTRIES, get_r_clone_config
