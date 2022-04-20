@@ -45,6 +45,9 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def get(self, key: DictKey, default: Optional[DictValue] = None):
         return self.__root__.get(key, default)
 
+    def setdefault(self, key: DictKey, default: DictValue):
+        return self.__root__.setdefault(key, default)
+
     def __len__(self) -> int:
         return self.__root__.__len__()
 

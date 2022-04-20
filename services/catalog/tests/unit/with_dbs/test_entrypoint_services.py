@@ -16,7 +16,7 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
-from models_library.services_resources import ResourcesDict, ServiceResources
+from models_library.services_resources import ResourceValue, ServiceResources
 from pydantic import ByteSize
 from respx.models import Route
 from respx.router import MockRouter
@@ -286,9 +286,16 @@ def mock_director_service_labels(
             },
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
-                    "limits": ResourcesDict.parse_obj(
-                        {"cpu": 4.0, "ram": ByteSize(17179869184)}
-                    )
+                    "__root__": {
+                        "cpu": ResourceValue(
+                            limit=4.0,
+                            reservation=_DEFAULT_SERVICE_RESOURCES["cpu"].reservation,
+                        ),
+                        "ram": ResourceValue(
+                            limit=ByteSize(17179869184),
+                            reservation=_DEFAULT_SERVICE_RESOURCES["ram"].reservation,
+                        ),
+                    },
                 }
             ),
             id="only_limits_defined_returns_default_reservations",
@@ -299,22 +306,14 @@ def mock_director_service_labels(
             },
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
-                    "limits": ResourcesDict.parse_obj(
-                        {
-                            "cpu": 4.0,
-                            "ram": ByteSize(17179869184),
-                            "VRAM": 1,
-                            "SOME_STUFF": "some_string",
-                        }
-                    ),
-                    "reservations": ResourcesDict.parse_obj(
-                        {
-                            "cpu": 0.1,
-                            "ram": ByteSize(536870912),
-                            "VRAM": 1,
-                            "SOME_STUFF": "some_string",
-                        }
-                    ),
+                    "__root__": {
+                        "cpu": ResourceValue(limit=4.0, reservation=0.1),
+                        "ram": ResourceValue(
+                            limit=ByteSize(17179869184), reservation=ByteSize(536870912)
+                        ),
+                        "VRAM": ResourceValue(limit=0, reservation=1),
+                        "SOME_STUFF": ResourceValue(limit=0, reservation="some_string"),
+                    }
                 }
             ),
             id="everything_rightly_defined",
@@ -325,12 +324,16 @@ def mock_director_service_labels(
             },
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
-                    "reservations": ResourcesDict.parse_obj(
-                        {
-                            "cpu": 0.1,
-                            "ram": ByteSize(536870912),
-                        }
-                    ),
+                    "__root__": {
+                        "cpu": ResourceValue(
+                            limit=_DEFAULT_SERVICE_RESOURCES["cpu"].limit,
+                            reservation=0.1,
+                        ),
+                        "ram": ResourceValue(
+                            limit=_DEFAULT_SERVICE_RESOURCES["ram"].limit,
+                            reservation=ByteSize(536870912),
+                        ),
+                    }
                 }
             ),
             id="no_limits_defined_returns_default_limits",
@@ -341,20 +344,17 @@ def mock_director_service_labels(
             },
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
-                    "limits": ResourcesDict.parse_obj(
-                        {
-                            "cpu": 10.0,
-                            "ram": ByteSize(53687091232),
-                            "VRAM": 1,
-                        }
-                    ),
-                    "reservations": ResourcesDict.parse_obj(
-                        {
-                            "cpu": 10.0,
-                            "ram": ByteSize(53687091232),
-                            "VRAM": 1,
-                        }
-                    ),
+                    "__root__": {
+                        "cpu": ResourceValue(
+                            limit=10.0,
+                            reservation=10.0,
+                        ),
+                        "ram": ResourceValue(
+                            limit=ByteSize(53687091232),
+                            reservation=ByteSize(53687091232),
+                        ),
+                        "VRAM": ResourceValue(limit=0, reservation=1),
+                    }
                 }
             ),
             id="no_limits_with_reservations_above_default_returns_same_as_reservation",

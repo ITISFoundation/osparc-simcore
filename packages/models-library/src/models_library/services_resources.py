@@ -4,23 +4,22 @@ from models_library.generics import DictModel
 from pydantic import BaseModel, StrictFloat, StrictInt, root_validator
 
 ResourceName = str
-ResourceValue = Union[StrictInt, StrictFloat, str]
 
 
-ResourcesDict = DictModel[ResourceName, ResourceValue]
-
-
-class ServiceResources(BaseModel):
-    limits: ResourcesDict
-    reservations: ResourcesDict
+class ResourceValue(BaseModel):
+    limit: Union[StrictInt, StrictFloat, str]
+    reservation: Union[StrictInt, StrictFloat, str]
 
     @root_validator()
     @classmethod
     def ensure_limits_are_equal_or_above_reservations(cls, values):
+        if isinstance(values["reservation"], str):
+            # in case of string, the limit is the same as the reservation
+            values["limit"] = values["reservation"]
+        else:
+            values["limit"] = max(values["limit"], values["reservation"])
 
-        for key, value in values["reservations"].items():
-            if isinstance(value, str):
-                values["limits"][key] = values["limits"].get(key, value)
-            else:
-                values["limits"][key] = max(values["limits"].get(key, value), value)
         return values
+
+
+ServiceResources = DictModel[ResourceName, ResourceValue]
