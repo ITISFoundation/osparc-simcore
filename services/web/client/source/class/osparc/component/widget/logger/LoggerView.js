@@ -312,17 +312,17 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const nodeColor = this.__getNodesColor(nodeId);
       const msgColor = osparc.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
       const msgLogs = [];
-      for (let i=0; i<msgs.length; i++) {
+      msgs.forEach(msg => {
         const msgLog = {
           nodeId,
           label,
-          msg: msgs[i],
+          msg,
           logLevel,
           nodeColor,
           msgColor
         };
         msgLogs.push(msgLog);
-      }
+      });
       this.__loggerModel.addRows(msgLogs);
 
       this.__updateTable();
