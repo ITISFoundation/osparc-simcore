@@ -1,12 +1,13 @@
 import json
 import logging
 from pprint import pformat
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 import pydantic
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
+from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import InvalidProtocolError
@@ -32,6 +33,7 @@ async def load(
     project_id: str,
     node_uuid: str,
     auto_update: bool = False,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
@@ -88,6 +90,7 @@ async def load(
         save_to_db_cb=dump,
         node_port_creator_cb=load,
         auto_update=auto_update,
+        r_clone_settings=r_clone_settings,
     )
     log.debug(
         "created node_ports_v2 object %s",

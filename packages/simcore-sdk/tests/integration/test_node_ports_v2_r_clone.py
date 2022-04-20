@@ -1,10 +1,10 @@
-from contextlib import asynccontextmanager
 import shutil
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Dict, Iterator
 from uuid import UUID
-import aioboto3
 
+import aioboto3
 import pytest
 from faker import Faker
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -113,7 +113,9 @@ async def _get_s3_object(
         aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT) as s3:
+    async with session.resource(
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+    ) as s3:
         s3_object = await s3.Object(
             bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
             key=s3_path.lstrip(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME),

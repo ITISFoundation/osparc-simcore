@@ -5,10 +5,12 @@ from typing import Any, Callable, Coroutine, Dict, Optional
 
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
+from settings_library.r_clone import RCloneSettings
 from yarl import URL
 
 from ..node_ports_common import config, data_items_utils, filemanager
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
+from .r_clone import is_r_clone_installed, sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
@@ -145,15 +147,23 @@ async def push_file_to_store(
     user_id: int,
     project_id: str,
     node_id: str,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
-    store_id, e_tag = await filemanager.upload_file(
-        user_id=user_id,
-        store_name=config.STORE,
-        s3_object=s3_object,
-        local_file_path=file,
-    )
+
+    if await is_r_clone_installed(r_clone_settings):
+        e_tag = await sync_local_to_s3(
+            r_clone_settings=r_clone_settings, s3_path=s3_object, local_file_path=file
+        )
+        store_id = 0  # simcore
+    else:
+        store_id, e_tag = await filemanager.upload_file(
+            user_id=user_id,
+            store_name=config.STORE,
+            s3_object=s3_object,
+            local_file_path=file,
+        )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)
     return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
 

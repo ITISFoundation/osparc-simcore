@@ -5,6 +5,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 from servicelib.utils import logged_gather
+from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
@@ -27,6 +28,7 @@ class Nodeports(BaseModel):
         [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
     ]
     auto_update: bool = False
+    r_clone_settings: Optional[RCloneSettings] = None
 
     class Config:
         arbitrary_types_allowed = True

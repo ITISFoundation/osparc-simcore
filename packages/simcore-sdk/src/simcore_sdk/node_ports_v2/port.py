@@ -226,6 +226,7 @@ class Port(BaseServiceIOModel):
                     user_id=self._node_ports.user_id,
                     project_id=self._node_ports.project_id,
                     node_id=self._node_ports.node_uuid,
+                    r_clone_settings=self._node_ports.r_clone_settings,
                 )
             else:
                 final_value = converted_value

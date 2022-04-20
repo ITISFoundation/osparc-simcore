@@ -64,20 +64,22 @@ async def is_r_clone_installed(r_clone_settings: Optional[RCloneSettings]) -> bo
 
 async def _get_etag_via_s3(r_clone_settings: RCloneSettings, s3_path: str) -> ETag:
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.S3_ENDPOINT) as s3:
+    async with session.resource(
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+    ) as s3:
         s3_object = await s3.Object(
-            bucket_name=r_clone_settings.S3_BUCKET_NAME,
-            key=s3_path.lstrip(r_clone_settings.S3_BUCKET_NAME),
+            bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
+            key=s3_path.lstrip(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME),
         )
         e_tag_result = await s3_object.e_tag
         # NOTE: above result is JSON encoded for some reason
         return json.loads(e_tag_result)
 
 
-async def sync_to_s3(
+async def sync_local_to_s3(
     r_clone_settings: Optional[RCloneSettings], s3_path: str, local_file_path: Path
 ) -> ETag:
     if r_clone_settings is None:
@@ -99,14 +101,14 @@ async def sync_to_s3(
         # we must run the command from the file's directory. See below
         # example for further details:
         #
-        # local_file_path=`/tmp/pytest-of-silenthk/pytest-80/test_sync_to_s30/filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt`
+        # local_file_path=`/tmp/pytest-of-silenthk/pytest-80/test_sync_local_to_s30/filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt`
         # s3_path=`simcore/00000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000002/filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt`
         #
         # rclone
         #   --config
         #   /tmp/tmpd_1rtmss
         #   sync
-        #   '/tmp/pytest-of-silenthk/pytest-80/test_sync_to_s30'
+        #   '/tmp/pytest-of-silenthk/pytest-80/test_sync_local_to_s30'
         #   'dst:simcore/00000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000002'
         #   --progress
         #   --include
