@@ -338,7 +338,7 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
       s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
-      s.set.value = s.minimum ? parseInt(String(s.defaultValue)) : 0;
+      s.set.value = s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
 
       this.__formCtrl.addBindingOptions(key,
         { // model2target
