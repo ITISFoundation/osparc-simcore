@@ -141,7 +141,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     try:
         project_uuid = ProjectID(request.match_info["project_id"])
         node_uuid = NodeID(request.match_info["node_id"])
-        body = await request.json()
+        # body = await request.json()
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     try:

@@ -3,17 +3,20 @@
 # pylint:disable=redefined-outer-name
 
 import re
+from pathlib import Path
 from typing import Callable
 
 import pytest
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_projects import NewProject
 from simcore_service_webserver.application import (
     create_safe_application,
     setup_catalog,
     setup_db,
     setup_login,
     setup_products,
+    setup_projects,
     setup_rest,
     setup_security,
     setup_session,
@@ -50,6 +53,7 @@ def client(
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     assert setup_catalog(app)
+    setup_projects(app)
     setup_products(app)
 
     yield event_loop.run_until_complete(
@@ -133,6 +137,24 @@ async def test_dag_entrypoints(
     data, errors = await assert_status(resp, expected)
 
 
+@pytest.fixture
+async def user_project(
+    client,
+    fake_project,
+    logged_user,
+    tests_data_dir: Path,
+):
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -145,8 +167,12 @@ async def test_dag_entrypoints(
 async def test_get_service_resources(
     client,
     logged_user,
+    user_project,
     api_version_prefix,
     mock_catalog_service_api_responses,
     expected,
 ):
     assert client.app.router
+    url = client.app.router["get_node_resources"].url_for(
+        project_id=user_project["uuid"]
+    )
