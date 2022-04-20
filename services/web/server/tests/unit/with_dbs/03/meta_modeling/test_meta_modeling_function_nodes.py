@@ -1,7 +1,7 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import collections.abc
 import inspect
@@ -16,7 +16,7 @@ def test_frontend_service_to_callable_registry():
 
     print(f"\n{len(catalog)=}")
 
-    for (node_key, node_version), func in catalog.iter_items():
+    for (node_key, node_version), func in catalog._items():
         if node_call := func.implementation:
             print(" -", node_key, node_version, node_call.__name__)
             assert (
