@@ -213,13 +213,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             icon: "@FontAwesome5Solid/bookmark/10",
             visibility: "excluded"
           });
-          control.addListener("execute", () => {
-            if (this.getNode().getMarker()) {
-              this.getNode().removeMarker();
-            } else {
-              this.getNode().addMarker();
-            }
-          });
+          control.addListener("execute", () => this.getNode().toggleMarker());
           const optionsMenu = this.getChildControl("options-menu-button");
           optionsMenu.getMenu().add(control);
           break;

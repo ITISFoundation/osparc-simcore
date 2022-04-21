@@ -231,13 +231,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
-      this._markerBtn.addListener("execute", () => {
-        if (this.getNode().getMarker()) {
-          this.getNode().removeMarker();
-        } else {
-          this.getNode().addMarker();
-        }
-      });
+      this._markerBtn.addListener("execute", () => this.getNode().toggleMarker());
 
       const marker = this.getChildControl("marker");
       const updateMarker = () => {

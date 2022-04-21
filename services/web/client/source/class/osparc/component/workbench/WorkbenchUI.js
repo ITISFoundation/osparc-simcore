@@ -1338,13 +1338,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         },
         addRemoveMarker: {
           "text": "\uf097", // marker
-          "action": () => {
-            if (nodeUI.getNode().getMarker()) {
-              nodeUI.getNode().removeMarker();
-            } else {
-              nodeUI.getNode().addMarker();
-            }
-          }
+          "action": () => nodeUI.getNode().toggleMarker()
         },
         addServiceInput: {
           "text": "\uf067", // plus
