@@ -44,6 +44,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable):
     cfg = deepcopy(default_app_cfg)
 
     cfg["main"]["port"] = unused_tcp_port_factory()
+    cfg["storage"]["port"] = unused_tcp_port_factory()
 
     exclude = {
         "tracing",
@@ -58,7 +59,6 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable):
         "computation",
         "clusters",
         "socketio",
-        "products",
         "studies_dispatcher",
     }
     include = {
@@ -66,6 +66,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable):
         "rest",
         "catalog",
         "projects",
+        "products",
         "login",
         "users",
         "resource_manager",
