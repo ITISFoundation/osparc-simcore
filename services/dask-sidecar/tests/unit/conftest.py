@@ -23,11 +23,15 @@ from pytest_mock.plugin import MockerFixture
 from yarl import URL
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.environment_configs",
     "pytest_simcore.docker_compose",
-    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
+    "pytest_simcore.minio_service",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 

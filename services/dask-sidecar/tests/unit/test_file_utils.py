@@ -5,12 +5,13 @@
 import asyncio
 import zipfile
 from pathlib import Path
-from typing import AsyncIterable, cast
+from typing import Any, AsyncIterable, cast
 from unittest import mock
 
 import fsspec
 import pytest
 from faker import Faker
+from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
@@ -27,6 +28,41 @@ async def mocked_log_publishing_cb(
 ) -> AsyncIterable[mock.AsyncMock]:
     async with mocker.AsyncMock() as mocked_callback:
         yield mocked_callback
+
+
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio"]
+
+
+async def test_copy_file_to_remote_s3(
+    minio_config: dict[str, Any],
+    minio_service: Minio,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    fssystem = fsspec.filesystem(
+        "s3",
+        key=minio_config["client"]["access_key"],
+        secret=minio_config["client"]["secret_key"],
+        use_ssl=minio_config["client"]["secure"],
+        client_kwargs={"endpoint_url": minio_config["client"]["endpoint"]},
+    )
+    ftp_server_base_url = ftpserver.get_login_data(style="url")
+
+    file_on_remote = f"{ftp_server_base_url}/{faker.file_name()}"
+    destination_url = parse_obj_as(AnyUrl, file_on_remote)
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+
+    await push_file_to_remote(src_path, destination_url, mocked_log_publishing_cb)
+
+    open_file = fsspec.open(destination_url, mode="rt")
+    with open_file as fp:
+        assert fp.read() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
 
 
 async def test_copy_file_to_remote(
