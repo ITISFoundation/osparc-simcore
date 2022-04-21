@@ -1280,32 +1280,46 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __doOpenContextMenu: function(e) {
+      const actions = {
+        addService: {
+          "text": "\uf067", // plus
+          "action": () => this.__openServiceCatalog(e)
+        },
+        zoomIn: {
+          "text": "\uf00e", // search-plus
+          "action": () => {
+            this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+            this.zoom(true);
+          }
+        },
+        zoomReset: {
+          "text": "\uf002", // search
+          "action": () => this.setScale(1)
+        },
+        zoomOut: {
+          "text": "\uf010", // search-minus
+          "action": () => {
+            this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+            this.zoom(false);
+          }
+        },
+        drawText: {
+          "text": "\uf040", // pencil
+          "action": () => this.startAnnotationsText()
+        },
+        drawRect: {
+          "text": "\uf044", // brush with rect
+          "action": () => this.startAnnotationsRect()
+        }
+      };
+      const buttons = [actions.addService, actions.drawText, actions.drawRect];
+      this.__buttonsToContextMenu(e, buttons);
+    },
+
+    __buttonsToContextMenu: function(e, buttons) {
       if (this.__contextMenu) {
         this.__contextMenu.hide();
       }
-      const buttons = [{
-        "text": "\uf067", // plus
-        "action": () => {
-          this.__openServiceCatalog(e);
-        }
-      }, {
-        "text": "\uf00e", // search-plus
-        "action": () => {
-          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.zoom(true);
-        }
-      }, {
-        "text": "\uf002", // search
-        "action": () => {
-          this.setScale(1);
-        }
-      }, {
-        "text": "\uf010", // search-minus
-        "action": () => {
-          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.zoom(false);
-        }
-      }];
       let rotation = 3 * Math.PI / 2;
       rotation -= (2/buttons.length) * (Math.PI / 2);
       const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
