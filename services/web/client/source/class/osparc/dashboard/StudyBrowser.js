@@ -424,6 +424,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         const studyItem = this.__createStudyItem(study);
+        studyItem.setMultiSelectionMode(this.getMultiSelection());
         this._resourcesContainer.add(studyItem);
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
