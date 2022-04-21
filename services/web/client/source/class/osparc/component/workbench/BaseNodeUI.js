@@ -145,6 +145,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         label: this.tr("Rename"),
         icon: "@FontAwesome5Solid/i-cursor/10"
       });
+      renameBtn.getChildControl("shortcut").setValue("F2");
       renameBtn.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
       optionsMenu.add(renameBtn);
 
@@ -158,6 +159,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         label: this.tr("Information..."),
         icon: "@FontAwesome5Solid/info/10"
       });
+      infoBtn.getChildControl("shortcut").setValue("I");
       infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
       optionsMenu.add(infoBtn);
 
@@ -165,6 +167,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         label: this.tr("Delete"),
         icon: "@FontAwesome5Solid/trash/10"
       });
+      deleteBtn.getChildControl("shortcut").setValue("Del");
       deleteBtn.addListener("execute", () => this.fireDataEvent("removeNode", this.getNodeId()));
       optionsMenu.add(deleteBtn);
 

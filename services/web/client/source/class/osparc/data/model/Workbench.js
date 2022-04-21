@@ -360,7 +360,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __getFreePosition: function(node, toTheLeft = true) {
+    getFreePosition: function(node, toTheLeft = true) {
       // do not overlap the new node2 with other nodes
       const pos = node.getPosition();
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
@@ -391,7 +391,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
-        const freePos = this.__getFreePosition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
         const filePickerMetadata = osparc.utils.Services.getFilePicker();
@@ -447,7 +447,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.__getFreePosition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
         pm.setPosition(freePos);
 
         // create connection
@@ -481,7 +481,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         probeNode.setLabel(requesterPortMD.label);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.__getFreePosition(requesterNode, false);
+        const freePos = this.getFreePosition(requesterNode, false);
         probeNode.setPosition(freePos);
 
         // create connection
@@ -566,10 +566,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       if (leftNodeId) {
         const leftNode = this.getNode(leftNodeId);
-        node.setPosition(this.__getFreePosition(leftNode, false));
+        node.setPosition(this.getFreePosition(leftNode, false));
       } else if (rightNodeId) {
         const rightNode = this.getNode(rightNodeId);
-        node.setPosition(this.__getFreePosition(rightNode, true));
+        node.setPosition(this.getFreePosition(rightNode, true));
       } else {
         node.setPosition({
           x: 20,

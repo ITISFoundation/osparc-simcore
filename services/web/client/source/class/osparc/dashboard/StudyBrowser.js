@@ -137,7 +137,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _createLayout: function() {
-      const studiesLayout = this._createResourcesLayout("study");
+      this._createResourcesLayout("study");
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
@@ -211,7 +211,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
       }, this);
 
-      return studiesLayout;
+      return this._resourcesContainer;
     },
 
     __createImportButton: function() {
@@ -424,6 +424,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         const studyItem = this.__createStudyItem(study);
+        studyItem.setMultiSelectionMode(this.getMultiSelection());
         this._resourcesContainer.add(studyItem);
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
