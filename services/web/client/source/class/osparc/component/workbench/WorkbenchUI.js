@@ -1823,6 +1823,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __consolidateAnnotation: function(annotation, type) {
+      if (annotation === undefined) {
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
+        return;
+      }
       const serializeData = {
         type,
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
