@@ -190,6 +190,8 @@ paramiko==2.10.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
+pint==0.19.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 psycopg2-binary==2.9.1
     # via
     #   aiopg
