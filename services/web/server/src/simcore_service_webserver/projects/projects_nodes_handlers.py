@@ -141,19 +141,19 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     try:
         project_uuid = ProjectID(request.match_info["project_id"])
         node_uuid = NodeID(request.match_info["node_id"])
-        # body = await request.json()
+        _body = await request.json()
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     try:
-        raise web.HTTPNotImplemented(reason=f"Not yet implemented!")
-        # ensure the project exists
-        # project = await projects_api.get_project_for_user(
-        #     request.app,
-        #     project_uuid=f"{project_uuid}",
-        #     user_id=user_id,
-        #     include_templates=True,
-        # )
 
+        # ensure the project exists
+        _project = await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{project_uuid}",
+            user_id=user_id,
+            include_templates=True,
+        )
+        raise web.HTTPNotImplemented(reason="Not yet implemented!")
         # new_node_resources = await projects_api.set_project_node_resources(
         #     request.app, project=project, node_id=node_uuid
         # )
