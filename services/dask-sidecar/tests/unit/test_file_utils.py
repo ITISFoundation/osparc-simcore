@@ -34,22 +34,12 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["minio"]
 
 
-async def test_copy_file_to_remote_s3(
+@pytest.fixture
+def storage_kwargs(
     minio_config: dict[str, Any],
     minio_service: Minio,
-    tmp_path: Path,
-    faker: Faker,
-    mocked_log_publishing_cb: mock.AsyncMock,
-):
-    file_on_remote = f"s3://{minio_config['bucket_name']}/{faker.file_name()}"
-    destination_url = parse_obj_as(AnyUrl, file_on_remote)
-    # let's create some file with text inside
-    src_path = tmp_path / faker.file_name()
-    TEXT_IN_FILE = faker.text()
-    src_path.write_text(TEXT_IN_FILE)
-    assert src_path.exists()
-    # push it to the remote
-    storage_kwargs = {
+) -> dict[str, Any]:
+    return {
         "key": minio_config["client"]["access_key"],
         "secret": minio_config["client"]["secret_key"],
         "use_ssl": minio_config["client"]["secure"],
@@ -57,14 +47,36 @@ async def test_copy_file_to_remote_s3(
             "endpoint_url": f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}"
         },
     }
+
+
+@pytest.fixture
+def remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
+    )
+
+
+async def test_copy_file_to_remote_s3(
+    storage_kwargs: dict[str, Any],
+    remote_file_url: AnyUrl,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with text inside
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
     await push_file_to_remote(
-        src_path, destination_url, mocked_log_publishing_cb, **storage_kwargs
+        src_path, remote_file_url, mocked_log_publishing_cb, **storage_kwargs
     )
 
     # check the remote is actually having the file in
     open_file = cast(
         fsspec.core.OpenFile,
-        fsspec.open(destination_url, mode="rt", **storage_kwargs),
+        fsspec.open(remote_file_url, mode="rt", **storage_kwargs),
     )
     with open_file as fp:
         assert fp.read() == TEXT_IN_FILE
