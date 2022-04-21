@@ -252,17 +252,17 @@ async def get_service_resources(
                 )
                 continue
             if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
-                service_resources["cpu"].limit = nano_cpu_limit / 1.0e09
+                service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
             if nano_cpu_reservation := entry.value.get("Reservations", {}).get(
                 "NanoCPUs"
             ):
-                service_resources["cpu"].reservation = nano_cpu_reservation / 1.0e09
+                service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
             if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
-                service_resources["ram"].limit = ram_limit
+                service_resources["RAM"].limit = ram_limit
             if ram_reservation := entry.value.get("Reservations", {}).get(
                 "MemoryBytes"
             ):
-                service_resources["ram"].reservation = ram_reservation
+                service_resources["RAM"].reservation = ram_reservation
 
             if generic_resources := entry.value.get("Reservations", {}).get(
                 "GenericResources", []

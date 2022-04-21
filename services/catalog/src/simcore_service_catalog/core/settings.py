@@ -26,8 +26,8 @@ class DirectorSettings(BaseCustomSettings):
 
 _DEFAULT_SERVICE_RESOURCES = ServiceResources.parse_obj(
     {
-        "cpu": {"limit": 0.1, "reservation": 0.1},
-        "ram": {
+        "CPU": {"limit": 0.1, "reservation": 0.1},
+        "RAM": {
             "limit": ByteSize(2 * 1024**3),
             "reservation": ByteSize(2 * 1024**3),
         },

@@ -287,13 +287,13 @@ def mock_director_service_labels(
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
                     "__root__": {
-                        "cpu": ResourceValue(
+                        "CPU": ResourceValue(
                             limit=4.0,
-                            reservation=_DEFAULT_SERVICE_RESOURCES["cpu"].reservation,
+                            reservation=_DEFAULT_SERVICE_RESOURCES["CPU"].reservation,
                         ),
-                        "ram": ResourceValue(
+                        "RAM": ResourceValue(
                             limit=ByteSize(17179869184),
-                            reservation=_DEFAULT_SERVICE_RESOURCES["ram"].reservation,
+                            reservation=_DEFAULT_SERVICE_RESOURCES["RAM"].reservation,
                         ),
                     },
                 }
@@ -307,8 +307,8 @@ def mock_director_service_labels(
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
                     "__root__": {
-                        "cpu": ResourceValue(limit=4.0, reservation=0.1),
-                        "ram": ResourceValue(
+                        "CPU": ResourceValue(limit=4.0, reservation=0.1),
+                        "RAM": ResourceValue(
                             limit=ByteSize(17179869184), reservation=ByteSize(536870912)
                         ),
                         "VRAM": ResourceValue(limit=0, reservation=1),
@@ -325,12 +325,12 @@ def mock_director_service_labels(
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
                     "__root__": {
-                        "cpu": ResourceValue(
-                            limit=_DEFAULT_SERVICE_RESOURCES["cpu"].limit,
+                        "CPU": ResourceValue(
+                            limit=_DEFAULT_SERVICE_RESOURCES["CPU"].limit,
                             reservation=0.1,
                         ),
-                        "ram": ResourceValue(
-                            limit=_DEFAULT_SERVICE_RESOURCES["ram"].limit,
+                        "RAM": ResourceValue(
+                            limit=_DEFAULT_SERVICE_RESOURCES["RAM"].limit,
                             reservation=ByteSize(536870912),
                         ),
                     }
@@ -345,11 +345,11 @@ def mock_director_service_labels(
             _DEFAULT_SERVICE_RESOURCES.copy(
                 update={
                     "__root__": {
-                        "cpu": ResourceValue(
+                        "CPU": ResourceValue(
                             limit=10.0,
                             reservation=10.0,
                         ),
-                        "ram": ResourceValue(
+                        "RAM": ResourceValue(
                             limit=ByteSize(53687091232),
                             reservation=ByteSize(53687091232),
                         ),
