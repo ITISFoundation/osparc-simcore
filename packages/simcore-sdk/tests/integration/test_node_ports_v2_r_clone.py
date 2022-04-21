@@ -57,7 +57,7 @@ async def r_clone_settings(minio_config: Dict[str, Any]) -> RCloneSettings:
     settings = RCloneSettings.parse_obj(
         dict(
             R_CLONE_S3=dict(
-                S3_ENDPOINT=f"http://{client['endpoint']}",  # TODO: timeout check of the command
+                S3_ENDPOINT=client["endpoint"],
                 S3_ACCESS_KEY=client["access_key"],
                 S3_SECRET_KEY=client["secret_key"],
                 S3_BUCKET_NAME=minio_config["bucket_name"],
@@ -117,7 +117,7 @@ async def _get_s3_object(
         aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
     async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.endpoint
     ) as s3:
         s3_object = await s3.Object(
             bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,

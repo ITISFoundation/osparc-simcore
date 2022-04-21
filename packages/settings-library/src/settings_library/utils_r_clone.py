@@ -38,7 +38,7 @@ def get_r_clone_config(r_clone_settings: RCloneSettings) -> str:
 
     # replace entries in template
     r_clone_config = r_clone_config_template.format(
-        endpoint=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        endpoint=r_clone_settings.R_CLONE_S3.endpoint,
         access_key=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         secret_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )

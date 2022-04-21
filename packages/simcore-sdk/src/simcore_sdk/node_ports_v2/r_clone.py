@@ -68,7 +68,7 @@ async def _get_etag_via_s3(r_clone_settings: RCloneSettings, s3_path: str) -> ET
         aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
     async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.endpoint
     ) as s3:
         s3_object = await s3.Object(
             bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
