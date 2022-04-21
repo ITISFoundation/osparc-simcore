@@ -202,6 +202,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             label: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/10"
           });
+          control.getChildControl("shortcut").setValue("F2");
           control.addListener("execute", () => this.fireDataEvent("renameNode", this.getId()));
           const optionsMenu = this.getChildControl("options-menu-button");
           optionsMenu.getMenu().add(control);
@@ -228,6 +229,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             label: this.tr("Information..."),
             icon: "@FontAwesome5Solid/info/10"
           });
+          control.getChildControl("shortcut").setValue("I");
           control.addListener("execute", () => this.fireDataEvent("infoNode", this.getId()));
           const optionsMenu = this.getChildControl("options-menu-button");
           optionsMenu.getMenu().add(control);
@@ -238,6 +240,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });
+          control.getChildControl("shortcut").setValue("Del");
           control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getId()));
           const optionsMenu = this.getChildControl("options-menu-button");
           optionsMenu.getMenu().add(control);
