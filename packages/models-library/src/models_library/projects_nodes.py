@@ -57,9 +57,9 @@ OutputTypes = Union[
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
-Inputs = Dict[InputID, InputTypes]
-Outputs = Dict[OutputID, OutputTypes]
-InputsUnits = Dict[InputID, str]
+InputsDict = Dict[InputID, InputTypes]
+OutputsDict = Dict[OutputID, OutputTypes]
+InputsUnitsDict = Dict[InputID, str]
 
 
 class NodeState(BaseModel):
@@ -136,10 +136,10 @@ class Node(BaseModel):
     )
 
     # INPUT PORTS ---
-    inputs: Optional[Inputs] = Field(
+    inputs: Optional[InputsDict] = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputs_units: Optional[InputsUnits] = Field(
+    inputs_units: Optional[InputsUnitsDict] = Field(
         None,
         description="values of input unit",
         alias="inputsUnits",
@@ -154,7 +154,7 @@ class Node(BaseModel):
     )
 
     # OUTPUT PORTS ---
-    outputs: Optional[Outputs] = Field(
+    outputs: Optional[OutputsDict] = Field(
         default_factory=dict, description="values of output properties"
     )
     output_node: Optional[bool] = Field(None, deprecated=True, alias="outputNode")

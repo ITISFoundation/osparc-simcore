@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Inputs, NodeID, Outputs
+from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
 from models_library.services import KEY_RE, PropertyName, ServiceInputs, ServiceOutput
 from pydantic import BaseModel, Extra, Field, validator
@@ -74,8 +74,8 @@ class CompTaskAtDB(BaseModel):
     node_id: NodeID
     job_id: Optional[str] = Field(None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
-    inputs: Optional[Inputs] = Field(..., description="the inputs payload")
-    outputs: Optional[Outputs] = Field({}, description="the outputs payload")
+    inputs: Optional[InputsDict] = Field(..., description="the inputs payload")
+    outputs: Optional[OutputsDict] = Field({}, description="the outputs payload")
     run_hash: Optional[str] = Field(
         None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
