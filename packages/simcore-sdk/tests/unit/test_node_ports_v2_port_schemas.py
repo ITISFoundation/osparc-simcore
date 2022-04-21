@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock
 
 import jsonschema
 import pytest
+from pint import UnitRegistry
 from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
@@ -197,3 +198,68 @@ async def test_port_with_object(mocker):
     #             "b": True
     #         }
     #     )
+
+
+@pytest.fixture(scope="module")
+def unit_registry():
+    return UnitRegistry()
+
+
+@pytest.mark.skip(reason="DEV")
+def test_it(unit_registry: UnitRegistry):
+    pass
+
+
+async def test_port_with_units_and_constraints(mocker):
+    mocker.patch.object(Port, "_node_ports", new=AsyncMock())
+
+    # objects
+    port_info = {
+        "label": "Time",
+        "description": "Positive time in usec",
+        "type": "ref_contentSchema",
+        "contentSchema": {
+            "title": "Time",
+            "minimum": 0,
+            "x_unit": "micro-second",
+            "type": "number",
+        },
+    }
+
+    expected_value = 3.14
+
+    print(json.dumps(port_info, indent=1))
+    # print(json.dumps(expected_value, indent=1))
+
+    # valid data
+    p = Port(key="port-name-goes-here", value=3.14, **port_info)
+    assert p.value == expected_value
+
+    # fails constraints
+    with pytest.raises(ValidationError) as exc_info:
+        Port(key="port-name-goes-here", value=-3.14, **port_info)
+
+    assert isinstance(exc_info.value, ValidationError)
+    assert len(exc_info.value.errors()) == 1
+
+    validation_error = exc_info.value.errors()[0]
+    print(validation_error)
+
+    assert validation_error["loc"] == ("value",)  # starts with value,!
+    assert validation_error["msg"] == "value_error"
+    assert (
+        validation_error["msg"]
+        == "-3.4 invalid against content_schema: -3.4 is less than the minimum of 0"
+    )  # after ":" is friendly
+
+    # TODO: convert errors in PortValidationError that includes name of the port and which item failed and why?
+
+    # inits with None and tests set_value
+    port = Port(key="port-name-goes-here", **port_info)
+    await port.set_value(expected_value)
+    assert await port.get_value() == expected_value
+
+    with pytest.raises(ValidationError) as exc_info:
+        await port.set_value(-3.14)
+
+    assert exc_info.value.errors()[0] == validation_error
