@@ -18,6 +18,7 @@ from .dask_utils import create_dask_worker_logger
 logger = create_dask_worker_logger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
+S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
 
 
 LogPublishingCB = Callable[[str], Awaitable[None]]
@@ -102,8 +103,108 @@ async def pull_file_from_remote(
         dst_path.unlink()
 
 
+async def _push_file_to_http_link(
+    file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
+):
+    # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
+    # Therefore, we need to use the http filesystem directly in order to call the put_file function.
+    # writing on httpfilesystem is disabled by default.
+    fs = fsspec.filesystem(
+        "http",
+        headers={
+            "Content-Length": f"{file_to_upload.stat().st_size}",
+        },
+        asynchronous=True,
+    )
+    await fs._put_file(  # pylint: disable=protected-access
+        file_to_upload,
+        f"{dst_url}",
+        method="PUT",
+        callback=fsspec.Callback(
+            hooks={
+                "progress": functools.partial(
+                    _file_progress_cb,
+                    log_publishing_cb=log_publishing_cb,
+                    text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+                    main_loop=asyncio.get_event_loop(),
+                )
+            }
+        ),
+    )
+
+
+async def _push_file_to_s3_remote(
+    file_to_upload: Path,
+    dst_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
+    **s3_kwargs,
+):
+    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+    fs = fsspec.filesystem(
+        protocol=dst_url.scheme,
+        key=s3_kwargs.get("key"),
+        secret=s3_kwargs.get("secret"),
+        token=s3_kwargs.get("token"),
+        use_ssl=s3_kwargs.get("use_ssl", True),
+        client_kwargs=s3_kwargs.get("client_kwargs"),
+        # asynchronous=True
+    )
+    await asyncio.get_event_loop().run_in_executor(
+        None,
+        functools.partial(
+            fs.put_file,
+            file_to_upload,
+            f"{dst_url}",
+            callback=fsspec.Callback(
+                hooks={
+                    "progress": functools.partial(
+                        _file_progress_cb,
+                        log_publishing_cb=log_publishing_cb,
+                        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+                        main_loop=asyncio.get_event_loop(),
+                    )
+                }
+            ),
+        ),
+    )
+
+
+async def _push_file_to_generic_remote(
+    file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
+):
+    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+    fs = fsspec.filesystem(
+        protocol=dst_url.scheme,
+        username=dst_url.user,
+        password=dst_url.password,
+        port=int(dst_url.port),
+        host=dst_url.host,
+    )
+    await asyncio.get_event_loop().run_in_executor(
+        None,
+        functools.partial(
+            fs.put_file,
+            file_to_upload,
+            dst_url.path,
+            callback=fsspec.Callback(
+                hooks={
+                    "progress": functools.partial(
+                        _file_progress_cb,
+                        log_publishing_cb=log_publishing_cb,
+                        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+                        main_loop=asyncio.get_event_loop(),
+                    )
+                }
+            ),
+        ),
+    )
+
+
 async def push_file_to_remote(
-    src_path: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
+    src_path: Path,
+    dst_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
@@ -136,57 +237,15 @@ async def push_file_to_remote(
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
-            # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
-            # Therefore, we need to use the http filesystem directly in order to call the put_file function.
-            # writing on httpfilesystem is disabled by default.
-            fs = fsspec.filesystem(
-                "http",
-                headers={
-                    "Content-Length": f"{file_to_upload.stat().st_size}",
-                },
-                asynchronous=True,
-            )
-            await fs._put_file(  # pylint: disable=protected-access
-                file_to_upload,
-                f"{dst_url}",
-                method="PUT",
-                callback=fsspec.Callback(
-                    hooks={
-                        "progress": functools.partial(
-                            _file_progress_cb,
-                            log_publishing_cb=log_publishing_cb,
-                            text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-                            main_loop=asyncio.get_event_loop(),
-                        )
-                    }
-                ),
+            await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
+        elif dst_url.scheme in S3_FILE_SYSTEM_SCHEMES:
+            logger.debug("destination is a S3 link")
+            await _push_file_to_s3_remote(
+                file_to_upload, dst_url, log_publishing_cb, **storage_kwargs
             )
         else:
-            logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
-            fs = fsspec.filesystem(
-                protocol=dst_url.scheme,
-                username=dst_url.user,
-                password=dst_url.password,
-                port=int(dst_url.port),
-                host=dst_url.host,
-            )
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                functools.partial(
-                    fs.put_file,
-                    file_to_upload,
-                    dst_url.path,
-                    callback=fsspec.Callback(
-                        hooks={
-                            "progress": functools.partial(
-                                _file_progress_cb,
-                                log_publishing_cb=log_publishing_cb,
-                                text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-                                main_loop=asyncio.get_event_loop(),
-                            )
-                        }
-                    ),
-                ),
+            await _push_file_to_generic_remote(
+                file_to_upload, dst_url, log_publishing_cb
             )
 
     await log_publishing_cb(
