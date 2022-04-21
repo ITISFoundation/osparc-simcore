@@ -1341,7 +1341,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           "action": () => nodeUI.getNode().toggleMarker()
         },
         addServiceInput: {
-          "text": "\uf067", // plus
+          "text": "\uf090", // in
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
             const srvCat = this.openServiceCatalog({
@@ -1352,7 +1352,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           }
         },
         addServiceOutput: {
-          "text": "\uf067", // plus
+          "text": "\uf08b", // out
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
             const srvCat = this.openServiceCatalog({
