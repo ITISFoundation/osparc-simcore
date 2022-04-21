@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _createLayout: function() {
-      const servicesLayout = this._createResourcesLayout("service");
+      this._createResourcesLayout("service");
 
       this.__addNewServiceButtons();
 
@@ -92,7 +92,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
-      return servicesLayout;
+      return this._resourcesContainer;
     },
 
     _createStudyFromService: function(key, version) {
