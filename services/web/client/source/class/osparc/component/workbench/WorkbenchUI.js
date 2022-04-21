@@ -374,7 +374,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__nodesUI.length === 0) {
         return null;
       }
-      console.log("pos", pos);
       let onNodeUI = null;
       this.__nodesUI.forEach(nodeUI => {
         const nBounds = nodeUI.getBounds();
@@ -1349,18 +1348,46 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         },
         addServiceInput: {
           "text": "\uf067", // plus
-          "action": () => console.log("input")
+          "action": () => {
+            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
+            const srvCat = this.openServiceCatalog({
+              x: 50,
+              y: 50
+            }, freePos);
+            srvCat.setContext(null, nodeUI.getNodeId());
+          }
         },
         addServiceOutput: {
           "text": "\uf067", // plus
-          "action": () => console.log("output")
+          "action": () => {
+            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
+            const srvCat = this.openServiceCatalog({
+              x: 50,
+              y: 50
+            }, freePos);
+            srvCat.setContext(nodeUI.getNodeId(), null);
+          }
+        },
+        noAction: {
+          "text": "\uf05e", // verboten
+          "action": () => {}
         }
       };
       let buttons = null;
       if (nodeUI) {
-        buttons = [actions.addRemoveMarker, actions.addServiceOutput, actions.removeNode, actions.addServiceInput];
+        const node = nodeUI.getNode();
+        buttons = [
+          actions.addRemoveMarker,
+          node.hasOutputs() ? actions.addServiceOutput : actions.noAction,
+          actions.removeNode,
+          node.hasInputs() ? actions.addServiceInput : actions.noAction
+        ];
       } else {
-        buttons = [actions.addService, actions.drawText, actions.drawRect];
+        buttons = [
+          actions.addService,
+          actions.drawText,
+          actions.drawRect
+        ];
       }
       this.__buttonsToContextMenu(e, buttons);
     },
