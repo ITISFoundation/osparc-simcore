@@ -895,4 +895,4 @@ async def get_project_node_resources(
 async def set_project_node_resources(
     app: web.Application, project: dict[str, Any], node_id: NodeID
 ):
-    raise NotImplementedError
+    raise NotImplementedError("cannot change resources for now")

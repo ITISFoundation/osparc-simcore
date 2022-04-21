@@ -81,7 +81,7 @@ async def test_get_node_resources(
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPNotImplemented),
     ],
 )
 async def test_replace_node_resources(
