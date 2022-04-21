@@ -162,7 +162,6 @@ async def get_service_resources(
 ) -> Dict[str, Any]:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
-
     url = (
         URL(settings.api_base_url)
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources"
@@ -177,6 +176,11 @@ async def get_service_resources(
         logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable"
+        ) from err
+    except ClientConnectionError as err:
+        logger.warning("Catalog service is unavailable", exc_info=True)
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable, please try again later"
         ) from err
 
 
