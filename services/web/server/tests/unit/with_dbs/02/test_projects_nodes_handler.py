@@ -5,6 +5,7 @@
 
 import re
 from typing import Any, Type
+from uuid import uuid4
 
 import pytest
 from aiohttp import web
@@ -72,7 +73,49 @@ async def test_get_node_resources(
             project_id=user_project["uuid"], node_id=node_id
         )
         response = await client.get(f"{url}")
-        data, error = await assert_status(response, expected)
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_get_wrong_project_raises_not_found_error(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: dict[str, Any],
+    expected: Type[web.HTTPException],
+):
+    assert client.app
+    project_workbench = user_project["workbench"]
+    for node_id in project_workbench:
+        url = client.app.router["get_node_resources"].url_for(
+            project_id=f"{uuid4()}", node_id=node_id
+        )
+        response = await client.get(f"{url}")
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_get_wrong_node_raises_not_found_error(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: dict[str, Any],
+    expected: Type[web.HTTPException],
+):
+    assert client.app
+    url = client.app.router["get_node_resources"].url_for(
+        project_id=user_project["uuid"], node_id=f"{uuid4()}"
+    )
+    response = await client.get(f"{url}")
+    await assert_status(response, expected)
 
 
 @pytest.mark.parametrize(
@@ -98,4 +141,4 @@ async def test_replace_node_resources(
             project_id=user_project["uuid"], node_id=node_id
         )
         response = await client.put(f"{url}", json={})
-        data, error = await assert_status(response, expected)
+        await assert_status(response, expected)
