@@ -72,8 +72,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         }
 
 
-class SimcoreServiceSettingsLabel(ListModel[SimcoreServiceSettingLabelEntry]):
-    ...
+SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
 class PathMappingsLabel(BaseModel):
