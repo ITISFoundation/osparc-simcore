@@ -135,5 +135,4 @@ class ServiceItem(BaseModel):
         }
 
 
-class ServiceResourcesGet(ServiceResources):
-    ...
+ServiceResourcesGet = ServiceResources
