@@ -1384,12 +1384,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__annotationInitPos = null;
       }
       if (this.__annotatingRect || this.__annotatingText) {
-        this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text");
-        osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
-        this.__rectAnnotationRepr = null;
-        this.__annotatingRect = false;
-        this.__annotatingText = false;
-        this.__toolHint.setValue(null);
+        if (this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text")) {
+          osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
+          this.__rectAnnotationRepr = null;
+          this.__annotatingRect = false;
+          this.__annotatingText = false;
+          this.__toolHint.setValue(null);
+        }
       }
 
       if (this.__panning) {
@@ -1823,9 +1824,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __consolidateAnnotation: function(annotation, type) {
-      if (annotation === undefined) {
+      if ([null, undefined].includes(annotation)) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
-        return;
+        return false;
       }
       const serializeData = {
         type,
@@ -1845,6 +1846,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         titleEditor.center();
         titleEditor.open();
       }
+      return true;
     },
 
     __addAnnotation: function(data, id) {
