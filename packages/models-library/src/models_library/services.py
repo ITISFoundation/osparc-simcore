@@ -371,8 +371,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputs = Dict[PropertyName, ServiceInput]
-ServiceOutputs = Dict[PropertyName, ServiceOutput]
+ServiceInputsDict = Dict[PropertyName, ServiceInput]
+ServiceOutputsDict = Dict[PropertyName, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
@@ -404,10 +404,10 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         description="email to correspond to the authors about the node",
         examples=["lab@net.flix"],
     )
-    inputs: Optional[ServiceInputs] = Field(
+    inputs: Optional[ServiceInputsDict] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[ServiceOutputs] = Field(
+    outputs: Optional[ServiceOutputsDict] = Field(
         ..., description="definition of the outputs of this node"
     )
 
