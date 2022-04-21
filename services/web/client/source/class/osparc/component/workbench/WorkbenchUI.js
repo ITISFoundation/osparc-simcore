@@ -370,6 +370,26 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return bounds;
     },
 
+    __cursorOnNodeUI: function(pos) {
+      if (this.__nodesUI.length === 0) {
+        return null;
+      }
+      console.log("pos", pos);
+      let onNodeUI = null;
+      this.__nodesUI.forEach(nodeUI => {
+        const nBounds = nodeUI.getBounds();
+        console.log();
+        if (onNodeUI === null &&
+          pos.x > nBounds.left &&
+          pos.x < nBounds.left + nBounds.width &&
+          pos.y > nBounds.top &&
+          pos.y < nBounds.top + nBounds.height) {
+          onNodeUI = nodeUI;
+        }
+      });
+      return onNodeUI;
+    },
+
     _addNodeUIToWorkbench: function(nodeUI, position) {
       if (position === undefined || !("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
         position = {
@@ -1280,6 +1300,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __doOpenContextMenu: function(e) {
+      const wbPos = this.__pointerEventToWorkbenchPos(e);
+      const nodeUI = this.__cursorOnNodeUI(wbPos);
       const actions = {
         addService: {
           "text": "\uf067", // plus
@@ -1310,9 +1332,36 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         drawRect: {
           "text": "\uf044", // brush with rect
           "action": () => this.startAnnotationsRect()
+        },
+        removeNode: {
+          "text": "\uf014", // trash
+          "action": () => nodeUI.fireDataEvent("removeNode", nodeUI.getNodeId())
+        },
+        addRemoveMarker: {
+          "text": "\uf097", // marker
+          "action": () => {
+            if (nodeUI.getNode().getMarker()) {
+              nodeUI.getNode().removeMarker();
+            } else {
+              nodeUI.getNode().addMarker();
+            }
+          }
+        },
+        addServiceInput: {
+          "text": "\uf067", // plus
+          "action": () => console.log("input")
+        },
+        addServiceOutput: {
+          "text": "\uf067", // plus
+          "action": () => console.log("output")
         }
       };
-      const buttons = [actions.addService, actions.drawText, actions.drawRect];
+      let buttons = null;
+      if (nodeUI) {
+        buttons = [actions.addRemoveMarker, actions.addServiceOutput, actions.removeNode, actions.addServiceInput];
+      } else {
+        buttons = [actions.addService, actions.drawText, actions.drawRect];
+      }
       this.__buttonsToContextMenu(e, buttons);
     },
 
