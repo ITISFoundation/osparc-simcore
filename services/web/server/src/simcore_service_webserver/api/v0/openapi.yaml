@@ -2707,6 +2707,76 @@ paths:
           description: Restarts containers started by the dynamic-sidecar
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/{node_id}/resources':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      description: Returns the node resources
+      operationId: get_node_resources
+      responses:
+        '200':
+          description: Returns the node resources.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+        - project
+      description: Replaces the node resources
+      operationId: replace_node_resources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+                required:
+                  - limit
+                  - reservation
+                properties:
+                  limit:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
+                  reservation:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
+      responses:
+        '200':
+          description: Returns the udpated node resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:
@@ -4615,6 +4685,36 @@ paths:
                 $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  '/catalog/services/{service_key}/{service_version}/resources':
+    get:
+      tags:
+        - catalog
+      description: Returns the service default resources
+      operationId: get_service_resources_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
     post:
       summary: test connectivity with cluster
