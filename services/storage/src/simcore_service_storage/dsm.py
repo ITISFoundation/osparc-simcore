@@ -28,6 +28,7 @@ from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_delay
@@ -488,15 +489,44 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     )
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
-    ):
+    ) -> Optional[FileMetaDataEx]:
         return await self.try_update_database_from_storage(
             file_uuid, bucket_name, object_name, silence_exception=True
         )
 
-    async def upload_link(self, user_id: str, file_uuid: str):
+    async def update_metadata(self, file_uuid: str) -> Optional[FileMetaDataEx]:
+        bucket_name = self.simcore_bucket_name
+        object_name = file_uuid
+        return await self.auto_update_database_from_storage_task(
+            file_uuid=file_uuid,
+            bucket_name=bucket_name,
+            object_name=object_name,
+        )
+
+    async def delete_metadata(self, user_id: int, file_uuid: str) -> None:
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.write:
+                message = f"User {user_id} was not allowed to upload file {file_uuid}"
+                logger.debug(message)
+                raise web.HTTPForbidden(reason=message)
+
+            try:
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.file_uuid == file_uuid
+                    )
+                )
+            except Exception:
+                message = f"Could not delete metada entry for file {file_uuid}"
+                logger.debug(message)
+                raise web.HTTPForbidden(reason=message)
+
+    async def _generate_metadata_for_link(self, user_id: str, file_uuid: str):
         """
-        Creates pre-signed upload link and updates metadata table when
-        link is used and upload is successfuly completed
+        Updates metadata table when link is used and upload is successfuly completed
 
         SEE _metadata_file_updater
         """
@@ -533,6 +563,12 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         await _init_metadata()
 
+    async def upload_link(self, user_id: str, file_uuid: str):
+        """returns: a presigned upload link
+
+        NOTE: updates metadata once the upload is concluded"""
+        await self._generate_metadata_for_link(user_id=user_id, file_uuid=file_uuid)
+
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
 
@@ -546,6 +582,18 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             )
         )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
+
+    async def get_s3_link(self, user_id: str, file_uuid: str) -> str:
+        """
+        returns: the s3 file link and creates a databas entry for the file
+
+        NOTE: the user must call the update metadata endpoint to update
+        the metadata once the upload is finished
+        """
+        await self._generate_metadata_for_link(user_id=user_id, file_uuid=file_uuid)
+        bucket_name = self.simcore_bucket_name
+        object_name = file_uuid
+        return f"s3://{bucket_name}/{object_name.lstrip('/')}"
 
     async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
 

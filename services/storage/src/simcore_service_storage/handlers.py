@@ -2,7 +2,8 @@ import asyncio
 import json
 import logging
 from contextlib import contextmanager
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+import urllib.parse
 
 import attr
 from aiohttp import web
@@ -16,6 +17,7 @@ from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .settings import Settings
+from .models import FileMetaDataEx
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ def handle_storage_errors():
 
     except InvalidFileIdentifier as err:
         raise web.HTTPUnprocessableEntity(
-            reason=f"{err.identifier} is an invalid file identifier"
+            reason=f"{err} is an invalid file identifier"
         ) from err
 
 
@@ -267,7 +269,7 @@ async def synchronise_meta_data_table(request: web.Request):
         return {"error": None, "data": sync_results}
 
 
-# DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
+@routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata")  # type: ignore
 async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -275,17 +277,39 @@ async def update_file_meta_data(request: web.Request):
     assert query, "query %s" % query  # nosec
     assert not body, "body %s" % body  # nosec
 
-    assert params["location_id"]  # nosec
-    assert params["fileId"]  # nosec
-    assert query["user_id"]  # nosec
+    with handle_storage_errors():
+        file_uuid = urllib.parse.unquote_plus(params["fileId"])
+
+        log.error("file_uuid=%s", file_uuid)
+        dsm = await _prepare_storage_manager(params, query, request)
+
+        data: Optional[FileMetaDataEx] = await dsm.update_metadata(file_uuid=file_uuid)
+        if data is None:
+            raise web.HTTPForbidden(reason=f"Could not update metadata for {file_uuid}")
+
+        return {
+            "error": None,
+            "data": {**attr.asdict(data.fmd), "parent_id": data.parent_id},
+        }
+
+
+@routes.delete(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata")  # type: ignore
+async def delete_file_meta_data(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
+    assert not body, "body %s" % body  # nosec
 
     with handle_storage_errors():
-        location_id = params["location_id"]
-        _user_id = query["user_id"]
-        _file_uuid = params["fileId"]
+        user_id = query["user_id"]
+        file_uuid = urllib.parse.unquote_plus(params["fileId"])
 
+        log.error("file_uuid=%s", file_uuid)
         dsm = await _prepare_storage_manager(params, query, request)
-        _location = dsm.location_from_id(location_id)
+
+        await dsm.delete_metadata(user_id=user_id, file_uuid=file_uuid)
+        return {"error": None, "data": None}
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
@@ -313,6 +337,30 @@ async def download_file(request: web.Request):
             link = await dsm.download_link_datcore(user_id, file_uuid)
 
         return {"error": None, "data": {"link": link}}
+
+
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/s3/link")  # type: ignore
+async def get_s3_link(request: web.Request) -> Dict[str, Any]:
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
+    assert not body, "body %s" % body  # nosec
+
+    with handle_storage_errors():
+        location_id = params["location_id"]
+        user_id = query["user_id"]
+        file_uuid = urllib.parse.unquote_plus(params["fileId"])
+
+        if int(location_id) != SIMCORE_S3_ID:
+            raise web.HTTPForbidden(
+                reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
+            )
+
+        dsm = await _prepare_storage_manager(params, query, request)
+
+        s3_link: str = await dsm.get_s3_link(user_id=user_id, file_uuid=file_uuid)
+        return {"error": None, "data": {"s3_link": s3_link}}
 
 
 @routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
