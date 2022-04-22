@@ -157,7 +157,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * NODES
        */
-      "nodesInStudy": {
+      "nodesInStudyResources": {
         idField: "nodeId",
         useCache: false,
         endpoints: {
@@ -165,6 +165,17 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
+          }
+        }
+      },
+      "serviceResources": {
+        idField: ["key", "version"],
+        useCache: false,
+        endpoints: {
+          getResources: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/resources"
           }
         }
       },
@@ -270,10 +281,6 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/catalog/services/{key}/{version}"
-          },
-          getResources: {
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/resources"
           },
           patch: {
             method: "PATCH",

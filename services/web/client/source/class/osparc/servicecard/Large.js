@@ -306,7 +306,7 @@ qx.Class.define("osparc.servicecard.Large", {
             nodeId: this.getInstanceUuid()
           }
         };
-        promise = osparc.data.Resources.fetch("nodesInStudy", "getResources", params);
+        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
@@ -314,7 +314,7 @@ qx.Class.define("osparc.servicecard.Large", {
             this.getService()["version"]
           )
         };
-        promise = osparc.data.Resources.fetch("services", "getResources", params);
+        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
       }
       promise
         .then(serviceResources => {
