@@ -126,23 +126,29 @@ async def test_copy_file_to_remote(
 
 
 async def test_copy_file_to_remote_compresses_if_zip_destination(
-    ftpserver: ProcessFTPServer,
+    remote_parameters: StorageParameters,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    ftp_server_base_url = ftpserver.get_login_data(style="url")
-
-    file_on_remote = f"{ftp_server_base_url}/{faker.file_name()}.zip"
-    destination_url = parse_obj_as(AnyUrl, file_on_remote)
+    destination_url = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}.zip")
     src_path = tmp_path / faker.file_name()
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
 
-    await push_file_to_remote(src_path, destination_url, mocked_log_publishing_cb)
+    await push_file_to_remote(
+        src_path,
+        destination_url,
+        mocked_log_publishing_cb,
+        **remote_parameters.storage_kwargs,
+    )
 
-    open_files = fsspec.open_files(f"zip://*::{destination_url}", mode="rt")
+    open_files = fsspec.open_files(
+        f"zip://*::{destination_url}",
+        mode="rt",
+        **remote_parameters.storage_kwargs,
+    )
     assert len(open_files) == 1
     with open_files[0] as fp:
         assert fp.read() == TEXT_IN_FILE
