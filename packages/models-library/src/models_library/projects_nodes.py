@@ -49,7 +49,7 @@ OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # FIXME: remove if OM sends object/array
+    Json,  # TODO: remove when OM sends object/array instead of json-formatted strings
     str,
     Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
@@ -59,7 +59,7 @@ OutputTypes = Union[
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
 InputsDict = Dict[InputID, InputTypes]
 OutputsDict = Dict[OutputID, OutputTypes]
-InputsUnitsDict = Dict[InputID, str]
+UnitStr = constr(strip_whitespace=True)
 
 
 class NodeState(BaseModel):
@@ -139,9 +139,9 @@ class Node(BaseModel):
     inputs: Optional[InputsDict] = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputs_units: Optional[InputsUnitsDict] = Field(
+    inputs_units: Optional[Dict[InputID, UnitStr]] = Field(
         None,
-        description="values of input unit",
+        description="Overrides default unit (if any) defined in the service for this port",
         alias="inputsUnits",
     )
     input_access: Optional[Dict[InputID, AccessEnum]] = Field(

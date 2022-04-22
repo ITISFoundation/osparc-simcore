@@ -29,6 +29,15 @@ class DirectorException(Exception):
     """Basic exception"""
 
 
+class ConfigurationError(DirectorException):
+    """An error in the director-v2 configuration"""
+
+    def __init__(self, msg: Optional[str] = None):
+        super().__init__(
+            msg or "Invalid configuration of the director-v2 application. Please check."
+        )
+
+
 class GenericDockerError(DirectorException):
     """Generic docker library error"""
 
@@ -88,6 +97,11 @@ class PipelineNotFoundError(DirectorException):
 
 class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational run not found"
+
+
+#
+# SCHEDULER ERRORS
+#
 
 
 class SchedulerError(DirectorException):
@@ -152,15 +166,9 @@ class ComputationalBackendTaskResultsNotReadyError(PydanticErrorMixin, Scheduler
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
-class ConfigurationError(DirectorException):
-    """An error in the director-v2 configuration"""
-
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(
-            msg or "Invalid configuration of the director-v2 application. Please check."
-        )
-
-
+#
+# SCHEDULER/CLUSTER ERRORS
+#
 class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
     code = "cluster.not_found"
     msg_template = "The cluster '{cluster_id}' not found"
@@ -172,6 +180,11 @@ class ClusterAccessForbiddenError(PydanticErrorMixin, SchedulerError):
 
 class ClusterInvalidOperationError(PydanticErrorMixin, SchedulerError):
     msg_template = "Invalid operation on cluster '{cluster_id}'"
+
+
+#
+# SCHEDULER/CLIENT ERRORS
+#
 
 
 class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
