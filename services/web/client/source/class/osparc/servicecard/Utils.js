@@ -208,7 +208,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       grid.setColumnAlign(1, "left", "middle");
       const resourcesInfo = new qx.ui.container.Composite(grid).set({
         allowGrowX: false,
-        alignX: "center",
+        alignX: "left",
         alignY: "middle"
       });
       resourcesLayout.add(resourcesInfo);
