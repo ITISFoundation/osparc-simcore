@@ -155,6 +155,36 @@ async def test_copy_file_to_remote_compresses_if_zip_destination(
     mocked_log_publishing_cb.assert_called()
 
 
+async def test_pull_file_from_remote_s3(
+    s3_storage_kwargs: dict[str, Any],
+    s3_remote_file_url: AnyUrl,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # put some file on the remote
+    open_file = cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            s3_remote_file_url,
+            mode="wt",
+            **s3_storage_kwargs,
+        ),
+    )
+    TEXT_IN_FILE = faker.text()
+    with open_file as fp:
+        fp.write(TEXT_IN_FILE)
+
+    # now let's get the file through the util
+    dst_path = tmp_path / faker.file_name()
+    await pull_file_from_remote(
+        s3_remote_file_url, dst_path, mocked_log_publishing_cb, **s3_storage_kwargs
+    )
+    assert dst_path.exists()
+    assert dst_path.read_text() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
 async def test_pull_file_from_remote(
     ftpserver: ProcessFTPServer,
     tmp_path: Path,

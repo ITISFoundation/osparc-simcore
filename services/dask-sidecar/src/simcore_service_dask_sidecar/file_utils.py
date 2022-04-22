@@ -3,7 +3,6 @@ import functools
 import mimetypes
 import zipfile
 from pathlib import Path
-from pprint import pformat
 from typing import Awaitable, Callable, Final
 
 import aiofiles
@@ -42,8 +41,14 @@ def _file_progress_cb(
     )
 
 
+CHUNK_SIZE = 4 * 1024 * 1024
+
+
 async def pull_file_from_remote(
-    src_url: AnyUrl, dst_path: Path, log_publishing_cb: LogPublishingCB
+    src_url: AnyUrl,
+    dst_path: Path,
+    log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> None:
     await log_publishing_cb(
         f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
@@ -56,37 +61,30 @@ async def pull_file_from_remote(
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
-    filesystem_cfg = {
-        "protocol": src_url.scheme,
-    }
-    if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES:
-        filesystem_cfg["host"] = src_url.host
-        filesystem_cfg["username"] = src_url.user
-        filesystem_cfg["password"] = src_url.password
-        filesystem_cfg["port"] = int(src_url.port)
-    logger.debug("file system configuration is %s", pformat(filesystem_cfg))
-    fs = fsspec.filesystem(**filesystem_cfg)
+    open_file = fsspec.open(src_url, mode="rb", **storage_kwargs)
 
-    await asyncio.get_event_loop().run_in_executor(
-        None,
-        functools.partial(
-            fs.get_file,
-            f"{src_url.path}"
-            if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
-            else src_url,
-            dst_path,
-            callback=fsspec.Callback(
-                hooks={
-                    "progress": functools.partial(
-                        _file_progress_cb,
-                        log_publishing_cb=log_publishing_cb,
-                        text_prefix=f"Downloading '{src_url.path.strip('/')}':",
-                        main_loop=asyncio.get_event_loop(),
-                    )
-                }
-            ),
-        ),
-    )
+    def _streamer(src_fp, dst_fp):
+        data = src_fp.read(CHUNK_SIZE)
+        segment_len = dst_fp.write(data)
+        return (data, segment_len)
+
+    with open_file as src_fp:
+        file_size = getattr(src_fp, "size", None)
+        with dst_path.open("wb") as dst_fp:
+            data_read = True
+            while data_read:
+                (
+                    data_read,
+                    data_written,
+                ) = await asyncio.get_event_loop().run_in_executor(
+                    None, _streamer, src_fp, dst_fp
+                )
+                await log_publishing_cb(
+                    f"Downloading '{src_url.path.strip('/')}':"
+                    f" {100.0 * float(data_written or 0)/float(file_size or 1):.1f}%"
+                    f" ({ByteSize(data_written).human_readable() if data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                )
+
     await log_publishing_cb(
         f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
     )
