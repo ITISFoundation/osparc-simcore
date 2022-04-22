@@ -41,16 +41,29 @@ def ftp_storage_kwargs(ftpserver: ProcessFTPServer) -> dict[str, Any]:
 
 
 @pytest.fixture
-def s3_storage_kwargs(
+def s3_presigned_link_storage_kwargs(
     minio_config: dict[str, Any], minio_service: Minio
+) -> dict[str, Any]:
+    return {}
+
+
+@pytest.fixture
+def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl,
+        f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}",
+    )
+
+
+@pytest.fixture
+def s3_storage_kwargs(
+    minio_config: dict[str, Any], minio_service: Minio, s3_endpoint_url: AnyUrl
 ) -> dict[str, Any]:
     return {
         "key": minio_config["client"]["access_key"],
         "secret": minio_config["client"]["secret_key"],
         "use_ssl": minio_config["client"]["secure"],
-        "client_kwargs": {
-            "endpoint_url": f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}"
-        },
+        "client_kwargs": {"endpoint_url": f"{s3_endpoint_url}"},
     }
 
 
@@ -58,6 +71,21 @@ def s3_storage_kwargs(
 def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
     return parse_obj_as(
         AnyUrl, f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
+    )
+
+
+@pytest.fixture
+def s3_presigned_link_remote_file_url(
+    minio_config: dict[str, Any],
+    minio_service: Minio,
+    faker: Faker,
+) -> AnyUrl:
+
+    return parse_obj_as(
+        AnyUrl,
+        minio_service.presigned_put_object(
+            minio_config["bucket_name"], faker.file_name()
+        ),
     )
 
 
@@ -92,7 +120,7 @@ def remote_parameters(
     }[request.param]
 
 
-async def test_copy_file_to_remote(
+async def test_push_file_to_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
     faker: Faker,
@@ -125,7 +153,41 @@ async def test_copy_file_to_remote(
     mocked_log_publishing_cb.assert_called()
 
 
-async def test_copy_file_to_remote_compresses_if_zip_destination(
+async def test_push_file_to_remote_s3_http_presigned_link(
+    s3_presigned_link_remote_file_url: AnyUrl,
+    s3_storage_kwargs: dict[str, Any],
+    minio_config: dict[str, Any],
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with text inside
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
+    await push_file_to_remote(
+        src_path,
+        s3_presigned_link_remote_file_url,
+        mocked_log_publishing_cb,
+    )
+
+    # check the remote is actually having the file in, but we need s3 access now
+    s3_remote_file_url = parse_obj_as(
+        AnyUrl,
+        f"s3:/{s3_presigned_link_remote_file_url.path}",
+    )
+    open_file = cast(
+        fsspec.core.OpenFile,
+        fsspec.open(s3_remote_file_url, mode="rt", **s3_storage_kwargs),
+    )
+    with open_file as fp:
+        assert fp.read() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_file_to_remote_compresses_if_zip_destination(
     remote_parameters: StorageParameters,
     tmp_path: Path,
     faker: Faker,
