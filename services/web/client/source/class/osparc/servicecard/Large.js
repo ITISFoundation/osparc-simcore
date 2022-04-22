@@ -24,7 +24,7 @@ qx.Class.define("osparc.servicecard.Large", {
     * @param instanceUuid {String} uuid of the service instance
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, instanceUuid = null, openOptions = true) {
+  construct: function(serviceData, instanceUuid = null, study = null, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -37,6 +37,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
     if (instanceUuid) {
       this.setInstanceUuid(instanceUuid);
+    }
+
+    if (study) {
+      this.setStudy(study);
     }
 
     if (openOptions !== undefined) {
@@ -68,6 +72,12 @@ qx.Class.define("osparc.servicecard.Large", {
 
     instanceUuid: {
       check: "String",
+      init: null,
+      nullable: true
+    },
+
+    study: {
+      check: "osparc.data.model.Study",
       init: null,
       nullable: true
     },
@@ -296,7 +306,7 @@ qx.Class.define("osparc.servicecard.Large", {
             nodeId: this.getInstanceUuid()
           }
         };
-        promise = osparc.data.Resources.fetch("studies", "getNodeResources", params);
+        promise = osparc.data.Resources.fetch("nodesInStudy", "getResources", params);
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(

@@ -142,11 +142,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
-          getNodeResources: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
-          },
           addTag: {
             useCache: false,
             method: "PUT",
@@ -156,6 +151,20 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
+          }
+        }
+      },
+      /*
+       * NODES
+       */
+      "nodesInStudy": {
+        idField: "nodeId",
+        useCache: false,
+        endpoints: {
+          getResources: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
           }
         }
       },
