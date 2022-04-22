@@ -193,6 +193,70 @@ qx.Class.define("osparc.servicecard.Utils", {
       return descriptionLayout;
     },
 
+    createResourcesInfo: function() {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
+        font: "title-12"
+      });
+      resourcesLayout.add(label);
+
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const resourcesInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "left",
+        alignY: "middle"
+      });
+      resourcesLayout.add(resourcesInfo);
+
+      return resourcesLayout;
+    },
+
+    resourcesToResourcesInfo: function(resourcesLayout, resourcesInfo) {
+      const layout = resourcesLayout.getChildren()[1];
+      let row = 0;
+      Object.keys(resourcesInfo).forEach(resourceKey => {
+        let column = 0;
+        const resourceInfo = resourcesInfo[resourceKey];
+        let label = resourceKey;
+        if (resourceKey === "RAM") {
+          label += " (GB)";
+        }
+        layout.add(new qx.ui.basic.Label(label).set({
+          font: "title-12"
+        }), {
+          row,
+          column
+        });
+        column++;
+        Object.keys(resourceInfo).forEach(resourceInfoKey => {
+          layout.add(new qx.ui.basic.Label(resourceInfoKey).set({
+            font: "title-12"
+          }), {
+            row,
+            column
+          });
+          column++;
+          let value = resourceInfo[resourceInfoKey];
+          if (resourceKey === "RAM") {
+            value = osparc.utils.Utils.bytesToGB(value);
+          }
+          layout.add(new qx.ui.basic.Label(String(value)).set({
+            font: "text-12"
+          }), {
+            row,
+            column
+          });
+          column++;
+        });
+        row++;
+      });
+    },
+
     createExtraInfo: function(extraInfos) {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");

@@ -529,6 +529,12 @@ qx.Class.define("osparc.component.form.Auto", {
         if (s.set.filter) {
           s.set.filter = RegExp(s.filter);
         }
+        if ("minimum" in s.set) {
+          control.setMinimum(s.set["minimum"]);
+        }
+        if ("maximum" in s.set) {
+          control.setMaximum(s.set["maximum"]);
+        }
         control.set(s.set);
       }
       control.key = key;
