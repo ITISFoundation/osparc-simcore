@@ -57,6 +57,14 @@ def app(
 
     monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
+    monkeypatch_module.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch_module.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch_module.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch_module.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch_module.setenv("S3_SECURE", "false")
+    monkeypatch_module.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch_module.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
+
     yield assemble_application()
 
 

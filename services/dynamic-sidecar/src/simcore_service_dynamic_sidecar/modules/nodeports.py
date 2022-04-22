@@ -60,6 +60,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
     )
 
     # let's gather the tasks

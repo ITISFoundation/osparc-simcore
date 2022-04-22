@@ -10,6 +10,7 @@ from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
 
 
@@ -93,6 +94,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
     RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     @property
     def is_development_mode(self) -> bool:

@@ -35,6 +35,14 @@ def mocked_non_request_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None
     monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
     monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
 
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
+
 
 def test_non_request_dynamic_sidecar_settings(
     mocked_non_request_settings: None,
