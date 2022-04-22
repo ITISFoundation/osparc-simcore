@@ -11,6 +11,7 @@ from unittest import mock
 
 import fsspec
 import pytest
+from _pytest.fixtures import FixtureRequest
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
@@ -104,7 +105,7 @@ class StorageParameters:
 
 @pytest.fixture(params=["ftp", "s3"])
 def remote_parameters(
-    request: pytest.FixtureRequest,
+    request: FixtureRequest,
     ftp_remote_file_url: AnyUrl,
     s3_remote_file_url: AnyUrl,
     ftp_storage_kwargs: dict[str, Any],
@@ -117,7 +118,9 @@ def remote_parameters(
         "s3": StorageParameters(
             storage_kwargs=s3_storage_kwargs, remote_file_url=s3_remote_file_url
         ),
-    }[request.param]
+    }[
+        request.param  # type: ignore
+    ]
 
 
 async def test_push_file_to_remote(
@@ -213,7 +216,7 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     )
     assert len(open_files) == 1
     with open_files[0] as fp:
-        assert fp.read() == TEXT_IN_FILE
+        assert fp.read() == TEXT_IN_FILE  # type: ignore
     mocked_log_publishing_cb.assert_called()
 
 

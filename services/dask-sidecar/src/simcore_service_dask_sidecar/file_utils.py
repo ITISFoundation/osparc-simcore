@@ -50,6 +50,7 @@ async def pull_file_from_remote(
     log_publishing_cb: LogPublishingCB,
     **storage_kwargs,
 ) -> None:
+    assert src_url.path  # nosec
     await log_publishing_cb(
         f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
     )
@@ -114,6 +115,7 @@ async def _push_file_to_http_link(
         },
         asynchronous=True,
     )
+    assert dst_url.path  # nosec
     await fs._put_file(  # pylint: disable=protected-access
         file_to_upload,
         f"{dst_url}",
@@ -145,8 +147,8 @@ async def _push_file_to_s3_remote(
         token=s3_kwargs.get("token"),
         use_ssl=s3_kwargs.get("use_ssl", True),
         client_kwargs=s3_kwargs.get("client_kwargs"),
-        # asynchronous=True
     )
+    assert dst_url.path  # nosec
     await asyncio.get_event_loop().run_in_executor(
         None,
         functools.partial(
@@ -175,9 +177,10 @@ async def _push_file_to_generic_remote(
         protocol=dst_url.scheme,
         username=dst_url.user,
         password=dst_url.password,
-        port=int(dst_url.port),
+        port=int(dst_url.port or "80"),
         host=dst_url.host,
     )
+    assert dst_url.path  # nosec
     await asyncio.get_event_loop().run_in_executor(
         None,
         functools.partial(
@@ -206,7 +209,7 @@ async def push_file_to_remote(
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
-
+    assert dst_url.path  # nosec
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         file_to_upload = src_path
 
@@ -242,6 +245,7 @@ async def push_file_to_remote(
                 file_to_upload, dst_url, log_publishing_cb, **storage_kwargs
             )
         else:
+            logger.debug("destination is a generic link")
             await _push_file_to_generic_remote(
                 file_to_upload, dst_url, log_publishing_cb
             )
