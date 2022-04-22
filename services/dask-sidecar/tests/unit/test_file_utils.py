@@ -4,6 +4,7 @@
 
 import asyncio
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncIterable, cast
 from unittest import mock
@@ -35,9 +36,13 @@ pytest_simcore_ops_services_selection = ["minio"]
 
 
 @pytest.fixture
-def storage_kwargs(
-    minio_config: dict[str, Any],
-    minio_service: Minio,
+def ftp_storage_kwargs(ftpserver: ProcessFTPServer) -> dict[str, Any]:
+    return {}
+
+
+@pytest.fixture
+def s3_storage_kwargs(
+    minio_config: dict[str, Any], minio_service: Minio
 ) -> dict[str, Any]:
     return {
         "key": minio_config["client"]["access_key"],
@@ -50,15 +55,45 @@ def storage_kwargs(
 
 
 @pytest.fixture
-def remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
+def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl, f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
+    )
+
+
+@pytest.fixture
+def s3_remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
     return parse_obj_as(
         AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
     )
 
 
-async def test_copy_file_to_remote_s3(
-    storage_kwargs: dict[str, Any],
-    remote_file_url: AnyUrl,
+@dataclass
+class StorageParameters:
+    storage_kwargs: dict[str, Any]
+    remote_file_url: AnyUrl
+
+
+@pytest.fixture(params=["ftp", "s3"])
+def remote_parameters(
+    request: pytest.FixtureRequest,
+    ftp_remote_file_url: AnyUrl,
+    s3_remote_file_url: AnyUrl,
+    ftp_storage_kwargs: dict[str, Any],
+    s3_storage_kwargs: dict[str, Any],
+) -> StorageParameters:
+    return {
+        "ftp": StorageParameters(
+            storage_kwargs=ftp_storage_kwargs, remote_file_url=ftp_remote_file_url
+        ),
+        "s3": StorageParameters(
+            storage_kwargs=s3_storage_kwargs, remote_file_url=s3_remote_file_url
+        ),
+    }[request.param]
+
+
+async def test_copy_file_to_remote(
+    remote_parameters: StorageParameters,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -70,37 +105,21 @@ async def test_copy_file_to_remote_s3(
     assert src_path.exists()
     # push it to the remote
     await push_file_to_remote(
-        src_path, remote_file_url, mocked_log_publishing_cb, **storage_kwargs
+        src_path,
+        remote_parameters.remote_file_url,
+        mocked_log_publishing_cb,
+        **remote_parameters.storage_kwargs,
     )
 
     # check the remote is actually having the file in
     open_file = cast(
         fsspec.core.OpenFile,
-        fsspec.open(remote_file_url, mode="rt", **storage_kwargs),
+        fsspec.open(
+            remote_parameters.remote_file_url,
+            mode="rt",
+            **remote_parameters.storage_kwargs,
+        ),
     )
-    with open_file as fp:
-        assert fp.read() == TEXT_IN_FILE
-    mocked_log_publishing_cb.assert_called()
-
-
-async def test_copy_file_to_remote(
-    ftpserver: ProcessFTPServer,
-    tmp_path: Path,
-    faker: Faker,
-    mocked_log_publishing_cb: mock.AsyncMock,
-):
-    ftp_server_base_url = ftpserver.get_login_data(style="url")
-
-    file_on_remote = f"{ftp_server_base_url}/{faker.file_name()}"
-    destination_url = parse_obj_as(AnyUrl, file_on_remote)
-    src_path = tmp_path / faker.file_name()
-    TEXT_IN_FILE = faker.text()
-    src_path.write_text(TEXT_IN_FILE)
-    assert src_path.exists()
-
-    await push_file_to_remote(src_path, destination_url, mocked_log_publishing_cb)
-
-    open_file = fsspec.open(destination_url, mode="rt")
     with open_file as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
