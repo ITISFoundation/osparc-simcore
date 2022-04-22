@@ -220,26 +220,30 @@ qx.Class.define("osparc.servicecard.Utils", {
       const layout = resourcesLayout.getChildren()[1];
       let row = 0;
       Object.keys(resourcesInfo).forEach(resourceKey => {
+        let column = 0;
         const resourceInfo = resourcesInfo[resourceKey];
         layout.add(new qx.ui.basic.Label(resourceKey).set({
           font: "title-12"
         }), {
           row,
-          column: 0
+          column
         });
+        column++;
         Object.keys(resourceInfo).forEach(resourceInfoKey => {
           layout.add(new qx.ui.basic.Label(resourceInfoKey).set({
             font: "title-12"
           }), {
             row,
-            column: 1
+            column
           });
-          layout.add(new qx.ui.basic.Label(resourceInfo[resourceInfoKey]).set({
+          column++;
+          layout.add(new qx.ui.basic.Label(String(resourceInfo[resourceInfoKey])).set({
             font: "text-12"
           }), {
             row,
-            column: 2
+            column
           });
+          column++;
         });
         row++;
       });
