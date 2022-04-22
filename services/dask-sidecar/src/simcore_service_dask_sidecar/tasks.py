@@ -87,6 +87,7 @@ async def _run_computational_sidecar_async(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: List[str],
+    **storage_kwargs,
 ) -> TaskOutputData:
 
     task_publishers = TaskPublisher()
@@ -115,7 +116,7 @@ async def _run_computational_sidecar_async(
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
         ) as sidecar:
-            output_data = await sidecar.run(command=command)
+            output_data = await sidecar.run(command=command, **storage_kwargs)
         log.debug("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
@@ -128,6 +129,7 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: List[str],
+    **storage_kwargs,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -149,6 +151,7 @@ def run_computational_sidecar(
             output_data_keys,
             log_file_url,
             command,
+            **storage_kwargs,
         )
     )
     return result

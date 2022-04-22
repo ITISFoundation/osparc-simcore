@@ -99,6 +99,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         self,
         task_volumes: TaskSharedVolumes,
         integration_version: version.Version,
+        **storage_kwargs,
     ) -> TaskOutputData:
         try:
             await self._publish_sidecar_log("Retrieving output data...")
@@ -130,7 +131,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
                         push_file_to_remote(
-                            src_path, output_params.url, self._publish_sidecar_log
+                            src_path,
+                            output_params.url,
+                            self._publish_sidecar_log,
+                            **storage_kwargs,
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -161,7 +165,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             TaskStateEvent.from_dask_worker(state=state, msg=msg),
         )
 
-    async def run(self, command: List[str]) -> TaskOutputData:
+    async def run(self, command: List[str], **storage_kwargs) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
@@ -210,6 +214,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
                     log_publishing_cb=self._publish_sidecar_log,
+                    **storage_kwargs,
                 ):
                     await container.start()
                     await self._publish_sidecar_log(
@@ -239,7 +244,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
             # POST-PROCESSING
             results = await self._retrieve_output_data(
-                task_volumes, integration_version
+                task_volumes, integration_version, **storage_kwargs
             )
             await self._publish_sidecar_log("Task completed successfully.")
             return results

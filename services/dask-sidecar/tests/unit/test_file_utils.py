@@ -49,26 +49,6 @@ def s3_presigned_link_storage_kwargs(
 
 
 @pytest.fixture
-def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl,
-        f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}",
-    )
-
-
-@pytest.fixture
-def s3_storage_kwargs(
-    minio_config: dict[str, Any], minio_service: Minio, s3_endpoint_url: AnyUrl
-) -> dict[str, Any]:
-    return {
-        "key": minio_config["client"]["access_key"],
-        "secret": minio_config["client"]["secret_key"],
-        "use_ssl": minio_config["client"]["secure"],
-        "client_kwargs": {"endpoint_url": f"{s3_endpoint_url}"},
-    }
-
-
-@pytest.fixture
 def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
     return parse_obj_as(
         AnyUrl, f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"

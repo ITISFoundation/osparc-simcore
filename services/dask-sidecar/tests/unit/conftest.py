@@ -2,22 +2,20 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import subprocess
-import sys
-import time
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional
 
 import dask
 import distributed
 import fsspec
 import pytest
-import requests
 import simcore_service_dask_sidecar
 from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from faker import Faker
+from minio import Minio
+from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from yarl import URL
@@ -91,38 +89,6 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
 
 
 @pytest.fixture(scope="module")
-def http_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
-    faker = Faker()
-    files = ["file_1", "file_2", "file_3"]
-    directory_path = tmp_path_factory.mktemp("http_server")
-    assert directory_path.exists()
-    for fn in files:
-        with (directory_path / fn).open("wt") as f:
-            f.write(f"This file is named: {fn}\n")
-            for s in faker.sentences():
-                f.write(f"{s}\n")
-
-    cmd = [sys.executable, "-m", "http.server", "8999"]
-
-    base_url = URL("http://localhost:8999")
-    with subprocess.Popen(cmd, cwd=directory_path) as p:
-        timeout = 10
-        while True:
-            try:
-                requests.get(f"{base_url}")
-                break
-            except requests.exceptions.ConnectionError as e:
-                time.sleep(0.1)
-                timeout -= 0.1
-                if timeout < 0:
-                    raise RuntimeError("Server did not appear") from e
-        # the server must be up
-        yield [base_url.with_path(f) for f in files]
-        # cleanup now, sometimes it hangs
-        p.kill()
-
-
-@pytest.fixture(scope="module")
 def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
     faker = Faker()
 
@@ -136,3 +102,64 @@ def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
                 fp.write(f"{s}\n")
 
     return [URL(f) for f in list_of_file_urls]
+
+
+@pytest.fixture
+def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl,
+        f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}",
+    )
+
+
+@pytest.fixture
+def s3_storage_kwargs(
+    minio_config: dict[str, Any], minio_service: Minio, s3_endpoint_url: AnyUrl
+) -> dict[str, Any]:
+    return {
+        "key": minio_config["client"]["access_key"],
+        "secret": minio_config["client"]["secret_key"],
+        "token": None,
+        "use_ssl": minio_config["client"]["secure"],
+        "client_kwargs": {"endpoint_url": f"{s3_endpoint_url}"},
+    }
+
+
+@pytest.fixture
+def s3_remote_file_url(
+    minio_config: dict[str, Any], faker: Faker
+) -> Callable[..., AnyUrl]:
+    def creator() -> AnyUrl:
+        return parse_obj_as(
+            AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
+        )
+
+    return creator
+
+
+@pytest.fixture
+def file_on_s3_server(
+    s3_storage_kwargs: dict[str, Any],
+    s3_remote_file_url: Callable[..., AnyUrl],
+    faker: Faker,
+) -> Iterator[Callable[..., AnyUrl]]:
+    list_of_created_files: list[AnyUrl] = []
+
+    def creator() -> AnyUrl:
+        new_remote_file = s3_remote_file_url()
+        open_file = fsspec.open(new_remote_file, mode="wt", **s3_storage_kwargs)
+        with open_file as fp:
+            fp.write(
+                f"This is the file contents of file #'{len(list_of_created_files):03}'"
+            )
+            for s in faker.sentences(5):
+                fp.write(f"{s}\n")
+        list_of_created_files.append(new_remote_file)
+        return new_remote_file
+
+    yield creator
+
+    # cleanup
+    fs = fsspec.filesystem("s3", **s3_storage_kwargs)
+    for file in list_of_created_files:
+        fs.delete(file.partition(f"{file.scheme}://")[2])

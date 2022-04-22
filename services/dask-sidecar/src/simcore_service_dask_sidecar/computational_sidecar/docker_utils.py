@@ -45,7 +45,7 @@ async def create_container_config(
 ) -> DockerContainerConfig:
 
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
-    memory_limit = ByteSize(task_max_resources.get("RAM", 1024 ** 3))
+    memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
     config = DockerContainerConfig(
         Env=[
             *[
@@ -198,6 +198,7 @@ async def _parse_container_log_file(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -243,7 +244,9 @@ async def _parse_container_log_file(
         )
         # copy the log file to the log_file_url
         file_to_upload = log_file
-        await push_file_to_remote(file_to_upload, log_file_url, log_publishing_cb)
+        await push_file_to_remote(
+            file_to_upload, log_file_url, log_publishing_cb, **storage_kwargs
+        )
 
         logger.debug(
             "monitoring legacy-style container log file: copying log file from %s to %s completed",
@@ -261,6 +264,7 @@ async def _parse_container_docker_logs(
     logs_pub: Pub,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -333,7 +337,9 @@ async def _parse_container_docker_logs(
         )
 
         # copy the log file to the log_file_url
-        await push_file_to_remote(log_file_path, log_file_url, log_publishing_cb)
+        await push_file_to_remote(
+            log_file_path, log_file_url, log_publishing_cb, **storage_kwargs
+        )
 
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",
@@ -353,6 +359,7 @@ async def monitor_container_logs(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -380,6 +387,7 @@ async def monitor_container_logs(
                 logs_pub,
                 log_file_url,
                 log_publishing_cb,
+                **storage_kwargs,
             )
         else:
             await _parse_container_log_file(
@@ -392,6 +400,7 @@ async def monitor_container_logs(
                 task_volumes,
                 log_file_url,
                 log_publishing_cb,
+                **storage_kwargs,
             )
 
         logger.info(
@@ -422,6 +431,7 @@ async def managed_monitor_container_log_task(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
+    **storage_kwargs,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -440,6 +450,7 @@ async def managed_monitor_container_log_task(
                 task_volumes,
                 log_file_url,
                 log_publishing_cb,
+                **storage_kwargs,
             ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )

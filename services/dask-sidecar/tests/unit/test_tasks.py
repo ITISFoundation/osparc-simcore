@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Dict, Iterable, List
+from typing import Callable, Coroutine, Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
@@ -38,7 +38,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
-from pydantic import AnyUrl
+from pydantic import AnyUrl, SecretStr
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -52,7 +52,6 @@ from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -138,10 +137,23 @@ class ServiceExampleParam:
     integration_version: version.Version
 
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio"]
+
+
+def test_file_on_server(file_on_s3_server: Callable[..., AnyUrl]):
+    file_url = file_on_s3_server()
+    import pdb
+
+    pdb.set_trace()
+
+
 @pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
-def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampleParam:
+def ubuntu_task(
+    request: FixtureRequest, file_on_s3_server: Callable[..., AnyUrl]
+) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
-    integration_version = version.Version(request.param)
+    integration_version = version.Version(request.param)  # type: ignore
     print("Using service integration:", integration_version)
     # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
@@ -156,7 +168,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             },
             **{
                 f"some_file_input_with_mapping{index+1}": FileUrl(
-                    url=f"{file}", file_mapping=f"{index+1}/some_file_input"
+                    url=parse_obj_as(AnyUrl, f"{file}"),
+                    file_mapping=f"{index+1}/some_file_input",
                 )
                 for index, file in enumerate(ftp_server)
             },
@@ -261,7 +274,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
 
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
-            server_address="docker.io", username="pytest", password=""
+            server_address="docker.io", username="pytest", password=SecretStr("")
         ),
         #
         # NOTE: we use sleeper because it defines a user
@@ -371,11 +384,11 @@ def test_run_computational_sidecar_real_fct(
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
             with fsspec.open(f"{v.url}") as fp:
-                assert fp.details.get("size") > 0
+                assert fp.details.get("size") > 0  # type: ignore
 
     # check the task has created a log file
     with fsspec.open(f"{ubuntu_task.log_file_url}", mode="rt") as fp:
-        saved_logs = fp.read()
+        saved_logs = fp.read()  # type: ignore
     assert saved_logs
     for log in ubuntu_task.expected_logs:
         assert log in saved_logs
@@ -410,7 +423,8 @@ def test_run_multiple_computational_sidecar_dask(
     ]
 
     results = dask_client.gather(futures)
-
+    assert results
+    assert not isinstance(results, Coroutine)
     # for result in results:
     # check that the task produce the expected data, not less not more
     for output_data in results:
@@ -466,7 +480,7 @@ def test_run_computational_sidecar_dask(
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
             with fsspec.open(f"{v.url}") as fp:
-                assert fp.details.get("size") > 0
+                assert fp.details.get("size") > 0  # type: ignore
 
 
 def test_failing_service_raises_exception(
