@@ -147,7 +147,7 @@ async def test_copy_file_to_remote_compresses_if_zip_destination(
     open_files = fsspec.open_files(
         f"zip://*::{destination_url}",
         mode="rt",
-        **remote_parameters.storage_kwargs,
+        **{destination_url.scheme: remote_parameters.storage_kwargs},
     )
     assert len(open_files) == 1
     with open_files[0] as fp:
