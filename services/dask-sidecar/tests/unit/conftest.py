@@ -129,10 +129,11 @@ def s3_storage_kwargs(
 def s3_remote_file_url(
     minio_config: dict[str, Any], faker: Faker
 ) -> Callable[..., AnyUrl]:
-    def creator() -> AnyUrl:
-        return parse_obj_as(
-            AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
+    def creator(file_path: Optional[Path] = None) -> AnyUrl:
+        file_path_with_bucket = Path(minio_config["bucket_name"]) / (
+            file_path or faker.file_name()
         )
+        return parse_obj_as(AnyUrl, f"s3://{file_path_with_bucket}")
 
     return creator
 
@@ -150,7 +151,7 @@ def file_on_s3_server(
         open_file = fsspec.open(new_remote_file, mode="wt", **s3_storage_kwargs)
         with open_file as fp:
             fp.write(
-                f"This is the file contents of file #'{len(list_of_created_files):03}'"
+                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'"
             )
             for s in faker.sentences(5):
                 fp.write(f"{s}\n")

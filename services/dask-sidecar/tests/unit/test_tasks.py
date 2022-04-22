@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Callable, Coroutine, Dict, Iterable, List
+from typing import Any, Callable, Coroutine, Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
@@ -39,7 +39,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr
-from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
@@ -141,20 +140,19 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["minio"]
 
 
-def test_file_on_server(file_on_s3_server: Callable[..., AnyUrl]):
-    file_url = file_on_s3_server()
-    import pdb
-
-    pdb.set_trace()
-
-
 @pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
 def ubuntu_task(
-    request: FixtureRequest, file_on_s3_server: Callable[..., AnyUrl]
+    request: FixtureRequest,
+    file_on_s3_server: Callable[..., AnyUrl],
+    s3_remote_file_url: Callable[..., AnyUrl],
 ) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
     integration_version = version.Version(request.param)  # type: ignore
     print("Using service integration:", integration_version)
+    # let's have some input files on the file server
+    NUM_FILES = 12
+    list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
+
     # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
         {
@@ -163,20 +161,20 @@ def ubuntu_task(
             "the_input_43": 15.0,
             "the_bool_input_54": False,
             **{
-                f"some_file_input_{index+1}": FileUrl(url=f"{file}")
-                for index, file in enumerate(ftp_server)
+                f"some_file_input_{index+1}": FileUrl(url=file)
+                for index, file in enumerate(list_of_files)
             },
             **{
                 f"some_file_input_with_mapping{index+1}": FileUrl(
-                    url=parse_obj_as(AnyUrl, f"{file}"),
+                    url=file,
                     file_mapping=f"{index+1}/some_file_input",
                 )
-                for index, file in enumerate(ftp_server)
+                for index, file in enumerate(list_of_files)
             },
         }
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
-    file_names = [file.path for file in ftp_server]
+    file_names = [file.path for file in list_of_files]
     list_of_commands = [
         "echo User: $(id $(whoami))",
         "echo Inputs:",
@@ -210,7 +208,7 @@ def ubuntu_task(
         "pytest_float": 3.2,
         "pytest_bool": False,
     }
-    output_file_url = next(iter(ftp_server)).with_path("output_file")
+    output_file_url = s3_remote_file_url(file_path="output_file")
     expected_output_keys = TaskOutputDataSchema.parse_obj(
         {
             **{k: {"required": True} for k in jsonable_outputs.keys()},
@@ -268,9 +266,7 @@ def ubuntu_task(
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/subfolder/a_outputfile",
     ]
 
-    log_file_url = parse_obj_as(
-        AnyUrl, f"{next(iter(ftp_server)).with_path('log.dat')}"
-    )
+    log_file_url = s3_remote_file_url(file_path="log.dat")
 
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
@@ -331,6 +327,7 @@ def test_run_computational_sidecar_real_fct(
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
+    s3_storage_kwargs: dict[str, Any],
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -346,6 +343,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.output_data_keys,
         ubuntu_task.log_file_url,
         ubuntu_task.command,
+        **s3_storage_kwargs,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
