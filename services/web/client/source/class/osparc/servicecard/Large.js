@@ -127,6 +127,9 @@ qx.Class.define("osparc.servicecard.Large", {
       description.addAt(editInTitle, 0);
       this._add(description);
 
+      const resources = this.__createResources();
+      this._add(resources);
+
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
         caretSize: 14
@@ -280,6 +283,46 @@ qx.Class.define("osparc.servicecard.Large", {
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
+    },
+
+    __createResources: function() {
+      const form = new qx.ui.form.Form();
+      let promise = null;
+      if (this.getInstanceUuid()) {
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid(),
+            nodeId: this.getInstanceUuid()
+          }
+        };
+        promise = osparc.data.Resources.fetch("studies", "getNodeResources", params);
+      } else {
+        const params = {
+          url: {
+            key: this.getService()["key"],
+            version: this.getService()["version"]
+          }
+        };
+        promise = osparc.data.Resources.fetch("services", "getResources", params);
+      }
+      promise
+        .then(serviceResources => {
+          console.log(serviceResources);
+          /*
+          for (let [key, value] of Object.entries(fileMetadata)) {
+            const entry = new qx.ui.form.TextField();
+            form.add(entry, key, null, key);
+            if (value) {
+              entry.setValue(value.toString());
+            }
+          }
+          */
+        })
+        .catch(err => console.error(err));
+
+      const formRenderer = new qx.ui.form.renderer.Single(form);
+      formRenderer.setEnabled(false);
+      return formRenderer;
     },
 
     __createRawMetadata: function() {
