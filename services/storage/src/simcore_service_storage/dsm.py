@@ -28,7 +28,6 @@ from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
-from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_delay
@@ -522,7 +521,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             except Exception:
                 message = f"Could not delete metada entry for file {file_uuid}"
                 logger.debug(message)
-                raise web.HTTPForbidden(reason=message)
+                raise web.HTTPForbidden(  # pylint: disable=raise-missing-from
+                    reason=message
+                )
 
     async def _generate_metadata_for_link(self, user_id: str, file_uuid: str):
         """

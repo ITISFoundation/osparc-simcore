@@ -25,8 +25,8 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.rabbit import RabbitSettings
 from settings_library.r_clone import RCloneSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
@@ -57,7 +57,7 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
-class RCloneSettings(RCloneSettings):
+class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",

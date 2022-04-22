@@ -23,7 +23,7 @@ from typing import (
     Type,
     Union,
 )
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.client import ClientSession
