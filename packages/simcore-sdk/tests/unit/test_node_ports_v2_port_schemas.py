@@ -191,13 +191,8 @@ async def test_port_with_object(mocker):
     await port.set_value(expected_value)
     assert await port.get_value() == expected_value
 
-    # FIXME: PC-> SAN set_value does not validate??
-    # with pytest.raises(ValidationError):
-    #     await port.set_value(
-    #         {
-    #             "b": True
-    #         }
-    #     )
+    with pytest.raises(ValidationError):
+        await port.set_value({"b": True})
 
 
 @pytest.fixture(scope="module")
@@ -246,11 +241,11 @@ async def test_port_with_units_and_constraints(mocker):
     print(validation_error)
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
-    assert validation_error["msg"] == "value_error"
+    assert validation_error["type"] == "value_error"
     assert (
         validation_error["msg"]
-        == "-3.4 invalid against content_schema: -3.4 is less than the minimum of 0"
-    )  # after ":" is friendly
+        == "-3.14 invalid against content_schema: -3.14 is less than the minimum of 0"
+    )
 
     # TODO: convert errors in PortValidationError that includes name of the port and which item failed and why?
 

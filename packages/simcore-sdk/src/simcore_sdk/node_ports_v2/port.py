@@ -60,6 +60,11 @@ class Port(BaseServiceIOModel):
     _node_ports = PrivateAttr()
     _used_default_value: bool = PrivateAttr(False)
 
+    class Config(BaseServiceIOModel.Config):
+        validate_assignment = (
+            True  # NOTE: ensures validation of 'value' using setters member functions
+        )
+
     @validator("content_schema", always=True)
     @classmethod
     def valid_content_jsonschema(cls, v):
@@ -141,6 +146,8 @@ class Port(BaseServiceIOModel):
         )
 
         if isinstance(self.value, PortLink):
+            # TODO: PC: add validation/conversion here as well
+
             # this is a link to another node
             return await port_utils.get_value_link_from_port_link(
                 # pylint: disable=protected-access
@@ -176,6 +183,8 @@ class Port(BaseServiceIOModel):
         value = None
         if isinstance(self.value, PortLink):
             # this is a link to another node
+            # TODO: PC: add validation here as well
+
             value = await port_utils.get_value_from_link(
                 # pylint: disable=protected-access
                 key=self.key,
