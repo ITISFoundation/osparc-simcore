@@ -249,6 +249,49 @@ async def test_pull_file_from_remote(
     mocked_log_publishing_cb.assert_called()
 
 
+async def test_pull_file_from_remote_s3_presigned_link(
+    s3_storage_kwargs: dict[str, Any],
+    s3_remote_file_url: AnyUrl,
+    minio_service: Minio,
+    minio_config: dict[str, Any],
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # put some file on the remote
+    open_file = cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            s3_remote_file_url,
+            mode="wt",
+            **s3_storage_kwargs,
+        ),
+    )
+    TEXT_IN_FILE = faker.text()
+    with open_file as fp:
+        fp.write(TEXT_IN_FILE)
+
+    # create a corresponding presigned get link
+    assert s3_remote_file_url.path
+    remote_file_url = parse_obj_as(
+        AnyUrl,
+        minio_service.presigned_get_object(
+            minio_config["bucket_name"],
+            s3_remote_file_url.path.removeprefix(f"/{minio_config['bucket_name']}/"),
+        ),
+    )
+    # now let's get the file through the util
+    dst_path = tmp_path / faker.file_name()
+    await pull_file_from_remote(
+        remote_file_url,
+        dst_path,
+        mocked_log_publishing_cb,
+    )
+    assert dst_path.exists()
+    assert dst_path.read_text() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
 async def test_pull_compressed_zip_file_from_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
