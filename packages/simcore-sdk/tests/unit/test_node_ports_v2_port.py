@@ -23,7 +23,7 @@ from typing import (
     Type,
     Union,
 )
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from aiohttp.client import ClientSession
@@ -607,6 +607,7 @@ async def test_valid_port(
         user_id: int
         project_id: str
         node_uuid: str
+        r_clone_settings: Optional[Any] = None
 
         @staticmethod
         async def get(key):

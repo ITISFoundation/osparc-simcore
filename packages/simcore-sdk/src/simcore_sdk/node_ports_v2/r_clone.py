@@ -1,12 +1,13 @@
 import asyncio
-import json
 import logging
+import re
+import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
-import aioboto3
 from aiofiles import tempfile
+from aiohttp import ClientSession, ClientTimeout, web
 from cache import AsyncLRU
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
@@ -52,8 +53,8 @@ async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
     return decoded_stdout
 
 
-@AsyncLRU(maxsize=1)
-async def is_r_clone_installed(r_clone_settings: Optional[RCloneSettings]) -> bool:
+@AsyncLRU(maxsize=2)
+async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
     try:
         await _async_command("rclone --version")
@@ -62,33 +63,102 @@ async def is_r_clone_installed(r_clone_settings: Optional[RCloneSettings]) -> bo
         return False
 
 
-async def _get_etag_via_s3(r_clone_settings: RCloneSettings, s3_path: str) -> ETag:
-    session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-    )
-    async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.endpoint
-    ) as s3:
-        s3_object = await s3.Object(
-            bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
-            key=s3_path.lstrip(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME),
+@asynccontextmanager
+async def _get_client_session(
+    r_clone_settings: RCloneSettings,
+) -> AsyncGenerator[ClientSession, None]:
+    client_timeout = ClientTimeout(
+        total=r_clone_settings.R_CLONE_AIOHTTP_CLIENT_TIMEOUT_TOTAL,
+        sock_connect=r_clone_settings.R_CLONE_AIOHTTP_CLIENT_TIMEOUT_SOCK_CONNECT,
+    )  # type: ignore
+
+    async with ClientSession(timeout=client_timeout) as session:
+        yield session
+
+
+async def _get_s3_link(
+    r_clone_settings: RCloneSettings, s3_object: str, user_id: int
+) -> str:
+    async with _get_client_session(r_clone_settings) as session:
+        url = "{endpoint}/v0/locations/0/files/{s3_object}/s3/link".format(
+            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            s3_object=urllib.parse.quote_plus(s3_object),
         )
-        e_tag_result = await s3_object.e_tag
-        # NOTE: above result is JSON encoded for some reason
-        return json.loads(e_tag_result)
+        logger.debug("%s", f"{url=}")
+        result = await session.get(url, params=dict(user_id=user_id))
+
+        if result.status == web.HTTPForbidden.status_code:
+            raise RCloneError(
+                (
+                    f"Insufficient permissions to upload {s3_object=} for {user_id=}. "
+                    f"Storage: {await result.text()}"
+                )
+            )
+
+        if result.status != web.HTTPOk.status_code:
+            raise RCloneError(
+                f"Could not fetch s3_link: status={result.status} {await result.text()}"
+            )
+
+        response = await result.json()
+        return response["data"]["s3_link"]
+
+
+async def _update_file_meta_data(
+    r_clone_settings: RCloneSettings, s3_object: str
+) -> ETag:
+    async with _get_client_session(r_clone_settings) as session:
+        url = "{endpoint}/v0/locations/0/files/{s3_object}/metadata".format(
+            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            s3_object=urllib.parse.quote_plus(s3_object),
+        )
+        logger.debug("%s", f"{url=}")
+        result = await session.patch(url)
+        if result.status != web.HTTPOk.status_code:
+            raise RCloneError(
+                f"Could not fetch metadata: status={result.status} {await result.text()}"
+            )
+
+        response = await result.json()
+        logger.debug("metadata response %s", response)
+        return response["data"]["entity_tag"]
+
+
+async def _delete_file_meta_data(
+    r_clone_settings: RCloneSettings, s3_object: str, user_id: int
+) -> None:
+    async with _get_client_session(r_clone_settings) as session:
+        url = "{endpoint}/v0/locations/0/files/{s3_object}/metadata".format(
+            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            s3_object=urllib.parse.quote_plus(s3_object),
+        )
+        logger.debug("%s", f"{url=}")
+        result = await session.delete(url, params=dict(user_id=user_id))
+        if result.status != web.HTTPOk.status_code:
+            raise RCloneError(
+                f"Could not fetch metadata: status={result.status} {await result.text()}"
+            )
 
 
 async def sync_local_to_s3(
-    r_clone_settings: Optional[RCloneSettings], s3_path: str, local_file_path: Path
+    r_clone_settings: Optional[RCloneSettings],
+    s3_object: str,
+    local_file_path: Path,
+    user_id: int,
 ) -> ETag:
     if r_clone_settings is None:
         raise RCloneError(
             (
-                f"Could not sync {local_file_path=} to {s3_path=}, provided "
+                f"Could not sync {local_file_path=} to {s3_object=}, provided "
                 f"config is invalid{r_clone_settings=}"
             )
         )
+
+    s3_link = await _get_s3_link(
+        r_clone_settings=r_clone_settings, s3_object=s3_object, user_id=user_id
+    )
+    s3_path = re.sub(r"^s3://", "", s3_link)
+    logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
 
     r_clone_config_file_content = get_r_clone_config(r_clone_settings)
     async with _config_file(r_clone_config_file_content) as config_file_name:
@@ -111,6 +181,7 @@ async def sync_local_to_s3(
         #   '/tmp/pytest-of-silenthk/pytest-80/test_sync_local_to_s30'
         #   'dst:simcore/00000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000002'
         #   --progress
+        #   --copy-links
         #   --include
         #   'filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt'
         r_clone_command = [
@@ -121,14 +192,21 @@ async def sync_local_to_s3(
             f"'{source_path.parent}'",
             f"'dst:{destination_path.parent}'",
             "--progress",
+            "--copy-links",
             "--include",
             f"'{file_name}'",
         ]
-        command_result = await _async_command(
-            " ".join(r_clone_command), cwd=f"{source_path.parent}"
-        )
-        logger.debug(command_result)
 
-        return await _get_etag_via_s3(
-            r_clone_settings=r_clone_settings, s3_path=s3_path
-        )
+        try:
+            await _async_command(" ".join(r_clone_command), cwd=f"{source_path.parent}")
+            return await _update_file_meta_data(
+                r_clone_settings=r_clone_settings, s3_object=s3_object
+            )
+        except Exception as e:
+            logger.warning(
+                "There was an error while uploading %s. Removing metadata", s3_object
+            )
+            await _delete_file_meta_data(
+                r_clone_settings=r_clone_settings, s3_object=s3_object, user_id=user_id
+            )
+            raise e

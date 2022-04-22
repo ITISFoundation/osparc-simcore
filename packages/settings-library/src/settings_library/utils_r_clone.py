@@ -14,6 +14,7 @@ _COMMON_ENTRIES: Dict[str, str] = {
 }
 
 _PROVIDER_ENDTIRES: Dict[S3Provider, Dict[str, str]] = {
+    # NOTE: # AWS_SESSION_TOKEN should be required for STS
     S3Provider.AWS: {"provider": "AWS"},
     S3Provider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
     S3Provider.MINIO: {"provider": "Minio", "endpoint": "{endpoint}"},

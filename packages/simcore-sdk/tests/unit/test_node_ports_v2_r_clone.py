@@ -32,19 +32,20 @@ def r_clone_settings(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
     return RCloneSettings()
 
 
-async def test_is_r_clone_installed_cached(
+async def test_is_r_clone_available_cached(
     caplog: LogCaptureFixture, r_clone_settings: RCloneSettings
 ) -> None:
     for _ in range(3):
-        result = await r_clone.is_r_clone_installed(r_clone_settings)
+        result = await r_clone.is_r_clone_available(r_clone_settings)
         assert type(result) is bool
     assert "'rclone --version' result:\n" in caplog.text
     assert caplog.text.count("'rclone --version' result:\n") == 1
 
-    assert await r_clone.is_r_clone_installed(None) is False
+    assert await r_clone.is_r_clone_available(None) is False
 
 
 async def test__config_file(text_to_write: str) -> None:

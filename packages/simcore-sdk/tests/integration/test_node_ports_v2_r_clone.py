@@ -4,22 +4,32 @@
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Dict, Iterator
-from uuid import UUID
+from typing import AsyncGenerator, AsyncIterable, Iterator
 
 import aioboto3
 import pytest
+import sqlalchemy as sa
 from faker import Faker
-from settings_library.r_clone import RCloneSettings, S3Provider
-from simcore_sdk.node_ports_v2.r_clone import is_r_clone_installed, sync_local_to_s3
+from pytest_mock.plugin import MockerFixture
+from settings_library.r_clone import RCloneSettings
+from simcore_postgres_database.models.file_meta_data import file_meta_data
+from simcore_sdk.node_ports_v2 import r_clone
 
 pytest_simcore_core_services_selection = [
+    "migration",
     "postgres",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
     "minio",
+    "adminer",
 ]
+
+
+class _TestException(Exception):
+    pass
+
 
 # FIXTURES
 
@@ -52,47 +62,8 @@ def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
 
 
 @pytest.fixture
-async def r_clone_settings(minio_config: Dict[str, Any]) -> RCloneSettings:
-    client = minio_config["client"]
-    settings = RCloneSettings.parse_obj(
-        dict(
-            R_CLONE_S3=dict(
-                S3_ENDPOINT=client["endpoint"],
-                S3_ACCESS_KEY=client["access_key"],
-                S3_SECRET_KEY=client["secret_key"],
-                S3_BUCKET_NAME=minio_config["bucket_name"],
-                S3_SECURE=client["secure"],
-            ),
-            R_CLONE_PROVIDER=S3Provider.MINIO,
-        )
-    )
-    if not await is_r_clone_installed(settings):
-        pytest.skip("rclone not installed")
-
-    return settings
-
-
-@pytest.fixture
-def project_id() -> UUID:
-    return UUID(int=1)
-
-
-@pytest.fixture
-def node_uuid() -> UUID:
-    return UUID(int=2)
-
-
-@pytest.fixture
-def s3_object(
-    r_clone_settings: RCloneSettings, project_id: UUID, node_uuid: UUID, file_name: str
-) -> str:
-
-    s3_path = (
-        Path(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        / f"{project_id}"
-        / f"{node_uuid}"
-        / file_name
-    )
+def s3_object(project_id: str, node_uuid: str, file_name: str) -> str:
+    s3_path = Path(project_id) / node_uuid / file_name
     return f"{s3_path}"
 
 
@@ -103,6 +74,17 @@ async def cleanup_s3(
     yield
     async with _get_s3_object(r_clone_settings, s3_object) as s3_object:
         await s3_object.delete()
+
+
+@pytest.fixture
+def mock_update_file_meta_data(mocker: MockerFixture) -> None:
+    async def _raise_error(*args, **kwargs) -> None:
+        raise _TestException()
+
+    mocker.patch(
+        "simcore_sdk.node_ports_v2.r_clone._update_file_meta_data",
+        side_effect=_raise_error,
+    )
 
 
 # UTILS
@@ -133,6 +115,16 @@ async def _download_s3_object(
         await s3_object.download_file(f"{local_path}")
 
 
+def _is_file_present(postgres_db: sa.engine.Engine, s3_object: str) -> bool:
+    with postgres_db.begin() as conn:
+        result = conn.execute(
+            file_meta_data.select().where(file_meta_data.c.file_uuid == s3_object)
+        )
+        result_len = len(list(result))
+    assert result_len <= 1
+    return result_len == 1
+
+
 # TESTS
 
 
@@ -141,12 +133,15 @@ async def test_sync_local_to_s3(
     s3_object: str,
     file_to_upload: Path,
     local_file_for_download: Path,
+    user_id: int,
+    postgres_db: sa.engine.Engine,
     cleanup_s3: None,
 ) -> None:
-    etag = await sync_local_to_s3(
+    etag = await r_clone.sync_local_to_s3(
         r_clone_settings=r_clone_settings,
-        s3_path=s3_object,
+        s3_object=s3_object,
         local_file_path=file_to_upload,
+        user_id=user_id,
     )
 
     assert isinstance(etag, str)
@@ -160,3 +155,25 @@ async def test_sync_local_to_s3(
 
     # check same file contents after upload and download
     assert file_to_upload.read_text() == local_file_for_download.read_text()
+
+    assert _is_file_present(postgres_db=postgres_db, s3_object=s3_object) is True
+
+
+async def test_sync_local_to_s3_cleanup_on_error(
+    r_clone_settings: RCloneSettings,
+    s3_object: str,
+    file_to_upload: Path,
+    local_file_for_download: Path,
+    user_id: int,
+    cleanup_s3: None,
+    mock_update_file_meta_data: None,
+    postgres_db: sa.engine.Engine,
+) -> None:
+    with pytest.raises(_TestException):
+        await r_clone.sync_local_to_s3(
+            r_clone_settings=r_clone_settings,
+            s3_object=s3_object,
+            local_file_path=file_to_upload,
+            user_id=user_id,
+        )
+    assert _is_file_present(postgres_db=postgres_db, s3_object=s3_object) is False

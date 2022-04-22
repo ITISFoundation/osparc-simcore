@@ -14,11 +14,13 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports import node_config
+from simcore_sdk.node_ports_v2.r_clone import is_r_clone_available
 from yarl import URL
 
 
@@ -323,3 +325,27 @@ def _assign_config(
         )
         if not entry[2] is None:
             config_dict[port_type].update({entry[0]: entry[2]})
+
+
+@pytest.fixture
+async def r_clone_settings(
+    minio_config: Dict[str, Any], storage_service: URL
+) -> RCloneSettings:
+    client = minio_config["client"]
+    settings = RCloneSettings.parse_obj(
+        dict(
+            R_CLONE_S3=dict(
+                S3_ENDPOINT=client["endpoint"],
+                S3_ACCESS_KEY=client["access_key"],
+                S3_SECRET_KEY=client["secret_key"],
+                S3_BUCKET_NAME=minio_config["bucket_name"],
+                S3_SECURE=client["secure"],
+            ),
+            R_CLONE_PROVIDER=S3Provider.MINIO,
+            R_CLONE_STORAGE_ENDPOINT=f"{storage_service}",
+        )
+    )
+    if not await is_r_clone_available(settings):
+        pytest.skip("rclone not installed")
+
+    return settings
