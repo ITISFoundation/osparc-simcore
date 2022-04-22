@@ -36,9 +36,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     this._showLoadingPage(this.tr("Starting..."));
 
-    this.addListener("appear", () => {
-      this._moreResourcesRequired();
-    });
+    this.addListener("appear", () => this._moreResourcesRequired());
   },
 
   events: {
@@ -85,17 +83,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "scroll-container":
-          control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
-          control.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
-          break;
         case "resources-layout": {
-          const scroll = this.getChildControl("scroll-container");
+          const scroll = new qx.ui.container.Scroll();
+          scroll.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
           control = this._createLayout();
           scroll.add(control);
+          this._add(scroll, {
+            flex: 1
+          });
           break;
         }
       }
@@ -115,23 +110,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _createResourcesLayout: function(resourceType) {
-      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
       const topBar = this.__createTopBar(resourceType);
-      resourcesLayout.add(topBar);
+      this._add(topBar);
 
       const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      resourcesLayout.add(secondaryBar);
+      this._add(secondaryBar);
 
-      const resourcesContainer = this._resourcesContainer = this.__createResourcesContainer();
-      resourcesLayout.add(resourcesContainer);
-
-      return resourcesLayout;
-    },
-
-    __createResourcesContainer: function() {
       const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      const resourcesContainer = this._resourcesContainer = new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      this._add(resourcesContainer);
     },
 
     __createTopBar: function(resourceType) {

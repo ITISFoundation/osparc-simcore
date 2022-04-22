@@ -279,6 +279,29 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
+@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/resources")
+@login_required
+@permission_required("services.catalog.*")
+async def get_service_resources_handler(request: Request):
+    """
+    Filters outputs of this service that match a given service input
+
+    Returns compatible output port of a connected node for a given input
+    """
+    with parameters_validation(request):
+        # match, parse and validate
+        service_key: ServiceKey = request.match_info["service_key"]
+        service_version: ServiceVersion = request.match_info["service_version"]
+
+    data = await catalog_client.get_service_resources(
+        request.app, service_key=service_key, service_version=service_version
+    )
+
+    # format response
+    enveloped: str = json_dumps({"data": data})
+    return web.Response(text=enveloped, content_type="application/json")
+
+
 ###############
 # IMPLEMENTATION
 #

@@ -451,7 +451,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setPosition(nodeUIData.position);
       }
       if ("marker" in nodeUIData) {
-        this.addMarker(nodeUIData.marker);
+        this.__addMarker(nodeUIData.marker);
       }
     },
 
@@ -623,7 +623,15 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    addMarker: function(marker) {
+    toggleMarker: function() {
+      if (this.getMarker()) {
+        this.__removeMarker();
+      } else {
+        this.__addMarker();
+      }
+    },
+
+    __addMarker: function(marker) {
       if (marker === undefined) {
         marker = {
           color: osparc.utils.Utils.getRandomColor()
@@ -633,7 +641,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setMarker(markerModel);
     },
 
-    removeMarker: function() {
+    __removeMarker: function() {
       this.setMarker(null);
     },
 

@@ -287,9 +287,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     __switchPrefix: function(item, oldPrefix, newPrefix) {
-      const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
+      let newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
-      item.setValue(String(newValue));
+      if ("type" in item && item.type !== "integer") {
+        newValue = String(newValue);
+      }
+      item.setValue(newValue);
       this.self().updateUnitLabelPrefix(item);
     },
 

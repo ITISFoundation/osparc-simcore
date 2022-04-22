@@ -92,8 +92,8 @@ async def delete_all_projects(app: web.Application):
 class NewProject:
     def __init__(
         self,
-        params_override: Dict = None,
-        app: web.Application = None,
+        params_override: Optional[Dict] = None,
+        app: Optional[web.Application] = None,
         clear_all: bool = True,
         user_id: Optional[int] = None,
         *,
@@ -146,9 +146,10 @@ async def assert_get_same_project(
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
+    assert client.app
     url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{api_vtag}/projects/{project['uuid']}"
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
     if not error:

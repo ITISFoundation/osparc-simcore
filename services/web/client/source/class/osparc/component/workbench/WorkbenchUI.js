@@ -370,6 +370,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return bounds;
     },
 
+    __cursorOnNodeUI: function(pos) {
+      if (this.__nodesUI.length === 0) {
+        return null;
+      }
+      let onNodeUI = null;
+      this.__nodesUI.forEach(nodeUI => {
+        const nBounds = nodeUI.getBounds();
+        console.log();
+        if (onNodeUI === null &&
+          pos.x > nBounds.left &&
+          pos.x < nBounds.left + nBounds.width &&
+          pos.y > nBounds.top &&
+          pos.y < nBounds.top + nBounds.height) {
+          onNodeUI = nodeUI;
+        }
+      });
+      return onNodeUI;
+    },
+
     _addNodeUIToWorkbench: function(nodeUI, position) {
       if (position === undefined || !("x" in position) || isNaN(position["x"]) || position["x"] < 0) {
         position = {
@@ -1280,32 +1299,97 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __doOpenContextMenu: function(e) {
+      const wbPos = this.__pointerEventToWorkbenchPos(e);
+      const nodeUI = this.__cursorOnNodeUI(wbPos);
+      const actions = {
+        addService: {
+          "text": "\uf067", // plus
+          "action": () => this.__openServiceCatalog(e)
+        },
+        zoomIn: {
+          "text": "\uf00e", // search-plus
+          "action": () => {
+            this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+            this.zoom(true);
+          }
+        },
+        zoomReset: {
+          "text": "\uf002", // search
+          "action": () => this.setScale(1)
+        },
+        zoomOut: {
+          "text": "\uf010", // search-minus
+          "action": () => {
+            this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+            this.zoom(false);
+          }
+        },
+        drawText: {
+          "text": "\uf040", // pencil
+          "action": () => this.startAnnotationsText()
+        },
+        drawRect: {
+          "text": "\uf044", // brush with rect
+          "action": () => this.startAnnotationsRect()
+        },
+        removeNode: {
+          "text": "\uf014", // trash
+          "action": () => nodeUI.fireDataEvent("removeNode", nodeUI.getNodeId())
+        },
+        addRemoveMarker: {
+          "text": "\uf097", // marker
+          "action": () => nodeUI.getNode().toggleMarker()
+        },
+        addServiceInput: {
+          "text": "\uf090", // in
+          "action": () => {
+            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
+            const srvCat = this.openServiceCatalog({
+              x: 50,
+              y: 50
+            }, freePos);
+            srvCat.setContext(null, nodeUI.getNodeId());
+          }
+        },
+        addServiceOutput: {
+          "text": "\uf08b", // out
+          "action": () => {
+            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
+            const srvCat = this.openServiceCatalog({
+              x: 50,
+              y: 50
+            }, freePos);
+            srvCat.setContext(nodeUI.getNodeId(), null);
+          }
+        },
+        noAction: {
+          "text": "\uf05e", // verboten
+          "action": () => {}
+        }
+      };
+      let buttons = null;
+      if (nodeUI) {
+        const node = nodeUI.getNode();
+        buttons = [
+          actions.addRemoveMarker,
+          node.hasOutputs() ? actions.addServiceOutput : actions.noAction,
+          actions.removeNode,
+          node.hasInputs() ? actions.addServiceInput : actions.noAction
+        ];
+      } else {
+        buttons = [
+          actions.addService,
+          actions.drawText,
+          actions.drawRect
+        ];
+      }
+      this.__buttonsToContextMenu(e, buttons);
+    },
+
+    __buttonsToContextMenu: function(e, buttons) {
       if (this.__contextMenu) {
         this.__contextMenu.hide();
       }
-      const buttons = [{
-        "text": "\uf067", // plus
-        "action": () => {
-          this.__openServiceCatalog(e);
-        }
-      }, {
-        "text": "\uf00e", // search-plus
-        "action": () => {
-          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.zoom(true);
-        }
-      }, {
-        "text": "\uf002", // search
-        "action": () => {
-          this.setScale(1);
-        }
-      }, {
-        "text": "\uf010", // search-minus
-        "action": () => {
-          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.zoom(false);
-        }
-      }];
       let rotation = 3 * Math.PI / 2;
       rotation -= (2/buttons.length) * (Math.PI / 2);
       const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
@@ -1370,12 +1454,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__annotationInitPos = null;
       }
       if (this.__annotatingRect || this.__annotatingText) {
-        this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text");
-        osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
-        this.__rectAnnotationRepr = null;
-        this.__annotatingRect = false;
-        this.__annotatingText = false;
-        this.__toolHint.setValue(null);
+        if (this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text")) {
+          osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
+          this.__rectAnnotationRepr = null;
+          this.__annotatingRect = false;
+          this.__annotatingText = false;
+          this.__toolHint.setValue(null);
+        }
       }
 
       if (this.__panning) {
@@ -1809,6 +1894,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __consolidateAnnotation: function(annotation, type) {
+      if ([null, undefined].includes(annotation)) {
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
+        return false;
+      }
       const serializeData = {
         type,
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
@@ -1827,6 +1916,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         titleEditor.center();
         titleEditor.open();
       }
+      return true;
     },
 
     __addAnnotation: function(data, id) {

@@ -49,11 +49,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
     },
 
     __setButtonStyle: function(btn) {
-      btn.getContentElement().setStyles({
-        "border-radius": "6px",
-        "box-shadow": "none"
-      });
-
       const colorManager = qx.theme.manager.Color.getInstance();
       const updateStyle = button => {
         osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));

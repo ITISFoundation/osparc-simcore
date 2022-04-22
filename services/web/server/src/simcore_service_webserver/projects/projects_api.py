@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -35,7 +36,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import director_v2_api, storage_api
+from .. import catalog_client, director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -53,7 +54,7 @@ from ..users_exceptions import UserNotFoundError
 from . import _delete
 from .project_lock import UserNameDict, get_project_locked_state, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectLockError
+from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -384,25 +385,6 @@ async def add_project_node(
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
         )
     return node_uuid
-
-
-async def get_project_node(
-    request: web.Request, project_uuid: str, user_id: int, node_id: str
-):
-    log.debug(
-        "getting node %s in project %s for user %s", node_id, project_uuid, user_id
-    )
-
-    list_of_interactive_services = await director_v2_api.get_services(
-        request.app, project_id=project_uuid, user_id=user_id
-    )
-    # get the project if it is running
-    for service in list_of_interactive_services:
-        if service["service_uuid"] == node_id:
-            return service
-    # the service is not running, it's a computational service maybe
-    # TODO: find out if computational service is running if not throw a 404 since it's not around
-    return {"service_uuid": node_id, "service_state": "idle"}
 
 
 async def delete_project_node(
@@ -898,3 +880,19 @@ async def add_project_states_for_user(
         locked=lock_state, state=ProjectRunningState(value=running_state)
     ).dict(by_alias=True, exclude_unset=True)
     return project
+
+
+async def get_project_node_resources(
+    app: web.Application, project: dict[str, Any], node_id: NodeID
+) -> Dict[str, Any]:
+    if project_node := project.get("workbench", {}).get(f"{node_id}"):
+        return await catalog_client.get_service_resources(
+            app, project_node["key"], project_node["version"]
+        )
+    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+
+
+async def set_project_node_resources(
+    app: web.Application, project: dict[str, Any], node_id: NodeID
+):
+    raise NotImplementedError("cannot change resources for now")

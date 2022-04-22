@@ -27,6 +27,7 @@
 /**
  * A qooxdoo wrapper for
  * <a href='https://github.com/victorqribeiro/radialMenu' target='_blank'>RadialMenu</a>
+ * icons: https://victorribeiro.com/radialMenu/font-visualizer.html
  */
 
 qx.Class.define("osparc.wrapper.RadialMenu", {

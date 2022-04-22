@@ -3,58 +3,18 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from typing import Callable
+from typing import Type
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
-from simcore_service_webserver.application import (
-    create_safe_application,
-    setup_catalog,
-    setup_db,
-    setup_login,
-    setup_products,
-    setup_rest,
-    setup_security,
-    setup_session,
-)
-from simcore_service_webserver.application_settings import setup_settings
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.catalog_settings import (
     CatalogSettings,
     get_plugin_settings,
 )
 from simcore_service_webserver.db_models import UserRole
-
-
-@pytest.fixture()
-def client(
-    event_loop,
-    app_cfg,
-    aiohttp_client,
-    postgres_db,
-    monkeypatch_setenv_from_app_config: Callable,
-):
-    # fixture: minimal client with catalog-subsystem enabled and
-    #   only pertinent modules
-    #
-    # - Mocks calls to actual API
-
-    monkeypatch_setenv_from_app_config(app_cfg)
-    app = create_safe_application(app_cfg)
-    assert setup_settings(app)
-
-    # patch all
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    assert setup_catalog(app)
-    setup_products(app)
-
-    yield event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": app_cfg["main"]["port"]})
-    )
 
 
 @pytest.fixture
@@ -79,30 +39,30 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
     ],
 )
 async def test_dag_entrypoints(
-    client,
-    logged_user,
-    api_version_prefix,
-    mock_catalog_service_api_responses,
-    expected,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    api_version_prefix: str,
+    mock_catalog_service_api_responses: None,
+    expected: Type[web.HTTPException],
 ):
     VTAG = api_version_prefix
 
     # list resources
-    assert client.app.router
-
     def assert_route(name, expected_url, **kargs):
+        assert client.app
+        assert client.app.router
         url = client.app.router[name].url_for(**{k: str(v) for k, v in kargs.items()})
         assert str(url) == expected_url
         return url
 
     url = assert_route("list_catalog_dags", f"/{VTAG}/catalog/dags")
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected)
 
     # create resource
     url = assert_route("create_catalog_dag", f"/{VTAG}/catalog/dags")
     data = {}  # TODO: some fake data
-    resp = await client.post(url, json=data)
+    resp = await client.post(f"{url}", json=data)
     data, errors = await assert_status(resp, expected)
 
     # TODO: get resource
@@ -117,7 +77,7 @@ async def test_dag_entrypoints(
     url = assert_route(
         "replace_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
     )
-    resp = await client.put(url, json=new_data)
+    resp = await client.put(f"{url}", json=new_data)
     data, errors = await assert_status(resp, expected)
 
     # TODO: update resource
@@ -129,5 +89,58 @@ async def test_dag_entrypoints(
     url = assert_route(
         "delete_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_get_service_resources(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_catalog_service_api_responses: None,
+    expected: Type[web.HTTPException],
+):
+    assert client.app
+    assert client.app.router
+    url = client.app.router["get_service_resources_handler"].url_for(
+        service_key="some_service", service_version="3.4.5"
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
+
+
+@pytest.fixture
+def mock_catalog_service_api_responses_not_found(client, aioresponses_mocker):
+    settings: CatalogSettings = get_plugin_settings(client.app)
+    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
+
+    aioresponses_mocker.get(url_pattern, exception=web.HTTPNotFound)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_get_undefined_service_resources_raises_not_found_error(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_catalog_service_api_responses_not_found: None,
+    expected: Type[web.HTTPException],
+):
+    assert client.app
+    assert client.app.router
+    url = client.app.router["get_service_resources_handler"].url_for(
+        service_key="some_service", service_version="3.4.5"
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
