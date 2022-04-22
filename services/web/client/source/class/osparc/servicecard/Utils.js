@@ -193,6 +193,58 @@ qx.Class.define("osparc.servicecard.Utils", {
       return descriptionLayout;
     },
 
+    createResourcesInfo: function() {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
+        font: "title-12"
+      });
+      resourcesLayout.add(label);
+
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const resourcesInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "center",
+        alignY: "middle"
+      });
+      resourcesLayout.add(resourcesInfo);
+
+      return resourcesLayout;
+    },
+
+    resourcesToResourcesInfo: function(resourcesLayout, resourcesInfo) {
+      const layout = resourcesLayout.getChildren()[1];
+      let row = 0;
+      Object.keys(resourcesInfo).forEach(resourceKey => {
+        const resourceInfo = resourcesInfo[resourceKey];
+        layout.add(new qx.ui.basic.Label(resourceKey).set({
+          font: "title-12"
+        }), {
+          row,
+          column: 0
+        });
+        Object.keys(resourceInfo).forEach(resourceInfoKey => {
+          layout.add(new qx.ui.basic.Label(resourceInfoKey).set({
+            font: "title-12"
+          }), {
+            row,
+            column: 1
+          });
+          layout.add(new qx.ui.basic.Label(resourceInfo[resourceInfoKey]).set({
+            font: "text-12"
+          }), {
+            row,
+            column: 2
+          });
+        });
+        row++;
+      });
+    },
+
     createExtraInfo: function(extraInfos) {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");

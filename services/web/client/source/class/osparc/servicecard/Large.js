@@ -286,7 +286,8 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __createResources: function() {
-      const form = new qx.ui.form.Form();
+      const resourcesLayout = osparc.servicecard.Utils.createResourcesInfo();
+      resourcesLayout.exclude();
       let promise = null;
       if (this.getInstanceUuid()) {
         const params = {
@@ -298,31 +299,20 @@ qx.Class.define("osparc.servicecard.Large", {
         promise = osparc.data.Resources.fetch("studies", "getNodeResources", params);
       } else {
         const params = {
-          url: {
-            key: this.getService()["key"],
-            version: this.getService()["version"]
-          }
+          url: osparc.data.Resources.getServiceUrl(
+            this.getService()["key"],
+            this.getService()["version"]
+          )
         };
         promise = osparc.data.Resources.fetch("services", "getResources", params);
       }
       promise
         .then(serviceResources => {
-          console.log(serviceResources);
-          /*
-          for (let [key, value] of Object.entries(fileMetadata)) {
-            const entry = new qx.ui.form.TextField();
-            form.add(entry, key, null, key);
-            if (value) {
-              entry.setValue(value.toString());
-            }
-          }
-          */
+          resourcesLayout.show();
+          osparc.servicecard.Utils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
         })
         .catch(err => console.error(err));
-
-      const formRenderer = new qx.ui.form.renderer.Single(form);
-      formRenderer.setEnabled(false);
-      return formRenderer;
+      return resourcesLayout;
     },
 
     __createRawMetadata: function() {
