@@ -222,7 +222,11 @@ qx.Class.define("osparc.servicecard.Utils", {
       Object.keys(resourcesInfo).forEach(resourceKey => {
         let column = 0;
         const resourceInfo = resourcesInfo[resourceKey];
-        layout.add(new qx.ui.basic.Label(resourceKey).set({
+        let label = resourceKey;
+        if (resourceKey === "RAM") {
+          label += " (GB)";
+        }
+        layout.add(new qx.ui.basic.Label(label).set({
           font: "title-12"
         }), {
           row,
@@ -237,7 +241,11 @@ qx.Class.define("osparc.servicecard.Utils", {
             column
           });
           column++;
-          layout.add(new qx.ui.basic.Label(String(resourceInfo[resourceInfoKey])).set({
+          let value = resourceInfo[resourceInfoKey];
+          if (resourceKey === "RAM") {
+            value = osparc.utils.Utils.bytesToGB(value);
+          }
+          layout.add(new qx.ui.basic.Label(String(value)).set({
             font: "text-12"
           }), {
             row,
