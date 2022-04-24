@@ -24,7 +24,7 @@ qx.Class.define("osparc.servicecard.Large", {
     * @param instanceUuid {String} uuid of the service instance
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, instanceUuid = null, openOptions = true) {
+  construct: function(serviceData, instanceUuid = null, study = null, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -37,6 +37,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
     if (instanceUuid) {
       this.setInstanceUuid(instanceUuid);
+    }
+
+    if (study) {
+      this.setStudy(study);
     }
 
     if (openOptions !== undefined) {
@@ -68,6 +72,12 @@ qx.Class.define("osparc.servicecard.Large", {
 
     instanceUuid: {
       check: "String",
+      init: null,
+      nullable: true
+    },
+
+    study: {
+      check: "osparc.data.model.Study",
       init: null,
       nullable: true
     },
@@ -126,6 +136,9 @@ qx.Class.define("osparc.servicecard.Large", {
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
       this._add(description);
+
+      const resources = this.__createResources();
+      this._add(resources);
 
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
@@ -280,6 +293,36 @@ qx.Class.define("osparc.servicecard.Large", {
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
+    },
+
+    __createResources: function() {
+      const resourcesLayout = osparc.servicecard.Utils.createResourcesInfo();
+      resourcesLayout.exclude();
+      let promise = null;
+      if (this.getInstanceUuid()) {
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid(),
+            nodeId: this.getInstanceUuid()
+          }
+        };
+        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+      } else {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.getService()["key"],
+            this.getService()["version"]
+          )
+        };
+        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+      }
+      promise
+        .then(serviceResources => {
+          resourcesLayout.show();
+          osparc.servicecard.Utils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+        })
+        .catch(err => console.error(err));
+      return resourcesLayout;
     },
 
     __createRawMetadata: function() {

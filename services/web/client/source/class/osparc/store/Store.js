@@ -62,6 +62,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    nodesInStudyResources: {
+      check: "Array",
+      init: []
+    },
+    serviceResources: {
+      check: "Array",
+      init: []
+    },
     snapshots: {
       check: "Array",
       init: [],
