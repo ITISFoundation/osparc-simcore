@@ -274,7 +274,6 @@ async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
     assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
     assert not body, "body %s" % body  # nosec
 
     with handle_storage_errors():
