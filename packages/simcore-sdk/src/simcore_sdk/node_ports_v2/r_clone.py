@@ -81,7 +81,7 @@ async def _get_s3_link(
 ) -> str:
     async with _get_client_session(r_clone_settings) as session:
         url = "{endpoint}/v0/locations/0/files/{s3_object}/s3/link".format(
-            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            endpoint=r_clone_settings.storage_endpoint,
             s3_object=urllib.parse.quote_plus(s3_object),
         )
         logger.debug("%s", f"{url=}")
@@ -109,7 +109,7 @@ async def _update_file_meta_data(
 ) -> ETag:
     async with _get_client_session(r_clone_settings) as session:
         url = "{endpoint}/v0/locations/0/files/{s3_object}/metadata".format(
-            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            endpoint=r_clone_settings.storage_endpoint,
             s3_object=urllib.parse.quote_plus(s3_object),
         )
         logger.debug("%s", f"{url=}")
@@ -129,7 +129,7 @@ async def _delete_file_meta_data(
 ) -> None:
     async with _get_client_session(r_clone_settings) as session:
         url = "{endpoint}/v0/locations/0/files/{s3_object}/metadata".format(
-            endpoint=r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
+            endpoint=r_clone_settings.storage_endpoint,
             s3_object=urllib.parse.quote_plus(s3_object),
         )
         logger.debug("%s", f"{url=}")
