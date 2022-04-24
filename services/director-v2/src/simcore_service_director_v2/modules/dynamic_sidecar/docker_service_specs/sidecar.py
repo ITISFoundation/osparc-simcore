@@ -25,6 +25,9 @@ def _get_environment_variables(
 ) -> Dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
+    r_clone_settings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
+    )
 
     state_exclude = []
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -60,6 +63,13 @@ def _get_environment_variables(
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
+        "S3_ENDPOINT": r_clone_settings.R_CLONE_S3.endpoint,
+        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
+        "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
+        "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
+        "R_CLONE_STORAGE_ENDPOINT": r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
     }
 
 
