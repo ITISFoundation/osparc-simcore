@@ -15,6 +15,7 @@ RUN set -eux && \
   apt-get install -y \
   gosu \
   libmagic1 \
+  curl \
   && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
@@ -46,6 +47,12 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # volumes between itself and the spawned containers
 ENV DY_VOLUMES="/dy-volumes"
 
+# rclone installation
+ARG R_CLONE_VERSION="1.58.0"
+RUN curl -sLO "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  dpkg -i "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rclone --version
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
