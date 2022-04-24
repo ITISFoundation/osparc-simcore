@@ -43,7 +43,7 @@ def test_supported_backends_did_not_change() -> None:
 def test_expected_s3_endpoint(
     endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
 
@@ -55,7 +55,7 @@ def test_expected_s3_endpoint(
 
 
 def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
     with pytest.raises(ValueError):
         RCloneSettings()

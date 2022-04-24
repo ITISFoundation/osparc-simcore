@@ -22,7 +22,7 @@ MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
     "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
     "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
     "SWARM_STACK_NAME": "test_swarm_name",
-    "R_CLONE_S3_PROVIDER": "MINIO",
+    "R_CLONE_PROVIDER": "MINIO",
 }
 
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
