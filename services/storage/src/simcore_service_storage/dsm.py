@@ -16,6 +16,7 @@ from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
 import attr
 import botocore
+import botocore.exceptions
 import sqlalchemy as sa
 from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext, get_session
@@ -493,7 +494,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             file_uuid, bucket_name, object_name, silence_exception=True
         )
 
-    async def upload_link(self, user_id: str, file_uuid: str):
+    async def upload_link(self, user_id: str, file_uuid: str, as_presigned_link: bool):
         """
         Creates pre-signed upload link and updates metadata table when
         link is used and upload is successfuly completed
@@ -545,9 +546,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 object_name=object_name,
             )
         )
-        return self.s3_client.create_presigned_put_url(bucket_name, object_name)
+        link = URL(f"s3://{bucket_name}/{object_name}")
+        if as_presigned_link:
+            link = self.s3_client.create_presigned_put_url(bucket_name, object_name)
+        return f"{link}"
 
-    async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
+    async def download_link_s3(
+        self, file_uuid: str, user_id: int, as_presigned_link: bool
+    ) -> str:
 
         # access layer
         async with self.engine.acquire() as conn:
@@ -577,9 +583,10 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 raise web.HTTPNotFound(
                     reason=f"File '{file_uuid}' does not exists in storage."
                 )
-
-        link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        return link
+        link = URL(f"s3://{bucket_name}/{object_name}")
+        if as_presigned_link:
+            link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
+        return f"{link}"
 
     async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
@@ -616,6 +623,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     async def copy_file_s3_datcore(
         self, user_id: str, dest_uuid: str, source_uuid: str
     ):
+        assert self.app  # nosec
         session = get_client_session(self.app)
 
         # source is s3, get link and copy to datcore
@@ -648,6 +656,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         source_uuid: str,
         filename_missing: bool = False,
     ):
+        assert self.app  # nosec
         session = get_client_session(self.app)
 
         # 2 steps: Get download link for local copy, the upload link to s3
@@ -658,7 +667,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         if filename_missing:
             dest_uuid = str(Path(dest_uuid) / filename)
 
-        s3_upload_link = await self.upload_link(user_id, dest_uuid)
+        s3_upload_link = await self.upload_link(
+            user_id, dest_uuid, as_presigned_link=True
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # FIXME: connect download and upload streams

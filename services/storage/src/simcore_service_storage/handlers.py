@@ -299,6 +299,7 @@ async def download_file(request: web.Request):
     assert params["location_id"]  # nosec
     assert params["fileId"]  # nosec
     assert query["user_id"]  # nosec
+    link_type = query.get("link_type", "presigned")
 
     with handle_storage_errors():
         location_id = params["location_id"]
@@ -308,7 +309,9 @@ async def download_file(request: web.Request):
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
         if location == SIMCORE_S3_STR:
-            link = await dsm.download_link_s3(file_uuid, user_id)
+            link = await dsm.download_link_s3(
+                file_uuid, user_id, as_presigned_link=bool(link_type == "presigned")
+            )
         else:
             link = await dsm.download_link_datcore(user_id, file_uuid)
 
@@ -318,10 +321,11 @@ async def download_file(request: web.Request):
 @routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def upload_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
-
+    log.debug("received call to upload_file with %s", f"{params=}, {query=}, {body=}")
     assert params, "params %s" % params  # nosec
     assert query, "query %s" % query  # nosec
     assert not body, "body %s" % body  # nosec
+    link_type = query.get("link_type", "presigned")
 
     with handle_storage_errors():
         location_id = params["location_id"]
@@ -343,7 +347,11 @@ async def upload_file(request: web.Request):
                 source_uuid=source_uuid,
             )
         else:
-            link = await dsm.upload_link(user_id=user_id, file_uuid=file_uuid)
+            link = await dsm.upload_link(
+                user_id=user_id,
+                file_uuid=file_uuid,
+                as_presigned_link=bool(link_type == "presigned"),
+            )
 
     return {"error": None, "data": {"link": link}}
 
