@@ -30,6 +30,9 @@ from pydantic.errors import PydanticErrorMixin
 class DirectorException(Exception):
     """Basic exception"""
 
+    def message(self) -> str:
+        return self.args[0]
+
 
 class ConfigurationError(DirectorException):
     """An error in the director-v2 configuration"""
@@ -108,7 +111,7 @@ class PortsValidationError(DirectorException):
         self.node_id = node_id
         self.errors = errors
 
-    def get_user_errors(self) -> List[ErrorDict]:
+    def get_errors(self) -> List[ErrorDict]:
         value_errors = []
         for error in self.errors:
             if error["type"] == "value_error.port_schema_validation_error":
@@ -130,7 +133,7 @@ class PortsValidationError(DirectorException):
 
 
 class SchedulerError(DirectorException):
-    """An error in the scheduler"""
+    code = "scheduler_error"
 
     def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "Unexpected error in the scheduler")
@@ -149,6 +152,11 @@ class TaskSchedulingError(SchedulerError):
     def __init__(self, node_id: NodeID, msg: Optional[str] = None):
         super().__init__(msg=msg)
         self.node_id = node_id
+
+    def get_errors(self) -> List[ErrorDict]:
+        return [
+            {"loc": (self.node_id,), "msg": self.message(), "type": self.code},
+        ]
 
 
 class MissingComputationalResourcesError(TaskSchedulingError):

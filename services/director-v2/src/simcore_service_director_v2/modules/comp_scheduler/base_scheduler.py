@@ -33,6 +33,7 @@ from ...core.errors import (
     InvalidPipelineError,
     MissingComputationalResourcesError,
     PipelineNotFoundError,
+    PortsValidationError,
     SchedulerError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
@@ -431,13 +432,15 @@ class BaseCompScheduler(ABC):
             ],
             return_exceptions=True,
         )
-        # let's parse the results
+        # Handling errors raised when _start_tasks(...)
         for r, t in zip(results, tasks_ready_to_start):
+            # FIXME: PC catch nodeports port match failure
             if isinstance(
                 r,
                 (
                     MissingComputationalResourcesError,
                     InsuficientComputationalResourcesError,
+                    PortsValidationError,
                 ),
             ):
                 logger.error(
@@ -446,10 +449,15 @@ class BaseCompScheduler(ABC):
                     r.node_id,
                     f"{r}",
                 )
+
                 await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [r.node_id], RunningState.FAILED
+                    project_id,
+                    [
+                        r.node_id,
+                    ],
+                    RunningState.FAILED,
+                    r.get_errors(),
                 )
-                # TODO: we should set some specific state so the user may know what to do
             elif isinstance(
                 r,
                 (
