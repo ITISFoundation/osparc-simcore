@@ -57,7 +57,7 @@ class TaskProgressEvent(BaseTaskEvent):
 
     @classmethod
     def from_dask_worker(cls, progress: float) -> "TaskProgressEvent":
-        return cls(job_id=get_worker().get_current_task(), progress=progress)
+        return cls(job_id=get_worker().get_current_task(), progress=progress, msg=None)
 
     class Config(BaseTaskEvent.Config):
         schema_extra = {
@@ -83,7 +83,7 @@ class TaskLogEvent(BaseTaskEvent):
 
     @classmethod
     def from_dask_worker(cls, log: str) -> "TaskLogEvent":
-        return cls(job_id=get_worker().get_current_task(), log=log)
+        return cls(job_id=get_worker().get_current_task(), log=log, msg=None)
 
     class Config(BaseTaskEvent.Config):
         schema_extra = {
