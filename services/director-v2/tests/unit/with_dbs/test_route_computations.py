@@ -36,6 +36,13 @@ def minimal_configuration(
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
 
 
 async def test_get_computation_from_empty_project(

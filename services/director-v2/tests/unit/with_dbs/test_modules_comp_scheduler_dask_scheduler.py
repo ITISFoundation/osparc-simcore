@@ -81,6 +81,13 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
+    
 
 
 @pytest.fixture
