@@ -57,6 +57,12 @@ comp_tasks = sa.Table(
         server_default=StateType.NOT_STARTED.value,
         doc="Current state in the task lifecicle",
     ),
+    sa.Column(
+        "errors",
+        sa.JSON,
+        nullable=True,
+        doc="List[ErrorDict] to complement failing states",
+    ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
     sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
