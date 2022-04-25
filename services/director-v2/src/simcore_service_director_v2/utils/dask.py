@@ -30,7 +30,7 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ValidationError
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
@@ -41,6 +41,7 @@ from ..core.errors import (
     ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
+    PortsValidationError,
 )
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
@@ -83,18 +84,29 @@ def parse_dask_job_id(
 async def _create_node_ports(
     db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> node_ports_v2.Nodeports:
-    db_manager = node_ports_v2.DBManager(db_engine)
-    return await node_ports_v2.ports(
-        user_id=user_id,
-        project_id=f"{project_id}",
-        node_uuid=f"{node_id}",
-        db_manager=db_manager,
-    )
+    """_summary_
+
+    :raises PortsValidationError: if any of the ports assigned values are invalid
+    """
+    try:
+        db_manager = node_ports_v2.DBManager(db_engine)
+        return await node_ports_v2.ports(
+            user_id=user_id,
+            project_id=f"{project_id}",
+            node_uuid=f"{node_id}",
+            db_manager=db_manager,
+        )
+    except ValidationError as err:
+        raise PortsValidationError(project_id, node_id, err.errors()) from err
 
 
 async def parse_output_data(
     db_engine: Engine, job_id: str, data: TaskOutputData
 ) -> None:
+    """
+
+    :raises PortsValidationError
+    """
     (
         service_key,
         service_version,
@@ -141,7 +153,12 @@ async def compute_input_data(
     node_id: NodeID,
     file_link_type: FileLinkType,
 ) -> TaskInputData:
-    """Retrieves values registered to the inputs of project_id/node_id"""
+    """Retrieves values registered to the inputs of project_id/node_id
+
+    :raises PortsValidationError: when inputs ports validation fail
+    """
+
+    # raises PortsValidationError
     ports = await _create_node_ports(
         db_engine=app.state.engine,
         user_id=user_id,
@@ -150,6 +167,7 @@ async def compute_input_data(
     )
     input_data = {}
 
+    # TODO: validate (and convert) inputs. If fails, raise
     port: Port
     for port in (await ports.inputs).values():
         value: _PVType = await port.get_value(file_link_type=file_link_type)
@@ -176,6 +194,10 @@ async def compute_output_data_schema(
     node_id: NodeID,
     file_link_type: FileLinkType,
 ) -> TaskOutputDataSchema:
+    """
+
+    :raises PortsValidationError: when output ports validation fail
+    """
     ports = await _create_node_ports(
         db_engine=app.state.engine,
         user_id=user_id,
@@ -231,6 +253,11 @@ async def compute_service_log_file_upload_link(
 async def clean_task_output_and_log_files_if_invalid(
     db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> None:
+    """
+
+    :raises PortsValidationError: when output ports validation fail
+    """
+
     # check outputs
     node_ports = await _create_node_ports(db_engine, user_id, project_id, node_id)
     for port in (await node_ports.outputs).values():

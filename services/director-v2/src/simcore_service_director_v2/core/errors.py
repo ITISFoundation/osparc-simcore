@@ -18,10 +18,12 @@ translate into something like
   }
 }
 """
-from typing import Optional
+
+from typing import List, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic.error_wrappers import ErrorDict
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -97,6 +99,29 @@ class PipelineNotFoundError(DirectorException):
 
 class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational run not found"
+
+
+class PortsValidationError(DirectorException):
+    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: List[ErrorDict]):
+        super().__init__(f"Node with {len(errors)} ports having invalid values")
+        self.project_id = project_id
+        self.node_id = node_id
+        self.errors = errors
+
+    def get_user_errors(self) -> List[ErrorDict]:
+        value_errors = []
+        for error in self.errors:
+            if error["type"] == "value_error.port_schema_validation_error":
+                port_key = error["ctx"].get("port_key")
+                loc = (
+                    (f"{self.project_id}", f"{self.node_id}", port_key)
+                    + error["loc"][1:-1],
+                )
+
+                value_errors.append(
+                    {"loc": loc, "msg": error["msg"], "type": error["type"]}
+                )
+        return value_errors
 
 
 #
