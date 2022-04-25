@@ -37,6 +37,7 @@ async def test_valid_upload_download(
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
+        store_name=None,
         s3_object=file_id,
         local_file_path=file_path,
     )
@@ -53,6 +54,7 @@ async def test_valid_upload_download(
     download_file_path = await filemanager.download_file_from_s3(
         user_id=user_id,
         store_id=s3_simcore_location,
+        store_name=None,
         s3_object=file_id,
         local_folder=download_folder,
     )
@@ -79,6 +81,7 @@ async def test_invalid_file_path(
         await filemanager.upload_file(
             user_id=user_id,
             store_id=store,
+            store_name=None,
             s3_object=file_id,
             local_file_path=Path(tmpdir) / "some other file.txt",
         )
@@ -88,6 +91,7 @@ async def test_invalid_file_path(
         await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store,
+            store_name=None,
             s3_object=file_id,
             local_folder=download_folder,
         )
@@ -108,13 +112,18 @@ async def test_errors_upon_invalid_file_identifiers(
     store = s3_simcore_location
     with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.upload_file(
-            user_id=user_id, store_id=store, s3_object="", local_file_path=file_path
+            user_id=user_id,
+            store_id=store,
+            store_name=None,
+            s3_object="",
+            local_file_path=file_path,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.upload_file(
             user_id=user_id,
             store_id=store,
+            store_name=None,
             s3_object="file_id",
             local_file_path=file_path,
         )
@@ -122,13 +131,18 @@ async def test_errors_upon_invalid_file_identifiers(
     download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.download_file_from_s3(
-            user_id=user_id, store_id=store, s3_object="", local_folder=download_folder
+            user_id=user_id,
+            store_id=store,
+            store_name=None,
+            s3_object="",
+            local_folder=download_folder,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store,
+            store_name=None,
             s3_object=np_helpers.file_uuid(
                 Path("invisible.txt"), project_id, f"{uuid4()}"
             ),
@@ -153,6 +167,7 @@ async def test_invalid_store(
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_file(
             user_id=user_id,
+            store_id=None,
             store_name=store,
             s3_object=file_id,
             local_file_path=file_path,
@@ -162,6 +177,7 @@ async def test_invalid_store(
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.download_file_from_s3(
             user_id=user_id,
+            store_id=None,
             store_name=store,
             s3_object=file_id,
             local_folder=download_folder,
@@ -194,6 +210,7 @@ async def test_valid_metadata(
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
+        store_name=None,
         s3_object=file_id,
         local_file_path=file_path,
     )
@@ -252,6 +269,7 @@ async def test_delete_File(
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
+        store_name=None,
         s3_object=file_id,
         local_file_path=file_path,
     )
