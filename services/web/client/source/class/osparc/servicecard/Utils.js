@@ -219,11 +219,11 @@ qx.Class.define("osparc.servicecard.Utils", {
     RESOURCES_INFO: {
       "reservation": {
         label: qx.locale.Manager.tr("Reservation"),
-        tooltip: "Schedule-time check: Defines if a service can be started (is there still machine with enough resources to start the service?)"
+        tooltip: qx.locale.Manager.tr("Schedule-time check:<br>Defines if a service can be started (is there still a machine with enough resources to start the service?)")
       },
       "limit": {
         label: qx.locale.Manager.tr("Limit"),
-        tooltip: "Runtime check: it is used to stop a service that would go over that limit"
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>Maximal amount above which the service will be stopped")
       }
     },
 
