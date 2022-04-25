@@ -334,18 +334,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           image = "@FontAwesome5Solid/lock/70";
           break;
       }
-      this.__setCardState(image, toolTip);
-    },
-
-    __setCardState: function(lockImageSrc, toolTipText) {
-      const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      lockImage.setSource(lockImageSrc);
-      if (toolTipText) {
-        const lock = this.getChildControl("lock-status");
-        lock.set({
-          toolTipText
-        });
-      }
+      this._blockCard(image, toolTip);
     },
 
     _applyLocked: function(locked) {

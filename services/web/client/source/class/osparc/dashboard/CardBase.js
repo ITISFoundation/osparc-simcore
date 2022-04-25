@@ -349,6 +349,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
         });
     },
 
+    _blockCard: function(lockImageSrc, toolTipText) {
+      const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      lockImage.setSource(lockImageSrc);
+      if (toolTipText) {
+        const lock = this.getChildControl("lock-status");
+        lock.set({
+          toolTipText
+        });
+      }
+    },
+
     _applyState: function(state) {
       throw new Error("Abstract method called!");
     },
