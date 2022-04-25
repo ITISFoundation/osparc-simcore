@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -36,8 +37,18 @@ def r_clone_settings(
     return RCloneSettings()
 
 
+@pytest.fixture
+def skip_if_r_clone_is_missing() -> None:
+    try:
+        subprocess.check_output(["rclone", "--version"])
+    except Exception:
+        pytest.skip("rclone is not installed")
+
+
 async def test_is_r_clone_available_cached(
-    caplog: LogCaptureFixture, r_clone_settings: RCloneSettings
+    caplog: LogCaptureFixture,
+    r_clone_settings: RCloneSettings,
+    skip_if_r_clone_is_missing: None,
 ) -> None:
     for _ in range(3):
         result = await r_clone.is_r_clone_available(r_clone_settings)
