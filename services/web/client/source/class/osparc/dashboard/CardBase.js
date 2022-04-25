@@ -335,6 +335,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (workbench === null) {
         return;
       }
+
       const updateStudy = this.getChildControl("update-study");
       osparc.utils.Study.isWorkbenchUpdatable(workbench)
         .then(updatable => {
@@ -345,6 +346,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
               this.__openUpdateServices();
             }, this);
             updateStudy.addListener("pointerdown", e => e.stopPropagation());
+          }
+        });
+
+      osparc.utils.Study.getUnaccessibleServices(workbench)
+        .then(unaccessibleServices => {
+          if (unaccessibleServices.length) {
+            this.setLocked(true);
+            const source = "@FontAwesome5Solid/ban/70";
+            let toolTipText = this.tr("Service info missing");
+            unaccessibleServices.forEach(unSrv => {
+              toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+            });
+            this._blockCard(source, toolTipText);
           }
         });
     },

@@ -34,6 +34,24 @@ qx.Class.define("osparc.utils.Study", {
       return services;
     },
 
+    getUnaccessibleServices: async function(workbench) {
+      return new Promise(resolve => {
+        const store = osparc.store.Store.getInstance();
+        store.getServicesOnly()
+          .then(allServices => {
+            const unaccessibleServices = new Set([]);
+            const services = new Set(this.extractServices(workbench));
+            services.forEach(srv => {
+              if (srv.key in allServices && srv.version in allServices[srv.key]) {
+                return;
+              }
+              unaccessibleServices.add(srv);
+            });
+            resolve(unaccessibleServices);
+          });
+      });
+    },
+
     isWorkbenchUpdatable: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
