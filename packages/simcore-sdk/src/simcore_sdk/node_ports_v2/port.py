@@ -8,6 +8,7 @@ import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 from simcore_sdk.node_ports_common.storage_client import LinkType
+from pydantic.errors import PydanticValueError
 
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableException,
@@ -26,6 +27,16 @@ from .links import (
 from .utils_schemas import jsonschema_validate_data, jsonschema_validate_schema
 
 log = logging.getLogger(__name__)
+
+
+# Extends pydantic errors to discriminate schema validation errors
+class PortSchemaValidationError(PydanticValueError):
+    code = "port_schema_validation_error"
+    msg_template = "{port_key} value does not fulfill port's content schema: {schema_error.message}"
+
+    # pylint: disable=useless-super-delegation
+    def __init__(self, *, port_key: str, schema_error: jsonschema.ValidationError):
+        super().__init__(port_key=port_key, schema_error=schema_error)
 
 
 TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
@@ -93,10 +104,9 @@ class Port(BaseServiceIOModel):
                     v = jsonschema_validate_data(
                         instance=v, schema=content_schema, return_with_default=True
                     )
-
                 except jsonschema.ValidationError as err:
-                    raise ValueError(
-                        f"{v} invalid against content_schema: {err.message}"
+                    raise PortSchemaValidationError(
+                        port_key=values.get("key", "unknown"), schema_error=err
                     ) from err
             else:
                 if isinstance(v, (list, dict)):

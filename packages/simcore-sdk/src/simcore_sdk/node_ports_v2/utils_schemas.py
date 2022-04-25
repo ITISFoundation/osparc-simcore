@@ -42,13 +42,18 @@ def jsonschema_validate_data(instance, schema, *, return_with_default: bool = Fa
         _EXTENDED_VALIDATOR(schema).validate(out)
     else:
         out = instance
-        validators.validate(out, schema, cls=None)
+        validators.validate(instance=out, schema=schema, cls=None)
+
+        # TODO: PC validate units? Validate and convert??
 
     return out
 
 
 def jsonschema_validate_schema(schema):
     try:
+        # TODO: PC validate field x_unit (e.g. fail if x-unit).
+        # Check that x-unit is a valid pint-compatible unit?
+        # TODO: This should also be added as integration test!
         validators.validate(instance={}, schema=schema)
     except jsonschema.ValidationError:
         pass
