@@ -167,7 +167,7 @@ def ubuntu_task(
             **{
                 f"some_file_input_with_mapping{index+1}": FileUrl(
                     url=file,
-                    file_mapping=f"{index+1}/some_file_input",
+                    file_mapping=f"{index+1}/some_file_input_{index+1}",
                 )
                 for index, file in enumerate(list_of_files)
             },
@@ -290,9 +290,11 @@ def ubuntu_task(
         expected_output_data=expected_output_data,
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-            "This is the file contents of 'file_1'",
-            "This is the file contents of 'file_2'",
-            "This is the file contents of 'file_3'",
+            "This is the file contents of file #'001'",
+            "This is the file contents of file #'002'",
+            "This is the file contents of file #'003'",
+            "This is the file contents of file #'004'",
+            "This is the file contents of file #'005'",
         ],
         integration_version=integration_version,
     )
@@ -381,11 +383,13 @@ def test_run_computational_sidecar_real_fct(
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}") as fp:
+            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
                 assert fp.details.get("size") > 0  # type: ignore
 
     # check the task has created a log file
-    with fsspec.open(f"{ubuntu_task.log_file_url}", mode="rt") as fp:
+    with fsspec.open(
+        f"{ubuntu_task.log_file_url}", mode="rt", **s3_storage_kwargs
+    ) as fp:
         saved_logs = fp.read()  # type: ignore
     assert saved_logs
     for log in ubuntu_task.expected_logs:

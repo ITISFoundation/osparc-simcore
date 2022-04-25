@@ -60,6 +60,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         self,
         task_volumes: TaskSharedVolumes,
         integration_version: version.Version,
+        **storage_kwargs,
     ) -> None:
         input_data_file = (
             task_volumes.inputs_folder
@@ -85,7 +86,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
                 download_tasks.append(
                     pull_file_from_remote(
-                        input_params.url, destination_path, self._publish_sidecar_log
+                        input_params.url,
+                        destination_path,
+                        self._publish_sidecar_log,
+                        **storage_kwargs,
                     )
                 )
             else:
@@ -200,7 +204,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
             )
-            await self._write_input_data(task_volumes, integration_version)
+            await self._write_input_data(
+                task_volumes, integration_version, **storage_kwargs
+            )
 
             # PROCESSING
             async with managed_container(docker_client, config) as container:
