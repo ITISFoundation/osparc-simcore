@@ -37,7 +37,7 @@ qx.Class.define("osparc.utils.Study", {
     getUnaccessibleServices: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly()
+        store.getServicesOnly(false)
           .then(allServices => {
             const unaccessibleServices = [];
             const services = new Set(this.extractServices(workbench));
@@ -58,7 +58,7 @@ qx.Class.define("osparc.utils.Study", {
     isWorkbenchUpdatable: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly()
+        store.getServicesOnly(false)
           .then(allServices => {
             const services = new Set(this.extractServices(workbench));
             const filtered = [];
