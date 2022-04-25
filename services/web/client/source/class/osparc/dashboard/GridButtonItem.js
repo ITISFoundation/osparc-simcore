@@ -307,39 +307,45 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     __setLockedStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
-      const lock = this.getChildControl("lock-status");
-      const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
-      let source = null;
+      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
+      let image = null;
       switch (status) {
         case "CLOSING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is closing it...");
+          image = "@FontAwesome5Solid/key/70";
+          toolTip += this.tr(" is closing it...");
           break;
         case "CLONING":
-          source = "@FontAwesome5Solid/clone/70";
-          toolTipText += this.tr(" is cloning it...");
+          image = "@FontAwesome5Solid/clone/70";
+          toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          source = osparc.component.task.Export.EXPORT_ICON+"/70";
-          toolTipText += this.tr(" is exporting it...");
+          image = osparc.component.task.Export.EXPORT_ICON+"/70";
+          toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is opening it...");
+          image = "@FontAwesome5Solid/key/70";
+          toolTip += this.tr(" is opening it...");
           break;
         case "OPENED":
-          source = "@FontAwesome5Solid/lock/70";
-          toolTipText += this.tr(" is using it.");
+          image = "@FontAwesome5Solid/lock/70";
+          toolTip += this.tr(" is using it.");
           break;
         default:
-          source = "@FontAwesome5Solid/lock/70";
+          image = "@FontAwesome5Solid/lock/70";
           break;
       }
-      lock.set({
-        toolTipText: toolTipText
-      });
-      lockImage.setSource(source);
+      this.__setCardState(image, toolTip);
+    },
+
+    __setCardState: function(lockImageSrc, toolTipText) {
+      const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      lockImage.setSource(lockImageSrc);
+      if (toolTipText) {
+        const lock = this.getChildControl("lock-status");
+        lock.set({
+          toolTipText
+        });
+      }
     },
 
     _applyLocked: function(locked) {
