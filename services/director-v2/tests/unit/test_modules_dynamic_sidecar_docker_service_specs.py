@@ -38,6 +38,12 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         "SWARM_STACK_NAME": "test_swarm_name",
         "R_CLONE_PROVIDER": "MINIO",
+        "S3_ENDPOINT": "endpoint",
+        "S3_ACCESS_KEY": "access_key",
+        "S3_SECRET_KEY": "secret_key",
+        "S3_BUCKET_NAME": "bucket_name",
+        "S3_SECURE": "false",
+        "R_CLONE_STORAGE_ENDPOINT": "storage_endpoint",
     }
 
     with monkeypatch.context() as m:

@@ -120,8 +120,9 @@ def _is_file_present(postgres_db: sa.engine.Engine, s3_object: str) -> bool:
         result = conn.execute(
             file_meta_data.select().where(file_meta_data.c.file_uuid == s3_object)
         )
-        result_len = len(list(result))
-    assert result_len <= 1
+        result_list = list(result)
+        result_len = len(result_list)
+    assert result_len <= 1, result_list
     return result_len == 1
 
 
