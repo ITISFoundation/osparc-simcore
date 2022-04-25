@@ -32,6 +32,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -91,6 +92,7 @@ RemoteFct = Callable[
         TaskOutputDataSchema,
         LogFileUploadURL,
         Commands,
+        Optional[S3Settings],
     ],
     TaskOutputData,
 ]
@@ -194,6 +196,7 @@ class DaskClient:
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
             command: List[str],
+            s3_settings: Optional[S3Settings],
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -207,6 +210,7 @@ class DaskClient:
                 output_data_keys,
                 log_file_url,
                 command,
+                s3_settings,
             )
 
         if remote_fct is None:
@@ -266,6 +270,7 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=["run"],
+                    s3_settings=None,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
