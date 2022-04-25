@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Any, Callable, Coroutine, Dict, Iterable, List
+from typing import Callable, Coroutine, Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
@@ -40,6 +40,7 @@ from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr
 from pytest_mock.plugin import MockerFixture
+from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
 )
@@ -50,6 +51,7 @@ from simcore_service_dask_sidecar.computational_sidecar.errors import (
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
+from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
 logger = logging.getLogger(__name__)
@@ -329,7 +331,7 @@ def test_run_computational_sidecar_real_fct(
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
-    s3_storage_kwargs: dict[str, Any],
+    s3_settings: S3Settings,
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -345,7 +347,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.output_data_keys,
         ubuntu_task.log_file_url,
         ubuntu_task.command,
-        **s3_storage_kwargs,
+        s3_settings,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -377,6 +379,8 @@ def test_run_computational_sidecar_real_fct(
         assert k in output_data
         assert output_data[k] == v
 
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+
     for k, v in output_data.items():
         assert k in ubuntu_task.expected_output_data
         assert v == ubuntu_task.expected_output_data[k]
@@ -401,6 +405,7 @@ def test_run_multiple_computational_sidecar_dask(
     dask_client: Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
+    s3_settings: S3Settings,
 ):
     NUMBER_OF_TASKS = 50
 
@@ -419,6 +424,7 @@ def test_run_multiple_computational_sidecar_dask(
             ubuntu_task.output_data_keys,
             ubuntu_task.log_file_url,
             ubuntu_task.command,
+            s3_settings,
             resources={},
         )
         for _ in range(NUMBER_OF_TASKS)
@@ -436,7 +442,10 @@ def test_run_multiple_computational_sidecar_dask(
 
 
 def test_run_computational_sidecar_dask(
-    dask_client: Client, ubuntu_task: ServiceExampleParam, mocker: MockerFixture
+    dask_client: Client,
+    ubuntu_task: ServiceExampleParam,
+    mocker: MockerFixture,
+    s3_settings: S3Settings,
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -452,6 +461,7 @@ def test_run_computational_sidecar_dask(
         ubuntu_task.output_data_keys,
         ubuntu_task.log_file_url,
         ubuntu_task.command,
+        s3_settings,
         resources={},
     )
 
@@ -475,13 +485,14 @@ def test_run_computational_sidecar_dask(
         assert k in output_data
         assert output_data[k] == v
 
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     for k, v in output_data.items():
         assert k in ubuntu_task.expected_output_data
         assert v == ubuntu_task.expected_output_data[k]
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}") as fp:
+            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
                 assert fp.details.get("size") > 0  # type: ignore
 
 
@@ -491,6 +502,7 @@ def test_failing_service_raises_exception(
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
+    s3_settings: S3Settings,
 ):
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
@@ -501,6 +513,7 @@ def test_failing_service_raises_exception(
             ubuntu_task_fail.output_data_keys,
             ubuntu_task_fail.log_file_url,
             ubuntu_task_fail.command,
+            s3_settings,
         )
 
 
@@ -510,6 +523,7 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_unexpected_output: ServiceExampleParam,
+    s3_settings: S3Settings,
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
@@ -520,4 +534,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
             ubuntu_task_unexpected_output.output_data_keys,
             ubuntu_task_unexpected_output.log_file_url,
             ubuntu_task_unexpected_output.command,
+            s3_settings,
         )

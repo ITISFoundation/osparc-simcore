@@ -6,7 +6,7 @@ import asyncio
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterable, cast
+from typing import Any, AsyncIterable, Optional, cast
 from unittest import mock
 
 import fsspec
@@ -17,7 +17,9 @@ from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.file_utils import (
+    _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
     push_file_to_remote,
 )
@@ -32,13 +34,10 @@ async def mocked_log_publishing_cb(
         yield mocked_callback
 
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = [
+    "postgres"
+]  # TODO: unnecessary but test framework requires it, only minio is useful here
 pytest_simcore_ops_services_selection = ["minio"]
-
-
-@pytest.fixture
-def ftp_storage_kwargs(ftpserver: ProcessFTPServer) -> dict[str, Any]:
-    return {}
 
 
 @pytest.fixture
@@ -77,9 +76,9 @@ def s3_remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class StorageParameters:
-    storage_kwargs: dict[str, Any]
+    s3_settings: Optional[S3Settings]
     remote_file_url: AnyUrl
 
 
@@ -88,15 +87,12 @@ def remote_parameters(
     request: FixtureRequest,
     ftp_remote_file_url: AnyUrl,
     s3_remote_file_url: AnyUrl,
-    ftp_storage_kwargs: dict[str, Any],
-    s3_storage_kwargs: dict[str, Any],
+    s3_settings: S3Settings,
 ) -> StorageParameters:
     return {
-        "ftp": StorageParameters(
-            storage_kwargs=ftp_storage_kwargs, remote_file_url=ftp_remote_file_url
-        ),
+        "ftp": StorageParameters(s3_settings=None, remote_file_url=ftp_remote_file_url),
         "s3": StorageParameters(
-            storage_kwargs=s3_storage_kwargs, remote_file_url=s3_remote_file_url
+            s3_settings=s3_settings, remote_file_url=s3_remote_file_url
         ),
     }[
         request.param  # type: ignore
@@ -119,16 +115,19 @@ async def test_push_file_to_remote(
         src_path,
         remote_parameters.remote_file_url,
         mocked_log_publishing_cb,
-        **remote_parameters.storage_kwargs,
+        remote_parameters.s3_settings,
     )
 
     # check the remote is actually having the file in
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
     open_file = cast(
         fsspec.core.OpenFile,
         fsspec.open(
             remote_parameters.remote_file_url,
             mode="rt",
-            **remote_parameters.storage_kwargs,
+            **storage_kwargs,
         ),
     )
     with open_file as fp:
@@ -138,7 +137,7 @@ async def test_push_file_to_remote(
 
 async def test_push_file_to_remote_s3_http_presigned_link(
     s3_presigned_link_remote_file_url: AnyUrl,
-    s3_storage_kwargs: dict[str, Any],
+    s3_settings: S3Settings,
     minio_config: dict[str, Any],
     tmp_path: Path,
     faker: Faker,
@@ -154,6 +153,7 @@ async def test_push_file_to_remote_s3_http_presigned_link(
         src_path,
         s3_presigned_link_remote_file_url,
         mocked_log_publishing_cb,
+        s3_settings=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -161,9 +161,11 @@ async def test_push_file_to_remote_s3_http_presigned_link(
         AnyUrl,
         f"s3:/{s3_presigned_link_remote_file_url.path}",
     )
+
+    storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     open_file = cast(
         fsspec.core.OpenFile,
-        fsspec.open(s3_remote_file_url, mode="rt", **s3_storage_kwargs),
+        fsspec.open(s3_remote_file_url, mode="rt", **storage_kwargs),
     )
     with open_file as fp:
         assert fp.read() == TEXT_IN_FILE
@@ -186,13 +188,16 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
         src_path,
         destination_url,
         mocked_log_publishing_cb,
-        **remote_parameters.storage_kwargs,
+        remote_parameters.s3_settings,
     )
 
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
     open_files = fsspec.open_files(
         f"zip://*::{destination_url}",
         mode="rt",
-        **{destination_url.scheme: remote_parameters.storage_kwargs},
+        **{destination_url.scheme: storage_kwargs},
     )
     assert len(open_files) == 1
     with open_files[0] as fp:
@@ -206,13 +211,16 @@ async def test_pull_file_from_remote(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
     # put some file on the remote
     open_file = cast(
         fsspec.core.OpenFile,
         fsspec.open(
             remote_parameters.remote_file_url,
             mode="wt",
-            **remote_parameters.storage_kwargs,
+            **storage_kwargs,
         ),
     )
     TEXT_IN_FILE = faker.text()
@@ -225,7 +233,7 @@ async def test_pull_file_from_remote(
         remote_parameters.remote_file_url,
         dst_path,
         mocked_log_publishing_cb,
-        **remote_parameters.storage_kwargs,
+        remote_parameters.s3_settings,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -233,7 +241,7 @@ async def test_pull_file_from_remote(
 
 
 async def test_pull_file_from_remote_s3_presigned_link(
-    s3_storage_kwargs: dict[str, Any],
+    s3_settings: S3Settings,
     s3_remote_file_url: AnyUrl,
     minio_service: Minio,
     minio_config: dict[str, Any],
@@ -241,13 +249,14 @@ async def test_pull_file_from_remote_s3_presigned_link(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
+    storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     # put some file on the remote
     open_file = cast(
         fsspec.core.OpenFile,
         fsspec.open(
             s3_remote_file_url,
             mode="wt",
-            **s3_storage_kwargs,
+            **storage_kwargs,
         ),
     )
     TEXT_IN_FILE = faker.text()
@@ -266,9 +275,7 @@ async def test_pull_file_from_remote_s3_presigned_link(
     # now let's get the file through the util
     dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(
-        remote_file_url,
-        dst_path,
-        mocked_log_publishing_cb,
+        remote_file_url, dst_path, mocked_log_publishing_cb, s3_settings=None
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -295,12 +302,15 @@ async def test_pull_compressed_zip_file_from_remote(
             file_names_within_zip_file.add(local_test_file.name)
 
     destination_url = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}.zip")
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
     open_file = cast(
         fsspec.core.OpenFile,
         fsspec.open(
             destination_url,
             mode="wb",
-            **remote_parameters.storage_kwargs,
+            **storage_kwargs,
         ),
     )
 
@@ -318,7 +328,7 @@ async def test_pull_compressed_zip_file_from_remote(
     dst_path = download_folder / f"{faker.file_name()}.zip"
 
     await pull_file_from_remote(
-        src_url, dst_path, mocked_log_publishing_cb, **remote_parameters.storage_kwargs
+        src_url, dst_path, mocked_log_publishing_cb, remote_parameters.s3_settings
     )
     assert dst_path.exists()
     dst_path.unlink()
@@ -329,7 +339,7 @@ async def test_pull_compressed_zip_file_from_remote(
     assert download_folder.exists()
     dst_path = download_folder / faker.file_name()
     await pull_file_from_remote(
-        src_url, dst_path, mocked_log_publishing_cb, **remote_parameters.storage_kwargs
+        src_url, dst_path, mocked_log_publishing_cb, remote_parameters.s3_settings
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):

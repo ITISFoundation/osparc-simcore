@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Coroutine, Dict, List, Optional, Type, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -22,6 +22,7 @@ from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 from yarl import URL
 
 from ..boot_mode import BootMode
@@ -55,12 +56,12 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     boot_mode: BootMode
     task_max_resources: Dict[str, Any]
     task_publishers: TaskPublisher
+    s3_settings: Optional[S3Settings]
 
     async def _write_input_data(
         self,
         task_volumes: TaskSharedVolumes,
         integration_version: version.Version,
-        **storage_kwargs,
     ) -> None:
         input_data_file = (
             task_volumes.inputs_folder
@@ -89,7 +90,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         input_params.url,
                         destination_path,
                         self._publish_sidecar_log,
-                        **storage_kwargs,
+                        self.s3_settings,
                     )
                 )
             else:
@@ -103,7 +104,6 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         self,
         task_volumes: TaskSharedVolumes,
         integration_version: version.Version,
-        **storage_kwargs,
     ) -> TaskOutputData:
         try:
             await self._publish_sidecar_log("Retrieving output data...")
@@ -138,7 +138,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             src_path,
                             output_params.url,
                             self._publish_sidecar_log,
-                            **storage_kwargs,
+                            self.s3_settings,
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -169,7 +169,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             TaskStateEvent.from_dask_worker(state=state, msg=msg),
         )
 
-    async def run(self, command: List[str], **storage_kwargs) -> TaskOutputData:
+    async def run(self, command: List[str]) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
@@ -204,9 +204,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
             )
-            await self._write_input_data(
-                task_volumes, integration_version, **storage_kwargs
-            )
+            await self._write_input_data(task_volumes, integration_version)
 
             # PROCESSING
             async with managed_container(docker_client, config) as container:
@@ -220,7 +218,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
                     log_publishing_cb=self._publish_sidecar_log,
-                    **storage_kwargs,
+                    s3_settings=self.s3_settings,
                 ):
                     await container.start()
                     await self._publish_sidecar_log(
@@ -242,15 +240,18 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             service_version=self.service_version,
                             container_id=container.id,
                             exit_code=container_data["State"]["ExitCode"],
-                            service_logs=await container.log(
-                                stdout=True, stderr=True, tail=20
+                            service_logs=await cast(
+                                Coroutine,
+                                container.log(
+                                    stdout=True, stderr=True, tail=20, follow=False
+                                ),
                             ),
                         )
                     await self._publish_sidecar_log("Container ran successfully.")
 
             # POST-PROCESSING
             results = await self._retrieve_output_data(
-                task_volumes, integration_version, **storage_kwargs
+                task_volumes, integration_version
             )
             await self._publish_sidecar_log("Task completed successfully.")
             return results

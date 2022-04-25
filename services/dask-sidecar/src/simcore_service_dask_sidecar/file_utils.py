@@ -3,13 +3,14 @@ import functools
 import mimetypes
 import zipfile
 from pathlib import Path
-from typing import Awaitable, Callable, Final
+from typing import Any, Awaitable, Callable, Final, Optional
 
 import aiofiles
 import aiofiles.tempfile
 import fsspec
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 from yarl import URL
 
 from .dask_utils import create_dask_worker_logger
@@ -44,11 +45,23 @@ def _file_progress_cb(
 CHUNK_SIZE = 4 * 1024 * 1024
 
 
+def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> dict[str, Any]:
+    return {
+        "key": s3_settings.S3_ACCESS_KEY,
+        "secret": s3_settings.S3_SECRET_KEY,
+        "token": s3_settings.S3_ACCESS_TOKEN,
+        "use_ssl": s3_settings.S3_SECURE,
+        "client_kwargs": {
+            "endpoint_url": f"http{'s' if s3_settings.S3_SECURE else ''}://{s3_settings.S3_ENDPOINT}"
+        },
+    }
+
+
 async def pull_file_from_remote(
     src_url: AnyUrl,
     dst_path: Path,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> None:
     assert src_url.path  # nosec
     await log_publishing_cb(
@@ -62,6 +75,9 @@ async def pull_file_from_remote(
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
+    storage_kwargs = {}
+    if s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     open_file = fsspec.open(src_url, mode="rb", **storage_kwargs)
 
     def _streamer(src_fp, dst_fp):
@@ -205,7 +221,7 @@ async def push_file_to_remote(
     src_path: Path,
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
@@ -241,6 +257,9 @@ async def push_file_to_remote(
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         elif dst_url.scheme in S3_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a S3 link")
+            storage_kwargs = {}
+            if s3_settings:
+                storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
             await _push_file_to_s3_remote(
                 file_to_upload, dst_url, log_publishing_cb, **storage_kwargs
             )

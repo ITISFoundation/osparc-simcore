@@ -3,7 +3,7 @@ import logging
 import signal
 import threading
 from pprint import pformat
-from typing import List
+from typing import List, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.io import (
 )
 from distributed.worker import logger
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
@@ -87,7 +88,7 @@ async def _run_computational_sidecar_async(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: List[str],
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
 
     task_publishers = TaskPublisher()
@@ -115,8 +116,9 @@ async def _run_computational_sidecar_async(
             boot_mode=sidecar_bootmode,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
+            s3_settings=s3_settings,
         ) as sidecar:
-            output_data = await sidecar.run(command=command, **storage_kwargs)
+            output_data = await sidecar.run(command=command)
         log.debug("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
@@ -129,7 +131,7 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: List[str],
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -151,7 +153,7 @@ def run_computational_sidecar(
             output_data_keys,
             log_file_url,
             command,
-            **storage_kwargs,
+            s3_settings,
         )
     )
     return result

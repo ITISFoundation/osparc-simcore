@@ -18,6 +18,8 @@ from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from settings_library.s3 import S3Settings
+from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from yarl import URL
 
 pytest_plugins = [
@@ -113,16 +115,8 @@ def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
 
 
 @pytest.fixture
-def s3_storage_kwargs(
-    minio_config: dict[str, Any], minio_service: Minio, s3_endpoint_url: AnyUrl
-) -> dict[str, Any]:
-    return {
-        "key": minio_config["client"]["access_key"],
-        "secret": minio_config["client"]["secret_key"],
-        "token": None,
-        "use_ssl": minio_config["client"]["secure"],
-        "client_kwargs": {"endpoint_url": f"{s3_endpoint_url}"},
-    }
+def s3_settings(minio_config: dict[str, Any], minio_service: Minio) -> S3Settings:
+    return S3Settings.create_from_envs()
 
 
 @pytest.fixture
@@ -140,11 +134,12 @@ def s3_remote_file_url(
 
 @pytest.fixture
 def file_on_s3_server(
-    s3_storage_kwargs: dict[str, Any],
+    s3_settings: S3Settings,
     s3_remote_file_url: Callable[..., AnyUrl],
     faker: Faker,
 ) -> Iterator[Callable[..., AnyUrl]]:
     list_of_created_files: list[AnyUrl] = []
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
     def creator() -> AnyUrl:
         new_remote_file = s3_remote_file_url()
