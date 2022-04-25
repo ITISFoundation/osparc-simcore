@@ -353,7 +353,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.setLocked(true);
-            const source = "@FontAwesome5Solid/ban/70";
+            const source = this.classname.includes("Grid") ? "@FontAwesome5Solid/ban/70" : "@FontAwesome5Solid/ban/24";
             let toolTipText = this.tr("Service info missing");
             unaccessibleServices.forEach(unSrv => {
               toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
@@ -367,8 +367,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
       lockImage.setSource(lockImageSrc);
       if (toolTipText) {
-        const lock = this.getChildControl("lock-status");
-        lock.set({
+        this.set({
           toolTipText
         });
       }
