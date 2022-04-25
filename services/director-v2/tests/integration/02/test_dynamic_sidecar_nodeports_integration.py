@@ -301,6 +301,8 @@ def mock_env(
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
+    minio_config: Dict[str, Any],
+    storage_service: URL,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -329,6 +331,12 @@ def mock_env(
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", f"{storage_service}")
+    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
+    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
+    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
+    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
+    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
