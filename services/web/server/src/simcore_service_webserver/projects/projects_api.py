@@ -29,6 +29,7 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.users import UserID
+from pydantic.error_wrappers import ErrorDict
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
@@ -564,7 +565,10 @@ async def notify_project_state_update(
 
 
 async def notify_project_node_update(
-    app: web.Application, project: Dict, node_id: str
+    app: web.Application,
+    project: Dict,
+    node_id: str,
+    errors: Optional[List[ErrorDict]],
 ) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
@@ -576,7 +580,10 @@ async def notify_project_node_update(
             "data": {
                 "project_id": project["uuid"],
                 "node_id": node_id,
+                # as GET projects/{project_id}/nodes/{node_id}
                 "data": project["workbench"][node_id],
+                # as GET projects/{project_id}/nodes/{node_id}/errors
+                "errors": errors,
             },
         }
     ]
