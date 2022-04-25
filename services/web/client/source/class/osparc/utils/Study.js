@@ -45,7 +45,10 @@ qx.Class.define("osparc.utils.Study", {
               if (srv.key in allServices && srv.version in allServices[srv.key]) {
                 return;
               }
-              unaccessibleServices.push(srv);
+              const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+              if (idx === -1) {
+                unaccessibleServices.push(srv);
+              }
             });
             resolve(unaccessibleServices);
           });
