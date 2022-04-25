@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
+# pylint: disable=unused-argument
 
 import subprocess
 from pathlib import Path
@@ -41,7 +42,7 @@ def r_clone_settings(
 def skip_if_r_clone_is_missing() -> None:
     try:
         subprocess.check_output(["rclone", "--version"])
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         pytest.skip("rclone is not installed")
 
 
