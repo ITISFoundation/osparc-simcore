@@ -1,4 +1,9 @@
-from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from ...services import (
+    LATEST_INTEGRATION_VERSION,
+    ServiceDockerData,
+    ServiceInput,
+    ServiceType,
+)
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, PC, FunctionServices, create_fake_thumbnail_url
 
@@ -36,7 +41,7 @@ META = ServiceDockerData.parse_obj(
         "contact": PC.email,
         "thumbnail": create_fake_thumbnail_url("demo-units"),
         "inputs": {
-            "length": build_input(
+            "length": ServiceInput.from_json_schema(
                 {
                     "title": "Distance",
                     "minimum": 0,

@@ -184,7 +184,6 @@ class BaseServiceIOModel(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        # TODO: all alias with camecase
 
     @validator("content_schema")
     @classmethod
@@ -196,6 +195,10 @@ class BaseServiceIOModel(BaseModel):
                 "content_schema is defined but set the wrong type."
                 f"Expected type=ref_contentSchema but got ={ptype}."
             )
+
+        # TODO: enforce project_type in (number, inte) -> as content_schema?
+        # TODO: validate json-schema here instead of in node-ports?
+        # TODO: validate x_unit and all custom fields are alos correct?
 
         # TODO:  Check is a valid jsonschema? Use $ref to or active validation as in
         # import jsonschema
@@ -280,6 +283,19 @@ class ServiceInput(BaseServiceIOModel):
                 },
             ],
         }
+
+    @classmethod
+    def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceInput":
+        """Creates input port model from a json-schema"""
+
+        description = port_schema.pop("description", port_schema["title"])
+        data = {
+            "label": port_schema["title"],
+            "description": description,
+            "type": "ref_contentSchema",
+            "contentSchema": port_schema,
+        }
+        return cls.parse_obj(data)
 
 
 class ServiceOutput(BaseServiceIOModel):
