@@ -39,13 +39,13 @@ qx.Class.define("osparc.utils.Study", {
         const store = osparc.store.Store.getInstance();
         store.getServicesOnly()
           .then(allServices => {
-            const unaccessibleServices = new Set([]);
+            const unaccessibleServices = [];
             const services = new Set(this.extractServices(workbench));
             services.forEach(srv => {
               if (srv.key in allServices && srv.version in allServices[srv.key]) {
                 return;
               }
-              unaccessibleServices.add(srv);
+              unaccessibleServices.push(srv);
             });
             resolve(unaccessibleServices);
           });
