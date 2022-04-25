@@ -216,6 +216,17 @@ qx.Class.define("osparc.servicecard.Utils", {
       return resourcesLayout;
     },
 
+    RESOURCES_INFO: {
+      "reservation": {
+        label: qx.locale.Manager.tr("Reservation"),
+        tooltip: "Schedule-time check: Defines if a service can be started (is there still machine with enough resources to start the service?)"
+      },
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: "Runtime check: it is used to stop a service that would go over that limit"
+      }
+    },
+
     resourcesToResourcesInfo: function(resourcesLayout, resourcesInfo) {
       const layout = resourcesLayout.getChildren()[1];
       let row = 0;
@@ -233,25 +244,32 @@ qx.Class.define("osparc.servicecard.Utils", {
           column
         });
         column++;
-        Object.keys(resourceInfo).forEach(resourceInfoKey => {
-          layout.add(new qx.ui.basic.Label(resourceInfoKey).set({
-            font: "title-12"
-          }), {
-            row,
-            column
-          });
-          column++;
-          let value = resourceInfo[resourceInfoKey];
-          if (resourceKey === "RAM") {
-            value = osparc.utils.Utils.bytesToGB(value);
+        Object.keys(this.RESOURCES_INFO).forEach(resourceInfoKey => {
+          if (resourceInfoKey in resourceInfo) {
+            layout.add(new qx.ui.basic.Label(this.RESOURCES_INFO[resourceInfoKey].label).set({
+              font: "title-12"
+            }), {
+              row,
+              column
+            });
+            column++;
+            layout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO[resourceInfoKey].tooltip), {
+              row,
+              column
+            });
+            column++;
+            let value = resourceInfo[resourceInfoKey];
+            if (resourceKey === "RAM") {
+              value = osparc.utils.Utils.bytesToGB(value);
+            }
+            layout.add(new qx.ui.basic.Label(String(value)).set({
+              font: "text-12"
+            }), {
+              row,
+              column
+            });
+            column++;
           }
-          layout.add(new qx.ui.basic.Label(String(value)).set({
-            font: "text-12"
-          }), {
-            row,
-            column
-          });
-          column++;
         });
         row++;
       });
