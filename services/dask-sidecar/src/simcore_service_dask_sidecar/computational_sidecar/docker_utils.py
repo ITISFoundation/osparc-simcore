@@ -7,9 +7,23 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from pprint import pformat
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Final, List, Tuple
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    Final,
+    List,
+    Optional,
+    Tuple,
+    cast,
+)
 
 import aiofiles
+import aiofiles.tempfile
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
@@ -18,6 +32,7 @@ from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 
 from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -64,6 +79,7 @@ async def create_container_config(
         Image=f"{docker_registry}/{service_key}:{service_version}",
         Labels={},
         HostConfig=ContainerHostConfig(
+            Init=True,
             Binds=[
                 f"{comp_volume_mount_point}/inputs:/inputs",
                 f"{comp_volume_mount_point}/outputs:/outputs",
@@ -79,7 +95,7 @@ async def create_container_config(
 
 @asynccontextmanager
 async def managed_container(
-    docker_client: Docker, config: DockerContainerConfig, *, name: str = None
+    docker_client: Docker, config: DockerContainerConfig, *, name: Optional[str] = None
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
@@ -198,7 +214,7 @@ async def _parse_container_log_file(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -245,7 +261,7 @@ async def _parse_container_log_file(
         # copy the log file to the log_file_url
         file_to_upload = log_file
         await push_file_to_remote(
-            file_to_upload, log_file_url, log_publishing_cb, **storage_kwargs
+            file_to_upload, log_file_url, log_publishing_cb, s3_settings
         )
 
         logger.debug(
@@ -264,7 +280,7 @@ async def _parse_container_docker_logs(
     logs_pub: Pub,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -279,8 +295,9 @@ async def _parse_container_docker_logs(
         )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-            async for log_line in container.log(
-                stdout=True, stderr=True, follow=True, timestamps=True
+            async for log_line in cast(
+                AsyncGenerator[str, None],
+                container.log(stdout=True, stderr=True, follow=True, timestamps=True),
             ):
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
@@ -302,11 +319,15 @@ async def _parse_container_docker_logs(
             )
             # NOTE: The log stream may be interrupted before all the logs are gathered!
             # therefore it is needed to get the remaining logs
-            missing_logs = await container.log(
-                stdout=True,
-                stderr=True,
-                timestamps=True,
-                since=to_datetime(latest_log_timestamp).strftime("%s"),
+            missing_logs = await cast(
+                Coroutine,
+                container.log(
+                    stdout=True,
+                    stderr=True,
+                    timestamps=True,
+                    follow=False,
+                    since=to_datetime(latest_log_timestamp).strftime("%s"),
+                ),
             )
             for log_line in missing_logs:
                 await log_fp.write(log_line.encode("utf-8"))
@@ -338,7 +359,7 @@ async def _parse_container_docker_logs(
 
         # copy the log file to the log_file_url
         await push_file_to_remote(
-            log_file_path, log_file_url, log_publishing_cb, **storage_kwargs
+            log_file_path, log_file_url, log_publishing_cb, s3_settings
         )
 
     logger.debug(
@@ -359,7 +380,7 @@ async def monitor_container_logs(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -387,7 +408,7 @@ async def monitor_container_logs(
                 logs_pub,
                 log_file_url,
                 log_publishing_cb,
-                **storage_kwargs,
+                s3_settings,
             )
         else:
             await _parse_container_log_file(
@@ -400,7 +421,7 @@ async def monitor_container_logs(
                 task_volumes,
                 log_file_url,
                 log_publishing_cb,
-                **storage_kwargs,
+                s3_settings,
             )
 
         logger.info(
@@ -431,7 +452,7 @@ async def managed_monitor_container_log_task(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **storage_kwargs,
+    s3_settings: Optional[S3Settings],
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -450,7 +471,7 @@ async def managed_monitor_container_log_task(
                 task_volumes,
                 log_file_url,
                 log_publishing_cb,
-                **storage_kwargs,
+                s3_settings,
             ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
