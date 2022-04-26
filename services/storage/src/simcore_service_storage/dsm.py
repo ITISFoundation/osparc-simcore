@@ -23,6 +23,7 @@ from aiobotocore.session import AioSession, ClientCreatorContext, get_session
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
+from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -546,7 +547,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 object_name=object_name,
             )
         )
-        link = URL(f"s3://{bucket_name}/{object_name}")
+        link = parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name}")
         if as_presigned_link:
             link = self.s3_client.create_presigned_put_url(bucket_name, object_name)
         return f"{link}"
@@ -583,7 +584,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 raise web.HTTPNotFound(
                     reason=f"File '{file_uuid}' does not exists in storage."
                 )
-        link = URL(f"s3://{bucket_name}/{object_name}")
+        link = parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name}")
         if as_presigned_link:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return f"{link}"
