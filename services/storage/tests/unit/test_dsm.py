@@ -143,7 +143,9 @@ def _create_file_meta_for_s3(
 async def _upload_file(
     dsm: DataStorageManager, file_metadata: FileMetaData, file_path: Path
 ) -> FileMetaData:
-    up_url = await dsm.upload_link(file_metadata.user_id, file_metadata.file_uuid)
+    up_url = await dsm.upload_link(
+        file_metadata.user_id, file_metadata.file_uuid, as_presigned_link=True
+    )
     assert file_path.exists()
     with file_path.open("rb") as fp:
         d = fp.read()
@@ -254,7 +256,9 @@ async def test_links_s3(
 
     tmp_file2 = f"{tmp_file}.rec"
     user_id = 0
-    down_url = await dsm.download_link_s3(fmd.file_uuid, user_id)
+    down_url = await dsm.download_link_s3(
+        fmd.file_uuid, user_id, as_presigned_link=True
+    )
 
     urllib.request.urlretrieve(down_url, tmp_file2)
 
@@ -276,7 +280,7 @@ async def test_copy_s3_s3(
     assert len(data) == 0
 
     # upload the file
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid, as_presigned_link=True)
     with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
@@ -350,7 +354,7 @@ async def test_dsm_s3_to_datcore(
 
     dsm = dsm_fixture
 
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid, as_presigned_link=True)
     with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
@@ -360,20 +364,22 @@ async def test_dsm_s3_to_datcore(
     # given the fmd, upload to datcore
     tmp_file2 = f"{tmp_file}.fordatcore"
     user_id = USER_ID
-    down_url = await dsm.download_link_s3(fmd.file_uuid)
+    down_url = await dsm.download_link_s3(
+        fmd.file_uuid, user_id, as_presigned_link=True
+    )
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
     await dsm.upload_file_to_datcore(
-        user_id=user_id,
-        local_file_path=tmp_file2,
-        destination_id=datcore_structured_testbucket["dataset_id"],
+        user_id,
+        tmp_file2,
+        datcore_structured_testbucket["dataset_id"],
     )
     # and into a deeper strucutre
     await dsm.upload_file_to_datcore(
-        user_id=user_id,
-        local_file_path=tmp_file2,
-        destination_id=datcore_structured_testbucket["coll2_id"],
+        user_id,
+        tmp_file2,
+        datcore_structured_testbucket["coll2_id"],
     )
 
     # FIXME: upload takes some time
@@ -460,7 +466,7 @@ async def test_dsm_datcore_to_S3(
 
     # and the one on s3
     tmp_file2 = f"{tmp_file}.fromS3"
-    down_url_s3 = await dsm.download_link_s3(dest_uuid)
+    down_url_s3 = await dsm.download_link_s3(dest_uuid, user_id, as_presigned_link=True)
     urllib.request.urlretrieve(down_url_s3, tmp_file2)
 
     assert filecmp.cmp(tmp_file1, tmp_file2)
@@ -486,7 +492,7 @@ async def test_copy_datcore(
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
 
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid, as_presigned_link=True)
     with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
