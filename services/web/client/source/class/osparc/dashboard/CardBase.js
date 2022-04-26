@@ -353,28 +353,66 @@ qx.Class.define("osparc.dashboard.CardBase", {
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.setLocked(true);
-            const source = this.classname.includes("Grid") ? "@FontAwesome5Solid/ban/70" : "@FontAwesome5Solid/ban/24";
+            const image = "@FontAwesome5Solid/ban/";
             let toolTipText = this.tr("Service info missing");
             unaccessibleServices.forEach(unSrv => {
               toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
             });
-            this._blockCard(source, toolTipText);
+            this._blockCard(image, toolTipText);
           }
         });
     },
 
+    _applyState: function(state) {
+      const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      this.setLocked(locked);
+      if (locked) {
+        this.__setLockedStatus(state["locked"]);
+      }
+    },
+
+    __setLockedStatus: function(lockedStatus) {
+      const status = lockedStatus["status"];
+      const owner = lockedStatus["owner"];
+      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
+      let image = null;
+      switch (status) {
+        case "CLOSING":
+          image = "@FontAwesome5Solid/key/";
+          toolTip += this.tr(" is closing it...");
+          break;
+        case "CLONING":
+          image = "@FontAwesome5Solid/clone/";
+          toolTip += this.tr(" is cloning it...");
+          break;
+        case "EXPORTING":
+          image = osparc.component.task.Export.EXPORT_ICON+"/";
+          toolTip += this.tr(" is exporting it...");
+          break;
+        case "OPENING":
+          image = "@FontAwesome5Solid/key/";
+          toolTip += this.tr(" is opening it...");
+          break;
+        case "OPENED":
+          image = "@FontAwesome5Solid/lock/";
+          toolTip += this.tr(" is using it.");
+          break;
+        default:
+          image = "@FontAwesome5Solid/lock/";
+          break;
+      }
+      this._blockCard(image, toolTip);
+    },
+
     _blockCard: function(lockImageSrc, toolTipText) {
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      lockImageSrc += this.classname.includes("Grid") ? "70" : "24";
       lockImage.setSource(lockImageSrc);
       if (toolTipText) {
         this.set({
           toolTipText
         });
       }
-    },
-
-    _applyState: function(state) {
-      throw new Error("Abstract method called!");
     },
 
     _applyLocked: function(locked) {
