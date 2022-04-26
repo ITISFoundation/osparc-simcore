@@ -137,9 +137,18 @@ paths:
           required: true
           schema:
             type: string
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "presigned"
+            enum:
+              - presigned
+              - s3
       responses:
         "200":
-          $ref: "#/components/responses/PresignedLink_200"
+          $ref: "#/components/responses/Link_200"
     put:
       summary: Returns upload link or performs copy operation to datcore
       tags:
@@ -166,9 +175,18 @@ paths:
           required: false
           schema:
             type: string
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "presigned"
+            enum:
+              - presigned
+              - s3
       responses:
         "200":
-          $ref: "#/components/responses/PresignedLink_200"
+          $ref: "#/components/responses/Link_200"
     delete:
       summary: Deletes File
       tags:
@@ -247,12 +265,12 @@ components:
           schema:
             $ref: "./components/schemas/files.yaml#/FileMetaData"
 
-    PresignedLink_200:
-      description: "Returns presigned link"
+    Link_200:
+      description: "Returns link (presigned or s3)"
       content:
         application/json:
           schema:
-            $ref: "./components/schemas/presigned_link.yaml#/PresignedLink"
+            $ref: "./components/schemas/presigned_link.yaml#/PresignedLinkEnveloped"
 
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
