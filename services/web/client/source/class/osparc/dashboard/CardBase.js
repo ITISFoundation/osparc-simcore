@@ -578,7 +578,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     }
   },
 
-  destruct : function() {
+  destruct: function() {
     this.removeListener("pointerover", this._onPointerOver, this);
     this.removeListener("pointerout", this._onPointerOut, this);
   }

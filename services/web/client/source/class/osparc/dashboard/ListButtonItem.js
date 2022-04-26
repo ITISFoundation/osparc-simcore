@@ -302,10 +302,5 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
     }
-  },
-
-  destruct : function() {
-    this.removeListener("pointerover", this._onPointerOver, this);
-    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });
