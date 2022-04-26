@@ -369,12 +369,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: as_s3
-          in: query
-          required: false
-          description: return and s3 link instead of a presigned link; not working with datcore
-          schema:
-            type: boolean
         - name: extra_location
           in: query
           required: false
