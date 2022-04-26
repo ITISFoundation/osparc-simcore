@@ -600,7 +600,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     # COPY -----------------------------
 
-    async def copy_file_s3_s3(self, user_id: str, dest_uuid: str, source_uuid: str):
+    async def copy_file_s3_s3(
+        self, user_id: str, dest_uuid: str, source_uuid: str
+    ) -> None:
         # FIXME: operation MUST be atomic
 
         # source is s3, location is s3
@@ -608,9 +610,13 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         to_object_name = dest_uuid
         from_bucket = self.simcore_bucket_name
         from_object_name = source_uuid
-        # FIXME: This is not async!
-        self.s3_client.copy_object(
-            to_bucket_name, to_object_name, from_bucket, from_object_name
+        await asyncio.get_event_loop().run_in_executor(
+            None,
+            self.s3_client.copy_object,
+            to_bucket_name,
+            to_object_name,
+            from_bucket,
+            from_object_name,
         )
 
         # update db
@@ -702,7 +708,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         dest_uuid: str,
         source_location: str,
         source_uuid: str,
-    ):
+    ) -> None:
         if source_location == SIMCORE_S3_STR:
             if dest_location == DATCORE_STR:
                 await self.copy_file_s3_datcore(user_id, dest_uuid, source_uuid)

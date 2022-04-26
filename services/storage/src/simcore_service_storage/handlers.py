@@ -339,6 +339,7 @@ async def upload_file(request: web.Request):
             source_uuid = query["extra_source"]
             source_id = query["extra_location"]
             source_location = dsm.location_from_id(source_id)
+            # FIXME: this does not even return a link... nobody is using this??
             link = await dsm.copy_file(
                 user_id=user_id,
                 dest_location=location,
