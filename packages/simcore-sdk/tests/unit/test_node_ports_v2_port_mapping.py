@@ -1,5 +1,5 @@
-import json
 from collections import deque
+from pprint import pprint
 from typing import Any, Dict, List, Type, Union
 
 import jsonschema
@@ -150,13 +150,15 @@ def test_input_lists_with_port_schema_validation_errors():
 
     port_with_errors = []
     for error in err_info.value.errors():
-        loc = error["loc"]
-        if len(loc) == 3 and (loc[0], loc[2]) == ("__root__", "value"):
-            port_name = loc[1]
-            port_with_errors.append(port_name)
+        error_loc = error["loc"]
+        port_key = error["ctx"].get("port_key")
 
-        assert error["loc"] == ("__root__", port_name, "value")
+        assert error_loc[0] == "__root__", f"{error_loc=}"
+        assert error_loc[1] == port_key, f"{error_loc=}"
+        assert error_loc[-1] == "value", f"{error_loc=}"
+
         assert error["type"] == "value_error.port_schema_validation_error"
-        print(json.dumps(error))
+        port_with_errors.append(port_key)
+        pprint(error)
 
     assert port_with_errors == expected_port_with_errors

@@ -115,14 +115,23 @@ class PortsValidationError(DirectorException):
         value_errors = []
         for error in self.errors:
             if error["type"] == "value_error.port_schema_validation_error":
+                error_loc = error["loc"]
                 port_key = error["ctx"].get("port_key")
-                loc = (
-                    (f"{self.project_id}", f"{self.node_id}", port_key)
-                    + error["loc"][1:-1],
-                )
+
+                assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
+                assert error_loc[1] == port_key, f"{error_loc=}"  # nosec
+                assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
 
                 value_errors.append(
-                    {"loc": loc, "msg": error["msg"], "type": error["type"]}
+                    {
+                        "loc": (
+                            f"{self.project_id}",
+                            f"{self.node_id}",
+                        )
+                        + error_loc[1:-1],
+                        "msg": error["msg"],
+                        "type": error["type"],
+                    }
                 )
         return value_errors
 
