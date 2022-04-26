@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import tempfile
+import urllib.parse
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -547,7 +548,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 object_name=object_name,
             )
         )
-        link = parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name}")
+        link = parse_obj_as(
+            AnyUrl, f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
+        )
         if as_presigned_link:
             link = self.s3_client.create_presigned_put_url(bucket_name, object_name)
         return f"{link}"
@@ -584,7 +587,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 raise web.HTTPNotFound(
                     reason=f"File '{file_uuid}' does not exists in storage."
                 )
-        link = parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name}")
+        link = parse_obj_as(
+            AnyUrl, f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
+        )
         if as_presigned_link:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return f"{link}"
