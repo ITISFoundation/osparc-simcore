@@ -1233,35 +1233,18 @@ paths:
           required: true
           schema:
             type: string
-        - name: link_type
-          in: query
-          required: false
-          schema:
-            type: string
-            default: presigned
-            enum:
-              - presigned
-              - s3
       responses:
         '200':
-          description: Returns link (presigned or s3)
+          description: Returns presigned link
           content:
             application/json:
               schema:
                 type: object
-                required:
-                  - data
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      link:
-                        type: string
-                    example:
-                      link: example_link
-                  error:
-                    nullable: true
-                    default: null
+                  link:
+                    type: string
+                example:
+                  link: example_link
     put:
       summary: Returns upload link or performs copy operation to datcore
       tags:
@@ -1288,15 +1271,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: link_type
-          in: query
-          required: false
-          schema:
-            type: string
-            default: presigned
-            enum:
-              - presigned
-              - s3
       responses:
         '200':
           $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/get/responses/200'
