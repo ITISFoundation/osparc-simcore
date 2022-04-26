@@ -384,6 +384,12 @@ async def delete_file(request: web.Request):
 # Exclusive for simcore-s3 storage -----------------------
 
 
+@routes.post(f"/{api_vtag}/simcore-s3:access")
+async def get_or_create_temporary_s3_access(request: web.Request):
+    user_id = request.query["user_id"]
+    raise web.HTTPOk()
+
+
 @routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")  # type: ignore
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
