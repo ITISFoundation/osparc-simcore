@@ -495,7 +495,18 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             file_uuid, bucket_name, object_name, silence_exception=True
         )
 
-    async def update_metadata(self, file_uuid: str) -> Optional[FileMetaDataEx]:
+    async def update_metadata(
+        self, file_uuid: str, user_id: int
+    ) -> Optional[FileMetaDataEx]:
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.write:
+                message = f"User {user_id} was not allowed to upload file {file_uuid}"
+                logger.debug(message)
+                raise web.HTTPForbidden(reason=message)
+
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
         return await self.auto_update_database_from_storage_task(

@@ -274,14 +274,18 @@ async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
     assert params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
     assert not body, "body %s" % body  # nosec
 
     with handle_storage_errors():
         file_uuid = urllib.parse.unquote_plus(params["fileId"])
+        user_id = query["user_id"]
 
         dsm = await _prepare_storage_manager(params, query, request)
 
-        data: Optional[FileMetaDataEx] = await dsm.update_metadata(file_uuid=file_uuid)
+        data: Optional[FileMetaDataEx] = await dsm.update_metadata(
+            file_uuid=file_uuid, user_id=user_id
+        )
         if data is None:
             raise web.HTTPNotFound(reason=f"Could not update metadata for {file_uuid}")
 

@@ -10,6 +10,7 @@ from aiofiles import tempfile
 from aiohttp import ClientSession
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
+from models_library.users import UserID
 
 from .constants import ETag
 from .storage_client import delete_file_meta_data, get_s3_link, update_file_meta_data
@@ -18,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class _CommandFailedException(Exception):
-    pass
-
-
-class RCloneError(Exception):
     pass
 
 
@@ -65,18 +62,11 @@ async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bo
 
 async def sync_local_to_s3(
     session: ClientSession,
-    r_clone_settings: Optional[RCloneSettings],
+    r_clone_settings: RCloneSettings,
     s3_object: str,
     local_file_path: Path,
-    user_id: int,
+    user_id: UserID,
 ) -> ETag:
-    if r_clone_settings is None:
-        raise RCloneError(
-            (
-                f"Could not sync {local_file_path=} to {s3_object=}, provided "
-                f"config is invalid{r_clone_settings=}"
-            )
-        )
 
     s3_link = await get_s3_link(session=session, s3_object=s3_object, user_id=user_id)
     s3_path = re.sub(r"^s3://", "", s3_link)
@@ -122,7 +112,9 @@ async def sync_local_to_s3(
 
         try:
             await _async_command(" ".join(r_clone_command), cwd=f"{source_path.parent}")
-            return await update_file_meta_data(session=session, s3_object=s3_object)
+            return await update_file_meta_data(
+                session=session, s3_object=s3_object, user_id=user_id
+            )
         except Exception as e:
             logger.warning(
                 "There was an error while uploading %s. Removing metadata", s3_object

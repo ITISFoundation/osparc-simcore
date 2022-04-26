@@ -176,7 +176,7 @@ async def delete_file(
 
 
 @handle_client_exception
-async def get_s3_link(session: ClientSession, s3_object: str, user_id: int) -> str:
+async def get_s3_link(session: ClientSession, s3_object: str, user_id: UserID) -> str:
     url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/s3/link"
     result = await session.get(url, params=dict(user_id=user_id))
 
@@ -198,12 +198,11 @@ async def get_s3_link(session: ClientSession, s3_object: str, user_id: int) -> s
 
 
 @handle_client_exception
-async def update_file_meta_data(session: ClientSession, s3_object: str) -> ETag:
-    # API: check user access rights here when updating
-    # TODO: check permissions
-
+async def update_file_meta_data(
+    session: ClientSession, s3_object: str, user_id: UserID
+) -> ETag:
     url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
-    result = await session.patch(url)
+    result = await session.patch(url, params=dict(user_id=user_id))
     if result.status != web.HTTPOk.status_code:
         raise exceptions.StorageInvalidCall(
             f"Could not fetch metadata: status={result.status} {await result.text()}"
@@ -215,8 +214,9 @@ async def update_file_meta_data(session: ClientSession, s3_object: str) -> ETag:
 
 @handle_client_exception
 async def delete_file_meta_data(
-    session: ClientSession, s3_object: str, user_id: int
+    session: ClientSession, s3_object: str, user_id: UserID
 ) -> None:
+    # TODO: this needs to be repalced as well!
     # TODO: check permissions
     url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
     result = await session.delete(url, params=dict(user_id=user_id))
