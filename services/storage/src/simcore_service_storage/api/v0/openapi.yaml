@@ -309,12 +309,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '204':
           description: Removes the file meta data entry from the database
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileMetaDataDeleteEnvelope'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/files/{fileId}':

@@ -14,11 +14,6 @@ from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.r_clone import RCloneSettings
 
 
-@pytest.fixture
-def text_to_write(faker: Faker) -> str:
-    return faker.text()
-
-
 @pytest.fixture(params=list(S3Provider))
 def s3_provider(request) -> S3Provider:
     return request.param
@@ -59,7 +54,8 @@ async def test_is_r_clone_available_cached(
     assert await r_clone.is_r_clone_available(None) is False
 
 
-async def test__config_file(text_to_write: str) -> None:
+async def test__config_file(faker: Faker) -> None:
+    text_to_write = faker.text()
     async with r_clone._config_file(text_to_write) as file_name:
         assert text_to_write == Path(file_name).read_text()
     assert Path(file_name).exists() is False

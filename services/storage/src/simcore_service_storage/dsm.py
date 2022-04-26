@@ -27,6 +27,8 @@ from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
+from pydantic import AnyUrl
+from pydantic.tools import parse_obj_as
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
@@ -519,9 +521,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     )
                 )
             except Exception:
-                message = f"Could not delete metada entry for file {file_uuid}"
-                logger.debug(message)
-                raise web.HTTPForbidden(  # pylint: disable=raise-missing-from
+                message = f"Could not delete metadata entry for file {file_uuid}"
+                logger.warning(message)
+                raise web.HTTPNotFound(  # pylint: disable=raise-missing-from
                     reason=message
                 )
 
@@ -594,7 +596,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         await self._generate_metadata_for_link(user_id=user_id, file_uuid=file_uuid)
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
-        return f"s3://{bucket_name}/{object_name.lstrip('/')}"
+        return parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name.lstrip('/')}")
 
     async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
 

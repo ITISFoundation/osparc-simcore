@@ -220,7 +220,7 @@ async def delete_file_meta_data(
     # TODO: check permissions
     url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
     result = await session.delete(url, params=dict(user_id=user_id))
-    if result.status != web.HTTPOk.status_code:
+    if result.status != web.HTTPNoContent.status_code:
         raise exceptions.StorageInvalidCall(
             f"Could not fetch metadata: status={result.status} {await result.text()}"
         )

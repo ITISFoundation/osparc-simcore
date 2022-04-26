@@ -279,12 +279,11 @@ async def update_file_meta_data(request: web.Request):
     with handle_storage_errors():
         file_uuid = urllib.parse.unquote_plus(params["fileId"])
 
-        log.error("file_uuid=%s", file_uuid)
         dsm = await _prepare_storage_manager(params, query, request)
 
         data: Optional[FileMetaDataEx] = await dsm.update_metadata(file_uuid=file_uuid)
         if data is None:
-            raise web.HTTPForbidden(reason=f"Could not update metadata for {file_uuid}")
+            raise web.HTTPNotFound(reason=f"Could not update metadata for {file_uuid}")
 
         return {
             "error": None,
@@ -304,11 +303,11 @@ async def delete_file_meta_data(request: web.Request):
         user_id = query["user_id"]
         file_uuid = urllib.parse.unquote_plus(params["fileId"])
 
-        log.error("file_uuid=%s", file_uuid)
         dsm = await _prepare_storage_manager(params, query, request)
 
         await dsm.delete_metadata(user_id=user_id, file_uuid=file_uuid)
-        return {"error": None, "data": None}
+
+    return web.HTTPNoContent(content_type="application/json")
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
@@ -327,6 +326,11 @@ async def download_file(request: web.Request):
         location_id = params["location_id"]
         user_id = query["user_id"]
         file_uuid = params["fileId"]
+
+        if int(location_id) != SIMCORE_S3_ID:
+            raise web.HTTPPreconditionFailed(
+                reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
+            )
 
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
@@ -352,7 +356,7 @@ async def get_s3_link(request: web.Request) -> Dict[str, Any]:
         file_uuid = urllib.parse.unquote_plus(params["fileId"])
 
         if int(location_id) != SIMCORE_S3_ID:
-            raise web.HTTPForbidden(
+            raise web.HTTPPreconditionFailed(
                 reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
             )
 

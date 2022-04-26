@@ -42,11 +42,10 @@ def file_name(faker: Faker) -> str:
 
 
 @pytest.fixture
-def upload_file_dir(tmpdir: Path) -> Iterator[Path]:
-    temp_path = Path(tmpdir)
-    assert temp_path.is_dir()
-    yield temp_path
-    shutil.rmtree(temp_path)
+def upload_file_dir(tmp_path: Path) -> Iterator[Path]:
+    assert tmp_path.is_dir()
+    yield tmp_path
+    shutil.rmtree(tmp_path)
 
 
 @pytest.fixture
@@ -80,12 +79,9 @@ async def cleanup_s3(
 
 @pytest.fixture
 def mock_update_file_meta_data(mocker: MockerFixture) -> None:
-    async def _raise_error(*args, **kwargs) -> None:
-        raise _TestException()
-
     mocker.patch(
         "simcore_sdk.node_ports_common.storage_client.update_file_meta_data",
-        side_effect=_raise_error,
+        side_effect=_TestException,
     )
     reload(r_clone)
     reload(storage_client)

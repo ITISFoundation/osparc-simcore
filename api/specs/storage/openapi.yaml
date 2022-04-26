@@ -316,12 +316,8 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        "204":
           description: "Removes the file meta data entry from the database"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FileMetaDataDeleteEnvelope"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -373,6 +369,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: as_s3
+          in: query
+          required: false
+          description: return and s3 link instead of a presigned link; not working with datcore
+          schema:
+            type: boolean
         - name: extra_location
           in: query
           required: false
