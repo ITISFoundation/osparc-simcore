@@ -10,8 +10,8 @@ from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest import MonkeyPatch
 from settings_library.r_clone import S3Provider
-from simcore_sdk.node_ports_v2 import r_clone
-from simcore_sdk.node_ports_v2.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common import r_clone
+from simcore_sdk.node_ports_common.r_clone import RCloneSettings
 
 
 @pytest.fixture

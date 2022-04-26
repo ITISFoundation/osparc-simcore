@@ -8,11 +8,14 @@ from typing import Optional, Tuple
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession
 from pydantic.networks import AnyUrl
+from settings_library.r_clone import RCloneSettings
 from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from . import exceptions, storage_client
+from .constants import ETag
+from .r_clone import is_r_clone_available, sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
@@ -88,9 +91,6 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
                 log.debug("Download complete")
         except ClientPayloadError as exc:
             raise exceptions.TransferError(url) from exc
-
-
-ETag = str
 
 
 async def _upload_file_to_link(
@@ -251,6 +251,7 @@ async def upload_file(
     s3_object: str,
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ) -> Tuple[str, str]:
     """Uploads a file to S3
 
@@ -279,7 +280,18 @@ async def upload_file(
         if not upload_link:
             raise exceptions.S3InvalidPathError(s3_object)
 
-        e_tag = await _upload_file_to_link(session, upload_link, local_file_path)
+        if await is_r_clone_available(r_clone_settings):
+            e_tag = await sync_local_to_s3(
+                session=session,
+                r_clone_settings=r_clone_settings,
+                s3_object=s3_object,
+                local_file_path=local_file_path,
+                user_id=user_id,
+            )
+            # TODO: maybe a better check here or an error if do not match?
+            store_id = "0"  # simcore only feature
+        else:
+            e_tag = await _upload_file_to_link(session, upload_link, local_file_path)
         return store_id, e_tag
 
 

@@ -20,7 +20,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports import node_config
-from simcore_sdk.node_ports_v2.r_clone import is_r_clone_available
+from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
 

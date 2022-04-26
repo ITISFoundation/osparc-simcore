@@ -1,9 +1,9 @@
 from functools import wraps
 from json import JSONDecodeError
 from typing import Any, Callable, Dict
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
@@ -15,6 +15,7 @@ from models_library.users import UserID
 from pydantic.networks import AnyUrl
 
 from . import config, exceptions
+from .constants import ETag
 
 
 def handle_client_exception(handler: Callable):
@@ -172,3 +173,54 @@ async def delete_file(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
+
+
+@handle_client_exception
+async def get_s3_link(session: ClientSession, s3_object: str, user_id: int) -> str:
+    url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/s3/link"
+    result = await session.get(url, params=dict(user_id=user_id))
+
+    if result.status == web.HTTPForbidden.status_code:
+        raise exceptions.StorageInvalidCall(
+            (
+                f"Insufficient permissions to upload {s3_object=} for {user_id=}. "
+                f"Storage: {await result.text()}"
+            )
+        )
+
+    if result.status != web.HTTPOk.status_code:
+        raise exceptions.StorageInvalidCall(
+            f"Could not fetch s3_link: status={result.status} {await result.text()}"
+        )
+
+    response = await result.json()
+    return response["data"]["s3_link"]
+
+
+@handle_client_exception
+async def update_file_meta_data(session: ClientSession, s3_object: str) -> ETag:
+    # API: check user access rights here when updating
+    # TODO: check permissions
+
+    url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
+    result = await session.patch(url)
+    if result.status != web.HTTPOk.status_code:
+        raise exceptions.StorageInvalidCall(
+            f"Could not fetch metadata: status={result.status} {await result.text()}"
+        )
+
+    response = await result.json()
+    return response["data"]["entity_tag"]
+
+
+@handle_client_exception
+async def delete_file_meta_data(
+    session: ClientSession, s3_object: str, user_id: int
+) -> None:
+    # TODO: check permissions
+    url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
+    result = await session.delete(url, params=dict(user_id=user_id))
+    if result.status != web.HTTPOk.status_code:
+        raise exceptions.StorageInvalidCall(
+            f"Could not fetch metadata: status={result.status} {await result.text()}"
+        )

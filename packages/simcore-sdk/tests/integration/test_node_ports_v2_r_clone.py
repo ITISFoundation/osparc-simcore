@@ -3,17 +3,19 @@
 
 import shutil
 from contextlib import asynccontextmanager
+from importlib import reload
 from pathlib import Path
 from typing import AsyncGenerator, AsyncIterable, Iterator
 
 import aioboto3
 import pytest
 import sqlalchemy as sa
+from aiohttp import ClientSession
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
-from simcore_sdk.node_ports_v2 import r_clone
+from simcore_sdk.node_ports_common import r_clone, storage_client
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -82,9 +84,17 @@ def mock_update_file_meta_data(mocker: MockerFixture) -> None:
         raise _TestException()
 
     mocker.patch(
-        "simcore_sdk.node_ports_v2.r_clone._update_file_meta_data",
+        "simcore_sdk.node_ports_common.storage_client.update_file_meta_data",
         side_effect=_raise_error,
     )
+    reload(r_clone)
+    reload(storage_client)
+
+
+@pytest.fixture
+async def client_session(filemanager_cfg: None) -> AsyncIterable[ClientSession]:
+    async with ClientSession() as session:
+        yield session
 
 
 # UTILS
@@ -136,9 +146,12 @@ async def test_sync_local_to_s3(
     local_file_for_download: Path,
     user_id: int,
     postgres_db: sa.engine.Engine,
+    client_session: ClientSession,
     cleanup_s3: None,
 ) -> None:
+
     etag = await r_clone.sync_local_to_s3(
+        session=client_session,
         r_clone_settings=r_clone_settings,
         s3_object=s3_object,
         local_file_path=file_to_upload,
@@ -164,14 +177,15 @@ async def test_sync_local_to_s3_cleanup_on_error(
     r_clone_settings: RCloneSettings,
     s3_object: str,
     file_to_upload: Path,
-    local_file_for_download: Path,
     user_id: int,
+    postgres_db: sa.engine.Engine,
+    client_session: ClientSession,
     cleanup_s3: None,
     mock_update_file_meta_data: None,
-    postgres_db: sa.engine.Engine,
 ) -> None:
     with pytest.raises(_TestException):
         await r_clone.sync_local_to_s3(
+            session=client_session,
             r_clone_settings=r_clone_settings,
             s3_object=s3_object,
             local_file_path=file_to_upload,
