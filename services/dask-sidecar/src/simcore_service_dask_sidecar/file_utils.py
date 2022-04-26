@@ -3,7 +3,7 @@ import functools
 import mimetypes
 import zipfile
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Awaitable, Callable, Final, Optional, TypedDict
 
 import aiofiles
 import aiofiles.tempfile
@@ -45,7 +45,19 @@ def _file_progress_cb(
 CHUNK_SIZE = 4 * 1024 * 1024
 
 
-def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> dict[str, Any]:
+class ClientKWArgsDict(TypedDict):
+    endpoint_url: str
+
+
+class S3FsSettingsDict(TypedDict):
+    key: str
+    secret: str
+    token: Optional[str]
+    use_ssl: bool
+    client_kwargs: ClientKWArgsDict
+
+
+def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict:
     return {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
