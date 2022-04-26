@@ -76,6 +76,10 @@ def _file_chunk_streamer(src: BytesIO, dst: BytesIO):
     return (data, segment_len)
 
 
+# TODO: use filecaching to leverage fsspec local cache of files for future improvements
+# TODO: use unzip from fsspec to simplify code
+
+
 async def _copy_file(
     src_url: AnyUrl,
     dst_url: AnyUrl,
