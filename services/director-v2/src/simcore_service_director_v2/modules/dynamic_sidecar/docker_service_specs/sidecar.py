@@ -69,7 +69,6 @@ def _get_environment_variables(
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
-        "R_CLONE_STORAGE_ENDPOINT": r_clone_settings.R_CLONE_STORAGE_ENDPOINT,
     }
 
 

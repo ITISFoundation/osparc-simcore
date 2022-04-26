@@ -8,7 +8,6 @@ from settings_library.utils_r_clone import _COMMON_ENTRIES, get_r_clone_config
 @pytest.fixture(params=list(S3Provider))
 def r_clone_settings(request, monkeypatch) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", request.param)
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")

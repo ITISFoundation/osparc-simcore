@@ -43,7 +43,6 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
         "S3_SECRET_KEY": "secret_key",
         "S3_BUCKET_NAME": "bucket_name",
         "S3_SECURE": "false",
-        "R_CLONE_STORAGE_ENDPOINT": "storage_endpoint",
     }
 
     with monkeypatch.context() as m:

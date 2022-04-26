@@ -7,7 +7,7 @@ from typing import AsyncGenerator, Optional
 
 from aiocache import cached
 from aiofiles import tempfile
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
@@ -61,19 +61,6 @@ async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bo
         return r_clone_settings is not None
     except _CommandFailedException:
         return False
-
-
-@asynccontextmanager
-async def _get_client_session(
-    r_clone_settings: RCloneSettings,
-) -> AsyncGenerator[ClientSession, None]:
-    client_timeout = ClientTimeout(
-        total=r_clone_settings.R_CLONE_AIOHTTP_CLIENT_TIMEOUT_TOTAL,
-        sock_connect=r_clone_settings.R_CLONE_AIOHTTP_CLIENT_TIMEOUT_SOCK_CONNECT,
-    )  # type: ignore
-
-    async with ClientSession(timeout=client_timeout) as session:
-        yield session
 
 
 async def sync_local_to_s3(

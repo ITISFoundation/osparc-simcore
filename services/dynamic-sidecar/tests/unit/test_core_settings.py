@@ -41,7 +41,6 @@ def mocked_non_request_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
 
 
 def test_non_request_dynamic_sidecar_settings(

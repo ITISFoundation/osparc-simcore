@@ -65,7 +65,6 @@ def dynamic_sidecar_settings(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -411,7 +410,6 @@ def test_valid_network_names(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
     dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
     assert dynamic_sidecar_settings
 

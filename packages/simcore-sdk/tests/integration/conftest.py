@@ -342,7 +342,6 @@ async def r_clone_settings(
                 S3_SECURE=client["secure"],
             ),
             R_CLONE_PROVIDER=S3Provider.MINIO,
-            R_CLONE_STORAGE_ENDPOINT=f"{storage_service}",
         )
     )
     if not await is_r_clone_available(settings):

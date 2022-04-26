@@ -112,7 +112,6 @@ def mock_environment(
     monkeypatch_module.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch_module.setenv("S3_SECURE", "false")
     monkeypatch_module.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch_module.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
 
 
 @pytest.fixture

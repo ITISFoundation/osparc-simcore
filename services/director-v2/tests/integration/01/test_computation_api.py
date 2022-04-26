@@ -71,8 +71,6 @@ def mock_env(
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage:8000")
-    
 
 
 @pytest.fixture()

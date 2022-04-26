@@ -234,7 +234,6 @@ def app_with_db(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
 
 
 async def test_compute_input_data(
