@@ -98,6 +98,12 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_STORAGE_ENDPOINT", "storage_endpoint")
 
 
 @pytest.fixture
