@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock
 
 import jsonschema
 import pytest
-from pint import UnitRegistry
 from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
@@ -88,7 +87,7 @@ async def test_port_with_array(mocker):
     mocker.patch.object(Port, "_node_ports", new=AsyncMock())
 
     # arrays
-    port_info = {
+    port_meta = {
         "label": "array_numbers",
         "description": "Some array of numbers",
         "type": "ref_contentSchema",
@@ -100,10 +99,10 @@ async def test_port_with_array(mocker):
     }
     expected_value = [1, 2, 3]
 
-    print(json.dumps(port_info, indent=1))
+    print(json.dumps(port_meta, indent=1))
     print(json.dumps(expected_value, indent=1))
 
-    port = Port(key="input_w_array", **port_info)
+    port = Port(key="input_w_array", **port_meta)
 
     await port.set_value(expected_value)
     assert await port.get_value() == expected_value
@@ -120,7 +119,7 @@ async def test_port_with_array_of_object(mocker):
 
     content_schema = schema_of(List[A], title="array[A]")
 
-    port_info = {
+    port_meta = {
         "label": "array_",
         "description": "Some array of As",
         "type": "ref_contentSchema",
@@ -129,19 +128,19 @@ async def test_port_with_array_of_object(mocker):
     sample = [{"i": 5, "s": "x", "l": [1, 2]}, {"i": 6, "s": "y", "l": [2]}]
     expected_value = [A(**i).dict() for i in sample]
 
-    print(json.dumps(port_info, indent=1))
+    print(json.dumps(port_meta, indent=1))
     print(json.dumps(expected_value, indent=1))
 
     # valid data and should assign defaults
     value = deepcopy(sample)
-    p = Port(key="k", value=value, **port_info)
+    p = Port(key="k", value=value, **port_meta)
     assert p.value == expected_value
 
     value = deepcopy(sample)
     value[0]["i"] = 0  # violates >3 condition
 
     with pytest.raises(ValidationError) as excinfo:
-        Port(key="k", value=value, **port_info)
+        Port(key="k", value=value, **port_meta)
 
     assert (
         "0 is less than or equal to the minimum of 3"
@@ -153,7 +152,7 @@ async def test_port_with_object(mocker):
     mocker.patch.object(Port, "_node_ports", new=AsyncMock())
 
     # objects
-    port_info = {
+    port_meta = {
         "label": "my_object",
         "description": "Some object",
         "type": "ref_contentSchema",
@@ -171,23 +170,23 @@ async def test_port_with_object(mocker):
 
     expected_value = {"i": 3, "b": True, "s": "foo"}
 
-    print(json.dumps(port_info, indent=1))
+    print(json.dumps(port_meta, indent=1))
     print(json.dumps(expected_value, indent=1))
 
     # valid data
-    p = Port(key="k", value={"i": 3, "b": True, "s": "foo"}, **port_info)
+    p = Port(key="k", value={"i": 3, "b": True, "s": "foo"}, **port_meta)
     assert p.value == expected_value
 
     # assigns defaults
-    p = Port(key="k", value={"b": True, "s": "foo"}, **port_info)
+    p = Port(key="k", value={"b": True, "s": "foo"}, **port_meta)
     assert p.value == expected_value
 
     # invalid data
     with pytest.raises(ValidationError):
-        Port(key="k", value={"b": True}, **port_info)
+        Port(key="k", value={"b": True}, **port_meta)
 
     # inits with None
-    port = Port(key="input_w_obj", **port_info)
+    port = Port(key="input_w_obj", **port_meta)
     await port.set_value(expected_value)
     assert await port.get_value() == expected_value
 
@@ -195,44 +194,30 @@ async def test_port_with_object(mocker):
         await port.set_value({"b": True})
 
 
-@pytest.fixture(scope="module")
-def unit_registry():
-    return UnitRegistry()
-
-
-@pytest.mark.skip(reason="DEV")
-def test_it(unit_registry: UnitRegistry):
-    pass
-
-
 async def test_port_with_units_and_constraints(mocker):
     mocker.patch.object(Port, "_node_ports", new=AsyncMock())
 
     # objects
-    port_info = {
+    port_meta = {
         "label": "Time",
         "description": "Positive time in usec",
         "type": "ref_contentSchema",
         "contentSchema": {
             "title": "Time",
             "minimum": 0,
-            "x_unit": "micro-second",
+            # TODO: PC x_unit": "micro-second",
             "type": "number",
         },
     }
-
     expected_value = 3.14
 
-    print(json.dumps(port_info, indent=1))
-    # print(json.dumps(expected_value, indent=1))
-
     # valid data
-    p = Port(key="port-name-goes-here", value=3.14, **port_info)
+    p = Port(key="port-name-goes-here", value=3.14, **port_meta)
     assert p.value == expected_value
 
     # fails constraints
     with pytest.raises(ValidationError) as exc_info:
-        Port(key="port-name-goes-here", value=-3.14, **port_info)
+        Port(key="port-name-goes-here", value=-3.14, **port_meta)
 
     assert isinstance(exc_info.value, ValidationError)
     assert len(exc_info.value.errors()) == 1
@@ -242,18 +227,14 @@ async def test_port_with_units_and_constraints(mocker):
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
     assert validation_error["type"] == "value_error"
-    assert (
-        validation_error["msg"]
-        == "-3.14 invalid against content_schema: -3.14 is less than the minimum of 0"
-    )
+    assert "-3.14 is less than the minimum of 0" in validation_error["msg"]
 
-    # TODO: convert errors in PortValidationError that includes name of the port and which item failed and why?
-
-    # inits with None and tests set_value
-    port = Port(key="port-name-goes-here", **port_info)
+    # inits with None + set_value
+    port = Port(key="port-name-goes-here", **port_meta)
     await port.set_value(expected_value)
     assert await port.get_value() == expected_value
 
+    # set_value and fail
     with pytest.raises(ValidationError) as exc_info:
         await port.set_value(-3.14)
 

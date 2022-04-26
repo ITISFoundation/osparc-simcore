@@ -72,7 +72,7 @@ def test_io_ports_are_not_aliases():
 
 
 @pytest.fixture
-def port_meta() -> Dict[str, Any]:
+def fake_port_meta() -> Dict[str, Any]:
     """Service port metadata: defines a list of non-negative numbers"""
     schema = schema_of(
         List[confloat(ge=0)],
@@ -87,10 +87,11 @@ def port_meta() -> Dict[str, Any]:
     return port_model.dict(exclude_unset=True, by_alias=True)
 
 
-def test_validate_port_value_against_schema(port_meta: Dict[str, Any]):
+def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
     # A simcore-sdk Port instance is a combination of both
     #  - the port's metadata
     #  - the port's value
+    port_meta = fake_port_meta
     port_value = {"key": "port_1", "value": [1, -2, 3, -4.0]}
 
     with pytest.raises(ValidationError) as err_info:
@@ -129,10 +130,11 @@ def test_validate_port_value_against_schema(port_meta: Dict[str, Any]):
     assert schema_error.parent is None
 
 
-def test_validate_iolist_against_schema(port_meta: Dict[str, Any]):
+def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
     # Check how errors propagate from a single Port to InputsList
 
     # reference port
+    port_meta = fake_port_meta
     port_value = {"key": "port_1", "value": [1, -2, 3, -4.0]}
     ports = [
         {**port_meta, **port_value},
