@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from importlib import reload
 from pathlib import Path
 from typing import AsyncGenerator, AsyncIterable, Iterator
+from uuid import uuid4
 
 import aioboto3
 import pytest
@@ -16,6 +17,7 @@ from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_sdk.node_ports_common import r_clone, storage_client
+from _pytest.fixtures import FixtureRequest
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -36,9 +38,15 @@ class _TestException(Exception):
 # FIXTURES
 
 
-@pytest.fixture
-def file_name(faker: Faker) -> str:
-    return f"file_{faker.uuid4()}.txt"
+@pytest.fixture(
+    params=[
+        f"{uuid4()}.bin",
+        "some funky name.txt",
+        "öä$äö2-34 no extension",
+    ]
+)
+def file_name(request: FixtureRequest) -> str:
+    return request.param
 
 
 @pytest.fixture

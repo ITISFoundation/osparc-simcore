@@ -12,6 +12,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
+import urllib.parse
 from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
 import attr
@@ -607,7 +608,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         await self._generate_metadata_for_link(user_id=user_id, file_uuid=file_uuid)
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
-        return parse_obj_as(AnyUrl, f"s3://{bucket_name}/{object_name.lstrip('/')}")
+        return parse_obj_as(
+            AnyUrl, f"s3://{bucket_name}/{urllib.parse.quote(object_name.lstrip('/'))}"
+        )
 
     async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
 

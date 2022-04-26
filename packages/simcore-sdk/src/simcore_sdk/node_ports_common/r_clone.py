@@ -75,7 +75,6 @@ async def sync_local_to_s3(
     async with _config_file(r_clone_config_file_content) as config_file_name:
         source_path = local_file_path
         destination_path = Path(s3_path)
-        assert local_file_path.name == destination_path.name
         file_name = local_file_path.name
         # TODO: capture and send progress somehow?
 
