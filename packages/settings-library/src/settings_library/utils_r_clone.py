@@ -13,7 +13,7 @@ _COMMON_ENTRIES: Dict[str, str] = {
     "acl": "private",
 }
 
-_PROVIDER_ENDTIRES: Dict[S3Provider, Dict[str, str]] = {
+_PROVIDER_ENTRIES: Dict[S3Provider, Dict[str, str]] = {
     # NOTE: # AWS_SESSION_TOKEN should be required for STS
     S3Provider.AWS: {"provider": "AWS"},
     S3Provider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
@@ -33,7 +33,7 @@ def _format_config(entries: Dict[str, str]) -> str:
 def get_r_clone_config(r_clone_settings: RCloneSettings) -> str:
     provider = r_clone_settings.R_CLONE_PROVIDER
     entries = deepcopy(_COMMON_ENTRIES)
-    entries.update(_PROVIDER_ENDTIRES[provider])
+    entries.update(_PROVIDER_ENTRIES[provider])
 
     r_clone_config_template = _format_config(entries=entries)
 
