@@ -65,6 +65,14 @@ async def test__async_command_ok() -> None:
     await r_clone._async_command(" ".join(["ls", "-la"]))
 
 
-async def test__async_command_error() -> None:
-    with pytest.raises(r_clone._CommandFailedException):
-        await r_clone._async_command("__i_do_not_exist__")
+@pytest.mark.parametrize(
+    "cmd",
+    ["__i_do_not_exist__", "ls_ -lah"],
+)
+async def test__async_command_error(cmd: str) -> None:
+    with pytest.raises(r_clone._CommandFailedException) as exe_info:
+        await r_clone._async_command(cmd)
+    assert (
+        f"{exe_info.value}"
+        == f"Command {cmd} finished with exception:\n/bin/sh: 1: {cmd.split(' ')[0]}: not found\n"
+    )

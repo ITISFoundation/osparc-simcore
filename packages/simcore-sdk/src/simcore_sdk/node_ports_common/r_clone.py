@@ -8,9 +8,10 @@ from typing import AsyncGenerator, Optional
 from aiocache import cached
 from aiofiles import tempfile
 from aiohttp import ClientSession
+from models_library.users import UserID
+from pydantic.errors import PydanticErrorMixin
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
-from models_library.users import UserID
 
 from .constants import ETag
 from .storage_client import delete_file_meta_data, get_s3_link, update_file_meta_data
@@ -18,8 +19,8 @@ from .storage_client import delete_file_meta_data, get_s3_link, update_file_meta
 logger = logging.getLogger(__name__)
 
 
-class _CommandFailedException(Exception):
-    pass
+class _CommandFailedException(PydanticErrorMixin, RuntimeError):
+    msg_template: str = "Command {command} finished with exception:\n{stdout}"
 
 
 @asynccontextmanager
@@ -42,9 +43,7 @@ async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
     stdout, _ = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise _CommandFailedException(
-            f"Command {command} finished with exception:\n{decoded_stdout}"
-        )
+        raise _CommandFailedException(command=command, stdout=decoded_stdout)
 
     logger.debug("'%s' result:\n%s", command, decoded_stdout)
     return decoded_stdout
