@@ -33,6 +33,7 @@ async def _push_file(
     await filemanager.upload_file(
         user_id=user_id,
         store_id=store_id,
+        store_name=None,
         s3_object=s3_object,
         local_file_path=file_path,
     )
@@ -79,6 +80,7 @@ async def _pull_file(
     downloaded_file = await filemanager.download_file_from_s3(
         user_id=user_id,
         store_id="0",
+        store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
     )

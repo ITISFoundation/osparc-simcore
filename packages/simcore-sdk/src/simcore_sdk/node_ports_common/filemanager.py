@@ -137,8 +137,8 @@ async def _upload_file_to_link(
 async def get_download_link_from_s3(
     *,
     user_id: int,
-    store_name: str = None,
-    store_id: str = None,
+    store_name: Optional[str],
+    store_id: Optional[str],
     s3_object: str,
     client_session: Optional[ClientSession] = None,
 ) -> Optional[URL]:
@@ -157,8 +157,8 @@ async def get_download_link_from_s3(
 async def get_upload_link_from_s3(
     *,
     user_id: int,
-    store_name: str = None,
-    store_id: str = None,
+    store_name: Optional[str],
+    store_id: Optional[str],
     s3_object: str,
     client_session: Optional[ClientSession] = None,
 ) -> Tuple[str, URL]:
@@ -180,8 +180,8 @@ async def get_upload_link_from_s3(
 async def download_file_from_s3(
     *,
     user_id: int,
-    store_name: str = None,
-    store_id: str = None,
+    store_name: Optional[str],
+    store_id: Optional[str],
     s3_object: str,
     local_folder: Path,
     client_session: Optional[ClientSession] = None,
@@ -246,8 +246,8 @@ async def download_file_from_link(
 async def upload_file(
     *,
     user_id: int,
-    store_id: Optional[str] = None,
-    store_name: Optional[str] = None,
+    store_id: Optional[str],
+    store_name: Optional[str],
     s3_object: str,
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,

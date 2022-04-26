@@ -5,14 +5,14 @@
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
-from typing import Callable, List
+from typing import Callable, Iterator, List
 
 import pytest
 from simcore_sdk.node_data import data_manager
 
 
 @pytest.fixture
-def create_files() -> Callable:
+def create_files() -> Iterator[Callable[..., List[Path]]]:
     created_files = []
 
     def _create_files(number: int, folder: Path) -> List[Path]:
@@ -76,6 +76,7 @@ async def test_push_folder(
         local_file_path=(test_compression_folder / "{}.zip".format(test_folder.stem)),
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id="0",
+        store_name=None,
         user_id=user_id,
     )
 
@@ -121,6 +122,7 @@ async def test_push_file(
         local_file_path=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id="0",
+        store_name=None,
         user_id=user_id,
     )
     mock_filemanager.reset_mock()
@@ -152,7 +154,7 @@ async def test_pull_folder(
     create_files(files_number, test_control_folder)
     compressed_file_name = test_compression_folder / test_folder.stem
     archive_file = make_archive(
-        compressed_file_name, "zip", root_dir=test_control_folder
+        f"{compressed_file_name}", "zip", root_dir=test_control_folder
     )
     assert Path(archive_file).exists()
     # create mock downloaded folder
@@ -179,6 +181,7 @@ async def test_pull_folder(
         local_folder=test_compression_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id="0",
+        store_name=None,
         user_id=user_id,
     )
 
@@ -223,5 +226,6 @@ async def test_pull_file(
         local_folder=file_path.parent,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id="0",
+        store_name=None,
         user_id=user_id,
     )
