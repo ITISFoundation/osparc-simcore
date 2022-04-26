@@ -671,6 +671,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     nodeSelected: function(nodeId) {
+      if (!this.isPropertyInitialized("study")) {
+        return;
+      }
       const study = this.getStudy();
       if (nodeId === null || nodeId === undefined) {
         nodeId = study.getUuid();
