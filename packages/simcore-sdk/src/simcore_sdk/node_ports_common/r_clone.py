@@ -3,7 +3,7 @@ import logging
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, List, Optional
 
 from aiocache import cached
 from aiofiles import tempfile
@@ -31,9 +31,9 @@ async def _config_file(config: str) -> AsyncGenerator[str, None]:
         yield f.name
 
 
-async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
+async def _async_command(cmd: List[str], *, cwd: Optional[str] = None) -> str:
     proc = await asyncio.create_subprocess_shell(
-        command,
+        " ".join(cmd),
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
@@ -43,9 +43,9 @@ async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
     stdout, _ = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise _CommandFailedException(command=command, stdout=decoded_stdout)
+        raise _CommandFailedException(command=cmd, stdout=decoded_stdout)
 
-    logger.debug("'%s' result:\n%s", command, decoded_stdout)
+    logger.debug("'%s' result:\n%s", cmd, decoded_stdout)
     return decoded_stdout
 
 
@@ -53,7 +53,7 @@ async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
 async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
     try:
-        await _async_command("rclone --version")
+        await _async_command(["rclone", "--version"])
         return r_clone_settings is not None
     except _CommandFailedException:
         return False
@@ -110,7 +110,7 @@ async def sync_local_to_s3(
         ]
 
         try:
-            await _async_command(" ".join(r_clone_command), cwd=f"{source_path.parent}")
+            await _async_command(r_clone_command, cwd=f"{source_path.parent}")
             return await update_file_meta_data(
                 session=session, s3_object=s3_object, user_id=user_id
             )
