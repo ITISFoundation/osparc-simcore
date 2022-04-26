@@ -5,9 +5,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
+from aiocache import cached
 from aiofiles import tempfile
 from aiohttp import ClientSession, ClientTimeout
-from cache import AsyncLRU
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
@@ -53,7 +53,7 @@ async def _async_command(command: str, *, cwd: Optional[str] = None) -> str:
     return decoded_stdout
 
 
-# @AsyncLRU(maxsize=2)
+@cached()
 async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
     try:
