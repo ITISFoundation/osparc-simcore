@@ -9,7 +9,7 @@ _COMMON_ENTRIES: Dict[str, str] = {
     "type": "s3",
     "access_key_id": "{access_key}",
     "secret_access_key": "{secret_key}",
-    "region": "us-east-1",
+    "region": "{aws_region}",
     "acl": "private",
 }
 
@@ -42,5 +42,6 @@ def get_r_clone_config(r_clone_settings: RCloneSettings) -> str:
         endpoint=r_clone_settings.R_CLONE_S3.endpoint,
         access_key=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         secret_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        aws_region=r_clone_settings.R_CLONE_REGION,
     )
     return r_clone_config

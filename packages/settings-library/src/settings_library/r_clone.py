@@ -22,3 +22,4 @@ class _RequiredS3Settings(S3Settings):
 class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: _RequiredS3Settings = Field(auto_default_from_env=True)
     R_CLONE_PROVIDER: S3Provider
+    R_CLONE_REGION: str = Field("us-east-1", description="S3 region to use")
