@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from collections import deque
 from pprint import pprint
 from typing import Any, Dict, List, Type, Union
@@ -67,14 +71,9 @@ def test_io_ports_are_not_aliases():
     assert not isinstance(outputs, InputsList)
 
 
-def test_input_lists_with_port_schema_validation_errors():
-    expected_port_with_errors = []
-
-    # A simcore-sdk Port instance is a combination of both
-    #  - the port's metadata
-    #  - the port's value
-    #
-
+@pytest.fixture
+def port_meta() -> Dict[str, Any]:
+    """Service port metadata: defines a list of non-negative numbers"""
     schema = schema_of(
         List[confloat(ge=0)],
         title="list[non-negative number]",
@@ -84,32 +83,41 @@ def test_input_lists_with_port_schema_validation_errors():
         x_unit="millimeter",
     )
 
-    port_meta = ServiceInput.from_json_schema(port_schema=schema).dict(
-        exclude_unset=True, by_alias=True
-    )
+    port_model = ServiceInput.from_json_schema(port_schema=schema)
+    return port_model.dict(exclude_unset=True, by_alias=True)
 
+
+def test_validate_port_value_against_schema(port_meta: Dict[str, Any]):
+    # A simcore-sdk Port instance is a combination of both
+    #  - the port's metadata
+    #  - the port's value
     port_value = {"key": "port_1", "value": [1, -2, 3, -4.0]}
-    expected_port_with_errors.append(port_value["key"])
 
     with pytest.raises(ValidationError) as err_info:
         Port(**port_meta, **port_value)
 
     assert isinstance(err_info.value, ValidationError)
     assert len(err_info.value.errors()) == 1
+
     error = err_info.value.errors()[0]
-    # this is how the error entry looks like
     # {
     #   'loc': ('value'),
-    #   'msg': 'port_1 value does not fulfill content schema: -2 is less than the minimum of 0',
+    #   'msg': 'port_1 value does not fulfill content schema: ',
     #   'type': 'value_error.port_schema_validation_error',
     #   'ctx': {'port_key': 'port_1', 'schema_error': <ValidationError: '-2 is less than the minimum of 0'>}
     # }
+
     assert error["loc"] == ("value",)
+    assert "-2 is less than the minimum of 0" in error["msg"]
+    assert error["type"] == "value_error.port_schema_validation_error"
+
+    assert "ctx" in error
     assert error["ctx"]["port_key"] == "port_1"
 
-    assert isinstance(error["ctx"]["schema_error"], jsonschema.ValidationError)
     schema_error = error["ctx"]["schema_error"]
-    # schema_error.message: str
+
+    assert isinstance(schema_error, jsonschema.ValidationError)
+    assert schema_error.message in error["msg"]
     assert schema_error.path == deque([1])
     assert schema_error.schema_path == deque(["items", "minimum"])
     assert schema_error.schema == {"type": "number", "minimum": 0}
@@ -120,31 +128,39 @@ def test_input_lists_with_port_schema_validation_errors():
     # schema_error.instance = instance
     assert schema_error.parent is None
 
-    # An InputsList is a Dict[PortKey, Port]
-    #   Creates an inputlist with several invalid ports
-    #
+
+def test_validate_iolist_against_schema(port_meta: Dict[str, Any]):
+    # Check how errors propagate from a single Port to InputsList
+
+    # reference port
+    port_value = {"key": "port_1", "value": [1, -2, 3, -4.0]}
+    ports = [
+        {**port_meta, **port_value},
+    ]
     expected_port_with_errors = [
         port_value["key"],
     ]
-    ports = []
 
-    ports.append({**port_meta, **port_value})
-
+    # same value, different key
     port_value["key"] = "port_2"
-    expected_port_with_errors.append(port_value["key"])
     ports.append({**port_meta, **port_value})
+    expected_port_with_errors.append(port_value["key"])
 
+    # all valid values
     port_value = {"key": "port_3", "value": [1, 2, 3, 4.3]}
     ports.append({**port_meta, **port_value})
 
+    # invalid values
     port_value = {"key": "port_4", "value": ["wrong", 2, 3, 4.3]}
-    expected_port_with_errors.append(port_value["key"])
     ports.append({**port_meta, **port_value})
+    expected_port_with_errors.append(port_value["key"])
+
+    # ----
 
     with pytest.raises(ValidationError) as err_info:
         InputsList.parse_obj({p["key"]: p for p in ports})
 
-    # Collect only port errors
+    # ---
     assert isinstance(err_info.value, ValidationError)
     assert len(err_info.value.errors()) == len(expected_port_with_errors)
 
@@ -153,6 +169,7 @@ def test_input_lists_with_port_schema_validation_errors():
         error_loc = error["loc"]
         port_key = error["ctx"].get("port_key")
 
+        # path hierachy
         assert error_loc[0] == "__root__", f"{error_loc=}"
         assert error_loc[1] == port_key, f"{error_loc=}"
         assert error_loc[-1] == "value", f"{error_loc=}"
