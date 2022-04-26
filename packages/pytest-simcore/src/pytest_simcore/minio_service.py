@@ -6,13 +6,15 @@ import logging
 from typing import Any, Dict, Iterator
 
 import pytest
-import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
 from pydantic import parse_obj_as
 from tenacity import Retrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
@@ -71,9 +73,9 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
     client = Minio(**minio_config["client"])
 
     for attempt in Retrying(
-        wait=tenacity.wait_fixed(5),
-        stop=tenacity.stop_after_attempt(60),
-        before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(60),
+        before_sleep=before_sleep_log(log, logging.WARNING),
         reraise=True,
     ):
         with attempt:

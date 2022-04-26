@@ -42,6 +42,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from settings_library.s3 import S3Settings
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
@@ -448,6 +449,7 @@ async def test_send_computation_task(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
@@ -538,6 +540,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -615,6 +618,7 @@ async def test_abort_computation_tasks(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -689,6 +693,7 @@ async def test_failed_task_returns_exceptions(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
 
         raise ValueError(
@@ -902,6 +907,7 @@ async def test_get_tasks_status(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
         start_event = Event(_DASK_EVENT_NAME)
@@ -979,6 +985,7 @@ async def test_dask_sub_handlers(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
 
         state_pub = distributed.Pub(TaskStateEvent.topic_name())
@@ -1056,6 +1063,7 @@ async def test_get_cluster_details(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: List[str],
+        s3_settings: Optional[S3Settings],
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
