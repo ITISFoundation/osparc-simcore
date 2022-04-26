@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from models_library.projects_nodes_io import UUID_REGEX, BaseFileLink, DownloadLink
 from models_library.projects_nodes_io import PortLink as BasePortLink
@@ -30,7 +30,22 @@ DataItemValue = Union[
     Dict[str, Any],  # object
 ]
 
-ItemConcreteValue = Union[int, float, bool, str, Path, List[Any], Dict[str, Any]]
-ItemValue = Union[int, float, bool, str, AnyUrl, List[Any], Dict[str, Any]]
+#
+# - the port's value is stored as Optional[DataItemValue]
+#   - order of union is used to parse object upon construction
+# - DataItemValue values are resolved into an ItemValue using Port.get_value()
+# - ItemValue values are resolved into ItemConcreteValue using Port.get()
+# - ItemConcreteValue are the types finally consumed by the actual service port
+#
+BasicValueTypes = Union[int, float, bool, str, List[Any], Dict[str, Any]]
+ItemValue = Union[BasicValueTypes, AnyUrl]
+ItemConcreteValue = Union[BasicValueTypes, Path]
 
-__all__ = ["FileLink", "DownloadLink", "PortLink", "DataItemValue", "ItemConcreteValue"]
+
+__all__: Tuple[str, ...] = (
+    "DataItemValue",
+    "DownloadLink",
+    "FileLink",
+    "ItemConcreteValue",
+    "PortLink",
+)
