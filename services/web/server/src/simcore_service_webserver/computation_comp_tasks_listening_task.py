@@ -45,12 +45,12 @@ async def _update_project_state(
     project_uuid: str,
     node_uuid: str,
     new_state: RunningState,
-    errors: Optional[List[ErrorDict]],
+    node_errors: Optional[List[ErrorDict]],
 ) -> None:
     project = await projects_api.update_project_node_state(
         app, user_id, project_uuid, node_uuid, new_state
     )
-    await projects_api.notify_project_node_update(app, project, node_uuid, errors)
+    await projects_api.notify_project_node_update(app, project, node_uuid, node_errors)
     await projects_api.notify_project_state_update(app, project)
 
 
@@ -62,6 +62,7 @@ async def _update_project_outputs(
     node_uuid: str,
     outputs: Dict,
     run_hash: Optional[str],
+    node_errors: Optional[List[ErrorDict]],
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
     project, changed_keys = await projects_api.update_project_node_outputs(
@@ -73,13 +74,15 @@ async def _update_project_outputs(
         new_run_hash=run_hash,
     )
 
-    await projects_api.notify_project_node_update(app, project, f"{node_uuid}")
+    await projects_api.notify_project_node_update(
+        app, project, f"{node_uuid}", errors=node_errors
+    )
     # get depending node and notify for these ones as well
     depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
     await logged_gather(
         *[
-            projects_api.notify_project_node_update(app, project, n)
-            for n in depending_node_uuids
+            projects_api.notify_project_node_update(app, project, nid, errors=None)
+            for nid in depending_node_uuids
         ]
     )
     # notify
@@ -142,6 +145,7 @@ async def listen(app: web.Application, db_engine: Engine):
                         node_uuid,
                         new_outputs,
                         new_run_hash,
+                        node_errors=task_data.get("errors", None),
                     )
 
                 if "state" in task_changes:
@@ -152,7 +156,7 @@ async def listen(app: web.Application, db_engine: Engine):
                         project_uuid,
                         node_uuid,
                         new_state,
-                        task_data.get("errors", None),
+                        node_errors=task_data.get("errors", None),
                     )
 
             except projects_exceptions.ProjectNotFoundError as exc:
