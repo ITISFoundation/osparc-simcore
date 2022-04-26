@@ -2,13 +2,14 @@ import asyncio
 import functools
 import mimetypes
 import zipfile
+from io import BytesIO
 from pathlib import Path
-from typing import Awaitable, Callable, Final, Optional, TypedDict
+from typing import Any, Awaitable, Callable, Final, Optional, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
 import fsspec
-from pydantic import ByteSize
+from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
@@ -69,6 +70,41 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     }
 
 
+def _file_chunk_streamer(src: BytesIO, dst: BytesIO):
+    data = src.read(CHUNK_SIZE)
+    segment_len = dst.write(data)
+    return (data, segment_len)
+
+
+async def _copy_file(
+    src_url: AnyUrl,
+    dst_url: AnyUrl,
+    *,
+    log_publishing_cb: LogPublishingCB,
+    text_prefix: str,
+    src_storage_cfg: Optional[dict[str, Any]] = None,
+    dst_storage_cfg: Optional[dict[str, Any]] = None,
+):
+    src_storage_kwargs = src_storage_cfg or {}
+    dst_storage_kwargs = dst_storage_cfg or {}
+    with fsspec.open(src_url, mode="rb", **src_storage_kwargs) as src_fp:
+        with fsspec.open(dst_url, "wb", **dst_storage_kwargs) as dst_fp:
+            file_size = getattr(src_fp, "size", None)
+            data_read = True
+            while data_read:
+                (
+                    data_read,
+                    data_written,
+                ) = await asyncio.get_event_loop().run_in_executor(
+                    None, _file_chunk_streamer, src_fp, dst_fp
+                )
+                await log_publishing_cb(
+                    f"{text_prefix}"
+                    f" {100.0 * float(data_written or 0)/float(file_size or 1):.1f}%"
+                    f" ({ByteSize(data_written).human_readable() if data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                )
+
+
 async def pull_file_from_remote(
     src_url: AnyUrl,
     dst_path: Path,
@@ -90,29 +126,13 @@ async def pull_file_from_remote(
     storage_kwargs = {}
     if s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-    open_file = fsspec.open(src_url, mode="rb", **storage_kwargs)
-
-    def _streamer(src_fp, dst_fp):
-        data = src_fp.read(CHUNK_SIZE)
-        segment_len = dst_fp.write(data)
-        return (data, segment_len)
-
-    with open_file as src_fp:
-        file_size = getattr(src_fp, "size", None)
-        with dst_path.open("wb") as dst_fp:
-            data_read = True
-            while data_read:
-                (
-                    data_read,
-                    data_written,
-                ) = await asyncio.get_event_loop().run_in_executor(
-                    None, _streamer, src_fp, dst_fp
-                )
-                await log_publishing_cb(
-                    f"Downloading '{src_url.path.strip('/')}':"
-                    f" {100.0 * float(data_written or 0)/float(file_size or 1):.1f}%"
-                    f" ({ByteSize(data_written).human_readable() if data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                )
+    await _copy_file(
+        src_url,
+        parse_obj_as(FileUrl, dst_path.as_uri()),
+        src_storage_cfg=cast(dict[str, Any], storage_kwargs),
+        log_publishing_cb=log_publishing_cb,
+        text_prefix=f"Downloading '{src_url.path.strip('/')}':",
+    )
 
     await log_publishing_cb(
         f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
@@ -161,71 +181,25 @@ async def _push_file_to_http_link(
     )
 
 
-async def _push_file_to_s3_remote(
+async def _push_file_to_remote(
     file_to_upload: Path,
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    **s3_kwargs,
+    s3_settings: Optional[S3Settings],
 ):
     logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
-    fs = fsspec.filesystem(
-        protocol=dst_url.scheme,
-        key=s3_kwargs.get("key"),
-        secret=s3_kwargs.get("secret"),
-        token=s3_kwargs.get("token"),
-        use_ssl=s3_kwargs.get("use_ssl", True),
-        client_kwargs=s3_kwargs.get("client_kwargs"),
-    )
     assert dst_url.path  # nosec
-    await asyncio.get_event_loop().run_in_executor(
-        None,
-        functools.partial(
-            fs.put_file,
-            file_to_upload,
-            f"{dst_url}",
-            callback=fsspec.Callback(
-                hooks={
-                    "progress": functools.partial(
-                        _file_progress_cb,
-                        log_publishing_cb=log_publishing_cb,
-                        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-                        main_loop=asyncio.get_event_loop(),
-                    )
-                }
-            ),
-        ),
-    )
 
+    storage_kwargs = {}
+    if s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
-async def _push_file_to_generic_remote(
-    file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
-):
-    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
-    fs = fsspec.filesystem(
-        protocol=dst_url.scheme,
-        username=dst_url.user,
-        password=dst_url.password,
-        port=int(dst_url.port or "80"),
-        host=dst_url.host,
-    )
-    assert dst_url.path  # nosec
-    await asyncio.get_event_loop().run_in_executor(
-        None,
-        functools.partial(
-            fs.put_file,
-            file_to_upload,
-            dst_url.path,
-            callback=fsspec.Callback(
-                hooks={
-                    "progress": functools.partial(
-                        _file_progress_cb,
-                        log_publishing_cb=log_publishing_cb,
-                        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-                        main_loop=asyncio.get_event_loop(),
-                    )
-                }
-            ),
-        ),
+    await _copy_file(
+        parse_obj_as(FileUrl, file_to_upload.as_uri()),
+        dst_url,
+        dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
+        log_publishing_cb=log_publishing_cb,
+        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
     )
 
 
@@ -267,18 +241,9 @@ async def push_file_to_remote(
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
-        elif dst_url.scheme in S3_FILE_SYSTEM_SCHEMES:
-            logger.debug("destination is a S3 link")
-            storage_kwargs = {}
-            if s3_settings:
-                storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-            await _push_file_to_s3_remote(
-                file_to_upload, dst_url, log_publishing_cb, **storage_kwargs
-            )
         else:
-            logger.debug("destination is a generic link")
-            await _push_file_to_generic_remote(
-                file_to_upload, dst_url, log_publishing_cb
+            await _push_file_to_remote(
+                file_to_upload, dst_url, log_publishing_cb, s3_settings
             )
 
     await log_publishing_cb(

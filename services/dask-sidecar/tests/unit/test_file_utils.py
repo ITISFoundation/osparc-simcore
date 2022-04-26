@@ -122,15 +122,15 @@ async def test_push_file_to_remote(
     storage_kwargs = {}
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-    open_file = cast(
+
+    with cast(
         fsspec.core.OpenFile,
         fsspec.open(
             remote_parameters.remote_file_url,
             mode="rt",
             **storage_kwargs,
         ),
-    )
-    with open_file as fp:
+    ) as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
 
@@ -163,11 +163,10 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     )
 
     storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-    open_file = cast(
+    with cast(
         fsspec.core.OpenFile,
         fsspec.open(s3_remote_file_url, mode="rt", **storage_kwargs),
-    )
-    with open_file as fp:
+    ) as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
 
@@ -215,16 +214,15 @@ async def test_pull_file_from_remote(
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
     # put some file on the remote
-    open_file = cast(
+    TEXT_IN_FILE = faker.text()
+    with cast(
         fsspec.core.OpenFile,
         fsspec.open(
             remote_parameters.remote_file_url,
             mode="wt",
             **storage_kwargs,
         ),
-    )
-    TEXT_IN_FILE = faker.text()
-    with open_file as fp:
+    ) as fp:
         fp.write(TEXT_IN_FILE)
 
     # now let's get the file through the util
@@ -251,16 +249,15 @@ async def test_pull_file_from_remote_s3_presigned_link(
 ):
     storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     # put some file on the remote
-    open_file = cast(
+    TEXT_IN_FILE = faker.text()
+    with cast(
         fsspec.core.OpenFile,
         fsspec.open(
             s3_remote_file_url,
             mode="wt",
             **storage_kwargs,
         ),
-    )
-    TEXT_IN_FILE = faker.text()
-    with open_file as fp:
+    ) as fp:
         fp.write(TEXT_IN_FILE)
 
     # create a corresponding presigned get link
@@ -305,16 +302,15 @@ async def test_pull_compressed_zip_file_from_remote(
     storage_kwargs = {}
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-    open_file = cast(
+
+    with cast(
         fsspec.core.OpenFile,
         fsspec.open(
             destination_url,
             mode="wb",
             **storage_kwargs,
         ),
-    )
-
-    with open_file as dest_fp:
+    ) as dest_fp:
         with local_zip_file_path.open("rb") as src_fp:
             dest_fp.write(src_fp.read())
 
