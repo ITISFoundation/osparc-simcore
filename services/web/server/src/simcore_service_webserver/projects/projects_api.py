@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
@@ -29,7 +30,6 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.users import UserID
-from pydantic.error_wrappers import ErrorDict
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance

@@ -21,9 +21,9 @@ translate into something like
 
 from typing import List, Optional
 
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.error_wrappers import ErrorDict
 from pydantic.errors import PydanticErrorMixin
 
 

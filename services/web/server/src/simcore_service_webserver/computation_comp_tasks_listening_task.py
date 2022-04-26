@@ -12,8 +12,8 @@ from typing import Dict, List, Optional
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from models_library.errors import ErrorDict
 from models_library.projects_state import RunningState
-from pydantic.error_wrappers import ErrorDict
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
