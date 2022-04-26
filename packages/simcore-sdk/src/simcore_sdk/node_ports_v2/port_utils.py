@@ -70,6 +70,7 @@ async def get_download_link_from_storage(
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
         store_id=f"{value.store}",
+        store_name=None,
         s3_object=value.path,
     )
     return parse_obj_as(AnyUrl, f"{link}") if link else None
@@ -85,6 +86,7 @@ async def get_upload_link_from_storage(
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
     _, link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
+        store_id=None,
         store_name=config.STORE,
         s3_object=s3_object,
     )
@@ -125,6 +127,7 @@ async def pull_file_from_store(
     downloaded_file = await filemanager.download_file_from_s3(
         user_id=user_id,
         store_id=f"{value.store}",
+        store_name=None,
         s3_object=value.path,
         local_folder=local_path,
     )
@@ -150,6 +153,7 @@ async def push_file_to_store(
     s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
+        store_id=None,
         store_name=config.STORE,
         s3_object=s3_object,
         local_file_path=file,
@@ -198,6 +202,7 @@ async def get_file_link_from_url(
     node_id: str,
 ) -> FileLink:
     log.debug("url %s will now be converted to a file link", new_value)
+    assert new_value.path  # nosec
     s3_object = data_items_utils.encode_file_id(
         Path(new_value.path), project_id, node_id
     )

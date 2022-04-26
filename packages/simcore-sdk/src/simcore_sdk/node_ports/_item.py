@@ -177,6 +177,7 @@ class Item:
             )
             store_id, _ = await filemanager.upload_file(
                 user_id=self._user_id,
+                store_id=None,
                 store_name=config.STORE,
                 s3_object=s3_object,
                 local_file_path=file_path,
@@ -216,6 +217,7 @@ class Item:
         downloaded_file = await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store_id,
+            store_name=None,
             s3_object=s3_path,
             local_folder=local_path,
         )

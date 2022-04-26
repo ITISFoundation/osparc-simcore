@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Coroutine, Dict, List, Optional, Type, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -22,6 +22,7 @@ from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 from yarl import URL
 
 from ..boot_mode import BootMode
@@ -55,6 +56,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     boot_mode: BootMode
     task_max_resources: Dict[str, Any]
     task_publishers: TaskPublisher
+    s3_settings: Optional[S3Settings]
 
     async def _write_input_data(
         self,
@@ -85,7 +87,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
                 download_tasks.append(
                     pull_file_from_remote(
-                        input_params.url, destination_path, self._publish_sidecar_log
+                        input_params.url,
+                        destination_path,
+                        self._publish_sidecar_log,
+                        self.s3_settings,
                     )
                 )
             else:
@@ -130,7 +135,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
                         push_file_to_remote(
-                            src_path, output_params.url, self._publish_sidecar_log
+                            src_path,
+                            output_params.url,
+                            self._publish_sidecar_log,
+                            self.s3_settings,
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -210,6 +218,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
                     log_publishing_cb=self._publish_sidecar_log,
+                    s3_settings=self.s3_settings,
                 ):
                     await container.start()
                     await self._publish_sidecar_log(
@@ -231,8 +240,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             service_version=self.service_version,
                             container_id=container.id,
                             exit_code=container_data["State"]["ExitCode"],
-                            service_logs=await container.log(
-                                stdout=True, stderr=True, tail=20
+                            service_logs=await cast(
+                                Coroutine,
+                                container.log(
+                                    stdout=True, stderr=True, tail=20, follow=False
+                                ),
                             ),
                         )
                     await self._publish_sidecar_log("Container ran successfully.")
