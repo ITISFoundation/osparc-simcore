@@ -10,7 +10,10 @@ from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.catalog import is_service_responsive, setup_catalog
+from simcore_service_webserver.catalog import (
+    is_catalog_service_responsive,
+    setup_catalog,
+)
 from simcore_service_webserver.catalog_client import to_backend_service
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, load_openapi_specs
 from yarl import URL
@@ -64,7 +67,7 @@ def test_catalog_routing(client):
 async def test_catalog_api_calls(client, mock_api_calls_to_catalog):
     client_session = client.app[APP_CLIENT_SESSION_KEY]
 
-    assert await is_service_responsive(client.app)
+    assert await is_catalog_service_responsive(client.app)
     mock_api_calls_to_catalog.assert_called_once()
 
     # from .login.decorators import login_required
