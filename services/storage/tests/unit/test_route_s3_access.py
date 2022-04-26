@@ -45,4 +45,4 @@ async def test_simcore_s3_access(client: TestClient):
         .with_query(user_id=1)
     )
     response = await client.get(f"{url}")
-    assert_status(response, web.HTTPOk)
+    await assert_status(response, web.HTTPOk)
