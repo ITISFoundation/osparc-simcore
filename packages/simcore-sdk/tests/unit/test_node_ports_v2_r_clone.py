@@ -49,8 +49,8 @@ async def test_is_r_clone_available_cached(
     for _ in range(3):
         result = await r_clone.is_r_clone_available(r_clone_settings)
         assert type(result) is bool
-    assert "'['rclone', '--version']' result:\n" in caplog.text
-    assert caplog.text.count("'['rclone', '--version']' result:\n") == 1
+    assert "'('rclone', '--version')' result:\n" in caplog.text
+    assert caplog.text.count("'('rclone', '--version')' result:\n") == 1
 
     assert await r_clone.is_r_clone_available(None) is False
 
@@ -63,19 +63,19 @@ async def test__config_file(faker: Faker) -> None:
 
 
 async def test__async_command_ok() -> None:
-    await r_clone._async_command(["ls", "-la"])
+    await r_clone._async_command("ls", "-la")
 
 
 @pytest.mark.parametrize(
     "cmd",
     [
-        ["__i_do_not_exist__"],
-        ["ls_", "-lah"],
+        ("__i_do_not_exist__",),
+        ("ls_", "-lah"),
     ],
 )
 async def test__async_command_error(cmd: List[str]) -> None:
     with pytest.raises(r_clone._CommandFailedException) as exe_info:
-        await r_clone._async_command(cmd)
+        await r_clone._async_command(*cmd)
     assert (
         f"{exe_info.value}"
         == f"Command {cmd} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"

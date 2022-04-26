@@ -3,7 +3,7 @@ import logging
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Optional
 
 from aiocache import cached
 from aiofiles import tempfile
@@ -31,7 +31,7 @@ async def _config_file(config: str) -> AsyncGenerator[str, None]:
         yield f.name
 
 
-async def _async_command(cmd: List[str], *, cwd: Optional[str] = None) -> str:
+async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
     proc = await asyncio.create_subprocess_shell(
         " ".join(cmd),
         stdin=asyncio.subprocess.PIPE,
@@ -53,7 +53,7 @@ async def _async_command(cmd: List[str], *, cwd: Optional[str] = None) -> str:
 async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
     try:
-        await _async_command(["rclone", "--version"])
+        await _async_command("rclone", "--version")
         return r_clone_settings is not None
     except _CommandFailedException:
         return False
@@ -96,7 +96,7 @@ async def sync_local_to_s3(
         #   --copy-links
         #   --include
         #   'filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt'
-        r_clone_command = [
+        r_clone_command = (
             "rclone",
             "--config",
             config_file_name,
@@ -107,10 +107,10 @@ async def sync_local_to_s3(
             "--copy-links",
             "--include",
             f"'{file_name}'",
-        ]
+        )
 
         try:
-            await _async_command(r_clone_command, cwd=f"{source_path.parent}")
+            await _async_command(*r_clone_command, cwd=f"{source_path.parent}")
             return await update_file_meta_data(
                 session=session, s3_object=s3_object, user_id=user_id
             )
