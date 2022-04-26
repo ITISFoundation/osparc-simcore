@@ -377,6 +377,35 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __enableCard: function(enabled) {
+      this.set({
+        cursor: enabled ? "pointer" : "not-allowed"
+      });
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(enabled ? 1.0 : 0.4);
+      });
+
+      [
+        "tick-selected",
+        "tick-unselected",
+        "menu-button"
+      ].forEach(childName => {
+        const child = this.getChildControl(childName);
+        child.set({
+          enabled
+        });
+      });
+    },
+
     _applyFetching: function(value) {
       throw new Error("Abstract method called!");
     },

@@ -342,27 +342,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
       }
       this._blockCard(image, toolTip);
-    },
-
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("icon").set({
-        visibility: locked ? "excluded" : "visible"
-      });
-      this.getChildControl("lock-status").set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-    },
-
-    __enableCard: function(enabled) {
-      this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
-      });
     }
   },
 

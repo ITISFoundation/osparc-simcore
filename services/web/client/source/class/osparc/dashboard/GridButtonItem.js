@@ -337,35 +337,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       this._blockCard(image, toolTip);
     },
 
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("lock-status").set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-    },
-
-    __enableCard: function(enabled) {
-      this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
-      });
-
-      [
-        "tick-selected",
-        "tick-unselected",
-        "menu-button"
-      ].forEach(childName => {
-        const child = this.getChildControl(childName);
-        child.set({
-          enabled
-        });
-      });
-    },
-
     // overridden
     _applyMenu: function(value, old) {
       const menuButton = this.getChildControl("menu-button");
