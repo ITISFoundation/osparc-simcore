@@ -3,10 +3,11 @@ import logging
 import time
 from asyncio import AbstractEventLoop
 from collections import deque
+from contextlib import contextmanager
 from functools import wraps
 from os import name
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Deque, Optional
+from typing import Any, Awaitable, Callable, Deque, Generator, Optional
 
 from fastapi import FastAPI
 from servicelib.utils import logged_gather
@@ -107,6 +108,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
         async_push_directory(self.loop, self.directory_path)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
+        logger.debug("Detected Event %s", event)
         super().on_any_event(event)
         if self._is_enabled:
             self._invoke_push_directory()
@@ -215,8 +217,18 @@ def enable_directory_watcher(app: FastAPI) -> None:
         app.state.dir_watcher.enable_event_propagation()
 
 
+@contextmanager
+def directory_watcher_disabler(app: FastAPI) -> Generator[None, None, None]:
+    disable_directory_watcher(app)
+    try:
+        yield None
+    finally:
+        enable_directory_watcher(app)
+
+
 __all__ = [
     "disable_directory_watcher",
     "enable_directory_watcher",
+    "directory_watcher_disabler",
     "setup_directory_watcher",
 ]
