@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type, get_args
 
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
@@ -56,9 +56,13 @@ class Port(BaseServiceIOModel):
 
     # TODO: PC unit: Optional[UnitStr] = None
 
+    # Final value types
     _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
+    # Function to convert to final value types
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
+    # parent node container this port as input or output
     _node_ports = PrivateAttr()
+    # flags
     _used_default_value: bool = PrivateAttr(False)
 
     class Config(BaseServiceIOModel.Config):
@@ -101,7 +105,7 @@ class Port(BaseServiceIOModel):
             self._py_value_converter = Path
 
         elif self.property_type == "ref_contentSchema":
-            self._py_value_type = (list, dict)
+            self._py_value_type = (int, float, bool, str, list, dict)
             self._py_value_converter = lambda v: v
 
         else:
@@ -120,9 +124,13 @@ class Port(BaseServiceIOModel):
     async def get_value(
         self, *, file_link_type: Optional[LinkType] = None
     ) -> Optional[ItemValue]:
-        """returns the value of the link after resolving the port links"""
+        """Resolves data links and returns resulted value
+
+        Transforms DataItemValue value -> ItemValue
+        """
         if not file_link_type:
             file_link_type = LinkType.PRESIGNED
+
         log.debug(
             "getting value of %s[%s] containing '%s' using %s",
             self.key,
@@ -132,33 +140,42 @@ class Port(BaseServiceIOModel):
         )
 
         if isinstance(self.value, PortLink):
-            # this is a link to another node
-            # pylint: disable=protected-access
-            value: Optional[ItemValue] = await port_utils.get_value_link_from_port_link(
+            # this is a link to another node's port
+            other_port_itemvalue: Optional[
+                ItemValue
+            ] = await port_utils.get_value_link_from_port_link(
                 self.value,
+                # pylint: disable=protected-access
                 self._node_ports._node_ports_creator_cb,
                 file_link_type=file_link_type,
             )
             # TODO: PC: add validation/conversion here as well
 
-            return value
+            return other_port_itemvalue
 
         if isinstance(self.value, FileLink):
             # let's get the download/upload link from storage
-            value: Optional[AnyUrl] = await port_utils.get_download_link_from_storage(
+            url_itemvalue: Optional[
+                AnyUrl
+            ] = await port_utils.get_download_link_from_storage(
+                # pylint: disable=protected-access
                 user_id=self._node_ports.user_id,
                 value=self.value,
                 link_type=file_link_type,
             )
-            return value
+            return url_itemvalue
 
         if isinstance(self.value, DownloadLink):
-            # this is a downloadable link
+            # generic download link for a file
             return self.value.download_link
 
+        # otherwise, this is a BasicValueTypes
         return self.value
 
     async def get(self) -> Optional[ItemConcreteValue]:
+        """
+        Transforms DataItemValue value -> ItemConcreteValue
+        """
         log.debug(
             "getting %s[%s] with value %s",
             self.key,
@@ -169,10 +186,11 @@ class Port(BaseServiceIOModel):
         if self.value is None:
             return None
 
-        value: Optional[ItemValue] = None
         if isinstance(self.value, PortLink):
             # this is a link to another node
-            value: Optional[ItemConcreteValue] = await port_utils.get_value_from_link(
+            other_port_concretevalue: Optional[
+                ItemConcreteValue
+            ] = await port_utils.get_value_from_link(
                 # pylint: disable=protected-access
                 key=self.key,
                 value=self.value,
@@ -180,66 +198,73 @@ class Port(BaseServiceIOModel):
                 node_port_creator=self._node_ports._node_ports_creator_cb,
             )
 
+            value = other_port_concretevalue
             # TODO: PC: add validation here as well
 
         elif isinstance(self.value, FileLink):
             # this is a link from storage
-            value: Path = await port_utils.pull_file_from_store(
+            path_concrete_value: Path = await port_utils.pull_file_from_store(
                 user_id=self._node_ports.user_id,
                 key=self.key,
                 fileToKeyMap=self.file_to_key_map,
                 value=self.value,
             )
+            value = path_concrete_value
 
         elif isinstance(self.value, DownloadLink):
             # this is a downloadable link
-            value: Path = await port_utils.pull_file_from_download_link(
+            path_concrete_value: Path = await port_utils.pull_file_from_download_link(
                 key=self.key,
                 fileToKeyMap=self.file_to_key_map,
                 value=self.value,
             )
+            value = path_concrete_value
+
         else:
-            # this is directly the value
-            value: ItemConcreteValue = self.value
+            # otherwise, this is a BasicValueTypes
+            value = self.value
 
         # don't atempt conversion of None it fails
         if value is None:
             return None
 
-        return self._py_value_converter(value)
+        concrete_value = self._py_value_converter(value)
+        assert isinstance(concrete_value, get_args(ItemConcreteValue))  # nosec
 
-    async def _set(self, new_value: ItemConcreteValue) -> None:
+        return concrete_value
+
+    async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
         log.debug(
             "setting %s[%s] with concrete value %s",
             self.key,
             self.property_type,
-            new_value,
+            new_concrete_value,
         )
-        final_value: Optional[DataItemValue] = None
-        if new_value is not None:
-            # convert the concrete value to a data value
-            converted_value: ItemConcreteValue = self._py_value_converter(new_value)
-
+        new_value: Optional[DataItemValue] = None
+        if new_concrete_value is not None:
+            converted_value = self._py_value_converter(new_concrete_value)
             if isinstance(converted_value, Path):
                 if (
                     not port_utils.is_file_type(self.property_type)
                     or not converted_value.exists()
                     or converted_value.is_dir()
                 ):
-                    raise InvalidItemTypeError(self.property_type, f"{new_value}")
+                    raise InvalidItemTypeError(
+                        self.property_type, f"{new_concrete_value}"
+                    )
 
                 _check_if_symlink_is_valid(converted_value)
 
-                final_value = await port_utils.push_file_to_store(
+                new_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,
                     project_id=self._node_ports.project_id,
                     node_id=self._node_ports.node_uuid,
                 )
             else:
-                final_value = converted_value
+                new_value = converted_value
 
-        self.value = final_value
+        self.value = new_value
         self._used_default_value = False
 
     async def set(self, new_value: ItemConcreteValue) -> None:
@@ -247,24 +272,29 @@ class Port(BaseServiceIOModel):
         await self._set(new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
 
-    async def set_value(self, new_value: Optional[ItemValue]) -> None:
-        """set the value on the port using a value (e.g. link for the file)"""
+    async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
+        """set the value on the port using an item-value"""
         log.debug(
-            "setting %s[%s] with value %s", self.key, self.property_type, new_value
+            "setting %s[%s] with value %s", self.key, self.property_type, new_item_value
         )
-        final_value: Optional[DataItemValue] = None
-        if port_utils.is_file_type(self.property_type) and new_value is not None:
-            if not isinstance(new_value, AnyUrl):
-                raise InvalidItemTypeError(self.property_type, f"{new_value}")
-            final_value: FileLink = await port_utils.get_file_link_from_url(
-                new_value,
+        if port_utils.is_file_type(self.property_type) and new_item_value is not None:
+            if not isinstance(new_item_value, AnyUrl):
+                raise InvalidItemTypeError(self.property_type, f"{new_item_value}")
+
+            new_filelink: FileLink = await port_utils.get_file_link_from_url(
+                new_item_value,
                 self._node_ports.user_id,
                 self._node_ports.project_id,
                 self._node_ports.node_uuid,
             )
-        else:
-            final_value: ItemConcreteValue = self._py_value_converter(new_value)
 
-        self.value = final_value
+            self.value = new_filelink
+
+        else:
+            new_concrete_value: ItemConcreteValue = self._py_value_converter(
+                new_item_value
+            )
+            self.value = new_concrete_value  # type:ignore
+
         self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)
