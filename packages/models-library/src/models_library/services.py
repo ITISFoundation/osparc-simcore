@@ -211,6 +211,17 @@ class BaseServiceIOModel(BaseModel):
 
         return v
 
+    @classmethod
+    def _from_json_schema(cls, port_schema: Dict[str, Any]) -> Dict[str, Any]:
+        description = port_schema.pop("description", port_schema["title"])
+        data = {
+            "label": port_schema["title"],
+            "description": description,
+            "type": "ref_contentSchema",
+            "contentSchema": port_schema,
+        }
+        return data
+
 
 class ServiceInput(BaseServiceIOModel):
     """
@@ -287,14 +298,8 @@ class ServiceInput(BaseServiceIOModel):
     @classmethod
     def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceInput":
         """Creates input port model from a json-schema"""
-
-        description = port_schema.pop("description", port_schema["title"])
-        data = {
-            "label": port_schema["title"],
-            "description": description,
-            "type": "ref_contentSchema",
-            "contentSchema": port_schema,
-        }
+        data = cls._from_json_schema(port_schema)
+        # TODO: default_value? widget?
         return cls.parse_obj(data)
 
 
@@ -335,6 +340,13 @@ class ServiceOutput(BaseServiceIOModel):
                 },
             ]
         }
+
+    @classmethod
+    def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceOutput":
+        """Creates output port model from a json-schema"""
+        data = cls._from_json_schema(port_schema)
+        # TODO: widget?
+        return cls.parse_obj(data)
 
 
 class ServiceKeyVersion(BaseModel):

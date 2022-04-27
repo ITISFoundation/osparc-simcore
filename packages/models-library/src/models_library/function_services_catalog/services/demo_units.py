@@ -2,22 +2,11 @@ from ...services import (
     LATEST_INTEGRATION_VERSION,
     ServiceDockerData,
     ServiceInput,
+    ServiceOutput,
     ServiceType,
 )
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, PC, FunctionServices, create_fake_thumbnail_url
-
-
-def build_input(schema):
-    description = schema.pop("description", schema["title"])
-
-    return {
-        "label": schema["title"],
-        "description": description,
-        "type": "ref_contentSchema",
-        "contentSchema": schema,
-    }
-
 
 # SEE https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
 #
@@ -50,7 +39,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "time": build_input(
+            "time": ServiceInput.from_json_schema(
                 {
                     "title": "Time",
                     "description": "Positive time",
@@ -59,21 +48,21 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "current": build_input(
+            "current": ServiceInput.from_json_schema(
                 {
                     "title": "Current",
                     "x_unit": "ampere",
                     "type": "number",
                 }
             ),
-            "luminosity": build_input(
+            "luminosity": ServiceInput.from_json_schema(
                 {
                     "title": "Luminosity",
                     "x_unit": "candela",
                     "type": "number",
                 }
             ),
-            "mass": build_input(
+            "mass": ServiceInput.from_json_schema(
                 {
                     "title": "Mass",
                     "description": "Positive mass",
@@ -82,7 +71,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "substance": build_input(
+            "substance": ServiceInput.from_json_schema(
                 {
                     "title": "Substance",
                     "minimum": 0,
@@ -90,7 +79,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "temperature": build_input(
+            "temperature": ServiceInput.from_json_schema(
                 {
                     "title": "Temperature",
                     "minimum": 0,
@@ -98,28 +87,28 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "angle": build_input(
+            "angle": ServiceInput.from_json_schema(
                 {
                     "title": "Angle",
                     "x_unit": "degree",
                     "type": "number",
                 }
             ),
-            "velocity": build_input(
+            "velocity": ServiceInput.from_json_schema(
                 {
                     "title": "Velo-city",
                     "x_unit": "meter_per_second",
                     "type": "number",
                 }
             ),
-            "entropy": build_input(
+            "entropy": ServiceInput.from_json_schema(
                 {
                     "title": "Entropy",
                     "x_unit": "m**2 kg/s**2/K",
                     "type": "number",
                 }
             ),
-            "radiation": build_input(
+            "radiation": ServiceInput.from_json_schema(
                 {
                     "title": "Radiation",
                     "x_unit": "rutherford",
@@ -128,7 +117,7 @@ META = ServiceDockerData.parse_obj(
             ),
         },
         "outputs": {
-            "mass": build_input(
+            "mass": ServiceOutput.from_json_schema(
                 {
                     "title": "Mass",
                     "minimum": 0,
@@ -136,21 +125,21 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "luminosity": build_input(
+            "luminosity": ServiceOutput.from_json_schema(
                 {
                     "title": "Luminosity",
                     "x_unit": "candela",
                     "type": "number",
                 }
             ),
-            "current": build_input(
+            "current": ServiceOutput.from_json_schema(
                 {
                     "title": "Current",
                     "x_unit": "milli-ampere",
                     "type": "number",
                 }
             ),
-            "time": build_input(
+            "time": ServiceOutput.from_json_schema(
                 {
                     "title": "Time",
                     "minimum": 0,
@@ -158,7 +147,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "length": build_input(
+            "length": ServiceOutput.from_json_schema(
                 {
                     "title": "Distance",
                     "description": "Distance value converted",
@@ -166,7 +155,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "substance": build_input(
+            "substance": ServiceOutput.from_json_schema(
                 {
                     "title": "Substance",
                     "minimum": 0,
@@ -174,7 +163,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "temperature": build_input(
+            "temperature": ServiceOutput.from_json_schema(
                 {
                     "title": "Temperature",
                     "minimum": 0,
@@ -182,21 +171,21 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "angle": build_input(
+            "angle": ServiceOutput.from_json_schema(
                 {
                     "title": "Angle",
                     "x_unit": "radian",
                     "type": "number",
                 }
             ),
-            "velocity": build_input(
+            "velocity": ServiceOutput.from_json_schema(
                 {
                     "title": "Velo-city",
                     "x_unit": "kilometer_per_hour",
                     "type": "number",
                 }
             ),
-            "radiation": build_input(
+            "radiation": ServiceOutput.from_json_schema(
                 {
                     "title": "Radiation",
                     "x_unit": "curie",
