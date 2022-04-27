@@ -100,6 +100,21 @@ class RCloneSettings(S3Settings):
         return self.S3_ENDPOINT
 
 
+class StorageSettings(BaseCustomSettings):
+    STORAGE_HOST: str = "storage"
+    STORAGE_PORT: int = 8080
+    STORAGE_VTAG: str = "v0"
+
+    @cached_property
+    def endpoint(self) -> str:
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.STORAGE_HOST,
+            port=f"{self.STORAGE_PORT}",
+            path=f"/{self.STORAGE_VTAG}",
+        )
+
+
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
@@ -378,6 +393,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
+    DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
