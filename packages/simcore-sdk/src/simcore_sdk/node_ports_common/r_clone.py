@@ -36,8 +36,9 @@ async def _config_file(config: str) -> AsyncGenerator[str, None]:
 
 
 async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+    str_cmd = " ".join(cmd)
     proc = await asyncio.create_subprocess_shell(
-        " ".join(cmd),
+        str_cmd,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
@@ -47,9 +48,9 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
     stdout, _ = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise _CommandFailedException(command=cmd, stdout=decoded_stdout)
+        raise _CommandFailedException(command=str_cmd, stdout=decoded_stdout)
 
-    logger.debug("'%s' result:\n%s", cmd, decoded_stdout)
+    logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
 
 

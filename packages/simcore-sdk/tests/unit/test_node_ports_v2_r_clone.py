@@ -49,8 +49,8 @@ async def test_is_r_clone_available_cached(
     for _ in range(3):
         result = await r_clone.is_r_clone_available(r_clone_settings)
         assert type(result) is bool
-    assert "'('rclone', '--version')' result:\n" in caplog.text
-    assert caplog.text.count("'('rclone', '--version')' result:\n") == 1
+    assert "'rclone --version' result:\n" in caplog.text
+    assert caplog.text.count("'rclone --version' result:\n") == 1
 
     assert await r_clone.is_r_clone_available(None) is False
 
@@ -78,5 +78,5 @@ async def test__async_command_error(cmd: List[str]) -> None:
         await r_clone._async_command(*cmd)
     assert (
         f"{exe_info.value}"
-        == f"Command {cmd} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
+        == f"Command {' '.join(cmd)} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
     )

@@ -74,6 +74,7 @@ async def test_push_folder(
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
         local_file_path=(test_compression_folder / "{}.zip".format(test_folder.stem)),
+        r_clone_settings=None,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id="0",
         store_name=None,
@@ -119,6 +120,7 @@ async def test_push_file(
     await data_manager.push(user_id, project_id, node_uuid, file_path)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
+        r_clone_settings=None,
         local_file_path=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id="0",
