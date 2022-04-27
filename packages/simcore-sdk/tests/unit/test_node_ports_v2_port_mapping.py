@@ -6,9 +6,9 @@ from collections import deque
 from pprint import pprint
 from typing import Any, Dict, List, Type, Union
 
-import jsonschema
 import pytest
 from models_library.services import ServiceInput
+from models_library.utils.json_schema import JsonSchemaValidationError
 from pydantic import ValidationError, confloat, schema_of
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
@@ -117,7 +117,7 @@ def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
 
     schema_error = error["ctx"]["schema_error"]
 
-    assert isinstance(schema_error, jsonschema.ValidationError)
+    assert isinstance(schema_error, JsonSchemaValidationError)
     assert schema_error.message in error["msg"]
     assert schema_error.path == deque([1])
     assert schema_error.schema_path == deque(["items", "minimum"])

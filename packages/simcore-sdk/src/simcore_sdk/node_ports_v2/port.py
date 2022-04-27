@@ -4,9 +4,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
-import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
-from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 from simcore_sdk.node_ports_common.storage_client import LinkType
 
@@ -67,18 +65,6 @@ class Port(BaseServiceIOModel):
         validate_assignment = (
             True  # NOTE: ensures validation of 'value' using setters member functions
         )
-
-    @validator("content_schema", always=True)
-    @classmethod
-    def valid_content_jsonschema(cls, v):
-        if v is not None:
-            try:
-                jsonschema_validate_schema(schema=v)
-            except jsonschema.SchemaError as err:
-                raise ValueError(
-                    f"Invalid json-schema in 'content_schema': {err}"
-                ) from err
-        return v
 
     @validator("value", always=True)
     @classmethod
