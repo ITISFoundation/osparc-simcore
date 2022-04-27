@@ -205,7 +205,10 @@ class BaseServiceIOModel(BaseModel):
                 jsonschema_validate_schema(schema=v)
                 # TODO: validate x_unit and all custom fields are alos correct?
             except InvalidJsonSchema as err:
-                raise ValueError(f"Invalid json-schema: {err.message}") from err
+                failed_path = "->".join(map(str, err.path))
+                raise ValueError(
+                    f"Invalid json-schema at {failed_path}: {err.message}"
+                ) from err
         return v
 
     @classmethod

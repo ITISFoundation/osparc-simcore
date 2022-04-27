@@ -28,13 +28,16 @@ def test_json_validation_with_array():
 
 
 def test_invalid_json_schema():
-    invalid_schema = {"type": "invalid_type"}
+    invalid_schema = {"type": "this_is_a_wrong_type"}
     with pytest.raises(InvalidJsonSchema) as err_info:
         jsonschema_validate_schema(invalid_schema)
 
     error = err_info.value
     assert isinstance(error, InvalidJsonSchema)
-    assert error.message == "'invalid_type' is not valid under any of the given schemas"
+    assert (
+        error.message
+        == "'this_is_a_wrong_type' is not valid under any of the given schemas"
+    )
     assert error.path == deque(["type"])
     assert error.schema_path == deque(["allOf", 3, "properties", "type", "anyOf"])
     assert error.schema == {
@@ -50,11 +53,11 @@ def test_invalid_json_schema():
     }
     assert (
         error.context
-    )  # [<ValidationError: "'invalid_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'invalid_type' is not of type 'array'">]
+    )  # [<ValidationError: "'this_is_a_wrong_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'this_is_a_wrong_type' is not of type 'array'">]
     assert error.cause is None  #  self.__cause__ = cause
     assert error.validator == "anyOf"
     assert error.validator_value == error.schema["anyOf"]
-    assert error.instance == "invalid_type"
+    assert error.instance == "this_is_a_wrong_type"
     assert error.parent is None
 
     # raises the same with validate_data
