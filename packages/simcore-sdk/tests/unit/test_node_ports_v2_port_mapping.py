@@ -169,6 +169,7 @@ def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
     port_with_errors = []
     for error in err_info.value.errors():
         error_loc = error["loc"]
+        assert "ctx" in error
         port_key = error["ctx"].get("port_key")
 
         # path hierachy

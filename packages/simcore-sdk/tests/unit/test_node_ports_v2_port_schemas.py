@@ -226,7 +226,7 @@ async def test_port_with_units_and_constraints(mocker):
     print(validation_error)
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
-    assert validation_error["type"] == "value_error"
+    assert validation_error["type"] == "value_error.port_schema_validation_error"
     assert "-3.14 is less than the minimum of 0" in validation_error["msg"]
 
     # inits with None + set_value
