@@ -186,15 +186,17 @@ class PortsValidationError(TaskSchedulingError):
     def get_errors(self) -> List[ErrorDict]:
         value_errors = []
         for error in self.errors:
-            if error["type"] == "value_error.port_schema_validation_error":
+            if error["type"].startswith("value_error.port_validation"):
                 error_loc = error["loc"]
 
                 assert "ctx" in error  # nosec
-                port_key = error["ctx"].get("port_key")
-
                 assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
-                assert error_loc[1] == port_key, f"{error_loc=}"  # nosec
+                assert error_loc[1] == error["ctx"].get(  # nosec
+                    "port_key"
+                ), f"{error_loc=}"  # nosec
                 assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
+
+                field_loc_tuple = error_loc[1:-1]
 
                 value_errors.append(
                     {
@@ -202,7 +204,7 @@ class PortsValidationError(TaskSchedulingError):
                             f"{self.project_id}",
                             f"{self.node_id}",
                         )
-                        + error_loc[1:-1],
+                        + field_loc_tuple,
                         "msg": error["msg"],
                         # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
                         "type": error["type"],

@@ -8,21 +8,39 @@
 
 import json
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import List
 from unittest.mock import AsyncMock
 
 import pytest
 from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
+from simcore_sdk.node_ports_v2.port_validation import validate_port_content
 
-# HELPERS --------------------------------------------------------------------------------------
 
+def test_validate_port_content():
+    # TODO:
+    #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
+    #  unit = "MHz" <-- we start here
+    #  unit = "MHz,mm"
+    # is unit valid? compatible with x_unit?
 
-def get_model_config_example(model_cls, label) -> Dict[str, Any]:
-    return next(
-        v for v in model_cls.Config.schema_extra["examples"] if v["label"] == label
+    value, unit = validate_port_content(
+        "port_1",
+        value=3.0,
+        unit="milli-meter",
+        # expected
+        content_schema={
+            "title": "simple number",
+            "type": "number",
+            "x_unit": "cm",
+        },
     )
+
+    #  3.0 mm -> 0.3 cm
+    # NOTE: there are roundoff errors in the unit conversion
+    assert unit == "centimeter"
+    assert abs(value - 0.3) < 1e-14
 
 
 async def test_port_with_array(mocker):
@@ -54,7 +72,7 @@ async def test_port_with_array_of_object(mocker):
     mocker.patch.object(Port, "_node_ports", new=AsyncMock())
 
     class A(BaseModel):
-        i: conint(gt=3)  #
+        i: conint(gt=3)
         b: bool = False
         s: str
         l: List[int]
@@ -168,7 +186,7 @@ async def test_port_with_units_and_constraints(mocker):
     print(validation_error)
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
-    assert validation_error["type"] == "value_error.port_schema_validation_error"
+    assert validation_error["type"] == "value_error.port_validation.port_schema"
     assert "-3.14 is less than the minimum of 0" in validation_error["msg"]
 
     # inits with None + set_value

@@ -1,13 +1,14 @@
 import logging
+import re
 from typing import Any, Dict, Optional, Tuple
 
-import jsonschema
 from models_library.projects_nodes import UnitStr
 from models_library.utils.json_schema import (
+    JsonSchemaValidationError,
     jsonschema_validate_data,
     jsonschema_validate_schema,
 )
-from pint import UnitRegistry
+from pint import PintError, UnitRegistry
 from pydantic.errors import PydanticValueError
 
 JsonSchemaDict = Dict[str, Any]
@@ -15,16 +16,28 @@ JsonSchemaDict = Dict[str, Any]
 log = logging.getLogger(__name__)
 
 # ERRORS
-#   Extends PydanticValueError to discriminate schema validation errors
+
+#  - Extends PydanticValueError
+#  -> Handled in @validator functions and gathered within ValidationError.errors()
+#  - Use 'code' to discriminate port_validation errors
 
 
-class PortSchemaValidationError(PydanticValueError):
-    code = "port_schema_validation_error"
-    msg_template = "{port_key} value does not fulfill port's content schema: {schema_error.message}"
+class PortValueError(PydanticValueError):
+    code = "port_validation.port_value"
+    msg_template = "Invalid value in port {port_key!r}: {schema_error.message}"
 
     # pylint: disable=useless-super-delegation
-    def __init__(self, *, port_key: str, schema_error: jsonschema.ValidationError):
+    def __init__(self, *, port_key: str, schema_error: JsonSchemaValidationError):
         super().__init__(port_key=port_key, schema_error=schema_error)
+
+
+class PortUnitError(PydanticValueError):
+    code = "port_validation.port_unit"
+    msg_template = "Invalid unit in port {port_key!r}: {pint_error_msg}"
+
+    # pylint: disable=useless-super-delegation
+    def __init__(self, *, port_key: str, pint_error: PintError):
+        super().__init__(port_key=port_key, pint_error_msg=f"{pint_error}")
 
 
 # VALIDATORS
@@ -34,6 +47,11 @@ class PortSchemaValidationError(PydanticValueError):
 # for the units registry. This acts as a cache and its livetime span
 # is the same as the service itself.
 _THE_UNIT_REGISTRY = UnitRegistry()
+UNIT_SUB_PATTERN = re.compile(r"[-\s]")
+
+
+def _normalize_unit(unit):
+    return re.sub(UNIT_SUB_PATTERN, "", unit)
 
 
 def _validate_port_value(value, content_schema: JsonSchemaDict):
@@ -46,24 +64,27 @@ def _validate_port_value(value, content_schema: JsonSchemaDict):
     return v
 
 
-def _validate_port_quantity(
+def _validate_port_unit(
     value, unit, content_schema: JsonSchemaDict, ureg: UnitRegistry = _THE_UNIT_REGISTRY
 ) -> Tuple:
-    # TODO:
-    #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
-    #  unit = "MHz" <-- we start here
-    #  unit = "MHz,mm"
-    # is unit valid? compatible with x_unit?
 
     if unit:
+        unit = _normalize_unit(unit)
+
         if content_schema["type"] == "object":
+            # TODO: extend to more complex unit setups
+            #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
+            #  unit = "MHz" <-- we have implementd this
+            #  unit = "MHz,mm"
             raise NotImplementedError("Units for objects are still not implemented")
 
     expected_unit = content_schema.get("x_unit")
     if expected_unit:
+        expected_unit = _normalize_unit(expected_unit)
+
         # convert value
-        new_quantity = ureg.Quantity(value, unit).to(expected_unit)
-        value = new_quantity.value
+        q = ureg.Quantity(value, unit).to(expected_unit)
+        value, expected_unit = q.magnitude, f"{q.units}"
 
     return (value, expected_unit)
 
@@ -92,7 +113,11 @@ def validate_port_content(
         # extra meta info on port
         u = unit
         if unit:
-            v, u = _validate_port_quantity(v, unit, content_schema)
+            v, u = _validate_port_unit(v, unit, content_schema)
         return v, u
-    except jsonschema.ValidationError as err:
-        raise PortSchemaValidationError(port_key=port_key, schema_error=err) from err
+
+    except JsonSchemaValidationError as err:
+        raise PortValueError(port_key=port_key, schema_error=err) from err
+
+    except PintError as err:
+        raise PortUnitError(port_key=port_key, pint_error=err) from err
