@@ -809,35 +809,6 @@ components:
       items:
         $ref: "#/components/schemas/DatasetMetaData"
 
-    S3LinkEnvelope:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          nullable: true
-          type: object
-          properties:
-            s3_link:
-              type: string
-        error:
-          nullable: true
-          default: null
-
-    FileMetaDataDeleteEnvelope:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          nullable: true
-          default: null
-        error:
-          nullable: true
-          default: null
-
     FileMetaEnvelope:
       type: object
       required:
