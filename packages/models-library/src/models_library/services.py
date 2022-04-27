@@ -22,6 +22,7 @@ from pydantic import (
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
 from .services_ui import Widget
+from .utils.json_schema import InvalidJsonSchema, jsonschema_validate_schema
 
 # CONSTANTS -------------------------------------------
 
@@ -188,27 +189,23 @@ class BaseServiceIOModel(BaseModel):
     @validator("content_schema")
     @classmethod
     def check_type_is_set_to_schema(cls, v, values):
-        # TODO: content_schema should be a valid json-schema
-        #
-        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
-            raise ValueError(
-                "content_schema is defined but set the wrong type."
-                f"Expected type=ref_contentSchema but got ={ptype}."
-            )
+        if v is not None:
+            if (ptype := values["property_type"]) != "ref_contentSchema":
+                raise ValueError(
+                    "content_schema is defined but set the wrong type."
+                    f"Expected type=ref_contentSchema but got ={ptype}."
+                )
+        return v
 
-        # TODO: enforce project_type in (number, inte) -> as content_schema?
-        # TODO: validate json-schema here instead of in node-ports?
-        # TODO: validate x_unit and all custom fields are alos correct?
-
-        # TODO:  Check is a valid jsonschema? Use $ref to or active validation as in
-        # import jsonschema
-        # try:
-        #   jsonschema.validate({}, v)
-        # except SchemaError as err:
-        #   raise ValueError()
-        # except jsonschema.ValidationError as err:
-        #
-
+    @validator("content_schema")
+    @classmethod
+    def check_valid_json_schema(cls, v):
+        if v is not None:
+            try:
+                jsonschema_validate_schema(schema=v)
+                # TODO: validate x_unit and all custom fields are alos correct?
+            except InvalidJsonSchema as err:
+                raise ValueError(f"Invalid json-schema: {err.message}") from err
         return v
 
     @classmethod
