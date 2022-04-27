@@ -95,7 +95,11 @@ async def get_download_file_presigned_link(
 
 @handle_client_exception
 async def get_upload_file_presigned_link(
-    session: ClientSession, file_id: str, location_id: str, user_id: UserID
+    session: ClientSession,
+    file_id: str,
+    location_id: str,
+    user_id: UserID,
+    as_presigned_link: bool,
 ) -> AnyUrl:
     if (
         not isinstance(file_id, str)
@@ -111,7 +115,10 @@ async def get_upload_file_presigned_link(
         )
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        params={"user_id": f"{user_id}"},
+        params={
+            "user_id": f"{user_id}",
+            "link_type": "presigned" if as_presigned_link else "s3",
+        },
     ) as response:
         response.raise_for_status()
 
@@ -173,28 +180,6 @@ async def delete_file(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-
-
-@handle_client_exception
-async def get_s3_link(session: ClientSession, s3_object: str, user_id: UserID) -> str:
-    url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/s3/link"
-    result = await session.get(url, params=dict(user_id=user_id))
-
-    if result.status == web.HTTPForbidden.status_code:
-        raise exceptions.StorageInvalidCall(
-            (
-                f"Insufficient permissions to upload {s3_object=} for {user_id=}. "
-                f"Storage: {await result.text()}"
-            )
-        )
-
-    if result.status != web.HTTPOk.status_code:
-        raise exceptions.StorageInvalidCall(
-            f"Could not fetch s3_link: status={result.status} {await result.text()}"
-        )
-
-    response = await result.json()
-    return response["data"]["s3_link"]
 
 
 @handle_client_exception

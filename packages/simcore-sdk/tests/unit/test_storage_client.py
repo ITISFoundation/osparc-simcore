@@ -76,7 +76,7 @@ async def test_get_upload_file_presigned_link(
 ):
     async with aiohttp.ClientSession() as session:
         link = await get_upload_file_presigned_link(
-            session, file_id, location_id, user_id
+            session, file_id, location_id, user_id, as_presigned_link=True
         )
     assert isinstance(link, AnyUrl)
 
@@ -123,4 +123,6 @@ async def test_invalid_calls(
                     },
                     **{invalid_keyword: None},
                 }
+                if fct_call == get_upload_file_presigned_link:
+                    kwargs["as_presigned_link"] = True
                 await fct_call(session=session, **kwargs)

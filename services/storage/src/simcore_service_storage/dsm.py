@@ -13,7 +13,6 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-import urllib.parse
 from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
 import attr
@@ -31,8 +30,6 @@ from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
-from pydantic import AnyUrl
-from pydantic.tools import parse_obj_as
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
@@ -581,7 +578,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         await _init_metadata()
 
-    async def upload_link(self, user_id: str, file_uuid: str):
+    async def upload_link(self, user_id: str, file_uuid: str, as_presigned_link: bool):
         """returns: a presigned upload link
 
         NOTE: updates metadata once the upload is concluded"""

@@ -349,30 +349,6 @@ async def download_file(request: web.Request):
         return {"error": None, "data": {"link": link}}
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/s3/link")  # type: ignore
-async def get_s3_link(request: web.Request) -> Dict[str, Any]:
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert not body, "body %s" % body  # nosec
-
-    with handle_storage_errors():
-        location_id = params["location_id"]
-        user_id = query["user_id"]
-        file_uuid = urllib.parse.unquote_plus(params["fileId"])
-
-        if int(location_id) != SIMCORE_S3_ID:
-            raise web.HTTPPreconditionFailed(
-                reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
-            )
-
-        dsm = await _prepare_storage_manager(params, query, request)
-
-        s3_link: str = await dsm.get_s3_link(user_id=user_id, file_uuid=file_uuid)
-        return {"error": None, "data": {"s3_link": s3_link}}
-
-
 @routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def upload_file(request: web.Request):
     params, query, body = await extract_and_validate(request)

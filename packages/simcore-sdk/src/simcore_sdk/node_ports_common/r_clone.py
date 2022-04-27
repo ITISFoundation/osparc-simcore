@@ -14,7 +14,11 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import ETag
-from .storage_client import delete_file_meta_data, get_s3_link, update_file_meta_data
+from .storage_client import (
+    delete_file_meta_data,
+    get_upload_file_presigned_link,
+    update_file_meta_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +71,13 @@ async def sync_local_to_s3(
     user_id: UserID,
 ) -> ETag:
 
-    s3_link = await get_s3_link(session=session, s3_object=s3_object, user_id=user_id)
+    s3_link = await get_upload_file_presigned_link(
+        session=session,
+        file_id=s3_object,
+        location_id="0",  # only works with simcore s3
+        user_id=user_id,
+        as_presigned_link=False,
+    )
     s3_path = re.sub(r"^s3://", "", s3_link)
     logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
 
