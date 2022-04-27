@@ -205,7 +205,7 @@ async def test_port_with_units_and_constraints(mocker):
         "contentSchema": {
             "title": "Time",
             "minimum": 0,
-            # TODO: PC x_unit": "micro-second",
+            "x_unit": "micro-second",
             "type": "number",
         },
     }

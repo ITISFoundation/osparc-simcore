@@ -8,7 +8,6 @@ import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 from simcore_sdk.node_ports_common.storage_client import LinkType
-from pydantic.errors import PydanticValueError
 
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableException,
@@ -24,19 +23,10 @@ from .links import (
     ItemValue,
     PortLink,
 )
-from .utils_schemas import jsonschema_validate_data, jsonschema_validate_schema
+from .port_validation import validate_port_content
+from .utils_schemas import jsonschema_validate_schema
 
 log = logging.getLogger(__name__)
-
-
-# Extends pydantic errors to discriminate schema validation errors
-class PortSchemaValidationError(PydanticValueError):
-    code = "port_schema_validation_error"
-    msg_template = "{port_key} value does not fulfill port's content schema: {schema_error.message}"
-
-    # pylint: disable=useless-super-delegation
-    def __init__(self, *, port_key: str, schema_error: jsonschema.ValidationError):
-        super().__init__(port_key=port_key, schema_error=schema_error)
 
 
 TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
@@ -102,16 +92,12 @@ class Port(BaseServiceIOModel):
                         f"{FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
                     )
             elif property_type == "ref_contentSchema" and not isinstance(v, PortLink):
-                try:
-                    v = jsonschema_validate_data(
-                        instance=v,
-                        schema=values["content_schema"],
-                        return_with_default=True,
-                    )
-                except jsonschema.ValidationError as err:
-                    raise PortSchemaValidationError(
-                        port_key=values.get("key", "unknown"), schema_error=err
-                    ) from err
+                v, _ = validate_port_content(
+                    port_key=values["key"],
+                    value=v,
+                    unit=None,
+                    content_schema=values["content_schema"],
+                )
             else:
                 if isinstance(v, (list, dict)):
                     # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2849
@@ -197,7 +183,7 @@ class Port(BaseServiceIOModel):
         if self.value is None:
             return None
 
-        value: Optional[ItemConcreteValue] = None
+        value: Optional[ItemValue] = None
         if isinstance(self.value, PortLink):
             # this is a link to another node
             value: Optional[ItemConcreteValue] = await port_utils.get_value_from_link(
