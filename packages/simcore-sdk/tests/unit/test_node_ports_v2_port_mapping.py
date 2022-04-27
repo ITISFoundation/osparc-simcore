@@ -104,13 +104,13 @@ def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
     # {
     #   'loc': ('value'),
     #   'msg': 'port_1 value does not fulfill content schema: ',
-    #   'type': 'value_error.port_validation.port_schema',
+    #   'type': 'value_error.port_validation.schema_error',
     #   'ctx': {'port_key': 'port_1', 'schema_error': <ValidationError: '-2 is less than the minimum of 0'>}
     # }
 
     assert error["loc"] == ("value",)
     assert "-2 is less than the minimum of 0" in error["msg"]
-    assert error["type"] == "value_error.port_validation.port_schema"
+    assert error["type"] == "value_error.port_validation.schema_error"
 
     assert "ctx" in error
     assert error["ctx"]["port_key"] == "port_1"
@@ -177,7 +177,7 @@ def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
         assert error_loc[1] == port_key, f"{error_loc=}"
         assert error_loc[-1] == "value", f"{error_loc=}"
 
-        assert error["type"] == "value_error.port_validation.port_schema"
+        assert error["type"] == "value_error.port_validation.schema_error"
         port_with_errors.append(port_key)
         pprint(error)
 

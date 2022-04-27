@@ -184,19 +184,20 @@ class PortsValidationError(TaskSchedulingError):
         self.errors = errors
 
     def get_errors(self) -> List[ErrorDict]:
+        """Returns 'public errors': filters only value_error.port_validation errors for the client.
+        The rest only shown as number
+        """
         value_errors = []
         for error in self.errors:
             if error["type"].startswith("value_error.port_validation"):
                 error_loc = error["loc"]
 
-                assert "ctx" in error  # nosec
                 assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
-                assert error_loc[1] == error["ctx"].get(  # nosec
-                    "port_key"
-                ), f"{error_loc=}"  # nosec
                 assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
 
                 field_loc_tuple = error_loc[1:-1]
+                if schema_error_path := error.get("ctx", {}).get("schema_error_path"):
+                    field_loc_tuple += tuple(schema_error_path)
 
                 value_errors.append(
                     {

@@ -23,16 +23,22 @@ log = logging.getLogger(__name__)
 
 
 class PortValueError(PydanticValueError):
-    code = "port_validation.port_value"
-    msg_template = "Invalid value in port {port_key!r}: {schema_error.message}"
+    code = "port_validation.schema_error"
+    msg_template = "Invalid value in port {port_key!r}: {schema_error_message}"
 
     # pylint: disable=useless-super-delegation
     def __init__(self, *, port_key: str, schema_error: JsonSchemaValidationError):
-        super().__init__(port_key=port_key, schema_error=schema_error)
+        # NOTE: We could extract more info from schema_error (see test_utils_json_schema)
+        # but for the moment we are only interested in the message
+        super().__init__(
+            port_key=port_key,
+            schema_error_path=schema_error.absolute_path,
+            schema_error_message=schema_error.message,
+        )
 
 
 class PortUnitError(PydanticValueError):
-    code = "port_validation.port_unit"
+    code = "port_validation.unit_error"
     msg_template = "Invalid unit in port {port_key!r}: {pint_error_msg}"
 
     # pylint: disable=useless-super-delegation

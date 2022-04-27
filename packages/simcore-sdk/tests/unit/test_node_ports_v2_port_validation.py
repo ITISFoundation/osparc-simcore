@@ -15,7 +15,10 @@ import pytest
 from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
-from simcore_sdk.node_ports_v2.port_validation import validate_port_content
+from simcore_sdk.node_ports_v2.port_validation import (
+    PortUnitError,
+    validate_port_content,
+)
 
 
 def test_validate_port_content():
@@ -23,8 +26,6 @@ def test_validate_port_content():
     #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
     #  unit = "MHz" <-- we start here
     #  unit = "MHz,mm"
-    # is unit valid? compatible with x_unit?
-
     value, unit = validate_port_content(
         "port_1",
         value=3.0,
@@ -41,6 +42,28 @@ def test_validate_port_content():
     # NOTE: there are roundoff errors in the unit conversion
     assert unit == "centimeter"
     assert abs(value - 0.3) < 1e-14
+
+
+def test_validate_port_content_fails():
+
+    with pytest.raises(PortUnitError) as err_info:
+        value, unit = validate_port_content(
+            "port_1",
+            value=3.0,
+            unit="seconds",
+            # expected
+            content_schema={
+                "title": "simple number",
+                "type": "number",
+                "x_unit": "cm",
+            },
+        )
+
+    error_message = f"{err_info.value}"
+    # "Invalid unit in port 'port_1': Cannot convert from 'second' ([time]) to 'centimeter' ([length])"
+    assert "'port_1'" in error_message
+    assert "'second'" in error_message
+    assert "'centimeter'" in error_message
 
 
 async def test_port_with_array(mocker):
@@ -186,7 +209,7 @@ async def test_port_with_units_and_constraints(mocker):
     print(validation_error)
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
-    assert validation_error["type"] == "value_error.port_validation.port_schema"
+    assert validation_error["type"] == "value_error.port_validation.schema_error"
     assert "-3.14 is less than the minimum of 0" in validation_error["msg"]
 
     # inits with None + set_value
