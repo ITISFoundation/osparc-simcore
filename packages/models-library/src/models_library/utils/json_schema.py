@@ -84,6 +84,7 @@ def jsonschema_validate_schema(schema):
         validators.validate(instance={}, schema=schema)
     except jsonschema.ValidationError:
         pass
+    return schema
 
 
 __all__: Tuple[str, ...] = (
