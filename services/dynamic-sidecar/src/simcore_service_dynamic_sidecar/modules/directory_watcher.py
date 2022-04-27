@@ -108,7 +108,6 @@ class UnifyingEventHandler(FileSystemEventHandler):
         async_push_directory(self.loop, self.directory_path)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        logger.debug("Detected Event %s", event)
         super().on_any_event(event)
         if self._is_enabled:
             self._invoke_push_directory()
