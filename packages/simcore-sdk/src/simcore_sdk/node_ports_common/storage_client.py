@@ -201,8 +201,6 @@ async def update_file_meta_data(
 async def delete_file_meta_data(
     session: ClientSession, s3_object: str, user_id: UserID
 ) -> None:
-    # TODO: this needs to be repalced as well!
-    # TODO: check permissions
     url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
     result = await session.delete(url, params=dict(user_id=user_id))
     if result.status != web.HTTPNoContent.status_code:
