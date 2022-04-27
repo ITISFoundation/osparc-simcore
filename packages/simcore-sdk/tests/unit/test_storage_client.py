@@ -123,7 +123,7 @@ async def test_invalid_calls(
                     },
                     **{invalid_keyword: None},
                 }
-                if (  # plylint: disable=comparison-with-callable
+                if (  # pylint: disable=comparison-with-callable
                     fct_call == get_upload_file_presigned_link
                 ):
                     kwargs["as_presigned_link"] = True

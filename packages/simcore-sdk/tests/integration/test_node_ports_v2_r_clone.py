@@ -11,13 +11,13 @@ from uuid import uuid4
 import aioboto3
 import pytest
 import sqlalchemy as sa
+from _pytest.fixtures import FixtureRequest
 from aiohttp import ClientSession
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_sdk.node_ports_common import r_clone, storage_client
-from _pytest.fixtures import FixtureRequest
 
 pytest_simcore_core_services_selection = [
     "migration",
