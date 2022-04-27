@@ -3,10 +3,12 @@ from typing import Any, Dict, Optional, Tuple
 
 import jsonschema
 from models_library.projects_nodes import UnitStr
+from models_library.utils.json_schema import (
+    jsonschema_validate_data,
+    jsonschema_validate_schema,
+)
 from pint import UnitRegistry
 from pydantic.errors import PydanticValueError
-
-from .utils_schemas import jsonschema_validate_data, jsonschema_validate_schema
 
 JsonSchemaDict = Dict[str, Any]
 
@@ -29,12 +31,13 @@ class PortSchemaValidationError(PydanticValueError):
 
 # These functions are embedded in a Pydantic validator callback so
 # IMO i think it is justified to create a global singleton in memory
-# for the units registry. This acts as a cache that will be restarted
-# with the service.
+# for the units registry. This acts as a cache and its livetime span
+# is the same as the service itself.
 _THE_UNIT_REGISTRY = UnitRegistry()
 
 
 def _validate_port_value(value, content_schema: JsonSchemaDict):
+    """validates value against json-schema and replaces defaults"""
     v = jsonschema_validate_data(
         instance=value,
         schema=content_schema,

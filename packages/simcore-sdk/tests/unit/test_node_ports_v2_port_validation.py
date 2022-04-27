@@ -11,15 +11,10 @@ from copy import deepcopy
 from typing import Any, Dict, List
 from unittest.mock import AsyncMock
 
-import jsonschema
 import pytest
 from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
-from simcore_sdk.node_ports_v2.utils_schemas import (
-    jsonschema_validate_data,
-    jsonschema_validate_schema,
-)
 
 # HELPERS --------------------------------------------------------------------------------------
 
@@ -28,59 +23,6 @@ def get_model_config_example(model_cls, label) -> Dict[str, Any]:
     return next(
         v for v in model_cls.Config.schema_extra["examples"] if v["label"] == label
     )
-
-
-# TESTS --------------------------------------------------------------------------------------
-def test_json_validation_with_array():
-    # with array
-    schema = {
-        "title": "list[number]",
-        "type": "array",
-        "items": {"type": "number"},
-    }
-
-    data = [1, 2, 3]
-    jsonschema.validate(data, schema)
-
-    jsonschema_validate_schema(schema)
-    jsonschema_validate_data(data, schema)
-
-
-def test_json_validation_with_object():
-
-    # with object
-    schema = {
-        "title": "an object named A",
-        "type": "object",
-        "properties": {
-            "i": {"title": "Int", "type": "integer", "default": 3},
-            "b": {"title": "Bool", "type": "boolean"},
-            "s": {"title": "Str", "type": "string"},
-        },
-        "required": ["b", "s"],
-    }
-
-    data = {"b": True}
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate(data, schema)
-
-    jsonschema_validate_schema(schema)
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema_validate_data(data, schema)
-
-    data = {"b": True, "s": "foo"}
-    jsonschema.validate(data, schema)
-
-    assert data == {"b": True, "s": "foo"}
-    assert jsonschema_validate_data(data, schema, return_with_default=True) == {
-        "b": True,
-        "s": "foo",
-        "i": 3,
-    }
-    assert jsonschema_validate_data(data, schema, return_with_default=False) == {
-        "b": True,
-        "s": "foo",
-    }
 
 
 async def test_port_with_array(mocker):

@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
+from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 from simcore_sdk.node_ports_common.storage_client import LinkType
 
@@ -24,7 +25,6 @@ from .links import (
     PortLink,
 )
 from .port_validation import validate_port_content
-from .utils_schemas import jsonschema_validate_schema
 
 log = logging.getLogger(__name__)
 
