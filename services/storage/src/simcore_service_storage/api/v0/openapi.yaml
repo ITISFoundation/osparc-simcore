@@ -338,6 +338,15 @@ paths:
           required: true
           schema:
             type: string
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: presigned
+            enum:
+              - presigned
+              - s3
       responses:
         '200':
           description: Returns presigned link
@@ -376,6 +385,15 @@ paths:
           required: false
           schema:
             type: string
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: presigned
+            enum:
+              - presigned
+              - s3
       responses:
         '200':
           description: Returns presigned link
