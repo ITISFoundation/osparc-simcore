@@ -248,6 +248,7 @@ class DaskClient:
             # sidecar, which will then populate the scheduler with resources available on the cluster
             if not self.backend.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
+                    project_id=project_id,
                     node_id=node_id,
                     scheduler_info=self.backend.client.scheduler_info(),
                     task_resources=dask_resources,

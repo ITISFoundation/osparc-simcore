@@ -369,6 +369,7 @@ def check_scheduler_status(client: distributed.Client):
 
 
 def check_if_cluster_is_able_to_run_pipeline(
+    project_id: ProjectID,
     node_id: NodeID,
     scheduler_info: Dict[str, Any],
     task_resources: Dict[str, Any],
@@ -423,6 +424,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         task_resources, all_available_resources_in_cluster
     ):
         raise MissingComputationalResourcesError(
+            project_id=project_id,
             node_id=node_id,
             msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
             f"on cluster {cluster_id}: task needs '{task_resources}', "
@@ -431,6 +433,7 @@ def check_if_cluster_is_able_to_run_pipeline(
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
+        project_id=project_id,
         node_id=node_id,
         msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
         f"on cluster {cluster_id}: insuficient resources"

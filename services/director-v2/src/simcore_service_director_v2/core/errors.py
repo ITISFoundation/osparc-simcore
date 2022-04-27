@@ -104,38 +104,6 @@ class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational run not found"
 
 
-class PortsValidationError(DirectorException):
-    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: List[ErrorDict]):
-        super().__init__(f"Node with {len(errors)} ports having invalid values")
-        self.project_id = project_id
-        self.node_id = node_id
-        self.errors = errors
-
-    def get_errors(self) -> List[ErrorDict]:
-        value_errors = []
-        for error in self.errors:
-            if error["type"] == "value_error.port_schema_validation_error":
-                error_loc = error["loc"]
-                port_key = error["ctx"].get("port_key")
-
-                assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
-                assert error_loc[1] == port_key, f"{error_loc=}"  # nosec
-                assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
-
-                value_errors.append(
-                    {
-                        "loc": (
-                            f"{self.project_id}",
-                            f"{self.node_id}",
-                        )
-                        + error_loc[1:-1],
-                        "msg": error["msg"],
-                        "type": error["type"],
-                    }
-                )
-        return value_errors
-
-
 #
 # SCHEDULER ERRORS
 #
@@ -158,28 +126,89 @@ class InvalidPipelineError(SchedulerError):
 class TaskSchedulingError(SchedulerError):
     """A task cannot be scheduled"""
 
-    def __init__(self, node_id: NodeID, msg: Optional[str] = None):
+    def __init__(
+        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
+    ):
         super().__init__(msg=msg)
+        self.project_id = project_id
         self.node_id = node_id
 
     def get_errors(self) -> List[ErrorDict]:
+        # default implementation
         return [
-            {"loc": (self.node_id,), "msg": self.message(), "type": self.code},
+            {
+                "loc": (
+                    f"{self.project_id}",
+                    f"{self.node_id}",
+                ),
+                "msg": self.message(),
+                "type": self.code,
+            },
         ]
 
 
 class MissingComputationalResourcesError(TaskSchedulingError):
     """A task cannot be scheduled because the cluster does not have the required resources"""
 
-    def __init__(self, node_id: NodeID, msg: Optional[str] = None):
-        super().__init__(node_id, msg=msg)
+    code = "scheduler_error.missing_resources"
+
+    def __init__(
+        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
+    ):
+        super().__init__(project_id, node_id, msg=msg)
 
 
 class InsuficientComputationalResourcesError(TaskSchedulingError):
     """A task cannot be scheduled because the cluster does not have *enough* of the required resources"""
 
-    def __init__(self, node_id: NodeID, msg: Optional[str] = None):
-        super().__init__(node_id, msg=msg)
+    code = "scheduler_error.insuficient_resources"
+
+    def __init__(
+        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
+    ):
+        super().__init__(project_id, node_id, msg=msg)
+
+
+class PortsValidationError(TaskSchedulingError):
+    """
+    Gathers all validation errors raised while checking input/output
+    ports in a project's node.
+    """
+
+    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: List[ErrorDict]):
+        super().__init__(
+            project_id,
+            node_id,
+            msg=f"Node with {len(errors)} ports having invalid values",
+        )
+        self.errors = errors
+
+    def get_errors(self) -> List[ErrorDict]:
+        value_errors = []
+        for error in self.errors:
+            if error["type"] == "value_error.port_schema_validation_error":
+                error_loc = error["loc"]
+
+                assert "ctx" in error  # nosec
+                port_key = error["ctx"].get("port_key")
+
+                assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
+                assert error_loc[1] == port_key, f"{error_loc=}"  # nosec
+                assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
+
+                value_errors.append(
+                    {
+                        "loc": (
+                            f"{self.project_id}",
+                            f"{self.node_id}",
+                        )
+                        + error_loc[1:-1],
+                        "msg": error["msg"],
+                        # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
+                        "type": error["type"],
+                    }
+                )
+        return value_errors
 
 
 class ComputationalSchedulerChangedError(PydanticErrorMixin, SchedulerError):

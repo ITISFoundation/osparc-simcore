@@ -29,12 +29,10 @@ from pydantic import PositiveInt
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
-    InsuficientComputationalResourcesError,
     InvalidPipelineError,
-    MissingComputationalResourcesError,
     PipelineNotFoundError,
-    PortsValidationError,
     SchedulerError,
+    TaskSchedulingError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
@@ -434,27 +432,17 @@ class BaseCompScheduler(ABC):
         )
         # Handling errors raised when _start_tasks(...)
         for r, t in zip(results, tasks_ready_to_start):
-            # FIXME: PC catch nodeports port match failure
-            if isinstance(
-                r,
-                (
-                    MissingComputationalResourcesError,
-                    InsuficientComputationalResourcesError,
-                    PortsValidationError,
-                ),
-            ):
+            if isinstance(r, TaskSchedulingError):
                 logger.error(
                     "Project '%s''s task '%s' could not be scheduled due to the following: %s",
-                    project_id,
+                    r.project_id,
                     r.node_id,
                     f"{r}",
                 )
 
                 await comp_tasks_repo.set_project_tasks_state(
                     project_id,
-                    [
-                        r.node_id,
-                    ],
+                    [r.node_id],
                     RunningState.FAILED,
                     r.get_errors(),
                 )

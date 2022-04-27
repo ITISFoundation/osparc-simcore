@@ -8,6 +8,13 @@ class _ErrorDictRequired(TypedDict):
     loc: identifies path in nested model e.g. ("parent", "child", "field", 0)
     type: set to code defined pydantic.errors raised upon validation
         (i.e. inside @validator decorated functions)
+
+    Example:
+        {
+            "loc": (node_uuid, "complex", "real_part",)
+            "msg": "Invalid real part, expected positive"
+            "type": "value_error."
+        }
     """
 
     loc: Loc
