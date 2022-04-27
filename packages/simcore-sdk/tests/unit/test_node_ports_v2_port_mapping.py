@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Type, Union
 
 import pytest
 from models_library.services import ServiceInput
-from models_library.utils.json_schema import JsonSchemaValidationError
 from pydantic import ValidationError, confloat, schema_of
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
@@ -115,19 +114,11 @@ def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
     assert "ctx" in error
     assert error["ctx"]["port_key"] == "port_1"
 
-    schema_error = error["ctx"]["schema_error"]
+    schema_error_message = error["ctx"]["schema_error_message"]
+    schema_error_path = error["ctx"]["schema_error_path"]
 
-    assert isinstance(schema_error, JsonSchemaValidationError)
-    assert schema_error.message in error["msg"]
-    assert schema_error.path == deque([1])
-    assert schema_error.schema_path == deque(["items", "minimum"])
-    assert schema_error.schema == {"type": "number", "minimum": 0}
-    assert schema_error.context == []
-    # schema_error.cause = self.__cause__ = cause
-    assert schema_error.validator == "minimum"
-    assert schema_error.validator_value == 0
-    # schema_error.instance = instance
-    assert schema_error.parent is None
+    assert schema_error_message in error["msg"]
+    assert schema_error_path == deque([1])
 
 
 def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
