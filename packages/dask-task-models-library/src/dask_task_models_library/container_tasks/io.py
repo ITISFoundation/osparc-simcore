@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, Final, List, Optional, Union, cast
 
 from models_library.generics import DictModel
 from models_library.services import PROPERTY_KEY_RE
@@ -57,21 +57,31 @@ class FilePortSchema(PortSchema):
         }
 
 
+MIME_TYPE_RE: Final[
+    str
+] = r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
+
+
 class FileUrl(BaseModel):
     url: AnyUrl
     file_mapping: Optional[str] = Field(
         None,
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
+    file_mime_type: Optional[str] = Field(
+        None, description="the file MIME type", regex=MIME_TYPE_RE
+    )
 
     class Config:
         extra = Extra.forbid
         schema_extra = {
             "examples": [
+                {"url": "s3://some_file_url", "file_mime_type": "application/json"},
                 {
                     "url": "https://some_file_url",
+                    "file_mapping": "some_file_name.txt",
+                    "file_mime_type": "application/json",
                 },
-                {"url": "s3://some_file_url", "file_mapping": "some_file_name.txt"},
             ]
         }
 
