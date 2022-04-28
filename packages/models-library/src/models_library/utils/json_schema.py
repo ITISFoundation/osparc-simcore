@@ -8,6 +8,7 @@ See how is used to validate input/output content-schemas of service models
 # SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
 
 
+from contextlib import suppress
 from copy import deepcopy
 from typing import Any, Dict, Tuple
 
@@ -75,10 +76,9 @@ def jsonschema_validate_schema(schema: Dict[str, Any]):
 
     :raises InvalidJsonSchema
     """
-    try:
-        validators.validate(instance={}, schema=schema)
-    except jsonschema.ValidationError:
-        pass
+    with suppress(jsonschema.ValidationError):
+        dummy_data = {}
+        validators.validate(instance=dummy_data, schema=schema)
     return schema
 
 

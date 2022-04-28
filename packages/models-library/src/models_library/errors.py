@@ -30,4 +30,6 @@ class ErrorDict(_ErrorDictRequired, total=False):
     ctx: Dict[str, Any]
 
 
-# WARNING: 'from pydantic.error_wrappers import ErrorDict' only works in development
+# NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'
+# because that only works if TYPE_CHECKING=True.
+__all__ = ("ErrorDict",)
