@@ -396,7 +396,6 @@ async def test_create_and_delete_folders_from_project_burst(
     mock_datcore_download,
 ):
     source_project = project
-    import asyncio
 
     await asyncio.gather(
         *[
