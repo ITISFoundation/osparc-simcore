@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 
 import httpx
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
 from settings_library.s3 import S3Settings
 
@@ -61,12 +61,14 @@ class StorageClient:
 
     @handle_errors("Storage", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> Response:
+    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
     @log_decorator(logger=logger)
     async def get_s3_access(self, user_id: UserID) -> S3Settings:
-        resp = await self.request("POST", "/simcore-s3:access", user_id=user_id)
+        resp = await self.request(
+            "POST", "/simcore-s3:access", params={"user_id": user_id}
+        )
         if resp.status_code == status.HTTP_200_OK:
             return S3Settings.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

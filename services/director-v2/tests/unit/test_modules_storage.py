@@ -15,15 +15,14 @@ from simcore_service_director_v2.modules.storage import StorageClient
 @pytest.fixture
 def minimal_storage_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
-    ...
-    # monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    # monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    # monkeypatch.setenv("REGISTRY_ENABLED", "0")
-    # monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    # monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
-    # monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
-    # monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
-    # monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
+    monkeypatch.setenv("POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("REGISTRY_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
 
 
 @pytest.fixture
@@ -46,11 +45,16 @@ def mocked_storage_service_fcts(minimal_app: FastAPI, fake_s3_settings):
     ) as respx_mock:
 
         respx_mock.post(
-            f"/simcore-s3:access",
+            "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
-        ).respond(json={"data": [fake_s3_settings.dict(by_alias=True)]})
+        ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
 
         yield respx_mock
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return UserID(faker.pyint(min_value=1))
 
 
 async def test_get_simcore_s3_access(
@@ -60,7 +64,8 @@ async def test_get_simcore_s3_access(
     user_id: UserID,
     fake_s3_settings: S3Settings,
 ):
-    storage_client: StorageClient = minimal_app.state.storage_v0_client
+    storage_client: StorageClient = minimal_app.state.storage_client
+    assert storage_client
     simcore_s3_settings: S3Settings = await storage_client.get_s3_access(user_id)
 
     assert mocked_storage_service_fcts["get_or_create_temporary_s3_access"].called

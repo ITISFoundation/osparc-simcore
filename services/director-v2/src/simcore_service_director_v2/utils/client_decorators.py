@@ -10,7 +10,7 @@
 
 import functools
 import logging
-from typing import Coroutine
+from typing import Callable, Coroutine
 
 import httpx
 from fastapi import HTTPException
@@ -48,7 +48,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
     - response server error -> logged + responds with HTTP_503_SERVICE_UNAVAILABLE
     """
 
-    def decorator_func(request_func: Coroutine):
+    def decorator_func(request_func: Callable[..., Coroutine]):
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> httpx.Response:
             try:
