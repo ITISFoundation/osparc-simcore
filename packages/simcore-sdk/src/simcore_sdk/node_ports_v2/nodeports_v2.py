@@ -5,6 +5,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 from servicelib.utils import logged_gather
+from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
@@ -55,14 +56,20 @@ class Nodeports(BaseModel):
             await self._auto_update_from_db()
         return self.internal_outputs
 
-    async def get_value_link(self, item_key: str) -> Optional[ItemValue]:
+    async def get_value_link(
+        self, item_key: str, *, file_link_type: LinkType
+    ) -> Optional[ItemValue]:
         try:
-            return await (await self.inputs)[item_key].get_value()
+            return await (await self.inputs)[item_key].get_value(
+                file_link_type=file_link_type
+            )
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get_value()
+        return await (await self.outputs)[item_key].get_value(
+            file_link_type=file_link_type
+        )
 
     async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
         try:

@@ -14,10 +14,10 @@ from pydantic.networks import AnyUrl
 from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
-    get_download_file_presigned_link,
+    get_download_file_link,
     get_file_metadata,
     get_storage_locations,
-    get_upload_file_presigned_link,
+    get_upload_file_link,
 )
 
 
@@ -53,7 +53,7 @@ async def test_get_storage_locations(
     assert result[0].id == 0
 
 
-async def test_get_download_file_presigned_link(
+async def test_get_download_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
@@ -61,13 +61,11 @@ async def test_get_download_file_presigned_link(
     location_id: str,
 ):
     async with aiohttp.ClientSession() as session:
-        link = await get_download_file_presigned_link(
-            session, file_id, location_id, user_id
-        )
+        link = await get_download_file_link(session, file_id, location_id, user_id)
     assert isinstance(link, AnyUrl)
 
 
-async def test_get_upload_file_presigned_link(
+async def test_get_upload_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
@@ -75,9 +73,7 @@ async def test_get_upload_file_presigned_link(
     location_id: str,
 ):
     async with aiohttp.ClientSession() as session:
-        link = await get_upload_file_presigned_link(
-            session, file_id, location_id, user_id
-        )
+        link = await get_upload_file_link(session, file_id, location_id, user_id)
     assert isinstance(link, AnyUrl)
 
 
@@ -100,8 +96,8 @@ async def test_get_file_metada(
     "fct_call",
     [
         get_file_metadata,
-        get_download_file_presigned_link,
-        get_upload_file_presigned_link,
+        get_download_file_link,
+        get_upload_file_link,
     ],
 )
 async def test_invalid_calls(
