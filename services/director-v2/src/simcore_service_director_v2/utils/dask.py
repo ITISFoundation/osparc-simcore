@@ -33,6 +33,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.storage_client import LinkType
 from simcore_sdk.node_ports_v2 import links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from simcore_sdk.node_ports_v2.port import Port
@@ -152,7 +153,7 @@ async def compute_input_data(
 
     port: Port
     for port in (await ports.inputs).values():
-        value: _PVType = await port.get_value()
+        value: _PVType = await port.get_value(file_link_type=LinkType.S3)
 
         # Mapping _PVType -> PortValue
         if isinstance(value, AnyUrl):
@@ -191,6 +192,7 @@ async def compute_output_data_schema(
                 file_name=next(iter(port.file_to_key_map))
                 if port.file_to_key_map
                 else port.key,
+                link_type=LinkType.S3,
             )
             output_data_schema[port.key].update(
                 {
@@ -218,6 +220,7 @@ async def compute_service_log_file_upload_link(
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=_LOGS_FILE_NAME,
+        link_type=LinkType.S3,
     )
     return value_link
 
