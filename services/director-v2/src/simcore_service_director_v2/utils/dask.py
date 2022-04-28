@@ -167,23 +167,32 @@ async def compute_input_data(
     )
     input_data = {}
 
-    # TODO: validate (and convert) inputs. If fails, raise
+    ports_errors = []
     port: Port
     for port in (await ports.inputs).values():
-        value: _PVType = await port.get_value(file_link_type=file_link_type)
+        try:
+            value: _PVType = await port.get_value(file_link_type=file_link_type)
 
-        # Mapping _PVType -> PortValue
-        if isinstance(value, AnyUrl):
-            logger.debug("Creating file url for %s", f"{port=}")
-            input_data[port.key] = FileUrl(
-                url=value,
-                file_mapping=(
-                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
-                ),
-                file_mime_type=port.property_type.removeprefix("data:"),
-            )
-        else:
-            input_data[port.key] = value
+            # Mapping _PVType -> PortValue
+            if isinstance(value, AnyUrl):
+                logger.debug("Creating file url for %s", f"{port=}")
+                input_data[port.key] = FileUrl(
+                    url=value,
+                    file_mapping=(
+                        next(iter(port.file_to_key_map))
+                        if port.file_to_key_map
+                        else None
+                    ),
+                    file_mime_type=port.property_type.removeprefix("data:"),
+                )
+            else:
+                input_data[port.key] = value
+        except ValidationError as err:
+            ports_errors.append(err.errors())
+
+    if ports_errors:
+        raise PortsValidationError(project_id, node_id, ports_errors)
+
     return TaskInputData.parse_obj(input_data)
 
 
