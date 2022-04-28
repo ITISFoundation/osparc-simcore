@@ -165,6 +165,13 @@ def postgres_engine(postgres_dsn: Dict[str, str]) -> Iterator[sa.engine.Engine]:
 
 
 @pytest.fixture(scope="module")
+def postgres_dsn_url(postgres_dsn: Dict[str, str]) -> str:
+    return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+        **postgres_dsn
+    )
+
+
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: Dict[str, str],
     postgres_engine: sa.engine.Engine,
