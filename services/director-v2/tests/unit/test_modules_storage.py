@@ -4,7 +4,6 @@
 # pylint:disable=protected-access
 
 import pytest
-import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -23,33 +22,6 @@ def minimal_storage_config(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
-
-
-@pytest.fixture
-def fake_s3_settings(faker: Faker) -> S3Settings:
-    return S3Settings(
-        S3_ENDPOINT=faker.uri(),
-        S3_ACCESS_KEY=faker.uuid4(),
-        S3_SECRET_KEY=faker.uuid4(),
-        S3_ACCESS_TOKEN=faker.uuid4(),
-        S3_BUCKET_NAME=faker.pystr(),
-    )
-
-
-@pytest.fixture
-def mocked_storage_service_fcts(minimal_app: FastAPI, fake_s3_settings):
-    with respx.mock(
-        base_url=minimal_app.state.settings.DIRECTOR_V2_STORAGE.endpoint,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-
-        respx_mock.post(
-            "/simcore-s3:access",
-            name="get_or_create_temporary_s3_access",
-        ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
-
-        yield respx_mock
 
 
 @pytest.fixture
