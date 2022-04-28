@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 
 
 import click
@@ -20,8 +20,11 @@ def _utc_timestamp() -> str:
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _command_output(command: str) -> str:
-    return check_output(command, shell=True).decode().strip()
+def _command_output(command: str, *, default: Optional[str] = None) -> Optional[str]:
+    try:
+        return check_output(command, shell=True).decode().strip()
+    except CalledProcessError:
+        return default
 
 
 def create_docker_compose_image_spec(
@@ -79,10 +82,10 @@ def create_docker_compose_image_spec(
     extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = _utc_timestamp()
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _command_output(
-        "git describe --always"
+        "git describe --always", default=""
     )
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _command_output(
-        "git config --get remote.origin.url"
+        "git config --get remote.origin.url", default=""
     )
 
     compose_spec = create_image_spec(
