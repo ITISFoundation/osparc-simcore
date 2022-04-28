@@ -14,14 +14,16 @@ from settings_library.s3 import S3Settings
 from simcore_service_storage.application import create
 from simcore_service_storage.settings import Settings
 
-pytest_simcore_core_services_selection = ["postgres", "migration"]
+pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 @pytest.fixture
-def app_settings(postgres_host_config: dict[str, str], minio_config) -> Settings:
+def app_settings(
+    aiopg_engine, postgres_host_config: dict[str, str], minio_config
+) -> Settings:
     test_app_settings = Settings.create_from_envs()
-    print(f"{test_app_settings=}")
+    print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
 
 
