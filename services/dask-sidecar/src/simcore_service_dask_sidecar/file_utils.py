@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import mimetypes
+import time
 import zipfile
 from io import BytesIO
 from pathlib import Path
@@ -95,6 +96,8 @@ async def _copy_file(
         with fsspec.open(dst_url, "wb", **dst_storage_kwargs) as dst_fp:
             file_size = getattr(src_fp, "size", None)
             data_read = True
+            total_data_written = 0
+            t = time.process_time()
             while data_read:
                 (
                     data_read,
@@ -102,10 +105,13 @@ async def _copy_file(
                 ) = await asyncio.get_event_loop().run_in_executor(
                     None, _file_chunk_streamer, src_fp, dst_fp
                 )
+                elapsed_time = time.process_time() - t
+                total_data_written += data_written or 0
                 await log_publishing_cb(
                     f"{text_prefix}"
-                    f" {100.0 * float(data_written or 0)/float(file_size or 1):.1f}%"
-                    f" ({ByteSize(data_written).human_readable() if data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                    f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
+                    f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s]"
                 )
 
 
@@ -128,7 +134,7 @@ async def pull_file_from_remote(
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
     storage_kwargs = {}
-    if s3_settings:
+    if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     await _copy_file(
         src_url,
