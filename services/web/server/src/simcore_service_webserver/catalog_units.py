@@ -13,8 +13,7 @@ def _get_unit_name(port: BaseServiceIOModel) -> str:
         assert port.content_schema is not None  # nosec
         unit = port.content_schema.get("x_unit", unit)
         if unit:
-            # TODO: Review this convention under dev: x_units
-            # has a special format for prefix. tmp direct replace here
+            # WARNING: has a special format for prefix. tmp direct replace here
             unit = unit.replace("-", "")
         elif port.content_schema["type"] in ("object", "array"):
             # these objects might have unit in its fields
@@ -56,9 +55,6 @@ def get_html_formatted_unit(
 def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool:
     assert from_unit  # nosec
     assert to_unit  # nosec
-
-    # TODO: optimize by caching?  ureg already caches?
-    # TODO: symmetric
     try:
         return ureg.Quantity(from_unit).check(to_unit)
     except (TypeError, PintError):
@@ -100,7 +96,6 @@ def can_connect(
 
     if any(t in ("object", "array") for t in (from_type, to_type)):
         # Not Implemented but this if e.g. from_type == to_type that should be the answer
-        # TODO: from_type subset of to_type is the right way resolve this check
         return ok
 
     # types units

@@ -54,7 +54,7 @@ def test_invalid_json_schema():
     assert (
         error.context
     )  # [<ValidationError: "'this_is_a_wrong_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'this_is_a_wrong_type' is not of type 'array'">]
-    assert error.cause is None  #  self.__cause__ = cause
+    assert error.cause is None
     assert error.validator == "anyOf"
     assert error.validator_value == error.schema["anyOf"]
     assert error.instance == "this_is_a_wrong_type"
@@ -94,7 +94,7 @@ def test_jsonschema_validate_data_error(valid_schema):
     assert error.schema_path == deque(["required"])
     assert error.schema == schema
     assert error.context == []
-    assert error.cause is None  #  self.__cause__ = cause
+    assert error.cause is None
     assert error.validator == "required"
     assert error.validator_value == schema["required"]
     assert error.instance == data

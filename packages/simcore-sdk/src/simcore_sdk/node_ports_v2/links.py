@@ -37,9 +37,9 @@ DataItemValue = Union[
 # - ItemValue values are resolved into ItemConcreteValue using Port.get()
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
-BasicValueTypes = Union[int, float, bool, str, List[Any], Dict[str, Any]]
-ItemValue = Union[BasicValueTypes, AnyUrl]
-ItemConcreteValue = Union[BasicValueTypes, Path]
+PortContentTypes = Union[int, float, bool, str, List[Any], Dict[str, Any]]
+ItemValue = Union[PortContentTypes, AnyUrl]
+ItemConcreteValue = Union[PortContentTypes, Path]
 
 
 __all__: Tuple[str, ...] = (
@@ -47,5 +47,6 @@ __all__: Tuple[str, ...] = (
     "DownloadLink",
     "FileLink",
     "ItemConcreteValue",
+    "PortContentTypes",
     "PortLink",
 )

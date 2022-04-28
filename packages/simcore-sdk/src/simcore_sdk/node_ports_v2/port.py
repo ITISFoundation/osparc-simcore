@@ -61,23 +61,23 @@ def can_parse_as(v, *types_) -> bool:
 class Port(BaseServiceIOModel):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
     widget: Optional[Dict[str, Any]] = None
-
     default_value: Optional[DataItemValue] = Field(None, alias="defaultValue")
+
     value: Optional[DataItemValue] = None
 
-    # TODO: PC unit: Optional[UnitStr] = None
+    # Different states of "value" (e.g. typically after resolving a port's link, a download link, ...)
+    _value_item: Optional[ItemValue] = PrivateAttr(None)
+    _value_concrete: Optional[ItemConcreteValue] = PrivateAttr(None)
 
-    # Final value types
+    # Types expected in _value_concrete
     _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
-    # Function to convert to final value types
+    # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
-    # parent node container this port as input or output
+    # Reference to the node that contains this port
     _node_ports = PrivateAttr()
+
     # flags
     _used_default_value: bool = PrivateAttr(False)
-
-    _item_value: Optional[ItemValue] = PrivateAttr(None)
-    _concrete_value: Optional[ItemConcreteValue] = PrivateAttr(None)
 
     class Config(BaseServiceIOModel.Config):
         validate_assignment = (
@@ -102,27 +102,28 @@ class Port(BaseServiceIOModel):
                     unit=None,
                     content_schema=values["content_schema"],
                 )
-            else:
-                if isinstance(v, (list, dict)):
-                    # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2849
-                    raise ValueError(
-                        f"Containers as {v} currently only supported within content_schema"
-                    )
+            elif isinstance(v, (list, dict)):
+                # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2849
+                raise ValueError(
+                    f"Containers as {v} currently only supported within content_schema"
+                )
         return v
 
     @validator("_item_value", "_concrete_value", pre=True)
     @classmethod
     def check_item_or_concrete_value(cls, v, values):
-        if v and (property_type := values.get("property_type")):
-            if property_type == "ref_contentSchema" and not can_parse_as(
-                v, Path, AnyUrl
-            ):
-                v, _ = validate_port_content(
-                    port_key=values["key"],
-                    value=v,
-                    unit=None,
-                    content_schema=values["content_schema"],
-                )
+        if (
+            v
+            and (property_type := values.get("property_type"))
+            and property_type == "ref_contentSchema"
+            and not can_parse_as(v, Path, AnyUrl)
+        ):
+            v, _ = validate_port_content(
+                port_key=values["key"],
+                value=v,
+                unit=None,
+                content_schema=values["content_schema"],
+            )
 
         return v
 
@@ -179,7 +180,6 @@ class Port(BaseServiceIOModel):
                     self._node_ports._node_ports_creator_cb,
                     file_link_type=file_link_type,
                 )
-                # TODO: PC: add validation/conversion here as well
 
                 return other_port_itemvalue
 
@@ -202,10 +202,9 @@ class Port(BaseServiceIOModel):
             # otherwise, this is a BasicValueTypes
             return self.value
 
-        if not self._item_value:
-            self._item_value = await _evaluate()
-
-        return self._item_value
+        # assigns to validate result
+        self._value_item = await _evaluate()
+        return self._value_item
 
     async def get(self) -> Optional[ItemConcreteValue]:
         """
@@ -267,10 +266,9 @@ class Port(BaseServiceIOModel):
             concrete_value = self._py_value_converter(value)
             return concrete_value
 
-        if not self._concrete_value:
-            self._concrete_value = await _evaluate()
-
-        return self._concrete_value
+        # assigns to validate result
+        self._value_concrete = await _evaluate()
+        return self._value_concrete
 
     async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
         log.debug(
@@ -304,13 +302,13 @@ class Port(BaseServiceIOModel):
                 new_value = converted_value
 
         self.value = new_value
-        self._item_value = None
-        self._concrete_value = None
+        self._value_item = None
+        self._value_concrete = None
         self._used_default_value = False
 
     async def set(self, new_value: ItemConcreteValue) -> None:
         """sets a value to the port, by default it is also stored in the database"""
-        await self._set(new_value)
+        await self._set(new_concrete_value=new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
@@ -335,10 +333,10 @@ class Port(BaseServiceIOModel):
             new_concrete_value: ItemConcreteValue = self._py_value_converter(
                 new_item_value
             )
-            self._concrete_value = None
+            self._value_concrete = None
             self.value = new_concrete_value  # type:ignore
 
-        self._item_value = None
-        self._concrete_value = None
+        self._value_item = None
+        self._value_concrete = None
         self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)
