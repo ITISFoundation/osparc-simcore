@@ -177,10 +177,10 @@ class BaseServiceIOModel(BaseModel):
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
 
-    # TODO: use discriminators
-    # TODO: deprecate
+    # TODO: should deprecate since content_schema include units
     unit: Optional[str] = Field(
-        None, description="Units, when it refers to a physical quantity"
+        None,
+        description="Units, when it refers to a physical quantity",
     )
 
     class Config:
@@ -203,7 +203,6 @@ class BaseServiceIOModel(BaseModel):
         if v is not None:
             try:
                 jsonschema_validate_schema(schema=v)
-                # TODO: validate x_unit and all custom fields are alos correct?
             except InvalidJsonSchema as err:
                 failed_path = "->".join(map(str, err.path))
                 raise ValueError(
@@ -212,7 +211,9 @@ class BaseServiceIOModel(BaseModel):
         return v
 
     @classmethod
-    def _from_json_schema(cls, port_schema: Dict[str, Any]) -> Dict[str, Any]:
+    def _from_json_schema_base_implementation(
+        cls, port_schema: Dict[str, Any]
+    ) -> Dict[str, Any]:
         description = port_schema.pop("description", port_schema["title"])
         data = {
             "label": port_schema["title"],
@@ -228,7 +229,7 @@ class ServiceInput(BaseServiceIOModel):
     Metadata on a service input port
     """
 
-    # NOTE: should deprecate since schema include defaults as well
+    # TODO: should deprecate since content_schema include defaults as well
     default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
@@ -298,8 +299,7 @@ class ServiceInput(BaseServiceIOModel):
     @classmethod
     def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceInput":
         """Creates input port model from a json-schema"""
-        data = cls._from_json_schema(port_schema)
-        # TODO: default_value? widget?
+        data = cls._from_json_schema_base_implementation(port_schema)
         return cls.parse_obj(data)
 
 
@@ -344,8 +344,7 @@ class ServiceOutput(BaseServiceIOModel):
     @classmethod
     def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceOutput":
         """Creates output port model from a json-schema"""
-        data = cls._from_json_schema(port_schema)
-        # TODO: widget?
+        data = cls._from_json_schema_base_implementation(port_schema)
         return cls.parse_obj(data)
 
 

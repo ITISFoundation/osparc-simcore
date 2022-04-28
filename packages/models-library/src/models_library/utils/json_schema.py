@@ -3,26 +3,22 @@ Models and schemas are intimately related.
 Here we implement an api on top of jsonschema package adapted for validation of
 json-schemas.
 
-SEE service models
+See how is used to validate input/output content-schemas of service models
 """
-# TODO: next step on top could be to construct pydantic models from json-schemas using datamodel-code-generator?
+# SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
+
 
 from copy import deepcopy
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 import jsonschema
 from jsonschema import validators
 
 # ERRORS
 
-# alias of jsonschema.exceptions._Error
+# alias for jsonschema.exceptions._Error subclasses
 InvalidJsonSchema = jsonschema.SchemaError
 JsonSchemaValidationError = jsonschema.ValidationError
-
-
-# TODO:  create PydanticValueError and can be raised inside validator
-# create also handlers with context managers?
-# should construct with jsonschema.*Error?? --> create_from
 
 
 # VALIDATORS
@@ -55,8 +51,11 @@ _LATEST_VALIDATOR = validators.validator_for(True)
 _EXTENDED_VALIDATOR = _extend_with_default(_LATEST_VALIDATOR)
 
 
-def jsonschema_validate_data(instance, schema, *, return_with_default: bool = False):
-    """
+def jsonschema_validate_data(
+    instance: Any, schema: Dict[str, Any], *, return_with_default: bool = False
+):
+    """Checks whether data satisfies schema contract
+
     : raises JsonSchemaValidationError
     """
     assert "$schema" not in schema, "assumes always latest json-schema"  # nosec
@@ -67,20 +66,16 @@ def jsonschema_validate_data(instance, schema, *, return_with_default: bool = Fa
     else:
         out = instance
         validators.validate(instance=out, schema=schema, cls=None)
-
-        # TODO: PC validate units? Validate and convert??
-
+        # SEE possible extension in https://github.com/ITISFoundation/osparc-simcore/issues/3009
     return out
 
 
-def jsonschema_validate_schema(schema):
-    """
+def jsonschema_validate_schema(schema: Dict[str, Any]):
+    """Checks whether schema is a valid json-schema
+
     :raises InvalidJsonSchema
     """
     try:
-        # TODO: PC validate field x_unit (e.g. fail if x-unit).
-        # Check that x-unit is a valid pint-compatible unit?
-        # TODO: This should also be added as integration test!
         validators.validate(instance={}, schema=schema)
     except jsonschema.ValidationError:
         pass

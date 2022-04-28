@@ -141,7 +141,7 @@ class Node(BaseModel):
     )
     inputs_units: Optional[Dict[InputID, UnitStr]] = Field(
         None,
-        description="Overrides default unit (if any) defined in the service for this port",
+        description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
     input_access: Optional[Dict[InputID, AccessEnum]] = Field(
