@@ -57,6 +57,15 @@ def user_id(faker: Faker) -> UserID:
     return UserID(faker.pyint(min_value=1))
 
 
+def test_get_storage_client_instance(
+    minimal_storage_config: None,
+    minimal_app: FastAPI,
+):
+    storage_client: StorageClient = minimal_app.state.storage_client
+    assert storage_client
+    assert StorageClient.instance(minimal_app) == storage_client
+
+
 async def test_get_simcore_s3_access(
     minimal_storage_config: None,
     minimal_app: FastAPI,
