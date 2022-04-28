@@ -14,6 +14,9 @@ from typing import Callable
 
 import pytest
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio"]
+
 
 @pytest.fixture()
 def bucket(s3_client, request):
