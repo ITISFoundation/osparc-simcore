@@ -216,7 +216,7 @@ async def download_file_from_s3(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
-            link_type=storage_client.LinkType.PRESIGNED,  # TODO: we might want to change this
+            link_type=storage_client.LinkType.PRESIGNED,
         )
 
         # the link contains the file name
@@ -281,7 +281,7 @@ async def upload_file(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
-            link_type=storage_client.LinkType.PRESIGNED,  # TODO: we might want to use S3
+            link_type=storage_client.LinkType.PRESIGNED,
         )
 
         if not upload_link:

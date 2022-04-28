@@ -51,7 +51,7 @@ class FilePortSchema(PortSchema):
                 },
                 {
                     "required": False,
-                    "url": "ftp://some_file_url",
+                    "url": "s3://another_file_url",
                 },
             ]
         }
@@ -76,7 +76,7 @@ class FileUrl(BaseModel):
         extra = Extra.forbid
         schema_extra = {
             "examples": [
-                {"url": "s3://some_file_url", "file_mime_type": "application/json"},
+                {"url": "http://some_file_url", "file_mime_type": "application/json"},
                 {
                     "url": "https://some_file_url",
                     "file_mapping": "some_file_name.txt",
@@ -108,7 +108,7 @@ class TaskInputData(DictModel[PortKey, PortValue]):
                     "int_input": -45,
                     "float_input": 4564.45,
                     "string_input": "nobody thinks like a string",
-                    "file_input": {"url": "s3://some_file_url"},
+                    "file_input": {"url": "s3://thatis_file_url"},
                 },
             ]
         }
