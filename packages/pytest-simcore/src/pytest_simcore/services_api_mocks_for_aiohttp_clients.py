@@ -334,10 +334,13 @@ async def storage_v0_service_mock(
 
     def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
         file_id = url.path.rsplit("/files/")[1]
-
+        assert "params" in kwargs
+        assert "link_type" in kwargs["params"]
+        link_type = kwargs["params"]["link_type"]
+        scheme = {"presigned": "http", "s3": "s3"}
         return CallbackResult(
             status=web.HTTPOk.status_code,
-            payload={"data": {"link": f"file://{file_id}"}},
+            payload={"data": {"link": f"{scheme[link_type]}://{file_id}"}},
         )
 
     get_file_metadata_pattern = re.compile(
