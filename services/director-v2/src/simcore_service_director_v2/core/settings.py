@@ -1,6 +1,7 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 
+
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -30,6 +31,7 @@ from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
+from simcore_sdk.node_ports_v2 import FileLinkType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
@@ -324,6 +326,10 @@ class ComputationalBackendSettings(BaseCustomSettings):
         NoAuthentication(),
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
+    )
+    COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.S3,
+        description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
     )
 
     @cached_property

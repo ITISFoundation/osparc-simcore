@@ -258,13 +258,24 @@ class DaskClient:
             except HTTPException as err:
                 raise ComputationalBackendNoS3AccessError() from err
             input_data = await compute_input_data(
-                self.app, user_id, project_id, node_id
+                self.app,
+                user_id,
+                project_id,
+                node_id,
+                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
             )
             output_data_keys = await compute_output_data_schema(
-                self.app, user_id, project_id, node_id
+                self.app,
+                user_id,
+                project_id,
+                node_id,
+                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
             )
             log_file_url = await compute_service_log_file_upload_link(
-                user_id, project_id, node_id
+                user_id,
+                project_id,
+                node_id,
+                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
             )
 
             try:
@@ -306,6 +317,11 @@ class DaskClient:
         return (await self.get_tasks_status(job_ids=[job_id]))[0]
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
+        check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        check_communication_with_scheduler_is_open(self.backend.client)
+        check_scheduler_status(self.backend.client)
         # try to get the task from the scheduler
         task_statuses = await self.backend.client.run_on_scheduler(
             lambda dask_scheduler: dask_scheduler.get_task_status(keys=job_ids)
