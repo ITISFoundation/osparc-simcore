@@ -4,7 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -163,14 +163,14 @@ class BaseServiceIOModel(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
-    content_schema: Optional[Dict[str, Any]] = Field(
+    content_schema: Optional[dict[str, Any]] = Field(
         None,
         description="jsonschema of this input/output. Required when type='ref_contentSchema'",
         alias="contentSchema",
     )
 
     # value
-    file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
+    file_to_key_map: Optional[dict[FileName, PropertyName]] = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
@@ -212,8 +212,8 @@ class BaseServiceIOModel(BaseModel):
 
     @classmethod
     def _from_json_schema_base_implementation(
-        cls, port_schema: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        cls, port_schema: dict[str, Any]
+    ) -> dict[str, Any]:
         description = port_schema.pop("description", port_schema["title"])
         data = {
             "label": port_schema["title"],
@@ -297,7 +297,7 @@ class ServiceInput(BaseServiceIOModel):
         }
 
     @classmethod
-    def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceInput":
+    def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceInput":
         """Creates input port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
         return cls.parse_obj(data)
@@ -342,7 +342,7 @@ class ServiceOutput(BaseServiceIOModel):
         }
 
     @classmethod
-    def from_json_schema(cls, port_schema: Dict[str, Any]) -> "ServiceOutput":
+    def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceOutput":
         """Creates output port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
         return cls.parse_obj(data)
@@ -398,8 +398,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputsDict = Dict[PropertyName, ServiceInput]
-ServiceOutputsDict = Dict[PropertyName, ServiceOutput]
+ServiceInputsDict = dict[PropertyName, ServiceInput]
+ServiceOutputsDict = dict[PropertyName, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
@@ -423,9 +423,9 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         examples=["computational"],
     )
 
-    badges: Optional[List[Badge]] = Field(None)
+    badges: Optional[list[Badge]] = Field(None)
 
-    authors: List[Author] = Field(..., min_items=1)
+    authors: list[Author] = Field(..., min_items=1)
     contact: EmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
@@ -553,8 +553,8 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     description: Optional[str]
 
     # user-defined metatada
-    classifiers: Optional[List[str]]
-    quality: Dict[str, Any] = {}
+    classifiers: Optional[list[str]]
+    quality: dict[str, Any] = {}
 
     class Config:
         schema_extra = {
