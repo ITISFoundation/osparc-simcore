@@ -16,6 +16,7 @@ import simcore_service_storage._meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
+from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
 from simcore_service_storage.application import create
@@ -23,7 +24,6 @@ from simcore_service_storage.constants import SIMCORE_S3_ID
 from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import Settings
-from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
@@ -129,6 +129,7 @@ async def test_s3_files_metadata(
     # list files fileterd by uuid
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
+        assert fmd.project_id
         uuid_filter = os.path.join(fmd.project_id, fmd.node_id)
         resp = await client.get(
             "/v0/locations/0/files/metadata?user_id={}&uuid_filter={}".format(
@@ -330,11 +331,12 @@ async def _create_and_delete_folders_from_project(
     destination_project, nodes_map = clone_project_data(project)
 
     # CREATING
+    assert client.app
     url = (
         client.app.router["copy_folders_from_project"].url_for().with_query(user_id="1")
     )
     resp = await client.post(
-        url,
+        f"{url}",
         json={
             "source": project,
             "destination": destination_project,
@@ -362,7 +364,7 @@ async def _create_and_delete_folders_from_project(
         .url_for(folder_id=project_id)
         .with_query(user_id="1")
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
 
     await assert_status(resp, expected_cls=web.HTTPNoContent)
 
@@ -405,12 +407,13 @@ async def test_create_and_delete_folders_from_project_burst(
 
 
 async def test_s3_datasets_metadata(client: TestClient):
+    assert client.app
     url = (
         client.app.router["get_datasets_metadata"]
         .url_for(location_id=str(SIMCORE_S3_ID))
         .with_query(user_id="21")
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     payload = await resp.json()
     assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ("data", "error"))
@@ -418,12 +421,13 @@ async def test_s3_datasets_metadata(client: TestClient):
 
 
 async def test_s3_files_datasets_metadata(client: TestClient):
+    assert client.app
     url = (
         client.app.router["get_files_metadata_dataset"]
         .url_for(location_id=str(SIMCORE_S3_ID), dataset_id="aa")
         .with_query(user_id="21")
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     payload = await resp.json()
     assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ("data", "error"))
