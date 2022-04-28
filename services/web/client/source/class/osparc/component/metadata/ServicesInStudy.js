@@ -85,8 +85,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           this._populateLayout();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
-          console.error(err);
+          if ("message" in err) {
+            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          } else {
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+          }
         })
         .finally(() => {
           if (fetchButton) {

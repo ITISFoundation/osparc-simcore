@@ -70,7 +70,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         column: this.self().GRID_POS.LATEST_VERSION
       });
 
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14");
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
+        appearance: "strong-button",
+        visibility: "excluded"
+      });
       this._add(updateAllButton, {
         row: 0,
         column: this.self().GRID_POS.UPDATE_BUTTON
@@ -79,6 +82,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
 
     _populateRows: function() {
       this.base(arguments);
+
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+      const canIWriteStudy = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
 
       const updatableServices = [];
       let i = 0;
@@ -115,11 +123,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.LATEST_VERSION
         });
 
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-        orgIDs.push(myGroupId);
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
-        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWrite) {
+        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             label: updatable ? this.tr("Update") : this.tr("Up-to-date"),
@@ -136,11 +140,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         }
       }
 
-      const updateAllButton = this.__updateAllButton;
-      updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
-      updateAllButton.setEnabled(Boolean(updatableServices.length));
-      if (updatableServices.length) {
-        updateAllButton.setAppearance("strong-button");
+      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        const updateAllButton = this.__updateAllButton;
+        updateAllButton.show();
+        updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
       }
     }
   }
