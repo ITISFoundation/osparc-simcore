@@ -49,10 +49,11 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
         raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
-def can_parse_as(v, *types_):
+def can_parse_as(v, *types_) -> bool:
     try:
         for type_ in types_:
             parse_obj_as(v, type_)
+        return True
     except ValidationError:
         return False
 
