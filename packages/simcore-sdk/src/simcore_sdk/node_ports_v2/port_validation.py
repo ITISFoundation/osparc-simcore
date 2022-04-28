@@ -71,7 +71,7 @@ def _validate_port_value(value, content_schema: JsonSchemaDict):
 
 
 def _validate_port_unit(
-    value, unit, content_schema: JsonSchemaDict, ureg: UnitRegistry = _THE_UNIT_REGISTRY
+    value, unit, content_schema: JsonSchemaDict, *, ureg: UnitRegistry
 ) -> Tuple:
 
     if unit:
@@ -119,7 +119,7 @@ def validate_port_content(
         # extra meta info on port
         u = unit
         if unit:
-            v, u = _validate_port_unit(v, unit, content_schema)
+            v, u = _validate_port_unit(v, unit, content_schema, ureg=_THE_UNIT_REGISTRY)
         return v, u
 
     except JsonSchemaValidationError as err:

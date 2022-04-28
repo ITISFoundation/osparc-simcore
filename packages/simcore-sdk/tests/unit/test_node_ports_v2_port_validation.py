@@ -7,6 +7,7 @@
 
 
 import json
+import sys
 from copy import deepcopy
 from typing import List
 from unittest.mock import AsyncMock
@@ -41,7 +42,7 @@ def test_validate_port_content():
     #  3.0 mm -> 0.3 cm
     # NOTE: there are roundoff errors in the unit conversion
     assert unit == "centimeter"
-    assert abs(value - 0.3) < 1e-14
+    assert abs(value - 0.3) < 2 * sys.float_info.epsilon
 
 
 def test_validate_port_content_fails():
