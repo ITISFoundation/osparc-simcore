@@ -4,6 +4,7 @@
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from .base import metadata
 from .comp_pipeline import StateType
@@ -59,7 +60,7 @@ comp_tasks = sa.Table(
     ),
     sa.Column(
         "errors",
-        sa.JSON,
+        postgresql.JSONB,
         nullable=True,
         doc="List[models_library.errors.ErrorDict] with error information"
         " for a failing state, otherwise set to None",
