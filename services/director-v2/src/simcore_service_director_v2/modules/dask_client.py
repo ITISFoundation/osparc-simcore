@@ -11,8 +11,10 @@ loads(dumps(my_object))
 import asyncio
 import json
 import logging
+import traceback
 from collections import deque
 from dataclasses import dataclass, field
+from http.client import HTTPException
 from typing import Callable, Deque, Dict, List, Optional, Tuple
 
 import distributed
@@ -33,12 +35,14 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
+from simcore_service_director_v2.modules.storage import StorageClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from ..core.errors import (
+    ComputationalBackendNoS3AccessError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
@@ -246,7 +250,13 @@ class DaskClient:
                     node_image=node_image,
                     cluster_id=cluster_id,
                 )
-
+            s3_settings = None
+            try:
+                s3_settings = await StorageClient.instance(self.app).get_s3_access(
+                    user_id
+                )
+            except HTTPException as err:
+                raise ComputationalBackendNoS3AccessError() from err
             input_data = await compute_input_data(
                 self.app, user_id, project_id, node_id
             )
@@ -256,6 +266,7 @@ class DaskClient:
             log_file_url = await compute_service_log_file_upload_link(
                 user_id, project_id, node_id
             )
+
             try:
                 task_future = self.backend.client.submit(
                     remote_fct,
@@ -270,7 +281,7 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=["run"],
-                    s3_settings=None,
+                    s3_settings=s3_settings,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
@@ -307,9 +318,21 @@ class DaskClient:
             if dask_status == "erred":
                 # find out if this was a cancellation
                 exception = await distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
+
                 if isinstance(exception, TaskCancelledError):
                     running_states.append(RunningState.ABORTED)
                 else:
+                    assert exception  # nosec
+                    logger.warning(
+                        "Task  %s completed in error:\n%s\nTrace:\n%s",
+                        job_id,
+                        exception,
+                        "".join(
+                            traceback.format_exception(
+                                exception.__class__, exception, exception.__traceback__
+                            )
+                        ),
+                    )
                     running_states.append(RunningState.FAILED)
             else:
                 running_states.append(
