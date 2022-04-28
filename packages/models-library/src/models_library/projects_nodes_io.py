@@ -88,7 +88,7 @@ class BaseFileLink(BaseModel):
     )
 
     label: Optional[str] = Field(
-        None,
+        default=None,
         description="The real file name",
     )
 
