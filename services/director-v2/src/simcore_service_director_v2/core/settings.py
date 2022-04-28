@@ -327,8 +327,12 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
         FileLinkType.S3,
+        description=f"Default file link type to use with the internal cluster '{list(FileLinkType)}'",
+    )
+    COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.PRESIGNED,
         description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
     )
 

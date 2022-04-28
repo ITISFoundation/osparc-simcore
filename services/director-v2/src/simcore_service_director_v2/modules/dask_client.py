@@ -15,7 +15,7 @@ import traceback
 from collections import deque
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Callable, Deque, Dict, List, Optional, Tuple
+from typing import Callable, Deque, Dict, Final, List, Optional, Tuple
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -35,6 +35,7 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.modules.storage import StorageClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -108,6 +109,7 @@ class DaskClient:
     app: FastAPI
     backend: DaskSubSystem
     settings: ComputationalBackendSettings
+    tasks_file_link_type: Final[FileLinkType]
 
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
@@ -118,6 +120,7 @@ class DaskClient:
         settings: ComputationalBackendSettings,
         endpoint: AnyUrl,
         authentication: ClusterAuthentication,
+        tasks_file_link_type: FileLinkType,
     ) -> "DaskClient":
         logger.info(
             "Initiating connection to %s with auth: %s",
@@ -144,6 +147,7 @@ class DaskClient:
                     app=app,
                     backend=backend,
                     settings=settings,
+                    tasks_file_link_type=tasks_file_link_type,
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
@@ -251,31 +255,32 @@ class DaskClient:
                     cluster_id=cluster_id,
                 )
             s3_settings = None
-            try:
-                s3_settings = await StorageClient.instance(self.app).get_s3_access(
-                    user_id
-                )
-            except HTTPException as err:
-                raise ComputationalBackendNoS3AccessError() from err
+            if self.tasks_file_link_type == FileLinkType.S3:
+                try:
+                    s3_settings = await StorageClient.instance(self.app).get_s3_access(
+                        user_id
+                    )
+                except HTTPException as err:
+                    raise ComputationalBackendNoS3AccessError() from err
             input_data = await compute_input_data(
                 self.app,
                 user_id,
                 project_id,
                 node_id,
-                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                file_link_type=self.tasks_file_link_type,
             )
             output_data_keys = await compute_output_data_schema(
                 self.app,
                 user_id,
                 project_id,
                 node_id,
-                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                file_link_type=self.tasks_file_link_type,
             )
             log_file_url = await compute_service_log_file_upload_link(
                 user_id,
                 project_id,
                 node_id,
-                file_link_type=self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                file_link_type=self.tasks_file_link_type,
             )
 
             try:
