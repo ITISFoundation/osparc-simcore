@@ -121,7 +121,7 @@ class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_HOST: str = "director"
     DIRECTOR_PORT: PortInt = 8080
     DIRECTOR_V0_VTAG: VersionTag = Field(
-        "v0", description="Director-v0 service API's version tag"
+        default="v0", description="Director-v0 service API's version tag"
     )
 
     @cached_property
