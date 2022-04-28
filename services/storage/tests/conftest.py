@@ -171,7 +171,7 @@ def dsm_mockup_db(
     s3_client: MinioClientWrapper,
     mock_files_factory: Callable[[int], List[Path]],
     cleanup_user_projects_file_metadata,
-) -> Iterator[Dict[str, FileMetaData]]:
+) -> Iterator[dict[str, FileMetaData]]:
 
     # s3 client
     bucket_name = BUCKET_NAME

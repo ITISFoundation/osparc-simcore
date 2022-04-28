@@ -6,54 +6,13 @@ import filecmp
 import os
 import time
 import urllib
+import urllib.error
+import urllib.request
 import uuid
 from datetime import timedelta
 from typing import Callable
 
 import pytest
-import requests
-from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
-
-
-def is_responsive(url, code=200):
-    """Check if something responds to ``url``."""
-    try:
-        response = requests.get(url)
-        if response.status_code == code:
-            return True
-    except requests.exceptions.RequestException as _e:
-        pass
-    return False
-
-
-@pytest.fixture(scope="module")
-def s3_client(docker_ip, docker_services):
-    """wait for minio to be up"""
-
-    # Build URL to service listening on random port.
-    url = "http://%s:%d/" % (
-        docker_ip,
-        docker_services.port_for("minio", 9000),
-    )
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=lambda: is_responsive(url, 403),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    # Contact the service.
-    response = requests.get(url)
-    assert response.status_code == 403
-
-    endpoint = "{ip}:{port}".format(
-        ip=docker_ip, port=docker_services.port_for("minio", 9000)
-    )
-    s3_client = MinioClientWrapper(
-        endpoint, access_key="12345678", secret_key="12345678", secure=False
-    )
-    return s3_client
 
 
 @pytest.fixture()
