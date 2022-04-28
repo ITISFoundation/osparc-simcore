@@ -49,7 +49,8 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client
         await client.aclose()
-        del app.state.director_v0_client
+        del client
+        logger.debug("delete client for director-v0: %s", settings.endpoint)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -70,7 +71,7 @@ class DirectorV0Client:
 
     @handle_errors("Director", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> Response:
+    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
     async def forward(self, request: Request, response: Response) -> Response:

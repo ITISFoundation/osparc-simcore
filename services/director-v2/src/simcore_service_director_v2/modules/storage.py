@@ -40,7 +40,7 @@ def setup(app: FastAPI, settings: StorageSettings):
     async def on_shutdown() -> None:
         client = StorageClient.instance(app).client
         await client.aclose()
-        del app.state.storage_client
+        del client
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -56,7 +56,7 @@ class StorageClient:
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
+    def instance(cls, app: FastAPI) -> "StorageClient":
         return app.state.storage_client
 
     @handle_errors("Storage", logger)
@@ -69,6 +69,7 @@ class StorageClient:
         resp = await self.request(
             "POST", "/simcore-s3:access", params={"user_id": user_id}
         )
+        resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
             return S3Settings.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
