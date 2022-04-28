@@ -115,6 +115,9 @@ async def _copy_file(
                 )
 
 
+_ZIP_MIME_TYPE: Final[str] = "application/zip"
+
+
 async def pull_file_from_remote(
     src_url: AnyUrl,
     target_mime_type: Optional[str],
@@ -150,7 +153,7 @@ async def pull_file_from_remote(
         f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
     )
 
-    if src_mime_type == "application/zip" and target_mime_type != "application/zip":
+    if src_mime_type == _ZIP_MIME_TYPE and target_mime_type != _ZIP_MIME_TYPE:
         await log_publishing_cb(f"Uncompressing '{dst_path.name}'...")
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
         with zipfile.ZipFile(dst_path, "r") as zip_obj:
@@ -230,7 +233,7 @@ async def push_file_to_remote(
         dst_mime_type, _ = mimetypes.guess_type(f"{dst_url.path}")
         src_mime_type, _ = mimetypes.guess_type(src_path)
 
-        if dst_mime_type == "application/zip" and src_mime_type != "application/zip":
+        if dst_mime_type == _ZIP_MIME_TYPE and src_mime_type != _ZIP_MIME_TYPE:
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
             await log_publishing_cb(
                 f"Compressing '{src_path.name}' to '{archive_file_path.name}'..."
