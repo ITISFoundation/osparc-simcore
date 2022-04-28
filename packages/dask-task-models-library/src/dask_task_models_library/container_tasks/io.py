@@ -76,7 +76,7 @@ class FileUrl(BaseModel):
         extra = Extra.forbid
         schema_extra = {
             "examples": [
-                {"url": "http://some_file_url", "file_mime_type": "application/json"},
+                {"url": "https://some_file_url", "file_mime_type": "application/json"},
                 {
                     "url": "https://some_file_url",
                     "file_mapping": "some_file_name.txt",
