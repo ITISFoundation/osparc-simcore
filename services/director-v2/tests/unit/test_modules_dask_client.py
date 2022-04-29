@@ -126,11 +126,6 @@ def minimal_dask_config(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-@pytest.fixture(params=list(FileLinkType))
-def tasks_file_link_type(request) -> FileLinkType:
-    return request.param
-
-
 @pytest.fixture
 async def create_dask_client_from_scheduler(
     minimal_dask_config: None,
@@ -689,7 +684,6 @@ async def test_abort_computation_tasks(
     # )
 
 
-@pytest.mark.flaky
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,

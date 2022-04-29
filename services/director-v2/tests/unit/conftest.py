@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic.types import NonNegativeInt
 from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -242,3 +243,8 @@ def mocked_storage_service_fcts(
         ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
 
         yield respx_mock
+
+
+@pytest.fixture(params=list(FileLinkType))
+def tasks_file_link_type(request) -> FileLinkType:
+    return request.param

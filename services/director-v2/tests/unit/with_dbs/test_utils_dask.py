@@ -14,11 +14,7 @@ from unittest import mock
 import aiopg
 import httpx
 import pytest
-from _helpers import (  # type: ignore
-    PublishedProject,
-    set_comp_task_inputs,
-    set_comp_task_outputs,
-)
+from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from _pytest.monkeypatch import MonkeyPatch
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from faker import Faker
@@ -28,6 +24,7 @@ from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.utils.dask import (
@@ -241,6 +238,7 @@ async def test_compute_input_data(
     fake_io_data: Dict[str, Any],
     faker: Faker,
     mocker: MockerFixture,
+    tasks_file_link_type: FileLinkType,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
 
@@ -274,9 +272,13 @@ async def test_compute_input_data(
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
+        file_link_type=tasks_file_link_type,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
-        [mock.call(mock.ANY) for n in fake_io_data.keys()]
+        [
+            mock.call(mock.ANY, file_link_type=tasks_file_link_type)
+            for n in fake_io_data.keys()
+        ]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
 
