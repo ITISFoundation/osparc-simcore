@@ -84,9 +84,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (this.__studyEditor) {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
-          const msg = this.tr("Do you really want to close the study?");
+          const msg = this.tr("Do you really want to save and close the study?");
           const win = new osparc.ui.window.Confirmation(msg).set({
-            confirmText: this.tr("Close")
+            confirmText: this.tr("Save & Close")
           });
           const confirmButton = win.getConfirmButton();
           osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
