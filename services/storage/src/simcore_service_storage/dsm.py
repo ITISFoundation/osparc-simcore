@@ -504,9 +504,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), file_uuid
             )
             if not can.write:
-                message = f"User {user_id} was not allowed to upload file {file_uuid}"
-                logger.debug(message)
-                raise web.HTTPForbidden(reason=message)
+                raise web.HTTPForbidden(
+                    reason=f"User {user_id} was not allowed to upload file {file_uuid}"
+                )
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -522,9 +522,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), file_uuid
             )
             if not can.write:
-                message = f"User {user_id} was not allowed to upload file {file_uuid}"
-                logger.debug(message)
-                raise web.HTTPForbidden(reason=message)
+                raise web.HTTPForbidden(
+                    reason=f"User {user_id} was not allowed to upload file {file_uuid}"
+                )
 
             try:
                 await conn.execute(
@@ -532,12 +532,10 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                         file_meta_data.c.file_uuid == file_uuid
                     )
                 )
-            except Exception:
-                message = f"Could not delete metadata entry for file {file_uuid}"
-                logger.warning(message)
-                raise web.HTTPNotFound(  # pylint: disable=raise-missing-from
-                    reason=message
-                )
+            except Exception as err:
+                raise web.HTTPNotFound(
+                    reason=f"Could not delete metadata entry for file {file_uuid}"
+                ) from err
 
     async def _generate_metadata_for_link(self, user_id: str, file_uuid: str):
         """
@@ -551,11 +549,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), file_uuid
             )
             if not can.write:
-                logger.debug(
-                    "User %s was not allowed to upload file %s", user_id, file_uuid
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to upload file {file_uuid}"
+                    reason=f"User {user_id} does not have enough access rights to upload file {file_uuid}"
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
@@ -617,11 +612,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 # If write permission would be required, then shared projects as views cannot
                 # recover data in nodes (e.g. jupyter cannot pull work data)
                 #
-                logger.debug(
-                    "User %s was not allowed to download file %s", user_id, file_uuid
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough rights to download {file_uuid}"
+                    reason=f"User {user_id} does not have enough rights to download file {file_uuid}"
                 )
 
         bucket_name = self.simcore_bucket_name
@@ -809,23 +801,13 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), project_id=dest_folder
             )
         if not source_access_rights.read:
-            logger.debug(
-                "User %s was not allowed to read from project %s",
-                user_id,
-                source_folder,
-            )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to read from project '{source_folder}'"
+                reason=f"User {user_id} does not have enough access rights to read from project '{source_folder}'"
             )
 
         if not dest_access_rights.write:
-            logger.debug(
-                "User %s was not allowed to write to project %s",
-                user_id,
-                dest_folder,
-            )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to write to project '{dest_folder}'"
+                reason=f"User {user_id} does not have enough access rights to write to project '{dest_folder}'"
             )
 
         # build up naming map based on labels
@@ -984,13 +966,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     conn, int(user_id), file_uuid
                 )
                 if not can.delete:
-                    logger.debug(
-                        "User %s was not allowed to delete file %s",
-                        user_id,
-                        file_uuid,
-                    )
                     raise web.HTTPForbidden(
-                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                        reason=f"User {user_id} does not have enough access rights to delete file {file_uuid}"
                     )
 
                 query = sa.select(
@@ -1035,13 +1012,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), project_id
             )
             if not can.delete:
-                logger.debug(
-                    "User %s was not allowed to delete project %s",
-                    user_id,
-                    project_id,
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have delete access for {project_id}"
+                    reason=f"User {user_id} does not have delete access for {project_id}"
                 )
 
             delete_me = file_meta_data.delete().where(

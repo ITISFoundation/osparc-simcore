@@ -311,7 +311,7 @@ async def delete_file_meta_data(request: web.Request):
 
         await dsm.delete_metadata(user_id=user_id, file_uuid=file_uuid)
 
-    return web.HTTPNoContent(content_type="application/json")
+    raise web.HTTPNoContent(content_type="application/json")
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
