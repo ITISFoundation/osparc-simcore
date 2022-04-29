@@ -23,7 +23,6 @@ from simcore_sdk.node_ports_v2.port_validation import (
 
 
 def test_validate_port_content():
-    # TODO:
     #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
     #  unit = "MHz" <-- we start here
     #  unit = "MHz,mm"

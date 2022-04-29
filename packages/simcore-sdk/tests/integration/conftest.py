@@ -149,7 +149,7 @@ def create_node_link() -> Callable[[str], Dict[str, str]]:
     def _create(key: str) -> Dict[str, str]:
         return {"nodeUuid": "TEST_NODE_UUID", "output": key}
 
-    yield _create
+    return _create
 
 
 @pytest.fixture()
@@ -190,7 +190,7 @@ def create_store_link(
         # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}
 
-    yield _create
+    return _create
 
 
 @pytest.fixture(scope="function")
