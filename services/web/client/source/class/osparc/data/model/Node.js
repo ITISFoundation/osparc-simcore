@@ -725,7 +725,29 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setErrors: function(errors) {
-      console.log(errors);
+      errors.forEach(error => {
+        let loc = error["loc"];
+        // remove parethesis
+        if (loc[0] === "(") {
+          loc = loc.substring(1);
+        }
+        if (loc[loc.length-1] === ")") {
+          loc = loc.substring(0, loc.length-1);
+        }
+        const hierarchy = loc.split(",");
+        if (hierarchy.length < 2) {
+          return;
+        }
+        if (hierarchy[1] === this.getNodeId()) {
+          const msg = error["msg"];
+          if (hierarchy.length > 2) {
+            const portKey = hierarchy[2];
+            console.log(portKey, msg);
+          } else {
+            console.log(msg);
+          }
+        }
+      });
     },
 
     // post edge creation routine
