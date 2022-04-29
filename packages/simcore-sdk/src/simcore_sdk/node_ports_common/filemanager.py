@@ -56,7 +56,7 @@ async def _get_upload_link(
     file_id: str,
     session: ClientSession,
 ) -> URL:
-    presigned_link: AnyUrl = await storage_client.get_upload_file_presigned_link(
+    presigned_link: AnyUrl = await storage_client.get_upload_file_link(
         session, file_id, store_id, user_id, as_presigned_link=True
     )
     if not presigned_link:

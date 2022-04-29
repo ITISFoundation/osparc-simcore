@@ -94,7 +94,7 @@ async def get_download_file_presigned_link(
 
 
 @handle_client_exception
-async def get_upload_file_presigned_link(
+async def get_upload_file_link(
     session: ClientSession,
     file_id: str,
     location_id: str,

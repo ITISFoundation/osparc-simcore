@@ -17,7 +17,7 @@ from simcore_sdk.node_ports_common.storage_client import (
     get_download_file_presigned_link,
     get_file_metadata,
     get_storage_locations,
-    get_upload_file_presigned_link,
+    get_upload_file_link,
 )
 
 
@@ -75,7 +75,7 @@ async def test_get_upload_file_presigned_link(
     location_id: str,
 ):
     async with aiohttp.ClientSession() as session:
-        link = await get_upload_file_presigned_link(
+        link = await get_upload_file_link(
             session, file_id, location_id, user_id, as_presigned_link=True
         )
     assert isinstance(link, AnyUrl)
@@ -101,7 +101,7 @@ async def test_get_file_metada(
     [
         get_file_metadata,
         get_download_file_presigned_link,
-        get_upload_file_presigned_link,
+        get_upload_file_link,
     ],
 )
 async def test_invalid_calls(
@@ -124,7 +124,7 @@ async def test_invalid_calls(
                     **{invalid_keyword: None},
                 }
                 if (  # pylint: disable=comparison-with-callable
-                    fct_call == get_upload_file_presigned_link
+                    fct_call == get_upload_file_link
                 ):
                     kwargs["as_presigned_link"] = True
                 await fct_call(session=session, **kwargs)

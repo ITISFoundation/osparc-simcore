@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
+import shlex
 from aiocache import cached
 from aiofiles import tempfile
 from aiohttp import ClientSession
@@ -16,7 +17,7 @@ from settings_library.utils_r_clone import get_r_clone_config
 from .constants import ETag
 from .storage_client import (
     delete_file_meta_data,
-    get_upload_file_presigned_link,
+    get_upload_file_link,
     update_file_meta_data,
 )
 
@@ -36,7 +37,7 @@ async def _config_file(config: str) -> AsyncGenerator[str, None]:
 
 
 async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
-    str_cmd = " ".join(cmd)
+    str_cmd = shlex.quote(" ".join(cmd))
     proc = await asyncio.create_subprocess_shell(
         str_cmd,
         stdin=asyncio.subprocess.PIPE,
@@ -72,7 +73,7 @@ async def sync_local_to_s3(
     user_id: UserID,
 ) -> ETag:
 
-    s3_link = await get_upload_file_presigned_link(
+    s3_link = await get_upload_file_link(
         session=session,
         file_id=s3_object,
         location_id="0",  # only works with simcore s3
