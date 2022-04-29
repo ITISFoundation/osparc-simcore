@@ -37,7 +37,7 @@ async def _config_file(config: str) -> AsyncGenerator[str, None]:
 
 
 async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
-    str_cmd = shlex.quote(" ".join(cmd))
+    str_cmd = " ".join(cmd)
     proc = await asyncio.create_subprocess_shell(
         str_cmd,
         stdin=asyncio.subprocess.PIPE,
@@ -58,9 +58,11 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
 @cached()
 async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
+    if r_clone_settings is None:
+        return False
     try:
         await _async_command("rclone", "--version")
-        return r_clone_settings is not None
+        return True
     except _CommandFailedException:
         return False
 
@@ -88,7 +90,7 @@ async def sync_local_to_s3(
         source_path = local_file_path
         destination_path = Path(s3_path)
         file_name = local_file_path.name
-        # TODO: capture and send progress somehow?
+        # FIXME: capture progress and connect progressbars or some event to inform the UI
 
         # rclone only acts upon directories, so to target a specific file
         # we must run the command from the file's directory. See below
@@ -112,12 +114,12 @@ async def sync_local_to_s3(
             "--config",
             config_file_name,
             "sync",
-            f"'{source_path.parent}'",
-            f"'dst:{destination_path.parent}'",
+            shlex.quote(f"{source_path.parent}"),
+            shlex.quote(f"dst:{destination_path.parent}"),
             "--progress",
             "--copy-links",
             "--include",
-            f"'{file_name}'",
+            shlex.quote(f"{file_name}"),
         )
 
         try:
