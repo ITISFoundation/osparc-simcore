@@ -1,8 +1,9 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
+from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
@@ -55,11 +56,6 @@ class FilePortSchema(PortSchema):
                 },
             ]
         }
-
-
-MIME_TYPE_RE: Final[
-    str
-] = r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
 
 
 class FileUrl(BaseModel):

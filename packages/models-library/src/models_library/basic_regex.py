@@ -25,3 +25,7 @@ VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-z
 #  - cannot start with spaces, _ (we only want public) or numbers
 # https://docs.python.org/3/reference/lexical_analysis.html#identifiers
 PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"
+
+MIME_TYPE_RE = (
+    r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
+)
