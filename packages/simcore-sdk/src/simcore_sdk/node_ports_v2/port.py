@@ -49,9 +49,9 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
         raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
-def can_parse_as(v, *types_) -> bool:
+def can_parse_as(v, *types) -> bool:
     try:
-        for type_ in types_:
+        for type_ in types:
             parse_obj_as(type_, v)
         return True
     except ValidationError:
@@ -164,7 +164,7 @@ class Port(BaseServiceIOModel):
 
         Transforms DataItemValue value -> ItemValue
 
-        raises ValidationError
+        :raises ValidationError
         """
         if not file_link_type:
             file_link_type = LinkType.PRESIGNED
@@ -220,7 +220,7 @@ class Port(BaseServiceIOModel):
         """
         Transforms DataItemValue value -> ItemConcreteValue
 
-        raises ValidationError
+        :raises ValidationError
         """
         log.debug(
             "getting %s[%s] with value %s",
@@ -285,6 +285,10 @@ class Port(BaseServiceIOModel):
         return v
 
     async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
+        """
+        :raises InvalidItemTypeError
+        :raises ValidationError
+        """
         log.debug(
             "setting %s[%s] with concrete value %s",
             self.key,
@@ -322,7 +326,9 @@ class Port(BaseServiceIOModel):
 
     async def set(self, new_value: ItemConcreteValue) -> None:
         """sets a value to the port, by default it is also stored in the database
-        raises ValidationError
+
+        :raises InvalidItemTypeError
+        :raises ValidationError
         """
         await self._set(new_concrete_value=new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
@@ -330,7 +336,8 @@ class Port(BaseServiceIOModel):
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
         """set the value on the port using an item-value
 
-        raises ValidationError
+        :raises InvalidItemTypeError
+        :raises ValidationError
         """
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_item_value
