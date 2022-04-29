@@ -56,7 +56,7 @@ async def assert_status(
 async def assert_error(
     response: ClientResponse,
     expected_cls: Type[HTTPException],
-    expected_msg: str = None,
+    expected_msg: Optional[str] = None,
 ):
     data, error = unwrap_envelope(await response.json())
     return do_assert_error(data, error, expected_cls, expected_msg)
@@ -66,7 +66,7 @@ def do_assert_error(
     data,
     error,
     expected_cls: Type[HTTPException],
-    expected_msg: str = None,
+    expected_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
 ):
     assert not data, pformat(data)
