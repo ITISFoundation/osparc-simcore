@@ -573,7 +573,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         await _init_metadata()
 
-    async def upload_link(self, user_id: str, file_uuid: str, as_presigned_link: bool):
+    async def upload_link(
+        self, user_id: str, file_uuid: str, as_presigned_link: bool
+    ) -> AnyUrl:
         """returns: a presigned upload link
 
         NOTE: updates metadata once the upload is concluded"""
@@ -591,12 +593,10 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 object_name=object_name,
             )
         )
-        link = parse_obj_as(
-            AnyUrl, f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
-        )
+        link = f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
         if as_presigned_link:
             link = self.s3_client.create_presigned_put_url(bucket_name, object_name)
-        return f"{link}"
+        return parse_obj_as(AnyUrl, f"{link}")
 
     async def download_link_s3(
         self, file_uuid: str, user_id: int, as_presigned_link: bool
