@@ -72,7 +72,7 @@ async def sync_local_to_s3(
     store_id: str,
 ) -> None:
     """NOTE: only works with simcore location"""
-    assert store_id == SIMCORE_LOCATION
+    assert store_id == SIMCORE_LOCATION  # nosec
 
     s3_link = await get_upload_file_link(
         session=session,
