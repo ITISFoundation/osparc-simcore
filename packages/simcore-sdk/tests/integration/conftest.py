@@ -5,7 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Coroutine, Dict, Iterable, List, Tuple
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple
 from urllib.parse import quote_plus
 from uuid import uuid4
 

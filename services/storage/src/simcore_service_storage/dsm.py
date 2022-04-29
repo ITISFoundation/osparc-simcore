@@ -25,11 +25,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from pydantic import AnyUrl, parse_obj_as
-from servicelib.aiohttp.aiopg_utils import (
-    DatabaseError,
-    DBAPIError,
-    PostgresRetryPolicyUponOperation,
-)
+from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
