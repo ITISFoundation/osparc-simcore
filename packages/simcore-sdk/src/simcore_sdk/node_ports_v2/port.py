@@ -4,11 +4,10 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
-from jsonschema import ValidationError
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
-from pydantic import AnyUrl, Field, PrivateAttr, validator
-from simcore_sdk.node_ports_common.storage_client import LinkType
+from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
+from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableException,
