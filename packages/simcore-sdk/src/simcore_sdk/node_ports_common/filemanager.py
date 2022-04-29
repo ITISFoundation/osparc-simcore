@@ -293,7 +293,16 @@ async def upload_file(
                 store_id=store_id,
             )
         else:
-            await _upload_file_to_link(session, upload_link, local_file_path)
+            try:
+                await _upload_file_to_link(session, upload_link, local_file_path)
+            except exceptions.S3TransferError as err:
+                await delete_file(
+                    user_id=user_id,
+                    store_id=store_id,
+                    s3_object=s3_object,
+                    client_session=session,
+                )
+                raise err
 
         e_tag = await update_file_meta_data(
             session=session, s3_object=s3_object, user_id=user_id
