@@ -89,7 +89,8 @@ async def _assert_wait_for_task_status(
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(timeout or _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
-        wait=wait_fixed(1),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
             print(
