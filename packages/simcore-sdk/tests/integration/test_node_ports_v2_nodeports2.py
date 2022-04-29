@@ -44,55 +44,50 @@ async def _check_port_valid(
     assert isinstance(port, Port)
 
     assert port.key == key_name
+    port_schema = config_dict["schema"][port_type][key_name]
 
     # check required values
-    assert port.label == config_dict["schema"][port_type][key_name]["label"]
-    assert port.description == config_dict["schema"][port_type][key_name]["description"]
-    assert port.property_type == config_dict["schema"][port_type][key_name]["type"]
-    assert (
-        port.display_order == config_dict["schema"][port_type][key_name]["displayOrder"]
-    )
+    assert port.label == port_schema["label"]
+    assert port.description == port_schema["description"]
+    assert port.property_type == port_schema["type"]
+    assert port.display_order == port_schema["displayOrder"]
     # check optional values
-    if "defaultValue" in config_dict["schema"][port_type][key_name]:
-        assert (
-            port.default_value
-            == config_dict["schema"][port_type][key_name]["defaultValue"]
-        )
+    if "defaultValue" in port_schema:
+        assert port.default_value == port_schema["defaultValue"]
     else:
         assert port.default_value == None
-    if "fileToKeyMap" in config_dict["schema"][port_type][key_name]:
-        assert (
-            port.file_to_key_map
-            == config_dict["schema"][port_type][key_name]["fileToKeyMap"]
-        )
+    if "fileToKeyMap" in port_schema:
+        assert port.file_to_key_map == port_schema["fileToKeyMap"]
     else:
         assert port.file_to_key_map == None
-    if "widget" in config_dict["schema"][port_type][key_name]:
-        assert port.widget == config_dict["schema"][port_type][key_name]["widget"]
+    if "widget" in port_schema:
+        assert port.widget == port_schema["widget"]
     else:
         assert port.widget == None
 
     # check payload values
-    if key_name in config_dict[port_type]:
-        if isinstance(config_dict[port_type][key_name], dict):
+    port_values = config_dict[port_type]
+    if key_name in port_values:
+        if isinstance(port_values[key_name], dict):
             assert (
                 port.value.dict(by_alias=True, exclude_unset=True)
-                == config_dict[port_type][key_name]
+                == port_values[key_name]
             )
         else:
-            assert port.value == config_dict[port_type][key_name]
-    elif "defaultValue" in config_dict["schema"][port_type][key_name]:
-        assert port.value == config_dict["schema"][port_type][key_name]["defaultValue"]
+            assert port.value == port_values[key_name]
+    elif "defaultValue" in port_schema:
+        assert port.value == port_schema["defaultValue"]
     else:
         assert port.value == None
 
 
 async def _check_ports_valid(ports: Nodeports, config_dict: Dict, port_type: str):
-    for key in config_dict["schema"][port_type].keys():
+    port_schemas = config_dict["schema"][port_type]
+    for key in port_schemas.keys():
         # test using "key" name
         await _check_port_valid(ports, config_dict, port_type, key, key)
         # test using index
-        key_index = list(config_dict["schema"][port_type].keys()).index(key)
+        key_index = list(port_schemas.keys()).index(key)
         await _check_port_valid(ports, config_dict, port_type, key, key_index)
 
 
@@ -384,6 +379,7 @@ async def test_removing_ports(
         ("boolean", True, bool),
         ("string", "test-string", str),
         ("string", "", str),
+        # TODO: add here schema-like port
     ],
 )
 async def test_get_value_from_previous_node(

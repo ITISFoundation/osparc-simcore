@@ -40,6 +40,7 @@ def _assign_config(
     if entries is None:
         return
     for entry in entries:
+
         config_dict["schema"][port_type].update(
             {
                 entry[0]: {
