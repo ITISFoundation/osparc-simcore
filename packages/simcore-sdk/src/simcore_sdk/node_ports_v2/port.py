@@ -163,6 +163,8 @@ class Port(BaseServiceIOModel):
         """Resolves data links and returns resulted value
 
         Transforms DataItemValue value -> ItemValue
+
+        raises ValidationError
         """
         if not file_link_type:
             file_link_type = LinkType.PRESIGNED
@@ -217,6 +219,8 @@ class Port(BaseServiceIOModel):
     async def get(self) -> Optional[ItemConcreteValue]:
         """
         Transforms DataItemValue value -> ItemConcreteValue
+
+        raises ValidationError
         """
         log.debug(
             "getting %s[%s] with value %s",
@@ -317,12 +321,17 @@ class Port(BaseServiceIOModel):
         self._used_default_value = False
 
     async def set(self, new_value: ItemConcreteValue) -> None:
-        """sets a value to the port, by default it is also stored in the database"""
+        """sets a value to the port, by default it is also stored in the database
+        raises ValidationError
+        """
         await self._set(new_concrete_value=new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
-        """set the value on the port using an item-value"""
+        """set the value on the port using an item-value
+
+        raises ValidationError
+        """
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_item_value
         )

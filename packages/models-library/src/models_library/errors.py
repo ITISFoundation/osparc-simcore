@@ -1,6 +1,6 @@
-from typing import Any, Dict, Tuple, TypedDict, Union
+from typing import Any, TypedDict, Union
 
-Loc = Tuple[Union[int, str], ...]
+Loc = tuple[Union[int, str], ...]
 
 
 class _ErrorDictRequired(TypedDict):
@@ -27,7 +27,7 @@ class _ErrorDictRequired(TypedDict):
 class ErrorDict(_ErrorDictRequired, total=False):
     """Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"""
 
-    ctx: Dict[str, Any]
+    ctx: dict[str, Any]
 
 
 # NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'
