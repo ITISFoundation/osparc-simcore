@@ -1,9 +1,9 @@
 import asyncio
 import json
 import logging
+import urllib.parse
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
-import urllib.parse
 
 import attr
 from aiohttp import web
@@ -16,8 +16,8 @@ from .access_layer import InvalidFileIdentifier
 from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
-from .settings import Settings
 from .models import FileMetaDataEx
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 

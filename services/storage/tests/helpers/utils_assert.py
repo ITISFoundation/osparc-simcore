@@ -1,7 +1,6 @@
 from pprint import pformat
 
 from aiohttp import web
-
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 
 
