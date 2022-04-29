@@ -191,45 +191,38 @@ qx.Class.define("osparc.utils.Services", {
      * - compIOFields of src outputs need to be in dest outputs
      */
     __areNodesCompatible: function(srcNode, destNode) {
-      const compIOFields = ["keyId", "type", "unit"]; // fileToKeyMap?, defaultValue?
+      const compIOFields = ["keyId"];
+      let compatible = true;
 
       // inputs
-      const inputKeys = Object.keys(srcNode["inputs"]);
-      for (let i=0; i<inputKeys.length; i++) {
-        const inputKey = inputKeys[i];
+      Object.keys(srcNode["inputs"]).forEach(inputKey => {
         if (!(inputKey in destNode["inputs"])) {
-          return false;
+          compatible = false;
         }
-        const inputFields = Object.keys(srcNode["inputs"][inputKey]);
-        for (let j=0; j<inputFields.length; j++) {
-          const inputField = inputFields[j];
+        Object.keys(srcNode["inputs"][inputKey]).forEach(inputField => {
           if (compIOFields.includes(inputField)) {
             if (!(inputField in destNode["inputs"][inputKey]) || srcNode["inputs"][inputKey][inputField] !== destNode["inputs"][inputKey][inputField]) {
-              return false;
+              compatible = false;
             }
           }
-        }
-      }
+        });
+      });
 
       // outputs
-      const outputKeys = Object.keys(srcNode["outputs"]);
-      for (let i=0; i<outputKeys.length; i++) {
-        const outputKey = outputKeys[i];
+      Object.keys(srcNode["outputs"]).forEach(outputKey => {
         if (!(outputKey in destNode["outputs"])) {
-          return false;
+          compatible = false;
         }
-        const outputFields = Object.keys(srcNode["outputs"][outputKey]);
-        for (let j=0; j<outputFields.length; j++) {
-          const outputField = outputFields[j];
+        Object.keys(srcNode["outputs"][outputKey]).forEach(outputField => {
           if (compIOFields.includes(outputField)) {
             if (!(outputField in destNode["outputs"][outputKey]) || srcNode["outputs"][outputKey][outputField] !== destNode["outputs"][outputKey][outputField]) {
-              return false;
+              compatible = false;
             }
           }
-        }
-      }
+        });
+      });
 
-      return true;
+      return compatible;
     },
 
     getLatestCompatible: function(services, srcKey, srcVersion) {
