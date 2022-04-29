@@ -93,7 +93,7 @@ class BaseFileLink(BaseModel):
     )
 
     e_tag: Optional[str] = Field(
-        None,
+        default=None,
         description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
         alias="eTag",
     )
@@ -103,7 +103,7 @@ class SimCoreFileLink(BaseFileLink):
     """I/O port type to hold a link to a file in simcore S3 storage"""
 
     dataset: Optional[str] = Field(
-        None,
+        default=None,
         deprecated=True
         # TODO: Remove with storage refactoring
     )
