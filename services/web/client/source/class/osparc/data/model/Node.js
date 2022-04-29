@@ -724,6 +724,10 @@ qx.Class.define("osparc.data.model.Node", {
       return outputsData;
     },
 
+    setErrors: function(errors) {
+      console.log(errors);
+    },
+
     // post edge creation routine
     edgeAdded: function(edge) {
       const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
