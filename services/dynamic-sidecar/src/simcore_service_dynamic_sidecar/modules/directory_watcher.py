@@ -217,7 +217,7 @@ def enable_directory_watcher(app: FastAPI) -> None:
 
 
 @contextmanager
-def directory_watcher_disabler(app: FastAPI) -> Generator[None, None, None]:
+def directory_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
     disable_directory_watcher(app)
     try:
         yield None
@@ -228,6 +228,6 @@ def directory_watcher_disabler(app: FastAPI) -> Generator[None, None, None]:
 __all__ = [
     "disable_directory_watcher",
     "enable_directory_watcher",
-    "directory_watcher_disabler",
+    "directory_watcher_disabled",
     "setup_directory_watcher",
 ]
