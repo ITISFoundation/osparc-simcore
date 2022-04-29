@@ -13,8 +13,9 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
+from ..node_ports_common.storage_client import update_file_meta_data
 from . import exceptions, storage_client
-from .constants import ETag
+from .constants import SIMCORE_LOCATION, ETag
 from .r_clone import is_r_clone_available, sync_local_to_s3
 
 log = logging.getLogger(__name__)
@@ -281,17 +282,22 @@ async def upload_file(
             raise exceptions.S3InvalidPathError(s3_object)
 
         if await is_r_clone_available(r_clone_settings):
-            e_tag = await sync_local_to_s3(
+            if store_id != SIMCORE_LOCATION:
+                raise exceptions.S3InvalidStore(store_id)
+            await sync_local_to_s3(
                 session=session,
                 r_clone_settings=r_clone_settings,
                 s3_object=s3_object,
                 local_file_path=local_file_path,
                 user_id=user_id,
+                store_id=store_id,
             )
-            # TODO: maybe a better check here or an error if do not match?
-            store_id = "0"  # simcore only feature
         else:
-            e_tag = await _upload_file_to_link(session, upload_link, local_file_path)
+            await _upload_file_to_link(session, upload_link, local_file_path)
+
+        e_tag = await update_file_meta_data(
+            session=session, s3_object=s3_object, user_id=user_id
+        )
         return store_id, e_tag
 
 

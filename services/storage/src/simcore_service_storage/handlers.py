@@ -295,25 +295,6 @@ async def update_file_meta_data(request: web.Request):
         }
 
 
-@routes.delete(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata")  # type: ignore
-async def delete_file_meta_data(request: web.Request):
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert not body, "body %s" % body  # nosec
-
-    with handle_storage_errors():
-        user_id = query["user_id"]
-        file_uuid = urllib.parse.unquote_plus(params["fileId"])
-
-        dsm = await _prepare_storage_manager(params, query, request)
-
-        await dsm.delete_metadata(user_id=user_id, file_uuid=file_uuid)
-
-    raise web.HTTPNoContent(content_type="application/json")
-
-
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def download_file(request: web.Request):
     params, query, body = await extract_and_validate(request)

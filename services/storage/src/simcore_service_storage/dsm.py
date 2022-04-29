@@ -520,27 +520,6 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             object_name=object_name,
         )
 
-    async def delete_metadata(self, user_id: int, file_uuid: str) -> None:
-        async with self.engine.acquire() as conn:
-            can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
-            )
-            if not can.write:
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} was not allowed to upload file {file_uuid}"
-                )
-
-            try:
-                await conn.execute(
-                    file_meta_data.delete().where(
-                        file_meta_data.c.file_uuid == file_uuid
-                    )
-                )
-            except DatabaseError as err:
-                raise web.HTTPNotFound(
-                    reason=f"Could not delete metadata entry for file {file_uuid}"
-                ) from err
-
     async def _generate_metadata_for_link(self, user_id: str, file_uuid: str):
         """
         Updates metadata table when link is used and upload is successfuly completed

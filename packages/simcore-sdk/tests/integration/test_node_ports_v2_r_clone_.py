@@ -1,11 +1,11 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import shutil
 from contextlib import asynccontextmanager
-from importlib import reload
 from pathlib import Path
-from typing import AsyncGenerator, AsyncIterable, Iterator
+from typing import AsyncGenerator, AsyncIterable, Final, Iterator, Optional
 from uuid import uuid4
 
 import aioboto3
@@ -17,7 +17,8 @@ from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
-from simcore_sdk.node_ports_common import r_clone, storage_client
+from simcore_sdk.node_ports_common import r_clone
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -29,6 +30,9 @@ pytest_simcore_ops_services_selection = [
     "minio",
     "adminer",
 ]
+
+
+WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
 class _TestException(Exception):
@@ -86,13 +90,21 @@ async def cleanup_s3(
 
 
 @pytest.fixture
-def mock_update_file_meta_data(mocker: MockerFixture) -> None:
+def raise_error_after_upload(
+    mocker: MockerFixture, postgres_db: sa.engine.Engine, s3_object: str
+) -> None:
+    handler = r_clone._async_command  # pylint: disable=protected-access
+
+    async def _mock_async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+        await handler(*cmd, cwd=cwd)
+        assert _is_file_present(postgres_db=postgres_db, s3_object=s3_object) is True
+
+        raise _TestException()
+
     mocker.patch(
-        "simcore_sdk.node_ports_common.storage_client.update_file_meta_data",
-        side_effect=_TestException,
+        "simcore_sdk.node_ports_common.r_clone._async_command",
+        side_effect=_mock_async_command,
     )
-    reload(r_clone)
-    reload(storage_client)
 
 
 @pytest.fixture
@@ -125,6 +137,7 @@ async def _get_s3_object(
 async def _download_s3_object(
     r_clone_settings: RCloneSettings, s3_path: str, local_path: Path
 ):
+    await asyncio.sleep(WAIT_FOR_S3_BACKEND_TO_UPDATE)
     async with _get_s3_object(r_clone_settings, s3_path) as s3_object:
         await s3_object.download_file(f"{local_path}")
 
@@ -154,16 +167,14 @@ async def test_sync_local_to_s3(
     cleanup_s3: None,
 ) -> None:
 
-    etag = await r_clone.sync_local_to_s3(
+    await r_clone.sync_local_to_s3(
         session=client_session,
         r_clone_settings=r_clone_settings,
         s3_object=s3_object,
         local_file_path=file_to_upload,
         user_id=user_id,
+        store_id=SIMCORE_LOCATION,
     )
-
-    assert isinstance(etag, str)
-    assert '"' not in etag
 
     await _download_s3_object(
         r_clone_settings=r_clone_settings,
@@ -185,7 +196,7 @@ async def test_sync_local_to_s3_cleanup_on_error(
     postgres_db: sa.engine.Engine,
     client_session: ClientSession,
     cleanup_s3: None,
-    mock_update_file_meta_data: None,
+    raise_error_after_upload: None,
 ) -> None:
     with pytest.raises(_TestException):
         await r_clone.sync_local_to_s3(
@@ -194,5 +205,6 @@ async def test_sync_local_to_s3_cleanup_on_error(
             s3_object=s3_object,
             local_file_path=file_to_upload,
             user_id=user_id,
+            store_id=SIMCORE_LOCATION,
         )
     assert _is_file_present(postgres_db=postgres_db, s3_object=s3_object) is False

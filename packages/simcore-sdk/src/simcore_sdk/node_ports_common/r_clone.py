@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import re
+import shlex
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
-import shlex
 from aiocache import cached
 from aiofiles import tempfile
 from aiohttp import ClientSession
@@ -14,12 +14,8 @@ from pydantic.errors import PydanticErrorMixin
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
-from .constants import ETag
-from .storage_client import (
-    delete_file_meta_data,
-    get_upload_file_link,
-    update_file_meta_data,
-)
+from .constants import SIMCORE_LOCATION
+from .storage_client import delete_file, get_upload_file_link
 
 logger = logging.getLogger(__name__)
 
@@ -73,12 +69,15 @@ async def sync_local_to_s3(
     s3_object: str,
     local_file_path: Path,
     user_id: UserID,
-) -> ETag:
+    store_id: str,
+) -> None:
+    """NOTE: only works with simcore location"""
+    assert store_id == SIMCORE_LOCATION
 
     s3_link = await get_upload_file_link(
         session=session,
         file_id=s3_object,
-        location_id="0",  # only works with simcore s3
+        location_id=store_id,
         user_id=user_id,
         as_presigned_link=False,
     )
@@ -124,14 +123,14 @@ async def sync_local_to_s3(
 
         try:
             await _async_command(*r_clone_command, cwd=f"{source_path.parent}")
-            return await update_file_meta_data(
-                session=session, s3_object=s3_object, user_id=user_id
-            )
         except Exception as e:
             logger.warning(
                 "There was an error while uploading %s. Removing metadata", s3_object
             )
-            await delete_file_meta_data(
-                session=session, s3_object=s3_object, user_id=user_id
+            await delete_file(
+                session=session,
+                file_id=s3_object,
+                location_id=store_id,
+                user_id=user_id,
             )
             raise e
