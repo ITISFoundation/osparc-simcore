@@ -688,7 +688,6 @@ async def test_abort_computation_tasks(
     )
 
 
-@pytest.mark.flaky
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,
@@ -743,11 +742,9 @@ async def test_failed_task_returns_exceptions(
         match="sadly we are failing to execute anything cause we are dumb...",
     ):
         await dask_client.get_task_result(job_id)
-
+    assert len(await dask_client.backend.client.list_datasets()) > 0
     await dask_client.release_task_result(job_id)
-    await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=120
-    )
+    assert len(await dask_client.backend.client.list_datasets()) == 0
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
