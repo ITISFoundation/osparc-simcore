@@ -44,6 +44,7 @@ from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
@@ -124,11 +125,17 @@ def minimal_dask_config(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
+@pytest.fixture(params=list(FileLinkType))
+def tasks_file_link_type(request) -> FileLinkType:
+    return request.param
+
+
 @pytest.fixture
 async def create_dask_client_from_scheduler(
     minimal_dask_config: None,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
+    tasks_file_link_type: FileLinkType,
 ) -> AsyncIterator[Callable[[], Awaitable[DaskClient]]]:
     created_clients = []
 
@@ -138,6 +145,7 @@ async def create_dask_client_from_scheduler(
             settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
             endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
             authentication=NoAuthentication(),
+            tasks_file_link_type=tasks_file_link_type,
         )
         assert client
         assert client.app == minimal_app
@@ -167,6 +175,7 @@ async def create_dask_client_from_gateway(
     minimal_dask_config: None,
     local_dask_gateway_server: DaskGatewayServer,
     minimal_app: FastAPI,
+    tasks_file_link_type: FileLinkType,
 ) -> AsyncIterator[Callable[[], Awaitable[DaskClient]]]:
     created_clients = []
 
@@ -179,6 +188,7 @@ async def create_dask_client_from_gateway(
                 username="pytest_user",
                 password=SecretStr(local_dask_gateway_server.password),
             ),
+            tasks_file_link_type=tasks_file_link_type,
         )
         assert client
         assert client.app == minimal_app
