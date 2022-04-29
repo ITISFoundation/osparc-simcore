@@ -413,8 +413,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
-    STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
-
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
     DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
