@@ -25,7 +25,11 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from pydantic import AnyUrl, parse_obj_as
-from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
+from servicelib.aiohttp.aiopg_utils import (
+    DatabaseError,
+    DBAPIError,
+    PostgresRetryPolicyUponOperation,
+)
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -532,7 +536,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                         file_meta_data.c.file_uuid == file_uuid
                     )
                 )
-            except Exception as err:
+            except DatabaseError as err:
                 raise web.HTTPNotFound(
                     reason=f"Could not delete metadata entry for file {file_uuid}"
                 ) from err
