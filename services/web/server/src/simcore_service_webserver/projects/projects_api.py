@@ -574,9 +574,6 @@ async def notify_project_node_update(
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    # TODO: create SocketMessageDict[NodeUpdatedData] with TypeDict but for now generic TypedDict
-    # does not seem supported. https://github.com/python/mypy/issues/3863
-    #
     messages: List[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
@@ -585,7 +582,7 @@ async def notify_project_node_update(
                 "node_id": node_id,
                 # as GET projects/{project_id}/nodes/{node_id}
                 "data": project["workbench"][node_id],
-                # TODO: as GET projects/{project_id}/nodes/{node_id}/errors
+                # as GET projects/{project_id}/nodes/{node_id}/errors
                 "errors": errors,
             },
         }
