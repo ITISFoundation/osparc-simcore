@@ -189,28 +189,29 @@ class PortsValidationError(TaskSchedulingError):
         """
         value_errors = []
         for error in self.errors:
-            if error["type"].startswith("value_error.port_validation"):
-                error_loc = error["loc"]
+            # NOTE: should I filter? if error["type"].startswith("value_error."):
 
-                assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
-                assert error_loc[-1].startswith("value"), f"{error_loc=}"  # nosec
+            loc_tail = []
+            if port_key := error.get("ctx", {}).get("port_key"):
+                loc_tail.append(f"{port_key}")
 
-                field_loc_tuple = error_loc[1:-1]
-                if schema_error_path := error.get("ctx", {}).get("schema_error_path"):
-                    field_loc_tuple += tuple(schema_error_path)
+            if schema_error_path := error.get("ctx", {}).get("schema_error_path"):
+                loc_tail += list(schema_error_path)
 
-                value_errors.append(
-                    {
-                        "loc": (
-                            f"{self.project_id}",
-                            f"{self.node_id}",
-                        )
-                        + field_loc_tuple,
-                        "msg": error["msg"],
-                        # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
-                        "type": error["type"],
-                    }
-                )
+            # WARNING: error in a node, might come from the previous node's port
+            # DO NOT remove project/node/port hiearchy
+            value_errors.append(
+                {
+                    "loc": (
+                        f"{self.project_id}",
+                        f"{self.node_id}",
+                    )
+                    + tuple(loc_tail),
+                    "msg": error["msg"],
+                    # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
+                    "type": error["type"],
+                }
+            )
         return value_errors
 
 
