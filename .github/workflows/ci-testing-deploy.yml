@@ -1086,6 +1086,8 @@ jobs:
           driver: docker
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v3
         with:

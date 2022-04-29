@@ -10,7 +10,7 @@ import tempfile
 import threading
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Type, Union
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
@@ -140,11 +140,11 @@ def config_value_symlink_path(symlink_path: Path) -> Dict[str, Any]:
 
 
 @pytest.fixture(params=[True, False])
-def option_r_clone_settings(
-    request, r_clone_settings: RCloneSettings
+async def option_r_clone_settings(
+    request, r_clone_settings_factory: Awaitable[RCloneSettings]
 ) -> Optional[RCloneSettings]:
     if request.param:
-        return r_clone_settings
+        return await r_clone_settings_factory
     return None
 
 

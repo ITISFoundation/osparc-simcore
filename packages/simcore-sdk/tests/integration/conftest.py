@@ -5,7 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Any, Awaitable, Callable, Coroutine, Dict, Iterable, List, Tuple
 from urllib.parse import quote_plus
 from uuid import uuid4
 
@@ -328,23 +328,33 @@ def _assign_config(
 
 
 @pytest.fixture
-async def r_clone_settings(
+async def r_clone_settings_factory(
     minio_config: Dict[str, Any], storage_service: URL
-) -> RCloneSettings:
-    client = minio_config["client"]
-    settings = RCloneSettings.parse_obj(
-        dict(
-            R_CLONE_S3=dict(
-                S3_ENDPOINT=client["endpoint"],
-                S3_ACCESS_KEY=client["access_key"],
-                S3_SECRET_KEY=client["secret_key"],
-                S3_BUCKET_NAME=minio_config["bucket_name"],
-                S3_SECURE=client["secure"],
-            ),
-            R_CLONE_PROVIDER=S3Provider.MINIO,
+) -> Awaitable[RCloneSettings]:
+    async def _factory() -> RCloneSettings:
+        client = minio_config["client"]
+        settings = RCloneSettings.parse_obj(
+            dict(
+                R_CLONE_S3=dict(
+                    S3_ENDPOINT=client["endpoint"],
+                    S3_ACCESS_KEY=client["access_key"],
+                    S3_SECRET_KEY=client["secret_key"],
+                    S3_BUCKET_NAME=minio_config["bucket_name"],
+                    S3_SECURE=client["secure"],
+                ),
+                R_CLONE_PROVIDER=S3Provider.MINIO,
+            )
         )
-    )
-    if not await is_r_clone_available(settings):
-        pytest.skip("rclone not installed")
+        if not await is_r_clone_available(settings):
+            pytest.skip("rclone not installed")
 
-    return settings
+        return settings
+
+    return _factory()
+
+
+@pytest.fixture
+async def r_clone_settings(
+    r_clone_settings_factory: Awaitable[RCloneSettings],
+) -> RCloneSettings:
+    return await r_clone_settings_factory
