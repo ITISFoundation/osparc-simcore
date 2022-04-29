@@ -209,8 +209,10 @@ class Port(BaseServiceIOModel):
             return self.value
 
         # assigns to validate result
-        self.value_item = await _evaluate()
-        return self.value_item
+        v = await _evaluate()
+        if v != self.value_item:
+            self.value_item = v
+        return v
 
     async def get(self) -> Optional[ItemConcreteValue]:
         """
@@ -273,8 +275,10 @@ class Port(BaseServiceIOModel):
             return concrete_value
 
         # assigns to validate result
-        self.value_concrete = await _evaluate()
-        return self.value_concrete
+        v = await _evaluate()
+        if v != self.value_concrete:
+            self.value_concrete = v
+        return v
 
     async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
         log.debug(

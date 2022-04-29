@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
@@ -93,6 +94,7 @@ class CompTaskAtDB(BaseModel):
     task_id: Optional[PositiveInt]
     internal_id: PositiveInt
     node_class: NodeClass
+    errors: Optional[list[ErrorDict]]
 
     @validator("state", pre=True)
     @classmethod

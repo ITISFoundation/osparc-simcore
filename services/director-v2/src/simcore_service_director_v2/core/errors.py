@@ -193,7 +193,7 @@ class PortsValidationError(TaskSchedulingError):
                 error_loc = error["loc"]
 
                 assert error_loc[0] == "__root__", f"{error_loc=}"  # nosec
-                assert error_loc[-1] == "value", f"{error_loc=}"  # nosec
+                assert error_loc[-1].startswith("value"), f"{error_loc=}"  # nosec
 
                 field_loc_tuple = error_loc[1:-1]
                 if schema_error_path := error.get("ctx", {}).get("schema_error_path"):
