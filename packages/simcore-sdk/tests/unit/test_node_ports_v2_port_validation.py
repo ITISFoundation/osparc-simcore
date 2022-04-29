@@ -126,6 +126,8 @@ async def test_port_with_array_of_object(mocker):
     with pytest.raises(ValidationError) as excinfo:
         Port(key="k", value=value, **port_meta)
 
+    assert len(excinfo.value.errors()) == 1
+
     assert (
         "0 is less than or equal to the minimum of 3"
         in excinfo.value.errors()[0]["msg"]
