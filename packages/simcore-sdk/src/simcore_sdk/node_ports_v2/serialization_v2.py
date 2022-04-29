@@ -110,12 +110,12 @@ async def dump(nodeports: Nodeports) -> None:
     async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
         ports = (
             nodeports
-            if str(node_id) == nodeports.node_uuid
+            if f"{node_id}" == nodeports.node_uuid
             else await load(
                 db_manager=nodeports.db_manager,
                 user_id=nodeports.user_id,
                 project_id=nodeports.project_id,
-                node_uuid=str(node_id),
+                node_uuid=f"{node_id}",
             )
         )
 

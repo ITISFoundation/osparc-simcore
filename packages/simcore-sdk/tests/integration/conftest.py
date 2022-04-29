@@ -28,7 +28,7 @@ def _set_configuration(
     node_id: str,
     json_configuration: str,
 ) -> Dict[str, Any]:
-    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_id))
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", f"{node_id}")
     configuration = json.loads(json_configuration)
     create_task(project_id, node_id, **configuration)
     return configuration
@@ -64,7 +64,7 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
 
     # pylint: disable=no-value-for-parameter
     stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
-    print(str(stmt))
+    print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [usr_id] = result.fetchone()
@@ -85,7 +85,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
         .values(**random_project(prj_owner=user_id))
         .returning(projects.c.uuid)
     )
-    print(str(stmt))
+    print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [prj_uuid] = result.fetchone()

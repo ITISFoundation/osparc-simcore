@@ -77,7 +77,7 @@ class Port(BaseServiceIOModel):
     _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
-    # Reference to the node that contains this port
+    # Reference to the `NodePorts` instance that contains this port
     _node_ports = PrivateAttr()
 
     # flags

@@ -271,7 +271,7 @@ async def test_port_file_accessors(
     assert received_file_link["store"] == s3_simcore_location
     assert (
         received_file_link["path"]
-        == Path(str(project_id), str(node_uuid), Path(item_value).name).as_posix()
+        == Path(f"{project_id}", f"{node_uuid}", Path(item_value).name).as_posix()
     )
     # the eTag is created by the S3 server
     assert received_file_link["eTag"]

@@ -60,7 +60,7 @@ def get_service_published_port(
     if published_port is None:
         raise RuntimeError(f"Cannot find published port for {target_port}. Got {msg}")
 
-    return str(published_port)
+    return f"{published_port}"
 
 
 def run_docker_compose_config(
