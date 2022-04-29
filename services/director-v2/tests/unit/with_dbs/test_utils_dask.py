@@ -16,7 +16,11 @@ import httpx
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from _pytest.monkeypatch import MonkeyPatch
-from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
+from dask_task_models_library.container_tasks.io import (
+    FilePortSchema,
+    FileUrl,
+    TaskOutputData,
+)
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
@@ -31,11 +35,13 @@ from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
+    compute_output_data_schema,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
     parse_dask_job_id,
     parse_output_data,
 )
+from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -44,6 +50,8 @@ pytest_simcore_ops_services_selection = ["adminer"]
 @pytest.fixture
 async def mocked_node_ports_filemanager_fcts(
     mocker: MockerFixture,
+    faker: Faker,
+    tasks_file_link_scheme: tuple,
 ) -> Dict[str, mock.MagicMock]:
     return {
         "entry_exists": mocker.patch(
@@ -55,6 +63,14 @@ async def mocked_node_ports_filemanager_fcts(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.delete_file",
             autospec=True,
             return_value=None,
+        ),
+        "get_upload_link_from_s3": mocker.patch(
+            "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_link_from_s3",
+            autospec=True,
+            side_effect=lambda **kwargs: (
+                0,
+                URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme)),
+            ),
         ),
     }
 
@@ -281,6 +297,57 @@ async def test_compute_input_data(
         ]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
+
+
+@pytest.fixture
+def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
+    if tasks_file_link_type == FileLinkType.S3:
+        return ("s3", "s3a")
+    if tasks_file_link_type == FileLinkType.PRESIGNED:
+        return ("http", "https")
+    assert False, "unknown file link type, need update of the fixture"
+
+
+async def test_compute_output_data_schema(
+    app_with_db: None,
+    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    async_client: httpx.AsyncClient,
+    user_id: UserID,
+    published_project: PublishedProject,
+    fake_io_schema: Dict[str, Dict[str, str]],
+    tasks_file_link_type: FileLinkType,
+    tasks_file_link_scheme: tuple,
+    mocked_node_ports_filemanager_fcts: Dict[str, mock.MagicMock],
+):
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    # simulate pre-created file links
+    no_outputs = {}
+    await set_comp_task_outputs(
+        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+    )
+
+    output_schema = await compute_output_data_schema(
+        async_client._transport.app,
+        user_id,
+        published_project.project.uuid,
+        sleeper_task.node_id,
+        file_link_type=tasks_file_link_type,
+    )
+    for port_key, port_schema in fake_io_schema.items():
+        assert port_key in output_schema
+        assert output_schema[port_key]
+        assert output_schema[port_key].required is True  # currently always true
+        assert isinstance(output_schema[port_key], FilePortSchema) == port_schema[
+            "type"
+        ].startswith("data:")
+        if isinstance(output_schema[port_key], FilePortSchema):
+            file_port_schema = output_schema[port_key]
+            assert isinstance(file_port_schema, FilePortSchema)
+            assert file_port_schema.url.scheme in tasks_file_link_scheme
+            if "fileToKeyMap" in port_schema:
+                assert file_port_schema.mapping
+            else:
+                assert file_port_schema.mapping is None
 
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
