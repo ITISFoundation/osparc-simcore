@@ -111,7 +111,7 @@ async def _copy_file(
                     f"{text_prefix}"
                     f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
                     f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s]"
+                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]"
                 )
 
 
