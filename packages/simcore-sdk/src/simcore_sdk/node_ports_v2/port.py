@@ -52,7 +52,7 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
 def can_parse_as(v, *types_) -> bool:
     try:
         for type_ in types_:
-            parse_obj_as(v, type_)
+            parse_obj_as(type_, v)
         return True
     except ValidationError:
         return False
@@ -65,9 +65,13 @@ class Port(BaseServiceIOModel):
 
     value: Optional[DataItemValue] = None
 
-    # Different states of "value" (e.g. typically after resolving a port's link, a download link, ...)
-    _value_item: Optional[ItemValue] = PrivateAttr(None)
-    _value_concrete: Optional[ItemConcreteValue] = PrivateAttr(None)
+    # Different states of "value"
+    #   - e.g. typically after resolving a port's link, a download link, ...
+    #   - lazy evaluation using get_* members
+    #   - used to run validation & conversion of resolved PortContentTypes values
+    #   - excluded from all model export
+    value_item: Optional[ItemValue] = Field(None, exclude=True)
+    value_concrete: Optional[ItemConcreteValue] = Field(None, exclude=True)
 
     # Types expected in _value_concrete
     _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
@@ -80,22 +84,24 @@ class Port(BaseServiceIOModel):
     _used_default_value: bool = PrivateAttr(False)
 
     class Config(BaseServiceIOModel.Config):
-        validate_assignment = (
-            True  # NOTE: ensures validation of 'value' using setters member functions
-        )
+        validate_assignment = True
 
     @validator("value", always=True)
     @classmethod
     def check_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
 
-        if v is not None and (property_type := values.get("property_type")):
+        if (
+            v is not None
+            and (property_type := values.get("property_type"))
+            and not isinstance(v, PortLink)
+        ):
             if port_utils.is_file_type(property_type):
-                if not isinstance(v, (FileLink, DownloadLink, PortLink)):
+                if not isinstance(v, (FileLink, DownloadLink)):
                     raise ValueError(
-                        f"[{values['property_type']}] must follow "
+                        f"{property_type!r} must follow "
                         f"{FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
                     )
-            elif property_type == "ref_contentSchema" and not can_parse_as(v, PortLink):
+            elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
                     port_key=values["key"],
                     value=v,
@@ -103,17 +109,17 @@ class Port(BaseServiceIOModel):
                     content_schema=values["content_schema"],
                 )
             elif isinstance(v, (list, dict)):
-                # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2849
-                raise ValueError(
-                    f"Containers as {v} currently only supported within content_schema"
+                raise TypeError(
+                    f"Containers as {v} currently only supported within content_schema."
                 )
         return v
 
-    @validator("_item_value", "_concrete_value", pre=True)
+    @validator("value_item", "value_concrete", pre=True)
     @classmethod
     def check_item_or_concrete_value(cls, v, values):
         if (
             v
+            and v != values["value"]
             and (property_type := values.get("property_type"))
             and property_type == "ref_contentSchema"
             and not can_parse_as(v, Path, AnyUrl)
@@ -203,8 +209,8 @@ class Port(BaseServiceIOModel):
             return self.value
 
         # assigns to validate result
-        self._value_item = await _evaluate()
-        return self._value_item
+        self.value_item = await _evaluate()
+        return self.value_item
 
     async def get(self) -> Optional[ItemConcreteValue]:
         """
@@ -267,8 +273,8 @@ class Port(BaseServiceIOModel):
             return concrete_value
 
         # assigns to validate result
-        self._value_concrete = await _evaluate()
-        return self._value_concrete
+        self.value_concrete = await _evaluate()
+        return self.value_concrete
 
     async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
         log.debug(
@@ -302,8 +308,8 @@ class Port(BaseServiceIOModel):
                 new_value = converted_value
 
         self.value = new_value
-        self._value_item = None
-        self._value_concrete = None
+        self.value_item = None
+        self.value_concrete = None
         self._used_default_value = False
 
     async def set(self, new_value: ItemConcreteValue) -> None:
@@ -333,10 +339,10 @@ class Port(BaseServiceIOModel):
             new_concrete_value: ItemConcreteValue = self._py_value_converter(
                 new_item_value
             )
-            self._value_concrete = None
+            self.value_concrete = None
             self.value = new_concrete_value  # type:ignore
 
-        self._value_item = None
-        self._value_concrete = None
+        self.value_item = None
+        self.value_concrete = None
         self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)

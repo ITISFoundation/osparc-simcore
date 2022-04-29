@@ -37,7 +37,9 @@ DataItemValue = Union[
 # - ItemValue values are resolved into ItemConcreteValue using Port.get()
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
-PortContentTypes = Union[int, float, bool, str, List[Any], Dict[str, Any]]
+PortContentTypes = Union[
+    StrictBool, StrictInt, StrictFloat, StrictStr, List[Any], Dict[str, Any]
+]
 ItemValue = Union[PortContentTypes, AnyUrl]
 ItemConcreteValue = Union[PortContentTypes, Path]
 
