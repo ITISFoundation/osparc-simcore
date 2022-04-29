@@ -14,19 +14,21 @@ from simcore_service_storage.access_layer import (
     get_project_access_rights,
 )
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 @pytest.fixture
 async def filemeta_id(
-    user_id: int, project_id: str, postgres_engine: Engine
+    user_id: int, project_id: str, aiopg_engine: Engine
 ) -> Iterable[str]:
     raise NotImplementedError()
 
 
 async def test_access_rights_on_owned_project(
-    user_id: int, project_id: UUID, postgres_engine: Engine
+    user_id: int, project_id: UUID, aiopg_engine: Engine
 ):
 
-    async with postgres_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
 
         access = await get_project_access_rights(conn, user_id, str(project_id))
         assert access == AccessRights.all()

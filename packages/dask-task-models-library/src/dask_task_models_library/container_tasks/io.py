@@ -69,7 +69,7 @@ class FileUrl(BaseModel):
         schema_extra = {
             "examples": [
                 {
-                    "url": "s3://some_file_url",
+                    "url": "https://some_file_url",
                 },
                 {"url": "s3://some_file_url", "file_mapping": "some_file_name.txt"},
             ]
@@ -124,7 +124,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
                     "string_output": {"required": False},
                     "file_output": {
                         "required": True,
-                        "url": "s3://some_file_url",
+                        "url": "https://some_file_url",
                         "mapping": "the_output_filename",
                     },
                     "optional_file_output": {

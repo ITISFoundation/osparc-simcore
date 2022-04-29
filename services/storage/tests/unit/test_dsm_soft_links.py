@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Iterable
+from typing import AsyncIterator
 
 import attr
 import pytest
@@ -13,13 +13,16 @@ from simcore_service_storage.models import FileMetaData, FileMetaDataEx, file_me
 from simcore_service_storage.utils import create_resource_uuid
 from sqlalchemy.sql.expression import literal_column
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio"]
+
 
 @pytest.fixture
-def storage(postgres_engine: Engine) -> DataStorageManager:
+def storage(aiopg_engine: Engine) -> DataStorageManager:
 
     return DataStorageManager(
         s3_client=None,
-        engine=postgres_engine,
+        engine=aiopg_engine,
         loop=None,
         pool=None,
         simcore_bucket_name="master-simcore",
@@ -30,8 +33,8 @@ def storage(postgres_engine: Engine) -> DataStorageManager:
 
 @pytest.fixture()
 async def output_file(
-    user_id: int, project_id: str, postgres_engine: Engine
-) -> Iterable[FileMetaData]:
+    user_id: int, project_id: str, aiopg_engine: Engine
+) -> AsyncIterator[FileMetaData]:
 
     node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
 
@@ -46,7 +49,7 @@ async def output_file(
     file.user_name = "test"
     file.user_id = str(user_id)
 
-    async with postgres_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         stmt = (
             file_meta_data.insert()
             .values(

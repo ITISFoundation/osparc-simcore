@@ -3,34 +3,37 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 from urllib.parse import quote
 
 import pytest
 import simcore_service_storage._meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aiopg.sa import Engine
+from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
-from simcore_service_storage.constants import APP_CONFIG_KEY, SIMCORE_S3_ID
-from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
+from simcore_service_storage.application import create
+from simcore_service_storage.constants import SIMCORE_S3_ID
+from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.rest import setup_rest
-from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import Settings
-from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
-def parse_db(dsm_mockup_db):
+
+def parse_db(dsm_mockup_db: dict[str, FileMetaData]):
     id_name_map = {}
     id_file_count = {}
     for d in dsm_mockup_db.keys():
@@ -45,53 +48,38 @@ def parse_db(dsm_mockup_db):
 
 
 @pytest.fixture
-def client(
-    event_loop,
-    unused_tcp_port_factory,
-    aiohttp_client: TestClient,
-    postgres_service,
-    postgres_service_url,
-    minio_service,
-    osparc_api_specs_dir,
-    monkeypatch,
-):
-    app = web.Application()
-
-    # FIXME: postgres_service fixture environs different from project_env_devel_environment. Do it after https://github.com/ITISFoundation/osparc-simcore/pull/2276 resolved
-    pg_config = postgres_service.copy()
-    pg_config.pop("database")
-
-    for key, value in pg_config.items():
-        monkeypatch.setenv(f"POSTGRES_{key.upper()}", f"{value}")
-
-    for key, value in minio_service.items():
-        monkeypatch.setenv(f"S3_{key.upper()}", f"{value}")
-
-    monkeypatch.setenv("STORAGE_PORT", str(unused_tcp_port_factory()))
+def app_settings(
+    aiopg_engine: Engine,
+    postgres_host_config: dict[str, str],
+    minio_config: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> Settings:
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("STORAGE_TESTING", "1")
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+    test_app_settings = Settings.create_from_envs()
+    print(f"{test_app_settings.json(indent=2)=}")
+    return test_app_settings
 
-    settings = Settings.create_from_envs()
-    print(settings.json(indent=2))
 
-    app[APP_CONFIG_KEY] = settings
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable[..., int],
+    app_settings: Settings,
+) -> TestClient:
 
-    setup_db(app)
-    setup_rest(app)
-    setup_dsm(app)
-    setup_s3(app)
+    app = create(app_settings)
 
     cli = event_loop.run_until_complete(
-        aiohttp_client(
-            app, server_kwargs={"port": settings.STORAGE_PORT, "host": "localhost"}
-        )
+        aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
     )
     return cli
 
 
-async def test_health_check(client):
+async def test_health_check(client: TestClient):
     resp = await client.get("/v0/")
     text = await resp.text()
 
@@ -108,7 +96,7 @@ async def test_health_check(client):
     assert app_health.version == simcore_service_storage._meta.api_version
 
 
-async def test_locations(client):
+async def test_locations(client: TestClient):
     user_id = USER_ID
 
     resp = await client.get("/v0/locations?user_id={}".format(user_id))
@@ -123,7 +111,9 @@ async def test_locations(client):
     assert not error
 
 
-async def test_s3_files_metadata(client, dsm_mockup_db):
+async def test_s3_files_metadata(
+    client: TestClient, dsm_mockup_db: dict[str, FileMetaData]
+):
     id_file_count, _id_name_map = parse_db(dsm_mockup_db)
 
     # list files for every user
@@ -139,6 +129,7 @@ async def test_s3_files_metadata(client, dsm_mockup_db):
     # list files fileterd by uuid
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
+        assert fmd.project_id
         uuid_filter = os.path.join(fmd.project_id, fmd.node_id)
         resp = await client.get(
             "/v0/locations/0/files/metadata?user_id={}&uuid_filter={}".format(
@@ -340,11 +331,12 @@ async def _create_and_delete_folders_from_project(
     destination_project, nodes_map = clone_project_data(project)
 
     # CREATING
+    assert client.app
     url = (
         client.app.router["copy_folders_from_project"].url_for().with_query(user_id="1")
     )
     resp = await client.post(
-        url,
+        f"{url}",
         json={
             "source": project,
             "destination": destination_project,
@@ -372,7 +364,7 @@ async def _create_and_delete_folders_from_project(
         .url_for(folder_id=project_id)
         .with_query(user_id="1")
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
 
     await assert_status(resp, expected_cls=web.HTTPNoContent)
 
@@ -404,7 +396,6 @@ async def test_create_and_delete_folders_from_project_burst(
     mock_datcore_download,
 ):
     source_project = project
-    import asyncio
 
     await asyncio.gather(
         *[
@@ -414,26 +405,28 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
-async def test_s3_datasets_metadata(client):
+async def test_s3_datasets_metadata(client: TestClient):
+    assert client.app
     url = (
         client.app.router["get_datasets_metadata"]
         .url_for(location_id=str(SIMCORE_S3_ID))
         .with_query(user_id="21")
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     payload = await resp.json()
     assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ("data", "error"))
     assert not error
 
 
-async def test_s3_files_datasets_metadata(client):
+async def test_s3_files_datasets_metadata(client: TestClient):
+    assert client.app
     url = (
         client.app.router["get_files_metadata_dataset"]
         .url_for(location_id=str(SIMCORE_S3_ID), dataset_id="aa")
         .with_query(user_id="21")
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     payload = await resp.json()
     assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ("data", "error"))
