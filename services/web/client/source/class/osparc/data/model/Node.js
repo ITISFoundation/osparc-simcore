@@ -727,40 +727,18 @@ qx.Class.define("osparc.data.model.Node", {
 
     setErrors: function(errors) {
       errors.forEach(error => {
-        let loc = error["loc"];
-        // remove parethesis
-        if (loc[0] === "(") {
-          loc = loc.substring(1);
-        }
-        if (loc[loc.length-1] === ")") {
-          loc = loc.substring(0, loc.length-1);
-        }
-        const hierarchy = loc.split(",");
-        if (hierarchy.length < 2) {
+        const loc = error["loc"];
+        if (loc.length < 2) {
           return;
         }
-        for (let i=0; i<hierarchy.length; i++) {
-          let dirty = hierarchy[i];
-          // remove whitespaces
-          dirty = dirty.trim();
-          // remove quotes
-          if (dirty[0] === "'") {
-            dirty = dirty.substring(1);
-          }
-          if (dirty[dirty.length-1] === "'") {
-            dirty = dirty.substring(0, dirty.length-1);
-          }
-          // set clean version
-          hierarchy[i] = dirty;
-        }
-        if (hierarchy[1] === this.getNodeId()) {
+        if (loc[1] === this.getNodeId()) {
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg: error["msg"],
             level: "ERROR"
           };
-          if (hierarchy.length > 2) {
-            const portKey = hierarchy[2];
+          if (loc.length > 2) {
+            const portKey = loc[2];
             if ("inputs" in this.getMetaData() && portKey in this.getMetaData()["inputs"]) {
               errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
             } else {
