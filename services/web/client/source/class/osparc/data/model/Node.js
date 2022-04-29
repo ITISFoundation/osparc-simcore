@@ -761,7 +761,11 @@ qx.Class.define("osparc.data.model.Node", {
           };
           if (hierarchy.length > 2) {
             const portKey = hierarchy[2];
-            errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+            if ("inputs" in this.getMetaData() && portKey in this.getMetaData()["inputs"]) {
+              errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
+            } else {
+              errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+            }
           }
           this.fireDataEvent("showInLogger", errorMsgData);
         }
