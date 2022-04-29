@@ -13,32 +13,19 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List
 
 import dotenv
 import pytest
 import simcore_service_storage
 from aiohttp import web
-from aiopg.sa import create_engine
-from pytest_simcore.helpers.utils_postgres import (
-    is_postgres_responsive,
-    migrated_pg_tables_context,
-)
+from aiopg.sa import Engine
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import FileMetaData, file_meta_data, projects, users
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
-from tests.utils import (
-    ACCESS_KEY,
-    BUCKET_NAME,
-    DATA_DIR,
-    DATABASE,
-    PASS,
-    SECRET_KEY,
-    USER,
-    USER_ID,
-)
+from tests.utils import BUCKET_NAME, DATA_DIR, USER_ID
 
 import tests
 
@@ -47,6 +34,12 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.minio_service",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -106,121 +99,13 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
         monkeypatch.setenv(key, value)
 
 
-@pytest.fixture(scope="session")
-def docker_compose_file(here) -> Iterator[str]:
-    """Overrides pytest-docker fixture"""
-    old = os.environ.copy()
-
-    # docker-compose reads these environs
-    os.environ["POSTGRES_DB"] = DATABASE
-    os.environ["POSTGRES_USER"] = USER
-    os.environ["POSTGRES_PASSWORD"] = PASS
-    os.environ["POSTGRES_ENDPOINT"] = "FOO"  # TODO: update config schema!!
-    os.environ["MINIO_ACCESS_KEY"] = ACCESS_KEY
-    os.environ["MINIO_SECRET_KEY"] = SECRET_KEY
-
-    dc_path = here / "docker-compose.yml"
-
-    assert dc_path.exists()
-    yield str(dc_path)
-
-    os.environ = old
-
-
-# POSTGRES SERVICES FIXTURES---------------------
-
-
-@pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip):
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=lambda: is_postgres_responsive(url),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    return {
-        "user": USER,
-        "password": PASS,
-        "db": DATABASE,
-        "database": DATABASE,
-        "host": docker_ip,
-        "port": docker_services.port_for("postgres", 5432),
-        "minsize": 1,
-        "maxsize": 4,
-    }
-
-
-@pytest.fixture(scope="function")
-def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
-
-    with migrated_pg_tables_context(postgres_service) as cfg:
-        yield cfg["dsn"]
-
-
-@pytest.fixture(scope="function")
-async def postgres_engine(postgres_service_url):
-    pg_engine = await create_engine(postgres_service_url)
-
-    yield pg_engine
-
-    if pg_engine:
-        pg_engine.close()
-        await pg_engine.wait_closed()
-
-
-## MINIO SERVICE FIXTURES ----------------------------------------------
-
-
-@pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip) -> Dict[str, Any]:
-
-    # Build URL to service listening on random port.
-    url = "http://%s:%d/" % (
-        docker_ip,
-        docker_services.port_for("minio", 9000),
-    )
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=lambda: tests.utils.is_responsive(url, 403),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    return {
-        "endpoint": "{ip}:{port}".format(
-            ip=docker_ip, port=docker_services.port_for("minio", 9000)
-        ),
-        "access_key": ACCESS_KEY,
-        "secret_key": SECRET_KEY,
-        "bucket_name": BUCKET_NAME,
-        "secure": 0,
-    }
-
-
 @pytest.fixture(scope="module")
-def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
+def s3_client(minio_config: Dict[str, Any]) -> MinioClientWrapper:
 
     s3_client = MinioClientWrapper(
-        endpoint=minio_service["endpoint"],
-        access_key=minio_service["access_key"],
-        secret_key=minio_service["secret_key"],
+        endpoint=minio_config["client"]["endpoint"],
+        access_key=minio_config["client"]["access_key"],
+        secret_key=minio_config["client"]["secret_key"],
     )
     return s3_client
 
@@ -242,12 +127,24 @@ def mock_files_factory(tmpdir_factory) -> Callable[[int], List[Path]]:
     return _create_files
 
 
-@pytest.fixture(scope="function")
-def dsm_mockup_complete_db(
-    postgres_service_url, s3_client
-) -> Tuple[Dict[str, str], Dict[str, str]]:
+@pytest.fixture
+async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
+    yield
+    # cleanup
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(file_meta_data.delete())
+        await conn.execute(projects.delete())
+        await conn.execute(users.delete())
 
-    tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
+
+@pytest.fixture
+def dsm_mockup_complete_db(
+    postgres_dsn, s3_client, cleanup_user_projects_file_metadata
+) -> Iterator[tuple[dict[str, str], dict[str, str]]]:
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+        **postgres_dsn
+    )
+    tests.utils.fill_tables_from_csv_files(url=dsn)
 
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
@@ -270,13 +167,17 @@ def dsm_mockup_complete_db(
     s3_client.upload_file(bucket_name, object_name, f)
     yield (file_1, file_2)
 
+    # cleanup
+    s3_client.remove_bucket(bucket_name, delete_contents=True)
 
-@pytest.fixture(scope="function")
+
+@pytest.fixture
 def dsm_mockup_db(
-    postgres_service_url,
+    postgres_dsn_url,
     s3_client: MinioClientWrapper,
     mock_files_factory: Callable[[int], List[Path]],
-) -> Dict[str, FileMetaData]:
+    cleanup_user_projects_file_metadata,
+) -> Iterator[dict[str, FileMetaData]]:
 
     # s3 client
     bucket_name = BUCKET_NAME
@@ -302,6 +203,7 @@ def dsm_mockup_db(
     files = mock_files_factory(N)
     counter = 0
     data = {}
+
     for _file in files:
         idx = randrange(len(users))
         user_name = users[idx]
@@ -352,7 +254,8 @@ def dsm_mockup_db(
         data[object_name] = FileMetaData(**d)
 
         # pylint: disable=no-member
-        tests.utils.insert_metadata(postgres_service_url, data[object_name])
+
+        tests.utils.insert_metadata(postgres_dsn_url, data[object_name])
 
     total_count = 0
     for _obj in s3_client.list_objects(bucket_name, recursive=True):
@@ -377,13 +280,13 @@ def moduleless_app(event_loop, aiohttp_server) -> web.Application:
 
 @pytest.fixture(scope="function")
 def dsm_fixture(
-    s3_client, postgres_engine, event_loop, moduleless_app
+    s3_client, aiopg_engine, event_loop, moduleless_app
 ) -> Iterable[DataStorageManager]:
 
     with ThreadPoolExecutor(3) as pool:
         dsm_fixture = DataStorageManager(
             s3_client=s3_client,
-            engine=postgres_engine,
+            engine=aiopg_engine,
             loop=event_loop,
             pool=pool,
             simcore_bucket_name=BUCKET_NAME,
