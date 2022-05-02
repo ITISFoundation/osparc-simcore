@@ -284,7 +284,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     populateGraph: function(snapshots, currentSnapshot) {
       this.__branches = [];
       this.__parentIDs = [];
-      console.log("snapshots", snapshots);
       const snapshotsClone = JSON.parse(JSON.stringify(snapshots));
       const sortedSnapshots = snapshotsClone.reverse();
       sortedSnapshots.forEach(snapshot => {
