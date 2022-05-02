@@ -24,6 +24,7 @@ from ..modules import (
     dynamic_sidecar,
     rabbitmq,
     remote_debug,
+    storage,
 )
 from ..utils.logging_utils import config_all_loggers
 from .errors import (
@@ -109,6 +110,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
         director_v0.setup(app, settings.DIRECTOR_V0)
+
+    if settings.DIRECTOR_V2_STORAGE:
+        storage.setup(app, settings.DIRECTOR_V2_STORAGE)
 
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)

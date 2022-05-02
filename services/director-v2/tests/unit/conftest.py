@@ -3,9 +3,10 @@
 
 import json
 import random
-from typing import Any, AsyncIterable, AsyncIterator, Mapping
+from typing import Any, AsyncIterable, AsyncIterator, Iterator, Mapping
 
 import pytest
+import respx
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
@@ -13,8 +14,12 @@ from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
+from faker import Faker
+from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic.types import NonNegativeInt
+from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -209,3 +214,37 @@ async def local_dask_gateway_server(
     print("--> local dask gateway server switching off...")
     await dask_gateway_server.cleanup()
     print("...done")
+
+
+@pytest.fixture
+def fake_s3_settings(faker: Faker) -> S3Settings:
+    return S3Settings(
+        S3_ENDPOINT=faker.uri(),
+        S3_ACCESS_KEY=faker.uuid4(),
+        S3_SECRET_KEY=faker.uuid4(),
+        S3_ACCESS_TOKEN=faker.uuid4(),
+        S3_BUCKET_NAME=faker.pystr(),
+    )
+
+
+@pytest.fixture
+def mocked_storage_service_fcts(
+    minimal_app: FastAPI, fake_s3_settings
+) -> Iterator[respx.MockRouter]:
+    with respx.mock(
+        base_url=minimal_app.state.settings.DIRECTOR_V2_STORAGE.endpoint,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+
+        respx_mock.post(
+            "/simcore-s3:access",
+            name="get_or_create_temporary_s3_access",
+        ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
+
+        yield respx_mock
+
+
+@pytest.fixture(params=list(FileLinkType))
+def tasks_file_link_type(request) -> FileLinkType:
+    return request.param
