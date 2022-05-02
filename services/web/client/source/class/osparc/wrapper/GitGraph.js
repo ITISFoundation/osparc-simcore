@@ -277,7 +277,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           snapshot["parents_ids"].forEach(parentID => this.__parentIDs.push(parentID));
         }
       });
-      sortedSnapshots.forEach((snapshot, i) => {
+      sortedSnapshots.forEach(snapshot => {
         const currentBranch = this.__getBranch(snapshot);
         const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {
