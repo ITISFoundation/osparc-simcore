@@ -92,7 +92,7 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       clusters.addListener("clusterDetailsReceived", e => {
         const data = e.getData();
         if (this.__clusterId === data.clusterId) {
-          this.__clusterStatus.setTextColor("error" in data ? "failed-red" : "visual-blue");
+          this.__clusterStatus.setTextColor("error" in data ? "failed-red" : "ready-green");
           this.__clusterWorkers.populateWorkersDetails("error" in data ? null : data.clusterDetails);
         }
       });
