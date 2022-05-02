@@ -116,8 +116,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __nodesUI: null,
     __edgesUI: null,
     __selectedNodeUIs: null,
-    __inputNodesLayout: null,
-    __outputNodesLayout: null,
     __workbenchLayer: null,
     __workbenchLayout: null,
     _workbenchLayoutScroll: null,
@@ -148,15 +146,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _addItemsToLayout: function() {
-      this.__addInputNodesLayout();
       this._addWorkbenchLayer();
       this.__addExtras();
-      this.__addOutputNodesLayout();
-    },
-
-    __addInputNodesLayout: function() {
-      const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
-      this._add(inputNodesLayout);
     },
 
     _addWorkbenchLayer: function() {
@@ -205,11 +196,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__addToolHint();
       this.__addDeleteItemButton();
       this.__annotationEditorView();
-    },
-
-    __addOutputNodesLayout: function() {
-      const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
-      this._add(nodesExposedLayout);
     },
 
     __addStartHint: function() {
@@ -781,73 +767,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
     },
 
-    __createNodeInputUI: function(inputNode) {
-      let nodeInput = new osparc.component.widget.NodeInput(inputNode);
-      nodeInput.populateNodeLayout();
-      this.__createDragDropMechanism(nodeInput);
-      this.__inputNodesLayout.add(nodeInput, {
-        flex: 1
-      });
-      return nodeInput;
-    },
-
-    __createNodeInputUIs: function(model) {
-      this.__clearNodeInputUIs();
-      const inputNodeIds = model.getInputNodes();
-      inputNodeIds.forEach(inputNodeId => {
-        const inputNode = this.__getWorkbench().getNode(inputNodeId);
-        const inputNodeUI = this.__createNodeInputUI(inputNode);
-        this.__nodesUI.push(inputNodeUI);
-      });
-    },
-
-    __clearNodeInputUIs: function() {
-      // remove all but the title
-      while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length - 1);
-      }
-    },
-
-    __createNodeOutputUI: function(currentModel) {
-      let nodeOutput = new osparc.component.widget.NodeOutput(currentModel);
-      nodeOutput.populateNodeLayout();
-      this.__createDragDropMechanism(nodeOutput);
-      this.__outputNodesLayout.add(nodeOutput, {
-        flex: 1
-      });
-      return nodeOutput;
-    },
-
-    __createNodeOutputUIs: function(model) {
-      this.__clearNodeOutputUIs();
-      let outputNodeUI = this.__createNodeOutputUI(model);
-      this.__nodesUI.push(outputNodeUI);
-    },
-
-    __clearNodeOutputUIs: function() {
-      // remove all but the title
-      while (this.__outputNodesLayout.getChildren().length > 1) {
-        this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
-      }
-    },
-
     _createEdgeBetweenNodes: function(from, to, edgeId) {
       const node1Id = from.nodeId;
       const node2Id = to.nodeId;
       this.__createEdgeUI(node1Id, node2Id, edgeId);
-    },
-
-    _createEdgeBetweenNodesAndInputNodes: function(from, to, edgeId) {
-      const inputNodes = this.__inputNodesLayout.getChildren();
-      // Children[0] is the title
-      for (let i = 1; i < inputNodes.length; i++) {
-        const inputNodeId = inputNodes[i].getNodeId();
-        if (inputNodeId === from.nodeId) {
-          let node1Id = from.nodeId;
-          let node2Id = to.nodeId;
-          this.__createEdgeUI(node1Id, node2Id, edgeId);
-        }
-      }
     },
 
     __updateAllEdges: function() {
@@ -915,9 +838,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __pointerEventToScreenPos: function(e) {
       const leftOffset = this.__getLeftOffset();
-      const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       return {
-        x: e.getDocumentLeft() - leftOffset - inputNodesLayoutWidth,
+        x: e.getDocumentLeft() - leftOffset,
         y: e.getDocumentTop() - this.__getTopOffset()
       };
     },
@@ -1147,20 +1069,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this._clearAll();
       this._currentModel = model;
       if (model) {
-        const isContainer = model.isContainer();
-        if (isContainer) {
-          this.__inputNodesLayout.setVisibility("visible");
-          this.__createNodeInputUIs(model);
-          this.__outputNodesLayout.setVisibility("visible");
-          this.__createNodeOutputUIs(model);
-        } else {
-          this.__inputNodesLayout.setVisibility("excluded");
-          this.__outputNodesLayout.setVisibility("excluded");
-        }
         qx.ui.core.queue.Visibility.flush();
 
         // create nodes
-        let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
+        const nodes = model.getNodes();
         const nodeUIs = [];
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
@@ -1191,24 +1103,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               }, {
                 nodeId: nodeId
               });
-            } else {
-              this._createEdgeBetweenNodesAndInputNodes({
-                nodeId: inputNodeId
-              }, {
-                nodeId: nodeId
-              });
             }
-          });
-        }
-
-        if (isContainer) {
-          const exposedNodeIDs = model.getExposedNodeIDs();
-          exposedNodeIDs.forEach(exposedNodeID => {
-            this._createEdgeBetweenNodes({
-              nodeId: exposedNodeID
-            }, {
-              nodeId: model.getNodeId()
-            });
           });
         }
 
