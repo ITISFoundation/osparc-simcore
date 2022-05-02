@@ -147,6 +147,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         branch.commit({
           subject: commitData["tags"],
           style: {
+            dot: {
+              size: 4 // default is 3
+            },
             message: {
               font: "bold 13px Roboto"
             }
@@ -235,23 +238,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           this.__selectedCommit = commit;
         }
       });
-    },
-
-    buildExample: function() {
-      const master = this.__gitgraph.branch("master");
-      this.__commit(master, "Initial commit");
-      this.__commit(master, "Some changes");
-
-      const it1 = master.branch("iteration-1");
-      this.__commit(it1, "x=1");
-
-      const it2 = master.branch("iteration-2");
-      this.__commit(it2, "x=2");
-
-      const it3 = master.branch("iteration-3");
-      this.__commit(it3, "x=3");
-
-      this.__commit(master, "Changes after iterations");
     },
 
     __createBranch: function(lastCommit, fromBranch, name) {
