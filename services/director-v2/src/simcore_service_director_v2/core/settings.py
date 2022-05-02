@@ -116,6 +116,13 @@ class StorageSettings(BaseCustomSettings):
             path=f"/{self.STORAGE_VTAG}",
         )
 
+    @cached_property
+    def storage_endpoint(self) -> str:
+        """used to re-create STORAGE_ENDPOINT: used by node_ports and must be
+        in style host:port
+        without scheme or version tag"""
+        return f"{self.STORAGE_HOST}:{self.STORAGE_PORT}"
+
 
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
