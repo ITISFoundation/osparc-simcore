@@ -120,7 +120,11 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
           const plotId = "ClusterDetails_" + plotKey + "-" + row;
           const w = parseInt(gridW/Object.keys(plots).length);
           const h = parseInt(w*0.75);
-          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
+          // hide plotly toolbar
+          const config = {
+            displayModeBar: false
+          };
+          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout, config).set({
             width: w,
             height: h
           });
