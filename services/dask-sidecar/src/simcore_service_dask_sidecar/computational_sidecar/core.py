@@ -67,7 +67,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             task_volumes.inputs_folder
             / f"{'inputs' if integration_version > LEGACY_INTEGRATION_VERSION else 'input'}.json"
         )
-        input_data = {}
+        local_input_data_file = {}
         download_tasks = []
 
         for input_key, input_params in self.input_data.items():
@@ -88,15 +88,16 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 download_tasks.append(
                     pull_file_from_remote(
                         input_params.url,
+                        input_params.file_mime_type,
                         destination_path,
                         self._publish_sidecar_log,
                         self.s3_settings,
                     )
                 )
             else:
-                input_data[input_key] = input_params
+                local_input_data_file[input_key] = input_params
         await asyncio.gather(*download_tasks)
-        input_data_file.write_text(json.dumps(input_data))
+        input_data_file.write_text(json.dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
 

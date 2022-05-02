@@ -87,7 +87,7 @@ async def _run_computational_sidecar_async(
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
-    command: List[str],
+    command: list[str],
     s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
 
@@ -95,7 +95,7 @@ async def _run_computational_sidecar_async(
 
     log.debug(
         "run_computational_sidecar %s",
-        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
+        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}, {s3_settings=}",
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
