@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.cluster.ClusterWorkers", {
             available = osparc.utils.Utils.bytesToGB(available);
           }
           if (qx.lang.Type.isNumber(available)) {
-            // red > 80%
+            // orange > 80%
             gaugeData.gauge.steps = [{
               range: [0.8*available, available],
               color: qx.theme.manager.Color.getInstance().resolve("busy-orange"),
