@@ -78,7 +78,6 @@ def _validate_port_unit(
         unit = _normalize_unit(unit)
 
         if content_schema["type"] == "object":
-            # TODO: extend to more complex unit setups
             #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
             #  unit = "MHz" <-- we have implementd this
             #  unit = "MHz,mm"
