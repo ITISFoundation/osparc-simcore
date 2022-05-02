@@ -145,6 +145,7 @@ async def create_dask_client_from_scheduler(
         )
         assert client
         assert client.app == minimal_app
+        client.app.engine = None
         assert (
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
@@ -188,6 +189,7 @@ async def create_dask_client_from_gateway(
         )
         assert client
         assert client.app == minimal_app
+        client.app.engine = None
         assert (
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
@@ -335,6 +337,11 @@ def image_params(
 
 @pytest.fixture()
 def mocked_node_ports(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.create_node_ports",
+        return_value=None,
+    )
+
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.compute_input_data",
         return_value=TaskInputData.parse_obj({}),
