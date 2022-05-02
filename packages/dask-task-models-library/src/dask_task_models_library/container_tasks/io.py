@@ -3,6 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
+from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
@@ -51,7 +52,7 @@ class FilePortSchema(PortSchema):
                 },
                 {
                     "required": False,
-                    "url": "ftp://some_file_url",
+                    "url": "s3://another_file_url",
                 },
             ]
         }
@@ -63,15 +64,20 @@ class FileUrl(BaseModel):
         None,
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
+    file_mime_type: Optional[str] = Field(
+        None, description="the file MIME type", regex=MIME_TYPE_RE
+    )
 
     class Config:
         extra = Extra.forbid
         schema_extra = {
             "examples": [
+                {"url": "https://some_file_url", "file_mime_type": "application/json"},
                 {
                     "url": "https://some_file_url",
+                    "file_mapping": "some_file_name.txt",
+                    "file_mime_type": "application/json",
                 },
-                {"url": "s3://some_file_url", "file_mapping": "some_file_name.txt"},
             ]
         }
 
@@ -98,7 +104,7 @@ class TaskInputData(DictModel[PortKey, PortValue]):
                     "int_input": -45,
                     "float_input": 4564.45,
                     "string_input": "nobody thinks like a string",
-                    "file_input": {"url": "s3://some_file_url"},
+                    "file_input": {"url": "s3://thatis_file_url"},
                 },
             ]
         }

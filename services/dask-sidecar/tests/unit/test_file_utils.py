@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import mimetypes
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -228,10 +229,11 @@ async def test_pull_file_from_remote(
     # now let's get the file through the util
     dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(
-        remote_parameters.remote_file_url,
-        dst_path,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        src_url=remote_parameters.remote_file_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -272,7 +274,11 @@ async def test_pull_file_from_remote_s3_presigned_link(
     # now let's get the file through the util
     dst_path = tmp_path / faker.file_name()
     await pull_file_from_remote(
-        remote_file_url, dst_path, mocked_log_publishing_cb, s3_settings=None
+        src_url=remote_file_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -324,7 +330,11 @@ async def test_pull_compressed_zip_file_from_remote(
     dst_path = download_folder / f"{faker.file_name()}.zip"
 
     await pull_file_from_remote(
-        src_url, dst_path, mocked_log_publishing_cb, remote_parameters.s3_settings
+        src_url=src_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
     )
     assert dst_path.exists()
     dst_path.unlink()
@@ -335,7 +345,33 @@ async def test_pull_compressed_zip_file_from_remote(
     assert download_folder.exists()
     dst_path = download_folder / faker.file_name()
     await pull_file_from_remote(
-        src_url, dst_path, mocked_log_publishing_cb, remote_parameters.s3_settings
+        src_url=src_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+    )
+    assert not dst_path.exists()
+    for file in download_folder.glob("*"):
+        assert file.exists()
+        assert file.name in file_names_within_zip_file
+    mocked_log_publishing_cb.assert_called()
+    mocked_log_publishing_cb.reset_mock()
+
+    # USE-CASE 3: if destination is a zip, but we pass a target mime type that is not, then we decompress
+    download_folder = tmp_path / "download2"
+    download_folder.mkdir(parents=True, exist_ok=True)
+    assert download_folder.exists()
+    dst_path = download_folder / f"{faker.file_name()}.zip"
+    mime_type, _ = mimetypes.guess_type(
+        faker.file_name()
+    )  # let's have a standard mime type
+    await pull_file_from_remote(
+        src_url=src_url,
+        target_mime_type=mime_type,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):

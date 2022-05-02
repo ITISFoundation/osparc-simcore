@@ -136,6 +136,10 @@ class ComputationalBackendNotConnectedError(PydanticErrorMixin, SchedulerError):
     msg_template = "The dask computational backend is not connected"
 
 
+class ComputationalBackendNoS3AccessError(PydanticErrorMixin, SchedulerError):
+    msg_template = "The S3 backend is not ready, please try again later"
+
+
 class ComputationalBackendTaskNotFoundError(PydanticErrorMixin, SchedulerError):
     code = "computational_backend.task_not_found"
     msg_template = (

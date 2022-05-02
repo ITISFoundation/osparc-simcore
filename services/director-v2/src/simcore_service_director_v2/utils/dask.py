@@ -33,9 +33,8 @@ from models_library.users import UserID
 from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports_v2 import links, port_utils
+from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
-from simcore_sdk.node_ports_v2.port import Port
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -140,6 +139,7 @@ async def compute_input_data(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id"""
     ports = await _create_node_ports(
@@ -152,15 +152,17 @@ async def compute_input_data(
 
     port: Port
     for port in (await ports.inputs).values():
-        value: _PVType = await port.get_value()
+        value: _PVType = await port.get_value(file_link_type=file_link_type)
 
         # Mapping _PVType -> PortValue
         if isinstance(value, AnyUrl):
+            logger.debug("Creating file url for %s", f"{port=}")
             input_data[port.key] = FileUrl(
                 url=value,
                 file_mapping=(
                     next(iter(port.file_to_key_map)) if port.file_to_key_map else None
                 ),
+                file_mime_type=port.property_type.removeprefix("data:"),
             )
         else:
             input_data[port.key] = value
@@ -172,6 +174,7 @@ async def compute_output_data_schema(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
 ) -> TaskOutputDataSchema:
     ports = await _create_node_ports(
         db_engine=app.state.engine,
@@ -191,6 +194,7 @@ async def compute_output_data_schema(
                 file_name=next(iter(port.file_to_key_map))
                 if port.file_to_key_map
                 else port.key,
+                link_type=file_link_type,
             )
             output_data_schema[port.key].update(
                 {
@@ -211,6 +215,7 @@ async def compute_service_log_file_upload_link(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
 ) -> AnyUrl:
 
     value_link = await port_utils.get_upload_link_from_storage(
@@ -218,6 +223,7 @@ async def compute_service_log_file_upload_link(
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=_LOGS_FILE_NAME,
+        link_type=file_link_type,
     )
     return value_link
 
@@ -303,6 +309,11 @@ def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
     logger.debug("current %s", f"{client.scheduler_info()=}")
+    if "id" not in client.scheduler_info():
+        raise ComputationalSchedulerChangedError(
+            original_scheduler_id=original_scheduler_id,
+            current_scheduler_id="No scheduler identifier",
+        )
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
         logger.error("The computational backend changed!")
