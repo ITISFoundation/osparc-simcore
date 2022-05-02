@@ -189,11 +189,10 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           cursor: "pointer"
         });
         hint.show();
-        // since the widget might be hidden in the scroll area,
-        // take mouse's position. It creates a bit of blinking thou
+        // since the widget might be hidden in the scroll area, take mouse's position.
         const native = e.getNativeEvent();
         hint.setLayoutProperties({
-          top: native.clientY,
+          top: native.clientY+2, // offset avoids flickering
           left: native.clientX
         });
       });
@@ -201,7 +200,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         widget.set({
           cursor: "auto"
         });
-        hint.exclude();
         if (this.__selectedCommit && this.__selectedCommit.id === commitData["id"]) {
           widget.set({
             backgroundColor: "white"
@@ -211,6 +209,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             backgroundColor: bgColor
           });
         }
+        hint.exclude();
       });
       widget.addListener("tap", () => {
         this.setSelection(commitData["id"]);
