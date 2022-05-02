@@ -7,7 +7,9 @@
 aio-pika==6.8.0
     # via -r requirements/_base.in
 aiocache==0.11.1
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -59,8 +61,6 @@ anyio==3.2.1
     #   starlette
 asgiref==3.4.1
     # via uvicorn
-async-cache==1.1.1
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
