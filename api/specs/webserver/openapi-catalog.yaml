@@ -400,6 +400,36 @@ paths:
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
 
+  catalog_services_service_key_service_version_resources:
+    get:
+      tags:
+        - catalog
+      description: Returns the service default resources
+      operationId: get_service_resources_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+            title: Service Version
+            type: string
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResourcesEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
 components:
   parameters:
     ServiceType:
@@ -678,3 +708,8 @@ components:
         - SelectBox
       title: WidgetType
       type: string
+    ServiceResourcesEnveloped:
+      $ref: "./components/schemas/node_resources.yaml#/components/schemas/NodeResourcesEnveloped"
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"

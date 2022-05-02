@@ -375,6 +375,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
+    def as_label_data(self) -> str:
+        # compose_spec needs to be json encoded before encoding it to json
+        # and storing it in the label
+        return self.copy(
+            update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
+        ).json()
+
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True

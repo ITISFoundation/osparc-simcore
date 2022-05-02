@@ -49,8 +49,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     _createLayout: function() {
-      const templatesLayout = this._createResourcesLayout("template");
-
+      this._createResourcesLayout("template");
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
 
       const loadingTemplatesBtn = this._createLoadMoreButton("templatesLoading");
@@ -59,7 +58,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
       this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
-      return templatesLayout;
+      return this._resourcesContainer;
     },
 
     __startStudy: function(studyId, templateData) {

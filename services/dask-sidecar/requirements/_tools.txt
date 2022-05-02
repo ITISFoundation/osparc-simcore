@@ -63,7 +63,7 @@ tomli==2.0.1
     #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==3.10.0.2
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt

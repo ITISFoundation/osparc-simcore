@@ -172,7 +172,7 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-typing-extensions==3.10.0.2
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -191,7 +191,9 @@ websocket-client==0.59.0
     #   -c requirements/_base.txt
     #   docker
 wrapt==1.14.0
-    # via astroid
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
 yarl==1.6.3
     # via
     #   -c requirements/_base.txt

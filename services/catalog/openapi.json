@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "Components Catalog Service",
-    "description": "Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
+    "title": "simcore-service-catalog",
+    "description": " Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
     "version": "0.3.2"
   },
   "paths": {
@@ -363,8 +363,9 @@
             "required": true,
             "schema": {
               "title": "User Id",
-              "exclusiveMinimum": false,
-              "type": "integer"
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
             },
             "name": "user_id",
             "in": "query"
@@ -399,6 +400,63 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ServiceOut"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}/resources": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Resources",
+        "operationId": "get_service_resources_v0_services__service_key___service_version__resources_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get",
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/ResourceValue"
                   }
                 }
               }
@@ -641,6 +699,55 @@
         },
         "additionalProperties": false
       },
+      "BootChoice": {
+        "title": "BootChoice",
+        "required": [
+          "label",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        }
+      },
+      "BootOption": {
+        "title": "BootOption",
+        "required": [
+          "label",
+          "description",
+          "default",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "default": {
+            "title": "Default",
+            "type": "string"
+          },
+          "items": {
+            "title": "Items",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/BootChoice"
+            }
+          }
+        }
+      },
       "DAGIn": {
         "title": "DAGIn",
         "required": [
@@ -773,10 +880,7 @@
           "dataset": {
             "title": "Dataset",
             "type": "string",
-            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
-            "example": [
-              "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"
-            ]
+            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)"
           }
         },
         "additionalProperties": false,
@@ -917,6 +1021,11 @@
             "type": "object",
             "description": "values of input properties"
           },
+          "inputsUnits": {
+            "title": "Inputsunits",
+            "type": "object",
+            "description": "values of input unit"
+          },
           "inputAccess": {
             "type": "object",
             "description": "map with key - access level pairs"
@@ -969,6 +1078,7 @@
                 "$ref": "#/components/schemas/Position"
               }
             ],
+            "description": "Use projects_ui.WorkbenchUI.position instead",
             "deprecated": true
           },
           "state": {
@@ -979,6 +1089,11 @@
               }
             ],
             "description": "The node's state object"
+          },
+          "bootOptions": {
+            "title": "Bootoptions",
+            "type": "object",
+            "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults."
           }
         },
         "additionalProperties": false
@@ -1027,19 +1142,13 @@
             "title": "Nodeuuid",
             "type": "string",
             "description": "The node to get the port output from",
-            "format": "uuid",
-            "example": [
-              "da5068e0-8a8d-4fb9-9516-56e5ddaef15b"
-            ]
+            "format": "uuid"
           },
           "output": {
             "title": "Output",
             "pattern": "^[-_a-zA-Z0-9]+$",
             "type": "string",
-            "description": "The port key in the node given by nodeUuid",
-            "example": [
-              "out_2"
-            ]
+            "description": "The port key in the node given by nodeUuid"
           }
         },
         "additionalProperties": false,
@@ -1071,6 +1180,44 @@
           }
         },
         "additionalProperties": false
+      },
+      "ResourceValue": {
+        "title": "ResourceValue",
+        "required": [
+          "limit",
+          "reservation"
+        ],
+        "type": "object",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reservation": {
+            "title": "Reservation",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        }
       },
       "RunningState": {
         "title": "RunningState",
@@ -1153,9 +1300,14 @@
           },
           "type": {
             "title": "Type",
-            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
             "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "type": "object",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
@@ -1308,13 +1460,18 @@
             "type": "object",
             "description": "definition of the outputs of this node"
           },
+          "boot-options": {
+            "title": "Boot-Options",
+            "type": "object",
+            "description": "Service defined boot options. These get injected in the service as env variables."
+          },
           "owner": {
             "title": "Owner",
             "type": "string",
             "format": "email"
           }
         },
-        "description": "Static metadata for a service injected in the image labels",
+        "description": "Static metadata for a service injected in the image labels\n\nThis is one to one with node-meta-v0.0.1.json",
         "example": {
           "name": "File Picker",
           "description": "File Picker",
@@ -1381,9 +1538,14 @@
           },
           "type": {
             "title": "Type",
-            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
             "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "type": "object",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
@@ -1407,14 +1569,15 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input or output port"
+        "description": "Base class for service input/outputs"
       },
       "ServiceType": {
         "title": "ServiceType",
         "enum": [
           "computational",
           "dynamic",
-          "frontend"
+          "frontend",
+          "backend"
         ],
         "type": "string",
         "description": "An enumeration."
@@ -1582,7 +1745,7 @@
         "description": "I/O port type to hold a link to a file in simcore S3 storage",
         "example": {
           "store": "0",
-          "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+          "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
           "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
           "label": "input.txt"
         }
@@ -1625,9 +1788,10 @@
         "properties": {
           "minHeight": {
             "title": "Minheight",
-            "exclusiveMinimum": false,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "minimum Height of the textarea"
+            "description": "minimum Height of the textarea",
+            "minimum": 0
           }
         },
         "additionalProperties": false

@@ -244,7 +244,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
         } else {
           const node = study.getWorkbench().getNode(nodeId);
-          const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), nodeId);
+          const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), nodeId, study);
           const title = this.tr("Service information");
           const width = 600;
           const height = 700;

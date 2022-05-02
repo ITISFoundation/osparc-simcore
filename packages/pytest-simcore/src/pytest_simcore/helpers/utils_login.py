@@ -1,5 +1,5 @@
 import re
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -71,6 +71,7 @@ async def log_client_in(
     client: TestClient, user_data=None, *, enable_check=True
 ) -> UserInfoDict:
     # creates user directly in db
+    assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     cfg: LoginOptions = get_plugin_options(client.app)
 
@@ -93,9 +94,10 @@ async def log_client_in(
 
 
 class NewUser:
-    def __init__(self, params=None, app: web.Application = None):
+    def __init__(self, params=None, app: Optional[web.Application] = None):
         self.params = params
         self.user = None
+        assert app
         self.db = get_plugin_storage(app)
 
     async def __aenter__(self):
@@ -121,6 +123,7 @@ class LoggedUser(NewUser):
 
 class NewInvitation(NewUser):
     def __init__(self, client: TestClient, guest="", host=None):
+        assert client.app
         super().__init__(host, client.app)
         self.client = client
         self.guest = guest or get_random_string(10)
@@ -128,6 +131,7 @@ class NewInvitation(NewUser):
 
     async def __aenter__(self):
         # creates host user
+        assert self.client.app
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
         self.user = await create_user(db, self.params)
 

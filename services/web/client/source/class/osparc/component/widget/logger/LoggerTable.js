@@ -57,6 +57,11 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
     ]);
 
     this.__rawData = [];
+
+    this.__messengerColors = new Set();
+
+    const themeManager = qx.theme.manager.Meta.getInstance();
+    themeManager.addListener("changeTheme", () => this.__themeChanged());
   },
 
   properties: {
@@ -76,34 +81,86 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
   statics: {
     addColorTag: function(msg, color) {
       return ("<font color=" + color +">" + msg + "</font>");
+    },
+
+    getNewColor: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
+      let luminanceText = null;
+      let color = null;
+      do {
+        color = osparc.utils.Utils.getRandomColor();
+        luminanceText = osparc.utils.Utils.getColorLuminance(color);
+      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
+      return color;
+    },
+
+    getLevelColor: function(logLevel) {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      let logColor = null;
+      const logLevels = osparc.component.widget.logger.LoggerView.LOG_LEVELS;
+      Object.keys(logLevels).forEach(logLevelKey => {
+        const logString = logLevelKey;
+        const logNumber = logLevels[logLevelKey];
+        if (logNumber === logLevel) {
+          logColor = colorManager.resolve("logger-"+logString+"-message");
+        }
+      });
+      return logColor ? logColor : colorManager.resolve("logger-info-message");
     }
   },
 
   members : {
     __rawData: null,
     __filteredData: null,
-
-    addRows: function(newRows) {
-      for (let i=0; i<newRows.length; i++) {
-        const newRow = newRows[i];
-        newRow["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.label, newRow.nodeColor);
-        newRow["msgRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.msg, newRow.msgColor);
-        this.__rawData.push(newRow);
-      }
-    },
+    __messengerColors: null,
 
     getRows: function() {
       return this.__rawData;
     },
 
-    nodeLabelChanged: function(nodeId, newLabel) {
-      for (let i=0; i<this.__rawData.length; i++) {
-        const row = this.__rawData[i];
-        if (row.nodeId === nodeId) {
-          row.label = newLabel;
-          row["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(row.label, row.nodeColor);
+    __getNodesColor: function(nodeId) {
+      for (const item of this.__messengerColors) {
+        if (item[0] === nodeId) {
+          return item[1];
         }
       }
+      const color = this.self().getNewColor();
+      this.__messengerColors.add([nodeId, color]);
+      return color;
+    },
+
+    addRows: function(newRows) {
+      newRows.forEach(newRow => {
+        newRow["nodeColor"] = this.__getNodesColor(newRow.nodeId);
+        newRow["msgColor"] = this.self().getLevelColor(newRow.logLevel);
+
+        newRow["whoRich"] = this.self().addColorTag(newRow.label, newRow.nodeColor);
+        newRow["msgRich"] = this.self().addColorTag(newRow.msg, newRow.msgColor);
+
+        this.__rawData.push(newRow);
+      });
+    },
+
+    nodeLabelChanged: function(nodeId, newLabel) {
+      this.__rawData.forEach(row => {
+        if (row.nodeId === nodeId) {
+          row.label = newLabel;
+          row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
+        }
+      });
+    },
+
+    __themeChanged: function() {
+      this.__messengerColors.clear();
+
+      this.__rawData.forEach(row => {
+        row["nodeColor"] = this.__getNodesColor(row.nodeId);
+        row["msgColor"] = this.self().getLevelColor(row.logLevel);
+
+        row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
+        row["msgRich"] = this.self().addColorTag(row.msg, row.msgColor);
+      });
     },
 
     clearTable: function() {

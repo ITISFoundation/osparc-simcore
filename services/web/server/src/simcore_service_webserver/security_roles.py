@@ -84,6 +84,7 @@ ROLES_PERMISSIONS = {
             "diagnostics.read",
             "project.snapshot.read",
             "project.snapshot.create",
+            "project.node.update",
         ],
         "inherits": [UserRole.USER],
     },

@@ -1,9 +1,9 @@
 from copy import deepcopy
 from typing import Any, Dict, Iterator, List, Tuple
 
-from models_library.projects_nodes import Outputs
 from pydantic import schema_of
 
+from ...projects_nodes import Outputs
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
@@ -104,7 +104,7 @@ def _sensitivity_generator(
 
 
 services = FunctionServices()
-services.add_function_service(
+services.add(
     meta=META,
     implementation=_sensitivity_generator,
     is_under_development=True,

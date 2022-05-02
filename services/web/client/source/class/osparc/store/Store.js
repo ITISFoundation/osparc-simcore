@@ -62,6 +62,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    nodesInStudyResources: {
+      check: "Array",
+      init: []
+    },
+    serviceResources: {
+      check: "Array",
+      init: []
+    },
     snapshots: {
       check: "Array",
       init: [],
@@ -320,7 +328,7 @@ qx.Class.define("osparc.store.Store", {
           .then(services => {
             allServices = services;
           })
-          .catch(err => console.error("getServices2 failed", err))
+          .catch(err => console.error("getServices failed", err))
           .finally(() => {
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
             osparc.utils.Services.servicesToCache(servicesObj, true);

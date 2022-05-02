@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import logging
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, List, Union
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -57,13 +57,15 @@ async def close_director(app: FastAPI) -> None:
 # DIRECTOR API CLASS ---------------------------------------------
 
 
-def safe_request(request_func: Callable):
+def safe_request(request_func: Callable[..., Awaitable[httpx.Response]]):
     """
     Creates a context for safe inter-process communication (IPC)
     """
     assert asyncio.iscoroutinefunction(request_func)
 
-    def _unenvelope_or_raise_error(resp: httpx.Response) -> Union[List, Dict]:
+    def _unenvelope_or_raise_error(
+        resp: httpx.Response,
+    ) -> Union[List[Any], Dict[str, Any]]:
         """
         Director responses are enveloped
         If successful response, we un-envelop it and return data as a dict
@@ -137,12 +139,12 @@ class DirectorApi:
     # TODO: add ping to healthcheck
 
     @safe_request
-    async def get(self, path: str) -> Optional[Union[Dict, List]]:
+    async def get(self, path: str) -> httpx.Response:
         # temp solution: default timeout increased to 20"
         return await self.client.get(path, timeout=20.0)
 
     @safe_request
-    async def put(self, path: str, body: Dict) -> Optional[Dict]:
+    async def put(self, path: str, body: Dict) -> httpx.Response:
         return await self.client.put(path, json=body)
 
     async def is_responsive(self) -> bool:

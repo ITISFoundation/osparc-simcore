@@ -193,6 +193,88 @@ qx.Class.define("osparc.servicecard.Utils", {
       return descriptionLayout;
     },
 
+    createResourcesInfo: function() {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
+        font: "title-12"
+      });
+      resourcesLayout.add(label);
+
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const resourcesInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "left",
+        alignY: "middle"
+      });
+      resourcesLayout.add(resourcesInfo);
+
+      return resourcesLayout;
+    },
+
+    RESOURCES_INFO: {
+      "reservation": {
+        label: qx.locale.Manager.tr("Reservation"),
+        tooltip: qx.locale.Manager.tr("Schedule time check:<br>The service requires this 'reservation' amount of resources to start - if insufficient hardware resources are available, the service will not start")
+      },
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
+      }
+    },
+
+    resourcesToResourcesInfo: function(resourcesLayout, resourcesInfo) {
+      const layout = resourcesLayout.getChildren()[1];
+      let row = 0;
+      Object.keys(resourcesInfo).forEach(resourceKey => {
+        let column = 0;
+        const resourceInfo = resourcesInfo[resourceKey];
+        let label = resourceKey;
+        if (resourceKey === "RAM") {
+          label += " (GB)";
+        }
+        layout.add(new qx.ui.basic.Label(label).set({
+          font: "title-12"
+        }), {
+          row,
+          column
+        });
+        column++;
+        Object.keys(this.RESOURCES_INFO).forEach(resourceInfoKey => {
+          if (resourceInfoKey in resourceInfo) {
+            layout.add(new qx.ui.basic.Label(this.RESOURCES_INFO[resourceInfoKey].label).set({
+              font: "title-12"
+            }), {
+              row,
+              column
+            });
+            column++;
+            layout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO[resourceInfoKey].tooltip), {
+              row,
+              column
+            });
+            column++;
+            let value = resourceInfo[resourceInfoKey];
+            if (resourceKey === "RAM") {
+              value = osparc.utils.Utils.bytesToGB(value);
+            }
+            layout.add(new qx.ui.basic.Label(String(value)).set({
+              font: "text-12"
+            }), {
+              row,
+              column
+            });
+            column++;
+          }
+        });
+        row++;
+      });
+    },
+
     createExtraInfo: function(extraInfos) {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");

@@ -155,6 +155,35 @@ async def get_service(
         ) from err
 
 
+async def get_service_resources(
+    app: web.Application,
+    service_key: str,
+    service_version: str,
+) -> Dict[str, Any]:
+    session: ClientSession = get_client_session(app)
+    settings: CatalogSettings = get_plugin_settings(app)
+    url = (
+        URL(settings.api_base_url)
+        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources"
+    )
+
+    try:
+        async with session.get(url) as resp:
+            resp.raise_for_status()  # FIXME: error handling for session and response exceptions
+            return await resp.json()
+
+    except asyncio.TimeoutError as err:
+        logger.warning("Catalog service connection timeout error")
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
+    except ClientConnectionError as err:
+        logger.warning("Catalog service is unavailable", exc_info=True)
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable, please try again later"
+        ) from err
+
+
 async def update_service(
     app: web.Application,
     user_id: int,

@@ -139,7 +139,7 @@ tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   distributed
-typing-extensions==3.10.0.2
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   aiodebug
