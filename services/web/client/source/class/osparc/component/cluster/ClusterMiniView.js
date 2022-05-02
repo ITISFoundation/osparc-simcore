@@ -163,8 +163,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           width: 60
         });
         osparc.utils.Utils.hideBorder(progressBar);
+        // orange > 80%
         progressBar.getChildControl("progress").set({
-          backgroundColor: "visual-blue"
+          backgroundColor: (resourceInfo.used / resourceInfo.available) > 0.8 ? "busy-orange" : "visual-blue"
         });
         this._add(progressBar, {
           row: idx,
