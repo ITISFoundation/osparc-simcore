@@ -1479,24 +1479,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, 20);
     },
 
-    __fillScreen: function() {
-      const scale = this.getScale();
-      const screenWidth = this.getBounds().width - 10; // scrollbar
-      const screenHeight = this.getBounds().height - 10; // scrollbar
-      const scaledScreenWidth = parseInt(screenWidth/scale);
-      const scaledScreenHeight = parseInt(screenHeight/scale);
-      if (this.__workbenchLayout.getWidth() < scaledScreenWidth) {
-        console.log("Fill width");
-        this.__workbenchLayout.set({
-          width: scaledScreenWidth
-        });
-      }
-      if (this.__workbenchLayout.getHeight() < scaledScreenHeight) {
-        console.log("Fill height");
-        this.__workbenchLayout.set({
-          height: scaledScreenHeight
-        });
-      }
+    _fitScaleToNodes: function(maxScale = 1.0) {
+      const xFit = this.getBounds().width / this._currentModel.getFarthestPosition().x;
+      const yFit = this.getBounds().height / this._currentModel.getFarthestPosition().y;
+
+      const prefScale = Math.min(Math.min(xFit, yFit), maxScale);
+
+      // reverse mutates original. make a copy first
+      const closestDown = this.self().ZOOM_VALUES.slice().reverse().find(z => z <= prefScale);
+      this.setScale(closestDown);
     },
 
     startAnnotationsRect: function() {
