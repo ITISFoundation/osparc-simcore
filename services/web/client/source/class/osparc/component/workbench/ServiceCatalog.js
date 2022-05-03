@@ -225,8 +225,6 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
 
-      osparc.utils.Services.sortBasedOnFav(groupedServicesList);
-
       this.__serviceBrowser.setModel(new qx.data.Array(groupedServicesList));
     },
 

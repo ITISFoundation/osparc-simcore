@@ -61,24 +61,25 @@ qx.Class.define("osparc.component.service.ServiceList", {
       const group = this.__buttonGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
-      model.toArray()
-        .sort((a, b) => a.getName().localeCompare(b.getName()))
-        .forEach(service => {
-          const button = new osparc.component.service.ServiceButtonSmall(service);
-          if (this.__filterGroup !== null) {
-            button.subscribeToFilterGroup(this.__filterGroup);
-          }
-          group.add(button);
-          this._add(button);
-          button.addListener("dbltap", e => {
+
+      osparc.utils.Services.sortBasedOnFav(model);
+      model.toArray().forEach(service => {
+        const button = new osparc.component.service.ServiceButtonSmall(service);
+        if (this.__filterGroup !== null) {
+          button.subscribeToFilterGroup(this.__filterGroup);
+        }
+        group.add(button);
+        this._add(button);
+        button.addListener("dbltap", () => {
+          this.fireDataEvent("serviceAdd", button.getServiceModel());
+        }, this);
+        button.addListener("keypress", e => {
+          if (e.getKeyIdentifier() === "Enter") {
             this.fireDataEvent("serviceAdd", button.getServiceModel());
-          }, this);
-          button.addListener("keypress", e => {
-            if (e.getKeyIdentifier() === "Enter") {
-              this.fireDataEvent("serviceAdd", button.getServiceModel());
-            }
-          }, this);
-        });
+          }
+        }, this);
+      });
+
       group.addListener("changeValue", e => this.dispatchEvent(e.clone()), this);
     },
 
