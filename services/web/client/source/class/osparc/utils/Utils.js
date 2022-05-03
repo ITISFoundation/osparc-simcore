@@ -46,10 +46,10 @@ qx.Class.define("osparc.utils.Utils", {
           serviceFavs = {};
         }
         if (serviceFavs && (serviceKey in serviceFavs)) {
-          serviceFavs[serviceKey]["instantiated"]++;
+          serviceFavs[serviceKey]["hits"]++;
         } else {
           serviceFavs[serviceKey] = {
-            instantiated: 1
+            hits: 1
           };
         }
         window.localStorage.setItem("services", JSON.stringify(serviceFavs));
@@ -59,7 +59,7 @@ qx.Class.define("osparc.utils.Utils", {
         let serviceFavs = window.localStorage.getItem("services");
         if (serviceFavs) {
           serviceFavs = JSON.parse(serviceFavs);
-          const favServices = Object.keys(serviceFavs).sort((a, b) => serviceFavs[b]["instantiated"] - serviceFavs[a]["instantiated"]);
+          const favServices = Object.keys(serviceFavs).sort((a, b) => serviceFavs[b]["hits"] - serviceFavs[a]["hits"]);
           return favServices;
         }
         return [];
