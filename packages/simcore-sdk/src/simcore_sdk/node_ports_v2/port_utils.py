@@ -6,6 +6,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
 from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.storage_client import LinkType
 from yarl import URL
 
 from ..node_ports_common import config, data_items_utils, filemanager
@@ -17,6 +18,8 @@ log = logging.getLogger(__name__)
 async def get_value_link_from_port_link(
     value: PortLink,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
+    *,
+    file_link_type: LinkType,
 ) -> Optional[ItemValue]:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
@@ -25,7 +28,7 @@ async def get_value_link_from_port_link(
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
     other_value: Optional[ItemValue] = await other_nodeports.get_value_link(
-        value.output
+        value.output, file_link_type=file_link_type
     )
     return other_value
 
@@ -64,8 +67,7 @@ async def get_value_from_link(
 
 
 async def get_download_link_from_storage(
-    user_id: int,
-    value: FileLink,
+    user_id: int, value: FileLink, link_type: LinkType
 ) -> Optional[AnyUrl]:
     log.debug("getting link to file from storage %s", value)
     link = await filemanager.get_download_link_from_s3(
@@ -73,15 +75,13 @@ async def get_download_link_from_storage(
         store_id=f"{value.store}",
         store_name=None,
         s3_object=value.path,
+        link_type=link_type,
     )
     return parse_obj_as(AnyUrl, f"{link}") if link else None
 
 
 async def get_upload_link_from_storage(
-    user_id: int,
-    project_id: str,
-    node_id: str,
-    file_name: str,
+    user_id: int, project_id: str, node_id: str, file_name: str, link_type: LinkType
 ) -> AnyUrl:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
@@ -90,6 +90,7 @@ async def get_upload_link_from_storage(
         store_id=None,
         store_name=config.STORE,
         s3_object=s3_object,
+        link_type=link_type,
     )
     return parse_obj_as(AnyUrl, f"{link}")
 

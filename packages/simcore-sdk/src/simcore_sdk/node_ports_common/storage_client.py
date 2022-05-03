@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import wraps
 from json import JSONDecodeError
 from typing import Any, Callable, Dict
@@ -62,9 +63,18 @@ async def get_storage_locations(
         return locations_enveloped.data
 
 
+class LinkType(str, Enum):
+    PRESIGNED = "presigned"
+    S3 = "s3"
+
+
 @handle_client_exception
-async def get_download_file_presigned_link(
-    session: ClientSession, file_id: str, location_id: str, user_id: UserID
+async def get_download_file_link(
+    session: ClientSession,
+    file_id: str,
+    location_id: str,
+    user_id: UserID,
+    link_type: LinkType,
 ) -> AnyUrl:
     if (
         not isinstance(file_id, str)
@@ -81,7 +91,7 @@ async def get_download_file_presigned_link(
 
     async with session.get(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        params={"user_id": f"{user_id}"},
+        params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
         response.raise_for_status()
 
@@ -99,7 +109,7 @@ async def get_upload_file_link(
     file_id: str,
     location_id: str,
     user_id: UserID,
-    as_presigned_link: bool,
+    link_type: LinkType,
 ) -> AnyUrl:
     if (
         not isinstance(file_id, str)
@@ -115,10 +125,7 @@ async def get_upload_file_link(
         )
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        params={
-            "user_id": f"{user_id}",
-            "link_type": "presigned" if as_presigned_link else "s3",
-        },
+        params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
         response.raise_for_status()
 

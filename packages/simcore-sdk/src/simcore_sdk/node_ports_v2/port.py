@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
+from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableException,
@@ -125,13 +126,18 @@ class Port(BaseServiceIOModel):
         assert self._py_value_type  # nosec
         assert self._py_value_converter  # nosec
 
-    async def get_value(self) -> Optional[ItemValue]:
+    async def get_value(
+        self, *, file_link_type: Optional[LinkType] = None
+    ) -> Optional[ItemValue]:
         """returns the value of the link after resolving the port links"""
+        if not file_link_type:
+            file_link_type = LinkType.PRESIGNED
         log.debug(
-            "getting value of %s[%s] containing '%s'",
+            "getting value of %s[%s] containing '%s' using %s",
             self.key,
             self.property_type,
             pformat(self.value),
+            file_link_type,
         )
 
         if isinstance(self.value, PortLink):
@@ -140,12 +146,14 @@ class Port(BaseServiceIOModel):
                 # pylint: disable=protected-access
                 self.value,
                 self._node_ports._node_ports_creator_cb,
+                file_link_type=file_link_type,
             )
         if isinstance(self.value, FileLink):
             # let's get the download/upload link from storage
             return await port_utils.get_download_link_from_storage(
                 user_id=self._node_ports.user_id,
                 value=self.value,
+                link_type=file_link_type,
             )
 
         if isinstance(self.value, DownloadLink):

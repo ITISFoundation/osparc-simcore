@@ -319,7 +319,11 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     # the client should be created here
     mocked_dask_client.create.assert_called_once_with(
-        app=mock.ANY, settings=mock.ANY, endpoint=mock.ANY, authentication=mock.ANY
+        app=mock.ANY,
+        settings=mock.ANY,
+        endpoint=mock.ANY,
+        authentication=mock.ANY,
+        tasks_file_link_type=mock.ANY,
     )
     # the tasks are set to pending, so they are ready to be taken, and the dask client is triggered
     await assert_comp_tasks_state(

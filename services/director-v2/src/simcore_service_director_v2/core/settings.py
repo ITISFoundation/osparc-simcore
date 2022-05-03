@@ -1,6 +1,7 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 
+
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -30,6 +31,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
+from simcore_sdk.node_ports_v2 import FileLinkType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
@@ -85,13 +87,35 @@ class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
         return v
 
 
+class StorageSettings(BaseCustomSettings):
+    STORAGE_HOST: str = "storage"
+    STORAGE_PORT: int = 8080
+    STORAGE_VTAG: str = "v0"
+
+    @cached_property
+    def endpoint(self) -> str:
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.STORAGE_HOST,
+            port=f"{self.STORAGE_PORT}",
+            path=f"/{self.STORAGE_VTAG}",
+        )
+
+    @cached_property
+    def storage_endpoint(self) -> str:
+        """used to re-create STORAGE_ENDPOINT: used by node_ports and must be
+        in style host:port
+        without scheme or version tag"""
+        return f"{self.STORAGE_HOST}:{self.STORAGE_PORT}"
+
+
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
     DIRECTOR_PORT: PortInt = 8080
     DIRECTOR_V0_VTAG: VersionTag = Field(
-        "v0", description="Director-v0 service API's version tag"
+        default="v0", description="Director-v0 service API's version tag"
     )
 
     @cached_property
@@ -295,6 +319,14 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.S3,
+        description=f"Default file link type to use with the internal cluster '{list(FileLinkType)}'",
+    )
+    COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.PRESIGNED,
+        description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
+    )
 
     @cached_property
     def default_cluster(self):
@@ -363,6 +395,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
+    DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
@@ -371,8 +404,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     POSTGRES: PGSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
-
-    STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 

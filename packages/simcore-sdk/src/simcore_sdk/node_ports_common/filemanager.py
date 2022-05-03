@@ -41,14 +41,15 @@ async def _get_download_link(
     store_id: str,
     file_id: str,
     session: ClientSession,
+    link_type: storage_client.LinkType,
 ) -> URL:
-    presigned_link: AnyUrl = await storage_client.get_download_file_presigned_link(
-        session, file_id, store_id, user_id
+    link: AnyUrl = await storage_client.get_download_file_link(
+        session, file_id, store_id, user_id, link_type
     )
-    if not presigned_link:
+    if not link:
         raise exceptions.S3InvalidPathError(file_id)
 
-    return URL(presigned_link)
+    return URL(link)
 
 
 async def _get_upload_link(
@@ -56,14 +57,15 @@ async def _get_upload_link(
     store_id: str,
     file_id: str,
     session: ClientSession,
+    link_type: storage_client.LinkType,
 ) -> URL:
-    presigned_link: AnyUrl = await storage_client.get_upload_file_link(
-        session, file_id, store_id, user_id, as_presigned_link=True
+    link: AnyUrl = await storage_client.get_upload_file_link(
+        session, file_id, store_id, user_id, link_type
     )
-    if not presigned_link:
+    if not link:
         raise exceptions.S3InvalidPathError(file_id)
 
-    return URL(presigned_link)
+    return URL(link)
 
 
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
@@ -141,6 +143,7 @@ async def get_download_link_from_s3(
     store_name: Optional[str],
     store_id: Optional[str],
     s3_object: str,
+    link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
 ) -> Optional[URL]:
     if store_name is None and store_id is None:
@@ -152,7 +155,9 @@ async def get_download_link_from_s3(
                 user_id, store_name, session
             )
         assert store_id is not None  # nosec
-        return await _get_download_link(user_id, store_id, s3_object, session)
+        return await _get_download_link(
+            user_id, store_id, s3_object, session, link_type
+        )
 
 
 async def get_upload_link_from_s3(
@@ -161,6 +166,7 @@ async def get_upload_link_from_s3(
     store_name: Optional[str],
     store_id: Optional[str],
     s3_object: str,
+    link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
 ) -> Tuple[str, URL]:
     if store_name is None and store_id is None:
@@ -174,7 +180,7 @@ async def get_upload_link_from_s3(
         assert store_id is not None  # nosec
         return (
             store_id,
-            await _get_upload_link(user_id, store_id, s3_object, session),
+            await _get_upload_link(user_id, store_id, s3_object, session, link_type),
         )
 
 
@@ -211,6 +217,7 @@ async def download_file_from_s3(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
+            link_type=storage_client.LinkType.PRESIGNED,
         )
 
         # the link contains the file name
@@ -276,6 +283,7 @@ async def upload_file(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
+            link_type=storage_client.LinkType.PRESIGNED,
         )
 
         if not upload_link:
