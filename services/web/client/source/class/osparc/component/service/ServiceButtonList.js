@@ -97,14 +97,37 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       const hitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
         alignY: "middle"
       })).set({
-        toolTipText: this.tr("Number of times it was instantiated"),
-        minWidth: 85
+        toolTipText: this.tr("Number of times it was instantiated")
       });
       const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: "));
       hitsLayout.add(hitsLabel);
       const hitsValue = new qx.ui.basic.Label(String(serviceModel.hits));
       hitsLayout.add(hitsValue);
       this._addAt(hitsLayout, osparc.dashboard.ListButtonBase.POS.TSR);
+    },
+
+    _filterText: function(text) {
+      const checks = [
+        this.getServiceModel().getName(),
+        this.getServiceModel().getDescription(),
+        this.getServiceModel().getContact()
+      ];
+      return osparc.dashboard.CardBase.filterText(checks, text);
+    },
+
+    _filterTags: function(tags) {
+      if (tags && tags.length) {
+        const type = this.getServiceModel().getType() || "";
+        if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _filterClassifiers: function(classifiers) {
+      const checks = this.getServiceModel().getClassifiers();
+      return osparc.dashboard.CardBase.filterText(checks, classifiers);
     }
   }
 });
