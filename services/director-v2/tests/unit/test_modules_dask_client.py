@@ -145,7 +145,6 @@ async def create_dask_client_from_scheduler(
         )
         assert client
         assert client.app == minimal_app
-        client.app.engine = None
         assert (
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
@@ -189,7 +188,6 @@ async def create_dask_client_from_gateway(
         )
         assert client
         assert client.app == minimal_app
-        client.app.engine = None
         assert (
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
@@ -221,10 +219,18 @@ async def create_dask_client_from_gateway(
 async def dask_client(
     create_dask_client_from_scheduler, create_dask_client_from_gateway, request
 ) -> DaskClient:
-    return await {
+    client: DaskClient = await {
         "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
         "create_dask_client_from_gateway": create_dask_client_from_gateway,
     }[request.param]()
+
+    try:
+        assert client.app.state.engine is not None
+    except AttributeError:
+        # enforces existance of 'app.state.engine' and sets to None
+        client.app.state.engine = None
+
+    return client
 
 
 @pytest.fixture
