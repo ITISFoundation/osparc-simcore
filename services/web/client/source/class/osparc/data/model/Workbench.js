@@ -299,6 +299,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
+      osparc.utils.Utils.localCache.serviceToFavs(key);
       const node = this.__createNode(this.getStudy(), key, version, uuid);
       this.addNode(node, parent);
 

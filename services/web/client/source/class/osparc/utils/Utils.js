@@ -36,6 +36,32 @@ qx.Class.define("osparc.utils.Utils", {
       },
       getTheme: function() {
         return window.localStorage.getItem("themeName");
+      },
+
+      serviceToFavs: function(serviceKey) {
+        let serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          serviceFavs = JSON.parse(serviceFavs);
+        } else {
+          serviceFavs = {};
+        }
+        if (serviceFavs && (serviceKey in serviceFavs)) {
+          serviceFavs[serviceKey]["instantiated"]++;
+        } else {
+          serviceFavs[serviceKey] = {
+            instantiated: 1
+          };
+        }
+        window.localStorage.setItem("services", JSON.stringify(serviceFavs));
+      },
+
+      getFavServices: function() {
+        const serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          const favServices = Object.keys(serviceFavs).sort((a, b) => serviceFavs[a]["instantiated"] - serviceFavs[b]["instantiated"]).map(sortedKey => serviceFavs[sortedKey]);
+          return favServices;
+        }
+        return [];
       }
     },
 
