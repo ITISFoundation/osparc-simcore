@@ -72,7 +72,11 @@ def _validate_port_value(value, content_schema: JsonSchemaDict):
 
 def _validate_port_unit(
     value, unit, content_schema: JsonSchemaDict, *, ureg: UnitRegistry
-) -> Tuple:
+) -> Tuple[Any, Optional[UnitStr]]:
+    """
+    - Checks valid 'value' against content_schema
+    - Converts 'value' with 'unit' to unit expected in content_schema
+    """
 
     if unit:
         unit = _normalize_unit(unit)
@@ -109,6 +113,9 @@ def validate_port_content(
 
     value is resolved dataset defined in content_schema
     unit is a part of the meta-data and specs can be encoded in content_schema under the x_unit field property
+
+    :raises PortValueError
+    :raises PortUnitError
     """
     assert jsonschema_validate_schema(content_schema)  # nosec
 
