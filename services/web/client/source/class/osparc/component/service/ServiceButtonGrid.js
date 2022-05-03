@@ -19,7 +19,7 @@
  * Big button representing a service. It shows its name and icon and description as tooltip.
  * It also adds filtering capabilities.
  */
-qx.Class.define("osparc.component.service.ServiceButtonSmall", {
+qx.Class.define("osparc.component.service.ServiceButtonGrid", {
   extend: osparc.dashboard.GridButtonBase,
 
   construct: function(serviceModel) {
