@@ -433,7 +433,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
     DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT: Optional[str] = Field(
-        None, regex=r"^.*(!=|==).*$", example="node.labels.region==east"
+        None,
+        regex=r"^[a-zA-Z0-9.]*(!=|==){1}[a-zA-Z0-9.]*$",
+        example="node.labels.region==east",
     )
 
     @validator("LOG_LEVEL", pre=True)
