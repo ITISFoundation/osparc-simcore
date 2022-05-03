@@ -15,7 +15,7 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import SIMCORE_LOCATION
-from .storage_client import delete_file, get_upload_file_link
+from .storage_client import LinkType, delete_file, get_upload_file_link
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ async def sync_local_to_s3(
         file_id=s3_object,
         location_id=store_id,
         user_id=user_id,
-        as_presigned_link=False,
+        link_type=LinkType.S3,
     )
     s3_path = re.sub(r"^s3://", "", s3_link)
     logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")

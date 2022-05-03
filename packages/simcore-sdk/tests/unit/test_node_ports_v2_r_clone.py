@@ -4,10 +4,11 @@
 
 import subprocess
 from pathlib import Path
-from typing import List
+from typing import Iterable, List, Optional
+from unittest.mock import Mock
 
 import pytest
-from _pytest.logging import LogCaptureFixture
+from pytest_mock.plugin import MockerFixture
 from faker import Faker
 from pytest import MonkeyPatch
 from settings_library.r_clone import S3Provider
@@ -41,16 +42,33 @@ def skip_if_r_clone_is_missing() -> None:
         pytest.skip("rclone is not installed")
 
 
+@pytest.fixture
+def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
+    mock = Mock()
+
+    original_async_command = r_clone._async_command
+
+    async def _mock_async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+        mock()
+        return await original_async_command(*cmd, cwd=cwd)
+
+    mocker.patch(
+        "simcore_sdk.node_ports_common.r_clone._async_command",
+        side_effect=_mock_async_command,
+    )
+
+    yield mock
+
+
 async def test_is_r_clone_available_cached(
-    caplog: LogCaptureFixture,
     r_clone_settings: RCloneSettings,
+    mock_async_command: Mock,
     skip_if_r_clone_is_missing: None,
 ) -> None:
     for _ in range(3):
         result = await r_clone.is_r_clone_available(r_clone_settings)
         assert type(result) is bool
-    assert "'rclone --version' result:\n" in caplog.text
-    assert caplog.text.count("'rclone --version' result:\n") == 1
+    assert mock_async_command.call_count == 1
 
     assert await r_clone.is_r_clone_available(None) is False
 
