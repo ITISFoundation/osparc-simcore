@@ -30,7 +30,11 @@ from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 async def test_scicrunch_resolves_all_valid_rrids(
     name: str, rrid: str, settings: SciCrunchSettings
 ):
-    # This tests checks some of the structure "deduced" from the responses
+    # NOTE: this test run against https://scicrunch.org/resolver/{SCR_018997}.json
+    # which is an open API (no auth required). Any change in the responses of that
+    # service might cause a failure on this test
+    # This tests checks some of the structure "deduced" from the responses so far.
+
     async with ClientSession(timeout=ClientTimeout(total=30)) as client:
         resolved = await resolve_rrid(identifier=rrid, client=client, settings=settings)
 
