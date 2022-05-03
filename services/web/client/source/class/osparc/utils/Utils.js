@@ -30,6 +30,15 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    localCache: {
+      setTheme: function(themeName) {
+        window.localStorage.setItem("themeName", themeName);
+      },
+      getTheme: function() {
+        return window.localStorage.getItem("themeName");
+      }
+    },
+
     checkIsOnScreen: function(elem) {
       const isInViewport = element => {
         if (element) {

@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
         const theme = qx.Theme.getByName(selected);
         if (theme) {
           themeMgr.setTheme(theme);
-          window.localStorage.setItem("themeName", theme.name);
+          osparc.utils.Utils.localCache.setTheme(theme.name);
         }
       });
       return box;
