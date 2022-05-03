@@ -41,7 +41,7 @@ async def test_scicrunch_resolves_all_valid_rrids(
         assert resolved
         assert isinstance(resolved, ResolvedItem)
 
-        if resolved.is_unique:
+        if resolved.is_unique and name:
             assert name in resolved.proper_citation
 
         assert rrid in resolved.proper_citation
