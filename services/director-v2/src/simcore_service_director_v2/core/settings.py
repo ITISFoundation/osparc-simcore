@@ -431,7 +431,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: str = Field(
-        "", description="added to service Placement constraint in dynamic-sidecars"
+        "",
+        description="added to service Placement constraint in dynamic-sidecars",
+        example="node.labels.region==east",
     )
 
     @validator("LOG_LEVEL", pre=True)
