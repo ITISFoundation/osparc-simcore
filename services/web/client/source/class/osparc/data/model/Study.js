@@ -372,8 +372,12 @@ qx.Class.define("osparc.data.model.Study", {
           node.getStatus().setProgress(progress);
         }
         node.populateStates(nodeData);
-      } else if (osparc.data.Permissions.getInstance().isTester()) {
-        console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
+      }
+      if (node && "errors" in nodeUpdatedData) {
+        const errors = nodeUpdatedData["errors"];
+        if (errors.length) {
+          node.setErrors(errors);
+        }
       }
     },
 

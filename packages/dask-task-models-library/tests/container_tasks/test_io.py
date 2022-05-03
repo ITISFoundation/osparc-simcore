@@ -118,7 +118,7 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_mis
         {
             "optional_file_output": {
                 "required": False,
-                "url": "s3://some_file_url",
+                "url": "s3://another_file_url",
                 "mapping": "the_output_filename",
             },
         }

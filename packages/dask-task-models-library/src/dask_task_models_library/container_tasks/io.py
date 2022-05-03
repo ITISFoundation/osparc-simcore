@@ -135,7 +135,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
                     },
                     "optional_file_output": {
                         "required": False,
-                        "url": "s3://some_file_url",
+                        "url": "s3://one_file_url",
                     },
                 },
             ]
@@ -188,7 +188,7 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
                     "int_output": -45,
                     "float_output": 4564.45,
                     "string_output": "nobody thinks like a string",
-                    "file_output": {"url": "s3://some_file_url"},
+                    "file_output": {"url": "s3://yet_another_file_url"},
                 },
             ]
         }

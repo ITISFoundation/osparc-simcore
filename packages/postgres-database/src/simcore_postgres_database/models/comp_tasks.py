@@ -4,6 +4,7 @@
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from .base import metadata
 from .comp_pipeline import StateType
@@ -56,6 +57,13 @@ comp_tasks = sa.Table(
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
         doc="Current state in the task lifecicle",
+    ),
+    sa.Column(
+        "errors",
+        postgresql.JSONB,
+        nullable=True,
+        doc="List[models_library.errors.ErrorDict] with error information"
+        " for a failing state, otherwise set to None",
     ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),

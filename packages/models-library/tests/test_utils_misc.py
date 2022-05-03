@@ -4,6 +4,7 @@
 
 
 import json
+from contextlib import suppress
 from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path
@@ -23,8 +24,11 @@ def get_model_cls(exclude: Optional[Set] = None) -> List[NameClassPair]:
     as (class name, class) items
     """
 
-    def is_model_cls(obj) -> bool:
-        return isclass(obj) and obj != BaseModel and issubclass(obj, BaseModel)
+    def is_model_cls(cls) -> bool:
+        with suppress(TypeError):
+            # NOTE: issubclass( dict[models_library.services.ConstrainedStrValue, models_library.services.ServiceInput] ) raises TypeError
+            return cls is not BaseModel and isclass(cls) and issubclass(cls, BaseModel)
+        return False
 
     exclude = exclude or set()
 

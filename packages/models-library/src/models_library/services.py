@@ -4,7 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -22,6 +22,7 @@ from pydantic import (
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
 from .services_ui import Widget
+from .utils.json_schema import InvalidJsonSchema, jsonschema_validate_schema
 
 # CONSTANTS -------------------------------------------
 
@@ -162,51 +163,65 @@ class BaseServiceIOModel(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
-    content_schema: Optional[Dict[str, Any]] = Field(
+    content_schema: Optional[dict[str, Any]] = Field(
         None,
         description="jsonschema of this input/output. Required when type='ref_contentSchema'",
         alias="contentSchema",
     )
 
     # value
-    file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
+    file_to_key_map: Optional[dict[FileName, PropertyName]] = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
 
-    # TODO: use discriminators
-    # TODO: deprecate
+    # TODO: should deprecate since content_schema include units
     unit: Optional[str] = Field(
-        None, description="Units, when it refers to a physical quantity"
+        None,
+        description="Units, when it refers to a physical quantity",
     )
 
     class Config:
         extra = Extra.forbid
-        # TODO: all alias with camecase
 
     @validator("content_schema")
     @classmethod
     def check_type_is_set_to_schema(cls, v, values):
-        # TODO: content_schema should be a valid json-schema
-        #
-        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
-            raise ValueError(
-                "content_schema is defined but set the wrong type."
-                f"Expected type=ref_contentSchema but got ={ptype}."
-            )
-
-        # TODO:  Check is a valid jsonschema? Use $ref to or active validation as in
-        # import jsonschema
-        # try:
-        #   jsonschema.validate({}, v)
-        # except SchemaError as err:
-        #   raise ValueError()
-        # except jsonschema.ValidationError as err:
-        #
-
+        if v is not None:
+            if (ptype := values["property_type"]) != "ref_contentSchema":
+                raise ValueError(
+                    "content_schema is defined but set the wrong type."
+                    f"Expected type=ref_contentSchema but got ={ptype}."
+                )
         return v
+
+    @validator("content_schema")
+    @classmethod
+    def check_valid_json_schema(cls, v):
+        if v is not None:
+            try:
+                jsonschema_validate_schema(schema=v)
+            except InvalidJsonSchema as err:
+                failed_path = "->".join(map(str, err.path))
+                raise ValueError(
+                    f"Invalid json-schema at {failed_path}: {err.message}"
+                ) from err
+        return v
+
+    @classmethod
+    def _from_json_schema_base_implementation(
+        cls, port_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        description = port_schema.pop("description", port_schema["title"])
+        data = {
+            "label": port_schema["title"],
+            "description": description,
+            "type": "ref_contentSchema",
+            "contentSchema": port_schema,
+        }
+        return data
 
 
 class ServiceInput(BaseServiceIOModel):
@@ -214,7 +229,7 @@ class ServiceInput(BaseServiceIOModel):
     Metadata on a service input port
     """
 
-    # NOTE: should deprecate since schema include defaults as well
+    # TODO: should deprecate since content_schema include defaults as well
     default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
@@ -281,6 +296,12 @@ class ServiceInput(BaseServiceIOModel):
             ],
         }
 
+    @classmethod
+    def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceInput":
+        """Creates input port model from a json-schema"""
+        data = cls._from_json_schema_base_implementation(port_schema)
+        return cls.parse_obj(data)
+
 
 class ServiceOutput(BaseServiceIOModel):
     widget: Optional[Widget] = Field(
@@ -319,6 +340,12 @@ class ServiceOutput(BaseServiceIOModel):
                 },
             ]
         }
+
+    @classmethod
+    def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceOutput":
+        """Creates output port model from a json-schema"""
+        data = cls._from_json_schema_base_implementation(port_schema)
+        return cls.parse_obj(data)
 
 
 class ServiceKeyVersion(BaseModel):
@@ -371,8 +398,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputs = Dict[PropertyName, ServiceInput]
-ServiceOutputs = Dict[PropertyName, ServiceOutput]
+ServiceInputsDict = dict[PropertyName, ServiceInput]
+ServiceOutputsDict = dict[PropertyName, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
@@ -396,18 +423,18 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         examples=["computational"],
     )
 
-    badges: Optional[List[Badge]] = Field(None)
+    badges: Optional[list[Badge]] = Field(None)
 
-    authors: List[Author] = Field(..., min_items=1)
+    authors: list[Author] = Field(..., min_items=1)
     contact: EmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
         examples=["lab@net.flix"],
     )
-    inputs: Optional[ServiceInputs] = Field(
+    inputs: Optional[ServiceInputsDict] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[ServiceOutputs] = Field(
+    outputs: Optional[ServiceOutputsDict] = Field(
         ..., description="definition of the outputs of this node"
     )
 
@@ -526,8 +553,8 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     description: Optional[str]
 
     # user-defined metatada
-    classifiers: Optional[List[str]]
-    quality: Dict[str, Any] = {}
+    classifiers: Optional[list[str]]
+    quality: dict[str, Any] = {}
 
     class Config:
         schema_extra = {

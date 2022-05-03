@@ -210,7 +210,9 @@ pamqp==2.3.0
     #   -c requirements/_base.txt
     #   aiormq
 paramiko==2.10.3
-    # via docker
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
 pillow==9.0.1
     # via bokeh
 platformdirs==2.5.1

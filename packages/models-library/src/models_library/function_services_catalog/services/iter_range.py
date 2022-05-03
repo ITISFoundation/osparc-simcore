@@ -1,6 +1,6 @@
 from typing import Iterator, Optional
 
-from ...projects_nodes import Outputs
+from ...projects_nodes import OutputsDict
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
@@ -60,7 +60,7 @@ def _linspace_func(
         yield value
 
 
-def _linspace_generator(**kwargs) -> Iterator[Outputs]:
+def _linspace_generator(**kwargs) -> Iterator[OutputsDict]:
     # Maps generator with iterable outputs.
     # Can have non-iterable outputs as well
     for value in _linspace_func(**kwargs):

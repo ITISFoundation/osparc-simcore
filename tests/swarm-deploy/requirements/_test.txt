@@ -131,6 +131,8 @@ packaging==21.3
     #   pytest-sugar
 pamqp==3.1.0
     # via aiormq
+pint==0.19.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.3
