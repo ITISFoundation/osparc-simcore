@@ -109,15 +109,15 @@ qx.Class.define("osparc.utils.Services", {
       });
       servicesArray.sort((a, b) => {
         let aIdx = Object.keys(favServices).indexOf(a.getKey());
-        if (aIdx === -1) {
-          aIdx = 10000;
+        if (aIdx !== -1) {
+          aIdx = favServices[a.getKey()]["hits"];
         }
         let bIdx = Object.keys(favServices).indexOf(b.getKey());
-        if (bIdx === -1) {
-          bIdx = 10000;
+        if (bIdx !== -1) {
+          bIdx = favServices[b.getKey()]["hits"];
         }
         if (aIdx !== bIdx) {
-          return aIdx - bIdx;
+          return bIdx - aIdx;
         }
         return a.getName().localeCompare(b.getName());
       });
