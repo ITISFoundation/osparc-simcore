@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
 import aiohttp
 import pytest
@@ -14,10 +14,11 @@ from pydantic.networks import AnyUrl
 from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
-    get_download_file_presigned_link,
+    LinkType,
+    get_download_file_link,
     get_file_metadata,
     get_storage_locations,
-    get_upload_file_presigned_link,
+    get_upload_file_link,
 )
 
 
@@ -53,32 +54,46 @@ async def test_get_storage_locations(
     assert result[0].id == 0
 
 
-async def test_get_download_file_presigned_link(
+@pytest.mark.parametrize(
+    "link_type, expected_scheme",
+    [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
+)
+async def test_get_download_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,
     location_id: str,
+    link_type: LinkType,
+    expected_scheme: tuple[str],
 ):
     async with aiohttp.ClientSession() as session:
-        link = await get_download_file_presigned_link(
-            session, file_id, location_id, user_id
+        link = await get_download_file_link(
+            session, file_id, location_id, user_id, link_type
         )
     assert isinstance(link, AnyUrl)
+    assert link.scheme in expected_scheme
 
 
-async def test_get_upload_file_presigned_link(
+@pytest.mark.parametrize(
+    "link_type, expected_scheme",
+    [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
+)
+async def test_get_upload_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,
     location_id: str,
+    link_type: LinkType,
+    expected_scheme: tuple[str],
 ):
     async with aiohttp.ClientSession() as session:
-        link = await get_upload_file_presigned_link(
-            session, file_id, location_id, user_id
+        link = await get_upload_file_link(
+            session, file_id, location_id, user_id, link_type
         )
     assert isinstance(link, AnyUrl)
+    assert link.scheme in expected_scheme
 
 
 async def test_get_file_metada(
@@ -97,11 +112,11 @@ async def test_get_file_metada(
 
 
 @pytest.mark.parametrize(
-    "fct_call",
+    "fct_call, additional_kwargs",
     [
-        get_file_metadata,
-        get_download_file_presigned_link,
-        get_upload_file_presigned_link,
+        (get_file_metadata, {}),
+        (get_download_file_link, {"link_type": LinkType.PRESIGNED}),
+        (get_upload_file_link, {"link_type": LinkType.PRESIGNED}),
     ],
 )
 async def test_invalid_calls(
@@ -111,6 +126,7 @@ async def test_invalid_calls(
     file_id: str,
     location_id: str,
     fct_call: Callable[..., Awaitable],
+    additional_kwargs: dict[str, Any],
 ):
     async with aiohttp.ClientSession() as session:
         for invalid_keyword in ["file_id", "location_id", "user_id"]:
@@ -122,5 +138,6 @@ async def test_invalid_calls(
                         "user_id": user_id,
                     },
                     **{invalid_keyword: None},
+                    **additional_kwargs,
                 }
                 await fct_call(session=session, **kwargs)

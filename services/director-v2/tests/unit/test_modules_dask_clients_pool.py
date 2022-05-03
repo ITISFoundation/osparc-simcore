@@ -187,6 +187,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 settings=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
+                tasks_file_link_type=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
             )
         )
         async with clients_pool.acquire(cluster) as dask_client:
@@ -268,6 +269,10 @@ async def test_acquire_default_cluster(
         def just_a_quick_fct(x, y):
             return x + y
 
+        assert (
+            dask_client.tasks_file_link_type
+            == client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+        )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
         result = await future.result(timeout=10)  # type: ignore

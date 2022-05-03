@@ -10,18 +10,16 @@
 
 import functools
 import logging
-from typing import Coroutine
+from typing import Callable, Coroutine
 
 import httpx
 from fastapi import HTTPException
 from starlette import status
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 
 def handle_retry(logger: logging.Logger):
@@ -48,7 +46,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
     - response server error -> logged + responds with HTTP_503_SERVICE_UNAVAILABLE
     """
 
-    def decorator_func(request_func: Coroutine):
+    def decorator_func(request_func: Callable[..., Coroutine]):
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> httpx.Response:
             try:

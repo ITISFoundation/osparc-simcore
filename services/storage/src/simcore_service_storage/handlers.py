@@ -7,9 +7,13 @@ from typing import Any, Dict
 import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from settings_library.s3 import S3Settings
 
+# Exclusive for simcore-s3 storage -----------------------
+from . import sts
 from ._meta import api_vtag
 from .access_layer import InvalidFileIdentifier
 from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
@@ -381,7 +385,14 @@ async def delete_file(request: web.Request):
         return {"error": None, "data": None}
 
 
-# Exclusive for simcore-s3 storage -----------------------
+@routes.post(f"/{api_vtag}/simcore-s3:access")
+async def get_or_create_temporary_s3_access(request: web.Request):
+    user_id = UserID(request.query["user_id"])
+    with handle_storage_errors():
+        s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(
+            request.app, user_id
+        )
+        return {"data": s3_settings.dict()}
 
 
 @routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")  # type: ignore

@@ -153,7 +153,10 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         if (resourceInfo.available === 0) {
           return;
         }
-        const icon = new qx.ui.basic.Image(resourceInfo.icon);
+        const relativeUsage = resourceInfo.used / resourceInfo.available;
+        const icon = new qx.ui.basic.Image(resourceInfo.icon).set({
+          textColor: relativeUsage > 0.8 ? "busy-orange" : "text"
+        });
         this._add(icon, {
           row: idx,
           column: 0
@@ -163,8 +166,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           width: 60
         });
         osparc.utils.Utils.hideBorder(progressBar);
+        // orange > 80%
         progressBar.getChildControl("progress").set({
-          backgroundColor: "visual-blue"
+          backgroundColor: relativeUsage > 0.8 ? "busy-orange" : "ready-green"
         });
         this._add(progressBar, {
           row: idx,

@@ -48,7 +48,7 @@ def _get_environment_variables(
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
-        "STORAGE_ENDPOINT": app_settings.STORAGE_ENDPOINT,
+        "STORAGE_ENDPOINT": app_settings.DIRECTOR_V2_STORAGE.storage_endpoint,
         "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
         "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
         "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
