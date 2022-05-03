@@ -56,9 +56,10 @@ qx.Class.define("osparc.utils.Utils", {
       },
 
       getFavServices: function() {
-        const serviceFavs = window.localStorage.getItem("services");
+        let serviceFavs = window.localStorage.getItem("services");
         if (serviceFavs) {
-          const favServices = Object.keys(serviceFavs).sort((a, b) => serviceFavs[a]["instantiated"] - serviceFavs[b]["instantiated"]).map(sortedKey => serviceFavs[sortedKey]);
+          serviceFavs = JSON.parse(serviceFavs);
+          const favServices = Object.keys(serviceFavs).sort((a, b) => serviceFavs[b]["instantiated"] - serviceFavs[a]["instantiated"]);
           return favServices;
         }
         return [];

@@ -101,6 +101,21 @@ qx.Class.define("osparc.utils.Services", {
       return 0;
     },
 
+    sortBasedOnFav: function(servicesArray) {
+      const favServices = osparc.utils.Utils.localCache.getFavServices();
+      servicesArray.sort((a, b) => {
+        let aIdx = favServices.indexOf(a.getKey());
+        if (aIdx === -1) {
+          aIdx = 10000;
+        }
+        let bIdx = favServices.indexOf(b.getKey());
+        if (bIdx === -1) {
+          bIdx = 10000;
+        }
+        return aIdx - bIdx;
+      });
+    },
+
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {
