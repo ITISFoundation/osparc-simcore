@@ -179,8 +179,6 @@ def get_dynamic_sidecar_spec(
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": scheduler_data.simcore_traefik_zone,
-            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
-            "study_id": f"{scheduler_data.project_id}",
             "traefik.docker.network": scheduler_data.dynamic_sidecar_network_name,  # also used for scheduling
             "traefik.enable": "true",
             f"traefik.http.routers.{scheduler_data.service_name}.entrypoints": "http",
@@ -189,10 +187,13 @@ def get_dynamic_sidecar_spec(
             f"traefik.http.services.{scheduler_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",
+            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
+            "study_id": f"{scheduler_data.project_id}",
             # the following are used for scheduling
             "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
+            "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
@@ -207,7 +208,9 @@ def get_dynamic_sidecar_spec(
                 "Labels": {},
                 "Mounts": mounts,
             },
-            "Placement": {"Constraints": []},
+            "Placement": {
+                "Constraints": [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS]
+            },
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": 5000000,

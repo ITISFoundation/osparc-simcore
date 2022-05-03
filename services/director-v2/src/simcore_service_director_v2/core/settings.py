@@ -430,6 +430,10 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: Optional[str] = Field(
+        "", description="added to service Placement constraint in dynamic-sidecars"
+    )
+
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value) -> str:
