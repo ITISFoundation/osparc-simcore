@@ -1,12 +1,12 @@
 import inspect
-from typing import Dict, Generator, Tuple, Any, Set, List, Union
 from pathlib import Path
-from pydantic import BaseModel
+from typing import Any, Dict, Generator, List, Set, Tuple, Union
 
 from openpyxl import Workbook
-from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.styles import Border, Alignment
 from openpyxl.cell import Cell
+from openpyxl.styles import Alignment, Border
+from openpyxl.worksheet.worksheet import Worksheet
+from pydantic import BaseModel
 
 BORDER_ATTRIBUTES: Set[str] = {
     "left",

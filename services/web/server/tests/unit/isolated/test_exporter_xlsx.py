@@ -1,43 +1,38 @@
 # pylint: disable=redefined-outer-name
 import datetime
-from typing import Any, Dict
-from pathlib import Path
 import random
 import string
-
+from pathlib import Path
+from typing import Any, Dict
 
 import openpyxl
 import pytest
-from openpyxl import Workbook
 from faker import Faker
-
-
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
-    SubmissionXLSXDocument,
-    SubmissionDocumentParams,
-)
-
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
-    DatasetDescriptionXLSXDocument,
-    DatasetDescriptionParams,
-    ContributorEntryModel,
-    DoiEntryModel,
-    LinkEntryModel,
-)
+from openpyxl import Workbook
 from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_description import (
-    CodeDescriptionXLSXDocument,
-    CodeDescriptionParams,
     CodeDescriptionModel,
+    CodeDescriptionParams,
+    CodeDescriptionXLSXDocument,
     InputsEntryModel,
     OutputsEntryModel,
     RRIDEntry,
 )
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
+    ContributorEntryModel,
+    DatasetDescriptionParams,
+    DatasetDescriptionXLSXDocument,
+    DoiEntryModel,
+    LinkEntryModel,
+)
 from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.directory_manifest import (
-    DirectoryManifestXLSXDocument,
     DirectoryManifestParams,
+    DirectoryManifestXLSXDocument,
     FileEntryModel,
 )
-
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
+    SubmissionDocumentParams,
+    SubmissionXLSXDocument,
+)
 
 MAX_ENTRIES_IN_ARRAYS = 10
 

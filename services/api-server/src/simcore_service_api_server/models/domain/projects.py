@@ -9,7 +9,7 @@ from ...utils.serialization import json_dumps, json_loads
 
 
 class NewProjectIn(Project):
-    """ Web-server API model in body for create_project """
+    """Web-server API model in body for create_project"""
 
     # - uuid
     # - name

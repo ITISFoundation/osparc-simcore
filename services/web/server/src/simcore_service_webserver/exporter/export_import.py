@@ -59,7 +59,7 @@ async def study_import(
     temp_dir: str,
     file_field: FileField,
     user_id: int,
-    chunk_size: int = 2 ** 16,
+    chunk_size: int = 2**16,
 ) -> str:
     """
     Creates a project from a given exported project and returns

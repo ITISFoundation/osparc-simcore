@@ -1,7 +1,8 @@
 """Defines the different exceptions that may arise in the director-v2 subpackage"""
 
-from pydantic.errors import PydanticErrorMixin
 from typing import Any
+
+from pydantic.errors import PydanticErrorMixin
 
 
 class DirectorServiceError(PydanticErrorMixin, RuntimeError):

@@ -15,11 +15,12 @@ from aiohttp.client_exceptions import (
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps
+from settings_library.catalog import CatalogSettings
 from yarl import URL
 
 from ._constants import X_PRODUCT_NAME_HEADER
 from ._meta import api_version_prefix
-from .catalog_settings import CatalogSettings, get_plugin_settings
+from .catalog_settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 

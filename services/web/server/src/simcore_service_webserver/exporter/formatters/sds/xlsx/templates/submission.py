@@ -1,9 +1,10 @@
 import datetime
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field, StrictStr, validator
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
-from ..styling_components import T, TB, Backgrounds, Borders
+
+from ..styling_components import TB, Backgrounds, Borders, T
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import ensure_correct_instance
 
 

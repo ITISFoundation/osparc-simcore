@@ -1,15 +1,14 @@
 import datetime
-
 from collections import deque
-from typing import List, Tuple, Dict
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 import magic
 from pydantic import BaseModel, Field, StrictStr, validator
 
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
-from ..styling_components import T, TB, Backgrounds, Borders
-from .utils import ensure_correct_instance, get_max_array_length, column_iter
+from ..styling_components import TB, Backgrounds, Borders, T
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .utils import column_iter, ensure_correct_instance, get_max_array_length
 
 # replaces lib-magic's description with these
 DESCRIPTION_OVERWRITES: Dict[str, str] = {

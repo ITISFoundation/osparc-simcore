@@ -75,7 +75,7 @@ async def get_token(request: web.Request):
 @login_required
 @permission_required("user.tokens.*")
 async def update_token(request: web.Request):
-    """ updates token_data of a given user service
+    """updates token_data of a given user service
 
     WARNING: token_data has to be complete!
     """

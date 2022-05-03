@@ -72,7 +72,7 @@ class BaseLoadingModel(BaseModel):
 
     @classmethod
     async def model_from_file(cls, root_dir: Path) -> "Manifest":
-        """Validates and returns the model inside root_dir expected at _RELATIVE_STORAGE_PATH """
+        """Validates and returns the model inside root_dir expected at _RELATIVE_STORAGE_PATH"""
         cls.validate_storage_path()
 
         storage_path = BaseModelSavePath(

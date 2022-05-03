@@ -5,9 +5,9 @@ from ..security_api import UserRole, get_access_model
 
 
 async def can_update_node_inputs(context):
-    """ Check function associated to "project.workbench.node.inputs.update" permission label
+    """Check function associated to "project.workbench.node.inputs.update" permission label
 
-        Returns True if user has permission to update inputs
+    Returns True if user has permission to update inputs
     """
     db = context["dbapi"]
     project_uuid = context["project_id"]
@@ -42,7 +42,7 @@ async def can_update_node_inputs(context):
 
 def setup_projects_access(app: web.Application):
     """
-        security - access : Inject permissions to rest API resources
+    security - access : Inject permissions to rest API resources
     """
     hrba = get_access_model(app)
 

@@ -1,8 +1,7 @@
 import sqlalchemy as sa
 from aiohttp import web
-from sqlalchemy import and_
-
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from sqlalchemy import and_
 
 from .db_models import tags
 from .login.decorators import RQT_USERID_KEY, login_required

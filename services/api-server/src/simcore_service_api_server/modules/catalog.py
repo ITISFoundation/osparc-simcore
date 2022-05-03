@@ -7,8 +7,8 @@ from typing import Callable, List, Optional, Tuple
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
+from settings_library.catalog import CatalogSettings
 
-from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 

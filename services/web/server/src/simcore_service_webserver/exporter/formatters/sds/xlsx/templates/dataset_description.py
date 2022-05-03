@@ -1,8 +1,10 @@
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 from pydantic import BaseModel, Field, StrictStr
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
-from ..styling_components import T, TB, Link, Comment, Backgrounds, Borders
-from .utils import ensure_correct_instance, get_max_array_length, column_iter
+
+from ..styling_components import TB, Backgrounds, Borders, Comment, Link, T
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .utils import column_iter, ensure_correct_instance, get_max_array_length
 
 
 class ContributorEntryModel(BaseModel):

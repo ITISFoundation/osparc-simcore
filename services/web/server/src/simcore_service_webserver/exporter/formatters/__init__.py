@@ -1,12 +1,11 @@
-from typing import Dict
 from pathlib import Path
+from typing import Dict
 
-
+from ..exceptions import ExporterException
 from .base_formatter import BaseFormatter
-from .models import ManifestFile
 from .formatter_v1 import FormatterV1
 from .formatter_v2 import FormatterV2
-from ..exceptions import ExporterException
+from .models import ManifestFile
 
 # maps manifest version to available formatters
 _FORMATTERS_MAPPINGS: Dict[str, BaseFormatter] = {"1": FormatterV1, "2": FormatterV2}

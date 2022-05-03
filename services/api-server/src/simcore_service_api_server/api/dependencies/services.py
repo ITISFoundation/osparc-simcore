@@ -10,13 +10,13 @@ from ...utils.client_base import BaseServiceClientApi
 
 def get_api_client(client_type: Type[BaseServiceClientApi]) -> Callable:
     """
-        Retrieves API client from backend services EXCEPT web-server (see dependencies/webserver)
+    Retrieves API client from backend services EXCEPT web-server (see dependencies/webserver)
 
-        Usage:
+    Usage:
 
-            director_client: DirectorApi = Depends(get_api_client(DirectorApi)),
-            catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-            storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+        director_client: DirectorApi = Depends(get_api_client(DirectorApi)),
+        catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+        storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     """
     assert issubclass(client_type, BaseServiceClientApi)  # nosec
 

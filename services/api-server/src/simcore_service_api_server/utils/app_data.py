@@ -14,7 +14,7 @@ class AppDataMixin:
 
     @classmethod
     def create_once(cls, app: FastAPI, **data):
-        """ Creates a single instance in app """
+        """Creates a single instance in app"""
 
         obj = cls.get_instance(app)
         if not obj:
@@ -31,7 +31,7 @@ class AppDataMixin:
 
     @classmethod
     def get_instance(cls, app: FastAPI):
-        """ Gets single instance in app if any, otherwise returns None """
+        """Gets single instance in app if any, otherwise returns None"""
         assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
 
         try:

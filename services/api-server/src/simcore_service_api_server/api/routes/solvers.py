@@ -34,7 +34,7 @@ async def list_solvers(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ Lists all available solvers (latest version) """
+    """Lists all available solvers (latest version)"""
     solvers: List[Solver] = await catalog_client.list_latest_releases(user_id)
 
     for solver in solvers:
@@ -51,7 +51,7 @@ async def list_solvers_releases(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ Lists all released solvers (all released versions) """
+    """Lists all released solvers (all released versions)"""
     assert await catalog_client.is_responsive()  # nosec
 
     solvers: List[Solver] = await catalog_client.list_solvers(user_id)
@@ -75,7 +75,7 @@ async def get_solver(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ) -> Solver:
-    """ Gets latest release of a solver """
+    """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
@@ -102,7 +102,7 @@ async def list_solver_releases(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ Lists all releases of a given solver """
+    """Lists all releases of a given solver"""
     releases: List[Solver] = await catalog_client.list_solver_releases(
         user_id, solver_key
     )
@@ -123,7 +123,7 @@ async def get_solver_release(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ) -> Solver:
-    """ Gets a specific release of a solver """
+    """Gets a specific release of a solver"""
     try:
         solver = await catalog_client.get_solver(user_id, solver_key, version)
 

@@ -5,6 +5,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
+from settings_library.catalog import CatalogSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -46,17 +47,6 @@ class WebServerSettings(BaseCustomSettings, _UrlMixin, MixinSessionSettings):
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
-
-
-# TODO: dynamically create types with minimal options?
-class CatalogSettings(BaseCustomSettings, _UrlMixin):
-    CATALOG_HOST: str = "catalog"
-    CATALOG_PORT: int = 8000
-    CATALOG_VTAG: str = "v0"
-
-    @cached_property
-    def base_url(self) -> str:
-        return self._build_url("CATALOG")
 
 
 class StorageSettings(BaseCustomSettings, _UrlMixin):

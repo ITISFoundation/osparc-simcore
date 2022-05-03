@@ -17,9 +17,9 @@ log = logging.getLogger(__name__)
 
 @login_required
 async def get_node_output_ui(request: web.Request):
-    """ Returns a json description of the ui for presenting the output within the mainUi
-        and a list of open api json schema objects describing the possible
-        json payloads and responses for the api calls available at this endpoint
+    """Returns a json description of the ui for presenting the output within the mainUi
+    and a list of open api json schema objects describing the possible
+    json payloads and responses for the api calls available at this endpoint
 
     """
     log.debug(request.match_info["nodeInstanceUUID"], request.match_info["outputKey"])
@@ -29,8 +29,8 @@ async def get_node_output_ui(request: web.Request):
 
 @login_required
 async def send_to_node_output_api(request: web.Request):
-    """ send data back to the output api ...
-        protocol depends on the definition
+    """send data back to the output api ...
+    protocol depends on the definition
     """
     body = await request.body
     log.debug(
@@ -45,8 +45,8 @@ async def send_to_node_output_api(request: web.Request):
 
 @login_required
 async def get_node_output_iframe(request: web.Request):
-    """ entry point for iframe interaction with the node.
-        This relies on the reverse proxy code.
+    """entry point for iframe interaction with the node.
+    This relies on the reverse proxy code.
     """
     log.debug(request.match_info["nodeInstanceUUID"])
 

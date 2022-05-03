@@ -13,7 +13,7 @@ NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
 class File(BaseModel):
-    """ Represents a file stored on the server side i.e. a unique reference to a file in the cloud."""
+    """Represents a file stored on the server side i.e. a unique reference to a file in the cloud."""
 
     # WARNING: from pydantic import File as FileParam
     # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
