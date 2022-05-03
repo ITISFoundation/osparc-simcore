@@ -171,7 +171,7 @@ async def list_services(
             asyncio.get_event_loop().run_in_executor(
                 None,
                 _prepare_service_details,
-                details,
+                s,
                 services_in_db[s["key"], s["version"]],
                 services_access_rights[s["key"], s["version"]],
                 services_owner_emails.get(
