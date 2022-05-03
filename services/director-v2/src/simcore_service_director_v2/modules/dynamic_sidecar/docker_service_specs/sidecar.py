@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
@@ -174,6 +174,11 @@ def get_dynamic_sidecar_spec(
             }
         ]
 
+    placement_constraints: List[str] = (
+        []
+        if app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS is None
+        else [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS]
+    )
     create_service_params = {
         "endpoint_spec": endpoint_spec,
         "labels": {
@@ -208,9 +213,7 @@ def get_dynamic_sidecar_spec(
                 "Labels": {},
                 "Mounts": mounts,
             },
-            "Placement": {
-                "Constraints": [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS]
-            },
+            "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": 5000000,

@@ -430,8 +430,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: str = Field(
-        "",
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: Optional[str] = Field(
+        None,
         description="added to service Placement constraint in dynamic-sidecars",
         example="node.labels.region==east",
     )
