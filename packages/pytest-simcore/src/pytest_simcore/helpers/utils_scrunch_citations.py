@@ -28,11 +28,19 @@ ANTIBODY_CITATIONS = split_citations(["(Millipore Cat# AB1542, RRID:AB_90755)"])
 # https://www.addgene.org/44362/
 PLAMID_CITATIONS = split_citations(["(RRID:Addgene_44362)"])
 
-#  MMRRC, catalog https://www.mmrrc.org/catalog/cellLineSDS.php?mmrrc_id=26409
-ORGANISM_CITATIONS = split_citations(["(MMRRC Cat# 026409-UCD, RRID:MMRRC_026409-UCD)"])
+#  MMRRC,
+# catalog https://www.mmrrc.org/catalog/cellLineSDS.php?mmrrc_id=26409
+#         https://scicrunch.org/resolver/RRID:MMRRC_026409-UCD.json
+#
+# As of May 2022, changed proper_citation change from
+#  '(MMRRC Cat# 026409-UCD, RRID:MMRRC_026409-UCD)' to
+#  'RRID:MMRRC_026409-UCD'
+#
+ORGANISM_CITATIONS = split_citations(["(RRID:MMRRC_026409-UCD)"])
 
 # https://web.expasy.org/cellosaurus/CVCL_0033
-CELL_LINE_CITATIONS = split_citations(["(ATCC Cat# HTB-30, RRID:CVCL_0033)"])
+# As of May 2022, name changed from 'ATCC Cat# HTB-30' to 'AddexBio Cat# C0006007/65'
+CELL_LINE_CITATIONS = split_citations(["(AddexBio Cat# C0006007/65, RRID:CVCL_0033)"])
 
 #
 #  WARNING: Since Sep.2021, the order of the resolved hits list returned by
