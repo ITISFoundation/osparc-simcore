@@ -430,10 +430,10 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: Optional[str] = Field(
-        None,
-        description="added to service Placement constraint in dynamic-sidecars",
-        example="node.labels.region==east",
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT: Optional[str] = Field(
+        None, regex=r"^.*(!=|==).*$", example="node.labels.region==east"
     )
 
     @validator("LOG_LEVEL", pre=True)

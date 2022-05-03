@@ -176,8 +176,8 @@ def get_dynamic_sidecar_spec(
 
     placement_constraints: List[str] = (
         []
-        if app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS is None
-        else [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS]
+        if app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT is None
+        else [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT]
     )
     create_service_params = {
         "endpoint_spec": endpoint_spec,
