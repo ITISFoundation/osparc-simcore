@@ -92,13 +92,8 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       clusters.addListener("clusterDetailsReceived", e => {
         const data = e.getData();
         if (this.__clusterId === data.clusterId) {
-          if ("error" in data) {
-            this.__clusterStatus.setTextColor("failed-red");
-            this.__clusterWorkers.populateWorkersDetails(null);
-          } else {
-            this.__clusterStatus.setTextColor("ready-green");
-            this.__clusterWorkers.populateWorkersDetails(data.clusterDetails);
-          }
+          this.__clusterStatus.setTextColor("error" in data ? "failed-red" : "ready-green");
+          this.__clusterWorkers.populateWorkersDetails("error" in data ? null : data.clusterDetails);
         }
       });
       clusters.startFetchingDetails(this.__clusterId);
