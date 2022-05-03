@@ -104,19 +104,22 @@ qx.Class.define("osparc.utils.Services", {
     sortBasedOnFav: function(servicesArray) {
       const favServices = osparc.utils.Utils.localCache.getFavServices();
       servicesArray.forEach(service => {
-        const found = favServices.find(service.getKey());
+        const found = Object.keys(favServices).find(favSrv => favSrv === service.getKey());
         service.hits = found ? found.hits : 0;
       });
       servicesArray.sort((a, b) => {
-        let aIdx = favServices.indexOf(a.getKey());
+        let aIdx = Object.keys(favServices).indexOf(a.getKey());
         if (aIdx === -1) {
           aIdx = 10000;
         }
-        let bIdx = favServices.indexOf(b.getKey());
+        let bIdx = Object.keys(favServices).indexOf(b.getKey());
         if (bIdx === -1) {
           bIdx = 10000;
         }
-        return aIdx - bIdx;
+        if (aIdx !== bIdx) {
+          return aIdx - bIdx;
+        }
+        return a.getName().localeCompare(b.getName());
       });
     },
 

@@ -90,11 +90,21 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       serviceModel.bind("description", this.getChildControl("description"), "value");
 
       // ITEM
-      this.__applyHits(JSON.parse(qx.util.Serializer.toJson(serviceModel.get("access_rights"))));
+      this.__applyHits(serviceModel);
     },
 
-    __applyHits: function() {
-      console.log("Apply hits");
+    __applyHits: function(serviceModel) {
+      const hitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+        alignY: "middle"
+      })).set({
+        toolTipText: this.tr("Number of times it was instantiated"),
+        minWidth: 85
+      });
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: "));
+      hitsLayout.add(hitsLabel);
+      const hitsValue = new qx.ui.basic.Label(String(serviceModel.hits));
+      hitsLayout.add(hitsValue);
+      this._addAt(hitsLayout, osparc.dashboard.ListButtonBase.POS.TSR);
     }
   }
 });
