@@ -4,15 +4,18 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from pprint import pformat
+from typing import Any, Type
 
 import pytest
 import yaml
-from service_integration.osparc_config import MetaConfig, RuntimeConfig
+from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
+from pydantic import BaseModel
+from service_integration.osparc_config import MetaConfig, RuntimeConfig, SettingsItem
 
 
 @pytest.fixture
-def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
+def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
     data = yaml.safe_load((tests_data_dir / "docker-compose-meta.yml").read_text())
 
     service_name = {
@@ -38,7 +41,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
     "labels_fixture_name", ["legacy", "service-sidecared", "compose-sidecared"]
 )
 def test_load_from_labels(
-    labels: Dict[str, str], labels_fixture_name: str, tmp_path: Path
+    labels: dict[str, str], labels_fixture_name: str, tmp_path: Path
 ):
     meta_cfg = MetaConfig.from_labels_annotations(labels)
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
@@ -60,3 +63,15 @@ def test_load_from_labels(
         # reload from yaml and compare
         new_model = model.__class__.from_yaml(config_path)
         assert new_model == model
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (SimcoreServiceSettingLabelEntry,),
+)
+def test_settings_item_in_sync_with_service_settings_label(
+    model_cls: Type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
+):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+        SettingsItem.parse_obj(**example)

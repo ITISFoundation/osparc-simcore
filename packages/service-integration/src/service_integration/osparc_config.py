@@ -14,8 +14,8 @@ integrates with osparc.
 
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
-from models_library.service_settings_labels import RestartPolicy
 
+from models_library.service_settings_labels import ContainerSpec, RestartPolicy
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
@@ -137,8 +137,12 @@ class PathsMapping(BaseModel):
 
 
 class SettingsItem(BaseModel):
+    # NOTE: this maps to SimcoreServiceSettingLabelEntry
+    # It is not reused until agreed how to refactor
+    # Instead there is a test that keeps them in sync
+
     name: str = Field(..., description="The name of the service setting")
-    type_: str = Field(
+    type_: Literal["string", "object", "ContainerSpec", "Resources"] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",
@@ -147,6 +151,13 @@ class SettingsItem(BaseModel):
         ...,
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
+
+    @validator("value", pre=True)
+    def check_value_against_custom_types(cls, v, values):
+        if type_ := values.get("type_"):
+            if type_ == "ContainerSpec":
+                ContainerSpec.parse_obj(v)
+        return v
 
 
 class RuntimeConfig(BaseModel):

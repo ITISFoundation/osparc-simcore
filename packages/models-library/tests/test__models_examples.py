@@ -43,12 +43,13 @@ def iter_model_cls_examples(
 @pytest.mark.parametrize(
     "class_name, model_cls, example_index, test_example", iter_model_cls_examples()
 )
-def test_model_examples(
+def test_all_module_model_examples(
     class_name: str,
     model_cls: Type[BaseModel],
     example_index: NonNegativeInt,
     test_example: Any,
 ):
+    """Automatically collects all BaseModel subclasses having examples and tests them against schemas"""
     print(
         f"test {example_index=} for {class_name=}:\n",
         json.dumps(test_example, default=pydantic_encoder, indent=2),
