@@ -445,7 +445,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
     DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraint] = Field(
-        [],
+        default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )
 
