@@ -34,11 +34,21 @@ class Image(BaseModel):
     node_requirements: NodeRequirements = Field(
         None, description="the requirements for the service to run on a node"
     )
+    command: list[str] = Field(
+        default=[
+            "run",
+        ],
+        description="command to run container. Can override using ContainerSpec service labels",
+    )
 
     @validator("node_requirements", pre=True, always=True)
     @classmethod
     def migrate_from_requirements(cls, v, values):
         if v is None:
+            # NOTE: 'node_requirements' field's default=None although is NOT declared as nullable.
+            # Then this validator with `pre=True, always=True` is used to create a default
+            # based on that accounts for an old version.
+            # This strategy guarantees backwards compatibility
             v = NodeRequirements(
                 CPU=1.0,
                 GPU=1 if values.get("requires_gpu") else 0,
@@ -57,6 +67,16 @@ class Image(BaseModel):
                     "node_requirements": node_req_example,
                 }
                 for node_req_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+            +
+            # old version
+            [
+                {
+                    "name": "simcore/services/dynamic/jupyter-octave-python-math",
+                    "tag": "0.0.1",
+                    "requires_gpu": True,
+                    "requires_mpi": False,
+                }
             ]
         }
 

@@ -105,18 +105,6 @@ RemoteFct = Callable[
 UserCallbackInSepThread = Callable[[], None]
 
 
-def get_service_command_line(node_image: Image) -> List[str]:
-    command = ["run"]
-    # ---------------------------------------------------------------------------
-    # FIXME: PC HACK to tmp run a different command for osparc function services
-    # TODO: added in settings = [ {"name": "Cmd", "type": "array", "value": ["ofs", "linear-regression"] }]
-    suffix = node_image.name.split("/")[-1]
-    if suffix.startswith("ofs-sensitivity_ua_"):
-        command = ["ofs", suffix.replace("ofs-sensitivity_ua_", "").replace("_", "-")]
-    # ---------------------------------------------------------------------------
-    return command
-
-
 @dataclass
 class DaskClient:
     app: FastAPI
@@ -287,8 +275,6 @@ class DaskClient:
                 node_id=node_id,
             )
 
-            command = get_service_command_line(node_image)
-
             input_data = await compute_input_data(
                 self.app,
                 user_id,
@@ -325,7 +311,7 @@ class DaskClient:
                     input_data=input_data,
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
-                    command=command,
+                    command=node_image.command,
                     s3_settings=s3_settings,
                     key=job_id,
                     resources=dask_resources,

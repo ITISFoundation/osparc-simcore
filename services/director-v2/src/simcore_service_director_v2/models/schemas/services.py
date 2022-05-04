@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import UUID_REGEX
+from models_library.service_settings_labels import ContainerSpec
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field
 from pydantic.types import ByteSize, NonNegativeInt
@@ -57,7 +58,8 @@ class NodeRequirements(BaseModel):
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
-    service_build_details: Optional[ServiceBuildDetails]
+    service_build_details: Optional[ServiceBuildDetails] = None
+    container_spec: Optional[ContainerSpec] = None
 
     class Config:
         schema_extra = {
@@ -73,6 +75,18 @@ class ServiceExtras(BaseModel):
                         "vcs_ref": "8251ade",
                         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
                     },
+                }
+                for node_example in NodeRequirements.Config.schema_extra["examples"]
+            ]
+            + [
+                {
+                    "node_requirements": node_example,
+                    "service_build_details": {
+                        "build_date": "2021-08-13T12:56:28Z",
+                        "vcs_ref": "8251ade",
+                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+                    },
+                    "container_spec": {"command": ["run", "subcommand"]},
                 }
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
