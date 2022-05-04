@@ -86,7 +86,7 @@ class ServiceExtras(BaseModel):
                         "vcs_ref": "8251ade",
                         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
                     },
-                    "container_spec": {"command": ["run", "subcommand"]},
+                    "container_spec": {"Command": ["run", "subcommand"]},
                 }
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
