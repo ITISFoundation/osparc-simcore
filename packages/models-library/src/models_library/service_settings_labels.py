@@ -46,7 +46,9 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
     _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
-    setting_type: Literal["string", "object", "ContainerSpec", "Resources"] = Field(
+    setting_type: Literal[
+        "string", "int", "integer", "number", "object", "ContainerSpec", "Resources"
+    ] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",

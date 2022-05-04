@@ -142,7 +142,9 @@ class SettingsItem(BaseModel):
     # Instead there is a test that keeps them in sync
 
     name: str = Field(..., description="The name of the service setting")
-    type_: Literal["string", "object", "ContainerSpec", "Resources"] = Field(
+    type_: Literal[
+        "string", "int", "integer", "number", "object", "ContainerSpec", "Resources"
+    ] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",
@@ -153,6 +155,7 @@ class SettingsItem(BaseModel):
     )
 
     @validator("value", pre=True)
+    @classmethod
     def check_value_against_custom_types(cls, v, values):
         if type_ := values.get("type_"):
             if type_ == "ContainerSpec":

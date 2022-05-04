@@ -74,4 +74,4 @@ def test_settings_item_in_sync_with_service_settings_label(
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        SettingsItem.parse_obj(**example)
+        SettingsItem.parse_obj(example)
