@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -68,8 +68,8 @@ async def _generate_tasks_list_from_project(
             continue
 
         # aggregates node_details amd node_extras into Image
-        data = {
-            "name": service_key_version,
+        data: Dict[str, Any] = {
+            "name": service_key_version.key,
             "tag": service_key_version.version,
         }
         if node_extras:
