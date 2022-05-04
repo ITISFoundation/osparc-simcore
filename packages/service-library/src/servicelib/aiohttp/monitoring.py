@@ -154,7 +154,6 @@ def middleware_factory(
             canonical_endpoint = request.match_info.route.resource.canonical
         start_time = time.time()
         try:
-            # log.debug("ENTERING monitoring middleware for %s", f"{request=}")
             if enter_middleware_cb:
                 with log_catch(logger=log, reraise=False):
                     await enter_middleware_cb(request)
@@ -173,11 +172,6 @@ def middleware_factory(
                 resp, web.StreamResponse
             ), "Forgot envelope middleware?"
 
-            # log.debug(
-            #     "EXITING monitoring middleware for %s with %s",
-            #     f"{request=}",
-            #     f"{resp=}",
-            # )
         except web.HTTPServerError as exc:
             # Transforms exception into response object and log exception
             resp = exc
