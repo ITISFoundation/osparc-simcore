@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
@@ -16,7 +16,35 @@ class _BaseConfig:
     keep_untouched = (cached_property,)
 
 
+class ContainerSpec(BaseModel):
+    """Implements entries can can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    request body: TaskTemplate -> ContainerSpec
+    """
+
+    command: Optional[list[str]] = Field(
+        default=None,
+        alias="Command",
+        description="The command to be run in the image. If None, it will not override default 'run'",
+        # NOTE: currently constraint to our use cases. Might mitigate some security issues.
+        min_items=1,
+        max_items=2,
+    )
+
+    class Config(_BaseConfig):
+        schema_extra = {
+            "examples": [
+                {"Command": ["executable"]},
+                {"Command": ["executable", "subcommand"]},
+                {"Command": ["ofs", "linear-regression"]},
+            ]
+        }
+
+
 class SimcoreServiceSettingLabelEntry(BaseModel):
+    """These value is used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    Specifically the section under ``TaskTemplate``
+    """
+
     _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
     setting_type: str = Field(
@@ -37,6 +65,12 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "name": "constraints",
                     "type": "string",
                     "value": ["node.platform.os == linux"],
+                },
+                # container spec. SEE ContainerSpec model for value
+                {
+                    "name": "ContainerSpec",
+                    "type": "ContainerSpec",
+                    "value": {"Command": ["run"]},
                 },
                 # resources
                 {
@@ -83,12 +117,12 @@ class PathMappingsLabel(BaseModel):
         ...,
         description="folder path where the service is expected to provide all its outputs",
     )
-    state_paths: List[Path] = Field(
+    state_paths: list[Path] = Field(
         [],
         description="optional list of paths which contents need to be persisted",
     )
 
-    state_exclude: Optional[List[str]] = Field(
+    state_exclude: Optional[list[str]] = Field(
         None,
         description="optional list unix shell rules used to exclude files from the state",
     )
