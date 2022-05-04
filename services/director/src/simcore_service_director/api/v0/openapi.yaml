@@ -1224,6 +1224,13 @@ paths:
                             type: string
                           vcs_url:
                             type: string
+                      container_spec:
+                        type: object
+                        properties:
+                          command:
+                            type: array
+                            items:
+                              type: string
                   error:
                     nullable: true
                     default: null
@@ -2793,6 +2800,13 @@ components:
                   type: string
                 vcs_url:
                   type: string
+            container_spec:
+              type: object
+              properties:
+                command:
+                  type: array
+                  items:
+                    type: string
         error:
           nullable: true
           default: null
