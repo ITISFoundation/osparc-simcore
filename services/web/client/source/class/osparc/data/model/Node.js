@@ -496,7 +496,8 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsg = "Error when starting " + key + ":" + version + ": " + err.getTarget().getResponse()["error"];
           const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: errorMsg
+            msg: errorMsg,
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           this.getStatus().setInteractive("failed");
@@ -722,6 +723,31 @@ qx.Class.define("osparc.data.model.Node", {
         }
       });
       return outputsData;
+    },
+
+    setErrors: function(errors) {
+      errors.forEach(error => {
+        const loc = error["loc"];
+        if (loc.length < 2) {
+          return;
+        }
+        if (loc[1] === this.getNodeId()) {
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: error["msg"],
+            level: "ERROR"
+          };
+          if (loc.length > 2) {
+            const portKey = loc[2];
+            if ("inputs" in this.getMetaData() && portKey in this.getMetaData()["inputs"]) {
+              errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
+            } else {
+              errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+            }
+          }
+          this.fireDataEvent("showInLogger", errorMsgData);
+        }
+      });
     },
 
     // post edge creation routine
@@ -1007,11 +1033,12 @@ qx.Class.define("osparc.data.model.Node", {
                 this.getPropsForm().retrievedPortData(portKey, false);
               }
               console.error(failure, error);
-              const msgData = {
+              const errorMsgData = {
                 nodeId: this.getNodeId(),
-                msg: "Failed retrieving inputs"
+                msg: "Failed retrieving inputs",
+                level: "ERROR"
               };
-              this.fireDataEvent("showInLogger", msgData);
+              this.fireDataEvent("showInLogger", errorMsgData);
             }, this);
           });
           updReq.send();
@@ -1097,11 +1124,12 @@ qx.Class.define("osparc.data.model.Node", {
         case "failed": {
           status.setInteractive("failed");
           const msg = "Service failed: " + data["service_message"];
-          const msgData = {
+          const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: msg
+            msg,
+            lvel: "ERROR"
           };
-          this.fireDataEvent("showInLogger", msgData);
+          this.fireDataEvent("showInLogger", errorMsgData);
           return;
         }
         default:
@@ -1138,7 +1166,8 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
           const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: errorMsg
+            msg: errorMsg,
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           this.getStatus().setInteractive("failed");
@@ -1153,11 +1182,12 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (error) {
         const msg = "Error received: " + error;
-        const msgData = {
+        const errorMsgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg,
+          level: "ERROR"
         };
-        this.fireDataEvent("showInLogger", msgData);
+        this.fireDataEvent("showInLogger", errorMsgData);
         return;
       }
 

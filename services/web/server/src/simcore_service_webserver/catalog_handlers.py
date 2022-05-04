@@ -22,7 +22,7 @@ from .catalog_models import (
     json_dumps,
     replace_service_input_outputs,
 )
-from .catalog_utils import can_connect
+from .catalog_units import can_connect
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required

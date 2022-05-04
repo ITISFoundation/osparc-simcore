@@ -87,7 +87,7 @@ async def test_push_folder(
     control_folder = Path(tmpdir) / "control_folder"
     control_folder.mkdir()
     assert control_folder.exists()
-    unpack_archive(str(archive_file), extract_dir=control_folder)
+    unpack_archive(f"{archive_file}", extract_dir=control_folder)
     matchs, mismatchs, errors = cmpfiles(
         test_folder, control_folder, [x.name for x in test_folder.glob("**/*")]
     )
