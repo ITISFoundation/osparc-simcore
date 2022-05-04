@@ -37,7 +37,7 @@ def iter_model_cls_examples(
                 # NOTE: this is part of utils.misc and is tested here
                 examples = extract_examples(model_cls)
                 for index, example in enumerate(examples):
-                    yield name, model_cls, index, example,
+                    yield (name, model_cls, index, example)
 
 
 @pytest.mark.parametrize(

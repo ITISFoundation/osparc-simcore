@@ -326,7 +326,9 @@ class DaskClient:
                 )  # type: ignore
 
                 logger.debug(
-                    "Dask task %s started [%s]", f"{task_future.key=}", f"{command=}"
+                    "Dask task %s started [%s]",
+                    f"{task_future.key=}",
+                    f"{node_image.command=}",
                 )
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
