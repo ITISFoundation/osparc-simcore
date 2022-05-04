@@ -174,11 +174,6 @@ def get_dynamic_sidecar_spec(
             }
         ]
 
-    placement_constraints: List[str] = (
-        []
-        if app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT is None
-        else [app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINT]
-    )
     create_service_params = {
         "endpoint_spec": endpoint_spec,
         "labels": {
@@ -213,7 +208,9 @@ def get_dynamic_sidecar_spec(
                 "Labels": {},
                 "Mounts": mounts,
             },
-            "Placement": {"Constraints": placement_constraints},
+            "Placement": {
+                "Constraints": app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+            },
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": 5000000,
