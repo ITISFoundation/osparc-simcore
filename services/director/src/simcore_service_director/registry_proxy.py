@@ -405,7 +405,6 @@ async def get_service_extras(
     labels = await get_image_labels(app, image_key, image_tag)
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
-    # check if the service requires GPU support
     if config.SERVICE_RUNTIME_SETTINGS in labels:
         service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
@@ -434,7 +433,9 @@ async def get_service_extras(
 
                 # discrete resources (custom made ones) ---
                 # TODO: this could be adjusted to separate between GPU and/or VRAM
+                # check if the service requires GPU support
                 if not invalid_with_msg and _validate_kind(entry, "VRAM"):
+
                     result["node_requirements"]["GPU"] = 1
                 if not invalid_with_msg and _validate_kind(entry, "MPI"):
                     result["node_requirements"]["MPI"] = 1

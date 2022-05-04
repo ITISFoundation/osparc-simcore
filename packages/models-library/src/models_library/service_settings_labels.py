@@ -17,13 +17,13 @@ class _BaseConfig:
 
 
 class ContainerSpec(BaseModel):
-    """Implements entries can can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     request body: TaskTemplate -> ContainerSpec
     """
 
     command: list[str] = Field(
         alias="Command",
-        description="The command to be run in the image. If None, it will not override default 'run'",
+        description="Used to override the container's command",
         # NOTE: currently constraint to our use cases. Might mitigate some security issues.
         min_items=1,
         max_items=2,
@@ -40,7 +40,7 @@ class ContainerSpec(BaseModel):
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
-    """These value is used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     Specifically the section under ``TaskTemplate``
     """
 
