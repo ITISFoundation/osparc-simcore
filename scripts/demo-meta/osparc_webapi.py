@@ -1,9 +1,12 @@
+""" Simple client SDK for osparc web API (prototype concept)
+
+"""
 import getpass
 import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generic, Iterator, List, Optional, Type, TypeVar
+from typing import Any, Generic, Iterator, Optional, Type, TypeVar
 from uuid import UUID
 
 import httpx
@@ -25,7 +28,7 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=getattr(logging, os.environ.get("LOG_LEVEL", "INFO")))
 
 
-# MODELS -
+# MODELS --------------------------------
 
 ItemT = TypeVar("ItemT")
 DataT = TypeVar("DataT")
@@ -48,7 +51,7 @@ class PageLinks(BaseModel):
 
 class Page(GenericModel, Generic[ItemT]):
     meta: Meta = Field(..., alias="_meta")
-    data: List[ItemT]
+    data: list[ItemT]
     links: PageLinks = Field(..., alias="_links")
 
 
@@ -89,17 +92,17 @@ class ProjectIteration(BaseModel):
 
 NodeIDStr = str
 OutputIDStr = str
-Outputs = Dict[OutputIDStr, Any]
+Outputs = dict[OutputIDStr, Any]
 
 
 class ExtractedResults(BaseModel):
-    progress: Dict[NodeIDStr, conint(ge=0, le=100)] = Field(
+    progress: dict[NodeIDStr, conint(ge=0, le=100)] = Field(
         ..., description="Progress in each computational node"
     )
-    labels: Dict[NodeIDStr, str] = Field(
+    labels: dict[NodeIDStr, str] = Field(
         ..., description="Maps captured node with a label"
     )
-    values: Dict[NodeIDStr, Outputs] = Field(
+    values: dict[NodeIDStr, Outputs] = Field(
         ..., description="Captured outputs per node"
     )
 
@@ -108,34 +111,7 @@ class ProjectIterationResultItem(ProjectIteration):
     results: ExtractedResults
 
 
-class ClientSettings(BaseSettings):
-
-    OSPARC_API_URL: AnyUrl = Field("http://127.0.0.1.nip.io:9081/v0")
-    OSPARC_USER_EMAIL: EmailStr
-    OSPARC_USER_PASSWORD: SecretStr
-
-    class Config:
-        env_file = ".env-osparc-web.ignore"
-
-
-def init():
-    env_file = Path(ClientSettings.Config.env_file)
-    if not env_file.exists():
-        log.info("Creating %s", f"{env_file}")
-        kwargs = {}
-        kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
-        kwargs["OSPARC_USER_EMAIL"] = (
-            input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
-        )
-        kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
-        with open(env_file) as fh:
-            for key, value in kwargs:
-                if value:
-                    fh.write(f"{key}={value}\n")
-    log.info("%s: %s", f"{env_file=}", f"{env_file.exists()=}")
-
-
-# THIN WRAPPER CLIENT -----
+# API ----------------------------------------------
 
 
 def ping(client: httpx.Client):
@@ -217,7 +193,32 @@ def iter_project_iteration(
     )
 
 
-## HELPERS
+# SETUP ------------------------------------------
+class ClientSettings(BaseSettings):
+
+    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0")
+    OSPARC_USER_EMAIL: EmailStr
+    OSPARC_USER_PASSWORD: SecretStr
+
+    class Config:
+        env_file = ".env-osparc-web.ignore"
+
+
+def init():
+    env_file = Path(ClientSettings.Config.env_file)
+    if not env_file.exists():
+        log.info("Creating %s", f"{env_file}")
+        kwargs = {}
+        kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
+        kwargs["OSPARC_USER_EMAIL"] = (
+            input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
+        )
+        kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
+        with open(env_file) as fh:
+            for key, value in kwargs:
+                if value:
+                    fh.write(f"{key}={value}\n")
+    log.info("%s: %s", f"{env_file=}", f"{env_file.exists()=}")
 
 
 def setup_client() -> httpx.Client:

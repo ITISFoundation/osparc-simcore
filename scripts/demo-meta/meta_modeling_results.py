@@ -1,3 +1,7 @@
+""" Demo script: retrieves results of all user's meta-study using osparc_webapi's client
+
+"""
+
 from collections import defaultdict
 from typing import List
 from uuid import UUID
