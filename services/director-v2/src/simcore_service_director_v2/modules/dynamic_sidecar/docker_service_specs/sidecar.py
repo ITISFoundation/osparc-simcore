@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
