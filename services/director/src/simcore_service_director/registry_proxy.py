@@ -417,7 +417,8 @@ async def get_service_extras(
                 if resource_value:
                     if not isinstance(resource_value, dict):
                         invalid_with_msg = "invalid type for resource"
-                    else:
+
+                    if not invalid_with_msg:
                         res_limit = resource_value.get("Limits", {})
                         res_reservation = resource_value.get("Reservations", {})
                         # CPU
@@ -433,13 +434,12 @@ async def get_service_extras(
                             or config.DEFAULT_MAX_MEMORY
                         )
 
-                if not invalid_with_msg:
-                    # discrete resources (custom made ones) ---
-                    # TODO: this could be adjusted to separate between GPU and/or VRAM
-                    if _validate_kind(entry, "VRAM"):
-                        result["node_requirements"]["GPU"] = 1
-                    if _validate_kind(entry, "MPI"):
-                        result["node_requirements"]["MPI"] = 1
+                # discrete resources (custom made ones) ---
+                # TODO: this could be adjusted to separate between GPU and/or VRAM
+                if not invalid_with_msg and _validate_kind(entry, "VRAM"):
+                    result["node_requirements"]["GPU"] = 1
+                if not invalid_with_msg and _validate_kind(entry, "MPI"):
+                    result["node_requirements"]["MPI"] = 1
 
             elif entry_name == COMPOSE_SPEC_ENTRY_NAME:
                 # NOTE: some minor validation
