@@ -228,6 +228,8 @@ partd==1.2.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+pint==0.19.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 psutil==5.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt

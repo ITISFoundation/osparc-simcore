@@ -14,6 +14,7 @@ from models_library.services import ServiceDockerData, ServiceKeyVersion
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
+from ....core.errors import ErrorDict
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
@@ -229,7 +230,11 @@ class CompTasksRepository(BaseRepository):
         )
 
     async def set_project_tasks_state(
-        self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
+        self,
+        project_id: ProjectID,
+        tasks: List[NodeID],
+        state: RunningState,
+        errors: Optional[List[ErrorDict]] = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(
@@ -238,7 +243,7 @@ class CompTasksRepository(BaseRepository):
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=RUNNING_STATE_TO_DB[state])
+                .values(state=RUNNING_STATE_TO_DB[state], errors=errors)
             )
         logger.debug(
             "set project %s tasks %s with state %s",

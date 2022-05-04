@@ -11,8 +11,8 @@ aiocache
 aiofiles
 aiohttp
 aiopg[sa]
-jsonschema
 packaging
+pint
 pydantic[email]
 tenacity
 tqdm

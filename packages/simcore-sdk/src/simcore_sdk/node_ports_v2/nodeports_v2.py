@@ -3,7 +3,8 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.error_wrappers import flatten_errors
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.storage_client import LinkType
@@ -125,6 +126,8 @@ class Nodeports(BaseModel):
         Sets the provided values to the respective input or output ports
         Only supports port_key by name, not able to distinguish between inputs
         and outputs using the index.
+
+        raises ValidationError
         """
         tasks = deque()
         for port_key, value in port_values.items():
@@ -136,5 +139,13 @@ class Nodeports(BaseModel):
                 # if this fails it will raise another exception
                 tasks.append(self.internal_inputs[port_key]._set(value))
 
-        await logged_gather(*tasks)
+        results = await logged_gather(*tasks)
         await self.save_to_db_cb(self)
+
+        # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
+        if errors := [
+            flatten_errors(r, self.__config__, loc=(f"{port_key}",))
+            for port_key, r in zip(port_values.keys(), results)
+            if isinstance(r, ValidationError)
+        ]:
+            raise ValidationError(errors, model=self)

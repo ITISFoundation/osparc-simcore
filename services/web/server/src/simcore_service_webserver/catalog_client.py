@@ -24,7 +24,7 @@ from .catalog_settings import CatalogSettings, get_plugin_settings
 logger = logging.getLogger(__name__)
 
 
-async def is_service_responsive(app: web.Application):
+async def is_catalog_service_responsive(app: web.Application):
     """Returns true if catalog is ready"""
     try:
         session: ClientSession = get_client_session(app)

@@ -9,7 +9,7 @@
 import logging
 from typing import Any, Dict
 
-from models_library.projects_nodes import Outputs
+from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
 from pydantic import BaseModel, Field, conint
 
@@ -23,7 +23,7 @@ class ExtractedResults(BaseModel):
     labels: Dict[NodeIDStr, str] = Field(
         ..., description="Maps captured node with a label"
     )
-    values: Dict[NodeIDStr, Outputs] = Field(
+    values: Dict[NodeIDStr, OutputsDict] = Field(
         ..., description="Captured outputs per node"
     )
 

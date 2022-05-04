@@ -190,7 +190,7 @@ async def mock_download_file(
         file_name: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
     ) -> Path:
-        assert str(local_folder).startswith(str(download_file_folder))
+        assert f"{local_folder}".startswith(f"{download_file_folder}")
         destination_path = local_folder / this_node_file.name
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(this_node_file, destination_path)

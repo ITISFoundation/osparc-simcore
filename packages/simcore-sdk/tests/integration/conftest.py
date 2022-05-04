@@ -24,6 +24,39 @@ from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
 
+def _set_configuration(
+    create_task: Callable[..., str],
+    project_id: str,
+    node_id: str,
+    json_configuration: str,
+) -> Dict[str, Any]:
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", f"{node_id}")
+    configuration = json.loads(json_configuration)
+    create_task(project_id, node_id, **configuration)
+    return configuration
+
+
+def _assign_config(
+    config_dict: dict, port_type: str, entries: List[Tuple[str, str, Any]]
+):
+    if entries is None:
+        return
+    for entry in entries:
+
+        config_dict["schema"][port_type].update(
+            {
+                entry[0]: {
+                    "label": "some label",
+                    "description": "some description",
+                    "displayOrder": 2,
+                    "type": entry[1],
+                }
+            }
+        )
+        if not entry[2] is None:
+            config_dict[port_type].update({entry[0]: entry[2]})
+
+
 @pytest.fixture
 def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
     # inject user in db
@@ -34,7 +67,7 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
 
     # pylint: disable=no-value-for-parameter
     stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
-    print(str(stmt))
+    print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [usr_id] = result.fetchone()
@@ -55,7 +88,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
         .values(**random_project(prj_owner=user_id))
         .returning(projects.c.uuid)
     )
-    print(str(stmt))
+    print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
         [prj_uuid] = result.fetchone()
@@ -68,12 +101,12 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
 
 @pytest.fixture(scope="module")
 def node_uuid() -> str:
-    return str(uuid4())
+    return f"{uuid4()}"
 
 
 @pytest.fixture(scope="session")
 def s3_simcore_location() -> str:
-    yield np_helpers.SIMCORE_STORE
+    return np_helpers.SIMCORE_STORE
 
 
 @pytest.fixture
@@ -89,39 +122,41 @@ async def filemanager_cfg(
 
 @pytest.fixture
 def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable[[Path], str]:
-    def create(file_path: Path) -> str:
+    def _create(file_path: Path) -> str:
         return np_helpers.file_uuid(file_path, project_id, node_uuid)
 
-    return create
+    return _create
 
 
 @pytest.fixture()
 def default_configuration(
     node_ports_config: None,
     bucket: str,
-    pipeline: Callable[[str], str],
-    task: Callable[..., str],
+    create_pipeline: Callable[[str], str],
+    create_task: Callable[..., str],
     default_configuration_file: Path,
     project_id: str,
     node_uuid: str,
 ) -> Dict[str, Any]:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
-    pipeline(project_id)
-    config_dict = _set_configuration(task, project_id, node_uuid, json_configuration)
+    create_pipeline(project_id)
+    config_dict = _set_configuration(
+        create_task, project_id, node_uuid, json_configuration
+    )
     return config_dict
 
 
 @pytest.fixture()
-def node_link() -> Callable[[str], Dict[str, str]]:
-    def create_node_link(key: str) -> Dict[str, str]:
+def create_node_link() -> Callable[[str], Dict[str, str]]:
+    def _create(key: str) -> Dict[str, str]:
         return {"nodeUuid": "TEST_NODE_UUID", "output": key}
 
-    yield create_node_link
+    return _create
 
 
 @pytest.fixture()
-def store_link(
+def create_store_link(
     bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
     create_valid_file_uuid: Callable,
     s3_simcore_location: str,
@@ -130,7 +165,7 @@ def store_link(
     node_uuid: str,
     storage_service: URL,  # packages/pytest-simcore/src/pytest_simcore/simcore_storage_service.py
 ) -> Callable[[Path], Dict[str, str]]:
-    async def create_store_link(file_path: Path) -> Dict[str, str]:
+    async def _create(file_path: Path) -> Dict[str, str]:
         file_path = Path(file_path)
         assert file_path.exists()
 
@@ -158,20 +193,20 @@ def store_link(
         # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}
 
-    yield create_store_link
+    return _create
 
 
 @pytest.fixture(scope="function")
-def special_configuration(
+def create_special_configuration(
     node_ports_config: None,
     bucket: str,
-    pipeline: Callable[[str], str],
-    task: Callable[..., str],
+    create_pipeline: Callable[[str], str],
+    create_task: Callable[..., str],
     empty_configuration_file: Path,
     project_id: str,
     node_uuid: str,
 ) -> Callable:
-    def create_config(
+    def _create(
         inputs: List[Tuple[str, str, Any]] = None,
         outputs: List[Tuple[str, str, Any]] = None,
         project_id: str = project_id,
@@ -180,24 +215,24 @@ def special_configuration(
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
-        project_id = pipeline(project_id)
+        project_id = create_pipeline(project_id)
         config_dict = _set_configuration(
-            task, project_id, node_id, json.dumps(config_dict)
+            create_task, project_id, node_id, json.dumps(config_dict)
         )
         return config_dict, project_id, node_uuid
 
-    yield create_config
+    return _create
 
 
 @pytest.fixture(scope="function")
-def special_2nodes_configuration(
+def create_2nodes_configuration(
     node_ports_config: None,
     bucket: str,
-    pipeline: Callable[[str], str],
-    task: Callable[..., str],
+    create_pipeline: Callable[[str], str],
+    create_task: Callable[..., str],
     empty_configuration_file: Path,
 ) -> Callable:
-    def create_config(
+    def _create(
         prev_node_inputs: List[Tuple[str, str, Any]],
         prev_node_outputs: List[Tuple[str, str, Any]],
         inputs: List[Tuple[str, str, Any]],
@@ -206,7 +241,7 @@ def special_2nodes_configuration(
         previous_node_id: str,
         node_id: str,
     ) -> Tuple[Dict, str, str]:
-        pipeline(project_id)
+        create_pipeline(project_id)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
@@ -219,7 +254,7 @@ def special_2nodes_configuration(
             prev_node_outputs if prev_node_outputs else [],
         )
         previous_config_dict = _set_configuration(
-            task,
+            create_task,
             project_id,
             previous_node_id,
             json.dumps(previous_config_dict),
@@ -232,17 +267,17 @@ def special_2nodes_configuration(
         # configure links if necessary
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", previous_node_id)
-        config_dict = _set_configuration(task, project_id, node_id, str_config)
+        config_dict = _set_configuration(create_task, project_id, node_id, str_config)
         return config_dict, project_id, node_id
 
-    yield create_config
+    return _create
 
 
 @pytest.fixture
-def pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
+def create_pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
     created_pipeline_ids: List[str] = []
 
-    def creator(project_id: str) -> str:
+    def _create(project_id: str) -> str:
         with postgres_db.connect() as conn:
             result = conn.execute(
                 comp_pipeline.insert()  # pylint: disable=no-value-for-parameter
@@ -253,7 +288,7 @@ def pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
         created_pipeline_ids.append(f"{new_pipeline_id}")
         return new_pipeline_id
 
-    yield creator
+    yield _create
 
     # cleanup
     with postgres_db.connect() as conn:
@@ -265,10 +300,10 @@ def pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
 
 
 @pytest.fixture
-def task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
+def create_task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
     created_task_ids: List[int] = []
 
-    def creator(project_id: str, node_uuid: str, **overrides) -> str:
+    def _create(project_id: str, node_uuid: str, **overrides) -> str:
         task_config = {
             "project_id": project_id,
             "node_id": node_uuid,
@@ -284,7 +319,7 @@ def task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
         created_task_ids.append(new_task_id)
         return node_uuid
 
-    yield creator
+    yield _create
 
     # cleanup
     with postgres_db.connect() as conn:

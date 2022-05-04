@@ -94,7 +94,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
           .then(() => {
             gitGraphWrapper.populateGraph(this.__snapshots, this.__currentSnapshot);
-            console.log("gitGraphWrapper", gitGraphWrapper);
+            this.__snapshotSelected(this.__currentSnapshot["id"]);
           });
         gitGraphWrapper.addListener("snapshotTap", e => {
           const snapshotId = e.getData();

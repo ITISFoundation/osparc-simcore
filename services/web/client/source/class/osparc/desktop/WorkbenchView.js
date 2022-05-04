@@ -566,7 +566,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        this.__loggerView.info(nodeId, msg);
+        if ("level" in data && data["level"] === "ERROR") {
+          this.__loggerView.error(nodeId, msg);
+        } else {
+          this.__loggerView.info(nodeId, msg);
+        }
       }, this);
 
       workbench.addListener("fileRequested", () => {
@@ -905,7 +909,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getSnapshotsSection: function() {
       const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      snapshotSection.add(new qx.ui.basic.Label(this.tr("Snapshots")).set({
+      snapshotSection.add(new qx.ui.basic.Label(this.tr("Checkpoints")).set({
         font: "title-14"
       }));
 
