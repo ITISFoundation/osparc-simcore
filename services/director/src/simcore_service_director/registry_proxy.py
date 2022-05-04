@@ -417,29 +417,21 @@ async def get_service_extras(
                 if resource_value:
                     if not isinstance(resource_value, dict):
                         warn_prefix = "invalid type for resource"
-                        continue
-
-                    res_limit = resource_value.get("Limits", {})
-                    res_reservation = resource_value.get("Reservations", {})
-                    # CPU
-                    result["node_requirements"]["CPU"] = (
-                        float(res_limit.get("NanoCPUs", 0))
-                        or float(res_reservation.get("NanoCPUs", 0))
-                        or config.DEFAULT_MAX_NANO_CPUS
-                    ) / 1.0e09
-                    # RAM
-                    result["node_requirements"]["RAM"] = (
-                        res_limit.get("MemoryBytes", 0)
-                        or res_reservation.get("MemoryBytes", 0)
-                        or config.DEFAULT_MAX_MEMORY
-                    )
-
-                # discrete resources (custom made ones)
-                # TODO: this could be adjusted to separate between GPU and/or VRAM
-                if _validate_kind(entry, "VRAM"):
-                    result["node_requirements"]["GPU"] = 1
-                if _validate_kind(entry, "MPI"):
-                    result["node_requirements"]["MPI"] = 1
+                    else:
+                        res_limit = resource_value.get("Limits", {})
+                        res_reservation = resource_value.get("Reservations", {})
+                        # CPU
+                        result["node_requirements"]["CPU"] = (
+                            float(res_limit.get("NanoCPUs", 0))
+                            or float(res_reservation.get("NanoCPUs", 0))
+                            or config.DEFAULT_MAX_NANO_CPUS
+                        ) / 1.0e09
+                        # RAM
+                        result["node_requirements"]["RAM"] = (
+                            res_limit.get("MemoryBytes", 0)
+                            or res_reservation.get("MemoryBytes", 0)
+                            or config.DEFAULT_MAX_MEMORY
+                        )
 
             elif entry_name == COMPOSE_SPEC_ENTRY_NAME:
                 # NOTE: some minor validation
@@ -457,6 +449,13 @@ async def get_service_extras(
                     image_key,
                     image_tag,
                 )
+
+            # discrete resources (custom made ones) ---
+            # TODO: this could be adjusted to separate between GPU and/or VRAM
+            if _validate_kind(entry, "VRAM"):
+                result["node_requirements"]["GPU"] = 1
+            if _validate_kind(entry, "MPI"):
+                result["node_requirements"]["MPI"] = 1
 
     # get org labels
     result.update(
