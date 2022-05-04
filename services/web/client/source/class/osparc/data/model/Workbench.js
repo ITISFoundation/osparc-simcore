@@ -388,6 +388,21 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
+    getFarthestPosition: function() {
+      let x = 0;
+      let y = 0;
+      Object.values(this.getNodes()).forEach(node => {
+        x = Math.max(x, node.getPosition().x);
+        y = Math.max(y, node.getPosition().y);
+      });
+      x += osparc.component.workbench.NodeUI.NODE_WIDTH;
+      y += osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      return {
+        x,
+        y
+      };
+    },
+
     __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
