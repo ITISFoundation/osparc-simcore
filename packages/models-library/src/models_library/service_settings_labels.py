@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
@@ -21,8 +21,7 @@ class ContainerSpec(BaseModel):
     request body: TaskTemplate -> ContainerSpec
     """
 
-    command: Optional[list[str]] = Field(
-        default=None,
+    command: list[str] = Field(
         alias="Command",
         description="The command to be run in the image. If None, it will not override default 'run'",
         # NOTE: currently constraint to our use cases. Might mitigate some security issues.
@@ -47,7 +46,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
     _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
-    setting_type: str = Field(
+    setting_type: Literal["string", "object", "ContainerSpec", "Resources"] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",
@@ -66,13 +65,13 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "type": "string",
                     "value": ["node.platform.os == linux"],
                 },
-                # container spec. SEE ContainerSpec model for value
+                # SEE service_settings_labels.py::ContainerSpec
                 {
                     "name": "ContainerSpec",
                     "type": "ContainerSpec",
                     "value": {"Command": ["run"]},
                 },
-                # resources
+                # SEE service_resources.py::ResourceValue
                 {
                     "name": "Resources",
                     "type": "Resources",
