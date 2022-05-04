@@ -147,6 +147,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         branch.commit({
           subject: commitData["tags"],
           style: {
+            dot: {
+              size: 4 // default is 3
+            },
             message: {
               font: "bold 13px Roboto"
             }
@@ -186,11 +189,10 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           cursor: "pointer"
         });
         hint.show();
-        // since the widget might be hidden in the scroll area,
-        // take mouse's position. It creates a bit of blinking thou
+        // since the widget might be hidden in the scroll area, take mouse's position.
         const native = e.getNativeEvent();
         hint.setLayoutProperties({
-          top: native.clientY,
+          top: native.clientY+2, // offset avoids flickering
           left: native.clientX
         });
       });
@@ -198,7 +200,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         widget.set({
           cursor: "auto"
         });
-        hint.exclude();
         if (this.__selectedCommit && this.__selectedCommit.id === commitData["id"]) {
           widget.set({
             backgroundColor: "white"
@@ -208,6 +209,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             backgroundColor: bgColor
           });
         }
+        hint.exclude();
       });
       widget.addListener("tap", () => {
         this.setSelection(commitData["id"]);
@@ -235,23 +237,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           this.__selectedCommit = commit;
         }
       });
-    },
-
-    buildExample: function() {
-      const master = this.__gitgraph.branch("master");
-      this.__commit(master, "Initial commit");
-      this.__commit(master, "Some changes");
-
-      const it1 = master.branch("iteration-1");
-      this.__commit(it1, "x=1");
-
-      const it2 = master.branch("iteration-2");
-      this.__commit(it2, "x=2");
-
-      const it3 = master.branch("iteration-3");
-      this.__commit(it3, "x=3");
-
-      this.__commit(master, "Changes after iterations");
     },
 
     __createBranch: function(lastCommit, fromBranch, name) {
@@ -284,7 +269,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     populateGraph: function(snapshots, currentSnapshot) {
       this.__branches = [];
       this.__parentIDs = [];
-      console.log("snapshots", snapshots);
       const snapshotsClone = JSON.parse(JSON.stringify(snapshots));
       const sortedSnapshots = snapshotsClone.reverse();
       sortedSnapshots.forEach(snapshot => {
@@ -292,7 +276,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           snapshot["parents_ids"].forEach(parentID => this.__parentIDs.push(parentID));
         }
       });
-      sortedSnapshots.forEach((snapshot, i) => {
+      sortedSnapshots.forEach(snapshot => {
         const currentBranch = this.__getBranch(snapshot);
         const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {

@@ -26,7 +26,7 @@ def is_value_a_download_link(item_value: Union[int, float, bool, str, Dict]) -> 
 
 
 def is_file_type(item_type: str) -> bool:
-    return str(item_type).startswith(config.FILE_TYPE_PREFIX)
+    return f"{item_type}".startswith(config.FILE_TYPE_PREFIX)
 
 
 def decode_link(value: Dict) -> Tuple[str, str]:
@@ -38,7 +38,7 @@ def decode_store(value: Dict) -> Tuple[str, str]:
 
 
 def encode_store(store: str, s3_object: str) -> Dict[str, str]:
-    return {"store": str(store), "path": s3_object}
+    return {"store": f"{store}", "path": s3_object}
 
 
 def encode_file_id(file_path: Path, project_id: str, node_id: str) -> str:

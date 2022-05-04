@@ -19,6 +19,7 @@ async-timeout==4.0.2
     # via aiohttp
 attrs==21.4.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   pytest
 certifi==2021.10.8

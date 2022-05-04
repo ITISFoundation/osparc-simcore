@@ -10,7 +10,7 @@ import threading
 from pathlib import Path
 from typing import Any, Callable, Dict, Type, Union
 
-import np_helpers  # pylint: disable=no-name-in-module
+import np_helpers
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports
@@ -113,9 +113,12 @@ async def test_default_configuration(
 
 
 async def test_invalid_ports(
-    user_id: int, project_id: str, node_uuid: str, special_configuration: Callable
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    create_special_configuration: Callable,
 ):
-    config_dict, _, _ = special_configuration()
+    config_dict, _, _ = create_special_configuration()
     PORTS = await node_ports.ports(
         user_id=user_id, project_id=project_id, node_uuid=node_uuid
     )
@@ -150,13 +153,13 @@ async def test_port_value_accessors(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: Type,
-):  # pylint: disable=W0613, W0621
+):
     item_key = "some key"
-    config_dict, _, _ = special_configuration(
+    config_dict, _, _ = create_special_configuration(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
     )
@@ -190,7 +193,7 @@ async def test_port_file_accessors(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     filemanager_cfg: None,
     s3_simcore_location: str,
     bucket: str,
@@ -199,7 +202,7 @@ async def test_port_file_accessors(
     item_pytype: Type,
     config_value: Dict[str, str],
 ):  # pylint: disable=W0613, W0621
-    config_dict, project_id, node_uuid = special_configuration(
+    config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_1", item_type, config_value)],
         outputs=[("out_34", item_type, None)],
     )
@@ -239,10 +242,10 @@ async def test_adding_new_ports(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
 ):
-    config_dict, project_id, node_uuid = special_configuration()
+    config_dict, project_id, node_uuid = create_special_configuration()
     PORTS = await node_ports.ports(user_id, project_id, node_uuid)
     await check_config_valid(PORTS, config_dict)
     # check empty configuration
@@ -287,10 +290,10 @@ async def test_removing_ports(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
 ):
-    config_dict, project_id, node_uuid = special_configuration(
+    config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
         outputs=[("out_123", "string", "blahblah"), ("out_2", "number", -12.3)],
     )  # pylint: disable=W0612
@@ -333,16 +336,16 @@ async def test_get_value_from_previous_node(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    special_2nodes_configuration: Callable,
-    node_link: Callable,
+    create_2nodes_configuration: Callable,
+    create_node_link: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: Type,
 ):
-    config_dict, _, _ = special_2nodes_configuration(
+    config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
         prev_node_outputs=[("output_int", item_type, item_value)],
-        inputs=[("in_15", item_type, node_link("output_int"))],
+        inputs=[("in_15", item_type, create_node_link("output_int"))],
         outputs=None,
         project_id=project_id,
         previous_node_id="myfakepreviousnodeid",
@@ -367,21 +370,23 @@ async def test_get_value_from_previous_node(
     ],
 )
 async def test_get_file_from_previous_node(
-    special_2nodes_configuration: Callable,
+    create_2nodes_configuration: Callable,
     user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
-    node_link: Callable,
-    store_link: Callable,
+    create_node_link: Callable,
+    create_store_link: Callable,
     item_type: str,
     item_value: str,
     item_pytype: Type,
 ):
-    config_dict, _, _ = special_2nodes_configuration(
+    config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
-        prev_node_outputs=[("output_int", item_type, await store_link(item_value))],
-        inputs=[("in_15", item_type, node_link("output_int"))],
+        prev_node_outputs=[
+            ("output_int", item_type, await create_store_link(item_value))
+        ],
+        inputs=[("in_15", item_type, create_node_link("output_int"))],
         outputs=None,
         project_id=project_id,
         previous_node_id="my_fake_node_id",
@@ -415,23 +420,23 @@ async def test_get_file_from_previous_node(
     ],
 )
 async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
-    special_2nodes_configuration: Callable,
+    create_2nodes_configuration: Callable,
     user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
-    node_link: Callable,
-    store_link: Callable,
+    create_node_link: Callable,
+    create_store_link: Callable,
     postgres_db: sa.engine.Engine,
     item_type: str,
     item_value: str,
     item_alias: str,
     item_pytype: Type,
 ):
-    config_dict, _, this_node_uuid = special_2nodes_configuration(
+    config_dict, _, this_node_uuid = create_2nodes_configuration(
         prev_node_inputs=None,
-        prev_node_outputs=[("in_15", item_type, await store_link(item_value))],
-        inputs=[("in_15", item_type, node_link("in_15"))],
+        prev_node_outputs=[("in_15", item_type, await create_store_link(item_value))],
+        inputs=[("in_15", item_type, create_node_link("in_15"))],
         outputs=None,
         project_id=project_id,
         previous_node_id="my_fake_previous_node_id",
@@ -471,22 +476,22 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     ],
 )
 async def test_file_mapping(
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     user_id: int,
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
     s3_simcore_location: str,
     bucket: str,
-    store_link: Callable,
+    create_store_link: Callable,
     postgres_db: sa.engine.Engine,
     item_type: str,
     item_value: str,
     item_alias: str,
     item_pytype: Type,
 ):
-    config_dict, project_id, node_uuid = special_configuration(
-        inputs=[("in_1", item_type, await store_link(item_value))],
+    config_dict, project_id, node_uuid = create_special_configuration(
+        inputs=[("in_1", item_type, await create_store_link(item_value))],
         outputs=[("out_1", item_type, None)],
         project_id=project_id,
         node_id=node_uuid,

@@ -49,14 +49,15 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       nullable: true,
       init: null,
       event: "changeRunning",
-      apply: "__recomputeOutput"
+      apply: "__applyRunning"
     },
 
     interactive: {
       check: ["idle", "starting", "pulling", "pending", "connecting", "ready", "failed"],
       nullable: true,
       init: null,
-      event: "changeInteractive"
+      event: "changeInteractive",
+      apply: "__applyInteractive"
     },
 
     dependencies: {
@@ -113,6 +114,19 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         return true;
       }
       return false;
+    },
+
+    __applyRunning: function(value) {
+      if (value === "FAILED") {
+        // ask why it failed
+      }
+      this.__recomputeOutput();
+    },
+
+    __applyInteractive: function(value) {
+      if (value === "failed") {
+        // ask why it failed
+      }
     },
 
     __recomputeOutput: function() {

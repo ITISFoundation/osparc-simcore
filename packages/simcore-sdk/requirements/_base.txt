@@ -51,7 +51,7 @@ idna==3.3
 jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 mako==1.2.0
     # via alembic
 markupsafe==2.1.1
@@ -61,6 +61,8 @@ multidict==6.0.2
     #   aiohttp
     #   yarl
 packaging==21.3
+    # via -r requirements/_base.in
+pint==0.19.1
     # via -r requirements/_base.in
 psycopg2-binary==2.9.3
     # via

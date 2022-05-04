@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List, Tuple
 
 from pydantic import schema_of
 
-from ...projects_nodes import Outputs
+from ...projects_nodes import OutputsDict
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
@@ -96,7 +96,7 @@ def eval_sensitivity(
 
 def _sensitivity_generator(
     paramrefs: List[float], paramdiff: List[float], diff_or_fact: bool
-) -> Iterator[Outputs]:
+) -> Iterator[OutputsDict]:
     for i, paramtestplus, paramtestminus in eval_sensitivity(
         paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
     ):

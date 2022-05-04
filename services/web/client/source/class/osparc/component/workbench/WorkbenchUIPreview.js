@@ -78,7 +78,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           });
         }
 
-        this.setScale(0.7);
+        const maxScale = 0.7;
+        this._fitScaleToNodes(maxScale);
       }
     },
 
