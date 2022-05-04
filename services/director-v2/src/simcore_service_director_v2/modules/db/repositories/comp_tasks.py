@@ -76,7 +76,7 @@ async def _generate_tasks_list_from_project(
             data.update(node_requirements=node_extras.node_requirements)
             if node_extras.container_spec:
                 data.update(command=node_extras.container_spec.command)
-        image = Image.from_obj(data)
+        image = Image.parse_obj(data)
         assert image.command  # nosec
 
         assert node.state is not None  # nosec

@@ -103,23 +103,23 @@ class NodeSchema(BaseModel):
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    job_id: Optional[str] = Field(None, description="The worker job ID")
+    job_id: Optional[str] = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: Optional[InputsDict] = Field(..., description="the inputs payload")
     outputs: Optional[OutputsDict] = Field({}, description="the outputs payload")
     run_hash: Optional[str] = Field(
-        None,
+        default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
     submit: datetime
-    start: Optional[datetime]
-    end: Optional[datetime]
+    start: Optional[datetime] = Field(default=None)
+    end: Optional[datetime] = Field(default=None)
     state: RunningState
-    task_id: Optional[PositiveInt]
+    task_id: Optional[PositiveInt] = Field(default=None)
     internal_id: PositiveInt
     node_class: NodeClass
-    errors: Optional[list[ErrorDict]]
+    errors: Optional[list[ErrorDict]] = Field(default=None)
 
     @validator("state", pre=True)
     @classmethod
