@@ -414,11 +414,9 @@ async def get_service_extras(
 
             if entry_name == RESOURCES_ENTRY_NAME:
                 resource_value = entry.get("value")
-                if resource_value:
-                    if not isinstance(resource_value, dict):
-                        invalid_with_msg = "invalid type for resource"
 
-                    if not invalid_with_msg:
+                if resource_value:
+                    if isinstance(resource_value, dict):
                         res_limit = resource_value.get("Limits", {})
                         res_reservation = resource_value.get("Reservations", {})
                         # CPU
@@ -432,6 +430,10 @@ async def get_service_extras(
                             res_limit.get("MemoryBytes", 0)
                             or res_reservation.get("MemoryBytes", 0)
                             or config.DEFAULT_MAX_MEMORY
+                        )
+                    else:
+                        invalid_with_msg = (
+                            f"invalid type for resource [{resource_value}]"
                         )
 
                 # discrete resources (custom made ones) ---
@@ -447,7 +449,7 @@ async def get_service_extras(
                 if value and isinstance(value, dict) and "command" in value:
                     result["container_spec"] = value
                 else:
-                    invalid_with_msg = "invalid container_spec"
+                    invalid_with_msg = f"invalid container_spec [{value}]"
 
             if invalid_with_msg:
                 logger.warning(
