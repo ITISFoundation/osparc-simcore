@@ -619,7 +619,7 @@ async def _fetch_data_via_aioboto(
         aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
     )
     async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.endpoint
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
     ) as s3:
         bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():

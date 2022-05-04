@@ -35,7 +35,7 @@ def test_supported_backends_did_not_change() -> None:
     "endpoint, is_secure",
     [
         ("localhost", False),
-        ("s3_aws", True),
+        ("s3_aws", False),
         ("https://ceph.home", True),
         ("http://local.dev", False),
     ],
@@ -53,8 +53,8 @@ def test_expected_s3_endpoint(
     r_clone_settings = RCloneSettings()
 
     scheme = "https" if is_secure else "http"
-    assert r_clone_settings.R_CLONE_S3.endpoint.startswith(f"{scheme}://")
-    assert r_clone_settings.R_CLONE_S3.endpoint.endswith(endpoint)
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.startswith(f"{scheme}://")
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.endswith(endpoint)
 
 
 def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
