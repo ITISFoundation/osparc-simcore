@@ -410,13 +410,13 @@ async def get_service_extras(
         service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
             entry_name = entry.get("name", "").lower()
-            warn_prefix = None
+            invalid_with_msg = None
 
             if entry_name == RESOURCES_ENTRY_NAME:
                 resource_value = entry.get("value")
                 if resource_value:
                     if not isinstance(resource_value, dict):
-                        warn_prefix = "invalid type for resource"
+                        invalid_with_msg = "invalid type for resource"
                     else:
                         res_limit = resource_value.get("Limits", {})
                         res_reservation = resource_value.get("Reservations", {})
@@ -433,26 +433,26 @@ async def get_service_extras(
                             or config.DEFAULT_MAX_MEMORY
                         )
 
+                if not invalid_with_msg:
+                    # discrete resources (custom made ones) ---
+                    # TODO: this could be adjusted to separate between GPU and/or VRAM
+                    if _validate_kind(entry, "VRAM"):
+                        result["node_requirements"]["GPU"] = 1
+                    if _validate_kind(entry, "MPI"):
+                        result["node_requirements"]["MPI"] = 1
+
             elif entry_name == COMPOSE_SPEC_ENTRY_NAME:
                 # NOTE: some minor validation
                 value = entry.get("value")
                 if value and isinstance(value, dict) and "command" in value:
                     result["container_spec"] = value
                 else:
-                    warn_prefix = "invalid container_spec"
+                    invalid_with_msg = "invalid container_spec"
 
-            else:
-                # discrete resources (custom made ones) ---
-                # TODO: this could be adjusted to separate between GPU and/or VRAM
-                if _validate_kind(entry, "VRAM"):
-                    result["node_requirements"]["GPU"] = 1
-                if _validate_kind(entry, "MPI"):
-                    result["node_requirements"]["MPI"] = 1
-
-            if warn_prefix:
+            if invalid_with_msg:
                 logger.warning(
                     "%s entry [%s] encoded in settings labels of service image %s:%s",
-                    warn_prefix,
+                    invalid_with_msg,
                     entry,
                     image_key,
                     image_tag,
