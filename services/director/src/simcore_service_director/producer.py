@@ -20,13 +20,8 @@ from aiohttp import (
     ClientSession,
     web,
 )
-from servicelib.async_utils import (  # pylint: disable=no-name-in-module
-    run_sequentially_in_context,
-)
-from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
-    service_started,
-    service_stopped,
-)
+from servicelib.async_utils import run_sequentially_in_context
+from servicelib.monitor_services import service_started, service_stopped
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -199,6 +194,7 @@ async def _create_docker_service_params(
             }
         ]
 
+    # SEE https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
         "registry": config.REGISTRY_PATH if config.REGISTRY_AUTH else "",
