@@ -494,7 +494,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __showSnapshots: function() {
       const study = this.getStudy();
       const snapshots = new osparc.component.snapshots.SnapshotsView(study);
-      const title = this.tr("Snapshots");
+      const title = this.tr("Checkpoints");
       const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
       snapshots.addListener("openSnapshot", e => {
         win.close();
