@@ -1,7 +1,7 @@
 from typing import Optional
 
 from .base import BaseCustomSettings
-from functools import cached_property
+from pydantic import validator
 
 
 class S3Settings(BaseCustomSettings):
@@ -12,9 +12,10 @@ class S3Settings(BaseCustomSettings):
     S3_BUCKET_NAME: str
     S3_SECURE: bool = False
 
-    @cached_property
-    def endpoint(self) -> str:
-        if not self.S3_ENDPOINT.startswith("http"):
-            scheme = "https" if self.S3_SECURE else "http"
-            return f"{scheme}://{self.S3_ENDPOINT}"
-        return self.S3_ENDPOINT
+    @validator("S3_ENDPOINT", pre=True)
+    @classmethod
+    def ensure_scheme(cls, v: str, values) -> str:
+        if not v.startswith("http"):
+            scheme = "https" if values.get("S3_SECURE") else "http"
+            return f"{scheme}://{v}"
+        return v

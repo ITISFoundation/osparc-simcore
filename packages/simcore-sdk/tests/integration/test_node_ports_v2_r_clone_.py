@@ -125,7 +125,7 @@ async def _get_s3_object(
         aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
     async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.endpoint
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
     ) as s3:
         s3_object = await s3.Object(
             bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,

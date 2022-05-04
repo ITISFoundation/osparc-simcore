@@ -63,7 +63,7 @@ def _get_environment_variables(
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
-        "S3_ENDPOINT": r_clone_settings.R_CLONE_S3.endpoint,
+        "S3_ENDPOINT": r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
         "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
