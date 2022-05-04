@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
@@ -564,7 +565,10 @@ async def notify_project_state_update(
 
 
 async def notify_project_node_update(
-    app: web.Application, project: Dict, node_id: str
+    app: web.Application,
+    project: Dict,
+    node_id: str,
+    errors: Optional[List[ErrorDict]],
 ) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
@@ -576,7 +580,10 @@ async def notify_project_node_update(
             "data": {
                 "project_id": project["uuid"],
                 "node_id": node_id,
+                # as GET projects/{project_id}/nodes/{node_id}
                 "data": project["workbench"][node_id],
+                # as GET projects/{project_id}/nodes/{node_id}/errors
+                "errors": errors,
             },
         }
     ]

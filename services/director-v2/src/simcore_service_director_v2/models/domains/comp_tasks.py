@@ -3,10 +3,16 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Inputs, NodeID, Outputs
+from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
-from models_library.services import KEY_RE, PropertyName, ServiceInputs, ServiceOutput
+from models_library.services import (
+    KEY_RE,
+    PropertyName,
+    ServiceInputsDict,
+    ServiceOutput,
+)
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -61,7 +67,7 @@ _ServiceOutputsOverride = Dict[PropertyName, _ServiceOutputOverride]
 
 
 class NodeSchema(BaseModel):
-    inputs: ServiceInputs = Field(..., description="the inputs scheam")
+    inputs: ServiceInputsDict = Field(..., description="the inputs scheam")
     outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
 
     class Config:
@@ -74,8 +80,8 @@ class CompTaskAtDB(BaseModel):
     node_id: NodeID
     job_id: Optional[str] = Field(None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
-    inputs: Optional[Inputs] = Field(..., description="the inputs payload")
-    outputs: Optional[Outputs] = Field({}, description="the outputs payload")
+    inputs: Optional[InputsDict] = Field(..., description="the inputs payload")
+    outputs: Optional[OutputsDict] = Field({}, description="the outputs payload")
     run_hash: Optional[str] = Field(
         None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
@@ -88,6 +94,7 @@ class CompTaskAtDB(BaseModel):
     task_id: Optional[PositiveInt]
     internal_id: PositiveInt
     node_class: NodeClass
+    errors: Optional[list[ErrorDict]]
 
     @validator("state", pre=True)
     @classmethod

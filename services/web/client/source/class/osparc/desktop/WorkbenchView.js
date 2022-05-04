@@ -566,7 +566,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        this.__loggerView.info(nodeId, msg);
+        if ("level" in data && data["level"] === "ERROR") {
+          this.__loggerView.error(nodeId, msg);
+        } else {
+          this.__loggerView.info(nodeId, msg);
+        }
       }, this);
 
       workbench.addListener("fileRequested", () => {

@@ -58,6 +58,7 @@ from ..utils.dask import (
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
+    create_node_ports,
     dask_sub_consumer_task,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
@@ -248,12 +249,14 @@ class DaskClient:
             # sidecar, which will then populate the scheduler with resources available on the cluster
             if not self.backend.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
+                    project_id=project_id,
                     node_id=node_id,
                     scheduler_info=self.backend.client.scheduler_info(),
                     task_resources=dask_resources,
                     node_image=node_image,
                     cluster_id=cluster_id,
                 )
+
             s3_settings = None
             if self.tasks_file_link_type == FileLinkType.S3:
                 try:
@@ -262,11 +265,21 @@ class DaskClient:
                     )
                 except HTTPException as err:
                     raise ComputationalBackendNoS3AccessError() from err
+
+            # This instance is created only once so it can be reused in calls below
+            node_ports = await create_node_ports(
+                db_engine=self.app.state.engine,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+            )
+
             input_data = await compute_input_data(
                 self.app,
                 user_id,
                 project_id,
                 node_id,
+                ports=node_ports,
                 file_link_type=self.tasks_file_link_type,
             )
             output_data_keys = await compute_output_data_schema(
@@ -274,6 +287,7 @@ class DaskClient:
                 user_id,
                 project_id,
                 node_id,
+                ports=node_ports,
                 file_link_type=self.tasks_file_link_type,
             )
             log_file_url = await compute_service_log_file_upload_link(

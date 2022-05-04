@@ -218,6 +218,9 @@ async def _push_file_to_remote(
     )
 
 
+MIMETYPE_APPLICATION_ZIP = "application/zip"
+
+
 async def push_file_to_remote(
     src_path: Path,
     dst_url: AnyUrl,
