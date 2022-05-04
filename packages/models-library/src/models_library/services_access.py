@@ -11,11 +11,11 @@ GroupId = PositiveInt
 
 class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
-        False,
+        default=False,
         description="defines whether the group can execute the service",
     )
     write_access: bool = Field(
-        False, description="defines whether the group can modify the service"
+        default=False, description="defines whether the group can modify the service"
     )
 
 
