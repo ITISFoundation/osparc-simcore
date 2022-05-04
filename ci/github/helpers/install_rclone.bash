@@ -11,7 +11,7 @@ IFS=$'\n\t'
 
 
 R_CLONE_VERSION="1.58.0"
-curl -sLO "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
-dpkg -i "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
 rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
 rclone --version

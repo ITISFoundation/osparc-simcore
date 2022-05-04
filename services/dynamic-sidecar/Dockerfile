@@ -49,8 +49,8 @@ ENV DY_VOLUMES="/dy-volumes"
 
 # rclone installation
 ARG R_CLONE_VERSION="1.58.0"
-RUN curl -sLO "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
-  dpkg -i "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+RUN curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
   rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
   rclone --version
 
