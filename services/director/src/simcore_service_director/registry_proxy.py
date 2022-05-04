@@ -410,31 +410,27 @@ async def get_service_extras(
         service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
             entry_name = entry.get("name", "").lower()
+            entry_value = entry.get("value")
             invalid_with_msg = None
 
             if entry_name == RESOURCES_ENTRY_NAME:
-                resource_value = entry.get("value")
-
-                if resource_value:
-                    if isinstance(resource_value, dict):
-                        res_limit = resource_value.get("Limits", {})
-                        res_reservation = resource_value.get("Reservations", {})
-                        # CPU
-                        result["node_requirements"]["CPU"] = (
-                            float(res_limit.get("NanoCPUs", 0))
-                            or float(res_reservation.get("NanoCPUs", 0))
-                            or config.DEFAULT_MAX_NANO_CPUS
-                        ) / 1.0e09
-                        # RAM
-                        result["node_requirements"]["RAM"] = (
-                            res_limit.get("MemoryBytes", 0)
-                            or res_reservation.get("MemoryBytes", 0)
-                            or config.DEFAULT_MAX_MEMORY
-                        )
-                    else:
-                        invalid_with_msg = (
-                            f"invalid type for resource [{resource_value}]"
-                        )
+                if entry_value and isinstance(entry_value, dict):
+                    res_limit = entry_value.get("Limits", {})
+                    res_reservation = entry_value.get("Reservations", {})
+                    # CPU
+                    result["node_requirements"]["CPU"] = (
+                        float(res_limit.get("NanoCPUs", 0))
+                        or float(res_reservation.get("NanoCPUs", 0))
+                        or config.DEFAULT_MAX_NANO_CPUS
+                    ) / 1.0e09
+                    # RAM
+                    result["node_requirements"]["RAM"] = (
+                        res_limit.get("MemoryBytes", 0)
+                        or res_reservation.get("MemoryBytes", 0)
+                        or config.DEFAULT_MAX_MEMORY
+                    )
+                else:
+                    invalid_with_msg = f"invalid type for resource [{entry_value}]"
 
                 # discrete resources (custom made ones) ---
                 # TODO: this could be adjusted to separate between GPU and/or VRAM
@@ -445,11 +441,14 @@ async def get_service_extras(
 
             elif entry_name == COMPOSE_SPEC_ENTRY_NAME:
                 # NOTE: some minor validation
-                value = entry.get("value")
-                if value and isinstance(value, dict) and "command" in value:
-                    result["container_spec"] = value
+                if (
+                    entry_value
+                    and isinstance(entry_value, dict)
+                    and "command" in entry_value
+                ):
+                    result["container_spec"] = entry_value
                 else:
-                    invalid_with_msg = f"invalid container_spec [{value}]"
+                    invalid_with_msg = f"invalid container_spec [{entry_value}]"
 
             if invalid_with_msg:
                 logger.warning(
