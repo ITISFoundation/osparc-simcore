@@ -33,14 +33,14 @@ def create_image_spec(
         labels.update(runtime_cfg.to_labels_annotations())
 
     service_name = meta_cfg.service_name()
-    dockerfile = docker_compose_overwrite_cfg.services[service_name].build.dockerfile
     context = docker_compose_overwrite_cfg.services[service_name].build.context
 
+    overwrite_options = docker_compose_overwrite_cfg.services[service_name].build.dict(
+        exclude_none=True
+    )
+
     build_spec = BuildItem(
-        context=context if context else "./",
-        dockerfile=dockerfile,
-        labels=labels,
-        args={"VERSION": meta_cfg.version},
+        context=context if context else "./", labels=labels, **overwrite_options
     )
 
     compose_spec = ComposeSpecification(
