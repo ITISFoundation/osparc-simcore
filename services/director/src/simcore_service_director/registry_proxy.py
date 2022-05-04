@@ -441,6 +441,14 @@ async def get_service_extras(
                 else:
                     warn_prefix = "invalid container_spec"
 
+            else:
+                # discrete resources (custom made ones) ---
+                # TODO: this could be adjusted to separate between GPU and/or VRAM
+                if _validate_kind(entry, "VRAM"):
+                    result["node_requirements"]["GPU"] = 1
+                if _validate_kind(entry, "MPI"):
+                    result["node_requirements"]["MPI"] = 1
+
             if warn_prefix:
                 logger.warning(
                     "%s entry [%s] encoded in settings labels of service image %s:%s",
@@ -449,13 +457,6 @@ async def get_service_extras(
                     image_key,
                     image_tag,
                 )
-
-            # discrete resources (custom made ones) ---
-            # TODO: this could be adjusted to separate between GPU and/or VRAM
-            if _validate_kind(entry, "VRAM"):
-                result["node_requirements"]["GPU"] = 1
-            if _validate_kind(entry, "MPI"):
-                result["node_requirements"]["MPI"] = 1
 
     # get org labels
     result.update(
