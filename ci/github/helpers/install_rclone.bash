@@ -10,11 +10,8 @@ set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 
-# Installation instructions from https://rclone.org/docker/
-
-apt-get -y install fuse=2.9.9-3
-mkdir -p /var/lib/docker-plugins/rclone/config
-mkdir -p /var/lib/docker-plugins/rclone/cache
-docker plugin install rclone/docker-volume-rclone:amd64-1.57.0 args="-v" --alias rclone --grant-all-permissions
-docker plugin list
-docker plugin inspect rclone
+R_CLONE_VERSION="1.58.0"
+curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+rclone --version

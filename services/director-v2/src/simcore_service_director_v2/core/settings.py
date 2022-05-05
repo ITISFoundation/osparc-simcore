@@ -34,8 +34,8 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
-from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
@@ -64,12 +64,6 @@ PlacementConstraint = constr(
 )
 
 
-class S3Provider(str, Enum):
-    AWS = "AWS"
-    CEPH = "CEPH"
-    MINIO = "MINIO"
-
-
 class VFSCacheMode(str, Enum):
     OFF = "off"
     MINIMAL = "minimal"
@@ -77,9 +71,7 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
-class RCloneSettings(S3Settings):
-    R_CLONE_S3_PROVIDER: S3Provider
-
+class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",
@@ -105,13 +97,6 @@ class RCloneSettings(S3Settings):
                 )
             )
         return v
-
-    @cached_property
-    def endpoint(self) -> str:
-        if not self.S3_ENDPOINT.startswith("http"):
-            scheme = "https" if self.S3_SECURE else "http"
-            return f"{scheme}://{self.S3_ENDPOINT}"
-        return self.S3_ENDPOINT
 
 
 class StorageSettings(BaseCustomSettings):

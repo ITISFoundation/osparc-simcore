@@ -3,10 +3,11 @@ import logging
 import time
 from asyncio import AbstractEventLoop
 from collections import deque
+from contextlib import contextmanager
 from functools import wraps
 from os import name
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Deque, Optional
+from typing import Any, Awaitable, Callable, Deque, Generator, Optional
 
 from fastapi import FastAPI
 from servicelib.utils import logged_gather
@@ -215,8 +216,18 @@ def enable_directory_watcher(app: FastAPI) -> None:
         app.state.dir_watcher.enable_event_propagation()
 
 
+@contextmanager
+def directory_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
+    disable_directory_watcher(app)
+    try:
+        yield None
+    finally:
+        enable_directory_watcher(app)
+
+
 __all__ = [
     "disable_directory_watcher",
     "enable_directory_watcher",
+    "directory_watcher_disabled",
     "setup_directory_watcher",
 ]

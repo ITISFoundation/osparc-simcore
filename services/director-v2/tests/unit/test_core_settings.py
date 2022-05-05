@@ -9,12 +9,12 @@ from _pytest.monkeypatch import MonkeyPatch
 from models_library.basic_types import LogLevel
 from pydantic import ValidationError
 from pytest import FixtureRequest
+from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
     DynamicSidecarSettings,
     RCloneSettings,
-    S3Provider,
 )
 
 
@@ -35,7 +35,7 @@ def test_supported_backends_did_not_change() -> None:
     "endpoint, is_secure",
     [
         ("localhost", False),
-        ("s3_aws", True),
+        ("s3_aws", False),
         ("https://ceph.home", True),
         ("http://local.dev", False),
     ],
@@ -43,19 +43,22 @@ def test_supported_backends_did_not_change() -> None:
 def test_expected_s3_endpoint(
     endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
 
     r_clone_settings = RCloneSettings()
 
     scheme = "https" if is_secure else "http"
-    assert r_clone_settings.endpoint.startswith(f"{scheme}://")
-    assert r_clone_settings.endpoint.endswith(endpoint)
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.startswith(f"{scheme}://")
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.endswith(endpoint)
 
 
 def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
     with pytest.raises(ValueError):
         RCloneSettings()

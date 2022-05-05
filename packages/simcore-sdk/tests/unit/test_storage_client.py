@@ -140,4 +140,8 @@ async def test_invalid_calls(
                     **{invalid_keyword: None},
                     **additional_kwargs,
                 }
+                if (  # pylint: disable=comparison-with-callable
+                    fct_call == get_upload_file_link
+                ):
+                    kwargs["link_type"] = LinkType.S3
                 await fct_call(session=session, **kwargs)

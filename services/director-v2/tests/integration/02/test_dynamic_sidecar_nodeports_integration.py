@@ -301,6 +301,8 @@ def mock_env(
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
+    minio_config: Dict[str, Any],
+    storage_service: URL,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -328,7 +330,12 @@ def mock_env(
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
+    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
+    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
+    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
+    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
@@ -611,7 +618,9 @@ async def _fetch_data_via_aioboto(
         aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
         aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.endpoint) as s3:
+    async with session.resource(
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+    ) as s3:
         bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():
             key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
