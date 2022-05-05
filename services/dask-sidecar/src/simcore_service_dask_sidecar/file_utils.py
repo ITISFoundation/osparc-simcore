@@ -65,9 +65,7 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
         "secret": s3_settings.S3_SECRET_KEY,
         "token": s3_settings.S3_ACCESS_TOKEN,
         "use_ssl": s3_settings.S3_SECURE,
-        "client_kwargs": {
-            "endpoint_url": f"http{'s' if s3_settings.S3_SECURE else ''}://{s3_settings.S3_ENDPOINT}"
-        },
+        "client_kwargs": {"endpoint_url": s3_settings.S3_ENDPOINT},
     }
 
 
