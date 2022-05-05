@@ -219,10 +219,18 @@ async def create_dask_client_from_gateway(
 async def dask_client(
     create_dask_client_from_scheduler, create_dask_client_from_gateway, request
 ) -> DaskClient:
-    return await {
+    client: DaskClient = await {
         "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
         "create_dask_client_from_gateway": create_dask_client_from_gateway,
     }[request.param]()
+
+    try:
+        assert client.app.state.engine is not None
+    except AttributeError:
+        # enforces existance of 'app.state.engine' and sets to None
+        client.app.state.engine = None
+
+    return client
 
 
 @pytest.fixture
@@ -335,6 +343,11 @@ def image_params(
 
 @pytest.fixture()
 def mocked_node_ports(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.create_node_ports",
+        return_value=None,
+    )
+
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.compute_input_data",
         return_value=TaskInputData.parse_obj({}),

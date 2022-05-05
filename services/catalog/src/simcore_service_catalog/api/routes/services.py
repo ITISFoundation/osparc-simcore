@@ -3,8 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from collections import deque
-from typing import Any, Deque, Dict, Final, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -143,19 +142,11 @@ async def list_services(
 
     # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
     @cached(ttl=DIRECTOR_CACHING_TTL)
-    async def cached_registry_services() -> Deque[Tuple[str, str, Dict[str, Any]]]:
-        services_in_registry = await director_client.get("/services")
-        filtered_services = deque(
-            (s["key"], s["version"], s)
-            for s in (
-                request.app.state.frontend_services_catalog + services_in_registry
-            )
-            if (s.get("key"), s.get("version")) in services_in_db
-        )
-        return filtered_services
+    async def cached_registry_services() -> dict[str, Any]:
+        return cast(dict[str, Any], await director_client.get("/services"))
 
     (
-        registry_filtered_services,
+        services_in_registry,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
@@ -180,12 +171,17 @@ async def list_services(
             asyncio.get_event_loop().run_in_executor(
                 None,
                 _prepare_service_details,
-                details,
-                services_in_db[key, version],
-                services_access_rights[key, version],
-                services_owner_emails.get(services_in_db[key, version].owner),
+                s,
+                services_in_db[s["key"], s["version"]],
+                services_access_rights[s["key"], s["version"]],
+                services_owner_emails.get(
+                    services_in_db[s["key"], s["version"]].owner or 0
+                ),
             )
-            for key, version, details in registry_filtered_services
+            for s in (
+                request.app.state.frontend_services_catalog + services_in_registry
+            )
+            if (s.get("key"), s.get("version")) in services_in_db
         ]
     )
     return [s for s in services_details if s is not None]
@@ -315,8 +311,11 @@ async def get_service(
         )
         _service_data = frontend_service
     else:
-        services_in_registry = await director_client.get(
-            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        services_in_registry = cast(
+            list[Any],
+            await director_client.get(
+                f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+            ),
         )
         _service_data = services_in_registry[0]
 

@@ -467,6 +467,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             await dynamic_sidecar_client.begin_service_destruction(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
+        # NOTE: ANE: need to use more specific exception here
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(
                 "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
@@ -502,6 +503,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     )
                 await logged_gather(*tasks)
                 logger.info("Ports data pushed by dynamic-sidecar")
+            # NOTE: ANE: need to use more specific exception here
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     (
@@ -511,6 +513,10 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     scheduler_data.service_name,
                     str(e),
                 )
+                # ensure dynamic-sidecar does not get removed
+                # user data can be manually saved and manual
+                # cleanup of the dynamic-sidecar is required
+                raise e
 
         # remove the 2 services
         await remove_dynamic_sidecar_stack(
