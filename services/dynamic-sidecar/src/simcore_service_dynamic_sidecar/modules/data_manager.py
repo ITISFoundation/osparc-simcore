@@ -76,5 +76,6 @@ async def upload_path_if_exists(path: Path, state_exclude: List[str]) -> None:
             project_id=str(settings.DY_SIDECAR_PROJECT_ID),
             node_uuid=str(settings.DY_SIDECAR_NODE_ID),
             file_or_folder=path,
+            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         )
     logger.info("Finished upload of %s", path)

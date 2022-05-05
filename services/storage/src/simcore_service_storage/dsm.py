@@ -491,15 +491,34 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     )
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
-    ):
+    ) -> Optional[FileMetaDataEx]:
         return await self.try_update_database_from_storage(
             file_uuid, bucket_name, object_name, silence_exception=True
         )
 
-    async def upload_link(self, user_id: str, file_uuid: str, as_presigned_link: bool):
+    async def update_metadata(
+        self, file_uuid: str, user_id: int
+    ) -> Optional[FileMetaDataEx]:
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.write:
+                raise web.HTTPForbidden(
+                    reason=f"User {user_id} was not allowed to upload file {file_uuid}"
+                )
+
+        bucket_name = self.simcore_bucket_name
+        object_name = file_uuid
+        return await self.auto_update_database_from_storage_task(
+            file_uuid=file_uuid,
+            bucket_name=bucket_name,
+            object_name=object_name,
+        )
+
+    async def _generate_metadata_for_link(self, user_id: str, file_uuid: str):
         """
-        Creates pre-signed upload link and updates metadata table when
-        link is used and upload is successfuly completed
+        Updates metadata table when link is used and upload is successfuly completed
 
         SEE _metadata_file_updater
         """
@@ -509,11 +528,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), file_uuid
             )
             if not can.write:
-                logger.debug(
-                    "User %s was not allowed to upload file %s", user_id, file_uuid
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to upload file {file_uuid}"
+                    reason=f"User {user_id} does not have enough access rights to upload file {file_uuid}"
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
@@ -536,6 +552,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         await _init_metadata()
 
+    async def upload_link(
+        self, user_id: str, file_uuid: str, as_presigned_link: bool
+    ) -> AnyUrl:
+        """returns: a presigned upload link
+
+        NOTE: updates metadata once the upload is concluded"""
+        await self._generate_metadata_for_link(user_id=user_id, file_uuid=file_uuid)
+
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
 
@@ -548,12 +572,10 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 object_name=object_name,
             )
         )
-        link = parse_obj_as(
-            AnyUrl, f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
-        )
+        link = f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
         if as_presigned_link:
             link = self.s3_client.create_presigned_put_url(bucket_name, object_name)
-        return f"{link}"
+        return parse_obj_as(AnyUrl, f"{link}")
 
     async def download_link_s3(
         self, file_uuid: str, user_id: int, as_presigned_link: bool
@@ -569,11 +591,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 # If write permission would be required, then shared projects as views cannot
                 # recover data in nodes (e.g. jupyter cannot pull work data)
                 #
-                logger.debug(
-                    "User %s was not allowed to download file %s", user_id, file_uuid
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have enough rights to download {file_uuid}"
+                    reason=f"User {user_id} does not have enough rights to download file {file_uuid}"
                 )
 
         bucket_name = self.simcore_bucket_name
@@ -761,23 +780,13 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), project_id=dest_folder
             )
         if not source_access_rights.read:
-            logger.debug(
-                "User %s was not allowed to read from project %s",
-                user_id,
-                source_folder,
-            )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to read from project '{source_folder}'"
+                reason=f"User {user_id} does not have enough access rights to read from project '{source_folder}'"
             )
 
         if not dest_access_rights.write:
-            logger.debug(
-                "User %s was not allowed to write to project %s",
-                user_id,
-                dest_folder,
-            )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to write to project '{dest_folder}'"
+                reason=f"User {user_id} does not have enough access rights to write to project '{dest_folder}'"
             )
 
         # build up naming map based on labels
@@ -936,13 +945,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     conn, int(user_id), file_uuid
                 )
                 if not can.delete:
-                    logger.debug(
-                        "User %s was not allowed to delete file %s",
-                        user_id,
-                        file_uuid,
-                    )
                     raise web.HTTPForbidden(
-                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                        reason=f"User {user_id} does not have enough access rights to delete file {file_uuid}"
                     )
 
                 query = sa.select(
@@ -987,13 +991,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 conn, int(user_id), project_id
             )
             if not can.delete:
-                logger.debug(
-                    "User %s was not allowed to delete project %s",
-                    user_id,
-                    project_id,
-                )
                 raise web.HTTPForbidden(
-                    reason=f"User does not have delete access for {project_id}"
+                    reason=f"User {user_id} does not have delete access for {project_id}"
                 )
 
             delete_me = file_meta_data.delete().where(

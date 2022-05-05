@@ -8,11 +8,15 @@ from typing import Optional, Tuple
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession
 from pydantic.networks import AnyUrl
+from settings_library.r_clone import RCloneSettings
 from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
+from ..node_ports_common.storage_client import update_file_meta_data
 from . import exceptions, storage_client
+from .constants import SIMCORE_LOCATION, ETag
+from .r_clone import is_r_clone_available, sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
@@ -90,9 +94,6 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
                 log.debug("Download complete")
         except ClientPayloadError as exc:
             raise exceptions.TransferError(url) from exc
-
-
-ETag = str
 
 
 async def _upload_file_to_link(
@@ -258,6 +259,7 @@ async def upload_file(
     s3_object: str,
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ) -> Tuple[str, str]:
     """Uploads a file to S3
 
@@ -287,7 +289,33 @@ async def upload_file(
         if not upload_link:
             raise exceptions.S3InvalidPathError(s3_object)
 
-        e_tag = await _upload_file_to_link(session, upload_link, local_file_path)
+        if (
+            await is_r_clone_available(r_clone_settings)
+            and store_id == SIMCORE_LOCATION
+        ):
+            await sync_local_to_s3(
+                session=session,
+                r_clone_settings=r_clone_settings,
+                s3_object=s3_object,
+                local_file_path=local_file_path,
+                user_id=user_id,
+                store_id=store_id,
+            )
+        else:
+            try:
+                await _upload_file_to_link(session, upload_link, local_file_path)
+            except exceptions.S3TransferError as err:
+                await delete_file(
+                    user_id=user_id,
+                    store_id=store_id,
+                    s3_object=s3_object,
+                    client_session=session,
+                )
+                raise err
+
+        e_tag = await update_file_meta_data(
+            session=session, s3_object=s3_object, user_id=user_id
+        )
         return store_id, e_tag
 
 

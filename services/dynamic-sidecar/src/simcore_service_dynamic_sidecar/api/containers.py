@@ -39,6 +39,7 @@ from ..core.validation import (
 )
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
@@ -64,12 +65,13 @@ async def _task_docker_compose_up(
         "docker-compose --project-name {project} --file {file_path} "
         "up --no-build --detach"
     )
-    finished_without_errors, stdout = await write_file_and_run_command(
-        settings=settings,
-        file_content=shared_store.compose_spec,
-        command=command,
-        command_timeout=None,
-    )
+    with directory_watcher_disabled(app):
+        finished_without_errors, stdout = await write_file_and_run_command(
+            settings=settings,
+            file_content=shared_store.compose_spec,
+            command=command,
+            command_timeout=None,
+        )
     message = f"Finished {command} with output\n{stdout}"
 
     if finished_without_errors:

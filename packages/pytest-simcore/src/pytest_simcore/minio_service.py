@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import logging
-from typing import Dict, Iterator
+from typing import Any, Iterator
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -43,8 +43,8 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 
 @pytest.fixture(scope="module")
 def minio_config(
-    docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module: MonkeyPatch
-) -> Dict[str, str]:
+    docker_stack: dict, testing_environ_vars: dict, monkeypatch_module: MonkeyPatch
+) -> dict[str, Any]:
     assert "pytest-ops_minio" in docker_stack["services"]
 
     config = {
@@ -68,7 +68,7 @@ def minio_config(
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
+def minio_service(minio_config: dict[str, str]) -> Iterator[Minio]:
 
     client = Minio(**minio_config["client"])
 
@@ -99,7 +99,7 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
 
 
 @pytest.fixture(scope="module")
-def bucket(minio_config: Dict[str, str], minio_service: Minio) -> Iterator[str]:
+def bucket(minio_config: dict[str, str], minio_service: Minio) -> Iterator[str]:
     bucket_name = minio_config["bucket_name"]
 
     _ensure_remove_bucket(minio_service, bucket_name)

@@ -5,7 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple
 from urllib.parse import quote_plus
 from uuid import uuid4
 
@@ -14,11 +14,13 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports import node_config
+from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
 
@@ -326,3 +328,68 @@ def create_task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
                 comp_tasks.c.task_id.in_(created_task_ids)
             )
         )
+
+
+def _set_configuration(
+    task: Callable[..., str],
+    project_id: str,
+    node_id: str,
+    json_configuration: str,
+) -> Dict[str, Any]:
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_id))
+    configuration = json.loads(json_configuration)
+    task(project_id, node_id, **configuration)
+    return configuration
+
+
+def _assign_config(
+    config_dict: dict, port_type: str, entries: List[Tuple[str, str, Any]]
+):
+    if entries is None:
+        return
+    for entry in entries:
+        config_dict["schema"][port_type].update(
+            {
+                entry[0]: {
+                    "label": "some label",
+                    "description": "some description",
+                    "displayOrder": 2,
+                    "type": entry[1],
+                }
+            }
+        )
+        if not entry[2] is None:
+            config_dict[port_type].update({entry[0]: entry[2]})
+
+
+@pytest.fixture
+async def r_clone_settings_factory(
+    minio_config: Dict[str, Any], storage_service: URL
+) -> Awaitable[RCloneSettings]:
+    async def _factory() -> RCloneSettings:
+        client = minio_config["client"]
+        settings = RCloneSettings.parse_obj(
+            dict(
+                R_CLONE_S3=dict(
+                    S3_ENDPOINT=client["endpoint"],
+                    S3_ACCESS_KEY=client["access_key"],
+                    S3_SECRET_KEY=client["secret_key"],
+                    S3_BUCKET_NAME=minio_config["bucket_name"],
+                    S3_SECURE=client["secure"],
+                ),
+                R_CLONE_PROVIDER=S3Provider.MINIO,
+            )
+        )
+        if not await is_r_clone_available(settings):
+            pytest.skip("rclone not installed")
+
+        return settings
+
+    return _factory()
+
+
+@pytest.fixture
+async def r_clone_settings(
+    r_clone_settings_factory: Awaitable[RCloneSettings],
+) -> RCloneSettings:
+    return await r_clone_settings_factory

@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
 from servicelib.archiving_utils import archive_dir, unarchive_dir
+from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import filemanager
 
@@ -24,6 +25,7 @@ async def _push_file(
     node_uuid: str,
     file_path: Path,
     rename_to: Optional[str],
+    r_clone_settings: Optional[RCloneSettings] = None,
 ):
     store_id = "0"  # this is for simcore.s3
     s3_object = _create_s3_object(
@@ -36,6 +38,7 @@ async def _push_file(
         store_name=None,
         s3_object=s3_object,
         local_file_path=file_path,
+        r_clone_settings=r_clone_settings,
     )
     log.info("%s successfuly uploaded", file_path)
 
@@ -46,6 +49,7 @@ async def push(
     node_uuid: str,
     file_or_folder: Path,
     rename_to: Optional[str] = None,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ):
     if file_or_folder.is_file():
         return await _push_file(
@@ -64,7 +68,9 @@ async def push(
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
         )
-        return await _push_file(user_id, project_id, node_uuid, archive_file_path, None)
+        return await _push_file(
+            user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
+        )
 
 
 async def _pull_file(

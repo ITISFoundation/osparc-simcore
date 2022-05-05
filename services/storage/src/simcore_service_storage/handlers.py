@@ -1,8 +1,9 @@
 import asyncio
 import json
 import logging
+import urllib.parse
 from contextlib import contextmanager
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import attr
 from aiohttp import web
@@ -19,6 +20,7 @@ from .access_layer import InvalidFileIdentifier
 from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
+from .models import FileMetaDataEx
 from .settings import Settings
 
 log = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ def handle_storage_errors():
 
     except InvalidFileIdentifier as err:
         raise web.HTTPUnprocessableEntity(
-            reason=f"{err.identifier} is an invalid file identifier"
+            reason=f"{err} is an invalid file identifier"
         ) from err
 
 
@@ -271,7 +273,7 @@ async def synchronise_meta_data_table(request: web.Request):
         return {"error": None, "data": sync_results}
 
 
-# DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
+@routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata")  # type: ignore
 async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -279,17 +281,22 @@ async def update_file_meta_data(request: web.Request):
     assert query, "query %s" % query  # nosec
     assert not body, "body %s" % body  # nosec
 
-    assert params["location_id"]  # nosec
-    assert params["fileId"]  # nosec
-    assert query["user_id"]  # nosec
-
     with handle_storage_errors():
-        location_id = params["location_id"]
-        _user_id = query["user_id"]
-        _file_uuid = params["fileId"]
+        file_uuid = urllib.parse.unquote_plus(params["fileId"])
+        user_id = query["user_id"]
 
         dsm = await _prepare_storage_manager(params, query, request)
-        _location = dsm.location_from_id(location_id)
+
+        data: Optional[FileMetaDataEx] = await dsm.update_metadata(
+            file_uuid=file_uuid, user_id=user_id
+        )
+        if data is None:
+            raise web.HTTPNotFound(reason=f"Could not update metadata for {file_uuid}")
+
+        return {
+            "error": None,
+            "data": {**attr.asdict(data.fmd), "parent_id": data.parent_id},
+        }
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
@@ -309,6 +316,11 @@ async def download_file(request: web.Request):
         location_id = params["location_id"]
         user_id = query["user_id"]
         file_uuid = params["fileId"]
+
+        if int(location_id) != SIMCORE_S3_ID:
+            raise web.HTTPPreconditionFailed(
+                reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
+            )
 
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
