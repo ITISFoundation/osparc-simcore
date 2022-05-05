@@ -5,7 +5,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -21,7 +21,15 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.projects_networks import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    constr,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -50,6 +58,10 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+
+PlacementConstraint = constr(
+    strip_whitespace=True, regex=r"^[a-zA-Z0-9. ]*(!=|==){1}[a-zA-Z0-9. ]*$"
+)
 
 
 class VFSCacheMode(str, Enum):
@@ -414,6 +426,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraint] = Field(
+        default_factory=list,
+        example='["node.labels.region==east", "one!=yes"]',
+    )
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

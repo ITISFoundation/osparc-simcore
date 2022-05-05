@@ -14,6 +14,7 @@ RUN set -eux && \
   apt-get update && \
   apt-get install -y \
   gosu \
+  curl \
   libmagic1 \
   curl \
   && \
@@ -84,6 +85,10 @@ WORKDIR /build
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
+# copy utility devops scripts
+COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
+
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
@@ -101,7 +106,6 @@ WORKDIR /build/services/dynamic-sidecar
 
 RUN pip --no-cache-dir install -r requirements/prod.txt &&\
   pip --no-cache-dir list -v
-
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

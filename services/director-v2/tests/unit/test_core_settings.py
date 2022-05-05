@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict, Set
+from typing import Any, Dict, List, Set
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -136,3 +136,32 @@ def test_expected_failure_dynamic_sidecar_settings(
 ) -> None:
     with pytest.raises(ValidationError) as exc_info:
         DynamicSidecarSettings()
+
+
+@pytest.mark.parametrize(
+    "custom_constraints, expected",
+    (
+        ("[]", []),
+        ('["one==yes"]', ["one==yes"]),
+        ('["two!=no"]', ["two!=no"]),
+        ('["one==yes", "two!=no"]', ["one==yes", "two!=no"]),
+        ('["     strips.white.spaces   ==  ok "]', ["strips.white.spaces   ==  ok"]),
+    ),
+)
+def test_services_custom_constraints(
+    custom_constraints: str,
+    expected: List[str],
+    project_env_devel_environment,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    settings = AppSettings()
+    assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
+    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == expected
+
+
+def test_services_custom_constraints_default_empty_list(
+    project_env_devel_environment,
+) -> None:
+    settings = AppSettings()
+    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
