@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     thumbnail: {
       check: "String",
       nullable: true,
-      apply: "_applyThumbnail"
+      apply: "__applyThumbnail"
     }
   },
 
@@ -160,11 +160,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
       this.resetThumbnail();
 
-      this._createWindowLayout();
+      this.__createWindowLayout();
     },
 
-    // overridden
-    _createWindowLayout: function() {
+    __createWindowLayout: function() {
       const node = this.getNode();
       if (node.getThumbnail()) {
         this.setThumbnail(node.getThumbnail());
@@ -185,8 +184,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       });
       const metaData = node.getMetaData();
-      this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
-      this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
+      this.__createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
+      this.__createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.getChildControl("progress"), "value", {
           converter: val => val === null ? 0 : val
@@ -423,8 +422,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    // overridden
-    _createPorts: function(isInput, draw) {
+    __createPorts: function(isInput, draw) {
       if (draw === false) {
         this._createPort(isInput, true);
         return;
@@ -460,11 +458,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         });
       }
 
-      this._addDragDropMechanism(port, isInput);
+      this.__addDragDropMechanism(port, isInput);
     },
 
-    // overridden
-    _createDragDropEventData: function(e, isInput) {
+    __addDragDropMechanism: function(port, isInput) {
+      [
+        ["dragstart", "edgeDragStart"],
+        ["dragover", "edgeDragOver"],
+        ["drop", "edgeDrop"],
+        ["dragend", "edgeDragEnd"]
+      ].forEach(eventPair => {
+        port.addListener(eventPair[0], e => {
+          const eData = this.__createDragDropEventData(e, isInput);
+          this.fireDataEvent(eventPair[1], eData);
+        }, this);
+      }, this);
+    },
+
+    __createDragDropEventData: function(e, isInput) {
       return {
         event: e,
         nodeId: this.getNodeId(),
@@ -483,7 +494,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.base(arguments, e);
     },
 
-    _applyThumbnail: function(thumbnailSrc) {
+    __applyThumbnail: function(thumbnailSrc) {
       if (this.__thumbnail) {
         this.remove(this.__thumbnail);
         this.__thumbnail = null;
