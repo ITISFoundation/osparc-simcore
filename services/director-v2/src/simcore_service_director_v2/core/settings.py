@@ -148,6 +148,9 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_LOG_LEVEL = Field(
+        "DEBUG", description="log level of the dynamic sidecar"
+    )
     SC_BOOT_MODE: BootModeEnum = Field(
         BootModeEnum.PRODUCTION,
         description="Used to compute where or not should start sidecar in development mode",
