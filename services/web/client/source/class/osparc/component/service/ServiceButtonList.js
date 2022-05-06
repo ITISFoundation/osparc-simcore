@@ -81,20 +81,23 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       serviceModel.bind("description", this.getChildControl("description-md"), "value");
 
       // ITEM
+      this.__applyLatestVersion(serviceModel);
       this.__applyHits(serviceModel);
     },
 
-    __applyHits: function(serviceModel) {
-      const hitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+    __applyLatestVersion: function(serviceModel) {
+      const latestVLabel = new qx.ui.basic.Label("v" + serviceModel.getVersion()).set({
         alignY: "middle"
-      })).set({
+      });
+      this._addAt(latestVLabel, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
+    },
+
+    __applyHits: function(serviceModel) {
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Latest: ") + String(serviceModel.hits)).set({
+        alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
       });
-      const hitsLabel = new qx.ui.basic.Label(this.tr("Latest: "));
-      hitsLayout.add(hitsLabel);
-      const hitsValue = new qx.ui.basic.Label(String(serviceModel.hits));
-      hitsLayout.add(hitsValue);
-      this._addAt(hitsLayout, osparc.dashboard.ListButtonBase.POS.TSR);
+      this._addAt(hitsLabel, osparc.dashboard.ListButtonBase.POS.TSR);
     },
 
     _filterText: function(text) {
