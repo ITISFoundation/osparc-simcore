@@ -33,7 +33,7 @@ from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 from yarl import URL
