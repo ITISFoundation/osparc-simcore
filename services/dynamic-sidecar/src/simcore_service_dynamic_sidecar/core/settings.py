@@ -22,7 +22,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     # LOGGING
-    LOG_LEVEL: str = Field("DEBUG")
+    LOG_LEVEL: str = Field("WARNING")
 
     @validator("LOG_LEVEL")
     @classmethod
