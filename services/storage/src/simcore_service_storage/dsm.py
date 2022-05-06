@@ -31,6 +31,7 @@ from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_delay
@@ -441,7 +442,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         file_uuid: str,
         bucket_name: str,
         object_name: str,
-        silence_exception: bool = False,
+        reraise_exceptions: bool = False,
     ) -> Optional[FileMetaDataEx]:
         try:
             async with self._create_aiobotocore_client_context() as aioboto_client:
@@ -472,29 +473,23 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
                     return to_meta_data_extended(row)
         except botocore.exceptions.ClientError:
-            if silence_exception:
-                logger.debug("Error happened while trying to access %s", file_uuid)
-            else:
-                logger.warning(
-                    "Error happened while trying to access %s", file_uuid, exc_info=True
-                )
-            # the file is not existing or some error happened
-            return None
+            logger.debug("Error happened while trying to access %s", file_uuid)
+            if reraise_exceptions:
+                raise
 
-    @retry(
-        stop=stop_after_delay(1 * _HOUR),
-        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
-        retry=(
-            retry_if_exception_type() | retry_if_result(lambda result: result is None)
-        ),
-        before_sleep=before_sleep_log(logger, logging.INFO),
-    )
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
     ) -> Optional[FileMetaDataEx]:
-        return await self.try_update_database_from_storage(
-            file_uuid, bucket_name, object_name, silence_exception=True
-        )
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(1 * _HOUR),
+            wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
+            retry=(retry_if_exception_type()),
+            before_sleep=before_sleep_log(logger, logging.INFO),
+        ):
+            with attempt:
+                return await self.try_update_database_from_storage(
+                    file_uuid, bucket_name, object_name, reraise_exceptions=True
+                )
 
     async def update_metadata(
         self, file_uuid: str, user_id: int
