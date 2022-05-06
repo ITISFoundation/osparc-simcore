@@ -46,7 +46,7 @@ async function runTutorial() {
     }
   }
   catch(err) {
-    tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
