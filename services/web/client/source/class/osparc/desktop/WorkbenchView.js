@@ -1068,69 +1068,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __isSelectionEmpty: function(selectedNodeUIs) {
-      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        return true;
-      }
-      return false;
-    },
-
-    __groupSelection: function() {
-      // Some checks
-      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        return;
-      }
-
-      const selectedNodeUIs = this.getSelectedNodes();
-      if (this.__isSelectionEmpty(selectedNodeUIs)) {
-        return;
-      }
-
-      const selectedNodes = [];
-      selectedNodeUIs.forEach(selectedNodeUI => {
-        selectedNodes.push(selectedNodeUI.getNode());
-      });
-
-      const workbench = this.getStudy().getWorkbench();
-      const currentModel = this.__workbenchUI.getCurrentModel();
-      workbench.groupNodes(currentModel, selectedNodes);
-
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
-      this.__workbenchChanged();
-
-      this.__workbenchUI.resetSelection();
-    },
-
-    __ungroupSelection: function() {
-      // Some checks
-      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        return;
-      }
-      const selectedNodeUIs = this.getSelectedNodes();
-      if (this.__isSelectionEmpty(selectedNodeUIs)) {
-        return;
-      }
-      if (selectedNodeUIs.length > 1) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Select only one group", "ERROR");
-        return;
-      }
-      const nodesGroup = selectedNodeUIs[0].getNode();
-      if (!nodesGroup.isContainer()) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Select a group", "ERROR");
-        return;
-      }
-
-      // Collect info
-      const workbench = this.getStudy().getWorkbench();
-      const currentModel = this.__workbenchUI.getCurrentModel();
-      workbench.ungroupNode(currentModel, nodesGroup);
-
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
-      this.__workbenchChanged();
-
-      this.__workbenchUI.resetSelection();
-    },
-
     __attachEventHandlers: function() {
       const maximizeIframeCb = msg => {
         this.__maximizeIframe(msg.getData());
