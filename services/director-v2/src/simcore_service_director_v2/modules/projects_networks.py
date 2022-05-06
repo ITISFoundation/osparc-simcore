@@ -206,11 +206,12 @@ async def _get_networks_with_aliases_for_default_network(
                 node_id=UUID(node_uuid),
                 messages=[
                     (
-                        f"Service with label '{node_content.label}' cannot "
-                        f"be connected to network {default_network}. If you "
-                        "whish for your services in this study to communicate "
-                        "provide a label containing the following characters "
-                        "'a-zA-Z0-9_-' and must be max 64 letters long."
+                        f"Service with label '{node_content.label}' cannot be "
+                        "identified on service network due to invalid name. "
+                        "To communicate over the network, please rename the "
+                        "service alphanumeric characters <64 characters, "
+                        "e.g. re.sub(r'\W+', '', SERVICE_NAME). "
+                        f"Network name is {default_network}"
                     )
                 ],
             )
