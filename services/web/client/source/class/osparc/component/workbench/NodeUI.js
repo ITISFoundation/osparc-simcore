@@ -431,12 +431,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       const port = this._createPort(isInput);
       port.addListener("mouseover", () => {
-        port.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
+        port.setSource(osparc.component.workbench.BaseNodeUI.PORT_CONNECTED);
       }, this);
       port.addListener("mouseout", () => {
         const isConnected = isInput ? this.getNode().getInputConnected() : this.getNode().getOutputConnected();
         port.set({
-          source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+          source: isConnected ? osparc.component.workbench.BaseNodeUI.PORT_CONNECTED : osparc.component.workbench.BaseNodeUI.PORT_DISCONNECTED
         });
       }, this);
       if (isInput) {
@@ -449,14 +449,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           }
         });
         this.getNode().bind("inputConnected", port, "source", {
-          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.PORT_CONNECTED : osparc.component.workbench.BaseNodeUI.PORT_DISCONNECTED
         });
       } else {
         this.getNode().getStatus().bind("output", port, "textColor", {
           converter: output => osparc.utils.StatusUI.getColor(output)
         });
         this.getNode().bind("outputConnected", port, "source", {
-          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+          converter: isConnected => isConnected ? osparc.component.workbench.BaseNodeUI.PORT_CONNECTED : osparc.component.workbench.BaseNodeUI.PORT_DISCONNECTED
         });
       }
 

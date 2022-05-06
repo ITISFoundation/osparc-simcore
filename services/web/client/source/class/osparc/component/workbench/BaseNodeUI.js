@@ -92,8 +92,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   statics: {
     PORT_HEIGHT: 18,
     PORT_WIDTH: 11,
-    NODE_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
-    NODE_DISCONNECTED: "@FontAwesome5Regular/circle/18",
+    PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
+    PORT_DISCONNECTED: "@FontAwesome5Regular/circle/18",
 
     CAPTION_POS: {
       ICON: 0, // from qooxdoo
@@ -205,7 +205,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         port = new qx.ui.core.Spacer(width, width);
       } else {
         port = new qx.ui.basic.Image().set({
-          source: this.self().NODE_DISCONNECTED, // disconnected by default
+          source: this.self().PORT_DISCONNECTED, // disconnected by default
           height: width,
           draggable: true,
           droppable: true,
