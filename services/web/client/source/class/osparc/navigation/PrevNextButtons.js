@@ -123,8 +123,8 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
      * @param state {String} "ready"|"busy"|"run"|"select-file"
      */
     __updateNextButtonState: function(state) {
-      let icon = "@FontAwesome5Solid/arrow-right/32";
-      let toolTipText = qx.locale.Manager.tr("Next");
+      let icon = "";
+      let toolTipText = "";
       let textColor = "text";
       let animate = false;
       let enabled = true;
@@ -144,6 +144,10 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
           textColor = "busy-orange";
           animate = true;
           enabled = false;
+          break;
+        default:
+          icon = "@FontAwesome5Solid/arrow-right/32";
+          toolTipText = qx.locale.Manager.tr("Next");
           break;
       }
       if (this.__nextBtn) {
