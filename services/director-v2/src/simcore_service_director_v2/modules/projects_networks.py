@@ -205,6 +205,7 @@ async def _get_networks_with_aliases_for_default_network(
                 project_id=project_id,
                 node_id=UUID(node_uuid),
                 messages=[
+                    # pylint:disable=anomalous-backslash-in-string
                     (
                         f"Service with label '{node_content.label}' cannot be "
                         "identified on service network due to invalid name. "
