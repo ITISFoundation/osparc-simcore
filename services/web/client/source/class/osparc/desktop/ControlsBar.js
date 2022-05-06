@@ -53,15 +53,11 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __viewCtrls: null,
     __workbenchViewButton: null,
     __settingsViewButton: null,
-    __groupCtrls: null,
-    __groupButton: null,
-    __ungroupButton: null,
     __iterationCtrls: null,
     __parametersButton: null,
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__serviceFilters.setVisibility(isWorkbenchContext ? "visible" : "excluded");
-      this.__groupCtrls.setVisibility(isWorkbenchContext ? "visible" : "excluded");
     },
 
     setExtraViewVisibility: function(hasExtraView) {
@@ -85,15 +81,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       this.add(viewCtrls);
       const viewRadioGroup = new qx.ui.form.RadioGroup();
       viewRadioGroup.add(workbenchViewButton, settingsViewButton);
-
-      const groupCtrls = this.__groupCtrls = new qx.ui.toolbar.Part();
-      const groupButton = this.__groupButton = this.__createGroupButton();
-      const ungroupButton = this.__ungroupButton = this.__createUngroupButton();
-      groupCtrls.add(groupButton);
-      groupCtrls.add(ungroupButton);
-      if (osparc.data.Permissions.getInstance().canDo("study.node.grouping")) {
-        this.add(groupCtrls);
-      }
     },
 
     __createWorkbenchButton: function() {
@@ -106,26 +93,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return settingsButton;
     },
 
-    __createGroupButton: function() {
-      return this.__createButton(
-        this.tr("Group Nodes"),
-        "object-group",
-        "groupNodesBtn",
-        "groupSelection",
-        "excluded"
-      );
-    },
-
-    __createUngroupButton: function() {
-      return this.__createButton(
-        this.tr("Ungroup Nodes"),
-        "object-ungroup",
-        "ungroupNodesBtn",
-        "ungroupSelection",
-        "excluded"
-      );
-    },
-
     __createRadioButton: function(label, icon, widgetId, singalName) {
       const button = new qx.ui.toolbar.RadioButton(label);
       // button.setIcon("@FontAwesome5Solid/"+icon+"/14");
@@ -134,27 +101,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         this.fireEvent(singalName);
       }, this);
       return button;
-    },
-
-    __createButton: function(label, icon, widgetId, signalName, visibility = "visible") {
-      const button = new osparc.ui.toolbar.FetchButton(label, "@FontAwesome5Solid/" + icon + "/14").set({
-        visibility
-      });
-      osparc.utils.Utils.setIdToWidget(button, widgetId);
-      button.addListener("execute", () => {
-        this.fireEvent(signalName);
-      }, this);
-      return button;
-    },
-
-    __workbenchSelectionChanged: function(msg) {
-      const selectedNodes = msg.getData();
-      this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
-      this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
     }
   }
 });
