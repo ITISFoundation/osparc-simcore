@@ -60,7 +60,7 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
         }
 
 
-class ServiceOut(
+class ServiceGet(
     ServiceDockerData, ServiceAccessRights, ServiceMetaData
 ):  # pylint: disable=too-many-ancestors
     owner: Optional[EmailStr]
