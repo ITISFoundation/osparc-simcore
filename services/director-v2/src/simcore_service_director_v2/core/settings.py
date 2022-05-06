@@ -148,7 +148,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_LOG_LEVEL = Field(
+    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
         "WARNING", description="log level of the dynamic sidecar"
     )
     SC_BOOT_MODE: BootModeEnum = Field(
