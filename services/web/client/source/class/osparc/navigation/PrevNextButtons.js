@@ -25,7 +25,8 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
   },
 
   events: {
-    "nodeSelected": "qx.event.type.Data"
+    "nodeSelected": "qx.event.type.Data",
+    "runPressed": "qx.event.type.Data"
   },
 
   statics: {
@@ -59,6 +60,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
   members: {
     __prvsBtn: null,
     __nextBtn: null,
+    __runBtn: null,
 
     getPreviousButton: function() {
       return this.__prvsBtn;
@@ -66,6 +68,10 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
     getNextButton: function() {
       return this.__nextBtn;
+    },
+
+    getRunButton: function() {
+      return this.__runBtn;
     },
 
     __createButtons: function() {
@@ -82,6 +88,13 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         ...this.self().BUTTON_OPTIONS
       });
       nextBtn.addListener("execute", () => this.__nextPressed(), this);
+
+      const runBtn = this.__runBtn = new qx.ui.form.Button().set({
+        toolTipText: qx.locale.Manager.tr("Run"),
+        icon: this.self().RUN_BUTTON,
+        ...this.self().BUTTON_OPTIONS
+      });
+      runBtn.addListener("execute", () => this.__runPressed(), this);
     },
 
     __applyStudy: function(study) {
@@ -107,6 +120,8 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       // this.__nextBtn.setEnabled();
 
       const currentNode = this.getStudy().getWorkbench().getNode(nodesIds[currentIdx]);
+      this.__nextBtn.show();
+      this.__runBtn.exclude();
       if (currentNode) {
         const currentNodeStatus = currentNode.getStatus();
         const currentNodeStatusOutput = currentNodeStatus.getOutput();
@@ -115,7 +130,8 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         } else if (currentNode.isFilePicker() && ["not-available"].includes(currentNodeStatusOutput)) {
           this.__updateNextButtonState("select-file");
         } else if (currentNode.isComputational() && ["not-available", "out-of-date"].includes(currentNodeStatusOutput)) {
-          this.__updateNextButtonState("run");
+          this.__nextBtn.exclude();
+          this.__runBtn.show();
         } else {
           this.__updateNextButtonState("ready");
           this.__nextBtn.setEnabled(!isLast);
@@ -135,10 +151,6 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       let animate = false;
       let enabled = true;
       switch (state) {
-        case "run":
-          icon = this.self().RUN_BUTTON;
-          toolTipText = qx.locale.Manager.tr("Run");
-          break;
         case "select-file":
           icon = this.self().SELECT_FILE_BUTTON;
           toolTipText = qx.locale.Manager.tr("Select File");
@@ -194,6 +206,11 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       const currentIdx = nodesIds.indexOf(currentNodeId);
 
       this.fireDataEvent("nodeSelected", nodesIds[currentIdx+1]);
+    },
+
+    __runPressed: function() {
+      const nodeId = this.getNode().getNodeId();
+      this.fireDataEvent("runPressed", nodeId);
     }
   }
 });
