@@ -56,15 +56,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "shared-icon": {
-          control = new qx.ui.basic.Image().set({
-            minWidth: 50,
-            alignY: "middle"
-          });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SHARED);
-          break;
-        }
-        case "hits": {
+        case "hits":
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
@@ -74,7 +66,6 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -87,7 +78,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
         this.getChildControl("icon").setSource(this.self().SERVICE_ICON);
       }
       serviceModel.bind("name", this.getChildControl("title"), "value");
-      serviceModel.bind("description", this.getChildControl("description"), "value");
+      serviceModel.bind("description", this.getChildControl("description-md"), "value");
 
       // ITEM
       this.__applyHits(serviceModel);
