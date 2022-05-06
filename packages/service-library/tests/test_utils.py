@@ -4,9 +4,10 @@
 
 import asyncio
 from pathlib import Path
+from typing import Awaitable, Coroutine, Union, Type
 
 import pytest
-from servicelib.utils import logged_gather
+from servicelib.utils import logged_gather, fire_and_forget_task
 
 
 async def _value_error(uid, *, delay=1):
@@ -91,3 +92,45 @@ def print_tree(path: Path, level=0):
     print(f"{tab}{'+' if path.is_dir() else '-'} {path if level==0 else path.name}")
     for p in path.glob("*"):
         print_tree(p, level + 1)
+
+
+@pytest.fixture(params=[Awaitable, Coroutine])
+def future_type(request) -> Type[Union[asyncio.Future, Awaitable]]:
+    return request.param
+
+
+@pytest.fixture()
+async def future_to_test(
+    future_type: Type[Union[asyncio.Future, Awaitable]]
+) -> Union[asyncio.Future, Awaitable]:
+    async def _self_cancelling() -> None:
+        raise asyncio.CancelledError("manual cancellation")
+
+    if future_type == Awaitable:
+        return asyncio.ensure_future(_self_cancelling())
+    if future_type == Coroutine:
+        return _self_cancelling()
+
+    raise RuntimeError("not defined")
+
+
+async def test_fire_and_forget_cancellation_errors_raised_when_awaited(
+    future_type: Type[Union[asyncio.Future, Awaitable]],
+    future_to_test: Union[asyncio.Future, Awaitable],
+) -> None:
+    assert isinstance(future_to_test, future_type)
+
+    task = fire_and_forget_task(future_to_test)
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+
+async def test_fire_and_forget_cancellation_no_errors_raised(
+    future_type: Type[Union[asyncio.Future, Awaitable]],
+    future_to_test: Union[asyncio.Future, Awaitable],
+) -> None:
+    assert isinstance(future_to_test, future_type)
+
+    task = fire_and_forget_task(future_to_test)
+    await asyncio.sleep(0.1)
+    assert task.cancelled() is True
