@@ -88,6 +88,16 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             flex: 1
           });
           break;
+        case "description-md":
+          control = new osparc.ui.markdown.Markdown().set({
+            maxHeight: 15,
+            alignY: "middle",
+            allowGrowX: true
+          });
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.DESCRIPTION, {
+            flex: 1
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },

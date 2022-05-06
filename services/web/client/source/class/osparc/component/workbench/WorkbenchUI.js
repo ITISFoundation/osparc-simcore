@@ -906,7 +906,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
       const portLabel = port.isInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
-      portLabel.setSource(osparc.component.workbench.BaseNodeUI.NODE_CONNECTED);
+      portLabel.setSource(osparc.component.workbench.BaseNodeUI.PORT_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
@@ -925,7 +925,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const isConnected = this.__tempEdgeIsInput ? nodeUI.getNode().getInputConnected() : nodeUI.getNode().getOutputConnected();
         const portLabel = this.__tempEdgeIsInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
         portLabel.set({
-          source: isConnected ? osparc.component.workbench.BaseNodeUI.NODE_CONNECTED : osparc.component.workbench.BaseNodeUI.NODE_DISCONNECTED
+          source: isConnected ? osparc.component.workbench.BaseNodeUI.PORT_CONNECTED : osparc.component.workbench.BaseNodeUI.PORT_DISCONNECTED
         });
       }
 
