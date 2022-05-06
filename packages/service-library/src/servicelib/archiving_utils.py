@@ -48,10 +48,9 @@ class _FastZipFileReader(zipfile.ZipFile):
     def _RealGetContents(self):
         """
         NOTE: this is bypassed because:
-        - for zipfiles with logs of entries is very slow to compute
+        - for zipfiles with lots of entries is very slow to compute
         - the list was previously computed
-        - when using zipfile.open() and passing a ZipInfo object
-            it is not required
+        - when using zipfile.open() and passing a ZipInfo object it is not required
         """
 
 
@@ -64,7 +63,7 @@ def _zipfile_single_file_extract_worker(
     """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
 
     Extracts in chunks to avoid memory pressure on zip/unzip
-    Retuns a path to extracted file or directory
+    returns: a path to extracted file or directory
     """
     with _FastZipFileReader(zip_file_path) as zf:
         # assemble destination and ensure it exits
