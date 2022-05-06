@@ -14,7 +14,9 @@ RUN set -eux && \
   apt-get update && \
   apt-get install -y \
   gosu \
+  curl \
   libmagic1 \
+  curl \
   && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
@@ -46,6 +48,12 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # volumes between itself and the spawned containers
 ENV DY_VOLUMES="/dy-volumes"
 
+# rclone installation
+ARG R_CLONE_VERSION="1.58.0"
+RUN curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rclone --version
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -77,6 +85,10 @@ WORKDIR /build
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
+# copy utility devops scripts
+COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
+
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
@@ -94,7 +106,6 @@ WORKDIR /build/services/dynamic-sidecar
 
 RUN pip --no-cache-dir install -r requirements/prod.txt &&\
   pip --no-cache-dir list -v
-
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

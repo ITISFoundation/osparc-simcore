@@ -5,6 +5,7 @@ import logging
 from typing import Dict
 
 from aiohttp import web
+from pydantic import AnyUrl, parse_obj_as
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from .constants import APP_CONFIG_KEY, APP_S3_KEY
@@ -54,6 +55,15 @@ async def _setup_s3_bucket(app):
     log.debug("tear-down %s.setup.cleanup_ctx", __name__)
 
 
+def _minio_client_endpint(s3_endpoint: str) -> str:
+    # Minio client adds http and https based on the secure paramenter
+    # provided at construction time, already including the schema
+    # will cause issues, encoding url to HOST:PORT or just HOST
+    # if port is missing
+    url = parse_obj_as(AnyUrl, s3_endpoint)
+    return f"{url.host}" if url.port is None else f"{url.host}:{url.port}"
+
+
 def setup_s3(app: web.Application):
     """minio/s3 service setup"""
 
@@ -67,7 +77,7 @@ def setup_s3(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
 
     s3_client = MinioClientWrapper(
-        cfg.STORAGE_S3.S3_ENDPOINT,
+        _minio_client_endpint(cfg.STORAGE_S3.S3_ENDPOINT),
         cfg.STORAGE_S3.S3_ACCESS_KEY,
         cfg.STORAGE_S3.S3_SECRET_KEY,
         secure=cfg.STORAGE_S3.S3_SECURE,

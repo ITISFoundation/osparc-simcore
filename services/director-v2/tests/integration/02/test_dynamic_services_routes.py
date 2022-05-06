@@ -124,7 +124,12 @@ async def test_client(
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
 
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
@@ -184,6 +189,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         ("service_restore_state", None),
         ("service_pull_output_ports", 42),
         ("service_outputs_create_dirs", None),
+        ("service_push_output_ports", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",

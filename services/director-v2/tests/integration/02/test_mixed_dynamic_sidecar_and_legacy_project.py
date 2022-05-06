@@ -128,6 +128,8 @@ async def dy_static_file_server_project(
 @pytest.fixture
 async def director_v2_client(
     minimal_configuration: None,
+    minio_config: Dict[str, Any],
+    storage_service: URL,
     network_name: str,
     monkeypatch,
 ) -> AsyncIterable[httpx.AsyncClient]:
@@ -154,7 +156,12 @@ async def director_v2_client(
     monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
+    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
+    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
+    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
+    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
 
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
@@ -203,6 +210,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     for method_name, return_value in [
         ("service_restore_state", None),
         ("service_pull_output_ports", 42),
+        ("service_push_output_ports", None),
     ]:
         mocker.patch(
             f"simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.{method_name}",

@@ -22,7 +22,12 @@ MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
     "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
     "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
     "SWARM_STACK_NAME": "test_swarm_name",
-    "R_CLONE_S3_PROVIDER": "MINIO",
+    "R_CLONE_PROVIDER": "MINIO",
+    "S3_ENDPOINT": "endpoint",
+    "S3_ACCESS_KEY": "s3_access_key",
+    "S3_SECRET_KEY": "s3_secret_key",
+    "S3_BUCKET_NAME": "bucket_name",
+    "S3_SECURE": "false",
 }
 
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
@@ -53,6 +58,12 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "REGISTRY_USER",
     "SIMCORE_HOST_NAME",
     "STORAGE_ENDPOINT",
+    "R_CLONE_PROVIDER",
+    "S3_ENDPOINT",
+    "S3_ACCESS_KEY",
+    "S3_SECRET_KEY",
+    "S3_BUCKET_NAME",
+    "S3_SECURE",
 }
 
 

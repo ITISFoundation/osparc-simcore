@@ -7,6 +7,7 @@ from typing import Optional
 
 from aiohttp import web
 from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
+from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
@@ -44,6 +45,9 @@ def create(settings: Settings) -> web.Application:
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
+
+    if settings.LOG_LEVEL == "DEBUG":
+        setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, app_name, version=f"{version}")

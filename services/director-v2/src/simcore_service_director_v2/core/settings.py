@@ -5,7 +5,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -21,13 +21,21 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.projects_networks import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    constr,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
-from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
@@ -51,11 +59,9 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
 
-
-class S3Provider(str, Enum):
-    AWS = "AWS"
-    CEPH = "CEPH"
-    MINIO = "MINIO"
+PlacementConstraint = constr(
+    strip_whitespace=True, regex=r"^[a-zA-Z0-9. ]*(!=|==){1}[a-zA-Z0-9. ]*$"
+)
 
 
 class VFSCacheMode(str, Enum):
@@ -65,9 +71,7 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
-class RCloneSettings(S3Settings):
-    R_CLONE_S3_PROVIDER: S3Provider
-
+class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",
@@ -93,13 +97,6 @@ class RCloneSettings(S3Settings):
                 )
             )
         return v
-
-    @cached_property
-    def endpoint(self) -> str:
-        if not self.S3_ENDPOINT.startswith("http"):
-            scheme = "https" if self.S3_SECURE else "http"
-            return f"{scheme}://{self.S3_ENDPOINT}"
-        return self.S3_ENDPOINT
 
 
 class StorageSettings(BaseCustomSettings):
@@ -429,6 +426,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraint] = Field(
+        default_factory=list,
+        example='["node.labels.region==east", "one!=yes"]',
+    )
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

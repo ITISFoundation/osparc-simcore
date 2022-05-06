@@ -1,6 +1,8 @@
 import logging
 from typing import Optional
 
+from settings_library.r_clone import RCloneSettings
+
 from ..node_ports_common import config as node_config
 from ..node_ports_common import exceptions
 from ..node_ports_common.dbmanager import DBManager
@@ -18,6 +20,7 @@ async def ports(
     node_uuid: str,
     *,
     db_manager: Optional[DBManager] = None,
+    r_clone_settings: Optional[RCloneSettings] = None
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
@@ -31,6 +34,7 @@ async def ports(
         project_id=project_id,
         node_uuid=node_uuid,
         auto_update=True,
+        r_clone_settings=r_clone_settings,
     )
 
 

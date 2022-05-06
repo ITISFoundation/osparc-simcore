@@ -6,6 +6,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional, Type
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
 from servicelib.utils import logged_gather
+from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.dbmanager import DBManager
@@ -29,6 +30,7 @@ class Nodeports(BaseModel):
         [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
     ]
     auto_update: bool = False
+    r_clone_settings: Optional[RCloneSettings] = None
 
     class Config:
         arbitrary_types_allowed = True

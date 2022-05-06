@@ -5,6 +5,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional
 
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
+from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.storage_client import LinkType
 from yarl import URL
 
@@ -149,15 +150,18 @@ async def push_file_to_store(
     user_id: int,
     project_id: str,
     node_id: str,
+    r_clone_settings: Optional[RCloneSettings] = None,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
+
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=None,
         store_name=config.STORE,
         s3_object=s3_object,
         local_file_path=file,
+        r_clone_settings=r_clone_settings,
     )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)
     return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
