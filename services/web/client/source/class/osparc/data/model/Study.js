@@ -375,7 +375,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       if (node && "errors" in nodeUpdatedData) {
         const errors = nodeUpdatedData["errors"];
-        if (errors.length) {
+        if (errors && errors.length) {
           node.setErrors(errors);
         }
       }
