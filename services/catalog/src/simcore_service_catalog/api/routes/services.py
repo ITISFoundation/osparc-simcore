@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
