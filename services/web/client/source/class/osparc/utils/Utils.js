@@ -30,6 +30,46 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    localCache: {
+      setTheme: function(themeName) {
+        window.localStorage.setItem("themeName", themeName);
+      },
+      getTheme: function() {
+        return window.localStorage.getItem("themeName");
+      },
+
+      serviceToFavs: function(serviceKey) {
+        let serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          serviceFavs = JSON.parse(serviceFavs);
+        } else {
+          serviceFavs = {};
+        }
+        if (serviceFavs && (serviceKey in serviceFavs)) {
+          serviceFavs[serviceKey]["hits"]++;
+        } else {
+          serviceFavs[serviceKey] = {
+            hits: 1
+          };
+        }
+        window.localStorage.setItem("services", JSON.stringify(serviceFavs));
+      },
+
+      getFavServices: function() {
+        const serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          return JSON.parse(serviceFavs);
+        }
+        return [];
+      },
+
+      getSortedFavServices: function() {
+        const serviceFavs = this.getFavServices();
+        const favServices = Object.keys().sort((a, b) => serviceFavs[b]["hits"] - serviceFavs[a]["hits"]);
+        return favServices;
+      }
+    },
+
     checkIsOnScreen: function(elem) {
       const isInViewport = element => {
         if (element) {
