@@ -42,17 +42,33 @@ def _read_in_chunks(file_object, chunk_size=1024 * 8):
         yield data
 
 
+class _FastZipFileReader(zipfile.ZipFile):
+    """Internal used to gain speed while unzipping many files"""
+
+    def _RealGetContents(self):
+        """
+        NOTE: this is bypassed because:
+        - for zipfiles with logs of entries is very slow to compute
+        - the list was previously computed
+        - when using zipfile.open() and passing a ZipInfo object
+            it is not required
+        """
+
+
 def _zipfile_single_file_extract_worker(
-    zip_file_path: Path, file_in_archive: str, destination_folder: Path, is_dir: bool
+    zip_file_path: Path,
+    file_in_archive: zipfile.ZipInfo,
+    destination_folder: Path,
+    is_dir: bool,
 ) -> Path:
     """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
 
     Extracts in chunks to avoid memory pressure on zip/unzip
     Retuns a path to extracted file or directory
     """
-    with zipfile.ZipFile(zip_file_path) as zf:
+    with _FastZipFileReader(zip_file_path) as zf:
         # assemble destination and ensure it exits
-        destination_path = destination_folder / file_in_archive
+        destination_path = destination_folder / file_in_archive.filename
 
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
@@ -109,7 +125,7 @@ async def unarchive_dir(
                     pool,
                     _zipfile_single_file_extract_worker,
                     archive_to_extract,
-                    zip_entry.filename,
+                    zip_entry,
                     destination_folder,
                     zip_entry.is_dir(),
                 )
