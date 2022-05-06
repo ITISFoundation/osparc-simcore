@@ -105,10 +105,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    isContainer: function() {
-      return false;
-    },
-
     getUpstreamNodes: function(node, upstreamNodes = new Set()) {
       upstreamNodes.add(node.getNodeId());
       const links = node.getLinks();
@@ -823,18 +819,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
         });
       });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        selectedNodes.forEach(selectedNode => {
-          const selectedNodeId = selectedNode.getNodeId();
-          if (currentModel.isOutputNode(selectedNodeId)) {
-            currentModel.removeOutputNode(selectedNodeId);
-            nodesGroup.addOutputNode(selectedNodeId);
-            currentModel.addOutputNode(nodesGroup.getNodeId());
-          }
-        });
-      }
     },
 
     ungroupNode: function(currentModel, nodesGroup) {
@@ -858,26 +842,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
           brotherNode.addInputNodes(nodesGroup.getExposedNodeIDs());
-
-          if (brotherNode.isContainer()) {
-            const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
-            broInnerNodes.forEach(broInnerNode => {
-              if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
-                broInnerNode.removeInputNode(nodesGroup.getNodeId());
-                broInnerNode.addInputNodes(nodesGroup.getExposedNodeIDs());
-              }
-            });
-          }
         }
       });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
-          currentModel.removeOutputNode(nodesGroup.getNodeId());
-          currentModel.addOutputNodes(nodesGroup.getExposedNodeIDs());
-        }
-      }
 
       // Remove nodesGroup
       this.removeNode(nodesGroup.getNodeId());

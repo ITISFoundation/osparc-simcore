@@ -320,11 +320,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addNode: function(service, pos) {
-      let parent = null;
-      if (this._currentModel.isContainer()) {
-        parent = this._currentModel;
-      }
-      const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent);
+      const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, null);
       if (!node) {
         return null;
       }
@@ -623,11 +619,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const port1 = nodeUI1.getOutputPort();
       const port2 = nodeUI2.getInputPort();
       if (port1 && port2) {
-        if (this._currentModel.isContainer() && nodeUI2.getNodeId() === this._currentModel.getNodeId()) {
-          this._currentModel.addOutputNode(nodeUI1.getNodeId());
-        } else {
-          nodeUI2.getNode().addInputNode(node1Id);
-        }
+        nodeUI2.getNode().addInputNode(node1Id);
         const pointList = this.__getEdgePoints(nodeUI1, port1, nodeUI2, port2);
         const x1 = pointList[0] ? pointList[0][0] : 0;
         const y1 = pointList[0] ? pointList[0][1] : 0;
