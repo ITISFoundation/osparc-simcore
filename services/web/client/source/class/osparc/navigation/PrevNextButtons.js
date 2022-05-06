@@ -70,7 +70,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
     __createButtons: function() {
       const prvsBtn = this.__prvsBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Previous"),
+        toolTipText: qx.locale.Manager.tr("Previous"),
         icon: this.self().PREV_BUTTON,
         ...this.self().BUTTON_OPTIONS
       });
