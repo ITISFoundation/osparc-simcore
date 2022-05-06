@@ -90,7 +90,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "description-md":
           control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 20,
+            maxHeight: 15,
             alignY: "middle",
             allowGrowX: true
           });
