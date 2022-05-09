@@ -5,7 +5,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -148,7 +148,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
+    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
         "WARNING", description="log level of the dynamic sidecar"
     )
     SC_BOOT_MODE: BootModeEnum = Field(
@@ -276,6 +276,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
     @classmethod
     def strip_leading_slashes(cls, v) -> str:
         return v.lstrip("/")
+
+    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v) -> str:
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
+        if v not in valid_log_levels:
+            raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
+        return v
 
 
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
