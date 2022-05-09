@@ -39,7 +39,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
     PREV_BUTTON: "@FontAwesome5Solid/arrow-left/32",
     NEXT_BUTTON: "@FontAwesome5Solid/arrow-right/32",
     RUN_BUTTON: "@FontAwesome5Solid/play/32",
-    BUSY_BUTTON: "@FontAwesome5Solid/play/32",
+    BUSY_BUTTON: "@FontAwesome5Solid/circle-notch/32",
     SELECT_FILE_BUTTON: "@FontAwesome5Solid/arrow-right/32"
   },
 
@@ -117,7 +117,6 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       const isLast = currentIdx === nodesIds.length-1;
 
       this.__prvsBtn.setEnabled(!isFirst);
-      // this.__nextBtn.setEnabled();
 
       const currentNode = this.getStudy().getWorkbench().getNode(nodesIds[currentIdx]);
       this.__nextBtn.show();
