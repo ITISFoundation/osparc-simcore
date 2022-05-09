@@ -143,9 +143,6 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (node.isContainer()) {
-        console.error("Only non-group nodes are supported");
-      }
       this.base(arguments, node);
     },
 
