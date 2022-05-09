@@ -5,7 +5,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Literal, Optional, Set
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -148,7 +148,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
+    DYNAMIC_SIDECAR_LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
         "WARNING", description="log level of the dynamic sidecar"
     )
     SC_BOOT_MODE: BootModeEnum = Field(
