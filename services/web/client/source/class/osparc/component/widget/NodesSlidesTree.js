@@ -193,9 +193,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           nodeInTree.position = pos;
           nodeInTree.skipNode = false;
         }
-        if (node.isContainer()) {
-          nodeInTree.children = this.__convertToModel(node.getInnerNodes());
-        }
         children.push(nodeInTree);
       }
       return children;
