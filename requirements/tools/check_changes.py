@@ -102,13 +102,25 @@ def classify_reqs_path(reqs_path: str) -> ReqsClassification:
     return ReqsClassification(module_type, module_name, reqs_type)
 
 
-def format_classification(c: ReqsClassification):
-    color = "blue"
+def get_symbol(c: ReqsClassification):
+    symbol = "🧪"
     if c.module_type == "service" and c.reqs_type not in ("test", "tools"):
-        color = "red"
+        symbol = "⬆️"
     elif c.reqs_type == "tools":
-        color = "green"
-    return f'<span style="color:{color}">{c.module_name}</span>'
+        symbol = "🔧"
+    return f"{symbol}"
+
+
+def format_reqs_paths(req_paths):
+    used_packages = []
+    symbols = defaultdict(list)
+    for rp in req_paths:
+        c = classify_reqs_path(rp)
+        symbols[c.module_name].append(get_symbol(c))
+
+    for module_name in sorted(symbols.keys()):
+        used_packages.append(f"{module_name}{''.join(symbols[module_name])}")
+    return used_packages
 
 
 def main_changes_stats() -> None:
@@ -136,11 +148,9 @@ def main_changes_stats() -> None:
             from_versions = set(str(v) for v in before[name])
             to_versions = set(str(v) for v in after[name])
 
-            used_in_modules = []
+            used_packages = []
             if req_paths := lib2reqs.get(name):
-                for rp in req_paths:
-                    c = classify_reqs_path(rp)
-                    used_in_modules.append(format_classification(c))
+                used_packages = format_reqs_paths(req_paths)
 
             print(
                 "|",
@@ -159,7 +169,7 @@ def main_changes_stats() -> None:
                 "|",
                 counts[name],
                 "|",
-                ",".join(used_in_modules),
+                "</br>".join(sorted(used_packages)),
                 "|",
             )
 
