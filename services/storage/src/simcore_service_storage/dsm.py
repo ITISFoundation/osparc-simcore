@@ -473,7 +473,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
                     return to_meta_data_extended(row)
         except botocore.exceptions.ClientError:
-            logger.debug("Error happened while trying to access %s", file_uuid)
+            logger.warning("Error happened while trying to access %s", file_uuid)
             if reraise_exceptions:
                 raise
 
