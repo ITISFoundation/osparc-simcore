@@ -70,9 +70,9 @@ def fire_and_forget_task(
         try:
             fut.result()
         except asyncio.CancelledError:
-            logger.exception("Task was cancelled")
+            logger.exception(f"{fut} spawned as fire&forget was cancelled")
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error occured while running task!")
+            logger.exception("Error occurred while running task!")
 
     future.add_done_callback(log_exception_callback)
     return future
