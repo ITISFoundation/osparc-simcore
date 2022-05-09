@@ -5,7 +5,7 @@
 
 import urllib.parse
 from random import choice, randint
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -28,28 +28,8 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
-    def creator():
-        return {faker.get_label(): faker.text()}
-
-    return creator
-
-
-@pytest.fixture
 def service_key(faker: Faker) -> str:
     return f"simcore/services/{choice(['comp', 'dynamic','frontend'])}/jupyter-math"
-
-
-@pytest.fixture
-def service_version() -> str:
-    return f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
-
-
-@pytest.fixture
-def mock_service_labels(faker: Faker) -> dict[str, Any]:
-    return {
-        "simcore.service.settings": '[ {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
-    }
 
 
 @pytest.fixture
