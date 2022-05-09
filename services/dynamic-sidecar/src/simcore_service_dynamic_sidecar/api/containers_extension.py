@@ -197,7 +197,7 @@ async def pull_output_ports(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_404_NOT_FOUND: {
             "description": "Could not find node_uuid in the database"
         }
     },
