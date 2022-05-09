@@ -26,6 +26,7 @@ def printing_table(columns: List[str]):
 
 BEFORE_PATTERN = re.compile(r"^-([\w-]+)==([0-9\.post]+)")
 AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.post]+)")
+DIFF_PATTERN = re.compile(r"diff --git a\/([\w_\.\-\/]+\.txt) b\/([\w_\.\-\/]+\.txt)")
 
 
 def dump_changes(filename: Path):
@@ -57,16 +58,57 @@ def parse_changes(filename: Path):
     changes = []
     before = defaultdict(list)
     after = defaultdict(list)
+    lib2reqs = defaultdict(list)
+    file_a = None
     with filename.open() as fh:
         for line in fh:
-            if match := BEFORE_PATTERN.match(line):
+            if match := DIFF_PATTERN.match(line):
+                file_a, file_b = match.groups()
+                assert (
+                    file_a == file_b
+                ), f"Should compare same files but {file_a}!={file_b}"
+            elif match := BEFORE_PATTERN.match(line):
                 name, version = match.groups()
                 before[name].append(Version(version))
                 changes.append(name)
+                #
+                if file_a:
+                    lib2reqs[name].append(file_a)
             elif match := AFTER_PATTERN.match(line):
                 name, version = match.groups()
                 after[name].append(Version(version))
-    return before, after, Counter(changes)
+    return before, after, Counter(changes), lib2reqs
+
+
+class ReqsClassification(NamedTuple):
+    module_type: str  # Literal["packages", "api", "services", "tests"]
+    module_name: str
+    reqs_type: str  # Literal["base", "test", "tools"]
+
+
+def classify_reqs_path(reqs_path: str) -> ReqsClassification:
+
+    if (
+        any(k in reqs_path for k in ("_test.txt", "requirements.txt"))
+        or "test" in reqs_path
+    ):
+        reqs_type = "test"
+    else:
+        reqs_type = reqs_path.split("/")[-1].replace(".txt", "").strip("_")
+
+    parts = reqs_path.split("/")
+    module_type, module_name = parts[:2]
+
+    return ReqsClassification(module_type, module_name, reqs_type)
+
+
+def format_classification(c: ReqsClassification):
+    color = "blue"
+    if c.module_type == "service" and c.reqs_type not in ("test", "tools"):
+        color = "red"
+    elif c.reqs_type == "tools":
+        color = "green"
+    return f'<span style="color:{color}">{c.module_name}</span>'
 
 
 def main_changes_stats() -> None:
@@ -75,7 +117,7 @@ def main_changes_stats() -> None:
     if not filepath.exists():
         dump_changes(filepath)
 
-    before, after, counts = parse_changes(filepath)
+    before, after, counts, lib2reqs = parse_changes(filepath)
 
     # format
     print("## Changes to libraries (only updated libraries are included)")
@@ -83,7 +125,7 @@ def main_changes_stats() -> None:
     print("- #packages after :", len(after))
     print()
 
-    COLUMNS = ["#", "name", "before", "after", "upgrade", " count"]
+    COLUMNS = ["#", "name", "before", "after", "upgrade", "count", "packages"]
 
     with printing_table(COLUMNS):
 
@@ -93,6 +135,13 @@ def main_changes_stats() -> None:
             # TODO: if major, get link to release notes
             from_versions = set(str(v) for v in before[name])
             to_versions = set(str(v) for v in after[name])
+
+            used_in_modules = []
+            if req_paths := lib2reqs.get(name):
+                for rp in req_paths:
+                    c = classify_reqs_path(rp)
+                    used_in_modules.append(format_classification(c))
+
             print(
                 "|",
                 f"{i:3d}",
@@ -109,6 +158,8 @@ def main_changes_stats() -> None:
                 else "",
                 "|",
                 counts[name],
+                "|",
+                ",".join(used_in_modules),
                 "|",
             )
 
