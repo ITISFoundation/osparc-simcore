@@ -11,11 +11,12 @@ def _get_unit_name(port: BaseServiceIOModel) -> str:
     unit = port.unit
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
+        # NOTE: content schema might not be resolved (i.e. has $ref!! )
         unit = port.content_schema.get("x_unit", unit)
         if unit:
             # WARNING: has a special format for prefix. tmp direct replace here
             unit = unit.replace("-", "")
-        elif port.content_schema["type"] in ("object", "array"):
+        elif port.content_schema.get("type") in ("object", "array", None):
             # these objects might have unit in its fields
             raise NotImplementedError
     return unit
@@ -25,7 +26,7 @@ def _get_type_name(port: BaseServiceIOModel) -> str:
     _type = port.property_type
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
-        _type = port.content_schema["type"]
+        _type = port.content_schema.get("type")
     return _type
 
 
