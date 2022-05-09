@@ -53,7 +53,7 @@ jobs:
       - name: setup docker buildx
         if: github.event_name == 'push'
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -144,7 +144,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -194,7 +194,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -244,7 +244,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -281,7 +281,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -331,7 +331,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -387,7 +387,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -444,7 +444,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -494,7 +494,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -550,7 +550,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -602,7 +602,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -652,7 +652,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -704,7 +704,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -742,7 +742,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -779,7 +779,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -830,7 +830,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -880,7 +880,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -930,7 +930,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -980,7 +980,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1030,7 +1030,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1082,7 +1082,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1139,7 +1139,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1205,7 +1205,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1271,7 +1271,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1337,7 +1337,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1406,7 +1406,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1474,7 +1474,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1527,7 +1527,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1581,7 +1581,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1654,7 +1654,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
@@ -1772,7 +1772,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker
