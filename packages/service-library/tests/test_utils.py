@@ -107,7 +107,7 @@ async def future_to_test(
         raise asyncio.CancelledError("manual cancellation")
 
     if future_type == Awaitable:
-        return asyncio.ensure_future(_self_cancelling())
+        return asyncio.create_task(_self_cancelling())
     if future_type == Coroutine:
         return _self_cancelling()
 
