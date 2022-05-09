@@ -78,7 +78,7 @@ def main_changes_stats() -> None:
     before, after, counts = parse_changes(filepath)
 
     # format
-    print("## 1/2 Changes to libraries (only updated libraries are included)")
+    print("## Changes to libraries (only updated libraries are included)")
     print("- #packages before:", len(before))
     print("- #packages after :", len(after))
     print()
@@ -164,7 +164,7 @@ def repo_wide_changes(exclude: Optional[Set] = None) -> None:
     reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format
-    print("## 2/2 Repo wide overview of libraries")
+    print("## Repositroy-wide overview of libraries")
     print("- #reqs files parsed:", len(reqs))
     print()
 
