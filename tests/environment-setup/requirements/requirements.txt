@@ -49,9 +49,9 @@ pydantic==1.9.0
     #   -c requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-pyparsing==3.0.7
+pyparsing==3.0.8
     # via packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/requirements.in
     #   pytest-aiohttp
@@ -80,7 +80,7 @@ termcolor==1.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via pytest
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via pydantic
 yarl==1.7.2
     # via aiohttp
