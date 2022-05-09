@@ -10,7 +10,6 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from faker import Faker
 from fastapi import FastAPI
 from models_library.services_resources import ResourceValue, ServiceResources
 from pydantic import ByteSize
@@ -25,11 +24,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def service_key(faker: Faker) -> str:
-    return f"simcore/services/{choice(['comp', 'dynamic','frontend'])}/jupyter-math"
 
 
 @pytest.fixture
