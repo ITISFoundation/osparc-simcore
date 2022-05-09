@@ -511,14 +511,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "description": "Could not find node_uuid in the database"
           }
         }
       }

@@ -20,6 +20,7 @@ from async_asgi_testclient import TestClient
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
@@ -177,6 +178,17 @@ def mock_nodeports(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
         return_value=42,
+    )
+
+
+@pytest.fixture
+def mock_node_missing(mocker: MockerFixture) -> None:
+    async def _mocked(*args, **kwargs) -> None:
+        raise NodeNotFound("mock_node_id")
+
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        side_effect=_mocked,
     )
 
 
@@ -600,6 +612,18 @@ async def test_container_push_output_ports(
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+
+
+async def test_container_push_output_ports_missing_node(
+    test_client: TestClient, mock_port_keys: List[str], mock_node_missing: None
+) -> None:
+    response = await test_client.post(
+        f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
+    error_detail = response.json()["detail"]
+    assert error_detail["error"] == "node_not_found"
+    assert error_detail["message"] == "the node id mock_node_id was not found"
 
 
 def _get_entrypoint_container_name(

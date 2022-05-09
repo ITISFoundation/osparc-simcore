@@ -11,6 +11,7 @@ from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.data_items_utils import is_file_type
+from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from ..core.dependencies import (
     get_application,
@@ -195,6 +196,11 @@ async def pull_output_ports(
     summary="Push output ports data",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Could not find node_uuid in the database"
+        }
+    },
 )
 async def push_output_ports(
     port_keys: Optional[List[str]] = None,
@@ -204,9 +210,14 @@ async def push_output_ports(
     port_keys = [] if port_keys is None else port_keys
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
-    await nodeports.upload_outputs(
-        mounted_volumes.disk_outputs_path, port_keys=port_keys
-    )
+    try:
+        await nodeports.upload_outputs(
+            mounted_volumes.disk_outputs_path, port_keys=port_keys
+        )
+    except NodeNotFound as err:
+        detail = dict(error="node_not_found", message=f"{err}")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=detail) from err
+
     await send_message(rabbitmq, "Finished pulling outputs")
 
 
