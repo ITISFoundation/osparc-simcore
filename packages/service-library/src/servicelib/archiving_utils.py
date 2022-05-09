@@ -43,15 +43,25 @@ def _read_in_chunks(file_object, chunk_size=1024 * 8):
 
 
 class _FastZipFileReader(zipfile.ZipFile):
-    """Internal used to gain speed while unzipping many files"""
+    """
+    Used to gain a speed boost of several orders of magnitude.
+
+    When opening archives the `_RealGetContents` is called 
+    generating the list of files contained in the zip archive.
+    This is done by the constructor.
+
+    If the archive contains a very large amount, the file scan operation
+    can take up to seconds. This was observed with 10000+ files.
+
+    When opening the zip file in the background worker the entire file 
+    list generation can be skipped because the `zipfile.ZipFile.open` 
+    is used passing `ZipInfo` object as file to decompress. 
+    Using a `ZipInfo` object does nto require to have the list of 
+    files contained in the archive.
+    """
 
     def _RealGetContents(self):
-        """
-        NOTE: this is bypassed because:
-        - for zipfiles with lots of entries is very slow to compute
-        - the list was previously computed
-        - when using zipfile.open() and passing a ZipInfo object it is not required
-        """
+        """method disabled"""
 
 
 def _zipfile_single_file_extract_worker(
