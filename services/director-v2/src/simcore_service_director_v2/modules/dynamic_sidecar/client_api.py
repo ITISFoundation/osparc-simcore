@@ -17,6 +17,7 @@ from ...utils.logging_utils import log_decorator
 from .errors import (
     DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
+    NodeportsDidNotFindNodeError,
 )
 
 # PC -> SAN improvements to discuss
@@ -246,6 +247,10 @@ class DynamicSidecarClient:
         response = await self._client.post(
             url, json=port_keys, timeout=self._save_restore_timeout
         )
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            # check if the error of the dict is as expected an raise to skip!
+            if "node_not_found" in response.text:
+                raise NodeportsDidNotFindNodeError()
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(response, "output ports push")
 

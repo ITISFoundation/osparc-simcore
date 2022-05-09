@@ -27,6 +27,7 @@ from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
+    are_all_services_present,
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
@@ -49,6 +50,7 @@ from ..errors import (
     DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
     GenericDockerError,
+    NodeportsDidNotFindNodeError,
 )
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
@@ -472,15 +474,23 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             logger.warning(
                 "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
                 scheduler_data.service_name,
-                str(e),
+                f"{e}",
             )
-
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+        # only try to save the status if :
+        # - the dynamic-sidecar has finished booting correctly
+        # - it is requested to save the state
+        if (
+            scheduler_data.dynamic_sidecar.service_removal_state.can_save
+            and await are_all_services_present(
+                node_uuid=scheduler_data.node_uuid,
+                dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+            )
+        ):
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
             dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
@@ -501,7 +511,16 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                             dynamic_sidecar_endpoint,
                         )
                     )
-                await logged_gather(*tasks)
+
+                try:
+                    await logged_gather(*tasks)
+                except NodeportsDidNotFindNodeError:
+                    logger.warning(
+                        "Could not node %s in the database. Did not upload data to S3, "
+                        "most likely due to service being removed from the study.",
+                        f"{scheduler_data.node_uuid}",
+                    )
+
                 logger.info("Ports data pushed by dynamic-sidecar")
             # NOTE: ANE: need to use more specific exception here
             except Exception as e:  # pylint: disable=broad-except
@@ -511,7 +530,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         "state and upload outputs %s\n%s"
                     ),
                     scheduler_data.service_name,
-                    str(e),
+                    f"{e}",
                 )
                 # ensure dynamic-sidecar does not get removed
                 # user data can be manually saved and manual

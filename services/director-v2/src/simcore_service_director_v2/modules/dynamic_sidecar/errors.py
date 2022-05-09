@@ -52,3 +52,10 @@ class DynamicSidecarUnexpectedResponseStatus(DirectorException):
         )
         super().__init__(message)
         self.response = response
+
+
+class NodeportsDidNotFindNodeError(DirectorException):
+    def __init__(self):
+        super().__init__(
+            f"Nodeports did not find node_uuid in database when uploading the data"
+        )
