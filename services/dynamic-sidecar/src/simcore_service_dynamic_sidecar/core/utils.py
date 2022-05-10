@@ -4,11 +4,10 @@ import json
 import logging
 import tempfile
 import traceback
-from collections import deque, namedtuple
-from contextlib import asynccontextmanager, suppress
+from collections import namedtuple
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Deque, List, Optional
-from uuid import UUID
+from typing import AsyncGenerator, List, Optional
 
 import aiofiles
 import httpx
