@@ -235,6 +235,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                             dex.fmd.file_uuid,
                             dex.fmd.bucket_name,
                             dex.fmd.object_name,
+                            reraise_exceptions=False,
                         )
                     if dex:
                         data.append(dex)
@@ -411,6 +412,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                         file_metadata.fmd.file_uuid,
                         file_metadata.fmd.bucket_name,
                         file_metadata.fmd.object_name,
+                        reraise_exceptions=False,
                     )
                     return file_metadata
                 # FIXME: returns None in both cases: file does not exist or use has no access
@@ -442,7 +444,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         file_uuid: str,
         bucket_name: str,
         object_name: str,
-        reraise_exceptions: bool = False,
+        *,
+        reraise_exceptions: bool,
     ) -> Optional[FileMetaDataEx]:
         try:
             async with self._create_aiobotocore_client_context() as aioboto_client:
