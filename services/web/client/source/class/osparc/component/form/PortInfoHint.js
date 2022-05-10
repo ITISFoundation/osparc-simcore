@@ -35,7 +35,8 @@ qx.Class.define("osparc.component.form.PortInfoHint", {
     __applyPortErrorMsg: function(errorMsg) {
       let text = this.getHintText();
       if (errorMsg) {
-        text += `<p style="color:red;">${errorMsg}</p>`;
+        const color = qx.theme.manager.Color.getInstance().resolve("failed-red");
+        text += `<br><br><font color="${color}">${errorMsg}</font>`;
       }
       this._hint.setText(text);
       this.set({
