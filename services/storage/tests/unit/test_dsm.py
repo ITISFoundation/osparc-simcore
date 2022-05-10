@@ -180,21 +180,21 @@ async def test_update_metadata_from_storage(
 
     assert (
         await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
-            "some_fake_uuid", fmd.bucket_name, fmd.object_name
+            "some_fake_uuid", fmd.bucket_name, fmd.object_name, reraise_exceptions=False
         )
         is None
     )
 
     assert (
         await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
-            fmd.file_uuid, "some_fake_bucket", fmd.object_name
+            fmd.file_uuid, "some_fake_bucket", fmd.object_name, reraise_exceptions=False
         )
         is None
     )
 
     assert (
         await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
-            fmd.file_uuid, fmd.bucket_name, "some_fake_object"
+            fmd.file_uuid, fmd.bucket_name, "some_fake_object", reraise_exceptions=False
         )
         is None
     )
@@ -202,7 +202,7 @@ async def test_update_metadata_from_storage(
     file_metadata: Optional[
         FileMetaDataEx
     ] = await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
-        fmd.file_uuid, fmd.bucket_name, fmd.object_name
+        fmd.file_uuid, fmd.bucket_name, fmd.object_name, reraise_exceptions=False
     )
     assert file_metadata is not None
     assert file_metadata.fmd.file_size == Path(tmp_file).stat().st_size
