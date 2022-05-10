@@ -515,7 +515,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 try:
                     await logged_gather(*tasks)
                 except NodeportsDidNotFindNodeError as err:
-                    logger.warning(f"{err}")
+                    logger.warning("%s", f"{err}")
 
                 logger.info("Ports data pushed by dynamic-sidecar")
             # NOTE: ANE: need to use more specific exception here
