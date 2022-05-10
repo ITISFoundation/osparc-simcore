@@ -384,4 +384,4 @@ class ServicesRepository(BaseRepository):
             merged_specifications.update(specs)
         merged_specifications.update(multi_group_service_specs[GroupType.PRIMARY])
 
-        return ServiceSpecifications(schedule_specs=merged_specifications)
+        return ServiceSpecifications.parse_obj(merged_specifications)
