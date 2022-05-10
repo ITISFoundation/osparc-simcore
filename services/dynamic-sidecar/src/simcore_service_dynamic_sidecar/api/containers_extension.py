@@ -4,6 +4,7 @@
 import logging
 from collections import deque
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Set
+from uuid import UUID
 
 from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
@@ -25,6 +26,7 @@ from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import write_file_and_run_command
+from ..core.utils import extract_uuid_from
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.ports import PortTypeName
 from ..modules import directory_watcher, nodeports
@@ -215,7 +217,12 @@ async def push_output_ports(
             mounted_volumes.disk_outputs_path, port_keys=port_keys
         )
     except NodeNotFound as err:
-        detail = dict(error="node_not_found", message=f"{err}")
+        node_uuid: UUID = extract_uuid_from(f"{err}")
+        detail = dict(
+            code="dynamic_sidecar.nodeports.node_not_found",
+            message=f"{err}",
+            node_uuid=f"{node_uuid}",
+        )
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=detail) from err
 
     await send_message(rabbitmq, "Finished pulling outputs")

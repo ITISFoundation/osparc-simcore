@@ -182,9 +182,14 @@ def mock_nodeports(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_node_missing(mocker: MockerFixture) -> None:
+def missing_node_uuid(faker: faker.Faker) -> str:
+    return faker.uuid4()
+
+
+@pytest.fixture
+def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     async def _mocked(*args, **kwargs) -> None:
-        raise NodeNotFound("mock_node_id")
+        raise NodeNotFound(missing_node_uuid)
 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
@@ -615,15 +620,19 @@ async def test_container_push_output_ports(
 
 
 async def test_container_push_output_ports_missing_node(
-    test_client: TestClient, mock_port_keys: List[str], mock_node_missing: None
+    test_client: TestClient,
+    mock_port_keys: List[str],
+    missing_node_uuid: str,
+    mock_node_missing: None,
 ) -> None:
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     error_detail = response.json()["detail"]
-    assert error_detail["error"] == "node_not_found"
-    assert error_detail["message"] == "the node id mock_node_id was not found"
+    assert error_detail["message"] == f"the node id {missing_node_uuid} was not found"
+    assert error_detail["code"] == "dynamic_sidecar.nodeports.node_not_found"
+    assert error_detail["node_uuid"] == missing_node_uuid
 
 
 def _get_entrypoint_container_name(

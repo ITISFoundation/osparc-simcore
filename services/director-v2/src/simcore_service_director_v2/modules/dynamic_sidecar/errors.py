@@ -3,6 +3,7 @@ from typing import Optional
 from aiodocker.exceptions import DockerError
 from httpx import Response
 from models_library.projects_nodes import NodeID
+from pydantic.errors import PydanticErrorMixin
 
 from ...core.errors import DirectorException
 
@@ -54,8 +55,9 @@ class DynamicSidecarUnexpectedResponseStatus(DirectorException):
         self.response = response
 
 
-class NodeportsDidNotFindNodeError(DirectorException):
-    def __init__(self):
-        super().__init__(
-            "Nodeports did not find node_uuid in database when uploading the data"
-        )
+class NodeportsDidNotFindNodeError(PydanticErrorMixin, DirectorException):
+    code = "dynamic_scheduler.output_ports_pulling.node_not_found"
+    msg_template = (
+        "Could not find node '{node_uuid}' in the database. Did not upload data to S3, "
+        "most likely due to service being removed from the study."
+    )

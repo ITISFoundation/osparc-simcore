@@ -1,8 +1,16 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=expression-not-assigned
+
+from uuid import UUID
+
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from faker import Faker
 from settings_library.docker_registry import RegistrySettings
-from simcore_service_dynamic_sidecar.core.utils import _is_registry_reachable
+from simcore_service_dynamic_sidecar.core.utils import (
+    _is_registry_reachable,
+    extract_uuid_from,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -26,5 +34,22 @@ def registry_with_auth(
     return RegistrySettings()
 
 
+@pytest.fixture
+def uuid(faker: Faker) -> str:
+    return faker.uuid4()
+
+
 async def test_is_registry_reachable(registry_with_auth: RegistrySettings) -> None:
     await _is_registry_reachable(registry_with_auth)
+
+
+def test_sextract_uuid_from(uuid: str) -> None:
+    assert extract_uuid_from(f"text with single {uuid} entry") == UUID(uuid)
+
+
+def test_sextract_uuid_from_raises_errors(uuid: str) -> None:
+    with pytest.raises(ValueError):
+        extract_uuid_from(f"text with multiple {uuid} {uuid} entries") == UUID(uuid)
+
+    with pytest.raises(ValueError):
+        extract_uuid_from("no uuid in this text") == UUID(uuid)
