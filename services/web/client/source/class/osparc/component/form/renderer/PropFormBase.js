@@ -244,7 +244,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _createInfoWHint: function(hint) {
-      const infoWHint = new osparc.ui.hint.InfoHint(hint);
+      const infoWHint = new osparc.component.form.PortInfoHint(hint);
       return infoWHint;
     },
 
@@ -326,6 +326,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getLabelFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().GRID_POS.LABEL);
+    },
+
+    _getInfoFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this.self().GRID_POS.INFO);
     },
 
     _getCtrlFieldChild: function(portId) {

@@ -731,6 +731,7 @@ qx.Class.define("osparc.data.model.Node", {
             } else {
               errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
             }
+            this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
           }
           this.fireDataEvent("showInLogger", errorMsgData);
         }
