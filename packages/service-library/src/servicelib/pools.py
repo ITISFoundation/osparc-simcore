@@ -1,7 +1,7 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
@@ -21,7 +21,7 @@ def get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
 
 
 @contextmanager
-def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
+def non_blocking_process_pool_executor(**kwargs) -> Iterator[ProcessPoolExecutor]:
     """
     Avoids default context manger behavior which calls
     shutdown with wait=True an blocks.
