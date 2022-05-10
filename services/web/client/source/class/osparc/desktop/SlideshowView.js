@@ -87,6 +87,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);
     }, this);
+    prevNextButtons.addListener("runPressed", e => {
+      const nodeId = e.getData();
+      this.fireDataEvent("startPartialPipeline", [nodeId]);
+    }, this);
     const prevButton = this.__prevButton = prevNextButtons.getPreviousButton().set({
       alignX: "right",
       alignY: "middle"
@@ -95,8 +99,13 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       alignX: "left",
       alignY: "middle"
     });
+    const runButton = this.__runButton = prevNextButtons.getRunButton().set({
+      alignX: "left",
+      alignY: "middle"
+    });
     mainView.add(prevButton);
     mainView.add(nextButton);
+    mainView.add(runButton);
   },
 
   events: {
@@ -132,6 +141,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __prevNextButtons: null,
     __prevButton: null,
     __nextButton: null,
+    __runButton: null,
     __nodeView: null,
     __currentNodeId: null,
 
@@ -297,6 +307,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__slideshowToolbar,
         this.__prevButton,
         this.__nextButton,
+        this.__runButton,
         this.__nodeView.getHeaderLayout(),
         this.__nodeView.getLoggerPanel()
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));

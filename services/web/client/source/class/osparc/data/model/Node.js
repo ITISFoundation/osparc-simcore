@@ -231,10 +231,6 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("/parameter/"));
     },
 
-    isContainer: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("nodes-group"));
-    },
-
     isIterator: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
     },
@@ -283,10 +279,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     isParameter: function() {
       return osparc.data.model.Node.isParameter(this.getMetaData());
-    },
-
-    isContainer: function() {
-      return osparc.data.model.Node.isContainer(this.getMetaData());
     },
 
     isIterator: function() {
@@ -388,12 +380,7 @@ qx.Class.define("osparc.data.model.Node", {
       let outputNodes = [];
       for (let i = 0; i < this.__exposedNodes.length; i++) {
         const outputNode = workbench.getNode(this.__exposedNodes[i]);
-        if (outputNode.isContainer()) {
-          let myOutputNodes = outputNode.getExposedInnerNodes();
-          outputNodes = outputNodes.concat(myOutputNodes);
-        } else {
-          outputNodes.push(outputNode);
-        }
+        outputNodes.push(outputNode);
       }
       const uniqueNodes = [...new Set(outputNodes)];
       return uniqueNodes;
@@ -972,22 +959,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     callRetrieveInputs: function(portKey) {
-      if (this.isContainer()) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        for (let i = 0; i < innerNodes.length; i++) {
-          const data = {
-            node: innerNodes[i],
-            portKey: null
-          };
-          innerNodes[i].fireDataEvent("retrieveInputs", data);
-        }
-      } else {
-        const data = {
-          node: this,
-          portKey
-        };
-        this.fireDataEvent("retrieveInputs", data);
-      }
+      const data = {
+        node: this,
+        portKey
+      };
+      this.fireDataEvent("retrieveInputs", data);
     },
 
     retrieveInputs: function(portKey = null) {
@@ -1343,9 +1319,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.state = this.getStatus().serialize();
       }
 
-      if (this.isContainer()) {
-        nodeEntry.outputNodes = this.getExposedNodeIDs();
-      } else if (this.isFilePicker()) {
+      if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
