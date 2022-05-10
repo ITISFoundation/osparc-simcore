@@ -8,7 +8,6 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
-from pprint import pformat
 from typing import Any, AsyncIterable, Dict, Iterable
 
 import dotenv
@@ -121,7 +120,7 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
 def client(mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-    print("Application settings\n", pformat(settings))
+    print("Application settings\n", settings.json(indent=2))
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
