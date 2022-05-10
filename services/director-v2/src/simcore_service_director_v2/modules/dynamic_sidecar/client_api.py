@@ -248,8 +248,6 @@ class DynamicSidecarClient:
             url, json=port_keys, timeout=self._save_restore_timeout
         )
         if response.status_code == status.HTTP_404_NOT_FOUND:
-            # raise only if the exception is of type node_not_found
-            # using codes in the dy-sidecar this should help
             json_error = response.json()
             if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
                 raise NodeportsDidNotFindNodeError(node_uuid=json_error["node_uuid"])
