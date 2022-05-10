@@ -22,6 +22,7 @@ from tenacity.wait import wait_exponential, wait_fixed
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
+from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from .._namepsace import get_compose_namespace
@@ -147,6 +148,14 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
+        )
+
+        catalog_client = CatalogClient.instance(app)
+        user_service_specifications = await catalog_client.get_service_specifications(
+            scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+        )
+        dynamic_sidecar_create_service_params.update(
+            user_service_specifications.get("schedule_specs", {})
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
