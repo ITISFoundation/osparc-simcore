@@ -3,15 +3,23 @@ from collections import defaultdict
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import sqlalchemy as sa
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
+from simcore_service_catalog.models.domain.service_specifications import (
+    ServiceSpecificationsAtDB,
+)
+from simcore_service_catalog.models.schemas.services_specifications import (
+    ServiceSpecifications,
+)
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data
+from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -328,3 +336,18 @@ class ServicesRepository(BaseRepository):
                         & (services_access_rights.c.product_name == rights.product_name)
                     )
                 )
+
+    async def get_service_specifications(
+        self, key: ServiceKey, version: ServiceVersion, gids: list[GroupID]
+    ) -> ServiceSpecifications:
+        multi_group_service_specs = []
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(
+                sa.select([services_specifications]).where(
+                    (services_specifications.c.service_key == key)
+                    & (services_specifications.c.service_version == version)
+                    & (services_specifications.c.gid.in_(gids))
+                )
+            ):
+                multi_group_service_specs.append(ServiceSpecificationsAtDB(**row))
+        return ServiceSpecifications(schedule_specs={})

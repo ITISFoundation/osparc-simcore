@@ -5,6 +5,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from ...db.repositories.groups import GroupsRepository
+from ...db.repositories.services import ServicesRepository
 from ...models.schemas.constants import RESPONSE_MODEL_POLICY
 from ...models.schemas.services_specifications import ServiceSpecificationsGet
 from ..dependencies.database import get_repository
@@ -27,6 +28,7 @@ async def get_service_specifications(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
 ):
     logger.debug("getting specifications for '%s:%s'", service_key, service_version)
     # Access layer
@@ -38,4 +40,7 @@ async def get_service_specifications(
             detail="You have unsufficient rights to access the services",
         )
 
-    return ServiceSpecificationsGet(schedule_specs={})
+    service_specs = await services_repo.get_service_specifications(
+        service_key, service_version, [group.gid for group in user_groups]
+    )
+    return service_specs
