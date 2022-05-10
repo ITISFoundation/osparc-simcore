@@ -1,8 +1,8 @@
+from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from fastapi import status
 
 from .errors import BaseDynamicSidecarError
 

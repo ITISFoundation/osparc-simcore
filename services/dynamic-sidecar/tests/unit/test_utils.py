@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=expression-not-assigned
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -25,3 +26,7 @@ def registry_with_auth(
     monkeypatch.setenv("REGISTRY_PW", "testpassword")
     monkeypatch.setenv("REGISTRY_SSL", "false")
     return RegistrySettings()
+
+
+async def test_is_registry_reachable(registry_with_auth: RegistrySettings) -> None:
+    await _is_registry_reachable(registry_with_auth)
