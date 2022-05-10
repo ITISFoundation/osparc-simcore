@@ -375,7 +375,7 @@ def get_service_last_names(image_key: str) -> str:
     return service_last_name
 
 
-COMPOSE_SPEC_ENTRY_NAME = "ComposeSpec".lower()
+CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
 RESOURCES_ENTRY_NAME = "Resources".lower()
 
 
@@ -440,12 +440,13 @@ async def get_service_extras(
                 if not invalid_with_msg and _validate_kind(entry, "MPI"):
                     result["node_requirements"]["MPI"] = 1
 
-            elif entry_name == COMPOSE_SPEC_ENTRY_NAME:
+            elif entry_name == CONTAINER_SPEC_ENTRY_NAME:
                 # NOTE: some minor validation
+                # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
                 if (
                     entry_value
                     and isinstance(entry_value, dict)
-                    and "command" in entry_value
+                    and "Command" in entry_value
                 ):
                     result["container_spec"] = entry_value
                 else:
