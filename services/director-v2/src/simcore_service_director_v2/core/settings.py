@@ -121,6 +121,21 @@ class StorageSettings(BaseCustomSettings):
         return f"{self.STORAGE_HOST}:{self.STORAGE_PORT}"
 
 
+class CatalogSettings(BaseCustomSettings):
+    CATALOG_HOST: str = "catalog"
+    CATALOG_PORT: int = 8000
+    CATALOG_VTAG: str = "v0"
+
+    @cached_property
+    def endpoint(self) -> str:
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.CATALOG_HOST,
+            port=f"{self.CATALOG_PORT}",
+            path=f"/{self.CATALOG_VTAG}",
+        )
+
+
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
@@ -419,6 +434,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # App modules settings ---------------------
     DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
+
+    DIRECTOR_V2_CATALOG: CatalogSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
