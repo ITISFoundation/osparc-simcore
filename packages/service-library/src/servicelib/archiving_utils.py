@@ -42,17 +42,42 @@ def _read_in_chunks(file_object, chunk_size=1024 * 8):
         yield data
 
 
+class _FastZipFileReader(zipfile.ZipFile):
+    """
+    Used to gain a speed boost of several orders of magnitude.
+
+    When opening archives the `_RealGetContents` is called 
+    generating the list of files contained in the zip archive.
+    This is done by the constructor.
+
+    If the archive contains a very large amount, the file scan operation
+    can take up to seconds. This was observed with 10000+ files.
+
+    When opening the zip file in the background worker the entire file 
+    list generation can be skipped because the `zipfile.ZipFile.open` 
+    is used passing `ZipInfo` object as file to decompress. 
+    Using a `ZipInfo` object does nto require to have the list of 
+    files contained in the archive.
+    """
+
+    def _RealGetContents(self):
+        """method disabled"""
+
+
 def _zipfile_single_file_extract_worker(
-    zip_file_path: Path, file_in_archive: str, destination_folder: Path, is_dir: bool
+    zip_file_path: Path,
+    file_in_archive: zipfile.ZipInfo,
+    destination_folder: Path,
+    is_dir: bool,
 ) -> Path:
     """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
 
     Extracts in chunks to avoid memory pressure on zip/unzip
-    Retuns a path to extracted file or directory
+    returns: a path to extracted file or directory
     """
-    with zipfile.ZipFile(zip_file_path) as zf:
+    with _FastZipFileReader(zip_file_path) as zf:
         # assemble destination and ensure it exits
-        destination_path = destination_folder / file_in_archive
+        destination_path = destination_folder / file_in_archive.filename
 
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
@@ -109,7 +134,7 @@ async def unarchive_dir(
                     pool,
                     _zipfile_single_file_extract_worker,
                     archive_to_extract,
-                    zip_entry.filename,
+                    zip_entry,
                     destination_folder,
                     zip_entry.is_dir(),
                 )
