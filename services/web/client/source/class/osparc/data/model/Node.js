@@ -150,6 +150,14 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: false
     },
 
+    errors: {
+      check: "Array",
+      init: [],
+      nullable: true,
+      event: "changeErrors",
+      apply: "__applyErrors"
+    },
+
     // GUI elements //
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
@@ -712,7 +720,7 @@ qx.Class.define("osparc.data.model.Node", {
       return outputsData;
     },
 
-    setErrors: function(errors) {
+    __applyErrors: function(errors) {
       if (errors && errors.length) {
         errors.forEach(error => {
           const loc = error["loc"];
@@ -725,8 +733,9 @@ qx.Class.define("osparc.data.model.Node", {
               msg: error["msg"],
               level: "ERROR"
             };
+
+            // errors to port
             if (loc.length > 2) {
-              // error to port
               const portKey = loc[2];
               if (this.hasInputs() && portKey in this.getMetaData()["inputs"]) {
                 errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
@@ -735,6 +744,8 @@ qx.Class.define("osparc.data.model.Node", {
               }
               this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
             }
+
+            // errors to logger
             this.fireDataEvent("showInLogger", errorMsgData);
           }
         });
