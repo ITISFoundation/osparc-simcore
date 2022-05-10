@@ -22,7 +22,7 @@ charset-normalizer==2.0.12
     #   requests
 docker==5.0.3
     # via -r requirements.in
-fastapi==0.75.1
+fastapi==0.76.0
     # via -r requirements.in
 frozenlist==1.3.0
     # via
@@ -45,10 +45,12 @@ requests==2.27.1
     # via docker
 sniffio==1.2.0
     # via anyio
-starlette==0.17.1
+starlette==0.18.0
     # via fastapi
-typing-extensions==4.1.1
-    # via pydantic
+typing-extensions==4.2.0
+    # via
+    #   pydantic
+    #   starlette
 urllib3==1.26.9
     # via requests
 websocket-client==1.3.2

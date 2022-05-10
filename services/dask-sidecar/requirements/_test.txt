@@ -13,7 +13,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-astroid==2.11.2
+astroid==2.11.5
     # via pylint
 async-timeout==4.0.1
     # via
@@ -45,7 +45,7 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.2
+cryptography==37.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pyopenssl
@@ -55,14 +55,14 @@ docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==13.3.3
+faker==13.7.0
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==2.10
     # via
@@ -93,7 +93,7 @@ packaging==20.4
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -109,7 +109,7 @@ pycparser==2.20
     #   cffi
 pyftpdlib==1.5.6
     # via pytest-localftpserver
-pylint==2.13.2
+pylint==2.13.8
     # via -r requirements/_test.in
 pyopenssl==22.0.0
     # via pytest-localftpserver
@@ -118,7 +118,7 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
