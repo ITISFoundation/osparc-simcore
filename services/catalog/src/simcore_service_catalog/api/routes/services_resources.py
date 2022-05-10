@@ -43,7 +43,6 @@ async def get_service_resources(
         get_default_service_resources
     ),
 ):
-    # TODO: --> PC: I'll need to go through that with you for function services,
     # cause these entries are not in ServiceDockerData
     if is_function_service(service_key):
         # NOTE: this is due to the fact that FastAPI does not appear to like pydantic models with just a root
