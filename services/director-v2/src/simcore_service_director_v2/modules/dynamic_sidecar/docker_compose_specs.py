@@ -36,7 +36,10 @@ def _inject_proxy_network_configuration(
     target_container_spec = service_spec["services"][target_container]
     container_networks = target_container_spec.get("networks", [])
     container_networks.append(dynamic_sidecar_network_name)
-    target_container_spec["networks"] = container_networks
+    # avoid duplicate entries, this is important when the dynamic-sidecar
+    # fails to run docker-compose up, otherwise it will
+    # continue adding lots of entries to this list
+    target_container_spec["networks"] = list(set(container_networks))
 
 
 class _environment_section:
