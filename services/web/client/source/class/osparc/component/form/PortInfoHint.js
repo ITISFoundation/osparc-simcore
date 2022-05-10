@@ -18,6 +18,10 @@
 qx.Class.define("osparc.component.form.PortInfoHint", {
   extend: osparc.ui.hint.InfoHint,
 
+  statics: {
+    ERROR_ICON: "@MaterialIcons/error_outline/14"
+  },
+
   properties: {
     portErrorMsg: {
       check: "String",
@@ -35,7 +39,7 @@ qx.Class.define("osparc.component.form.PortInfoHint", {
         this._hint.setText(hintText);
 
         this.set({
-          source: "@MaterialIcons/error_outline/14",
+          source: this.self().ERROR_ICON,
           textColor: "failed-red"
         });
       } else {
@@ -43,7 +47,7 @@ qx.Class.define("osparc.component.form.PortInfoHint", {
         const baseText = this.getHintText();
         this._hint.setText(baseText);
         this.set({
-          source: "@MaterialIcons/info_outline/14",
+          source: osparc.ui.hint.InfoHint.INFO_ICON,
           textColor: "text"
         });
       }
