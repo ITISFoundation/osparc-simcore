@@ -33,24 +33,15 @@ qx.Class.define("osparc.component.form.PortInfoHint", {
 
   members: {
     __applyPortErrorMsg: function(errorMsg) {
+      let text = this.getHintText();
       if (errorMsg) {
-        const baseText = this.getHintText();
-        const hintText = baseText + `<p style="color:red;">${errorMsg}</p>`;
-        this._hint.setText(hintText);
-
-        this.set({
-          source: this.self().ERROR_ICON,
-          textColor: "failed-red"
-        });
-      } else {
-        // back to normal
-        const baseText = this.getHintText();
-        this._hint.setText(baseText);
-        this.set({
-          source: osparc.ui.hint.InfoHint.INFO_ICON,
-          textColor: "text"
-        });
+        text += `<p style="color:red;">${errorMsg}</p>`;
       }
+      this._hint.setText(text);
+      this.set({
+        source: errorMsg ? this.self().ERROR_ICON : osparc.ui.hint.InfoHint.INFO_ICON,
+        textColor: errorMsg ? "failed-red" : "text"
+      });
     }
   }
 });
