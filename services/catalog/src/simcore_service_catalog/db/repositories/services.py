@@ -5,8 +5,9 @@ from typing import Dict, Iterable, List, Optional, Tuple
 import sqlalchemy as sa
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
+from pydantic import ValidationError
+from simcore_postgres_database.models.groups import GroupType
 from simcore_service_catalog.models.domain.service_specifications import (
     ServiceSpecificationsAtDB,
 )
@@ -19,6 +20,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
+from ...models.domain.group import GroupAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
@@ -338,16 +340,48 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def get_service_specifications(
-        self, key: ServiceKey, version: ServiceVersion, gids: list[GroupID]
+        self, key: ServiceKey, version: ServiceVersion, groups: tuple[GroupAtDB]
     ) -> ServiceSpecifications:
-        multi_group_service_specs = []
+        gid_to_group_map = {group.gid: group for group in groups}
+        multi_group_service_specs = {
+            GroupType.EVERYONE: {},
+            GroupType.PRIMARY: {},
+            GroupType.STANDARD: [],
+        }
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
                 sa.select([services_specifications]).where(
                     (services_specifications.c.service_key == key)
                     & (services_specifications.c.service_version == version)
-                    & (services_specifications.c.gid.in_(gids))
+                    & (
+                        services_specifications.c.gid.in_(
+                            (group.gid for group in groups)
+                        )
+                    )
                 )
             ):
-                multi_group_service_specs.append(ServiceSpecificationsAtDB(**row))
-        return ServiceSpecifications(schedule_specs={})
+                try:
+                    group_service_specs = ServiceSpecificationsAtDB(**row)
+                    group = gid_to_group_map[row.gid]
+                    if group.group_type == GroupType.STANDARD:
+                        multi_group_service_specs[group.group_type].append(
+                            group_service_specs.dict(include={"schedule_specs"})
+                        )
+                    else:
+                        multi_group_service_specs[
+                            group.group_type
+                        ] = group_service_specs.dict(include={"schedule_specs"})
+                except ValidationError as exc:
+                    logger.warning(
+                        "skipping service specifications for group '%s' as invalid: %s",
+                        f"{row.gid}",
+                        f"{exc}",
+                    )
+
+        # merge all group specifications
+        merged_specifications = multi_group_service_specs[GroupType.EVERYONE]
+        for specs in multi_group_service_specs[GroupType.STANDARD]:
+            merged_specifications.update(specs)
+        merged_specifications.update(multi_group_service_specs[GroupType.PRIMARY])
+
+        return ServiceSpecifications(schedule_specs=merged_specifications)
