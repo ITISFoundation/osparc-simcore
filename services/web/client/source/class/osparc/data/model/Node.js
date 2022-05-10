@@ -713,29 +713,37 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setErrors: function(errors) {
-      errors.forEach(error => {
-        const loc = error["loc"];
-        if (loc.length < 2) {
-          return;
-        }
-        if (loc[1] === this.getNodeId()) {
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: error["msg"],
-            level: "ERROR"
-          };
-          if (loc.length > 2) {
-            const portKey = loc[2];
-            if ("inputs" in this.getMetaData() && portKey in this.getMetaData()["inputs"]) {
-              errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
-            } else {
-              errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
-            }
-            this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
+      if (errors && errors.length) {
+        errors.forEach(error => {
+          const loc = error["loc"];
+          if (loc.length < 2) {
+            return;
           }
-          this.fireDataEvent("showInLogger", errorMsgData);
-        }
-      });
+          if (loc[1] === this.getNodeId()) {
+            const errorMsgData = {
+              nodeId: this.getNodeId(),
+              msg: error["msg"],
+              level: "ERROR"
+            };
+            if (loc.length > 2) {
+              // error to port
+              const portKey = loc[2];
+              if (this.hasInputs() && portKey in this.getMetaData()["inputs"]) {
+                errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
+              } else {
+                errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+              }
+              this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
+            }
+            this.fireDataEvent("showInLogger", errorMsgData);
+          }
+        });
+      } else if (this.hasInputs()) {
+        // reset port errors
+        Object.keys(this.getMetaData()["inputs"]).forEach(portKey => {
+          this.getPropsForm().setPortErrorMessage(portKey, null);
+        });
+      }
     },
 
     // post edge creation routine

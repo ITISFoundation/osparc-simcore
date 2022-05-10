@@ -22,6 +22,7 @@ qx.Class.define("osparc.component.form.PortInfoHint", {
     portErrorMsg: {
       check: "String",
       init: null,
+      nullable: true,
       apply: "__applyPortErrorMsg"
     }
   },
