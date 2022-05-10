@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
     response_model=ServiceSpecificationsGet,
     **RESPONSE_MODEL_POLICY,
 )
-# @cached(
-#     ttl=DIRECTOR_CACHING_TTL,
-#     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['service_key']}_{kwargs['service_version']}",
-# )
 async def get_service_specifications(
     user_id: UserID,
     service_key: ServiceKey,
