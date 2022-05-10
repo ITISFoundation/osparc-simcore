@@ -70,6 +70,8 @@ async def _apply_observation_cycle(
             dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
         )
     ):
+        # NOTE: once marked for removal the observation cycle needs
+        # to continue in order for the service to be removed
         logger.warning(
             "Removing service %s from observation", scheduler_data.service_name
         )
@@ -168,7 +170,6 @@ class DynamicSidecarsScheduler:
             )
             await update_scheduler_data_label(current.scheduler_data)
 
-        self._enqueue_observation_from_service_name(service_name)
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def finish_service_removal(self, node_uuid: NodeID) -> None:
@@ -399,7 +400,7 @@ class DynamicSidecarsScheduler:
                 # fire and forget about the task
                 asyncio.create_task(
                     observing_single_service(service_name),
-                    name=f"observe {service_name}",
+                    name=f"observe_{service_name}",
                 )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
@@ -417,13 +418,15 @@ class DynamicSidecarsScheduler:
                 async with self._lock:
                     for service_name in self._to_observe:
                         self._enqueue_observation_from_service_name(service_name)
-
-                await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover
                 logger.info("Stopped dynamic scheduler")
                 raise
             except Exception:  # pylint: disable=broad-except
-                logger.error("Unexpected error in dynamic scheduler", exc_info=True)
+                logger.exception(
+                    "Unexpected error while scheduling sidecars observation"
+                )
+
+            await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
