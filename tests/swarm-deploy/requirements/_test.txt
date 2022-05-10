@@ -4,8 +4,10 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==7.1.2
+aio-pika==7.2.0
     # via -r requirements/_test.in
+aiocache==0.11.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -25,6 +27,7 @@ aiohttp==3.8.1
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -62,7 +65,7 @@ charset-normalizer==2.0.12
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiohttp
     #   requests
-click==8.0.4
+click==8.1.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
@@ -77,7 +80,7 @@ docker==5.0.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
-email-validator==1.1.3
+email-validator==1.2.1
     # via pydantic
 frozenlist==1.3.0
     # via
@@ -99,7 +102,8 @@ jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_test.in
 mako==1.2.0
     # via
@@ -117,6 +121,7 @@ minio==7.0.4
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -131,7 +136,7 @@ packaging==21.3
     #   pytest-sugar
 pamqp==3.1.0
     # via aiormq
-pint==0.19.1
+pint==0.19.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pluggy==1.0.0
     # via pytest
@@ -150,6 +155,7 @@ pydantic==1.9.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -157,16 +163,17 @@ pydantic==1.9.0
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pyinstrument==4.1.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.7
+pyparsing==3.0.8
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -201,6 +208,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -215,7 +223,7 @@ six==1.16.0
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   jsonschema
     #   websocket-client
-sqlalchemy==1.4.32
+sqlalchemy==1.4.36
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -223,6 +231,7 @@ sqlalchemy==1.4.32
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
@@ -242,11 +251,13 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.63.1
+tqdm==4.64.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.1
-    # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.1.1
+    # via
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+typing-extensions==4.2.0
     # via
     #   aiodebug
     #   aiodocker
@@ -259,6 +270,7 @@ urllib3==1.26.9
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
