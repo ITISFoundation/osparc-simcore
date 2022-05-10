@@ -163,17 +163,3 @@ async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
             "oSPARC internals to properly enforce permissions on this "
             "directory and all its files"
         )
-
-
-def extract_uuid_from(message: str) -> UUID:
-    """extracts exactly 1 UUID from a string."""
-    results: Deque[UUID] = deque()
-    for word in message.split(" "):
-        with suppress(ValueError):
-            results.append(UUID(word))
-
-    if len(results) != 1:
-        raise ValueError(
-            f"While parsing '{message}', found {results=}. expected 1 result."
-        )
-    return results[0]

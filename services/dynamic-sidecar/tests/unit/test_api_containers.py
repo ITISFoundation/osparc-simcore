@@ -629,7 +629,7 @@ async def test_container_push_output_ports_missing_node(
         f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-    error_detail = response.json()["detail"]
+    error_detail = response.json()
     assert error_detail["message"] == f"the node id {missing_node_uuid} was not found"
     assert error_detail["code"] == "dynamic_sidecar.nodeports.node_not_found"
     assert error_detail["node_uuid"] == missing_node_uuid

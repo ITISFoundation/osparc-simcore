@@ -250,14 +250,9 @@ class DynamicSidecarClient:
         if response.status_code == status.HTTP_404_NOT_FOUND:
             # raise only if the exception is of type node_not_found
             # using codes in the dy-sidecar this should help
-            try:
-                json_error = response.json().get("detail", {})
-                if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
-                    raise NodeportsDidNotFindNodeError(
-                        node_uuid=json_error["node_uuid"]
-                    )
-            except json.JSONDecodeError:
-                pass
+            json_error = response.json()
+            if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
+                raise NodeportsDidNotFindNodeError(node_uuid=json_error["node_uuid"])
 
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(response, "output ports push")
