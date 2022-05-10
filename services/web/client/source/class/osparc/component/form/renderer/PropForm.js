@@ -797,10 +797,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       this.__portLinkRemoved(toPortId);
-    },
-
-    __getLinkFieldChild: function(portId) {
-      return this.__linkUnlinkStackMap[portId].getSelection()[0];
     }
     /* /LINKS */
   }
