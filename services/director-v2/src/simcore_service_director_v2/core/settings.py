@@ -148,6 +148,9 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
+        "WARNING", description="log level of the dynamic sidecar"
+    )
     SC_BOOT_MODE: BootModeEnum = Field(
         BootModeEnum.PRODUCTION,
         description="Used to compute where or not should start sidecar in development mode",
@@ -273,6 +276,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
     @classmethod
     def strip_leading_slashes(cls, v) -> str:
         return v.lstrip("/")
+
+    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v) -> str:
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
+        if v not in valid_log_levels:
+            raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
+        return v
 
 
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
