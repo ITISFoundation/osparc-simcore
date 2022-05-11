@@ -86,8 +86,10 @@ def jsonschema_validate_schema(schema: Dict[str, Any]):
 def any_ref_key(obj):
     if isinstance(obj, dict):
         return "$ref" in obj.keys() or any_ref_key(tuple(obj.values()))
-    elif isinstance(obj, Sequence) and not isinstance(obj, str):
+
+    if isinstance(obj, Sequence) and not isinstance(obj, str):
         return any(any_ref_key(v) for v in obj)
+
     return False
 
 
