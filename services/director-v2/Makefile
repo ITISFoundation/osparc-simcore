@@ -73,3 +73,23 @@ info-registry: .env ## displays content of docker-registry
 	# ${REGISTRY_URL} info queries
 	curl -s ${REGISTRY_URL}/v2/_catalog | jq '.repositories'
 	curl -s ${REGISTRY_URL}/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+
+DOCKER_API_VERSION ?= 1.41
+docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
+	$(if $(shell pip list --verbose | grep datamodel-codegen),,$(error Missing datamodel-codegen, execute 'pip install "datamodel-code-generator[http]"'))
+	# auto-generates $@ from $<
+	@datamodel-codegen \
+		--url https://docs.docker.com/engine/api/v$(DOCKER_API_VERSION).yaml \
+		--field-constraints  \
+		--use_non_positive_negative_number_constrained_types \
+		--use-standard-collections \
+		--use-schema-description \
+		--reuse-model \
+		--set-default-enum-member \
+		--use-title-as-name \
+		--validation \
+		--output $@
+
+	# formats
+	black $@
+	@mv $@ src/simcore_service_director_v2/models/schemas/$@
