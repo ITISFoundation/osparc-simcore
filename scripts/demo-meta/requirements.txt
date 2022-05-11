@@ -1,0 +1,4 @@
+httpx
+pandas
+pydantic[dotenv,email]
+tabulate

@@ -6,9 +6,11 @@
 from collections import deque
 
 import pytest
+from faker import Faker
 from models_library.utils.json_schema import (
     InvalidJsonSchema,
     JsonSchemaValidationError,
+    any_ref_key,
     jsonschema_validate_data,
     jsonschema_validate_schema,
 )
@@ -117,3 +119,56 @@ def test_jsonschema_validate_data_succeed(valid_schema):
         "b": True,
         "s": "foo",
     }
+
+
+def test_resolve_content_schema(faker: Faker):
+    #
+    # https://python-jsonschema.readthedocs.io/en/stable/_modules/jsonschema/validators/#RefResolver.in_scope
+    #
+    import jsonschema
+    import jsonschema.validators
+
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=[2, 3, 4], schema={"maxItems": 2})
+
+    schema_with_ref = {
+        "title": "Complex_value",
+        "$ref": "#/definitions/Complex",
+        "definitions": {
+            "Complex": {
+                "title": "Complex",
+                "type": "object",
+                "properties": {
+                    "real": {"title": "Real", "default": 0, "type": "number"},
+                    "imag": {"title": "Imag", "default": 0, "type": "number"},
+                },
+            }
+        },
+    }
+
+    assert any_ref_key(schema_with_ref)
+
+    resolver = jsonschema.RefResolver.from_schema(schema_with_ref)
+    assert resolver.resolution_scope == ""
+    assert resolver.base_uri == ""
+
+    ref, schema_resolved = resolver.resolve(schema_with_ref["$ref"])
+
+    assert ref == "#/definitions/Complex"
+    assert schema_resolved == {
+        "title": "Complex",
+        "type": "object",
+        "properties": {
+            "real": {"title": "Real", "default": 0, "type": "number"},
+            "imag": {"title": "Imag", "default": 0, "type": "number"},
+        },
+    }
+
+    assert not any_ref_key(schema_resolved)
+
+    validator = jsonschema.validators.validator_for(schema_with_ref)
+    validator.check_schema(schema_with_ref)
+
+    instance = {"real": faker.pyfloat()}
+    assert validator(schema_with_ref).is_valid(instance)
+    assert validator(schema_resolved).is_valid(instance)

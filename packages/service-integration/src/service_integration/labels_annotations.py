@@ -29,6 +29,11 @@ def to_labels(
         else:
             label = _json_dumps({key: value}, sort_keys=False)
 
+        # NOTE: docker-compose env var interpolation gets confused with schema's '$ref' and
+        # will replace it '$ref' with an empty string.
+        if isinstance(label, str) and "$ref" in label:
+            label = label.replace("$ref", "$$ref")
+
         labels[f"{prefix_key}.{key}"] = label
 
     return labels

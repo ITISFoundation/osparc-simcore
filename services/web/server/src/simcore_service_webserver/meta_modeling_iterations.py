@@ -244,7 +244,8 @@ async def get_or_create_runnable_projects(
 
     # std-project
     is_meta_project = any(
-        is_iterator_service(node.key) for node in project_nodes.values()
+        is_iterator_service(node.key) and not node.outputs
+        for node in project_nodes.values()
     )
     if not is_meta_project:
         return runnable_project_ids, runnable_project_vc_commits
