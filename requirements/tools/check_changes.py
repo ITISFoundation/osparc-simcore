@@ -104,7 +104,7 @@ def classify_reqs_path(reqs_path: str) -> ReqsClassification:
 
 def get_symbol(c: ReqsClassification):
     symbol = "🧪"
-    if c.module_type == "service" and c.reqs_type not in ("test", "tools"):
+    if c.module_type == "services" and c.reqs_type not in ("test", "tools"):
         symbol = "⬆️"
     elif c.reqs_type == "tools":
         symbol = "🔧"
