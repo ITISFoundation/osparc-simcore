@@ -8,8 +8,7 @@ from uuid import UUID
 
 import httpx
 import pandas as pd
-
-from .osparc_webapi import (
+from osparc_webapi import (
     CheckPoint,
     Envelope,
     ProjectIterationResultItem,
@@ -18,6 +17,7 @@ from .osparc_webapi import (
     iter_items,
     iter_project_iteration,
     iter_repos,
+    query_if_invalid_config,
     setup_client,
 )
 
@@ -88,6 +88,8 @@ def process_data(df: pd.DataFrame):
 
 
 def main():
+    query_if_invalid_config()
+
     with setup_client() as client:
         print_checkpoints(client)
 

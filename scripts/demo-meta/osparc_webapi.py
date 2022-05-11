@@ -4,6 +4,7 @@
 import getpass
 import logging
 import os
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Iterator, Optional, Type, TypeVar
@@ -20,6 +21,7 @@ from pydantic import (
     Field,
     NonNegativeInt,
     SecretStr,
+    ValidationError,
     conint,
 )
 from pydantic.generics import GenericModel
@@ -206,22 +208,30 @@ class ClientSettings(BaseSettings):
 
 def init():
     env_file = Path(ClientSettings.Config.env_file)
-    if not env_file.exists():
-        log.info("Creating %s", f"{env_file}")
-        kwargs = {}
-        kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
-        kwargs["OSPARC_USER_EMAIL"] = (
-            input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
-        )
-        kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
-        with open(env_file) as fh:
-            for key, value in kwargs:
-                if value:
-                    fh.write(f"{key}={value}\n")
+    log.info("Creating %s", f"{env_file}")
+    kwargs = {}
+    kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
+    kwargs["OSPARC_USER_EMAIL"] = (
+        input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
+    )
+    kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
+    with open(env_file, "wt") as fh:
+        for key, value in kwargs.items():
+            print(key, value)
+            if value is not None:
+                fh.write(f"{key}={value}\n")
     log.info("%s: %s", f"{env_file=}", f"{env_file.exists()=}")
 
 
-def setup_client() -> httpx.Client:
+def query_if_invalid_config():
+    try:
+        ClientSettings()
+    except ValidationError:
+        init()
+
+
+@contextmanager
+def setup_client() -> Iterator[httpx.Client]:
     settings = ClientSettings()
 
     client = httpx.Client(base_url=settings.OSPARC_API_URL)
@@ -238,7 +248,8 @@ def setup_client() -> httpx.Client:
         # check is OK
         assert get_profile(client)
 
-        return client
+        yield client
+
     except Exception:  # pylint: global-except
         client.close()
         raise

@@ -1,4 +1,4 @@
 httpx
 pandas
-pydantic[dotenv]
+pydantic[dotenv,email]
 tabulate
