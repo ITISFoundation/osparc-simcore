@@ -5,14 +5,17 @@ from pprint import pprint
 from typing import Any, Dict, Iterator, cast
 
 import pytest
+import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
+from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
+from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
@@ -312,7 +315,7 @@ def test_get_dynamic_proxy_spec(
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-def test_merge_user_specific_and_dynamic_sidecar_specs(
+async def test_merge_user_specific_and_dynamic_sidecar_specs(
     minimal_catalog_config: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
@@ -321,6 +324,9 @@ def test_merge_user_specific_and_dynamic_sidecar_specs(
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
+    mock_service_key_version: ServiceKeyVersion,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    fake_service_specifications: dict[str, Any],
 ):
     dynamic_sidecar_spec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
@@ -332,3 +338,14 @@ def test_merge_user_specific_and_dynamic_sidecar_specs(
     )
     assert dynamic_sidecar_spec
     assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec
+
+    catalog_client = CatalogClient.instance(minimal_app)
+    user_service_specs = await catalog_client.get_service_specifications(
+        scheduler_data.user_id,
+        mock_service_key_version.key,
+        mock_service_key_version.version,
+    )
+    assert user_service_specs
+    assert "schedule_specs" in user_service_specs
+    dynamic_sidecar_spec.update(user_service_specs["schedule_specs"])
+    assert dynamic_sidecar_spec != expected_dynamic_sidecar_spec
