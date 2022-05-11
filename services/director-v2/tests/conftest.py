@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from starlette.testclient import TestClient
+from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -147,7 +147,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
 
 
 @pytest.fixture(scope="function")
-def minimal_app(client: TestClient) -> FastAPI:
+def minimal_app(client: TestClient) -> ASGI3App:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/
     return client.app

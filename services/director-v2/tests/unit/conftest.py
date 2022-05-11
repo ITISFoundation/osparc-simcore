@@ -3,6 +3,7 @@
 
 import json
 import random
+import urllib.parse
 from typing import Any, AsyncIterable, AsyncIterator, Iterator, Mapping
 
 import pytest
@@ -17,6 +18,7 @@ from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -231,7 +233,7 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 def mocked_storage_service_fcts(
     minimal_app: FastAPI, fake_s3_settings
 ) -> Iterator[respx.MockRouter]:
-    with respx.mock(
+    with respx.mock(  # type: ignore
         base_url=minimal_app.state.settings.DIRECTOR_V2_STORAGE.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
@@ -248,3 +250,76 @@ def mocked_storage_service_fcts(
 @pytest.fixture(params=list(FileLinkType))
 def tasks_file_link_type(request) -> FileLinkType:
     return request.param
+
+
+@pytest.fixture
+def mock_service_key_version() -> ServiceKeyVersion:
+    return ServiceKeyVersion(key="simcore/services/dynamic/myservice", version="1.4.5")
+
+
+@pytest.fixture
+def fake_service_specifications(faker: Faker) -> dict[str, Any]:
+    # the service specifications follow the Docker service creation available
+    # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    return {
+        "schedule_specs": {
+            "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
+            "TaskTemplate": {
+                "Placement": {
+                    "Constraints": [
+                        "node.id==2ivku8v2gvtg4",
+                        "node.hostname!=node-2",
+                        "node.platform.os==linux",
+                        "node.labels.security==high",
+                        "engine.labels.operatingsystem==ubuntu-20.04",
+                    ]
+                },
+                "Resources": {
+                    "Limits": {"NanoCPUs": 16 * 10e9, "MemoryBytes": 10 * 1024**3},
+                    "Reservation": {
+                        "NanoCPUs": 1 * 10e9,
+                        "MemoryBytes": 1 * 1024**3,
+                        "GenericResources": [
+                            {
+                                "NamedResourceSpec": {
+                                    "Kind": "Chipset",
+                                    "Value": "Late2020",
+                                }
+                            },
+                            {
+                                "DiscreteResourceSpec": {
+                                    "Kind": "VRAM",
+                                    "Value": 1 * 1024**3,
+                                }
+                            },
+                        ],
+                    },
+                },
+                "ContainerSpec": {
+                    "Command": ["my", "super", "duper", "service", "command"],
+                    "Env": {"SOME_FAKE_ADDITIONAL_ENV": faker.pystr().upper()},
+                },
+            },
+        }
+    }
+
+
+@pytest.fixture
+def mocked_catalog_service_fcts(
+    minimal_app: FastAPI,
+    mock_service_key_version: ServiceKeyVersion,
+    fake_service_specifications: dict[str, Any],
+) -> Iterator[respx.MockRouter]:
+    with respx.mock(  # type: ignore
+        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.endpoint,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        quoted_key = urllib.parse.quote(mock_service_key_version.key, safe="")
+        version = mock_service_key_version.version
+        respx_mock.get(
+            f"/services/{quoted_key}/{version}/specifications",
+            name="get_service_specifications",
+        ).respond(json=fake_service_specifications)
+
+        yield respx_mock
