@@ -102,10 +102,10 @@ class Port(BaseServiceIOModel):
                     )
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
-                    port_key=values["key"],
+                    port_key=values.get("key"),
                     value=v,
                     unit=None,
-                    content_schema=values["content_schema"],
+                    content_schema=values.get("content_schema", {}),
                 )
             elif isinstance(v, (list, dict)):
                 raise TypeError(
@@ -124,10 +124,10 @@ class Port(BaseServiceIOModel):
             and not can_parse_as(v, Path, AnyUrl)
         ):
             v, _ = validate_port_content(
-                port_key=values["key"],
+                port_key=values.get("key"),
                 value=v,
                 unit=None,
-                content_schema=values["content_schema"],
+                content_schema=values.get("content_schema", {}),
             )
 
         return v
