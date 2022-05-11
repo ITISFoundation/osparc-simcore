@@ -7,11 +7,13 @@
   "files.associations": {
     ".*rc": "ini",
     ".env*": "ini",
-    "Dockerfile*": "dockerfile",
-    "**/requirements/*.txt": "pip-requirements",
     "**/requirements/*.in": "pip-requirements",
+    "**/requirements/*.txt": "pip-requirements",
+    "*logs.txt": "log",
+    "*.logs*": "log",
     "*Makefile": "makefile",
-    "*.cwl": "yaml"
+    "docker-compose*.yml": "dockercompose",
+    "Dockerfile*": "dockerfile"
   },
   "files.eol": "\n",
   "files.exclude": {

@@ -236,6 +236,7 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
+
             check_scheduler_is_still_the_same(
                 self.backend.scheduler_id, self.backend.client
             )
@@ -310,7 +311,7 @@ class DaskClient:
                     input_data=input_data,
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
-                    command=["run"],
+                    command=node_image.command,
                     s3_settings=s3_settings,
                     key=job_id,
                     resources=dask_resources,
@@ -324,7 +325,11 @@ class DaskClient:
                     task_future, name=job_id
                 )  # type: ignore
 
-                logger.debug("Dask task %s started", task_future.key)
+                logger.debug(
+                    "Dask task %s started [%s]",
+                    f"{task_future.key=}",
+                    f"{node_image.command=}",
+                )
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
                 check_scheduler_status(self.backend.client)
