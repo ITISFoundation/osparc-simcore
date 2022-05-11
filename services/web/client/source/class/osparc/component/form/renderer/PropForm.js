@@ -382,6 +382,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.fireEvent("changeChildVisibility");
     },
 
+    setPortErrorMessage: function(portId, msg) {
+      const infoButton = this._getInfoFieldChild(portId);
+      if (infoButton && "child" in infoButton) {
+        const infoHint = infoButton.child;
+        infoHint.setPortErrorMsg(msg);
+      }
+    },
+
     retrievingPortData: function(portId) {
       const status = this._retrieveStatus.retrieving;
       if (portId) {

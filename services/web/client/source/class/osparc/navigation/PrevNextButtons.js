@@ -40,7 +40,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
     NEXT_BUTTON: "@FontAwesome5Solid/arrow-right/32",
     RUN_BUTTON: "@FontAwesome5Solid/play/32",
     BUSY_BUTTON: "@FontAwesome5Solid/circle-notch/32",
-    SELECT_FILE_BUTTON: "@FontAwesome5Solid/arrow-right/32"
+    SELECT_FILE_BUTTON: "@FontAwesome5Solid/file-medical/32"
   },
 
   properties: {
