@@ -297,7 +297,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
                 },
                 "ContainerSpec": {
                     "Command": ["my", "super", "duper", "service", "command"],
-                    "Env": {"SOME_FAKE_ADDITIONAL_ENV": faker.pystr().upper()},
+                    "Env": [f"SOME_FAKE_ADDITIONAL_ENV={faker.pystr().upper()}"],
                 },
             },
         }
