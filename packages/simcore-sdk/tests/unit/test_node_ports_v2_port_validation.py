@@ -30,7 +30,8 @@ def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
     #
     if isinstance(item, list):
         return [_replace_value_in_dict(i, original_schema) for i in item]
-    elif isinstance(item, dict):
+
+    if isinstance(item, dict):
         if "$ref" in item.keys():
             # Limited to something like "$ref": "#/definitions/Engine"
             definitions = item["$ref"][2:].split("/")
@@ -38,13 +39,10 @@ def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
             for definition in definitions:
                 res = res[definition]
             return res
-        else:
-            return {
-                key: _replace_value_in_dict(i, original_schema)
-                for key, i in item.items()
-            }
-    else:
-        return item
+        return {
+            key: _replace_value_in_dict(i, original_schema) for key, i in item.items()
+        }
+    return item
 
 
 def _resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
