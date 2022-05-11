@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=expression-not-assigned
+
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings

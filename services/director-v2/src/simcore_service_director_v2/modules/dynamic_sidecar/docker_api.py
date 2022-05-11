@@ -96,7 +96,7 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
     except aiodocker.exceptions.DockerError as e:
         message = "Unexpected error from docker client"
         log_message = f"{message} {e.message}\n{traceback.format_exc()}"
-        log.warning(log_message)
+        log.info(log_message)
         raise GenericDockerError(message, e) from e
     finally:
         if client is not None:

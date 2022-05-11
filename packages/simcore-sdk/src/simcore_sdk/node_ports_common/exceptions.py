@@ -122,6 +122,7 @@ class NodeNotFound(NodeportsException):
     """The given node_uuid was not found"""
 
     def __init__(self, node_uuid):
+        self.node_uuid = node_uuid
         super().__init__(f"the node id {node_uuid} was not found")
 
 

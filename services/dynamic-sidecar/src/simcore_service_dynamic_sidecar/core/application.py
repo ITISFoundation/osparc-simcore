@@ -3,6 +3,7 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
@@ -10,7 +11,7 @@ from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import setup_directory_watcher
 from .docker_logs import setup_background_log_fetcher
-from .error_handlers import http_error_handler
+from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
@@ -78,6 +79,7 @@ def assemble_application() -> FastAPI:
     application.include_router(main_router)
 
     # error handlers
+    application.add_exception_handler(NodeNotFound, node_not_found_error_handler)
     application.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
     # also sets up mounted_volumes
