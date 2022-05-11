@@ -14,6 +14,10 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.models.schemas.aiodocker_api import (
+    AioDockerServiceSpec,
+)
+from simcore_service_director_v2.models.schemas.docker_rest_api import ServiceSpec
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
@@ -338,6 +342,8 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
     )
     assert dynamic_sidecar_spec
     assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec
+    original_dynamic_sidecar_spec = AioDockerServiceSpec(**dynamic_sidecar_spec)
+    assert original_dynamic_sidecar_spec
 
     catalog_client = CatalogClient.instance(minimal_app)
     user_service_specs = await catalog_client.get_service_specifications(
@@ -347,5 +353,17 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
     )
     assert user_service_specs
     assert "schedule_specs" in user_service_specs
-    dynamic_sidecar_spec.update(user_service_specs["schedule_specs"])
-    assert dynamic_sidecar_spec != expected_dynamic_sidecar_spec
+    docker_service_spec = ServiceSpec.parse_obj(user_service_specs["schedule_specs"])
+    assert docker_service_spec
+    aiodocker_service_spec = AioDockerServiceSpec(**docker_service_spec.dict())
+    assert aiodocker_service_spec
+
+    merged_dynamic_sidecar_spec = {
+        **dynamic_sidecar_spec,
+        **aiodocker_service_spec.dict(by_alias=True),
+    }
+
+    assert merged_dynamic_sidecar_spec != expected_dynamic_sidecar_spec
+    import pdb
+
+    pdb.set_trace()
