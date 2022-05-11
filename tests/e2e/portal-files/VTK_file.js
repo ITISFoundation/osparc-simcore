@@ -67,7 +67,7 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'teapot');
   }
   catch(err) {
-    tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {

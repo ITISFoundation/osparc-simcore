@@ -80,7 +80,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
   statics: {
     LATEST: "latest",
     Width: 580,
-    Height: 400
+    Height: 500
   },
 
   members: {

@@ -20,7 +20,7 @@ alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.11.2
+astroid==2.11.5
     # via pylint
 async-timeout==4.0.2
     # via
@@ -35,7 +35,7 @@ attrs==20.3.0
     #   jsonschema
     #   pytest
     #   pytest-docker
-bcrypt==3.2.0
+bcrypt==3.2.2
     # via paramiko
 certifi==2021.10.8
     # via requests
@@ -91,7 +91,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==13.3.3
+faker==13.7.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -104,9 +104,9 @@ greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.39.6
+hypothesis==6.46.2
     # via -r requirements/_test.in
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==3.3
     # via
@@ -157,9 +157,11 @@ packaging==21.3
     #   pytest
     #   pytest-sugar
     #   redis
-paramiko==2.10.3
-    # via docker
-platformdirs==2.5.1
+paramiko==2.10.4
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   docker
+platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -177,7 +179,7 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.13.2
+pylint==2.13.8
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -189,7 +191,7 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -206,7 +208,7 @@ pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.11.0
+pytest-docker==0.12.0
     # via -r requirements/_test.in
 pytest-icdiff==0.5
     # via -r requirements/_test.in
@@ -243,7 +245,6 @@ requests==2.27.1
 six==1.16.0
     # via
     #   -c requirements/_base.txt
-    #   bcrypt
     #   dockerpty
     #   jsonschema
     #   paramiko
@@ -282,7 +283,7 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-websockets==10.2
+websockets==10.3
     # via -r requirements/_test.in
 wrapt==1.14.0
     # via

@@ -313,6 +313,12 @@ class TutorialBase {
     await auto.showLogger(this.__page, show);
   }
 
+  async takeLoggerScreenshot() {
+    await this.takeScreenshot("logger_before");
+    await this.showLogger(true);
+    await this.takeScreenshot("logger_after");
+  }
+
   async runPipeline() {
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
@@ -482,7 +488,10 @@ class TutorialBase {
     return this.__failed;
   }
 
-  setTutorialFailed(failed) {
+  async setTutorialFailed(failed) {
+    if (failed) {
+      await this.takeLoggerScreenshot();
+    }
     this.__failed = failed;
   }
 }

@@ -49,9 +49,9 @@ qx.Class.define("osparc.Application", {
       this.base();
 
       // Load user preferred theme if present
-      if (window.localStorage.getItem("themeName") &&
-        window.localStorage.getItem("themeName") !== qx.theme.manager.Meta.getInstance().getTheme().name) {
-        const preferredTheme = qx.Theme.getByName(window.localStorage.getItem("themeName"));
+      const themeName = osparc.utils.Utils.localCache.getTheme();
+      if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
+        const preferredTheme = qx.Theme.getByName(themeName);
         const themes = qx.Theme.getAll();
         if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
           qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);

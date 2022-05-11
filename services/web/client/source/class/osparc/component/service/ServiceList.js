@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * This is a view to display the available services in a flowing fashion. Creates a ServiceButtonSmall button
+ * This is a view to display the available services in a flowing fashion. Creates a ServiceButtonGrid button
  * for every service in the model and subscribes it to the filter group.
  */
 qx.Class.define("osparc.component.service.ServiceList", {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
   /**
    * If the optional parameter is given, the elements will be subscribed to the filter group of the given id.
    *
-   * @param {String} [filterGroupId] Id of the filter group the ServiceButtonSmall buttons will be subscribed to.
+   * @param {String} [filterGroupId] Id of the filter group the ServiceButtonGrid buttons will be subscribed to.
    */
   construct: function(filterGroupId) {
     this.base(arguments);
@@ -61,24 +61,25 @@ qx.Class.define("osparc.component.service.ServiceList", {
       const group = this.__buttonGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
-      model.toArray()
-        .sort((a, b) => a.getName().localeCompare(b.getName()))
-        .forEach(service => {
-          const button = new osparc.component.service.ServiceButtonSmall(service);
-          if (this.__filterGroup !== null) {
-            button.subscribeToFilterGroup(this.__filterGroup);
-          }
-          group.add(button);
-          this._add(button);
-          button.addListener("dbltap", e => {
+
+      osparc.utils.Services.sortBasedOnFav(model);
+      model.toArray().forEach(service => {
+        const button = new osparc.component.service.ServiceButtonList(service);
+        if (this.__filterGroup !== null) {
+          button.subscribeToFilterGroup(this.__filterGroup);
+        }
+        group.add(button);
+        this._add(button);
+        button.addListener("dbltap", () => {
+          this.fireDataEvent("serviceAdd", button.getServiceModel());
+        }, this);
+        button.addListener("keypress", e => {
+          if (e.getKeyIdentifier() === "Enter") {
             this.fireDataEvent("serviceAdd", button.getServiceModel());
-          }, this);
-          button.addListener("keypress", e => {
-            if (e.getKeyIdentifier() === "Enter") {
-              this.fireDataEvent("serviceAdd", button.getServiceModel());
-            }
-          }, this);
-        });
+          }
+        }, this);
+      });
+
       group.addListener("changeValue", e => this.dispatchEvent(e.clone()), this);
     },
 
