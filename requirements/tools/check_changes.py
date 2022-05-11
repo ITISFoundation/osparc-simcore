@@ -132,10 +132,11 @@ def main_changes_stats() -> None:
     before, after, counts, lib2reqs = parse_changes(filepath)
 
     # format
-    print("## Changes to libraries (only updated libraries are included)")
+    print("###  Highlights on updated libraries (only updated libraries are included)")
+    print()
     print("- #packages before:", len(before))
     print("- #packages after :", len(after))
-    print()
+    print("")
 
     COLUMNS = ["#", "name", "before", "after", "upgrade", "count", "packages"]
 
@@ -172,6 +173,13 @@ def main_changes_stats() -> None:
                 "</br>".join(sorted(used_packages)),
                 "|",
             )
+
+    print()
+    print("*Legend*: ")
+    print("- ⬆️ base dependency (only services because packages are floating)")
+    print("- 🧪 test dependency")
+    print("- 🔧 tool dependency")
+    print()
 
 
 ## Stats on installed packages (i.e. defined in txt files)
