@@ -76,7 +76,7 @@ info-registry: .env ## displays content of docker-registry
 
 DOCKER_API_VERSION ?= 1.41
 docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
-	$(if $(shell pip list --verbose | grep datamodel-codegen),,$(error Missing datamodel-codegen, execute 'pip install "datamodel-code-generator[http]"'))
+	$(if $(shell pip list --verbose | grep datamodel-code-generator),,$(error Missing datamodel-codegen, execute 'pip install "datamodel-code-generator[http]"'))
 	# auto-generates $@ from $<
 	@datamodel-codegen \
 		--url https://docs.docker.com/engine/api/v$(DOCKER_API_VERSION).yaml \
