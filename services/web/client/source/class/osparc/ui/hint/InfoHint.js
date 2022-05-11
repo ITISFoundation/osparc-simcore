@@ -25,7 +25,9 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
    * @extends osparc.ui.basic.IconButton
    */
   construct: function(hint) {
-    this.base(arguments, "@MaterialIcons/info_outline/14");
+    this.base(arguments, this.self().INFO_ICON);
+
+    this.__createHint();
 
     this.bind("hintText", this, "visibility", {
       converter: hintText => (hintText && hintText !== "") ? "visible" : "excluded"
@@ -34,6 +36,10 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
     if (hint) {
       this.setHintText(hint);
     }
+  },
+
+  statics: {
+    INFO_ICON: "@MaterialIcons/info_outline/14"
   },
 
   properties: {
@@ -46,35 +52,39 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
   },
 
   members: {
-    __applyHintText: function(hintText) {
-      if (hintText && hintText !== "") {
-        const hint = new osparc.ui.hint.Hint(this, hintText).set({
-          active: false
-        });
+    _hint: null,
 
-        const showHint = () => hint.show();
-        const hideHint = () => hint.exclude();
+    __createHint: function() {
+      const hint = this._hint = new osparc.ui.hint.Hint(this).set({
+        active: false
+      });
 
-        // Make hint "modal" when info button is clicked
-        const tapListener = event => {
-          if (osparc.utils.Utils.isMouseOnElement(hint, event)) {
-            return;
-          }
-          hideHint();
-          document.removeEventListener("mousedown", tapListener);
-          this.addListener("mouseover", showHint);
-          this.addListener("mouseout", hideHint);
-        };
+      const showHint = () => hint.show();
+      const hideHint = () => hint.exclude();
 
+      // Make hint "modal" when info button is clicked
+      const tapListener = event => {
+        if (osparc.utils.Utils.isMouseOnElement(hint, event)) {
+          return;
+        }
+        hideHint();
+        document.removeEventListener("mousedown", tapListener);
         this.addListener("mouseover", showHint);
         this.addListener("mouseout", hideHint);
-        this.addListener("tap", () => {
-          showHint();
-          document.addEventListener("mousedown", tapListener);
-          this.removeListener("mouseover", showHint);
-          this.removeListener("mouseout", hideHint);
-        }, this);
-      }
+      };
+
+      this.addListener("mouseover", showHint);
+      this.addListener("mouseout", hideHint);
+      this.addListener("tap", () => {
+        showHint();
+        document.addEventListener("mousedown", tapListener);
+        this.removeListener("mouseover", showHint);
+        this.removeListener("mouseout", hideHint);
+      }, this);
+    },
+
+    __applyHintText: function(hintText) {
+      this._hint.setText(hintText);
     }
   }
 });

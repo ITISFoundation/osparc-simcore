@@ -150,6 +150,14 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: false
     },
 
+    errors: {
+      check: "Array",
+      init: [],
+      nullable: true,
+      event: "changeErrors",
+      apply: "__applyErrors"
+    },
+
     // GUI elements //
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
@@ -712,29 +720,41 @@ qx.Class.define("osparc.data.model.Node", {
       return outputsData;
     },
 
-    setErrors: function(errors) {
-      errors.forEach(error => {
-        const loc = error["loc"];
-        if (loc.length < 2) {
-          return;
-        }
-        if (loc[1] === this.getNodeId()) {
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: error["msg"],
-            level: "ERROR"
-          };
-          if (loc.length > 2) {
-            const portKey = loc[2];
-            if ("inputs" in this.getMetaData() && portKey in this.getMetaData()["inputs"]) {
-              errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
-            } else {
-              errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
-            }
+    __applyErrors: function(errors) {
+      if (errors && errors.length) {
+        errors.forEach(error => {
+          const loc = error["loc"];
+          if (loc.length < 2) {
+            return;
           }
-          this.fireDataEvent("showInLogger", errorMsgData);
-        }
-      });
+          if (loc[1] === this.getNodeId()) {
+            const errorMsgData = {
+              nodeId: this.getNodeId(),
+              msg: error["msg"],
+              level: "ERROR"
+            };
+
+            // errors to port
+            if (loc.length > 2) {
+              const portKey = loc[2];
+              if (this.hasInputs() && portKey in this.getMetaData()["inputs"]) {
+                errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
+              } else {
+                errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+              }
+              this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
+            }
+
+            // errors to logger
+            this.fireDataEvent("showInLogger", errorMsgData);
+          }
+        });
+      } else if (this.hasInputs()) {
+        // reset port errors
+        Object.keys(this.getMetaData()["inputs"]).forEach(portKey => {
+          this.getPropsForm().setPortErrorMessage(portKey, null);
+        });
+      }
     },
 
     // post edge creation routine

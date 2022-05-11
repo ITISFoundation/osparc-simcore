@@ -70,6 +70,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       } else {
         this.__setupBlank();
       }
+      node.bind("errors", this, "toolTipText", {
+        converter: errors => {
+          let errorsText = "";
+          if (errors) {
+            errors.forEach(error => errorsText += error["msg"] + "<br>");
+          }
+          return errorsText;
+        }
+      });
     },
 
     __setupComputational: function() {
