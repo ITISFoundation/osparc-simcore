@@ -23,8 +23,6 @@
 # socket_id saved in redis does not correspond to client's sio
 python-socketio~=4.6.1
 
-# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
-yarl<1.6
 
 
 aio-pika # RabbitMQ client
@@ -47,11 +45,11 @@ json2html
 jsondiff
 openpyxl # excel
 orjson  # json
+packaging
 parfive  # excel
 passlib
 pint # units
 pydantic[email] # models
 python-magic # excel
 redis
-semantic_version
 tenacity

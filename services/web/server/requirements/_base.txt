@@ -131,6 +131,7 @@ jsonschema==3.2.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-schema-validator
     #   openapi-spec-validator
@@ -160,6 +161,7 @@ orjson==3.6.7
     # via -r requirements/_base.in
 packaging==21.3
     # via
+    #   -r requirements/_base.in
     #   pint
     #   redis
 pamqp==3.1.0
@@ -224,8 +226,6 @@ pyyaml==5.4.1
     #   openapi-spec-validator
 redis==4.2.2
     # via -r requirements/_base.in
-semantic-version==2.9.0
-    # via -r requirements/_base.in
 setproctitle==1.2.2
     # via gunicorn
 six==1.16.0
@@ -269,8 +269,8 @@ wrapt==1.14.0
     # via deprecated
 yarl==1.5.1
     # via
+    #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
