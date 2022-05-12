@@ -17,6 +17,9 @@ from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.generated_models.docker_rest_api import (
+    ServiceSpec as DockerServiceSpec,
+)
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
@@ -262,45 +265,50 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
     # the service specifications follow the Docker service creation available
     # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     return {
-        "schedule_specs": {
-            "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
-            "TaskTemplate": {
-                "Placement": {
-                    "Constraints": [
-                        "node.id==2ivku8v2gvtg4",
-                        "node.hostname!=node-2",
-                        "node.platform.os==linux",
-                        "node.labels.security==high",
-                        "engine.labels.operatingsystem==ubuntu-20.04",
-                    ]
-                },
-                "Resources": {
-                    "Limits": {"NanoCPUs": 16 * 10e9, "MemoryBytes": 10 * 1024**3},
-                    "Reservation": {
-                        "NanoCPUs": 136 * 10e9,
-                        "MemoryBytes": 312 * 1024**3,
-                        "GenericResources": [
-                            {
-                                "NamedResourceSpec": {
-                                    "Kind": "Chipset",
-                                    "Value": "Late2020",
-                                }
-                            },
-                            {
-                                "DiscreteResourceSpec": {
-                                    "Kind": "FAKE_RESOURCE",
-                                    "Value": 1 * 1024**3,
-                                }
-                            },
-                        ],
+        "sidecar": DockerServiceSpec.parse_obj(
+            {
+                "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
+                "TaskTemplate": {
+                    "Placement": {
+                        "Constraints": [
+                            "node.id==2ivku8v2gvtg4",
+                            "node.hostname!=node-2",
+                            "node.platform.os==linux",
+                            "node.labels.security==high",
+                            "engine.labels.operatingsystem==ubuntu-20.04",
+                        ]
+                    },
+                    "Resources": {
+                        "Limits": {
+                            "NanoCPUs": 16 * 10e9,
+                            "MemoryBytes": 10 * 1024**3,
+                        },
+                        "Reservation": {
+                            "NanoCPUs": 136 * 10e9,
+                            "MemoryBytes": 312 * 1024**3,
+                            "GenericResources": [
+                                {
+                                    "NamedResourceSpec": {
+                                        "Kind": "Chipset",
+                                        "Value": "Late2020",
+                                    }
+                                },
+                                {
+                                    "DiscreteResourceSpec": {
+                                        "Kind": "FAKE_RESOURCE",
+                                        "Value": 1 * 1024**3,
+                                    }
+                                },
+                            ],
+                        },
+                    },
+                    "ContainerSpec": {
+                        "Command": ["my", "super", "duper", "service", "command"],
+                        "Env": [f"SOME_FAKE_ADDITIONAL_ENV={faker.pystr().upper()}"],
                     },
                 },
-                "ContainerSpec": {
-                    "Command": ["my", "super", "duper", "service", "command"],
-                    "Env": [f"SOME_FAKE_ADDITIONAL_ENV={faker.pystr().upper()}"],
-                },
-            },
-        }
+            }
+        ).dict(by_alias=True, exclude_unset=True)
     }
 
 

@@ -175,7 +175,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 dynamic_sidecar_service_spec_base.dict(
                     by_alias=True, exclude_unset=True
                 ),
-                user_specific_service_spec,
+                user_specific_service_spec.get("sidecar", {}),
                 include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
