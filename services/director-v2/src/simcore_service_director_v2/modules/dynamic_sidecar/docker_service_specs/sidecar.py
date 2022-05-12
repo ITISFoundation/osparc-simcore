@@ -254,8 +254,6 @@ def _clean_env_field(service_spec: dict[str, Any]) -> None:
         return
     # Fix Env, should be an array of strings not dict, aiodocker auto-fixes this but it is wrong
     service_spec["task_template"]["ContainerSpec"]["Env"] = sorted(
-        [
-            k if v is None else f"{k}={v}"
-            for k, v in service_spec["task_template"]["ContainerSpec"]["Env"].items()
-        ]
+        k if v is None else f"{k}={v}"
+        for k, v in service_spec["task_template"]["ContainerSpec"]["Env"].items()
     )
