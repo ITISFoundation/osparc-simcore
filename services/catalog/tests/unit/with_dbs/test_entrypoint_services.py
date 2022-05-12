@@ -16,11 +16,11 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
-from models_library.services_resources import ResourceValue, ServiceResources
+from models_library.services_resources import Resources, ResourceValue, ServiceResources
 from pydantic import ByteSize
 from respx.models import Route
 from respx.router import MockRouter
-from simcore_service_catalog.core.settings import _DEFAULT_SERVICE_RESOURCES
+from simcore_service_catalog.core.settings import _DEFAULT_RESOURCES
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -277,23 +277,23 @@ def mock_director_service_labels(
     [
         pytest.param(
             {},
-            _DEFAULT_SERVICE_RESOURCES,
+            _DEFAULT_RESOURCES,
             id="nothing_defined_returns_default_resources",
         ),
         pytest.param(
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
             },
-            _DEFAULT_SERVICE_RESOURCES.copy(
+            _DEFAULT_RESOURCES.copy(
                 update={
                     "__root__": {
                         "CPU": ResourceValue(
                             limit=4.0,
-                            reservation=_DEFAULT_SERVICE_RESOURCES["CPU"].reservation,
+                            reservation=_DEFAULT_RESOURCES["CPU"].reservation,
                         ),
                         "RAM": ResourceValue(
                             limit=ByteSize(17179869184),
-                            reservation=_DEFAULT_SERVICE_RESOURCES["RAM"].reservation,
+                            reservation=_DEFAULT_RESOURCES["RAM"].reservation,
                         ),
                     },
                 }
@@ -302,9 +302,9 @@ def mock_director_service_labels(
         ),
         pytest.param(
             {
-                "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "SOME_STUFF", "Value": "some_string" } } ] } } } ]'
+                "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "AIRAM", "Value": "some_string" } } ] } } } ]'
             },
-            _DEFAULT_SERVICE_RESOURCES.copy(
+            _DEFAULT_RESOURCES.copy(
                 update={
                     "__root__": {
                         "CPU": ResourceValue(limit=4.0, reservation=0.1),
@@ -312,7 +312,7 @@ def mock_director_service_labels(
                             limit=ByteSize(17179869184), reservation=ByteSize(536870912)
                         ),
                         "VRAM": ResourceValue(limit=0, reservation=1),
-                        "SOME_STUFF": ResourceValue(limit=0, reservation="some_string"),
+                        "AIRAM": ResourceValue(limit=0, reservation="some_string"),
                     }
                 }
             ),
@@ -322,15 +322,15 @@ def mock_director_service_labels(
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [  ] } } } ]'
             },
-            _DEFAULT_SERVICE_RESOURCES.copy(
+            _DEFAULT_RESOURCES.copy(
                 update={
                     "__root__": {
                         "CPU": ResourceValue(
-                            limit=_DEFAULT_SERVICE_RESOURCES["CPU"].limit,
+                            limit=_DEFAULT_RESOURCES["CPU"].limit,
                             reservation=0.1,
                         ),
                         "RAM": ResourceValue(
-                            limit=_DEFAULT_SERVICE_RESOURCES["RAM"].limit,
+                            limit=_DEFAULT_RESOURCES["RAM"].limit,
                             reservation=ByteSize(536870912),
                         ),
                     }
@@ -342,7 +342,7 @@ def mock_director_service_labels(
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
             },
-            _DEFAULT_SERVICE_RESOURCES.copy(
+            _DEFAULT_RESOURCES.copy(
                 update={
                     "__root__": {
                         "CPU": ResourceValue(
@@ -366,8 +366,8 @@ async def test_get_service_resources(
     mock_director_service_labels: Route,
     client: TestClient,
     director_labels: Dict[str, Any],
-    expected_resources: ServiceResources,
-):
+    expected_resources: Resources,
+) -> None:
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     mock_director_service_labels.respond(json={"data": director_labels})
@@ -376,14 +376,84 @@ async def test_get_service_resources(
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
     received_resources = ServiceResources.parse_obj(data)
-    assert received_resources == expected_resources
+
+    expected_service_resources = ServiceResources.from_resources(
+        expected_resources, f"{service_key}:{service_version}"
+    )
+    assert received_resources.dict() == expected_service_resources.dict()
+    assert received_resources.json() == expected_service_resources.json()
+    assert received_resources == expected_service_resources
+
+
+@pytest.fixture
+def create_mock_director_service_labels(
+    director_mockup: respx.MockRouter, app: FastAPI
+) -> Callable:
+    def factory(services_labels: Dict[str, Dict[str, Any]]) -> None:
+        for service_name, data in services_labels.items():
+            encoded_key = urllib.parse.quote_plus(
+                f"simcore/services/dynamic/{service_name}"
+            )
+            director_mockup.get(
+                url__regex=rf"v0/services/{encoded_key}/[0-9]+.[0-9]+.[0-9]+/labels",
+                name=f"get_service_labels_for_{service_name}",
+            ).respond(200, json={"data": data})
+
+    return factory
+
+
+@pytest.mark.parametrize(
+    "mapped_services_labels, expected_service_resources",
+    [
+        pytest.param(
+            {
+                "sim4life-dy": {
+                    "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 300000000, "MemoryBytes": 53687091232 } } } ]',
+                    "simcore.service.compose-spec": '{"version": "2.3", "services": {"rt-web-dy":{"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life-dy:${SERVICE_VERSION}","init": true, "depends_on": ["s4l-core"]}, "s4l-core": {"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core-dy:${SERVICE_VERSION}","runtime": "nvidia", "init": true, "environment": ["DISPLAY=${DISPLAY}"],"volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"]}, "sym-server": {"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sym-server:${SERVICE_VERSION}","init": true}}}',
+                },
+                "s4l-core-dy": {
+                    "simcore.service.settings": '[{"name": "env", "type": "string", "value": ["DISPLAY=:0"]},{"name": "env", "type": "string", "value": ["SYM_SERVER_HOSTNAME=%%container_name.sym-server%%"]},{"name": "mount", "type": "object", "value": [{"ReadOnly": true, "Source":"/tmp/.X11-unix", "Target": "/tmp/.X11-unix", "Type": "bind"}]}, {"name":"constraints", "type": "string", "value": ["node.platform.os == linux"]},{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs":4000000000, "MemoryBytes": 17179869184}, "Reservations": {"NanoCPUs": 100000000,"MemoryBytes": 536870912, "GenericResources": [{"DiscreteResourceSpec":{"Kind": "VRAM", "Value": 1}}]}}}]'
+                },
+                "sym-server": {"simcore.service.settings": "[]"},
+            },
+            ServiceResources.parse_obj(
+                ServiceResources.Config.schema_extra["examples"][1]
+            ),
+            id="s4l_case",
+        ),
+    ],
+)
+async def test_get_service_resources_sim4life_case(
+    mock_catalog_background_task,
+    create_mock_director_service_labels: Callable,
+    client: TestClient,
+    mapped_services_labels: Dict[str, Dict[str, Any]],
+    expected_service_resources: ServiceResources,
+) -> None:
+    service_key = "simcore/services/dynamic/sim4life-dy"
+    service_version = "3.0.0"
+
+    create_mock_director_service_labels(mapped_services_labels)
+
+    url = URL(f"/v0/services/{service_key}/{service_version}/resources")
+    response = client.get(f"{url}")
+    assert response.status_code == 200, f"{response.text}"
+    data = response.json()
+    received_service_resources = ServiceResources.parse_obj(data)
+
+    # assemble expected!
+
+    assert received_service_resources.dict() == expected_service_resources.dict()
+    assert received_service_resources.json() == expected_service_resources.json()
+    assert received_service_resources == expected_service_resources
 
 
 async def test_get_service_resources_raises_errors(
     mock_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
-):
+) -> None:
+
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")

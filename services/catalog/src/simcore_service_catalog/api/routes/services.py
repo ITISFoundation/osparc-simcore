@@ -5,18 +5,24 @@ import logging
 import urllib.parse
 from typing import Any, Dict, Final, List, Optional, Set, Tuple, cast
 
+import yaml
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    SimcoreServiceSettingLabelEntry,
+)
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.services_resources import (
-    ResourceName,
+    ImageResources,
+    Resources,
     ResourceValue,
     ServiceResources,
 )
 from pydantic import ValidationError, parse_raw_as
 from pydantic.types import PositiveInt
+from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
 
@@ -188,11 +194,12 @@ async def list_services(
 
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
+SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
 
 
 @router.get(
     "/{service_key:path}/{service_version}/resources",
-    response_model=Dict[ResourceName, ResourceValue],
+    response_model=ServiceResources,
     **RESPONSE_MODEL_POLICY,
 )
 @cached(
@@ -203,36 +210,18 @@ async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
-    default_service_resources: ServiceResources = Depends(
-        get_default_service_resources
-    ),
-):
+    default_service_resources: Resources = Depends(get_default_service_resources),
+) -> ServiceResources:
     # TODO: --> PC: I'll need to go through that with you for function services,
     # cause these entries are not in ServiceDockerData
+
+    image_version = f"{service_key}:{service_version}"
     if is_function_service(service_key):
-        # NOTE: this is due to the fact that FastAPI does not appear to like pydantic models with just a root
-        return default_service_resources.dict()["__root__"]
-
-    service_labels: Dict[str, Any] = cast(
-        Dict[str, Any],
-        await director_client.get(
-            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
-        ),
-    )
-
-    if not service_labels:
-        # NOTE: this is due to the fact that FastAPI does not appear to like pydantic models with just a root
-        return default_service_resources.dict()["__root__"]
-
-    service_settings = parse_raw_as(
-        List[SimcoreServiceSettingLabelEntry],
-        service_labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
-    )
-    logger.debug("received %s", f"{service_settings}")
+        return ServiceResources.from_resources(default_service_resources, image_version)
 
     def _from_service_settings(
         settings: List[SimcoreServiceSettingLabelEntry],
-    ) -> ServiceResources:
+    ) -> Resources:
         # filter resource entries
         resource_entries = filter(
             lambda entry: entry.name.lower() == "resources", settings
@@ -284,10 +273,79 @@ async def get_service_resources(
 
         return service_resources
 
-    service_resources = _from_service_settings(service_settings)
-    logger.debug("%s", f"{service_resources}")
-    # NOTE: this is due to the fact that FastAPI does not appear to like pydantic models with just a root
-    return service_resources.dict()["__root__"]
+    async def _get_service_labels(key: str, version: str) -> Dict[str, Any]:
+        service_labels = cast(
+            Dict[str, Any],
+            await director_client.get(
+                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
+            ),
+        )
+        logger.debug(
+            "received for %s %s",
+            f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
+            f"{service_labels=}",
+        )
+        return service_labels
+
+    def _get_service_settings(
+        labels: Dict[str, Any]
+    ) -> List[SimcoreServiceSettingLabelEntry]:
+        service_settings = parse_raw_as(
+            List[SimcoreServiceSettingLabelEntry],
+            labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+        )
+        logger.debug("received %s", f"{service_settings=}")
+        return service_settings
+
+    service_labels: Dict[str, Any] = await _get_service_labels(
+        service_key, service_version
+    )
+
+    if not service_labels:
+        return ServiceResources.from_resources(default_service_resources, image_version)
+
+    service_spec: Optional[ComposeSpecLabel] = parse_raw_as(
+        Optional[ComposeSpecLabel],
+        service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
+    )
+    logger.debug("received %s", f"{service_spec=}")
+
+    if service_spec is None:
+        service_settings = _get_service_settings(service_labels)
+        service_resources = _from_service_settings(service_settings)
+        return ServiceResources.from_resources(service_resources, image_version)
+
+    stringified_service_spec = replace_env_vars_in_compose_spec(
+        service_spec=service_spec,
+        replace_simcore_registry="",
+        replace_service_version=service_version,
+    )
+    full_service_spec: ComposeSpecLabel = yaml.safe_load(stringified_service_spec)
+
+    results: ServiceResources = ServiceResources.parse_obj({})
+
+    for spec_key, spec_data in full_service_spec["services"].items():
+        # image can be:
+        # - `/simcore/service/dynamic/service-name:0.0.1`
+        # - `traefik:0.0.1`
+        # leading slashes must be stripped
+        image = spec_data["image"].lstrip("/")
+        key, version = image.split(":")
+        spec_service_labels: Dict[str, Any] = await _get_service_labels(key, version)
+
+        if not spec_service_labels:
+            spec_service_resources: Resources = default_service_resources
+        else:
+            spec_service_settings = _get_service_settings(spec_service_labels)
+            spec_service_resources: Resources = _from_service_settings(
+                spec_service_settings
+            )
+
+        results[spec_key] = ImageResources.parse_obj(
+            {"image": image, "resources": spec_service_resources}
+        )
+
+    return results
 
 
 @router.get(

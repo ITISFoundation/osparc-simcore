@@ -3,8 +3,8 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from models_library.services_resources import ServiceResources
-from pydantic import ByteSize, Field, PositiveInt
+from models_library.services_resources import DEFAULT_RESOURCES, Resources
+from pydantic import Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -24,15 +24,7 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_SERVICE_RESOURCES = ServiceResources.parse_obj(
-    {
-        "CPU": {"limit": 0.1, "reservation": 0.1},
-        "RAM": {
-            "limit": ByteSize(2 * 1024**3),
-            "reservation": ByteSize(2 * 1024**3),
-        },
-    }
-)
+_DEFAULT_RESOURCES = Resources.parse_obj(DEFAULT_RESOURCES)
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -64,4 +56,4 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_TRACING: Optional[TracingSettings] = None
 
-    CATALOG_SERVICES_DEFAULT_RESOURCE: ServiceResources = _DEFAULT_SERVICE_RESOURCES
+    CATALOG_SERVICES_DEFAULT_RESOURCES: Resources = _DEFAULT_RESOURCES
