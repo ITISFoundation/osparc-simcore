@@ -87,7 +87,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "type": "ContainerSpec",
                     "value": {"Command": ["run"]},
                 },
-                # SEE service_resources.py::ResourceValue
+                # SEE services_resources.py::ResourceValue
                 {
                     "name": "Resources",
                     "type": "Resources",
