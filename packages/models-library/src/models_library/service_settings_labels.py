@@ -47,7 +47,13 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
     _destination_container: str = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
     setting_type: Literal[
-        "string", "int", "integer", "number", "object", "ContainerSpec", "Resources"
+        "string",
+        "int",
+        "integer",
+        "number",
+        "object",
+        "ContainerSpec",
+        "Resources",
     ] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
@@ -57,6 +63,14 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         ...,
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
+
+    @validator("setting_type", pre=True)
+    @classmethod
+    def ensure_backwards_compatible_setting_type(cls, v):
+        if v == "resources":
+            # renamed in the latest version as
+            return "Resources"
+        return v
 
     class Config(_BaseConfig):
         schema_extra = {
@@ -73,7 +87,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "type": "ContainerSpec",
                     "value": {"Command": ["run"]},
                 },
-                # SEE service_resources.py::ResourceValue
+                # SEE services_resources.py::ResourceValue
                 {
                     "name": "Resources",
                     "type": "Resources",
@@ -103,6 +117,20 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                 },
                 # environments
                 {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
+                # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
+                {"name": "ports", "type": "int", "value": 8888},
+                {
+                    "name": "constraints",
+                    "type": "string",
+                    "value": ["node.platform.os == linux"],
+                },
+                {
+                    "name": "resources",
+                    "type": "resources",
+                    "value": {
+                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 8589934592}
+                    },
+                },
             ]
         }
 

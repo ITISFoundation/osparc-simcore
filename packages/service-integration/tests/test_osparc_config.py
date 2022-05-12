@@ -5,12 +5,11 @@
 import json
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Type
+from typing import Any
 
 import pytest
 import yaml
 from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
-from pydantic import BaseModel
 from service_integration.osparc_config import MetaConfig, RuntimeConfig, SettingsItem
 
 
@@ -66,12 +65,24 @@ def test_load_from_labels(
 
 
 @pytest.mark.parametrize(
-    "model_cls",
-    (SimcoreServiceSettingLabelEntry,),
+    "example_data", SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
 )
 def test_settings_item_in_sync_with_service_settings_label(
-    model_cls: Type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
+    example_data: dict[str, Any]
 ):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        SettingsItem.parse_obj(example)
+
+    print(pformat(example_data))
+
+    # First we parse with SimcoreServiceSettingLabelEntry since it also supports backwards compatibility
+    # and will upgrade old version
+    example_model = SimcoreServiceSettingLabelEntry.parse_obj(example_data)
+
+    # SettingsItem is exclusively for NEW labels, so it should not support backwards compatibility
+    new_model = SettingsItem(
+        name=example_model.name,
+        type=example_model.setting_type,
+        value=example_model.value,
+    )
+
+    # check back
+    SimcoreServiceSettingLabelEntry.parse_obj(new_model.dict(by_alias=True))
