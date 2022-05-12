@@ -13,6 +13,7 @@ from typing import (
 )
 
 from pydantic.generics import GenericModel
+from pydantic.utils import ROOT_KEY
 
 DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
@@ -50,6 +51,11 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
 
     def __len__(self) -> int:
         return self.__root__.__len__()
+
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
+        # `this is due to the fact that FastAPI does not appear to like pydantic models with just a root`
+        data = super().dict(*args, **kwargs)
+        return data[ROOT_KEY] if self.__custom_root_type__ else data
 
 
 DataT = TypeVar("DataT")
