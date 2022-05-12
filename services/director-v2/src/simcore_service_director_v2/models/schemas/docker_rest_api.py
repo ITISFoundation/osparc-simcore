@@ -699,8 +699,6 @@ class PortMap(BaseModel):
 
     """
 
-    pass
-
     class Config:
         extra = Extra.allow
 
@@ -1799,8 +1797,6 @@ class File1(File):
     > **Note**: `Configs.File` and `Configs.Runtime` are mutually exclusive
 
     """
-
-    pass
 
 
 class Config1(BaseModel):
