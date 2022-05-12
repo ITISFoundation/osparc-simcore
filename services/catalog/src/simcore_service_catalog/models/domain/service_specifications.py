@@ -8,3 +8,6 @@ class ServiceSpecificationsAtDB(ServiceSpecifications):
     service_key: ServiceKey
     service_version: ServiceVersion
     gid: GroupID
+
+    class Config(ServiceSpecifications.Config):
+        orm_mode: bool = True

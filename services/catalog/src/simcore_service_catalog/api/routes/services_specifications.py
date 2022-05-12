@@ -39,4 +39,5 @@ async def get_service_specifications(
     service_specs = await services_repo.get_service_specifications(
         service_key, service_version, tuple(user_groups)
     )
+    logger.debug("returning %s", f"{service_specs=}")
     return service_specs

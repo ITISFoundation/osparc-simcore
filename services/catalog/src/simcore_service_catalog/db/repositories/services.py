@@ -342,6 +342,9 @@ class ServicesRepository(BaseRepository):
     async def get_service_specifications(
         self, key: ServiceKey, version: ServiceVersion, groups: tuple[GroupAtDB]
     ) -> ServiceSpecifications:
+        logger.debug(
+            "getting specifications from db for %s", f"{key}:{version} for {groups=}"
+        )
         gid_to_group_map = {group.gid: group for group in groups}
         multi_group_service_specs = {
             GroupType.EVERYONE: {},
@@ -358,19 +361,20 @@ class ServicesRepository(BaseRepository):
                             (group.gid for group in groups)
                         )
                     )
-                )
+                ),
             ):
                 try:
-                    group_service_specs = ServiceSpecificationsAtDB(**row)
+                    logger.debug("found following %s", f"{row=}")
+                    group_service_specs = ServiceSpecificationsAtDB.from_orm(row)
                     group = gid_to_group_map[row.gid]
                     if group.group_type == GroupType.STANDARD:
                         multi_group_service_specs[group.group_type].append(
-                            group_service_specs.dict(include={"schedule_specs"})
+                            group_service_specs.dict(include={"sidecar"})
                         )
                     else:
                         multi_group_service_specs[
                             group.group_type
-                        ] = group_service_specs.dict(include={"schedule_specs"})
+                        ] = group_service_specs.dict(include={"sidecar"})
                 except ValidationError as exc:
                     logger.warning(
                         "skipping service specifications for group '%s' as invalid: %s",
@@ -383,5 +387,5 @@ class ServicesRepository(BaseRepository):
         for specs in multi_group_service_specs[GroupType.STANDARD]:
             merged_specifications.update(specs)
         merged_specifications.update(multi_group_service_specs[GroupType.PRIMARY])
-
+        logger.debug("found following %s", f"{merged_specifications=}")
         return ServiceSpecifications.parse_obj(merged_specifications)
