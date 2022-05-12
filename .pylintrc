@@ -7,7 +7,11 @@ extension-pkg-whitelist=pydantic,orjson,ujson
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS,migration,generated_models
+ignore=CVS,migration
+
+# Add files or directories matching the regex patterns to the ignore-list.
+# The regex matches against paths and can be in Posix or Windows format.
+ignore-paths=^.*/generated_models/.*$
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -18,7 +22,7 @@ ignore-patterns=
 #init-hook=
 
 # Use multiple processes to speed up Pylint.
-jobs=4
+jobs=0
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
