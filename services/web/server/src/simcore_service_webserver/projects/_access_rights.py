@@ -51,6 +51,9 @@ from sqlalchemy.sql import text
 logger = logging.getLogger(__name__)
 
 
+# MODELS -----------------------------------------------
+
+
 @dataclass
 class AccessRights:
     read: bool
@@ -66,6 +69,7 @@ class AccessRights:
         return cls(False, False, False)
 
 
+# ERRORS --------------------------------------------------
 class AccessLayerError(Exception):
     """Base class for access-layer related errors"""
 
@@ -84,6 +88,9 @@ class InvalidFileIdentifier(AccessLayerError):
 
     def __str__(self):
         return "Error in {}: {} [{}]".format(self.identifier, self.reason, self.details)
+
+
+# HELPERS ---------------------------------------------
 
 
 async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
@@ -113,6 +120,7 @@ def _aggregate_access_rights(
         return AccessRights.none()
 
 
+# API ------------------------------------------------------------
 async def list_projects_access_rights(
     conn: SAConnection, user_id: int
 ) -> Dict[ProjectID, AccessRights]:
@@ -195,9 +203,6 @@ async def get_project_access_rights(
     # determine user's access rights by aggregating AR of all groups
     prj_access = _aggregate_access_rights(row.access_rights, user_group_ids)
     return prj_access
-
-
-# HELPERS -----------------------------------------------
 
 
 async def get_readable_project_ids(conn: SAConnection, user_id: int) -> List[ProjectID]:
