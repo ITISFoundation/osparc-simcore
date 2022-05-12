@@ -206,7 +206,10 @@ def get_dynamic_sidecar_spec(
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
         },
         "name": scheduler_data.service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
+        "networks": [
+            {"Target": swarm_network_id},
+            {"Target": dynamic_sidecar_network_id},
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
@@ -229,7 +232,7 @@ def get_dynamic_sidecar_spec(
             # this will get overwritten
             "Resources": {
                 "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
-                "Reservations": {
+                "Reservation": {
                     "NanoCPUs": 1 * pow(10, 8),
                     "MemoryBytes": 500 * pow(1024, 2),
                 },
@@ -241,5 +244,18 @@ def get_dynamic_sidecar_spec(
         labels_service_settings=settings,
         create_service_params=create_service_params,
     )
+    _clean_env_field(create_service_params)
 
     return create_service_params
+
+
+def _clean_env_field(service_spec: dict[str, Any]) -> None:
+    if isinstance(service_spec["task_template"]["ContainerSpec"].get("Env", []), list):
+        return
+    # Fix Env, should be an array of strings not dict, aiodocker auto-fixes this but it is wrong
+    service_spec["task_template"]["ContainerSpec"]["Env"] = sorted(
+        [
+            k if v is None else f"{k}={v}"
+            for k, v in service_spec["task_template"]["ContainerSpec"]["Env"].items()
+        ]
+    )
