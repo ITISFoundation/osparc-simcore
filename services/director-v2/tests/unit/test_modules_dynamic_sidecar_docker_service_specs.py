@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import json
 from pprint import pprint
 from typing import Any, Dict, Iterator, cast
 
@@ -165,53 +166,63 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-        "networks": ["mocked_swarm_network_id", "mocked_dynamic_sidecar_network_id"],
+        "networks": [
+            {"Target": "mocked_swarm_network_id"},
+            {"Target": "mocked_dynamic_sidecar_network_id"},
+        ],
         "task_template": {
             "ContainerSpec": {
-                "Env": {
-                    "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
-                    "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
-                    "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": '["/tmp/strip_me/*", ' '"*.py"]',
-                    "DY_SIDECAR_STATE_PATHS": '["/tmp/save_1", ' '"/tmp_save_2"]',
-                    "DY_SIDECAR_USER_ID": "234",
-                    "FORWARD_ENV_DISPLAY": ":0",
-                    "LOG_LEVEL": "WARNING",
-                    "POSTGRES_DB": "mocked_db",
-                    "POSTGRES_ENDPOINT": "mocked_host:5432",
-                    "POSTGRES_HOST": "mocked_host",
-                    "POSTGRES_PASSWORD": "mocked_password",
-                    "POSTGRES_PORT": "5432",
-                    "POSTGRES_USER": "mocked_user",
-                    "RABBIT_CHANNELS": '{"log": '
-                    '"simcore.services.logs", '
-                    '"progress": '
-                    '"simcore.services.progress", '
-                    '"instrumentation": '
-                    '"simcore.services.instrumentation", '
-                    '"events": '
-                    '"simcore.services.events"}',
-                    "RABBIT_HOST": "rabbit",
-                    "RABBIT_PASSWORD": "adminadmin",
-                    "RABBIT_PORT": "5672",
-                    "RABBIT_USER": "admin",
-                    "REGISTRY_AUTH": "False",
-                    "REGISTRY_PATH": "None",
-                    "REGISTRY_PW": "test",
-                    "REGISTRY_SSL": "False",
-                    "REGISTRY_URL": "registry.osparc-master.speag.com",
-                    "REGISTRY_USER": "test",
-                    "R_CLONE_PROVIDER": "MINIO",
-                    "S3_ACCESS_KEY": "12345678",
-                    "S3_BUCKET_NAME": "simcore",
-                    "S3_ENDPOINT": "http://172.17.0.1:9001",
-                    "S3_SECRET_KEY": "12345678",
-                    "S3_SECURE": "False",
-                    "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "STORAGE_ENDPOINT": "storage:8080",
-                },
+                "Env": sorted(
+                    [
+                        f"{k}={v}"
+                        for k, v in {
+                            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                            "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                            "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
+                            "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
+                            "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                            "DY_SIDECAR_STATE_EXCLUDE": '["/tmp/strip_me/*", '
+                            '"*.py"]',
+                            "DY_SIDECAR_STATE_PATHS": '["/tmp/save_1", '
+                            '"/tmp_save_2"]',
+                            "DY_SIDECAR_USER_ID": "234",
+                            "FORWARD_ENV_DISPLAY": ":0",
+                            "LOG_LEVEL": "WARNING",
+                            "POSTGRES_DB": "mocked_db",
+                            "POSTGRES_ENDPOINT": "mocked_host:5432",
+                            "POSTGRES_HOST": "mocked_host",
+                            "POSTGRES_PASSWORD": "mocked_password",
+                            "POSTGRES_PORT": "5432",
+                            "POSTGRES_USER": "mocked_user",
+                            "RABBIT_CHANNELS": '{"log": '
+                            '"simcore.services.logs", '
+                            '"progress": '
+                            '"simcore.services.progress", '
+                            '"instrumentation": '
+                            '"simcore.services.instrumentation", '
+                            '"events": '
+                            '"simcore.services.events"}',
+                            "RABBIT_HOST": "rabbit",
+                            "RABBIT_PASSWORD": "adminadmin",
+                            "RABBIT_PORT": "5672",
+                            "RABBIT_USER": "admin",
+                            "REGISTRY_AUTH": "False",
+                            "REGISTRY_PATH": "None",
+                            "REGISTRY_PW": "test",
+                            "REGISTRY_SSL": "False",
+                            "REGISTRY_URL": "registry.osparc-master.speag.com",
+                            "REGISTRY_USER": "test",
+                            "R_CLONE_PROVIDER": "MINIO",
+                            "S3_ACCESS_KEY": "12345678",
+                            "S3_BUCKET_NAME": "simcore",
+                            "S3_ENDPOINT": "http://172.17.0.1:9001",
+                            "S3_SECRET_KEY": "12345678",
+                            "S3_SECURE": "False",
+                            "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                            "STORAGE_ENDPOINT": "storage:8080",
+                        }.items()
+                    ]
+                ),
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
@@ -277,7 +288,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             "Placement": {"Constraints": ["node.platform.os == linux"]},
             "Resources": {
                 "Limits": {"MemoryBytes": 17179869184, "NanoCPUs": 4000000000},
-                "Reservations": {
+                "Reservation": {
                     "GenericResources": [
                         {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
                     ],
@@ -342,8 +353,18 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
     )
     assert dynamic_sidecar_spec
     assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec
-    original_dynamic_sidecar_spec = AioDockerServiceSpec(**dynamic_sidecar_spec)
-    assert original_dynamic_sidecar_spec
+    original_aiodocker_dynamic_sidecar_spec = AioDockerServiceSpec(
+        **dynamic_sidecar_spec
+    )
+    assert original_aiodocker_dynamic_sidecar_spec
+    assert (
+        json.loads(
+            original_aiodocker_dynamic_sidecar_spec.json(
+                by_alias=True, exclude_unset=True
+            )
+        )
+        == expected_dynamic_sidecar_spec
+    )
 
     catalog_client = CatalogClient.instance(minimal_app)
     user_service_specs = await catalog_client.get_service_specifications(
@@ -353,14 +374,20 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
     )
     assert user_service_specs
     assert "schedule_specs" in user_service_specs
-    docker_service_spec = ServiceSpec.parse_obj(user_service_specs["schedule_specs"])
-    assert docker_service_spec
-    aiodocker_service_spec = AioDockerServiceSpec(**docker_service_spec.dict())
-    assert aiodocker_service_spec
+    user_docker_service_spec = ServiceSpec.parse_obj(
+        user_service_specs["schedule_specs"]
+    )
+    assert user_docker_service_spec
+    user_aiodocker_service_spec = AioDockerServiceSpec(
+        **user_docker_service_spec.dict(exclude_unset=True)
+    )
+    assert user_aiodocker_service_spec
 
     merged_dynamic_sidecar_spec = {
-        **dynamic_sidecar_spec,
-        **aiodocker_service_spec.dict(by_alias=True),
+        **original_aiodocker_dynamic_sidecar_spec.dict(
+            by_alias=True, exclude_unset=True
+        ),
+        **user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True),
     }
 
     assert merged_dynamic_sidecar_spec != expected_dynamic_sidecar_spec
