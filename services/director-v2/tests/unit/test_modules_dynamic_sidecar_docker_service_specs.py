@@ -333,6 +333,7 @@ def test_get_dynamic_proxy_spec(
 
 
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
+    # pylint: disable=too-many-arguments
     minimal_catalog_config: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
