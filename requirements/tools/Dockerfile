@@ -20,8 +20,9 @@ RUN apt-get update \
   && apt-get clean
 
 
+# SEE bug with pip==22.1 https://github.com/jazzband/pip-tools/issues/1617
 RUN pip --no-cache-dir install --upgrade \
-  pip~=22.0  \
+  pip~=22.0.1  \
   wheel \
   setuptools
 
