@@ -163,7 +163,7 @@ def inject_settings_to_create_service_params(
 def _clean_reservation_field(service_spec: dict[str, Any]) -> None:
     WRONG_FIELD = "Reservations"
     RIGHT_FIELD = "Reservation"
-    if not WRONG_FIELD in service_spec["task_template"].get("Resources", {}):
+    if WRONG_FIELD not in service_spec["task_template"].get("Resources", {}):
         return
     # NOTE: in old services, there is a typo in the field. There is no s in Reservation in
     # the Docker API (see https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate)
