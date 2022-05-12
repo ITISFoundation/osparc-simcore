@@ -1,4 +1,4 @@
-from models_library.generated_models.docker_rest_api import ServiceSpec
+from .generated_models.docker_rest_api import ServiceSpec
 
 
 def to_snake_case(string: str) -> str:
