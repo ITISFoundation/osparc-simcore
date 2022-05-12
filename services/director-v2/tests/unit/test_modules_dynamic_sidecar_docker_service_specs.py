@@ -24,6 +24,7 @@ from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
+from simcore_service_director_v2.utils.dict_utils import merge_extend
 
 # FIXTURES
 
@@ -382,15 +383,30 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
         **user_docker_service_spec.dict(exclude_unset=True)
     )
     assert user_aiodocker_service_spec
+    assert original_aiodocker_dynamic_sidecar_spec.Labels
+    assert user_aiodocker_service_spec.Labels
 
-    merged_dynamic_sidecar_spec = {
-        **original_aiodocker_dynamic_sidecar_spec.dict(
-            by_alias=True, exclude_unset=True
-        ),
-        **user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True),
-    }
+    orig_dict = original_aiodocker_dynamic_sidecar_spec.dict(
+        by_alias=True, exclude_unset=True
+    )
+    user_dict = user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True)
 
-    assert merged_dynamic_sidecar_spec != expected_dynamic_sidecar_spec
-    import pdb
+    EXTENDABLE_DICT_KEYS = (
+        ["labels"],
+        ["task_template", "Resources", "Limits"],
+        ["task_template", "Resources", "Reservation", "MemoryBytes"],
+        ["task_template", "Resources", "Reservation", "NanoCPUs"],
+    )
 
-    pdb.set_trace()
+    EXTENDABLE_ARRAYS_KEYS = (
+        ["task_template", "Placement", "Constraints"],
+        ["task_template", "ContainerSpec", "Env"],
+        ["task_template", "Resources", "Reservation", "GenericResources"],
+    )
+    another_merged_dict = merge_extend(
+        orig_dict,
+        user_dict,
+        extendable_array_keys=EXTENDABLE_ARRAYS_KEYS,
+        extendable_dict_keys=EXTENDABLE_DICT_KEYS,
+    )
+    assert another_merged_dict
