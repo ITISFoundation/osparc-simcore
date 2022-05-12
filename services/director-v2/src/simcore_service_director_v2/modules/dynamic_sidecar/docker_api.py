@@ -12,6 +12,7 @@ from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -156,7 +157,7 @@ async def create_network(network_config: Dict[str, Any]) -> str:
 async def create_service_and_get_id(create_service_data: AioDockerServiceSpec) -> str:
     async with docker_client() as client:
         service_start_result = await client.services.create(
-            **create_service_data.dict(by_alias=True, exclude_unset=True)
+            **jsonable_encoder(create_service_data, by_alias=True, exclude_unset=True)
         )
 
     if "ID" not in service_start_result:

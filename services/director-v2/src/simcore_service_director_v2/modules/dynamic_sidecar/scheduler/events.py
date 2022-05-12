@@ -4,6 +4,7 @@ from typing import Any, Dict, Final, List, Optional, Set, Type, cast
 
 import httpx
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
@@ -169,11 +170,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         ] = await catalog_client.get_service_specifications(
             scheduler_data.user_id, scheduler_data.key, scheduler_data.version
         )
-
-        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.construct(
-            **nested_update(
-                dynamic_sidecar_service_spec_base.dict(
-                    by_alias=True, exclude_unset=True
+        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.parse_obj(
+            nested_update(
+                jsonable_encoder(
+                    dynamic_sidecar_service_spec_base, by_alias=True, exclude_unset=True
                 ),
                 user_specific_service_spec.get("sidecar", {}),
                 include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
