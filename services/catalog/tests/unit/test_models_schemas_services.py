@@ -5,13 +5,13 @@ from pprint import pformat
 
 import pytest
 from simcore_service_catalog.models.schemas.services import (
+    ServiceGet,
     ServiceItem,
-    ServiceOut,
     ServiceUpdate,
 )
 
 
-@pytest.mark.parametrize("model_cls", (ServiceOut, ServiceUpdate, ServiceItem))
+@pytest.mark.parametrize("model_cls", (ServiceGet, ServiceUpdate, ServiceItem))
 def test_service_api_models_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))

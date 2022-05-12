@@ -8,6 +8,7 @@ See how is used to validate input/output content-schemas of service models
 # SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
 
 
+from collections.abc import Sequence
 from contextlib import suppress
 from copy import deepcopy
 from typing import Any, Dict, Tuple
@@ -82,9 +83,20 @@ def jsonschema_validate_schema(schema: Dict[str, Any]):
     return schema
 
 
+def any_ref_key(obj):
+    if isinstance(obj, dict):
+        return "$ref" in obj.keys() or any_ref_key(tuple(obj.values()))
+
+    if isinstance(obj, Sequence) and not isinstance(obj, str):
+        return any(any_ref_key(v) for v in obj)
+
+    return False
+
+
 __all__: Tuple[str, ...] = (
+    "any_ref_key",
     "InvalidJsonSchema",
-    "JsonSchemaValidationError",
-    "jsonschema_validate_schema",
     "jsonschema_validate_data",
+    "jsonschema_validate_schema",
+    "JsonSchemaValidationError",
 )

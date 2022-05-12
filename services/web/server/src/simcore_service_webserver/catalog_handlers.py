@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Tuple
@@ -26,6 +27,8 @@ from .catalog_units import can_connect
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
+
+logger = logging.getLogger(__name__)
 
 ###############
 # API HANDLERS
@@ -312,9 +315,22 @@ async def list_services(ctx: _RequestContext):
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
-        replace_service_input_outputs(
-            service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
-        )
+        try:
+            replace_service_input_outputs(
+                service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+            )
+        except KeyError:
+            # This will limit the effect of a any error in the formatting of
+            # service metadata (mostly in label annotations). Otherwise it would
+            # completely break all the listing operation. At this moment,
+            # a limitation on schema's $ref produced an error that made faiing
+            # the full service listing.
+            logger.exception(
+                "Failed while processing this %s. "
+                "Skipping service from listing. "
+                "TIP: check formatting of docker label annotations for inputs/outputs.",
+                f"{service=}",
+            )
     return services
 
 

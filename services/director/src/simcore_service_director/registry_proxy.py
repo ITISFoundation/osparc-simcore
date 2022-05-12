@@ -375,68 +375,91 @@ def get_service_last_names(image_key: str) -> str:
     return service_last_name
 
 
+CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
+RESOURCES_ENTRY_NAME = "Resources".lower()
+
+
+def _validate_kind(entry_to_validate: Dict[str, Any], kind_name: str):
+    for element in (
+        entry_to_validate.get("value", {})
+        .get("Reservations", {})
+        .get("GenericResources", [])
+    ):
+        if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
+            return True
+    return False
+
+
 async def get_service_extras(
     app: web.Application, image_key: str, image_tag: str
 ) -> Dict[str, Any]:
-    result = {}
-    labels = await get_image_labels(app, image_key, image_tag)
-    logger.debug("Compiling service extras from labels %s", pformat(labels))
-
     # check physical node requirements
     # all nodes require "CPU"
-    result["node_requirements"] = {
-        "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
-        "RAM": config.DEFAULT_MAX_MEMORY,
+    result = {
+        "node_requirements": {
+            "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
+            "RAM": config.DEFAULT_MAX_MEMORY,
+        }
     }
-    # check if the service requires GPU support
 
-    def validate_kind(entry_to_validate, kind_name):
-        for element in (
-            entry_to_validate.get("value", {})
-            .get("Reservations", {})
-            .get("GenericResources", [])
-        ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
-                return True
-        return False
+    labels = await get_image_labels(app, image_key, image_tag)
+    logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     if config.SERVICE_RUNTIME_SETTINGS in labels:
         service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
-            if entry.get("name", "").lower() != "resources":
-                continue
+            entry_name = entry.get("name", "").lower()
+            entry_value = entry.get("value")
+            invalid_with_msg = None
 
-            resource_value = entry.get("value")
-            if resource_value:
-                if not isinstance(resource_value, dict):
-                    logger.warning(
-                        "invalid type for resource %s in service settings in %s:%s",
-                        entry,
-                        image_key,
-                        image_tag,
+            if entry_name == RESOURCES_ENTRY_NAME:
+                if entry_value and isinstance(entry_value, dict):
+                    res_limit = entry_value.get("Limits", {})
+                    res_reservation = entry_value.get("Reservations", {})
+                    # CPU
+                    result["node_requirements"]["CPU"] = (
+                        float(res_limit.get("NanoCPUs", 0))
+                        or float(res_reservation.get("NanoCPUs", 0))
+                        or config.DEFAULT_MAX_NANO_CPUS
+                    ) / 1.0e09
+                    # RAM
+                    result["node_requirements"]["RAM"] = (
+                        res_limit.get("MemoryBytes", 0)
+                        or res_reservation.get("MemoryBytes", 0)
+                        or config.DEFAULT_MAX_MEMORY
                     )
-                    continue
-                res_limit = resource_value.get("Limits", {})
-                res_reservation = resource_value.get("Reservations", {})
-                # CPU
-                result["node_requirements"]["CPU"] = (
-                    float(res_limit.get("NanoCPUs", 0))
-                    or float(res_reservation.get("NanoCPUs", 0))
-                    or config.DEFAULT_MAX_NANO_CPUS
-                ) / 1.0e09
-                # RAM
-                result["node_requirements"]["RAM"] = (
-                    res_limit.get("MemoryBytes", 0)
-                    or res_reservation.get("MemoryBytes", 0)
-                    or config.DEFAULT_MAX_MEMORY
-                )
+                else:
+                    invalid_with_msg = f"invalid type for resource [{entry_value}]"
 
-            # discrete resources (custom made ones)
-            # TODO: this could be adjusted to separate between GPU and/or VRAM
-            if validate_kind(entry, "VRAM"):
-                result["node_requirements"]["GPU"] = 1
-            if validate_kind(entry, "MPI"):
-                result["node_requirements"]["MPI"] = 1
+                # discrete resources (custom made ones) ---
+                # TODO: this could be adjusted to separate between GPU and/or VRAM
+                # check if the service requires GPU support
+                if not invalid_with_msg and _validate_kind(entry, "VRAM"):
+
+                    result["node_requirements"]["GPU"] = 1
+                if not invalid_with_msg and _validate_kind(entry, "MPI"):
+                    result["node_requirements"]["MPI"] = 1
+
+            elif entry_name == CONTAINER_SPEC_ENTRY_NAME:
+                # NOTE: some minor validation
+                # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
+                if (
+                    entry_value
+                    and isinstance(entry_value, dict)
+                    and "Command" in entry_value
+                ):
+                    result["container_spec"] = entry_value
+                else:
+                    invalid_with_msg = f"invalid container_spec [{entry_value}]"
+
+            if invalid_with_msg:
+                logger.warning(
+                    "%s entry [%s] encoded in settings labels of service image %s:%s",
+                    invalid_with_msg,
+                    entry,
+                    image_key,
+                    image_tag,
+                )
 
     # get org labels
     result.update(

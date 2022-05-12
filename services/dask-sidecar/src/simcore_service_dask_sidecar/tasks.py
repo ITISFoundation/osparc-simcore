@@ -102,8 +102,6 @@ async def _run_computational_sidecar_async(
     async with monitor_task_abortion(
         task_name=current_task.get_name(), log_publisher=task_publishers.logs
     ):
-        _retry = 0
-        _max_retries = 1
         sidecar_bootmode = get_current_task_boot_mode()
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
