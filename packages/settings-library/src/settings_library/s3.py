@@ -1,7 +1,8 @@
 from typing import Optional
 
-from .base import BaseCustomSettings
 from pydantic import validator
+
+from .base import BaseCustomSettings
 
 
 class S3Settings(BaseCustomSettings):

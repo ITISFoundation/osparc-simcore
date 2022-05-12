@@ -1,6 +1,9 @@
-from settings_library.s3 import S3Settings
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+
 import pytest
 from pytest import MonkeyPatch
+from settings_library.s3 import S3Settings
 
 
 @pytest.fixture
