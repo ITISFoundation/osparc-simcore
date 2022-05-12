@@ -277,8 +277,8 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
                 "Resources": {
                     "Limits": {"NanoCPUs": 16 * 10e9, "MemoryBytes": 10 * 1024**3},
                     "Reservation": {
-                        "NanoCPUs": 1 * 10e9,
-                        "MemoryBytes": 1 * 1024**3,
+                        "NanoCPUs": 136 * 10e9,
+                        "MemoryBytes": 312 * 1024**3,
                         "GenericResources": [
                             {
                                 "NamedResourceSpec": {
@@ -288,7 +288,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
                             },
                             {
                                 "DiscreteResourceSpec": {
-                                    "Kind": "VRAM",
+                                    "Kind": "FAKE_RESOURCE",
                                     "Value": 1 * 1024**3,
                                 }
                             },
