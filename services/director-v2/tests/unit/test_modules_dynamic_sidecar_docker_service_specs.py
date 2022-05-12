@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-import json
 from pprint import pprint
 from typing import Any, Dict, Iterator, cast
 
@@ -9,22 +8,20 @@ import pytest
 import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.aiodocker_api import (
-    AioDockerServiceSpec,
-)
-from simcore_service_director_v2.models.schemas.docker_rest_api import ServiceSpec
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
-from simcore_service_director_v2.utils.dict_utils import merge_extend
+from simcore_service_director_v2.utils.dict_utils import nested_update
 
 # FIXTURES
 
@@ -152,8 +149,9 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             '"proxy_service_name": '
             '"dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa"}',
             "io.simcore.zone": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "port": "8000",
+            "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
+            "service_port": "8888",
             "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
             "swarm_stack_name": "test_swarm_name",
             "traefik.docker.network": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -227,7 +225,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
-                "Labels": {"mem_limit": "17179869184", "nano_cpus_limit": "4000000000"},
+                "Labels": {"mem_limit": "8589934592", "nano_cpus_limit": "4000000000"},
                 "Mounts": [
                     {
                         "Source": "/var/run/docker.sock",
@@ -288,7 +286,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             },
             "Placement": {"Constraints": ["node.platform.os == linux"]},
             "Resources": {
-                "Limits": {"MemoryBytes": 17179869184, "NanoCPUs": 4000000000},
+                "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
                 "Reservation": {
                     "GenericResources": [
                         {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
@@ -326,12 +324,15 @@ def test_get_dynamic_proxy_spec(
         app_settings=minimal_app.state.settings,
     )
     assert dynamic_sidecar_spec
-    assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec
+    assert (
+        jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
+        == expected_dynamic_sidecar_spec
+    )
     pprint(dynamic_sidecar_spec)
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-async def test_merge_user_specific_and_dynamic_sidecar_specs(
+async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     minimal_catalog_config: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
@@ -344,7 +345,7 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
     mocked_catalog_service_fcts: respx.MockRouter,
     fake_service_specifications: dict[str, Any],
 ):
-    dynamic_sidecar_spec = get_dynamic_sidecar_spec(
+    dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
@@ -353,60 +354,40 @@ async def test_merge_user_specific_and_dynamic_sidecar_specs(
         app_settings=minimal_app.state.settings,
     )
     assert dynamic_sidecar_spec
-    assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec
-    original_aiodocker_dynamic_sidecar_spec = AioDockerServiceSpec(
-        **dynamic_sidecar_spec
-    )
-    assert original_aiodocker_dynamic_sidecar_spec
     assert (
-        json.loads(
-            original_aiodocker_dynamic_sidecar_spec.json(
-                by_alias=True, exclude_unset=True
-            )
-        )
+        jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
         == expected_dynamic_sidecar_spec
     )
 
     catalog_client = CatalogClient.instance(minimal_app)
-    user_service_specs = await catalog_client.get_service_specifications(
+    user_service_specs: dict[
+        str, Any
+    ] = await catalog_client.get_service_specifications(
         scheduler_data.user_id,
         mock_service_key_version.key,
         mock_service_key_version.version,
     )
     assert user_service_specs
     assert "schedule_specs" in user_service_specs
-    user_docker_service_spec = ServiceSpec.parse_obj(
+    user_aiodocker_service_spec = AioDockerServiceSpec.parse_obj(
         user_service_specs["schedule_specs"]
     )
-    assert user_docker_service_spec
-    user_aiodocker_service_spec = AioDockerServiceSpec(
-        **user_docker_service_spec.dict(exclude_unset=True)
-    )
     assert user_aiodocker_service_spec
-    assert original_aiodocker_dynamic_sidecar_spec.Labels
-    assert user_aiodocker_service_spec.Labels
 
-    orig_dict = original_aiodocker_dynamic_sidecar_spec.dict(
-        by_alias=True, exclude_unset=True
-    )
+    orig_dict = dynamic_sidecar_spec.dict(by_alias=True, exclude_unset=True)
     user_dict = user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True)
 
-    EXTENDABLE_DICT_KEYS = (
-        ["labels"],
-        ["task_template", "Resources", "Limits"],
-        ["task_template", "Resources", "Reservation", "MemoryBytes"],
-        ["task_template", "Resources", "Reservation", "NanoCPUs"],
-    )
-
-    EXTENDABLE_ARRAYS_KEYS = (
-        ["task_template", "Placement", "Constraints"],
-        ["task_template", "ContainerSpec", "Env"],
-        ["task_template", "Resources", "Reservation", "GenericResources"],
-    )
-    another_merged_dict = merge_extend(
+    another_merged_dict = nested_update(
         orig_dict,
         user_dict,
-        extendable_array_keys=EXTENDABLE_ARRAYS_KEYS,
-        extendable_dict_keys=EXTENDABLE_DICT_KEYS,
+        include=(
+            ["labels"],
+            ["task_template", "Resources", "Limits"],
+            ["task_template", "Resources", "Reservation", "MemoryBytes"],
+            ["task_template", "Resources", "Reservation", "NanoCPUs"],
+            ["task_template", "Placement", "Constraints"],
+            ["task_template", "ContainerSpec", "Env"],
+            ["task_template", "Resources", "Reservation", "GenericResources"],
+        ),
     )
     assert another_merged_dict

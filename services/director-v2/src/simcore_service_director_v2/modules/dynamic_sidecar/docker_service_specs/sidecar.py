@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict
 
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
 
@@ -80,7 +81,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
-) -> Dict[str, Any]:
+) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
     of the dynamic service. The director-v2 directly coordinates with
@@ -246,7 +247,7 @@ def get_dynamic_sidecar_spec(
     )
     _clean_env_field(create_service_params)
 
-    return create_service_params
+    return AioDockerServiceSpec.parse_obj(create_service_params)
 
 
 def _clean_env_field(service_spec: dict[str, Any]) -> None:
