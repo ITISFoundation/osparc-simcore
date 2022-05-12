@@ -41,6 +41,9 @@ docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 			--output $@
 
 	# formats
-	black $@
+	@black $@
+	# copy output to src/models_library/generated_models...
 	@mkdir --parents src/models_library/generated_models
 	@mv $@ src/models_library/generated_models/$@
+	@touch src/models_library/generated_models/__init__.py
+	# done
