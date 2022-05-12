@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
@@ -16,9 +17,10 @@ log = logging.getLogger(__name__)
 
 
 def extract_service_port_from_compose_start_spec(
-    create_service_params: Dict[str, Any]
+    create_service_params: AioDockerServiceSpec,
 ) -> int:
-    return create_service_params["labels"]["service_port"]
+    assert create_service_params.Labels
+    return parse_obj_as(int, create_service_params.Labels["service_port"])
 
 
 def _get_environment_variables(
