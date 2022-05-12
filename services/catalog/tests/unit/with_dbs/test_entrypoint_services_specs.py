@@ -54,4 +54,4 @@ async def test_get_service_specifications(
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecificationsGet.parse_obj(response.json())
     assert service_specs
-    assert service_specs.schedule_specs == {}
+    assert service_specs.sidecar is None
