@@ -79,7 +79,6 @@ class ServiceResources(DictModel[str, ImageResources]):
             "examples": [
                 # no compose spec (majority of services)
                 {
-                    # NOTE: Try to do this for
                     "container": {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": DEFAULT_RESOURCES,
