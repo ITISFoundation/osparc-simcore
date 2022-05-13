@@ -389,21 +389,21 @@ class ServicesRepository(BaseRepository):
                     db_spec_version = packaging.version.parse(
                         db_service_spec.service_version
                     )
-                    if allow_use_latest_service_version:
+                    if allow_use_latest_service_version and (
+                        db_spec_version > queried_version
+                    ):
                         # NOTE: in this case we look for the latest version only (e.g <=queried_version)
                         # and we skip them if they are above
-                        if db_spec_version > queried_version:
-                            continue
+                        continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if group.group_type == GroupType.STANDARD:
-                        if _is_newer(
-                            group_specs[group.group_type].get(db_service_spec.gid),
-                            db_service_spec,
-                        ):
-                            group_specs[group.group_type][
-                                db_service_spec.gid
-                            ] = db_service_spec
+                    if (group.group_type == GroupType.STANDARD) and _is_newer(
+                        group_specs[group.group_type].get(db_service_spec.gid),
+                        db_service_spec,
+                    ):
+                        group_specs[group.group_type][
+                            db_service_spec.gid
+                        ] = db_service_spec
                     elif _is_newer(group_specs[group.group_type], db_service_spec):
                         group_specs[group.group_type] = db_service_spec
 
