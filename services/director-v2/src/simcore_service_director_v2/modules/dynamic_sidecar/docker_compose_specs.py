@@ -5,7 +5,11 @@ from typing import Dict, List, Optional, Union
 
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
-from models_library.services_resources import Resources, ResourceValue, ServiceResources
+from models_library.services_resources import (
+    ResourcesDict,
+    ResourceValue,
+    ServiceResources,
+)
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from settings_library.docker_registry import RegistrySettings
 
@@ -106,7 +110,7 @@ def _update_resource_limits_and_reservations(
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
 
     for spec_service_key, spec in service_spec["services"].items():
-        resources: Resources = service_resources[spec_service_key].resources
+        resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
         cpu: ResourceValue = resources["CPU"]

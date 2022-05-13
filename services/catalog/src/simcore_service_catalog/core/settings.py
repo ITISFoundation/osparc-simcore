@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from models_library.services_resources import DEFAULT_RESOURCES, Resources
+from models_library.services_resources import DEFAULT_RESOURCES, ResourcesDict
 from pydantic import Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -24,7 +24,7 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_RESOURCES = Resources.parse_obj(DEFAULT_RESOURCES)
+_DEFAULT_RESOURCES = ResourcesDict.parse_obj(DEFAULT_RESOURCES)
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -56,4 +56,4 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_TRACING: Optional[TracingSettings] = None
 
-    CATALOG_SERVICES_DEFAULT_RESOURCES: Resources = _DEFAULT_RESOURCES
+    CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES

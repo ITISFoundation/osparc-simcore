@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import pytest
 import yaml
-from models_library.services_resources import Resources, ServiceResources
+from models_library.services_resources import ResourcesDict, ServiceResources
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
 # TESTS
@@ -100,7 +100,7 @@ async def test_inject_resource_limits_and_reservations(
 
     compose_spec_version_major = int(service_spec["version"].split(".")[0])
 
-    resources: Resources = service_resources["container"].resources
+    resources: ResourcesDict = service_resources["container"].resources
     cpu = resources["CPU"]
     memory = resources["RAM"]
 

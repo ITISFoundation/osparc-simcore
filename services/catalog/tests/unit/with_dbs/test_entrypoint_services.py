@@ -16,7 +16,11 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
-from models_library.services_resources import Resources, ResourceValue, ServiceResources
+from models_library.services_resources import (
+    ResourcesDict,
+    ResourceValue,
+    ServiceResources,
+)
 from pydantic import ByteSize
 from respx.models import Route
 from respx.router import MockRouter
@@ -366,7 +370,7 @@ async def test_get_service_resources(
     mock_director_service_labels: Route,
     client: TestClient,
     director_labels: Dict[str, Any],
-    expected_resources: Resources,
+    expected_resources: ResourcesDict,
 ) -> None:
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"

@@ -9,7 +9,7 @@ import pytest
 from models_library.services_resources import (
     ComposeImage,
     ImageResources,
-    Resources,
+    ResourcesDict,
     ServiceResources,
 )
 from pydantic import BaseModel, parse_obj_as
@@ -46,12 +46,12 @@ def test_compose_image(example: str) -> None:
 
 
 @pytest.fixture
-def resources() -> Resources:
-    return Resources.parse_obj(
+def resources_dict() -> ResourcesDict:
+    return ResourcesDict.parse_obj(
         ImageResources.Config.schema_extra["example"]["resources"]
     )
 
 
-def test_service_resoruces_from_resources(resources: Resources) -> None:
+def test_service_resoruces_from_resources(resources_dict: ResourcesDict) -> None:
     image = "asdsad:asdsadsa"
-    assert ServiceResources.from_resources(resources, image)
+    assert ServiceResources.from_resources(resources_dict, image)

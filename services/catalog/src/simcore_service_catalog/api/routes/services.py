@@ -16,7 +16,7 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.services_resources import (
     ImageResources,
-    Resources,
+    ResourcesDict,
     ResourceValue,
     ServiceResources,
 )
@@ -210,7 +210,7 @@ async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
-    default_service_resources: Resources = Depends(get_default_service_resources),
+    default_service_resources: ResourcesDict = Depends(get_default_service_resources),
 ) -> ServiceResources:
     # TODO: --> PC: I'll need to go through that with you for function services,
     # cause these entries are not in ServiceDockerData
@@ -221,7 +221,7 @@ async def get_service_resources(
 
     def _from_service_settings(
         settings: List[SimcoreServiceSettingLabelEntry],
-    ) -> Resources:
+    ) -> ResourcesDict:
         # filter resource entries
         resource_entries = filter(
             lambda entry: entry.name.lower() == "resources", settings
@@ -334,10 +334,10 @@ async def get_service_resources(
         spec_service_labels: Dict[str, Any] = await _get_service_labels(key, version)
 
         if not spec_service_labels:
-            spec_service_resources: Resources = default_service_resources
+            spec_service_resources: ResourcesDict = default_service_resources
         else:
             spec_service_settings = _get_service_settings(spec_service_labels)
-            spec_service_resources: Resources = _from_service_settings(
+            spec_service_resources: ResourcesDict = _from_service_settings(
                 spec_service_settings
             )
 

@@ -40,12 +40,12 @@ class ResourceValue(BaseModel):
         return values
 
 
-Resources = DictModel[ResourceName, ResourceValue]
+ResourcesDict = DictModel[ResourceName, ResourceValue]
 
 
 class ImageResources(BaseModel):
     image: ComposeImage = Field(..., description="used by the fro")
-    resources: Resources
+    resources: ResourcesDict
 
     class Config:
         schema_extra = {
@@ -67,7 +67,7 @@ class ImageResources(BaseModel):
 
 class ServiceResources(DictModel[str, ImageResources]):
     @classmethod
-    def from_resources(cls, resource: Resources, image: str) -> "ServiceResources":
+    def from_resources(cls, resource: ResourcesDict, image: str) -> "ServiceResources":
         service_resources = cls.parse_obj(
             {"container": {"image": image, "resources": resource}}
         )
