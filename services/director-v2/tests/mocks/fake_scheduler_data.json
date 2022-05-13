@@ -49,7 +49,7 @@
     "dynamic_sidecar_network_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
     "simcore_traefik_zone": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
     "service_port": "8888",
-    "resources": {
+    "service_resources": {
         "container": {
             "image": "simcore/services/dynamic/jupyter-math:2.0.5",
             "resources": {

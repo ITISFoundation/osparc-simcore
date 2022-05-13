@@ -49,7 +49,7 @@
     "dynamic_sidecar_network_name": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
     "simcore_traefik_zone": "dy-sidecar_dd2b8ceb-4408-4bfb-a953-46178836e12d",
     "service_port": "80",
-    "resources": {
+    "service_resources": {
         "rt-web-dy": {
             "image": "simcore/services/dynamic/sim4life-dy:3.0.0",
             "resources": {
