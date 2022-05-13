@@ -47,13 +47,10 @@ Run()
 
 }
 
-# Examples:
-#  - SEE  https://pydeps.readthedocs.io/en/latest/#usage
-#
-# pydeps.bash services/web/server/src/simcore_service_webserver --cluster
-# pydeps.bash services/web/server/src/simcore_service_webserver --only "simcore_service_webserver.projects" --cluster
-#
-#
+Help()
+{
+  echo "Please check https://koxudaxi.github.io/datamodel-code-generator/ for help on usage"
+}
 
 Build
 Run "$@"
