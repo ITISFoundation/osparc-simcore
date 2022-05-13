@@ -24,7 +24,7 @@ from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
-SERVICE_IS_READY_TIMEOUT = 2 * 60
+SERVICE_IS_READY_TIMEOUT = 4 * 60
 
 DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 
@@ -119,6 +119,7 @@ async def test_client(
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")

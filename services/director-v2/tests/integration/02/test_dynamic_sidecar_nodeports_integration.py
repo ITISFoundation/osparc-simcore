@@ -885,6 +885,7 @@ async def test_nodeports_integration(
     fake_dy_published: Dict[str, Any],
     temp_dir: Path,
     mocker: MockerFixture,
+    service_resources: ServiceResources,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -921,6 +922,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        service_resources=service_resources,
     )
 
     # STEP 2
@@ -1119,6 +1121,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        service_resources=service_resources,
     )
 
     dy_path_volume_after = (
