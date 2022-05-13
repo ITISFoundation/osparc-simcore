@@ -119,7 +119,7 @@ async def get_service_resources(
 
     service_settings = parse_raw_as(
         list[SimcoreServiceSettingLabelEntry],
-        service_labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+        service_labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
     )
     logger.debug("received %s", f"{service_settings}")
 
