@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import asyncio
 from random import choice, randint
 from typing import Any, AsyncIterator, Awaitable, Callable
 
@@ -212,3 +213,72 @@ async def test_get_service_specifications(
     assert service_specs == ServiceSpecifications.parse_obj(
         user_group_service_specs.dict()
     )
+
+
+async def test_get_service_specifications_are_passed_to_newer_versions_of_service(
+    mock_catalog_background_task,
+    director_mockup: respx.MockRouter,
+    app: FastAPI,
+    client: TestClient,
+    user_id: UserID,
+    user_db: dict[str, Any],
+    user_groups_ids: list[int],
+    products_names: list[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+    services_specifications_injector: Callable,
+):
+    target_product = products_names[-1]
+    SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
+    SERVICE_VERSIONS = ["0.0.1", "0.0.2", "0.1.0", "1.0.0"]
+    await asyncio.gather(
+        *[
+            services_db_tables_injector(
+                [
+                    service_catalog_faker(
+                        SERVICE_KEY,
+                        version,
+                        team_access=None,
+                        everyone_access=None,
+                        product=target_product,
+                    )
+                ]
+            )
+            for version in SERVICE_VERSIONS
+        ]
+    )
+
+    everyone_gid, user_gid, team_gid = user_groups_ids
+    # let's inject some rights for everyone group ONLY for the second version
+    everyone_service_specs = ServiceSpecificationsAtDB(
+        service_key=SERVICE_KEY,
+        service_version=SERVICE_VERSIONS[1],
+        gid=everyone_gid,
+        sidecar=ServiceSpec(  # type: ignore
+            Labels={"fake_label_for_everyone": "fake_label_value_for_everyone"}
+        ),
+    )
+    await services_specifications_injector(everyone_service_specs)
+
+    # check first service specs return the default
+    url = URL(
+        f"/v0/services/{SERVICE_KEY}/{SERVICE_VERSIONS[0]}/specifications"
+    ).with_query(user_id=user_id)
+    response = client.get(f"{url}")
+    assert response.status_code == status.HTTP_200_OK
+    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    assert service_specs
+    assert service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+
+    # check all other versions return the injected ones, since they are equal or later
+    for version in SERVICE_VERSIONS[1:]:
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
+            user_id=user_id
+        )
+        response = client.get(f"{url}")
+        assert response.status_code == status.HTTP_200_OK
+        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        assert service_specs
+        assert service_specs == ServiceSpecifications.parse_obj(
+            everyone_service_specs.dict()
+        ), f"specifications for {version=} are not passed down from {SERVICE_VERSIONS[1]}"
