@@ -177,7 +177,7 @@ async def assert_start_service(
         service_version=service_version,
         service_uuid=service_uuid,
         basepath=basepath,
-        service_resources=service_resources,
+        service_resources=service_resources.dict(),
     )
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
