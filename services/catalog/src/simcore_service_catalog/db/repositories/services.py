@@ -358,9 +358,11 @@ class ServicesRepository(BaseRepository):
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
-        everyone_group_specs = None
-        team_group_specs: dict[GroupID, ServiceSpecificationsAtDB] = {}
-        user_group_specs = None
+        group_specs = {
+            GroupType.EVERYONE: None,
+            GroupType.PRIMARY: None,
+            GroupType.STANDARD: {},
+        }
 
         queried_version = packaging.version.parse(version)
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
@@ -394,18 +396,17 @@ class ServicesRepository(BaseRepository):
                             continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-
                     if group.group_type == GroupType.STANDARD:
                         if _is_newer(
-                            team_group_specs.get(db_service_spec.gid), db_service_spec
+                            group_specs[group.group_type].get(db_service_spec.gid),
+                            db_service_spec,
                         ):
-                            team_group_specs[db_service_spec.gid] = db_service_spec
-                    elif group.group_type == GroupType.EVERYONE:
-                        if _is_newer(everyone_group_specs, db_service_spec):
-                            everyone_group_specs = db_service_spec
+                            group_specs[group.group_type][
+                                db_service_spec.gid
+                            ] = db_service_spec
                     else:
-                        if _is_newer(user_group_specs, db_service_spec):
-                            user_group_specs = db_service_spec
+                        if _is_newer(group_specs[group.group_type], db_service_spec):
+                            group_specs[group.group_type] = db_service_spec
 
                 except ValidationError as exc:
                     logger.warning(
@@ -415,7 +416,9 @@ class ServicesRepository(BaseRepository):
                     )
 
         merged_specifications = _merge_specs(
-            everyone_group_specs, team_group_specs, user_group_specs
+            group_specs[GroupType.EVERYONE],
+            group_specs[GroupType.STANDARD],
+            group_specs[GroupType.PRIMARY],
         )
         if not merged_specifications:
             logger.debug("no entry found for %s", f"{key}:{version} for {groups=}")
