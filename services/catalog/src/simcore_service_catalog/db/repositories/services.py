@@ -404,9 +404,8 @@ class ServicesRepository(BaseRepository):
                             group_specs[group.group_type][
                                 db_service_spec.gid
                             ] = db_service_spec
-                    else:
-                        if _is_newer(group_specs[group.group_type], db_service_spec):
-                            group_specs[group.group_type] = db_service_spec
+                    elif _is_newer(group_specs[group.group_type], db_service_spec):
+                        group_specs[group.group_type] = db_service_spec
 
                 except ValidationError as exc:
                     logger.warning(
@@ -415,15 +414,12 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        merged_specifications = _merge_specs(
+        if merged_specifications := _merge_specs(
             group_specs[GroupType.EVERYONE],
             group_specs[GroupType.STANDARD],
             group_specs[GroupType.PRIMARY],
-        )
-        if not merged_specifications:
-            logger.debug("no entry found for %s", f"{key}:{version} for {groups=}")
-            return
-        return ServiceSpecifications.parse_obj(merged_specifications)
+        ):
+            return ServiceSpecifications.parse_obj(merged_specifications)
 
 
 def _is_newer(
