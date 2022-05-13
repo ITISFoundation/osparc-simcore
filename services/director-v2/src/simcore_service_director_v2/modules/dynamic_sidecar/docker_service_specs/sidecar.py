@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
@@ -247,16 +247,5 @@ def get_dynamic_sidecar_spec(
         labels_service_settings=settings,
         create_service_params=create_service_params,
     )
-    _clean_env_field(create_service_params)
 
     return AioDockerServiceSpec.parse_obj(create_service_params)
-
-
-def _clean_env_field(service_spec: dict[str, Any]) -> None:
-    if isinstance(service_spec["task_template"]["ContainerSpec"].get("Env", []), list):
-        return
-    # Fix Env, should be an array of strings not dict, aiodocker auto-fixes this but it is wrong
-    service_spec["task_template"]["ContainerSpec"]["Env"] = sorted(
-        k if v is None else f"{k}={v}"
-        for k, v in service_spec["task_template"]["ContainerSpec"]["Env"].items()
-    )
