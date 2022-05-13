@@ -11,6 +11,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
+from models_library.services_resources import ServiceResources
 from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
 
 from ..constants import (
@@ -319,6 +320,11 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "is started, this value is fetched from the service start spec"
         ),
     )
+
+    service_resources: ServiceResources = Field(
+        ..., description="service resources used to enforce limits"
+    )
+
     # Below values are used only once and then are nto required, thus optional
     # after the service is picked up by the scheduler after a reboot these are not required
     # and can be set to None
@@ -351,6 +357,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             user_id=service.user_id,
             key=service.key,
             version=service.version,
+            service_resources=service.service_resources,
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
