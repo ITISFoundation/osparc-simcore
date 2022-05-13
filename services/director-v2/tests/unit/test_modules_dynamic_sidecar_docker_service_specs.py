@@ -80,11 +80,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def minimal_catalog_config(project_env_devel_environment, monkeypatch):
-    """set a minimal configuration for testing the director connection only"""
-
-
-@pytest.fixture
 def expected_dynamic_sidecar_spec() -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -299,7 +294,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
 
 # TESTS
 def test_get_dynamic_proxy_spec(
-    minimal_catalog_config: None,
+    project_env_devel_environment,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -327,7 +322,7 @@ def test_get_dynamic_proxy_spec(
 
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     # pylint: disable=too-many-arguments
-    minimal_catalog_config: None,
+    project_env_devel_environment,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
