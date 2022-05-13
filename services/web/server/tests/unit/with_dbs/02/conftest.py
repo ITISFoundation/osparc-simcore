@@ -16,7 +16,6 @@ from typing import (
     Type,
     Union,
 )
-from models_library.services_resources import ServiceResources
 
 import pytest
 from aiohttp import web
@@ -29,6 +28,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.services_resources import ServiceResources
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils

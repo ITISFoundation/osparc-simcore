@@ -8,12 +8,12 @@ from typing import Type
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.services_resources import ServiceResources
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
-from models_library.services_resources import ServiceResources
 
 
 @pytest.fixture

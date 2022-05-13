@@ -23,6 +23,4 @@ def login_required(handler):
     return wrapped
 
 
-__all__ = [
-    "login_required",
-]
+__all__ = ("login_required",)

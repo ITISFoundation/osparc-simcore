@@ -2,12 +2,12 @@ import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Tuple
-from models_library.services_resources import ServiceResources
 
 import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
+from models_library.services_resources import ServiceResources
 from pint import UnitRegistry
 from pydantic import ValidationError
 

@@ -9,7 +9,6 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest import mock
 from unittest.mock import call
-from models_library.services_resources import ServiceResources
 
 import pytest
 import socketio
@@ -24,6 +23,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.services_resources import ServiceResources
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
