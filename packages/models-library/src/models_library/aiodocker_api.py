@@ -18,7 +18,7 @@ class AioDockerContainerSpec(ContainerSpec):
         if v is not None and isinstance(v, list):
             converted_dict = {}
             for env in v:
-                splitted_env = str(env).split("=", maxsplit=1)
+                splitted_env = f"{env}".split("=", maxsplit=1)
                 converted_dict[splitted_env[0]] = (
                     splitted_env[1] if len(splitted_env) > 1 else None
                 )
