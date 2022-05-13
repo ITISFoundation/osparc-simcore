@@ -47,7 +47,9 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(ServiceDetails.Config.schema_extra["example"])
+    return DynamicServiceCreate.parse_obj(
+        DynamicServiceCreate.Config.schema_extra["example"]
+    )
 
 
 @pytest.fixture(scope="session")
