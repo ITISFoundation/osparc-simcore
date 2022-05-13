@@ -29,6 +29,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.services_resources import ServiceResources
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -162,6 +163,18 @@ async def start_project_interactive_services(
     }
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
+    unique_project_needed_services = set(project_needed_services.keys())
+    service_resources_result: List[ServiceResources] = await logged_gather(
+        *[
+            get_project_node_resources(request.app, project=project, node_id=node_uuid)
+            for node_uuid in unique_project_needed_services
+        ],
+        reraise=True,
+    )
+    service_resources_search: Dict[str, ServiceResources] = dict(
+        zip(unique_project_needed_services, service_resources_result)
+    )
+
     start_service_tasks = [
         director_v2_api.start_service(
             request.app,
@@ -172,6 +185,7 @@ async def start_project_interactive_services(
             service_uuid=service_uuid,
             request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+            service_resources=service_resources_search[service_uuid],
         )
         for service_uuid, service in project_needed_services.items()
     ]
@@ -375,6 +389,15 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
+        service_resources: ServiceResources = await get_project_node_resources(
+            request.app,
+            project={
+                "workbench": {
+                    f"{node_uuid}": {"key": service_key, "version": service_version}
+                }
+            },
+            node_id=UUID(node_uuid),
+        )
         await director_v2_api.start_service(
             request.app,
             project_id=project_uuid,
@@ -384,6 +407,7 @@ async def add_project_node(
             service_uuid=node_uuid,
             request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+            service_resources=service_resources,
         )
     return node_uuid
 
@@ -891,7 +915,7 @@ async def add_project_states_for_user(
 
 async def get_project_node_resources(
     app: web.Application, project: dict[str, Any], node_id: NodeID
-) -> Dict[str, Any]:
+) -> ServiceResources:
     if project_node := project.get("workbench", {}).get(f"{node_id}"):
         return await catalog_client.get_service_resources(
             app, project_node["key"], project_node["version"]

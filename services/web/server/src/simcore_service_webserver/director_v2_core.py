@@ -9,6 +9,7 @@ from aiohttp import ClientTimeout, web
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
+from models_library.services_resources import ServiceResources
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
@@ -298,6 +299,7 @@ async def start_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
+    service_resources: ServiceResources,
 ) -> DataType:
     """
     Requests to start a service:
@@ -311,6 +313,7 @@ async def start_service(
         "version": service_version,
         "node_uuid": service_uuid,
         "basepath": f"/x/{service_uuid}",
+        "service_resources": service_resources,
     }
 
     headers = {

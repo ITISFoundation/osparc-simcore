@@ -12,6 +12,7 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
+from models_library.services_resources import ServiceResources
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps
@@ -160,7 +161,7 @@ async def get_service_resources(
     app: web.Application,
     service_key: str,
     service_version: str,
-) -> Dict[str, Any]:
+) -> ServiceResources:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
     url = (
@@ -171,7 +172,8 @@ async def get_service_resources(
     try:
         async with session.get(url) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
-            return await resp.json()
+            dict_response = await resp.json()
+            return ServiceResources.parse_obj(dict_response)
 
     except asyncio.TimeoutError as err:
         logger.warning("Catalog service connection timeout error")
