@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 def extract_service_port_from_compose_start_spec(
     create_service_params: AioDockerServiceSpec,
 ) -> int:
-    assert create_service_params.Labels
+    assert create_service_params.Labels  # nosec
     return parse_obj_as(int, create_service_params.Labels["service_port"])
 
 
