@@ -230,7 +230,20 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
 ):
     target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
-    SERVICE_VERSIONS = ["0.0.1", "0.0.2", "0.1.0", "1.0.0"]
+    sorted_versions = [
+        "0.0.1",
+        "0.0.2",
+        "0.1.0",
+        "0.1.1",
+        "0.2.3",
+        "1.0.0",
+        "1.0.1",
+        "1.0.10",
+        "1.1.1",
+        "1.10.1",
+        "1.11.1",
+        "10.0.0",
+    ]
     await asyncio.gather(
         *[
             services_db_tables_injector(
@@ -244,34 +257,51 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
                     )
                 ]
             )
-            for version in SERVICE_VERSIONS
+            for version in sorted_versions
         ]
     )
 
     everyone_gid, user_gid, team_gid = user_groups_ids
-    # let's inject some rights for everyone group ONLY for the second version
-    everyone_service_specs = ServiceSpecificationsAtDB(
-        service_key=SERVICE_KEY,
-        service_version=SERVICE_VERSIONS[1],
-        gid=everyone_gid,
-        sidecar=ServiceSpec(  # type: ignore
-            Labels={"fake_label_for_everyone": "fake_label_value_for_everyone"}
-        ),
-    )
-    await services_specifications_injector(everyone_service_specs)
+    # let's inject some rights for everyone group ONLY for some versions
+    INDEX_FIRST_SERVICE_VERSION_WITH_SPEC = 2
+    INDEX_SECOND_SERVICE_VERSION_WITH_SPEC = 6
+    versions_with_specs = [
+        sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC],
+        sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC],
+    ]
+    version_speced: list[ServiceSpecificationsAtDB] = []
 
-    # check first service specs return the default
-    url = URL(
-        f"/v0/services/{SERVICE_KEY}/{SERVICE_VERSIONS[0]}/specifications"
-    ).with_query(user_id=user_id)
-    response = client.get(f"{url}")
-    assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
-    assert service_specs
-    assert service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+    for version in versions_with_specs:
+        specs = ServiceSpecificationsAtDB(
+            service_key=SERVICE_KEY,
+            service_version=version,
+            gid=everyone_gid,
+            sidecar=ServiceSpec(  # type: ignore
+                Labels={
+                    f"fake_label_for_everyone_version_{version}": f"fake_label_value_for_everyone_{version}"
+                }
+            ),
+        )
+        await services_specifications_injector(specs)
+        version_speced.append(specs)
 
-    # check all other versions return the injected ones, since they are equal or later
-    for version in SERVICE_VERSIONS[1:]:
+    # check versions before first speced service return the default
+    for version in sorted_versions[:INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]:
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
+            user_id=user_id
+        )
+        response = client.get(f"{url}")
+        assert response.status_code == status.HTTP_200_OK
+        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        assert service_specs
+        assert (
+            service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+        )
+
+    # check version between first index and second all return the specs of the first
+    for version in sorted_versions[
+        INDEX_FIRST_SERVICE_VERSION_WITH_SPEC:INDEX_SECOND_SERVICE_VERSION_WITH_SPEC
+    ]:
         url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
             user_id=user_id
         )
@@ -280,5 +310,18 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecificationsGet.parse_obj(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.parse_obj(
-            everyone_service_specs.dict()
-        ), f"specifications for {version=} are not passed down from {SERVICE_VERSIONS[1]}"
+            version_speced[0].dict()
+        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+
+    # check version from second to last use the second version
+    for version in sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC:]:
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
+            user_id=user_id
+        )
+        response = client.get(f"{url}")
+        assert response.status_code == status.HTTP_200_OK
+        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        assert service_specs
+        assert service_specs == ServiceSpecifications.parse_obj(
+            version_speced[1].dict()
+        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
