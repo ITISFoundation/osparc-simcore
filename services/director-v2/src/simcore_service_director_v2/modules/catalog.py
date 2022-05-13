@@ -13,13 +13,13 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from services.catalog.src.simcore_service_catalog.services.director import MINUTE
-
 from ..core.settings import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
+
+_MINUTE = 60
 
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
@@ -40,7 +40,7 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         async for attempt in AsyncRetrying(
             reraise=True,
             wait=wait_fixed(1),
-            stop=stop_after_delay(2 * MINUTE),
+            stop=stop_after_delay(2 * _MINUTE),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
