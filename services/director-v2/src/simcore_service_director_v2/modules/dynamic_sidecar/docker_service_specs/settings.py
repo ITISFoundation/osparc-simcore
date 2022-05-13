@@ -162,8 +162,8 @@ async def _extract_osparc_involved_service_labels(
 
     If the service contains a compose-spec that will also be parsed for images.
     Searches for images like the following in the spec:
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:${SERVICE_VERSION}`
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
     """
 
     # initialize with existing labels
@@ -202,7 +202,7 @@ async def _extract_osparc_involved_service_labels(
         ):
             continue
 
-        # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
+        # strips `${SIMCORE_REGISTRY}/`; replaces `${SERVICE_VERSION}` with `service_tag`
         osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(
             MATCH_IMAGE_START, ""
         )

@@ -1,6 +1,5 @@
 import yaml
 
-from models_library.service_settings_labels import ComposeSpecLabel
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -16,7 +15,7 @@ MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
 def replace_env_vars_in_compose_spec(
-    service_spec: ComposeSpecLabel,
+    service_spec: "ComposeSpecLabel",
     *,
     replace_simcore_registry: str,
     replace_service_version: str,
@@ -27,6 +26,11 @@ def replace_env_vars_in_compose_spec(
     """
 
     stringified_service_spec = yaml.safe_dump(service_spec)
+
+    # NOTE: could not use string.Template here because the test will
+    # fail since `${DISPLAY}` cannot be replaced, and we do not want
+    # it to be replaced at this time. If this method is changed
+    # the test should always without changes
     stringified_service_spec = stringified_service_spec.replace(
         MATCH_SIMCORE_REGISTRY, replace_simcore_registry
     )
