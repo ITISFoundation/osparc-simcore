@@ -16,6 +16,7 @@ from typing import (
     Type,
     Union,
 )
+from models_library.services_resources import ServiceResources
 
 import pytest
 from aiohttp import web
@@ -60,6 +61,7 @@ def client(
     postgres_db,
     mocked_director_v2_api,
     mock_orphaned_services,
+    mock_catalog_api: None,
     redis_client,
     monkeypatch_setenv_from_app_config: Callable,
 ):
@@ -133,6 +135,21 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=state,
+    )
+
+
+@pytest.fixture
+def mock_service_resources() -> ServiceResources:
+    return ServiceResources.parse_obj(
+        ServiceResources.Config.schema_extra["examples"][0]
+    )
+
+
+@pytest.fixture
+def mock_catalog_api(mocker, mock_service_resources: ServiceResources) -> None:
+    mocker.patch(
+        "simcore_service_webserver.catalog_client.get_service_resources",
+        return_value=mock_service_resources,
     )
 
 

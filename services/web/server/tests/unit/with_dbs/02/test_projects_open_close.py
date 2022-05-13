@@ -9,6 +9,7 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest import mock
 from unittest.mock import call
+from models_library.services_resources import ServiceResources
 
 import pytest
 import socketio
@@ -384,6 +385,7 @@ async def test_open_project(
     client_session_id_factory: Callable,
     expected,
     mocked_director_v2_api,
+    mock_service_resources: ServiceResources,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -410,6 +412,7 @@ async def test_open_project(
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
                     request_dns=request_dns,
+                    service_resources=mock_service_resources,
                 )
             )
         mocked_director_v2_api["director_v2_api.start_service"].assert_has_calls(calls)
