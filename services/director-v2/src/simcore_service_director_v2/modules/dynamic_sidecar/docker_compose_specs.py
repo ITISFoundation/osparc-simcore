@@ -138,7 +138,7 @@ def _update_resource_limits_and_reservations(
             spec["cpus"] = float(max(cpu.limit, cpu.reservation))
 
 
-async def assemble_spec(
+def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
