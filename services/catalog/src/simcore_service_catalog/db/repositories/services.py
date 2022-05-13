@@ -395,15 +395,6 @@ class ServicesRepository(BaseRepository):
                     # filter by group type
                     group = gid_to_group_map[row.gid]
 
-                    def _is_newer(
-                        old: Optional[ServiceSpecificationsAtDB],
-                        new: ServiceSpecificationsAtDB,
-                    ):
-                        return old is None or (
-                            packaging.version.parse(old.service_version)
-                            < packaging.version.parse(new.service_version)
-                        )
-
                     if group.group_type == GroupType.STANDARD:
                         if _is_newer(
                             team_group_specs.get(db_service_spec.gid), db_service_spec
@@ -423,17 +414,6 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        def _merge_specs(
-            everyone_spec: Optional[ServiceSpecificationsAtDB],
-            team_specs: dict[GroupID, ServiceSpecificationsAtDB],
-            user_spec: Optional[ServiceSpecificationsAtDB],
-        ) -> dict[str, Any]:
-            merged_spec = {}
-            for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
-                if spec is not None:
-                    merged_spec.update(spec.dict(include={"sidecar"}))
-            return merged_spec
-
         merged_specifications = _merge_specs(
             everyone_group_specs, team_group_specs, user_group_specs
         )
@@ -441,3 +421,25 @@ class ServicesRepository(BaseRepository):
             logger.debug("no entry found for %s", f"{key}:{version} for {groups=}")
             return
         return ServiceSpecifications.parse_obj(merged_specifications)
+
+
+def _is_newer(
+    old: Optional[ServiceSpecificationsAtDB],
+    new: ServiceSpecificationsAtDB,
+):
+    return old is None or (
+        packaging.version.parse(old.service_version)
+        < packaging.version.parse(new.service_version)
+    )
+
+
+def _merge_specs(
+    everyone_spec: Optional[ServiceSpecificationsAtDB],
+    team_specs: dict[GroupID, ServiceSpecificationsAtDB],
+    user_spec: Optional[ServiceSpecificationsAtDB],
+) -> dict[str, Any]:
+    merged_spec = {}
+    for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
+        if spec is not None:
+            merged_spec.update(spec.dict(include={"sidecar"}))
+    return merged_spec
