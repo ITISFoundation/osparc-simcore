@@ -15,6 +15,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
+from models_library.services_resources import ServiceResources
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -65,6 +66,7 @@ def start_request_data(
     project_id: ProjectID,
     node_uuid: NodeID,
     dy_static_file_server_dynamic_sidecar_service: Dict,
+    service_resources: ServiceResources,
     ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
@@ -89,6 +91,7 @@ def start_request_data(
             },
         ],
         paths_mapping={"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
+        service_resources=service_resources.dict(),
     )
 
 

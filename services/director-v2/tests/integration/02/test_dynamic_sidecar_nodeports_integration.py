@@ -28,6 +28,7 @@ import aioboto3
 import aiodocker
 import aiopg.sa
 import httpx
+from models_library.services_resources import ServiceResources
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
@@ -640,6 +641,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     user_id: UserID,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
+    service_resources: ServiceResources,
 ) -> Dict[str, str]:
     # start dynamic services
     await asyncio.gather(
@@ -652,6 +654,7 @@ async def _start_and_wait_for_dynamic_services_ready(
                 service_version=node.version,
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
+                service_resources=service_resources,
             )
             for service_uuid, node in workbench_dynamic_services.items()
         )

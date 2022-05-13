@@ -6,6 +6,7 @@ from uuid import uuid4
 import aiodocker
 import pytest
 from models_library.projects_networks import ProjectsNetworks
+from models_library.services_resources import ServiceResources
 from pytest_mock.plugin import MockerFixture
 
 
@@ -56,4 +57,11 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
         return_value=ProjectsNetworks.parse_obj(
             dict(project_uuid=uuid4(), networks_with_aliases={})
         ),
+    )
+
+
+@pytest.fixture
+def service_resources() -> ServiceResources:
+    return ServiceResources.parse_obj(
+        ServiceResources.Config.schema_extra["examples"][0]
     )

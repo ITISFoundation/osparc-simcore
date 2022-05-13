@@ -11,6 +11,7 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
+from models_library.services_resources import ServiceResources
 from models_library.users import UserID
 from pydantic import PositiveInt
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -167,6 +168,7 @@ async def assert_start_service(
     service_version: str,
     service_uuid: str,
     basepath: Optional[str],
+    service_resources: ServiceResources,
 ) -> None:
     data = dict(
         user_id=user_id,
@@ -175,6 +177,7 @@ async def assert_start_service(
         service_version=service_version,
         service_uuid=service_uuid,
         basepath=basepath,
+        service_resources=service_resources,
     )
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,

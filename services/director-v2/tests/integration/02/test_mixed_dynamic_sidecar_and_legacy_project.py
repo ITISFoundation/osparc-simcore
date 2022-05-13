@@ -9,6 +9,7 @@ from typing import Any, AsyncIterable, Callable, Dict, Iterable
 
 import aiodocker
 import httpx
+from models_library.services_resources import ServiceResources
 import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
@@ -229,6 +230,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
     mock_dynamic_sidecar_client: None,
+    service_resources: ServiceResources,
 ):
     """
     The test will start 3 dynamic services in the same project and check
@@ -255,6 +257,7 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_uuid=node_id,
                 # extra config (legacy)
                 basepath=f"/x/{node_id}" if is_legacy(node) else None,
+                service_resources=service_resources,
             )
             for node_id, node in dy_static_file_server_project.workbench.items()
         )
