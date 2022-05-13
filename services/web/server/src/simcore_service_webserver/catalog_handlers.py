@@ -2,6 +2,7 @@ import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Tuple
+from models_library.services_resources import ServiceResources
 
 import orjson
 from aiohttp import web
@@ -296,12 +297,12 @@ async def get_service_resources_handler(request: Request):
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
 
-    data = await catalog_client.get_service_resources(
+    service_resources: ServiceResources = await catalog_client.get_service_resources(
         request.app, service_key=service_key, service_version=service_version
     )
 
     # format response
-    enveloped: str = json_dumps({"data": data})
+    enveloped: str = json_dumps({"data": service_resources.dict()})
     return web.Response(text=enveloped, content_type="application/json")
 
 

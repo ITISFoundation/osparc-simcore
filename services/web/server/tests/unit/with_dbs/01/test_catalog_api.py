@@ -13,17 +13,21 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
+from models_library.services_resources import ServiceResources
 
 
 @pytest.fixture
 def mock_catalog_service_api_responses(client, aioresponses_mocker):
     settings: CatalogSettings = get_plugin_settings(client.app)
+
     url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
-    aioresponses_mocker.get(url_pattern, payload={"data": {}})
-    aioresponses_mocker.post(url_pattern, payload={"data": {}})
-    aioresponses_mocker.put(url_pattern, payload={"data": {}})
-    aioresponses_mocker.patch(url_pattern, payload={"data": {}})
+    data = ServiceResources.Config.schema_extra["examples"][0]
+
+    aioresponses_mocker.get(url_pattern, payload=data)
+    aioresponses_mocker.post(url_pattern, payload=data)
+    aioresponses_mocker.put(url_pattern, payload=data)
+    aioresponses_mocker.patch(url_pattern, payload=data)
     aioresponses_mocker.delete(url_pattern)
 
 
