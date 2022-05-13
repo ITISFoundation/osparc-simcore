@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Optional
+from typing import Final, Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ServiceResources
@@ -10,6 +10,9 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from simcore_service_catalog.models.schemas.services_specifications import (
+    ServiceSpecifications,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +27,25 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_SERVICE_RESOURCES = ServiceResources.parse_obj(
+_DEFAULT_SERVICE_RESOURCES: Final[ServiceResources] = ServiceResources.parse_obj(
     {
         "CPU": {"limit": 0.1, "reservation": 0.1},
         "RAM": {
             "limit": ByteSize(2 * 1024**3),
             "reservation": ByteSize(2 * 1024**3),
         },
+    }
+)
+
+_DEFAULT_SERVICE_SPECIFICATIONS: Final[
+    ServiceSpecifications
+] = ServiceSpecifications.parse_obj(
+    {
+        "sidecar": {
+            "TaskTemplate": {
+                "Placement": {"Constraints": ["node.labels.standard==true"]}
+            }
+        }
     }
 )
 
@@ -65,3 +80,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CATALOG_TRACING: Optional[TracingSettings] = None
 
     CATALOG_SERVICES_DEFAULT_RESOURCE: ServiceResources = _DEFAULT_SERVICE_RESOURCES
+    CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
+        _DEFAULT_SERVICE_SPECIFICATIONS
+    )

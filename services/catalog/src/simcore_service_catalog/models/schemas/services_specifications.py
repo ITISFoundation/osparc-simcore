@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class ServiceSpecifications(BaseModel):
     sidecar: Optional[DockerServiceSpec] = Field(
-        None,
+        default=None,
         description="schedule-time specifications for the service sidecar (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.25/#operation/ServiceCreate)",
     )
 

@@ -7,8 +7,13 @@ from models_library.users import UserID
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.schemas.constants import RESPONSE_MODEL_POLICY
-from ...models.schemas.services_specifications import ServiceSpecificationsGet
+from ...models.schemas.services_specifications import (
+    ServiceSpecifications,
+    ServiceSpecificationsGet,
+)
+from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
+from ..dependencies.services import get_default_service_specifications
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -25,8 +30,16 @@ async def get_service_specifications(
     service_version: ServiceVersion,
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    default_service_specifcations: ServiceSpecifications = Depends(
+        get_default_service_specifications
+    ),
 ):
     logger.debug("getting specifications for '%s:%s'", service_key, service_version)
+
+    if is_function_service(service_key):
+        # There is no specification for these, return empty specs
+        return ServiceSpecifications()
+
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -39,5 +52,10 @@ async def get_service_specifications(
     service_specs = await services_repo.get_service_specifications(
         service_key, service_version, tuple(user_groups)
     )
+
+    if not service_specs:
+        # nothing found, let's return the default then
+        service_specs = default_service_specifcations.copy()
+
     logger.debug("returning %s", f"{service_specs=}")
     return service_specs

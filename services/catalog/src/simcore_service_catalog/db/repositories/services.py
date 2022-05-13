@@ -341,7 +341,7 @@ class ServicesRepository(BaseRepository):
 
     async def get_service_specifications(
         self, key: ServiceKey, version: ServiceVersion, groups: tuple[GroupAtDB]
-    ) -> ServiceSpecifications:
+    ) -> Optional[ServiceSpecifications]:
         logger.debug(
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
@@ -388,4 +388,7 @@ class ServicesRepository(BaseRepository):
             merged_specifications.update(specs)
         merged_specifications.update(multi_group_service_specs[GroupType.PRIMARY])
         logger.debug("found following %s", f"{merged_specifications=}")
+        if not merged_specifications:
+            logger.debug("no entry found for %s", f"{key}:{version} for {groups=}")
+            return
         return ServiceSpecifications.parse_obj(merged_specifications)
