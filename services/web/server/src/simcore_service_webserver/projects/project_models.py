@@ -1,9 +1,11 @@
+import asyncio
 import json
 from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from servicelib.aiohttp.jsonschema_validation import validate_instance
 from simcore_postgres_database.models.projects import ProjectType
 
 from .._constants import APP_JSONSCHEMA_SPECS_KEY
@@ -43,8 +45,16 @@ def setup_projects_model_schema(app: web.Application):
     return app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
 
 
+async def validate_project(app: web.Application, project: ProjectDict):
+    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
+    await asyncio.get_event_loop().run_in_executor(
+        None, validate_instance, project, project_schema
+    )
+
+
 __all__: Tuple[str, ...] = (
     "ProjectDict",
     "ProjectProxy",
     "setup_projects_model_schema",
+    "validate_project",
 )

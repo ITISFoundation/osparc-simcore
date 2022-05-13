@@ -31,8 +31,6 @@ from models_library.projects_state import (
 )
 from models_library.users import UserID
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
-from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -54,6 +52,7 @@ from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete
 from .project_lock import UserNameDict, get_project_locked_state, lock_project
+from .project_models import validate_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port
@@ -65,13 +64,6 @@ PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
-
-
-async def validate_project(app: web.Application, project: Dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
-    await asyncio.get_event_loop().run_in_executor(
-        None, validate_instance, project, project_schema
-    )
 
 
 async def get_project_for_user(
