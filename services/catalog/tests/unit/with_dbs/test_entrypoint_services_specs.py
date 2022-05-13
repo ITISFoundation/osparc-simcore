@@ -325,3 +325,23 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         assert service_specs == ServiceSpecifications.parse_obj(
             version_speced[1].dict()
         ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+
+    # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
+    for version in sorted_versions:
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
+            user_id=user_id, strict=1
+        )
+        response = client.get(f"{url}")
+        assert response.status_code == status.HTTP_200_OK
+        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        assert service_specs
+        if version in versions_with_specs:
+            assert (
+                service_specs
+                != app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+            )
+        else:
+            assert (
+                service_specs
+                == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+            )

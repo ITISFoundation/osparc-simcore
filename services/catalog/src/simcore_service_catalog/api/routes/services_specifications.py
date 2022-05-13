@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
@@ -28,6 +28,10 @@ async def get_service_specifications(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
+    strict: bool = Query(
+        False,
+        description="if True only the version specs will be retrieved, if False the latest version will be used instead",
+    ),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     default_service_specifcations: ServiceSpecifications = Depends(
@@ -50,7 +54,10 @@ async def get_service_specifications(
         )
 
     service_specs = await services_repo.get_service_specifications(
-        service_key, service_version, tuple(user_groups)
+        service_key,
+        service_version,
+        tuple(user_groups),
+        allow_use_latest_service_version=not strict,
     )
 
     if not service_specs:

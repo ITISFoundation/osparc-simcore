@@ -1,10 +1,13 @@
 import logging
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Tuple
+from itertools import chain
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+import packaging.version
 import sqlalchemy as sa
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
@@ -340,22 +343,36 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def get_service_specifications(
-        self, key: ServiceKey, version: ServiceVersion, groups: tuple[GroupAtDB]
+        self,
+        key: ServiceKey,
+        version: ServiceVersion,
+        groups: tuple[GroupAtDB],
+        allow_use_latest_service_version: bool = False,
     ) -> Optional[ServiceSpecifications]:
+        """returns the service specifications for service 'key:version' and for 'groups'
+            returns None if nothing found
+
+        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
+        """
         logger.debug(
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
-        multi_group_service_specs = {
-            GroupType.EVERYONE: {},
-            GroupType.PRIMARY: {},
-            GroupType.STANDARD: [],
-        }
+        everyone_group_specs = None
+        team_group_specs: dict[GroupID, ServiceSpecificationsAtDB] = {}
+        user_group_specs = None
+
+        queried_version = packaging.version.parse(version)
+        # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
                 sa.select([services_specifications]).where(
                     (services_specifications.c.service_key == key)
-                    & (services_specifications.c.service_version == version)
+                    & (
+                        (services_specifications.c.service_version == version)
+                        if not allow_use_latest_service_version
+                        else True
+                    )
                     & (
                         services_specifications.c.gid.in_(
                             (group.gid for group in groups)
@@ -365,16 +382,40 @@ class ServicesRepository(BaseRepository):
             ):
                 try:
                     logger.debug("found following %s", f"{row=}")
-                    group_service_specs = ServiceSpecificationsAtDB.from_orm(row)
+                    # validate the specs first
+                    db_service_spec = ServiceSpecificationsAtDB.from_orm(row)
+                    db_spec_version = packaging.version.parse(
+                        db_service_spec.service_version
+                    )
+                    if allow_use_latest_service_version:
+                        # NOTE: in this case we look for the latest version only (e.g <=queried_version)
+                        # and we skip them if they are above
+                        if db_spec_version > queried_version:
+                            continue
+                    # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if group.group_type == GroupType.STANDARD:
-                        multi_group_service_specs[group.group_type].append(
-                            group_service_specs.dict(include={"sidecar"})
+
+                    def _is_newer(
+                        old: Optional[ServiceSpecificationsAtDB],
+                        new: ServiceSpecificationsAtDB,
+                    ):
+                        return old is None or (
+                            packaging.version.parse(old.service_version)
+                            < packaging.version.parse(new.service_version)
                         )
+
+                    if group.group_type == GroupType.STANDARD:
+                        if _is_newer(
+                            team_group_specs.get(db_service_spec.gid), db_service_spec
+                        ):
+                            team_group_specs[db_service_spec.gid] = db_service_spec
+                    elif group.group_type == GroupType.EVERYONE:
+                        if _is_newer(everyone_group_specs, db_service_spec):
+                            everyone_group_specs = db_service_spec
                     else:
-                        multi_group_service_specs[
-                            group.group_type
-                        ] = group_service_specs.dict(include={"sidecar"})
+                        if _is_newer(user_group_specs, db_service_spec):
+                            user_group_specs = db_service_spec
+
                 except ValidationError as exc:
                     logger.warning(
                         "skipping service specifications for group '%s' as invalid: %s",
@@ -382,12 +423,20 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        # merge all group specifications
-        merged_specifications = multi_group_service_specs[GroupType.EVERYONE]
-        for specs in multi_group_service_specs[GroupType.STANDARD]:
-            merged_specifications.update(specs)
-        merged_specifications.update(multi_group_service_specs[GroupType.PRIMARY])
-        logger.debug("found following %s", f"{merged_specifications=}")
+        def _merge_specs(
+            everyone_spec: Optional[ServiceSpecificationsAtDB],
+            team_specs: dict[GroupID, ServiceSpecificationsAtDB],
+            user_spec: Optional[ServiceSpecificationsAtDB],
+        ) -> dict[str, Any]:
+            merged_spec = {}
+            for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
+                if spec is not None:
+                    merged_spec.update(spec.dict(include={"sidecar"}))
+            return merged_spec
+
+        merged_specifications = _merge_specs(
+            everyone_group_specs, team_group_specs, user_group_specs
+        )
         if not merged_specifications:
             logger.debug("no entry found for %s", f"{key}:{version} for {groups=}")
             return
