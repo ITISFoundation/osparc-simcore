@@ -3,10 +3,7 @@ from typing import Optional
 from pydantic import Field, validator
 
 from .generated_models.docker_rest_api import ContainerSpec, ServiceSpec, TaskSpec
-
-
-def to_snake_case(string: str) -> str:
-    return "".join(["_" + i.lower() if i.isupper() else i for i in string]).lstrip("_")
+from .utils.converters import to_snake_case
 
 
 class AioDockerContainerSpec(ContainerSpec):
