@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aioboto3==9.5.0
+aioboto3==9.6.0
     # via -r requirements/_test.in
-aiobotocore==2.2.0
+aiobotocore==2.3.0
     # via aioboto3
 aiohttp==3.8.1
     # via
@@ -27,7 +27,7 @@ alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.11.3
+astroid==2.11.5
     # via pylint
 async-timeout==4.0.2
     # via
@@ -54,7 +54,7 @@ charset-normalizer==2.0.12
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.1.2
+click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -73,7 +73,7 @@ docopt==0.6.2
     # via coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==13.3.5
+faker==13.7.0
     # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
@@ -139,13 +139,13 @@ py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.13.7
+pylint==2.13.8
     # via -r requirements/_test.in
 pyparsing==3.0.8
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -197,7 +197,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-sqlalchemy==1.4.35
+sqlalchemy==1.4.36
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -223,7 +223,7 @@ urllib3==1.26.9
     #   requests
 websocket-client==1.3.2
     # via docker
-wrapt==1.14.0
+wrapt==1.14.1
     # via
     #   aiobotocore
     #   astroid

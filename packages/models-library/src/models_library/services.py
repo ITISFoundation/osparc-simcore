@@ -3,6 +3,7 @@
 NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
+
 from enum import Enum
 from typing import Any, Optional, Union
 
@@ -22,7 +23,11 @@ from pydantic import (
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
 from .services_ui import Widget
-from .utils.json_schema import InvalidJsonSchema, jsonschema_validate_schema
+from .utils.json_schema import (
+    InvalidJsonSchema,
+    any_ref_key,
+    jsonschema_validate_schema,
+)
 
 # CONSTANTS -------------------------------------------
 
@@ -203,6 +208,11 @@ class BaseServiceIOModel(BaseModel):
         if v is not None:
             try:
                 jsonschema_validate_schema(schema=v)
+
+                if any_ref_key(v):
+                    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3030
+                    raise ValueError("Schemas with $ref are still not supported")
+
             except InvalidJsonSchema as err:
                 failed_path = "->".join(map(str, err.path))
                 raise ValueError(

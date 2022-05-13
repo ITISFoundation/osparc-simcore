@@ -9,7 +9,7 @@
 import json
 import sys
 from copy import deepcopy
-from typing import List
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -20,6 +20,44 @@ from simcore_sdk.node_ports_v2.port_validation import (
     PortUnitError,
     validate_port_content,
 )
+
+
+# HELPERS ---------
+def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
+    #
+    # Taken and adapted from https://github.com/samuelcolvin/pydantic/issues/889#issuecomment-850312496
+    # Check as a more reliable solution https://github.com/gazpachoking/jsonref or see jsonschema.Resolver
+    #
+    if isinstance(item, list):
+        return [_replace_value_in_dict(i, original_schema) for i in item]
+
+    if isinstance(item, dict):
+        if "$ref" in item.keys():
+            # Limited to something like "$ref": "#/definitions/Engine"
+            definitions = item["$ref"][2:].split("/")
+            res = original_schema.copy()
+            for definition in definitions:
+                res = res[definition]
+            return res
+        return {
+            key: _replace_value_in_dict(i, original_schema) for key, i in item.items()
+        }
+    return item
+
+
+def _resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
+    #  tmp solution until $ref  implemented
+
+    if "$ref" in str(schema):
+        # NOTE: this is a minimal solution that cannot cope e.g. with
+        # the most generic $ref with might be URLs. For that we will be using
+        # directly jsonschema python package's resolver in the near future.
+        # In the meantime we can live with this
+        return _replace_value_in_dict(deepcopy(schema), deepcopy(schema.copy()))
+    return schema
+
+
+# TESTS --------------
 
 
 def test_validate_port_content():
@@ -98,9 +136,9 @@ async def test_port_with_array_of_object(mocker):
         i: conint(gt=3)
         b: bool = False
         s: str
-        l: List[int]
+        l: list[int]
 
-    content_schema = schema_of(List[A], title="array[A]")
+    content_schema = _resolve_refs(schema_of(list[A], title="array[A]"))
 
     port_meta = {
         "label": "array_",

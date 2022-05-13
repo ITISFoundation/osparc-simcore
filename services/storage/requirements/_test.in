@@ -5,26 +5,19 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
-# testing
+codecov
+coverage
+coveralls
+docker
+faker
+pandas
+pylint
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-icdiff
 pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-
-# test coverage
-coverage
-coveralls
-codecov
-
-# fixtures
-faker
-pandas
-pylint
 python-dotenv
-
-# remote debugger
-ptvsd

@@ -22,7 +22,7 @@ from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.services import ServiceOut, ServiceUpdate
+from ...models.schemas.services import ServiceGet, ServiceUpdate
 from ...services.function_services import get_function_service, is_function_service
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
@@ -53,7 +53,7 @@ def _prepare_service_details(
     service_in_db: ServiceMetaDataAtDB,
     service_access_rights_in_db: List[ServiceAccessRightsAtDB],
     service_owner: Optional[str],
-) -> Optional[ServiceOut]:
+) -> Optional[ServiceGet]:
     # compose service from registry and DB
     composed_service = service_in_registry
     composed_service.update(
@@ -65,7 +65,7 @@ def _prepare_service_details(
     # validate the service
     validated_service = None
     try:
-        validated_service = ServiceOut(**composed_service)
+        validated_service = ServiceGet(**composed_service)
     except ValidationError as exc:
         logger.warning(
             "could not validate service [%s:%s]: %s",
@@ -83,7 +83,7 @@ def _build_cache_key(fct, *_, **kwargs):
 # NOTE: this call is pretty expensive and can be called several times
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
-@router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
+@router.get("", response_model=List[ServiceGet], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
@@ -125,7 +125,7 @@ async def list_services(
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         services_overview = [
-            ServiceOut.construct(
+            ServiceGet.construct(
                 key=key,
                 version=version,
                 name="nodetails",
@@ -292,7 +292,7 @@ async def get_service_resources(
 
 @router.get(
     "/{service_key:path}/{service_version}",
-    response_model=ServiceOut,
+    response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
 )
 async def get_service(
@@ -319,7 +319,7 @@ async def get_service(
         )
         _service_data = services_in_registry[0]
 
-    service: ServiceOut = ServiceOut.parse_obj(_service_data)
+    service: ServiceGet = ServiceGet.parse_obj(_service_data)
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -375,10 +375,10 @@ async def get_service(
 
 @router.patch(
     "/{service_key:path}/{service_version}",
-    response_model=ServiceOut,
+    response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
 )
-async def modify_service(
+async def update_service(
     # pylint: disable=too-many-arguments
     user_id: int,
     service_key: ServiceKey,

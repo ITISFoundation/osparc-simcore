@@ -510,6 +510,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Could not find node_uuid in the database"
+          },
           "422": {
             "description": "Validation Error",
             "content": {

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -67,11 +67,17 @@ async def _generate_tasks_list_from_project(
         if not node_details:
             continue
 
-        image = Image(
-            name=service_key_version.key,
-            tag=service_key_version.version,
-            node_requirements=node_extras.node_requirements if node_extras else None,
-        )
+        # aggregates node_details amd node_extras into Image
+        data: Dict[str, Any] = {
+            "name": service_key_version.key,
+            "tag": service_key_version.version,
+        }
+        if node_extras:
+            data.update(node_requirements=node_extras.node_requirements)
+            if node_extras.container_spec:
+                data.update(command=node_extras.container_spec.command)
+        image = Image.parse_obj(data)
+        assert image.command  # nosec
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status

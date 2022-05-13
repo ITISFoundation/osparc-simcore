@@ -195,6 +195,11 @@ async def pull_output_ports(
     summary="Push output ports data",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Could not find node_uuid in the database"
+        }
+    },
 )
 async def push_output_ports(
     port_keys: Optional[List[str]] = None,

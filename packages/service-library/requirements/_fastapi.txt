@@ -6,7 +6,7 @@
 #
 anyio==3.5.0
     # via starlette
-fastapi==0.75.0
+fastapi==0.76.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
@@ -29,15 +29,17 @@ six==1.16.0
     # via thrift
 sniffio==1.2.0
     # via anyio
-starlette==0.17.1
+starlette==0.18.0
     # via fastapi
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.15.0
+thrift==0.16.0
     # via jaeger-client
 tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typing-extensions==4.1.1
-    # via pydantic
+typing-extensions==4.2.0
+    # via
+    #   pydantic
+    #   starlette
