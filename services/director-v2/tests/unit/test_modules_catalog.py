@@ -57,5 +57,5 @@ async def test_get_service_specifications(
         user_id, mock_service_key_version.key, mock_service_key_version.version
     )
     assert service_specifications
-    assert "schedule_specs" in service_specifications
+    assert "sidecar" in service_specifications
     assert service_specifications == fake_service_specifications

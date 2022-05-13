@@ -369,9 +369,9 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         mock_service_key_version.version,
     )
     assert user_service_specs
-    assert "schedule_specs" in user_service_specs
+    assert "sidecar" in user_service_specs
     user_aiodocker_service_spec = AioDockerServiceSpec.parse_obj(
-        user_service_specs["schedule_specs"]
+        user_service_specs["sidecar"]
     )
     assert user_aiodocker_service_spec
 
