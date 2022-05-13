@@ -39,15 +39,7 @@ _DEFAULT_SERVICE_RESOURCES: Final[ServiceResources] = ServiceResources.parse_obj
 
 _DEFAULT_SERVICE_SPECIFICATIONS: Final[
     ServiceSpecifications
-] = ServiceSpecifications.parse_obj(
-    {
-        "sidecar": {
-            "TaskTemplate": {
-                "Placement": {"Constraints": ["node.labels.standard==true"]}
-            }
-        }
-    }
-)
+] = ServiceSpecifications.parse_obj({})
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
