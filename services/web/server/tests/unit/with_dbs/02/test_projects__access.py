@@ -4,7 +4,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_service_webserver._constants import APP_PROJECT_DBAPI
-from simcore_service_webserver.projects._access_rights import (
+from simcore_service_webserver.projects._access import (
     AccessRights,
     get_project_access_rights,
 )
