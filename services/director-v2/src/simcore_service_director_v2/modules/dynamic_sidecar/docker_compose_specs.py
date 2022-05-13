@@ -1,42 +1,24 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Dict, Final, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
-import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import (
-    ComposeSpecLabel,
-    PathMappingsLabel,
-    SimcoreServiceLabels,
-    SimcoreServiceSettingLabelEntry,
-)
+from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.services_resources import Resources, ResourceValue, ServiceResources
+from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from settings_library.docker_registry import RegistrySettings
 
-from ...modules.director_v0 import DirectorV0Client
 from ._constants import CONTAINER_NAME
-from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
-from .docker_service_specs.settings import get_labels_for_involved_services
-from .scheduler.events_utils import get_director_v0_client
 
 EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
 
-_NANO_UNIT: Final[int] = int(1e9)
-_MB: Final[int] = 1_048_576
-# defaults to use when these values are not defined or found
-# TODO: ANE -> SAN, PC: let's make these are sensible for when a service does not define them
-DEFAULT_LIMIT_MEMORY_BYTES: Final[int] = 100 * _MB
-DEFAULT_LIMIT_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
-DEFAULT_RESERVATION_MEMORY_BYTES: Final[int] = 100 * _MB
-DEFAULT_RESERVATION_NANO_CPUS: Final[int] = int(0.1 * _NANO_UNIT)
-assert DEFAULT_RESERVATION_NANO_CPUS <= DEFAULT_LIMIT_NANO_CPUS  # nosec
-assert DEFAULT_RESERVATION_MEMORY_BYTES <= DEFAULT_LIMIT_MEMORY_BYTES  # nosec
 
 logger = logging.getLogger(__name__)
 
 
-def _inject_proxy_network_configuration(
+def _update_proxy_network_configuration(
     service_spec: ComposeSpecLabel,
     target_container: str,
     dynamic_sidecar_network_name: str,
@@ -99,7 +81,7 @@ class _environment_section:
         return envs
 
 
-def _inject_paths_mappings(
+def _update_paths_mappings(
     service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
@@ -117,76 +99,18 @@ def _inject_paths_mappings(
         service_content["environment"] = _environment_section.export_as_list(env_vars)
 
 
-def _replace_env_vars_in_compose_spec(
-    stringified_service_spec: str, resolved_registry_url: str, service_tag: str
-) -> str:
-    stringified_service_spec = stringified_service_spec.replace(
-        MATCH_SIMCORE_REGISTRY, resolved_registry_url
-    )
-    stringified_service_spec = stringified_service_spec.replace(
-        MATCH_SERVICE_VERSION, service_tag
-    )
-    return stringified_service_spec
-
-
-async def _inject_resource_limits_and_reservations(
-    app: FastAPI, service_key: str, service_tag: str, service_spec: ComposeSpecLabel
+def _update_resource_limits_and_reservations(
+    service_resources: ServiceResources, service_spec: ComposeSpecLabel
 ) -> None:
-    director_v0_client: DirectorV0Client = get_director_v0_client(app)
-    labels_for_involved_services: Dict[
-        str, SimcoreServiceLabels
-    ] = await get_labels_for_involved_services(
-        director_v0_client=director_v0_client,
-        service_key=service_key,
-        service_tag=service_tag,
-    )
-
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
 
     for spec_service_key, spec in service_spec["services"].items():
-        if spec_service_key not in labels_for_involved_services:
-            logger.info(
-                "No labels found for service %s, service may not be an osparc service",
-                spec_service_key,
-            )
-            continue
-        labels = labels_for_involved_services[spec_service_key]
+        resources: Resources = service_resources[spec_service_key].resources
+        logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
-        settings_list: List[SimcoreServiceSettingLabelEntry] = labels.settings
-
-        # defaults
-        limit_nano_cpus = DEFAULT_LIMIT_NANO_CPUS
-        limit_memory_bytes = DEFAULT_LIMIT_MEMORY_BYTES
-        reservation_nano_cpus = DEFAULT_RESERVATION_NANO_CPUS
-        reservation_memory_bytes = DEFAULT_RESERVATION_MEMORY_BYTES
-
-        for entry in settings_list:
-            if entry.name == "Resources" and entry.setting_type == "Resources":
-                values: Dict[str, Any] = entry.value
-
-                # fetch limits
-                limits: Dict[str, Any] = values.get("Limits", {})
-                limit_nano_cpus = limits.get("NanoCPUs", DEFAULT_LIMIT_NANO_CPUS)
-                limit_memory_bytes = limits.get(
-                    "MemoryBytes", DEFAULT_LIMIT_MEMORY_BYTES
-                )
-
-                # fetch reservations
-                reservations: Dict[str, Any] = values.get("Reservations", {})
-                reservation_nano_cpus = reservations.get(
-                    "NanoCPUs", DEFAULT_RESERVATION_NANO_CPUS
-                )
-
-                reservation_memory_bytes = reservations.get(
-                    "MemoryBytes", DEFAULT_RESERVATION_MEMORY_BYTES
-                )
-
-                break
-
-        # ensure reservations <= limits setting up limits as the max between both
-        limit_nano_cpus = max(limit_nano_cpus, reservation_nano_cpus)
-        limit_memory_bytes = max(limit_memory_bytes, reservation_memory_bytes)
+        cpu: ResourceValue = resources["CPU"]
+        memory: ResourceValue = resources["RAM"]
 
         if docker_compose_major_version >= 3:
             # compos spec version 3 and beyond
@@ -196,11 +120,11 @@ async def _inject_resource_limits_and_reservations(
             reservations = resources.get("reservations", {})
 
             # assign limits
-            limits["cpus"] = limit_nano_cpus / _NANO_UNIT
-            limits["memory"] = f"{limit_memory_bytes}b"
+            limits["cpus"] = float(cpu.limit)
+            limits["memory"] = f"{memory.limit}"
             # assing reservations
-            reservations["cpus"] = reservation_nano_cpus / _NANO_UNIT
-            reservations["memory"] = f"{reservation_memory_bytes}b"
+            reservations["cpus"] = float(cpu.reservation)
+            reservations["memory"] = f"{memory.reservation}"
 
             resources["reservations"] = reservations
             resources["limits"] = limits
@@ -208,10 +132,10 @@ async def _inject_resource_limits_and_reservations(
             spec["deploy"] = deploy
         else:
             # compos spec version 2
-            spec["mem_limit"] = limit_memory_bytes
-            spec["mem_reservation"] = reservation_memory_bytes
+            spec["mem_limit"] = f"{memory.limit}"
+            spec["mem_reservation"] = f"{memory.reservation}"
             # NOTE: there is no distinction between limit and reservation, taking the higher value
-            spec["cpus"] = max(limit_nano_cpus, reservation_nano_cpus) / _NANO_UNIT
+            spec["cpus"] = float(max(cpu.limit, cpu.reservation))
 
 
 async def assemble_spec(
@@ -222,6 +146,7 @@ async def assemble_spec(
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
+    service_resources: ServiceResources,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -254,26 +179,22 @@ async def assemble_spec(
     assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
-    _inject_proxy_network_configuration(
+    _update_proxy_network_configuration(
         service_spec=service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )
 
-    _inject_paths_mappings(service_spec, paths_mapping)
+    _update_paths_mappings(service_spec, paths_mapping)
 
-    await _inject_resource_limits_and_reservations(
-        app=app,
-        service_key=service_key,
-        service_tag=service_tag,
-        service_spec=service_spec,
+    _update_resource_limits_and_reservations(
+        service_resources=service_resources, service_spec=service_spec
     )
 
-    stringified_service_spec = yaml.safe_dump(service_spec)
-    stringified_service_spec = _replace_env_vars_in_compose_spec(
-        stringified_service_spec=stringified_service_spec,
-        resolved_registry_url=docker_registry_settings.resolved_registry_url,
-        service_tag=service_tag,
+    stringified_service_spec = replace_env_vars_in_compose_spec(
+        service_spec=service_spec,
+        replace_simcore_registry=docker_registry_settings.resolved_registry_url,
+        replace_service_version=service_tag,
     )
 
     return stringified_service_spec
