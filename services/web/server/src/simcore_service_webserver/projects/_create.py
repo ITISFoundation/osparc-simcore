@@ -1,4 +1,5 @@
-""" Implementations of project creations
+""" Implementations of project creation, either cloning other or
+from scratch
 
 """
 
@@ -13,8 +14,9 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 
 from ..storage_api import copy_data_folders_from_project
-from .project_models import ProjectDict
+from .project_models import ProjectDict, validate_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_exceptions import ProjectNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ def _replace_uuids(entity: Any, project_map, nodes_map) -> Any:
     return entity
 
 
-def _clone_project_from(
+def _clone_project_model(
     source_project: ProjectDict,
     *,
     new_project_id: ProjectID,
@@ -106,8 +108,10 @@ def _clone_project_from(
 async def clone_project(
     app: web.Application,
     user_id: UserID,
-    project: ProjectDict,
+    source_project_id: ProjectID,
     *,
+    copy_data: bool = True,
+    as_template: bool = False,
     new_project_id: Optional[UUID] = AUTO_CREATE_UUID,
 ) -> ProjectDict:
     """
@@ -130,30 +134,48 @@ async def clone_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
+    # 1 -------------
+    # Get source project
+    # TODO: use API instead (will verify e.g. access)
+    source_project = await db.get_user_project(user_id, f"{source_project_id}")
+    if not source_project:
+        raise ProjectNotFoundError(source_project_id)
+
+    # 2 -------------
     # Update project id
     new_project_id = new_project_id or uuid4()
     assert isinstance(new_project_id, UUID)  # nosec
 
     # creates clone
-    project_copy, nodes_map = _clone_project_from(
-        project,
+    project_copy, nodes_map = _clone_project_model(
+        source_project,
         new_project_id=new_project_id,
         clean_output_data=False,
     )
 
-    # inject in db
-    await db.add_project(project_copy, user_id, force_project_uuid=True)
-
-    # access writes apply again in
-    updated_project = await copy_data_folders_from_project(
-        app, project, project_copy, nodes_map, user_id
+    # inject in db # TODO: repository pattern
+    await validate_project(app, project_copy)
+    await db.add_project(
+        project_copy, user_id, force_project_uuid=True, force_as_template=True
     )
 
-    assert updated_project == project_copy  # nosec
+    # 3 -------------
 
-    return updated_project
+    if copy_data:
+        # TODO: schedule task?
+        # TODO: long running https://google.aip.dev/151 ?
 
+        # access writes apply again in
+        updated_project = await copy_data_folders_from_project(
+            app, source_project, project_copy, nodes_map, user_id
+        )
 
-# TODO: schedule task
-# TODO: long running https://google.aip.dev/151
-# TODO: create_project(...)
+        assert updated_project == project_copy  # nosec
+
+    # 4 -------------
+    # update access rights
+    if source_project["type"] == "TEMPLATE":
+        # remove template access rights
+        project_copy["accessRights"] = {}
+
+    return project_copy
