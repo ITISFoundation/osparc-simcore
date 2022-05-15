@@ -71,7 +71,7 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 
 @pytest.fixture(scope="function")
 def project_env_devel_environment(
-    project_env_devel_dict: Dict[str, Any], monkeypatch
+    project_env_devel_dict: Dict[str, Any], monkeypatch: MonkeyPatch
 ) -> Dict[str, Any]:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)

@@ -34,19 +34,21 @@ def user_id(faker: Faker) -> UserID:
 
 def test_get_catalog_client_instance(
     minimal_catalog_config: None,
+    mocked_catalog_service_fcts: respx.MockRouter,
     minimal_app: FastAPI,
 ):
     catalog_client: CatalogClient = minimal_app.state.catalog_client
     assert catalog_client
     assert CatalogClient.instance(minimal_app) == catalog_client
+    assert mocked_catalog_service_fcts["get_health"].called
 
 
 async def test_get_service_specifications(
     minimal_catalog_config: None,
+    mocked_catalog_service_fcts: respx.MockRouter,
     minimal_app: FastAPI,
     user_id: UserID,
     mock_service_key_version: ServiceKeyVersion,
-    mocked_catalog_service_fcts: respx.MockRouter,
     fake_service_specifications: dict[str, Any],
 ):
     catalog_client: CatalogClient = minimal_app.state.catalog_client

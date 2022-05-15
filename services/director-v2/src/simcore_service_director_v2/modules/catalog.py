@@ -96,7 +96,7 @@ class CatalogClient:
         try:
             logger.debug("checking catalog is responsive")
             health_check_path: str = "/"
-            result = await self.client.head(health_check_path, timeout=1.0)
+            result = await self.client.get(health_check_path)  # , timeout=1.0)
             result.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):

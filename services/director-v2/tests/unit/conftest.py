@@ -16,7 +16,6 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
-from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
@@ -25,6 +24,7 @@ from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -233,15 +233,16 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 
 @pytest.fixture
-def mocked_storage_service_fcts(
-    minimal_app: FastAPI, fake_s3_settings
-) -> Iterator[respx.MockRouter]:
+def mocked_storage_service_fcts(fake_s3_settings) -> Iterator[respx.MockRouter]:
+    settings = AppSettings.create_from_envs()
     with respx.mock(  # type: ignore
-        base_url=minimal_app.state.settings.DIRECTOR_V2_STORAGE.endpoint,
+        base_url=settings.DIRECTOR_V2_STORAGE.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        import pdb
 
+        pdb.set_trace()
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
@@ -314,15 +315,19 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def mocked_catalog_service_fcts(
-    minimal_app: FastAPI,
     mock_service_key_version: ServiceKeyVersion,
     fake_service_specifications: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
+    settings = AppSettings.create_from_envs()
     with respx.mock(  # type: ignore
-        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.endpoint,
+        base_url=settings.DIRECTOR_V2_CATALOG.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        # health
+        respx_mock.get("/", name="get_health").respond(json="all good ;)")
+
+        # get service specifications
         quoted_key = urllib.parse.quote(mock_service_key_version.key, safe="")
         version = mock_service_key_version.version
         respx_mock.get(
