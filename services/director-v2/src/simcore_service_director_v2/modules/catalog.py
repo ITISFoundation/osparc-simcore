@@ -65,6 +65,7 @@ class CatalogClient:
     async def get_service_specifications(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
     ) -> dict[str, Any]:
+
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/specifications",
