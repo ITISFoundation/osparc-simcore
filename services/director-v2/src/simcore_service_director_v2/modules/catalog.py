@@ -7,11 +7,6 @@ import httpx
 from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from servicelib.json_serialization import json_dumps
-from tenacity._asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..core.settings import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
@@ -36,20 +31,8 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         )
         logger.debug("created client for catalog: %s", settings.endpoint)
 
-        # ensure catalog is up before we continue
-        async for attempt in AsyncRetrying(
-            reraise=True,
-            wait=wait_fixed(1),
-            stop=stop_after_delay(2 * _MINUTE),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        ):
-            with attempt:
-                if not await client.is_responsive():
-                    raise RuntimeError("Catalog is not responsive")
-                logger.info(
-                    "Connection to catalog succeeded [%s]",
-                    json_dumps(attempt.retry_state.retry_object.statistics),
-                )
+        # Here we currently do not ensure the catalog is up on start
+        # This will need to be assessed.
 
     async def on_shutdown() -> None:
         client = CatalogClient.instance(app).client
