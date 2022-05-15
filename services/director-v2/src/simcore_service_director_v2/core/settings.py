@@ -435,7 +435,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # App modules settings ---------------------
     DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_CATALOG: CatalogSettings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 

@@ -240,9 +240,6 @@ def mocked_storage_service_fcts(fake_s3_settings) -> Iterator[respx.MockRouter]:
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        import pdb
-
-        pdb.set_trace()
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
