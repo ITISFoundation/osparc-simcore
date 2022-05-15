@@ -40,7 +40,6 @@ def test_get_catalog_client_instance(
     catalog_client: CatalogClient = minimal_app.state.catalog_client
     assert catalog_client
     assert CatalogClient.instance(minimal_app) == catalog_client
-    assert mocked_catalog_service_fcts["get_health"].called
 
 
 async def test_get_service_specifications(
