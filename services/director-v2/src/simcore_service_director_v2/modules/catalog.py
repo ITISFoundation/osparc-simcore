@@ -22,7 +22,7 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         settings = CatalogSettings()
 
     async def on_startup() -> None:
-        client = CatalogClient.create(
+        CatalogClient.create(
             app,
             client=httpx.AsyncClient(
                 base_url=f"{settings.endpoint}",
