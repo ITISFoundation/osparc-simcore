@@ -57,6 +57,7 @@ API_PREFIX = "/" + API_VTAG
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
+    "catalog",
     "dask-scheduler",
     "dask-sidecar",
     "director-v2",

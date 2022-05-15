@@ -295,6 +295,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
 # TESTS
 def test_get_dynamic_proxy_spec(
     project_env_devel_environment,
+    mocked_catalog_service_fcts: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -323,6 +324,7 @@ def test_get_dynamic_proxy_spec(
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     # pylint: disable=too-many-arguments
     project_env_devel_environment,
+    mocked_catalog_service_fcts: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -331,7 +333,6 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
     mock_service_key_version: ServiceKeyVersion,
-    mocked_catalog_service_fcts: respx.MockRouter,
     fake_service_specifications: dict[str, Any],
 ):
     dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
