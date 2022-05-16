@@ -13,10 +13,10 @@ from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.basic_types import UUIDStr
 from models_library.projects_state import ProjectStatus
-from models_library.rest_pagination import Page, PageMetaInfoLimitOffset
+from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -243,9 +243,20 @@ async def create_projects(request: web.Request):
 #
 
 
-class _ProjectListParams(PageMetaInfoLimitOffset):
-    project_type: ProjectTypeAPI = Field(ProjectTypeAPI.all, alias="type")
-    show_hidden: bool
+class _ProjectListParams(BaseModel):
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        description="maximum number of items to return (pagination)",
+        ge=1,
+        lt=50,
+    )
+    offset: NonNegativeInt = Field(
+        default=0, description="index to the first item to return (pagination)"
+    )
+    project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
+    show_hidden: bool = Field(
+        default=False, description="includes projects marked as hidden in the listing"
+    )
 
 
 @routes.get(f"/{VTAG}/projects", name="list_projects")
