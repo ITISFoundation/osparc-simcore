@@ -24,6 +24,7 @@ from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from servicelib import mime
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -204,7 +205,7 @@ async def create_projects(
     else:
         log.debug("project created successfuly")
         raise web.HTTPCreated(
-            text=json.dumps(new_project), content_type="application/json"
+            text=json.dumps(new_project), content_type=mime.APPLICATION_JSON
         )
 
 
@@ -495,4 +496,4 @@ async def delete_project(request: web.Request):
     except ProjectNotFoundError as err:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from err
 
-    raise web.HTTPNoContent(content_type="application/json")
+    raise web.HTTPNoContent(content_type=mime.APPLICATION_JSON)

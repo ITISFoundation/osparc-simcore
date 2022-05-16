@@ -10,6 +10,7 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
+from servicelib import mime
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 
@@ -154,7 +155,7 @@ async def close_project(request: web.Request) -> web.Response:
         await projects_api.try_close_project_for_user(
             user_id, project_uuid, client_session_id, request.app
         )
-        raise web.HTTPNoContent(content_type="application/json")
+        raise web.HTTPNoContent(content_type=mime.APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
