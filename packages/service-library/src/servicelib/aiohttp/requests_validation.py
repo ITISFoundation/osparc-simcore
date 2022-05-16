@@ -9,8 +9,8 @@ from typing import Iterator, Type, TypeVar
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
 
-from .. import mime
 from ..json_serialization import json_dumps
+from ..mime import APPLICATION_JSON
 
 M = TypeVar("M", bound=BaseModel)
 
@@ -33,7 +33,7 @@ def handle_validation_as_http_error(*, error_msg_template: str) -> Iterator[None
         raise web.HTTPBadRequest(
             reason=msg,
             body=json_dumps({"error": {"msg": msg, "details": details}}),
-            content_type=mime.APPLICATION_JSON,
+            content_type=APPLICATION_JSON,
         )
 
 
@@ -61,7 +61,7 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    query_schema: Type[M],
+    parameters_schema: Type[M],
     request: web.Request,
 ) -> M:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
@@ -73,7 +73,7 @@ def parse_request_query_parameters_as(
         error_msg_template="Invalid parameter/s '{failed}' in request query"
     ):
         data = dict(request.query)
-        return query_schema.parse_obj(data)
+        return parameters_schema.parse_obj(data)
 
 
 async def parse_request_body_as(model_schema: Type[M], request: web.Request) -> M:

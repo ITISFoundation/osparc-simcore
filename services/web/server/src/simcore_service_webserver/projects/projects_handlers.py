@@ -16,7 +16,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
-from servicelib.json_serialization import MIMETYPE_APP_JSON, json_dumps
+from servicelib.json_serialization import json_dumps
+from servicelib.mime import APPLICATION_JSON
 
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_core import DirectorServiceError
@@ -169,7 +170,7 @@ async def close_project(request: web.Request) -> web.Response:
         await projects_api.try_close_project_for_user(
             c.user_id, f"{p.project_uuid}", client_session_id, request.app
         )
-        raise web.HTTPNoContent(content_type=MIMETYPE_APP_JSON)
+        raise web.HTTPNoContent(content_type=APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
 

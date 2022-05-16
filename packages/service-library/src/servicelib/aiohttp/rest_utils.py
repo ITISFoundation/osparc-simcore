@@ -11,7 +11,7 @@ import attr
 from aiohttp import web
 from openapi_core.extensions.models.factories import Model as BodyModel
 
-from .. import mime
+from ..mime import APPLICATION_JSON
 from .openapi_validation import (
     COOKIE_KEY,
     HEADER_KEY,
@@ -74,7 +74,7 @@ async def extract_and_validate(request: web.Request):
         raise web.HTTPBadRequest(
             reason="Failed request validation against API specs",
             text=EnvelopeFactory(error=error).as_text(),
-            content_type=mime.APPLICATION_JSON,
+            content_type=APPLICATION_JSON,
         )
 
     return params[PATH_KEY], params[QUERY_KEY], body

@@ -10,8 +10,8 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from servicelib import mime
 from servicelib.json_serialization import json_dumps
+from servicelib.mime import APPLICATION_JSON
 
 from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
@@ -224,6 +224,6 @@ async def delete_node(request: web.Request) -> web.Response:
             request, project_uuid, user_id, node_uuid
         )
 
-        raise web.HTTPNoContent(content_type=mime.APPLICATION_JSON)
+        raise web.HTTPNoContent(content_type=APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc

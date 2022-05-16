@@ -21,7 +21,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import MIMETYPE_APP_JSON, json_dumps
+from servicelib.json_serialization import json_dumps
+from servicelib.mime import APPLICATION_JSON
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -233,7 +234,7 @@ async def create_projects(request: web.Request):
     else:
         log.debug("project created successfuly")
         raise web.HTTPCreated(
-            text=json.dumps(new_project), content_type=MIMETYPE_APP_JSON
+            text=json.dumps(new_project), content_type=APPLICATION_JSON
         )
 
 
@@ -303,7 +304,7 @@ async def list_projects(request: web.Request):
     )
     return web.Response(
         text=page.json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APP_JSON,
+        content_type=APPLICATION_JSON,
     )
 
 
@@ -321,8 +322,6 @@ async def get_project(request: web.Request):
 
     :raises web.HTTPBadRequest
     """
-
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
 
     c = BaseRequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -547,4 +546,4 @@ async def delete_project(request: web.Request):
     except ProjectNotFoundError as err:
         raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from err
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APP_JSON)
+    raise web.HTTPNoContent(content_type=APPLICATION_JSON)
