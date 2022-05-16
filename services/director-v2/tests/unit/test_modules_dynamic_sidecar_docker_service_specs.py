@@ -80,7 +80,9 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec() -> dict[str, Any]:
+def expected_dynamic_sidecar_spec(
+    postgres_host_config: dict[str, str]
+) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -177,12 +179,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "LOG_LEVEL": "WARNING",
-                    "POSTGRES_DB": "mocked_db",
-                    "POSTGRES_ENDPOINT": "mocked_host:5432",
-                    "POSTGRES_HOST": "mocked_host",
-                    "POSTGRES_PASSWORD": "mocked_password",
-                    "POSTGRES_PORT": "5432",
-                    "POSTGRES_USER": "mocked_user",
+                    **postgres_host_config,
                     "RABBIT_CHANNELS": '{"log": '
                     '"simcore.services.logs", '
                     '"progress": '
