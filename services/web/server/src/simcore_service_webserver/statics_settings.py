@@ -5,11 +5,11 @@
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
+from models_library.utils.string_formatters import snake_to_camel
 from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
 from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
-from .utils import snake_to_camel
 
 
 class OsparcDependency(BaseModel):
