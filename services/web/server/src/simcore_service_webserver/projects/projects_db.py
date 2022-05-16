@@ -20,8 +20,8 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from change_case import ChangeCase
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.utils.change_case import snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -143,7 +143,7 @@ def _convert_to_schema_names(
         if key in SCHEMA_NON_NULL_KEYS and value is None:
             converted_value = ""
 
-        converted_args[ChangeCase.snake_to_camel(key)] = converted_value
+        converted_args[snake_to_camel(key)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
 

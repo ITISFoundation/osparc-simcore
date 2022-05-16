@@ -5,7 +5,7 @@
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
-from models_library.utils.string_formatters import snake_to_camel
+from models_library.utils.change_case import snake_to_camel
 from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
 from settings_library.base import BaseCustomSettings
 

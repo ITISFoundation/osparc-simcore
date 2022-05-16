@@ -10,7 +10,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.utils.string_formatters import snake_to_camel
+from models_library.utils.change_case import snake_to_camel
 from pydantic import validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
