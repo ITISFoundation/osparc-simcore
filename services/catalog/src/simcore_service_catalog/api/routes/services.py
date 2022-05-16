@@ -11,11 +11,6 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
-
-from models_library.services import ServiceKey, ServiceType, ServiceVersion
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pydantic import ValidationError
-from pydantic.types import PositiveInt
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository

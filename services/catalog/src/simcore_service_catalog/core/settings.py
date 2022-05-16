@@ -71,7 +71,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_TRACING: Optional[TracingSettings] = None
 
-    CATALOG_SERVICES_DEFAULT_RESOURCE: ResourcesDict = _DEFAULT_RESOURCES
+    CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
         _DEFAULT_SERVICE_SPECIFICATIONS
     )
