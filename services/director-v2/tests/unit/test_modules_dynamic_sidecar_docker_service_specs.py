@@ -182,7 +182,12 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "LOG_LEVEL": "WARNING",
-                    **postgres_host_config,
+                    "POSTGRES_DB": postgres_host_config["database"],
+                    "POSTGRES_HOST": postgres_host_config["host"],
+                    "POSTGRES_PORT": postgres_host_config["port"],
+                    "POSTGRES_USER": postgres_host_config["user"],
+                    "POSTGRES_PASSWORD": postgres_host_config["password"],
+                    "POSTGRES_ENDPOINT": f"{postgres_host_config['host']}:{postgres_host_config['port']}",
                     "RABBIT_CHANNELS": '{"log": '
                     '"simcore.services.logs", '
                     '"progress": '
