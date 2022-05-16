@@ -5,10 +5,12 @@ from pydantic.types import PositiveInt
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 
-MEMORY_50MB = 52_428_800
-MEMORY_250MB = 262_144_000
-CPU_1_PERCENT = 10_000_000
-CPU_100_PERCENT = 1_000_000_000
+from models_library.services_resources import (
+    CPU_10_PERCENT,
+    CPU_100_PERCENT,
+    MEMORY_250MB,
+    MEMORY_50MB,
+)
 
 
 def get_dynamic_proxy_spec(
@@ -101,7 +103,10 @@ def get_dynamic_proxy_spec(
                 ]
             },
             "Resources": {
-                "Reservations": {"MemoryBytes": MEMORY_50MB, "NanoCPUs": CPU_1_PERCENT},
+                "Reservations": {
+                    "MemoryBytes": MEMORY_50MB,
+                    "NanoCPUs": CPU_10_PERCENT,
+                },
                 "Limits": {"MemoryBytes": MEMORY_250MB, "NanoCPUs": CPU_100_PERCENT},
             },
             "RestartPolicy": {

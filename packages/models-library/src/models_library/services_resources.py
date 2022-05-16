@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Final, Union
 
 from models_library.generics import DictModel
 from pydantic import (
@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 ResourceName = str
 
 ComposeImage = constr(regex=r"[\w/-]+:[\w.@]+")
+
+
+GIGA: Final[float] = 1e9
+MEMORY_50MB: Final[int] = 52_428_800
+MEMORY_250MB: Final[int] = 262_144_000
+CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
+CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
 
 class ResourceValue(BaseModel):

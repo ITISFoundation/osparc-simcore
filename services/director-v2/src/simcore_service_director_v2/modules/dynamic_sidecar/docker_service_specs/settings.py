@@ -19,10 +19,12 @@ from servicelib.docker_compose import (
 )
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from .._constants import CONTAINER_NAME, GIGA
+from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
+from models_library.services_resources import GIGA, CPU_100_PERCENT
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
+
 
 log = logging.getLogger(__name__)
 
@@ -307,6 +309,12 @@ def _merge_resources_in_settings(
                 empty_resource_entry.value["Reservations"]["GenericResources"].extend(
                     [generic_resource]
                 )
+    # since some services do not define CPU limitations, by default 0.1% CPU is assigned
+    # ensuring limit is at least 1.0 CPUs otherwise the dynamic-sidecar is not able to work
+    # properly
+    empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
+        empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
+    )
 
     result.append(empty_resource_entry)
 

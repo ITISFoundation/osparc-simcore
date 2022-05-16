@@ -62,11 +62,6 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def service_resources() -> ServiceResources:
-    # by default 0.1% CPU as limit and reservation will is not enough
-    # for dynamic sidecars to run
-    service_resources = ServiceResources.parse_obj(
+    return ServiceResources.parse_obj(
         ServiceResources.Config.schema_extra["examples"][0]
-    ).copy()
-    cpu = service_resources["container"].resources["CPU"]
-    cpu.limit = 1
-    return service_resources
+    )
