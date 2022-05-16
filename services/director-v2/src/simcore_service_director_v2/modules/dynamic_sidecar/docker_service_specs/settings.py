@@ -19,7 +19,7 @@ from servicelib.docker_compose import (
 )
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from .._constants import CONTAINER_NAME, MULTIPLE_GIGA
+from .._constants import CONTAINER_NAME, GIGA
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
@@ -284,10 +284,10 @@ def _merge_resources_in_settings(
         for resource_name, resource_value in image_resources.resources.items():
             if resource_name == "CPU":
                 empty_resource_entry.value["Limits"]["NanoCPUs"] += int(
-                    float(resource_value.limit) * MULTIPLE_GIGA
+                    float(resource_value.limit) * GIGA
                 )
                 empty_resource_entry.value["Reservations"]["NanoCPUs"] += int(
-                    float(resource_value.reservation) * MULTIPLE_GIGA
+                    float(resource_value.reservation) * GIGA
                 )
             elif resource_name == "RAM":
                 empty_resource_entry.value["Limits"][
