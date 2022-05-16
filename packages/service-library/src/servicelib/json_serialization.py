@@ -3,8 +3,6 @@ from typing import Any
 
 from pydantic.json import pydantic_encoder
 
-MIMETYPE_APP_JSON = "application/json"
-
 
 def json_dumps(obj: Any, **kwargs):
     """json.dumps with rich encoder.

@@ -8,7 +8,9 @@ from typing import Iterator, Type, TypeVar
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
-from servicelib.json_serialization import json_dumps
+
+from .. import mime
+from ..json_serialization import json_dumps
 
 M = TypeVar("M", bound=BaseModel)
 
@@ -31,7 +33,7 @@ def handle_validation_as_http_error(*, error_msg_template: str) -> Iterator[None
         raise web.HTTPBadRequest(
             reason=msg,
             body=json_dumps({"error": {"msg": msg, "details": details}}),
-            content_type="application/json",
+            content_type=mime.APPLICATION_JSON,
         )
 
 
