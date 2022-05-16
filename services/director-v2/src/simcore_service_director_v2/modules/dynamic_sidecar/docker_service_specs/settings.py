@@ -21,7 +21,14 @@ from servicelib.docker_compose import (
 from ....api.dependencies.director_v0 import DirectorV0Client
 from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
-from models_library.services_resources import GIGA, CPU_100_PERCENT
+from models_library.services_resources import (
+    GIGA,
+    CPU_100_PERCENT,
+    CPU_10_PERCENT,
+    CPU_100_PERCENT,
+    MEMORY_250MB,
+    MEMORY_1GB,
+)
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
 
@@ -297,10 +304,10 @@ def _merge_resources_in_settings(
                 "name": "Resources",
                 "type": "Resources",
                 "value": {
-                    "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                    "Limits": {"NanoCPUs": CPU_100_PERCENT, "MemoryBytes": MEMORY_1GB},
                     "Reservations": {
-                        "NanoCPUs": 0,
-                        "MemoryBytes": 0,
+                        "NanoCPUs": MEMORY_250MB,
+                        "MemoryBytes": CPU_10_PERCENT,
                         "GenericResources": [],
                     },
                 },

@@ -21,9 +21,12 @@ ResourceName = str
 ComposeImage = constr(regex=r"[\w/-]+:[\w.@]+")
 
 
+_MB: Final[int] = 1024 * 1024
+MEMORY_50MB: Final[int] = 50 * _MB
+MEMORY_250MB: Final[int] = 50 * _MB
+MEMORY_1GB: Final[int] = 1024 * _MB
+
 GIGA: Final[float] = 1e9
-MEMORY_50MB: Final[int] = 52_428_800
-MEMORY_250MB: Final[int] = 262_144_000
 CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
 CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
