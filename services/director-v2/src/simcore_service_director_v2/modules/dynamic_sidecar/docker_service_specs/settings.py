@@ -100,7 +100,12 @@ def inject_settings_to_create_service_params(
                     "NanoCPUs"
                 ] = param.value["cpu_reservation"]
             # REST-API compatible
-            if "Limits" in param.value or "Reservations" in param.value:
+            if (
+                "Limits" in param.value
+                or "Reservation" in param.value
+                or "Reservations" in param.value
+            ):
+                # NOTE: Reservations is incorrect. It's Reservation but we keep it for backwards compatibility
                 create_service_params["task_template"]["Resources"].update(param.value)
 
         # publishing port on the ingress network.
@@ -151,6 +156,27 @@ def inject_settings_to_create_service_params(
     container_spec["Labels"]["mem_limit"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
+
+    _clean_reservation_field(create_service_params)
+
+
+def _clean_reservation_field(service_spec: dict[str, Any]) -> None:
+    WRONG_FIELD = "Reservations"
+    RIGHT_FIELD = "Reservation"
+    if WRONG_FIELD not in service_spec["task_template"].get("Resources", {}):
+        return
+    # NOTE: in old services, there is a typo in the field. There is no s in Reservation in
+    # the Docker API (see https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate)
+    new_reservation = service_spec["task_template"]["Resources"][WRONG_FIELD]
+    if (
+        current_reservation := service_spec["task_template"]
+        .get("Resources", {})
+        .get(RIGHT_FIELD)
+    ):
+        new_reservation = current_reservation | new_reservation
+
+    service_spec["task_template"]["Resources"][RIGHT_FIELD] = new_reservation
+    service_spec["task_template"]["Resources"].pop(WRONG_FIELD)
 
 
 def _assemble_key(service_key: str, service_tag: str) -> str:

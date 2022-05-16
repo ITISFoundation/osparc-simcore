@@ -120,11 +120,6 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                 # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
                 {"name": "ports", "type": "int", "value": 8888},
                 {
-                    "name": "constraints",
-                    "type": "string",
-                    "value": ["node.platform.os == linux"],
-                },
-                {
                     "name": "resources",
                     "type": "resources",
                     "value": {

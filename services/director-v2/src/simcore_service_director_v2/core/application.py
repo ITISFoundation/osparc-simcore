@@ -1,12 +1,10 @@
 import logging
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
-from starlette import status
-from starlette.exceptions import HTTPException
 
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
@@ -16,6 +14,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
+    catalog,
     comp_scheduler,
     dask_clients_pool,
     db,
@@ -113,6 +112,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_STORAGE:
         storage.setup(app, settings.DIRECTOR_V2_STORAGE)
+
+    if settings.DIRECTOR_V2_CATALOG:
+        catalog.setup(app, settings.DIRECTOR_V2_CATALOG)
 
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)

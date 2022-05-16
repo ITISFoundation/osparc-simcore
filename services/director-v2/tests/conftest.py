@@ -8,7 +8,6 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
-from pprint import pformat
 from typing import Any, AsyncIterable, Dict, Iterable
 
 import dotenv
@@ -21,7 +20,7 @@ from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from starlette.testclient import TestClient
+from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -72,7 +71,7 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 
 @pytest.fixture(scope="function")
 def project_env_devel_environment(
-    project_env_devel_dict: Dict[str, Any], monkeypatch
+    project_env_devel_dict: Dict[str, Any], monkeypatch: MonkeyPatch
 ) -> Dict[str, Any]:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
@@ -105,10 +104,6 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
 
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -121,7 +116,7 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
 def client(mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-    print("Application settings\n", pformat(settings))
+    print("Application settings\n", settings.json(indent=2))
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
@@ -148,7 +143,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
 
 
 @pytest.fixture(scope="function")
-def minimal_app(client: TestClient) -> FastAPI:
+def minimal_app(client: TestClient) -> ASGI3App:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/
     return client.app

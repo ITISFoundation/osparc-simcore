@@ -1,7 +1,9 @@
 import logging
-from typing import Any, Dict
+from typing import Dict
 
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
@@ -15,9 +17,10 @@ log = logging.getLogger(__name__)
 
 
 def extract_service_port_from_compose_start_spec(
-    create_service_params: Dict[str, Any]
+    create_service_params: AioDockerServiceSpec,
 ) -> int:
-    return create_service_params["labels"]["service_port"]
+    assert create_service_params.Labels  # nosec
+    return parse_obj_as(int, create_service_params.Labels["service_port"])
 
 
 def _get_environment_variables(
@@ -80,7 +83,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
-) -> Dict[str, Any]:
+) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
     of the dynamic service. The director-v2 directly coordinates with
@@ -206,7 +209,10 @@ def get_dynamic_sidecar_spec(
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
         },
         "name": scheduler_data.service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
+        "networks": [
+            {"Target": swarm_network_id},
+            {"Target": dynamic_sidecar_network_id},
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
@@ -229,7 +235,7 @@ def get_dynamic_sidecar_spec(
             # this will get overwritten
             "Resources": {
                 "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
-                "Reservations": {
+                "Reservation": {
                     "NanoCPUs": 1 * pow(10, 8),
                     "MemoryBytes": 500 * pow(1024, 2),
                 },
@@ -242,4 +248,4 @@ def get_dynamic_sidecar_spec(
         create_service_params=create_service_params,
     )
 
-    return create_service_params
+    return AioDockerServiceSpec.parse_obj(create_service_params)
