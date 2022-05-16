@@ -1,9 +1,11 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Coroutine, Dict, Final, List, Optional, Set, Type, cast
 
 import httpx
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
@@ -14,6 +16,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -22,6 +25,7 @@ from tenacity.wait import wait_exponential, wait_fixed
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
+from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from .._namepsace import get_compose_namespace
@@ -64,6 +68,16 @@ from .events_utils import (
 
 logger = logging.getLogger(__name__)
 
+DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
+    ["labels"],
+    ["task_template", "Resources", "Limits"],
+    ["task_template", "Resources", "Reservation", "MemoryBytes"],
+    ["task_template", "Resources", "Reservation", "NanoCPUs"],
+    ["task_template", "Placement", "Constraints"],
+    ["task_template", "ContainerSpec", "Env"],
+    ["task_template", "Resources", "Reservation", "GenericResources"],
+)
+
 
 class CreateSidecars(DynamicSchedulerEvent):
     """Created the dynamic-sidecar and the proxy."""
@@ -90,9 +104,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
-
         # fetching project form DB and fetching user settings
-        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
+        projects_repository = cast(
+            ProjectsRepository, fetch_repo_outside_of_request(app, ProjectsRepository)
+        )
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
@@ -138,25 +153,42 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_create_service_params: Dict[str, Any]
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
+            get_dynamic_sidecar_spec(
+                scheduler_data=scheduler_data,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+                swarm_network_id=swarm_network_id,
+                settings=settings,
+                app_settings=app.state.settings,
+            )
+        )
 
-        dynamic_sidecar_create_service_params = get_dynamic_sidecar_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-            swarm_network_id=swarm_network_id,
-            settings=settings,
-            app_settings=app.state.settings,
+        catalog_client = CatalogClient.instance(app)
+        user_specific_service_spec = await catalog_client.get_service_specifications(
+            scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+        )
+        user_specific_service_spec = AioDockerServiceSpec.parse_obj(
+            user_specific_service_spec.get("sidecar", {})
+        )
+        # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
+        # we do not use aliases when exporting dynamic_sidecar_service_spec_base
+        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.parse_obj(
+            nested_update(
+                jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
+                jsonable_encoder(user_specific_service_spec, exclude_unset=True),
+                include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+            )
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
-            dynamic_sidecar_create_service_params
+            dynamic_sidecar_service_final_spec
         )
 
         # update service_port and assing it to the status
         # needed by CreateUserServices action
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
-            dynamic_sidecar_create_service_params
+            dynamic_sidecar_service_final_spec
         )
 
         # finally mark services created
@@ -237,7 +269,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
         ):
-            tasks = [
+            tasks: list[Coroutine[Any, Any, Any]] = [
                 dynamic_sidecar_client.service_pull_output_ports(
                     dynamic_sidecar_endpoint
                 )
@@ -417,8 +449,9 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        projects_networks_repository: ProjectsNetworksRepository = (
-            fetch_repo_outside_of_request(app, ProjectsNetworksRepository)
+        projects_networks_repository: ProjectsNetworksRepository = cast(
+            ProjectsNetworksRepository,
+            fetch_repo_outside_of_request(app, ProjectsNetworksRepository),
         )
 
         projects_networks: ProjectsNetworks = (

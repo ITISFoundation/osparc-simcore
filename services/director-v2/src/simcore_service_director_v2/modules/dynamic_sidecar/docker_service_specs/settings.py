@@ -101,6 +101,7 @@ def inject_settings_to_create_service_params(
                 ] = param.value["cpu_reservation"]
             # REST-API compatible
             if "Limits" in param.value or "Reservations" in param.value:
+                # NOTE: The Docker REST API reads Reservation when actually it's Reservations
                 create_service_params["task_template"]["Resources"].update(param.value)
 
         # publishing port on the ingress network.

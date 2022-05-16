@@ -7,7 +7,7 @@ import os
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Iterator, Optional
 
 import docker
 import jsonschema
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
-def docker_registry(keep_docker_up: bool) -> str:
+def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
@@ -31,7 +31,9 @@ def docker_registry(keep_docker_up: bool) -> str:
     container = None
     try:
         docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list({"name": "pytest_registry"})[0]
+        container = docker_client.containers.list(filters={"name": "pytest_registry"})[
+            0
+        ]
         print("Warning: docker registry is already up!")
     except Exception:  # pylint: disable=broad-except
         container = docker_client.containers.run(
