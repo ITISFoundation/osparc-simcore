@@ -28,7 +28,6 @@ import aioboto3
 import aiodocker
 import aiopg.sa
 import httpx
-from models_library.services_resources import ServiceResources
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
@@ -46,6 +45,7 @@ from models_library.projects_networks import (
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.services_resources import ServiceResources
 from models_library.users import UserID
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture

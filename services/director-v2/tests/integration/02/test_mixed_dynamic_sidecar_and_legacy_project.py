@@ -9,12 +9,12 @@ from typing import Any, AsyncIterable, Callable, Dict, Iterable
 
 import aiodocker
 import httpx
-from models_library.services_resources import ServiceResources
 import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from models_library.services_resources import ServiceResources
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -146,6 +146,7 @@ async def director_v2_client(
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
