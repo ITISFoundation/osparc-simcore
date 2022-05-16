@@ -27,10 +27,10 @@ def replace_env_vars_in_compose_spec(
 
     stringified_service_spec = yaml.safe_dump(service_spec)
 
-    # NOTE: could not use string.Template here because the test will
+    # NOTE: could not use `string.Template` here because the test will
     # fail since `${DISPLAY}` cannot be replaced, and we do not want
     # it to be replaced at this time. If this method is changed
-    # the test should always without changes
+    # the test suite should always pass without changes.
     stringified_service_spec = stringified_service_spec.replace(
         MATCH_SIMCORE_REGISTRY, replace_simcore_registry
     )
