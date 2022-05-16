@@ -2,25 +2,30 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
+import json
+from typing import Callable
 from uuid import UUID
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
+from aiohttp.test_utils import TestClient
 from faker import Faker
-from jsonschema import ValidationError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
-    parse_request_context_as,
-    parse_request_parameters_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
 )
-from yarl import URL
+from servicelib.json_serialization import json_dumps
 
-# HELPERS
+# HELPERS -----------------------------------------------------------
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
+
+
+def jsonable_encoder(data):
+    # q&d replacement for fastapi.encoders.jsonable_encoder
+    return json.loads(json_dumps(data))
 
 
 class MyRequestContext(BaseModel):
@@ -32,13 +37,28 @@ class MyRequestContext(BaseModel):
         return cls(user_id=faker.pyint(), secret=faker.password())
 
 
-class MyRequestParameters(BaseModel):
+class MyRequestPathParams(BaseModel):
     project_uuid: UUID
-    is_ok: bool = True
+
+    class Config:
+        extra = Extra.forbid
 
     @classmethod
     def create_fake(cls, faker: Faker):
-        return cls(project_uuid=faker.uuid4(), is_ok=faker.pybool())
+        return cls(project_uuid=faker.uuid4())
+
+
+class MyRequestQueryParams(BaseModel):
+    is_ok: bool = True
+    label: str
+
+    def as_params(self, **kwargs) -> dict[str, str]:
+        data = self.dict(**kwargs)
+        return {k: f"{v}" for k, v in data.items()}
+
+    @classmethod
+    def create_fake(cls, faker: Faker):
+        return cls(is_ok=faker.pybool(), label=faker.word())
 
 
 class Sub(BaseModel):
@@ -59,87 +79,174 @@ class MyBody(BaseModel):
         return cls(x=faker.pyint(), y=faker.pybool(), z=Sub.create_fake(faker))
 
 
-def create_fake_request(
-    app: web.Application, params: dict[str, str], queries: dict[str, Any], body: Any
-):
-    url = URL.build(path="/projects/{project_uuid}/".format(**params), query=queries)
+# FIXTURES ----------------------------------
 
-    request = make_mocked_request(
-        "GET",
-        f"{url}",
-        match_info=params,
-        app=app,
-        payload=body,
+
+@pytest.fixture
+def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
+    """
+    Some app that:
+
+    - creates app and request context
+    - has a handler that parses request params, query and body
+
+    """
+
+    async def _handler(request: web.Request) -> web.Response:
+        # --------- UNDER TEST -------
+        # NOTE: app context does NOT need to be validated everytime!
+        context = MyRequestContext.parse_obj({**dict(request.app), **dict(request)})
+
+        path_params = parse_request_path_parameters_as(MyRequestPathParams, request)
+        query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
+        body = await parse_request_body_as(MyBody, request)
+        # ---------------------------
+
+        return web.json_response(
+            {
+                "parameters": path_params.dict(),
+                "queries": query_params.dict(),
+                "body": body.dict(),
+                "context": context.dict(),
+            },
+            dumps=json_dumps,
+        )
+
+    # ---
+
+    @web.middleware
+    async def _middleware(request: web.Request, handler):
+        # request context
+        request[RQT_USERID_KEY] = 42
+        request["RQT_IGNORE_CONTEXT"] = "not interesting"
+        resp = await handler(request)
+        return resp
+
+    app = web.Application(
+        middlewares=[
+            _middleware,
+        ]
     )
-    return request
+
+    # app context
+    app[APP_SECRET_KEY] = faker.password()
+    app["APP_IGNORE_CONTEXT"] = "not interesting"
+
+    # adds handler
+    app.add_routes([web.get("/projects/{project_uuid}", _handler)])
+
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
-# TESTS
+@pytest.fixture
+def path_params(faker: Faker):
+    path_params = MyRequestPathParams.create_fake(faker)
+    return path_params
+
+
+@pytest.fixture
+def query_params(faker: Faker) -> MyRequestQueryParams:
+    return MyRequestQueryParams.create_fake(faker)
+
+
+@pytest.fixture
+def body(faker: Faker) -> MyBody:
+    return MyBody.create_fake(faker)
+
+
+# TESTS ------------------------------------------------------
 
 
 async def test_parse_request_as(
-    app: web.Application,
-    faker: Faker,
+    client: TestClient,
+    path_params: MyRequestPathParams,
+    query_params: MyRequestQueryParams,
+    body: MyBody,
 ):
 
-    context = MyRequestContext.create_fake(faker)
-    params = MyRequestParameters.create_fake(faker)
-    body = MyBody.create_fake(faker)
-
-    app = web.Application()
-    app[APP_SECRET_KEY] = context.secret
-    app["SKIP_THIS"] = 0
-
-    request = create_fake_request(
-        app,
-        params=params.dict(include={"project_uuid"}),
-        queries=params.dict(exclude={"project_uuid"}),
-        body=body.json(),
+    r = await client.get(
+        f"/projects/{path_params.project_uuid}",
+        params=query_params.as_params(),
+        json=body.dict(),
     )
-    request[RQT_USERID_KEY] = context.user_id
-    request["SKIP_ALSO_THIS"] = 0
+    assert r.status == web.HTTPOk.status_code, f"{await r.text()}"
 
-    # params
-    valid_params = parse_request_parameters_as(MyRequestParameters, request)
-    assert valid_params == params
+    got = await r.json()
 
-    # body
-    valid_body = await parse_request_body_as(MyBody, request)
-    assert valid_body == body
-
-    # context
-    valid_context = parse_request_context_as(MyRequestContext, request)
-    assert valid_context == context
+    assert got["parameters"] == jsonable_encoder(path_params.dict())
+    assert got["queries"] == jsonable_encoder(query_params.dict())
+    assert got["body"] == body.dict()
+    assert got["context"] == {
+        "secret": client.app[APP_SECRET_KEY],
+        "user_id": 42,
+    }
 
 
-async def test_parse_request_as_raises_http_error(
-    app: web.Application,
-    faker: Faker,
+async def test_parse_request_with_invalid_path_params(
+    client: TestClient,
+    query_params: MyRequestQueryParams,
+    body: MyBody,
 ):
 
-    body = MyBody.create_fake(faker)
-
-    request = create_fake_request(
-        app,
-        params={"project_uuid": "invalid-uuid"},
-        queries={},
-        body={"wrong": 33},
+    r = await client.get(
+        "/projects/invalid-uuid",
+        params=query_params.as_params(),
+        json=body.dict(),
     )
+    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
-    # params
-    with pytest.raises(web.HTTPBadRequest) as exc_info:
-        parse_request_parameters_as(MyRequestParameters, request)
+    errors = await r.json()
+    assert errors == {
+        "error": {
+            "msg": "Invalid parameter/s 'project_uuid' in request path",
+            "details": [{"loc": "project_uuid", "msg": "value is not a valid uuid"}],
+        }
+    }
 
-    bad_request_exc = exc_info.value
-    assert "project_uuid" in bad_request_exc.reason
 
-    # body
-    with pytest.raises(web.HTTPBadRequest) as exc_info:
-        await parse_request_body_as(MyBody, request)
+async def test_parse_request_with_invalid_query_params(
+    client: TestClient,
+    path_params: MyRequestPathParams,
+    body: MyBody,
+):
 
-    bad_request_exc = exc_info.value
-    assert "wrong" in bad_request_exc.reason
+    r = await client.get(
+        f"/projects/{path_params.project_uuid}",
+        params={},
+        json=body.dict(),
+    )
+    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
-    # context
-    with pytest.raises(ValidationError):
-        parse_request_context_as(MyRequestContext, request)
+    errors = await r.json()
+    assert errors == {
+        "error": {
+            "msg": "Invalid parameter/s 'label' in request query",
+            "details": [{"loc": "label", "msg": "field required"}],
+        }
+    }
+
+
+async def test_parse_request_with_invalid_body(
+    client: TestClient,
+    path_params: MyRequestPathParams,
+    query_params: MyRequestQueryParams,
+):
+
+    r = await client.get(
+        f"/projects/{path_params.project_uuid}",
+        params=query_params.as_params(),
+        json={"invalid": "body"},
+    )
+    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+
+    errors = await r.json()
+
+    assert errors == {
+        "error": {
+            "msg": "Invalid field/s 'x, z' in request body",
+            "details": [
+                {"loc": "x", "msg": "field required"},
+                {"loc": "z", "msg": "field required"},
+            ],
+        }
+    }
