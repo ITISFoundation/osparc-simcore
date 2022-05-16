@@ -384,9 +384,10 @@ async def test_get_service_resources(
     expected_service_resources = ServiceResources.from_resources(
         expected_resources, f"{service_key}:{service_version}"
     )
-    assert received_resources.dict() == expected_service_resources.dict()
-    assert received_resources.json() == expected_service_resources.json()
-    assert received_resources == expected_service_resources
+    assert received_resources == expected_service_resources, "%s\n%s" % (
+        received_resources.json(indent=2),
+        expected_service_resources.dict(indent=2),
+    )
 
 
 @pytest.fixture
