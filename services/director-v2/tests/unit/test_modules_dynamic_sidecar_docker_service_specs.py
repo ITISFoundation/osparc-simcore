@@ -25,9 +25,6 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 # FIXTURES
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
-
 
 @pytest.fixture
 def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
@@ -37,10 +34,6 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
         "REGISTRY_PW": "test",
         "REGISTRY_SSL": "false",
         "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
-        "POSTGRES_HOST": "test_host",
-        "POSTGRES_USER": "test_user",
-        "POSTGRES_PASSWORD": "test_password",
-        "POSTGRES_DB": "test_db",
         "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         "SWARM_STACK_NAME": "test_swarm_name",
@@ -83,9 +76,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec(
-    postgres_host_config: dict[str, str]
-) -> dict[str, Any]:
+def expected_dynamic_sidecar_spec() -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -182,12 +173,12 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "LOG_LEVEL": "WARNING",
-                    "POSTGRES_DB": postgres_host_config["database"],
-                    "POSTGRES_HOST": postgres_host_config["host"],
-                    "POSTGRES_PORT": postgres_host_config["port"],
-                    "POSTGRES_USER": postgres_host_config["user"],
-                    "POSTGRES_PASSWORD": postgres_host_config["password"],
-                    "POSTGRES_ENDPOINT": f"{postgres_host_config['host']}:{postgres_host_config['port']}",
+                    "POSTGRES_DB": "test",
+                    "POSTGRES_HOST": "localhost",
+                    "POSTGRES_PORT": "5432",
+                    "POSTGRES_USER": "test",
+                    "POSTGRES_PASSWORD": "test",
+                    "POSTGRES_ENDPOINT": "localhost:5432",
                     "RABBIT_CHANNELS": '{"log": '
                     '"simcore.services.logs", '
                     '"progress": '
