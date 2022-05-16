@@ -2,7 +2,13 @@ from typing import Optional
 
 from pydantic import Field, validator
 
-from .generated_models.docker_rest_api import ContainerSpec, ServiceSpec, TaskSpec
+from .generated_models.docker_rest_api import (
+    ContainerSpec,
+    ResourceObject,
+    Resources1,
+    ServiceSpec,
+    TaskSpec,
+)
 from .utils.converters import to_snake_case
 
 
@@ -26,9 +32,25 @@ class AioDockerContainerSpec(ContainerSpec):
         return v
 
 
+class AioDockerResources1(Resources1):
+    # NOTE: The Docker REST API documentation is wrong!!!
+    # Do not set that back to singular Reservation.
+    Reservation: Optional[ResourceObject] = Field(
+        None, description="Define resources reservation.", alias="Reservations"
+    )
+
+    class Config(Resources1.Config):
+        allow_population_by_field_name = True
+
+
 class AioDockerTaskSpec(TaskSpec):
     ContainerSpec: Optional[AioDockerContainerSpec] = Field(
         None,
+    )
+
+    Resources: Optional[AioDockerResources1] = Field(
+        None,
+        description="Resource requirements which apply to each individual container created\nas part of the service.\n",
     )
 
 
