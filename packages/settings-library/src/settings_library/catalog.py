@@ -10,7 +10,6 @@ from settings_library.utils_service import (
 )
 
 
-# TODO remove from services/director-v2/src/simcore_service_director_v2/core/settings.py when merging https://github.com/ITISFoundation/osparc-simcore/pull/3034
 class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
     CATALOG_HOST: str = "catalog"
     CATALOG_PORT: PortInt = DEFAULT_FASTAPI_PORT
