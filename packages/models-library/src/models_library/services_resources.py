@@ -10,6 +10,7 @@ from pydantic import (
     StrictInt,
     constr,
     root_validator,
+    parse_obj_as,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,15 @@ ResourcesDict = DictModel[ResourceName, ResourceValue]
 
 
 class ImageResources(BaseModel):
-    image: ComposeImage = Field(..., description="used by the fro")
+    image: ComposeImage = Field(
+        ...,
+        description=(
+            "Used by the frontend to provide a context for the users."
+            "Services with a docker-compose spec will have multiple entries."
+            "Using the `image:version` instead of the docker-compose spec is "
+            "more helpful for the end user."
+        ),
+    )
     resources: ResourcesDict
 
     class Config:
@@ -87,8 +96,8 @@ class ServiceResources(DictModel[str, ImageResources]):
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": ByteSize(2 * 1024**3),
-                                "reservation": ByteSize(2 * 1024**3),
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
                     },
@@ -115,8 +124,8 @@ class ServiceResources(DictModel[str, ImageResources]):
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": ByteSize(2 * 1024**3),
-                                "reservation": ByteSize(2 * 1024**3),
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
                     },
@@ -128,8 +137,8 @@ class ServiceResources(DictModel[str, ImageResources]):
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": ByteSize(2 * 1024**3),
-                                "reservation": ByteSize(2 * 1024**3),
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
                     },
@@ -138,8 +147,8 @@ class ServiceResources(DictModel[str, ImageResources]):
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": ByteSize(2 * 1024**3),
-                                "reservation": ByteSize(2 * 1024**3),
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
                     },

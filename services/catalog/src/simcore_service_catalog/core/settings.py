@@ -4,7 +4,7 @@ from typing import Final, Optional
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
-from pydantic import ByteSize, Field, PositiveInt
+from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -31,8 +31,8 @@ _DEFAULT_RESOURCES: Final[ResourcesDict] = ResourcesDict.parse_obj(
     {
         "CPU": {"limit": 0.1, "reservation": 0.1},
         "RAM": {
-            "limit": ByteSize(2 * 1024**3),
-            "reservation": ByteSize(2 * 1024**3),
+            "limit": parse_obj_as(ByteSize, "2Gib"),
+            "reservation": parse_obj_as(ByteSize, "2Gib"),
         },
     }
 )
