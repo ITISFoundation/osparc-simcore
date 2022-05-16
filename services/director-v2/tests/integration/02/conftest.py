@@ -68,6 +68,5 @@ def service_resources() -> ServiceResources:
         ServiceResources.Config.schema_extra["examples"][0]
     ).copy()
     cpu = service_resources["container"].resources["CPU"]
-    cpu.limit = 2
-    cpu.reservation = 1
+    cpu.limit = 1
     return service_resources
