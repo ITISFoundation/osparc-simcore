@@ -31,4 +31,5 @@ RUN pip --no-cache-dir install --upgrade \
 RUN pip install \
   pip-tools \
   pipreqs \
-  pipdeptree
+  pipdeptree && \
+  pip list -vv

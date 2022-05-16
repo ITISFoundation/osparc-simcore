@@ -26,9 +26,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-# TODO: Reservation and not Reservations https://github.com/ITISFoundation/osparc-simcore/issues/3044
-
-
 def _parse_generic_resource(
     generic_resources: list[Any], service_resources: ServiceResources
 ) -> None:
