@@ -38,7 +38,7 @@ def _create_routes(tag, specs, *handlers_module):
             lambda o: tag in o.tags and "snapshot" not in o.path,
             iter_path_operations(specs),
         ),
-        strict=True,
+        strict=False,
     )
 
     return routes
