@@ -37,6 +37,7 @@ from starlette.testclient import TestClient
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "catalog",
     "dask-scheduler",
     "dask-sidecar",
     "director",

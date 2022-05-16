@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 from .helpers.utils_postgres import migrated_pg_tables_context
 
 TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
@@ -125,7 +125,7 @@ def postgres_dsn(docker_stack: Dict, testing_environ_vars: Dict) -> Dict[str, st
         "user": testing_environ_vars["POSTGRES_USER"],
         "password": testing_environ_vars["POSTGRES_PASSWORD"],
         "database": testing_environ_vars["POSTGRES_DB"],
-        "host": "127.0.0.1",
+        "host": get_localhost_ip(),
         "port": get_service_published_port(
             "postgres", testing_environ_vars["POSTGRES_PORT"]
         ),

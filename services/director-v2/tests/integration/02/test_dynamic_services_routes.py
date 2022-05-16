@@ -4,7 +4,7 @@
 import asyncio
 import logging
 from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
 import aiodocker
 import pytest
@@ -12,7 +12,7 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from faker import Faker
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResources
@@ -31,28 +31,41 @@ DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
+    "catalog",
     "director",
     "rabbit",
+    "migration",
+    "postgres",
 ]
+pytest_simcore_ops_services_selection = ["adminer"]
 
 
 @pytest.fixture
 def minimal_configuration(
+    postgres_db,
+    postgres_host_config: dict[str, str],
     dy_static_file_server_dynamic_sidecar_service: Dict,
     simcore_services_ready: None,
     rabbit_service: RabbitSettings,
 ):
-    pass
+    ...
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
+def user_db(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
+    user = registered_user()
+    return user
 
 
 @pytest.fixture
-def project_id(faker: Faker) -> str:
-    return f"{faker.uuid4()}"
+def user_id(user_db) -> UserID:
+    return UserID(user_db["id"])
+
+
+@pytest.fixture
+def project_id(user_db, project: Callable[..., ProjectAtDB]) -> str:
+    prj = project(user=user_db)
+    return f"{prj.uuid}"
 
 
 @pytest.fixture
@@ -96,22 +109,10 @@ def start_request_data(
 
 
 @pytest.fixture
-def mocked_engine() -> AsyncMock:
-    engine = AsyncMock()
-    engine.maxsize = 100
-    engine.size = 1
-    engine.freesize = 1
-    available_engines = engine.maxsize - (engine.size - engine.freesize)
-    assert type(available_engines) == int
-    return engine
-
-
-@pytest.fixture
 async def test_client(
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
-    mocked_engine: AsyncMock,
     monkeypatch,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -123,11 +124,7 @@ async def test_client(
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "true")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -143,8 +140,6 @@ async def test_client(
     settings = AppSettings.create_from_envs()
 
     app = init_app(settings)
-
-    app.state.engine = mocked_engine
 
     async with TestClient(app) as client:
         yield client

@@ -5,16 +5,20 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_postgres_database.models.services_specifications import (
+    services_specifications,
+)
 from simcore_postgres_database.models.users import users
 
-__all__ = [
+__all__ = (
     "dags",
     "services_meta_data",
     "services_access_rights",
+    "services_specifications",
     "users",
     "user_to_groups",
     "groups",
     "GroupType",
     "projects",
     "ProjectType",
-]
+)
