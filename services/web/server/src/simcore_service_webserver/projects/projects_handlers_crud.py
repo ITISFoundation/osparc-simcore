@@ -92,7 +92,7 @@ class _ProjectCreateParams(BaseModel):
     hidden: bool = False
 
 
-@routes.post(f"/{VTAG}/projects")
+@routes.post(f"/{VTAG}/projects", name="create_projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -248,7 +248,7 @@ class _ProjectListParams(PageMetaInfoLimitOffset):
     show_hidden: bool
 
 
-@routes.get(f"/{VTAG}/projects")
+@routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -313,7 +313,7 @@ async def list_projects(request: web.Request):
 #
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}", name="get_project")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
@@ -373,7 +373,7 @@ async def get_project(request: web.Request):
 #
 
 
-@routes.put(f"/{VTAG}/projects/{{project_uuid}}")
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}", name="replace_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -493,7 +493,7 @@ async def replace_project(request: web.Request):
 #
 
 
-@routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
+@routes.delete(f"/{VTAG}/projects/{{project_uuid}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):

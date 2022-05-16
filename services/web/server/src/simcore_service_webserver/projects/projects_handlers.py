@@ -43,7 +43,7 @@ class _ProjectActiveParams(BaseModel):
     client_session_id: str
 
 
-@routes.get(f"/{VTAG}/projects/active")
+@routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
@@ -76,7 +76,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:open", name="open_project")
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
@@ -144,7 +144,7 @@ async def open_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:close", name="close_project")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
@@ -180,10 +180,10 @@ async def close_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}/state")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}/state", name="get_project_state")
 @login_required
 @permission_required("project.read")
-async def state_project(request: web.Request) -> web.Response:
+async def get_project_state(request: web.Request) -> web.Response:
     c = BaseRequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 

@@ -199,7 +199,7 @@ paths:
       tags:
         - project
       summary: returns the state of a project
-      operationId: state_project
+      operationId: get_project_state
       responses:
         "200":
           description: returns the project current state
