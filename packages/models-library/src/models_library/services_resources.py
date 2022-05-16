@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union
+from typing import Union
 
 from models_library.generics import DictModel
 from pydantic import (
@@ -14,10 +14,6 @@ from pydantic import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_RESOURCES: dict[str, Any] = {
-    "CPU": {"limit": 0.1, "reservation": 0.1},
-    "RAM": {"limit": ByteSize(2 * 1024**3), "reservation": ByteSize(2 * 1024**3)},
-}
 
 ResourceName = str
 
@@ -81,7 +77,13 @@ class ServiceResources(DictModel[str, ImageResources]):
                 {
                     "container": {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
-                        "resources": DEFAULT_RESOURCES,
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": ByteSize(2 * 1024**3),
+                                "reservation": ByteSize(2 * 1024**3),
+                            },
+                        },
                     },
                 },
                 # service with a compose spec
@@ -103,18 +105,36 @@ class ServiceResources(DictModel[str, ImageResources]):
                     },
                     "sym-server": {
                         "image": "simcore/services/dynamic/sym-server:3.0.0",
-                        "resources": DEFAULT_RESOURCES,
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": ByteSize(2 * 1024**3),
+                                "reservation": ByteSize(2 * 1024**3),
+                            },
+                        },
                     },
                 },
                 # compose spec with image outside the platform
                 {
                     "jupyter-lab": {
                         "image": "simcore/services/dynamic/jupyter-math:4.0.0",
-                        "resources": DEFAULT_RESOURCES,
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": ByteSize(2 * 1024**3),
+                                "reservation": ByteSize(2 * 1024**3),
+                            },
+                        },
                     },
                     "proxy": {
                         "image": "traefik:v2.6.6",
-                        "resources": DEFAULT_RESOURCES,
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": ByteSize(2 * 1024**3),
+                                "reservation": ByteSize(2 * 1024**3),
+                            },
+                        },
                     },
                 },
             ]
