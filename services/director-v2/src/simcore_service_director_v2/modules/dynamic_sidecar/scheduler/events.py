@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Final, List, Optional, Set, Type, cast
+from typing import Any, Coroutine, Dict, Final, List, Optional, Set, Type, cast
 
 import httpx
 from fastapi import FastAPI
@@ -269,7 +269,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
         ):
-            tasks = [
+            tasks: list[Coroutine[Any, Any, Any]] = [
                 dynamic_sidecar_client.service_pull_output_ports(
                     dynamic_sidecar_endpoint
                 )
