@@ -1,16 +1,15 @@
 from typing import Any, Dict
 
+from models_library.services_resources import (
+    CPU_10_PERCENT,
+    CPU_100_PERCENT,
+    MEMORY_50MB,
+    MEMORY_250MB,
+)
 from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-
-from models_library.services_resources import (
-    CPU_10_PERCENT,
-    CPU_100_PERCENT,
-    MEMORY_250MB,
-    MEMORY_50MB,
-)
 
 
 def get_dynamic_proxy_spec(

@@ -11,7 +11,14 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    CPU_10_PERCENT,
+    CPU_100_PERCENT,
+    GIGA,
+    MEMORY_1GB,
+    MEMORY_250MB,
+    ServiceResources,
+)
 from servicelib.docker_compose import (
     MATCH_IMAGE_END,
     MATCH_IMAGE_START,
@@ -21,14 +28,6 @@ from servicelib.docker_compose import (
 from ....api.dependencies.director_v0 import DirectorV0Client
 from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
-from models_library.services_resources import (
-    GIGA,
-    CPU_100_PERCENT,
-    CPU_10_PERCENT,
-    CPU_100_PERCENT,
-    MEMORY_250MB,
-    MEMORY_1GB,
-)
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
 
