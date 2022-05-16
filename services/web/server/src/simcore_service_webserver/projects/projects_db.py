@@ -21,7 +21,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
-from models_library.utils.change_case import snake_to_camel
+from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -122,7 +122,7 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
         if not key in exclude_keys:
-            converted_args[ChangeCase.camel_to_snake(key)] = value
+            converted_args[camel_to_snake(key)] = value
     return converted_args
 
 
