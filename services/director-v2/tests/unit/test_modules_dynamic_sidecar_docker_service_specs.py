@@ -70,8 +70,8 @@ def swarm_network_id() -> str:
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
-    return SimcoreServiceLabels(
-        **SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    return SimcoreServiceLabels.parse_obj(
+        SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
 
 
@@ -89,11 +89,11 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             '"{\\"version\\": \\"2.3\\", '
             '\\"services\\": {\\"rt-web\\": '
             '{\\"image\\": '
-            '\\"${REGISTRY_URL}/simcore/services/dynamic/sim4life:${SERVICE_TAG}\\", '
+            '\\"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}\\", '
             '\\"init\\": true, \\"depends_on\\": '
             '[\\"s4l-core\\"]}, \\"s4l-core\\": '
             '{\\"image\\": '
-            '\\"${REGISTRY_URL}/simcore/services/dynamic/s4l-core:${SERVICE_TAG}\\", '
+            '\\"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}\\", '
             '\\"runtime\\": \\"nvidia\\", '
             '\\"init\\": true, \\"environment\\": '
             '[\\"DISPLAY=${DISPLAY}\\"], '
@@ -135,6 +135,10 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             '"simcore_traefik_zone": '
             '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
             '"service_port": 65534, '
+            '"service_resources": {"container": {"image": '
+            '"simcore/services/dynamic/jupyter-math:2.0.5", "resources": '
+            '{"CPU": {"limit": 0.1, "reservation": 0.1}, "RAM": '
+            '{"limit": 2147483648, "reservation": 2147483648}}}}, '
             '"request_dns": null, '
             '"request_scheme": null, '
             '"proxy_service_name": '
