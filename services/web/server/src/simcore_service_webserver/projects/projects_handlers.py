@@ -10,40 +10,46 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
+from pydantic import BaseModel, Field
+from servicelib.aiohttp.requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_core import DirectorServiceError
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security_decorators import permission_required
-from . import projects_api
+from . import _create, projects_api
 from .projects_exceptions import ProjectNotFoundError
-from .projects_handlers_crud import routes
+from .projects_handlers_crud import BaseRequestContext, ProjectPathParams, routes
 
 log = logging.getLogger(__name__)
 
+
 #
-# Singleton per-session resources https://google.aip.dev/156
+# singleton: Active project
+#  - Singleton per-session resources https://google.aip.dev/156
 #
+
+
+class _ProjectActiveParams(BaseModel):
+    client_session_id: str
 
 
 @routes.get(f"/{VTAG}/projects/active")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
+    p = parse_request_query_parameters_as(_ProjectActiveParams, request)
 
-    try:
-        client_session_id = request.query["client_session_id"]
-
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     try:
         project = None
         user_active_projects = []
-        with managed_resource(user_id, client_session_id, request.app) as rt:
+        with managed_resource(p.user_id, p.client_session_id, request.app) as rt:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
@@ -51,7 +57,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
-                user_id=user_id,
+                user_id=p.user_id,
                 include_templates=True,
                 include_state=True,
             )
@@ -63,7 +69,41 @@ async def get_active_project(request: web.Request) -> web.Response:
 
 
 #
-# Custom methods https://google.aip.dev/136
+# clone: custom methods https://google.aip.dev/136
+#
+
+
+class _ProjectCloneParams(BaseModel):
+    copy_data: bool = True
+    as_template: bool = Field(
+        default=False, description="Enforces clone to be a template"
+    )
+
+
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:clone")
+@login_required
+@permission_required("project.create")
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
+async def clone_project(request: web.Request):
+    c = BaseRequestContext.parse_obj(request)
+    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    q = parse_request_query_parameters_as(_ProjectCloneParams, request)
+
+    project = await _create.clone_project(
+        request.app,
+        c.user_id,
+        source_project_id=p.project_uuid,
+        copy_data=q.copy_data,
+        as_template=q.as_template,
+    )
+
+    # TODO: see create!
+
+    return web.json_response({"data": project})
+
+
+#
+# open project: custom methods https://google.aip.dev/136
 #
 
 
@@ -71,38 +111,40 @@ async def get_active_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
+    c = BaseRequestContext.parse_obj(request)
+    p = parse_request_path_parameters_as(ProjectPathParams, request)
+
     try:
-        project_uuid = request.match_info["project_id"]
         client_session_id = await request.json()
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
+            project_uuid=f"{p.project_uuid}",
+            user_id=c.user_id,
             include_templates=False,
             include_state=True,
         )
 
         if not await projects_api.try_open_project_for_user(
-            user_id,
-            project_uuid=project_uuid,
+            p.user_id,
+            project_uuid=f"{p.project_uuid}",
             client_session_id=client_session_id,
             app=request.app,
         ):
             raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
-        await projects_api.start_project_interactive_services(request, project, user_id)
+        await projects_api.start_project_interactive_services(
+            request, project, c.user_id
+        )
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
+            user_id=c.user_id,
             project=project,
             is_template=False,
             app=request.app,
@@ -113,13 +155,13 @@ async def open_project(request: web.Request) -> web.Response:
         return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
         await projects_api.try_close_project_for_user(
-            user_id=user_id,
-            project_uuid=project_uuid,
+            user_id=c.user_id,
+            project_uuid=f"{p.project_uuid}",
             client_session_id=client_session_id,
             app=request.app,
         )
@@ -128,17 +170,22 @@ async def open_project(request: web.Request) -> web.Response:
         ) from exc
 
 
+#
+# close project: custom methods https://google.aip.dev/136
+#
+
+
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
-    user_id: int = request[RQT_USERID_KEY]
+
+    c = BaseRequestContext.parse_obj(request)
+    p = parse_request_path_parameters_as(ProjectPathParams, request)
+
     try:
-        project_uuid = request.match_info["project_id"]
         client_session_id = await request.json()
 
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
@@ -146,35 +193,36 @@ async def close_project(request: web.Request) -> web.Response:
         # ensure the project exists
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
+            project_uuid=f"{p.project_uuid}",
+            user_id=c.user_id,
             include_templates=False,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(
-            user_id, project_uuid, client_session_id, request.app
+            c.user_id, f"{p.project_uuid}", client_session_id, request.app
         )
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
+
+
+#
+# project's state sub-resource
+#
 
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}/state")
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
-    from servicelib.aiohttp.rest_utils import extract_and_validate
-
-    user_id: int = request[RQT_USERID_KEY]
-
-    path, _, _ = await extract_and_validate(request)
-    project_uuid = path["project_id"]
+    c = BaseRequestContext.parse_obj(request)
+    p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
         request.app,
-        project_uuid=project_uuid,
-        user_id=user_id,
+        project_uuid=f"{p.project_uuid}",
+        user_id=c.user_id,
         include_templates=True,
         include_state=True,
     )
