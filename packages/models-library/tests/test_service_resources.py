@@ -2,9 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from pprint import pformat
-from typing import Type
-
 import pytest
 from models_library.services_resources import (
     ComposeImage,
@@ -12,23 +9,7 @@ from models_library.services_resources import (
     ResourcesDict,
     ServiceResources,
 )
-from pydantic import BaseModel, parse_obj_as
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ImageResources,
-        ServiceResources,
-    ),
-)
-def test_computation_task_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: dict[str, dict]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls.parse_obj(example)
-        assert model_instance, f"Failed with {name}"
+from pydantic import parse_obj_as
 
 
 @pytest.mark.parametrize(
