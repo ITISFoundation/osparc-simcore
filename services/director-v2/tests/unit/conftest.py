@@ -319,7 +319,7 @@ def mocked_catalog_service_fcts(
 ) -> Iterator[respx.MockRouter]:
     settings = AppSettings.create_from_envs()
     with respx.mock(  # type: ignore
-        base_url=settings.DIRECTOR_V2_CATALOG.endpoint,
+        base_url=settings.DIRECTOR_V2_CATALOG.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
