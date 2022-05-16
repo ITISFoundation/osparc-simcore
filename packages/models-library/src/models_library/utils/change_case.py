@@ -15,7 +15,7 @@ Example of usage in pydantic:
 import re
 
 _underscorer1 = re.compile(r"(.)([A-Z][a-z]+)")
-_underscorer2 = re.compile("([a-z0-9])([A-Z])")
+_underscorer2 = re.compile(r"([a-z0-9])([A-Z])")
 
 
 def snake_to_camel(subject: str) -> str:

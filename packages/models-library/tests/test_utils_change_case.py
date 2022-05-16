@@ -32,38 +32,30 @@ from models_library.utils.change_case import (
 def test_snake_to_camel(subject, expected):
     assert snake_to_camel(subject) == expected
 
-    if subject != "_S":
-        subject, expected = expected, subject
-        assert camel_to_snake(subject) == expected
+
+@pytest.mark.parametrize(
+    "subject,expected",
+    [
+        ("snakesOnAPlane", "snakes_on_a_plane"),
+        ("SnakesOnAPlane", "snakes_on_a_plane"),
+        ("IPhoneHysteria", "i_phone_hysteria"),
+        ("iPhoneHysteria", "i_phone_hysteria"),
+    ],
+)
+def test_camel_to_snake(subject, expected):
+    # WARNING: not always reversable
+    assert camel_to_snake(subject) == expected
 
 
 @pytest.mark.parametrize(
     "subject,expected",
     [
-        (
-            "snakes_on_a_plane",
-            "SnakesOnAPlane",
-        ),
-        (
-            "Snakes_On_A_Plane",
-            "SnakesOnAPlane",
-        ),
-        (
-            "snakes_On_a_Plane",
-            "SnakesOnAPlane",
-        ),
-        (
-            "snakes_on_A_plane",
-            "SnakesOnAPlane",
-        ),
-        (
-            "i_phone_hysteria",
-            "IPhoneHysteria",
-        ),
-        (
-            "i_Phone_Hysteria",
-            "IPhoneHysteria",
-        ),
+        ("snakes_on_a_plane", "SnakesOnAPlane"),
+        ("Snakes_On_A_Plane", "SnakesOnAPlane"),
+        ("snakes_On_a_Plane", "SnakesOnAPlane"),
+        ("snakes_on_A_plane", "SnakesOnAPlane"),
+        ("i_phone_hysteria", "IPhoneHysteria"),
+        ("i_Phone_Hysteria", "IPhoneHysteria"),
     ],
 )
 def test_snake_to_upper_camel(subject, expected):
