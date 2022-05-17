@@ -148,7 +148,7 @@ async def catalog_subsystem_mock(monkeypatch):
 async def _request_list(client) -> List[Dict]:
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3))
+    resp = await client.get(url.with_query(offset=0, limit=3))
 
     projects, _ = await assert_status(resp, web.HTTPOk)
 
