@@ -365,7 +365,7 @@ async def get_project(request: web.Request):
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=p.project_uuid,
+            project_uuid=f"{p.project_uuid}",
             user_id=c.user_id,
             include_templates=True,
             include_state=True,
