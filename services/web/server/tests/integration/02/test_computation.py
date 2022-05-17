@@ -294,7 +294,7 @@ async def _assert_and_wait_for_pipeline_state(
     expected_state: RunningState,
     expected_api_response: ExpectedResponse,
 ):
-    url_project_state = client.app.router["state_project"].url_for(
+    url_project_state = client.app.router["get_project_state"].url_for(
         project_id=project_id
     )
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
@@ -477,7 +477,7 @@ async def test_run_pipeline_and_check_state(
         check_outputs=False,
     )
 
-    url_project_state = client.app.router["state_project"].url_for(
+    url_project_state = client.app.router["get_project_state"].url_for(
         project_id=project_id
     )
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")

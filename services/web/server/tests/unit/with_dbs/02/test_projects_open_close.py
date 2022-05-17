@@ -242,7 +242,7 @@ async def _state_project(
     expected: Type[web.HTTPException],
     expected_project_state: ProjectState,
 ):
-    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["get_project_state"].url_for(project_id=project["uuid"])
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
     if not error:
