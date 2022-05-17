@@ -47,12 +47,15 @@ class _ProjectActiveParams(BaseModel):
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
-    p = parse_request_query_parameters_as(_ProjectActiveParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
 
     try:
         project = None
         user_active_projects = []
-        with managed_resource(p.user_id, p.client_session_id, request.app) as rt:
+        with managed_resource(
+            req_ctx.user_id, query_params.client_session_id, request.app
+        ) as rt:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
@@ -60,7 +63,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
-                user_id=p.user_id,
+                user_id=req_ctx.user_id,
                 include_templates=True,
                 include_state=True,
             )
@@ -80,8 +83,8 @@ async def get_active_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         client_session_id = await request.json()
@@ -92,15 +95,15 @@ async def open_project(request: web.Request) -> web.Response:
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{p.project_uuid}",
-            user_id=c.user_id,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
             include_templates=False,
             include_state=True,
         )
 
         if not await projects_api.try_open_project_for_user(
-            p.user_id,
-            project_uuid=f"{p.project_uuid}",
+            req_ctx.user_id,
+            project_uuid=f"{path_params.project_uuid}",
             client_session_id=client_session_id,
             app=request.app,
         ):
@@ -108,12 +111,12 @@ async def open_project(request: web.Request) -> web.Response:
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(
-            request, project, c.user_id
+            request, project, req_ctx.user_id
         )
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
-            user_id=c.user_id,
+            user_id=req_ctx.user_id,
             project=project,
             is_template=False,
             app=request.app,
@@ -124,13 +127,15 @@ async def open_project(request: web.Request) -> web.Response:
         return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
         await projects_api.try_close_project_for_user(
-            user_id=c.user_id,
-            project_uuid=f"{p.project_uuid}",
+            user_id=req_ctx.user_id,
+            project_uuid=f"{path_params.project_uuid}",
             client_session_id=client_session_id,
             app=request.app,
         )
@@ -149,8 +154,8 @@ async def open_project(request: web.Request) -> web.Response:
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
 
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         client_session_id = await request.json()
@@ -162,17 +167,22 @@ async def close_project(request: web.Request) -> web.Response:
         # ensure the project exists
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{p.project_uuid}",
-            user_id=c.user_id,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
             include_templates=False,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(
-            c.user_id, f"{p.project_uuid}", client_session_id, request.app
+            req_ctx.user_id,
+            f"{path_params.project_uuid}",
+            client_session_id,
+            request.app,
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 #
@@ -184,14 +194,14 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def get_project_state(request: web.Request) -> web.Response:
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
         request.app,
-        project_uuid=f"{p.project_uuid}",
-        user_id=c.user_id,
+        project_uuid=f"{path_params.project_uuid}",
+        user_id=req_ctx.user_id,
         include_templates=True,
         include_state=True,
     )
