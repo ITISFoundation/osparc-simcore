@@ -1,4 +1,18 @@
+""" CRUD operations on a "computation" resource
+
+A computation is a resource that represents a running pipeline of computational services in a give project
+Therefore,
+ - creating a computation will run the project's pipeline
+ - the computation ID is the same as the associated project uuid
+
+
+A task is computation sub-resource that respresents a running computational service in the pipeline described above
+Therefore,
+ - the task ID is the same as the associated node uuid
+
+"""
 # pylint: disable=too-many-arguments
+
 
 import contextlib
 import logging
@@ -28,9 +42,9 @@ from ...core.errors import (
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
-    ComputationTaskCreate,
-    ComputationTaskDelete,
-    ComputationTaskGet,
+    ComputationCreate,
+    ComputationDelete,
+    ComputationGet,
     ComputationTaskStop,
 )
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -64,13 +78,13 @@ PIPELINE_ABORT_TIMEOUT_S = 10
 @router.post(
     "",
     summary="Create and optionally start a new computation",
-    response_model=ComputationTaskGet,
+    response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["job.project_id"])
 async def create_computation(
-    job: ComputationTaskCreate,
+    job: ComputationCreate,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     computation_pipelines: CompPipelinesRepository = Depends(
@@ -82,7 +96,7 @@ async def create_computation(
     computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
-) -> ComputationTaskGet:
+) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
         f"{job.user_id=}",
@@ -166,7 +180,7 @@ async def create_computation(
                 user_id=job.user_id, project_id=job.project_id
             )
 
-        return ComputationTaskGet(
+        return ComputationGet(
             id=job.project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
@@ -192,7 +206,7 @@ async def create_computation(
 @router.get(
     "/{project_id}",
     summary="Returns a computation pipeline state",
-    response_model=ComputationTaskGet,
+    response_model=ComputationGet,
     status_code=status.HTTP_200_OK,
 )
 async def get_computation(
@@ -207,7 +221,7 @@ async def get_computation(
         get_repository(CompTasksRepository)
     ),
     computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
-) -> ComputationTaskGet:
+) -> ComputationGet:
     log.debug(
         "User %s getting computation status for project %s",
         f"{user_id=}",
@@ -260,7 +274,7 @@ async def get_computation(
         last_run = await computation_runs.get(user_id=user_id, project_id=project_id)
 
     self_url = request.url.remove_query_params("user_id")
-    task_out = ComputationTaskGet(
+    task_out = ComputationGet(
         id=project_id,
         state=pipeline_state,
         pipeline_details=pipeline_details,
@@ -278,10 +292,10 @@ async def get_computation(
 @router.post(
     "/{project_id}:stop",
     summary="Stops a computation pipeline",
-    response_model=ComputationTaskGet,
+    response_model=ComputationGet,
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def stop_computation_project(
+async def stop_computation(
     comp_task_stop: ComputationTaskStop,
     project_id: ProjectID,
     request: Request,
@@ -294,7 +308,7 @@ async def stop_computation_project(
     ),
     computation_runs: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
-) -> ComputationTaskGet:
+) -> ComputationGet:
     log.debug(
         "User %s stopping computation for project %s",
         comp_task_stop.user_id,
@@ -328,7 +342,7 @@ async def stop_computation_project(
                 user_id=comp_task_stop.user_id, project_id=project_id
             )
 
-        return ComputationTaskGet(
+        return ComputationGet(
             id=project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
@@ -353,8 +367,8 @@ async def stop_computation_project(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_pipeline(
-    comp_task_stop: ComputationTaskDelete,
+async def delete_computation(
+    comp_task_stop: ComputationDelete,
     project_id: ProjectID,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     computation_pipelines: CompPipelinesRepository = Depends(

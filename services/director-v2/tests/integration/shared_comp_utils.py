@@ -12,7 +12,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from pydantic.networks import AnyHttpUrl
 from pytest_simcore.helpers.constants import MINUTE
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -47,7 +47,7 @@ async def create_pipeline(
 
 
 async def assert_computation_task_out_obj(
-    task_out: ComputationTaskGet,
+    task_out: ComputationGet,
     *,
     project: ProjectAtDB,
     exp_task_state: RunningState,
@@ -79,7 +79,7 @@ async def assert_and_wait_for_pipeline_status(
     user_id: UserID,
     project_uuid: UUID,
     wait_for_states: Optional[List[RunningState]] = None,
-) -> ComputationTaskGet:
+) -> ComputationGet:
     if not wait_for_states:
         wait_for_states = [
             RunningState.SUCCESS,
@@ -88,12 +88,12 @@ async def assert_and_wait_for_pipeline_status(
         ]
     MAX_TIMEOUT_S = 5 * MINUTE
 
-    async def check_pipeline_state() -> ComputationTaskGet:
+    async def check_pipeline_state() -> ComputationGet:
         response = await client.get(url, params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_200_OK
         ), f"response code is {response.status_code}, error: {response.text}"
-        task_out = ComputationTaskGet.parse_obj(response.json())
+        task_out = ComputationGet.parse_obj(response.json())
         assert task_out.id == project_uuid
         assert task_out.url.path == f"/v2/computations/{project_uuid}"
         print(

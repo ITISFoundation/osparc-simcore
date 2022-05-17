@@ -21,7 +21,7 @@ from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -75,9 +75,9 @@ async def test_get_computation_from_empty_project(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationTaskGet.parse_obj(response.json())
+    returned_computation = ComputationGet.parse_obj(response.json())
     assert returned_computation
-    expected_computation = ComputationTaskGet(
+    expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.UNKNOWN,
         pipeline_details=PipelineDetails(adjacency_list={}, node_states={}),
@@ -120,9 +120,9 @@ async def test_get_computation_from_not_started_computation_task(
     comp_tasks = tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationTaskGet.parse_obj(response.json())
+    returned_computation = ComputationGet.parse_obj(response.json())
     assert returned_computation
-    expected_computation = ComputationTaskGet(
+    expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
@@ -180,12 +180,12 @@ async def test_get_computation_from_published_computation_task(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationTaskGet.parse_obj(response.json())
+    returned_computation = ComputationGet.parse_obj(response.json())
     assert returned_computation
     expected_stop_url = async_client.base_url.join(
         f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
     )
-    expected_computation = ComputationTaskGet(
+    expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.PUBLISHED,
         pipeline_details=PipelineDetails(

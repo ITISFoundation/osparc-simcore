@@ -8,7 +8,7 @@ from models_library.users import UserID
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 
-class ComputationTaskGet(ComputationTask):
+class ComputationGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
@@ -17,7 +17,7 @@ class ComputationTaskGet(ComputationTask):
     )
 
 
-class ComputationTaskCreate(BaseModel):
+class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
     start_pipeline: Optional[bool] = Field(
@@ -40,7 +40,7 @@ class ComputationTaskStop(BaseModel):
     user_id: UserID
 
 
-class ComputationTaskDelete(ComputationTaskStop):
+class ComputationDelete(ComputationTaskStop):
     force: Optional[bool] = Field(
         False,
         description="if True then the pipeline will be removed even if it is running",
