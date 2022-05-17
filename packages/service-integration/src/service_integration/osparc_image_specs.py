@@ -34,14 +34,16 @@ def create_image_spec(
 
     service_name = meta_cfg.service_name()
     context = docker_compose_overwrite_cfg.services[service_name].build.context
+    docker_compose_overwrite_cfg.services[service_name].build.context = (
+        context if context else "./"
+    )
+    docker_compose_overwrite_cfg.services[service_name].build.labels = labels
 
     overwrite_options = docker_compose_overwrite_cfg.services[service_name].build.dict(
         exclude_none=True
     )
 
-    build_spec = BuildItem(
-        context=context if context else "./", labels=labels, **overwrite_options
-    )
+    build_spec = BuildItem(**overwrite_options)
 
     compose_spec = ComposeSpecification(
         version=integration_context.COMPOSE_VERSION,
