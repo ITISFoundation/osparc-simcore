@@ -15,6 +15,7 @@ import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
 from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
@@ -547,7 +548,7 @@ async def test_get_active_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, create_exp, get_exp, deletion_exp",
+    "user_role, expected_response_on_Create, expected_response_on_Get, expected_response_on_Delete",
     [
         (
             UserRole.ANONYMOUS,
@@ -555,21 +556,37 @@ async def test_get_active_project(
             web.HTTPUnauthorized,
             web.HTTPUnauthorized,
         ),
-        (UserRole.GUEST, web.HTTPForbidden, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+        (
+            UserRole.GUEST,
+            web.HTTPForbidden,
+            web.HTTPOk,
+            web.HTTPForbidden,
+        ),
+        (
+            UserRole.USER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNoContent,
+        ),
+        (
+            UserRole.TESTER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNoContent,
+        ),
     ],
 )
 async def test_project_node_lifetime(
     client,
     logged_user,
     user_project,
-    create_exp,
-    get_exp,
-    deletion_exp,
+    expected_response_on_Create,
+    expected_response_on_Get,
+    expected_response_on_Delete,
     mocked_director_v2_api,
     storage_subsystem_mock,
     mocker,
+    faker: Faker,
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
@@ -581,8 +598,10 @@ async def test_project_node_lifetime(
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "some/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
-    data, errors = await assert_status(resp, create_exp)
-    node_id = "wrong_node_id"
+    data, errors = await assert_status(resp, expected_response_on_Create)
+    node_id = (
+        faker.uuid4()
+    )  # NOTE: this is a fake node_id that is not in the project, but it does not matter because director_v2 is patched
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api["director_v2_api.start_service"].assert_called_once()
         assert "node_id" in data
@@ -595,8 +614,8 @@ async def test_project_node_lifetime(
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
-    data, errors = await assert_status(resp, create_exp)
-    node_id_2 = "wrong_node_id"
+    data, errors = await assert_status(resp, expected_response_on_Create)
+    node_id_2 = node_id
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api["director_v2_api.start_service"].assert_not_called()
         assert "node_id" in data
@@ -615,7 +634,7 @@ async def test_project_node_lifetime(
         "service_state": "running"
     }
     resp = await client.get(url)
-    data, errors = await assert_status(resp, get_exp)
+    data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
         assert data["service_state"] == "running"
@@ -630,7 +649,7 @@ async def test_project_node_lifetime(
         "service_state": "idle"
     }
     resp = await client.get(url)
-    data, errors = await assert_status(resp, get_exp)
+    data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
         assert data["service_state"] == "idle"
@@ -643,7 +662,7 @@ async def test_project_node_lifetime(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.delete(url)
-    data, errors = await assert_status(resp, deletion_exp)
+    data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api["director_v2_api.stop_service"].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
@@ -659,7 +678,7 @@ async def test_project_node_lifetime(
         project_id=user_project["uuid"], node_id=node_id_2
     )
     resp = await client.delete(url)
-    data, errors = await assert_status(resp, deletion_exp)
+    data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
