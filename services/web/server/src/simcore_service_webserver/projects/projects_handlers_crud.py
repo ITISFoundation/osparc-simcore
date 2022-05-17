@@ -344,7 +344,43 @@ async def list_projects(request: web.Request):
 
 #
 # - Get https://google.aip.dev/131
+# - Get active project: Singleton per-session resources https://google.aip.dev/156
 #
+
+
+class _ProjectActiveParams(BaseModel):
+    client_session_id: str
+
+
+@routes.get(f"/{VTAG}/projects/active", name="get_active_project")
+@login_required
+@permission_required("project.read")
+async def get_active_project(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
+
+    try:
+        project = None
+        user_active_projects = []
+        with managed_resource(
+            req_ctx.user_id, query_params.client_session_id, request.app
+        ) as rt:
+            # get user's projects
+            user_active_projects = await rt.find(PROJECT_ID_KEY)
+        if user_active_projects:
+
+            project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=user_active_projects[0],
+                user_id=req_ctx.user_id,
+                include_templates=True,
+                include_state=True,
+            )
+
+        return web.json_response({"data": project}, dumps=json_dumps)
+
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason="Project not found") from exc
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")

@@ -63,8 +63,8 @@ def setup_projects(app: web.Application) -> bool:
     # database API
     setup_projects_db(app)
 
-    app.router.add_routes(projects_handlers_crud.routes)
     app.router.add_routes(projects_handlers.routes)
+    app.router.add_routes(projects_handlers_crud.routes)
 
     app.router.add_routes(
         _create_routes(

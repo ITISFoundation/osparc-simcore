@@ -2,19 +2,14 @@
 
 Imports in standard methods (SEE projects_handlers_crud) and extends with
     - custom methods (https://google.aip.dev/121)
-    - singleton resources (https://google.aip.dev/156)
-    - ...
+
 """
 import json
 import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
-from pydantic import BaseModel
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
+from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -22,7 +17,6 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_core import DirectorServiceError
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import ProjectNotFoundError
@@ -32,46 +26,6 @@ log = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-#
-# singleton: Active project
-#  - Singleton per-session resources https://google.aip.dev/156
-#
-
-
-class _ProjectActiveParams(BaseModel):
-    client_session_id: str
-
-
-@routes.get(f"/{VTAG}/projects/active", name="get_active_project")
-@login_required
-@permission_required("project.read")
-async def get_active_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
-
-    try:
-        project = None
-        user_active_projects = []
-        with managed_resource(
-            req_ctx.user_id, query_params.client_session_id, request.app
-        ) as rt:
-            # get user's projects
-            user_active_projects = await rt.find(PROJECT_ID_KEY)
-        if user_active_projects:
-
-            project = await projects_api.get_project_for_user(
-                request.app,
-                project_uuid=user_active_projects[0],
-                user_id=req_ctx.user_id,
-                include_templates=True,
-                include_state=True,
-            )
-
-        return web.json_response({"data": project}, dumps=json_dumps)
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason="Project not found") from exc
 
 
 #
