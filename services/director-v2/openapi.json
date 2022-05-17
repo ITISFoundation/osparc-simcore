@@ -562,7 +562,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComputationTaskStop"
+                "$ref": "#/components/schemas/ComputationStop"
               }
             }
           },
@@ -1959,8 +1959,8 @@
           }
         }
       },
-      "ComputationTaskStop": {
-        "title": "ComputationTaskStop",
+      "ComputationStop": {
+        "title": "ComputationStop",
         "required": [
           "user_id"
         ],
