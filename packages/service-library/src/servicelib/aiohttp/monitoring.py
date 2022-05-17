@@ -146,7 +146,7 @@ def middleware_factory(
         resp: web.StreamResponse = web.HTTPInternalServerError(
             reason="Unexpected exception"
         )
-        # NOTE: a canonical endpoint is `/v0/projects/{project_id}/node/{node_uuid}``
+        # NOTE: a canonical endpoint is `/v0/projects/{project_uuid}/node/{node_uuid}``
         # vs a resolved endpoint `/v0/projects/51e4bdf4-2cc7-43be-85a6-627a4c0afb77/nodes/51e4bdf4-2cc7-43be-85a6-627a4c0afb77`
         # which would create way to many different endpoints for monitoring!
         canonical_endpoint = request.path

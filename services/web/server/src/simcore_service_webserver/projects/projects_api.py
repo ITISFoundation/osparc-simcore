@@ -580,9 +580,9 @@ async def notify_project_node_update(
             "data": {
                 "project_id": project["uuid"],
                 "node_id": node_id,
-                # as GET projects/{project_id}/nodes/{node_id}
+                # as GET projects/{project_uuid}/nodes/{node_id}
                 "data": project["workbench"][node_id],
-                # as GET projects/{project_id}/nodes/{node_id}/errors
+                # as GET projects/{project_uuid}/nodes/{node_id}/errors
                 "errors": errors,
             },
         }

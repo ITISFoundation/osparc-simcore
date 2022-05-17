@@ -143,11 +143,11 @@ async def assert_get_same_project(
     expected: Type[web.HTTPException],
     api_vtag="/v0",
 ) -> Dict:
-    # GET /v0/projects/{project_id}
+    # GET /v0/projects/{project_uuid}
 
     # with a project owned by user
     assert client.app
-    url = client.app.router["get_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["get_project"].url_for(project_uuid=project["uuid"])
     assert str(url) == f"{api_vtag}/projects/{project['uuid']}"
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)

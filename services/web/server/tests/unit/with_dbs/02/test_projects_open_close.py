@@ -172,9 +172,9 @@ async def _new_project(
 async def _replace_project(
     client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
-    # PUT /v0/projects/{project_id}
+    # PUT /v0/projects/{project_uuid}
     url = client.app.router["replace_project"].url_for(
-        project_id=project_update["uuid"]
+        project_uuid=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
     resp = await client.put(url, json=project_update)
@@ -209,7 +209,7 @@ async def _open_project(
     project: Dict,
     expected: Union[Type[web.HTTPException], List[Type[web.HTTPException]]],
 ) -> Tuple[Dict, Dict]:
-    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["open_project"].url_for(project_uuid=project["uuid"])
     resp = await client.post(url, json=client_id)
 
     if isinstance(expected, list):
@@ -230,7 +230,7 @@ async def _open_project(
 async def _close_project(
     client, client_id: str, project: Dict, expected: Type[web.HTTPException]
 ):
-    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["close_project"].url_for(project_uuid=project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected)
 
@@ -241,7 +241,7 @@ async def _state_project(
     expected: Type[web.HTTPException],
     expected_project_state: ProjectState,
 ):
-    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["state_project"].url_for(project_uuid=project["uuid"])
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
     if not error:
@@ -286,7 +286,7 @@ async def _assert_project_state_updated(
 
 
 async def _delete_project(client, project: Dict) -> ClientResponse:
-    url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["delete_project"].url_for(project_uuid=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
     return resp
@@ -385,9 +385,9 @@ async def test_open_project(
     expected,
     mocked_director_v2_api,
 ):
-    # POST /v0/projects/{project_id}:open
+    # POST /v0/projects/{project_uuid}:open
     # open project
-    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["open_project"].url_for(project_uuid=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
@@ -425,14 +425,14 @@ async def test_close_project(
     mocked_director_v2_api,
     fake_services,
 ):
-    # POST /v0/projects/{project_id}:close
+    # POST /v0/projects/{project_uuid}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
     # open project
     client_id = client_session_id_factory()
-    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["open_project"].url_for(project_uuid=user_project["uuid"])
     resp = await client.post(url, json=client_id)
 
     if resp.status == web.HTTPOk.status_code:
@@ -442,7 +442,7 @@ async def test_close_project(
         mocked_director_v2_api["director_v2_core.get_services"].reset_mock()
 
     # close project
-    url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["close_project"].url_for(project_uuid=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.no_content)
 
@@ -578,7 +578,7 @@ async def test_project_node_lifetime(
     )
 
     # create a new dynamic node...
-    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["create_node"].url_for(project_uuid=user_project["uuid"])
     body = {"service_key": "some/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
@@ -592,7 +592,7 @@ async def test_project_node_lifetime(
 
     # create a new NOT dynamic node...
     mocked_director_v2_api["director_v2_api.start_service"].reset_mock()
-    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["create_node"].url_for(project_uuid=user_project["uuid"])
     body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
@@ -991,7 +991,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
         client,
         client_session_id,
     )
-    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["open_project"].url_for(project_uuid=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
     await assert_status(
         resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk

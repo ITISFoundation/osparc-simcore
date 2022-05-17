@@ -22,7 +22,7 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 async def _request_delete_project(
     client, project: Dict, expected: Type[web.HTTPException]
 ) -> None:
-    url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
+    url = client.app.router["delete_project"].url_for(project_uuid=project["uuid"])
     assert str(url) == f"/{api_version_prefix}/projects/{project['uuid']}"
 
     resp = await client.delete(url)
@@ -46,7 +46,7 @@ async def test_delete_project(
 ):
     assert client.app
 
-    # DELETE /v0/projects/{project_id}
+    # DELETE /v0/projects/{project_uuid}
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
@@ -118,7 +118,7 @@ async def test_delete_multiple_opened_project_forbidden(
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
 
-    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["open_project"].url_for(project_uuid=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
     await assert_status(resp, expected_ok)
 
