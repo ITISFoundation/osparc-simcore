@@ -16,6 +16,7 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
+from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
@@ -285,8 +286,9 @@ async def test_get_invalid_project(
     docker_registry: str,
     simcore_services_ready,
     logged_user,
+    faker: Faker,
 ):
-    url = client.app.router["get_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["get_project"].url_for(project_id=faker.uuid4())
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
@@ -299,8 +301,9 @@ async def test_update_invalid_project(
     docker_registry: str,
     simcore_services_ready,
     logged_user,
+    faker: Faker,
 ):
-    url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["replace_project"].url_for(project_id=faker.uuid4())
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
@@ -313,8 +316,9 @@ async def test_delete_invalid_project(
     docker_registry: str,
     simcore_services_ready,
     logged_user,
+    faker: Faker,
 ):
-    url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["delete_project"].url_for(project_id=faker.uuid4())
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)
