@@ -16,7 +16,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -107,7 +107,7 @@ async def create_computation(
         # FIXME: this could not be valid anymore if the user deletes the project in between right?
 
         # check if current state allow to modify the computation
-        comp_tasks: List[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
             computation.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -237,7 +237,7 @@ async def get_computation(
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
     # get the project task states
-    all_tasks: List[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [
@@ -319,7 +319,7 @@ async def stop_computation(
         )
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
-        tasks: List[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+        tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
         # filter the tasks by the effective pipeline
@@ -377,7 +377,7 @@ async def delete_computation(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: List[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -410,7 +410,7 @@ async def delete_computation(
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: List[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+                comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
                     project_id
                 )
                 pipeline_state = get_pipeline_state_from_task_states(
