@@ -8,7 +8,6 @@ from typing import Iterator, Type, TypeVar
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
-from yarl import URL
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -18,7 +17,7 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 
 @contextmanager
 def handle_validation_as_http_error(
-    *, error_msg_template: str, resource: URL, use_error_v1: bool
+    *, error_msg_template: str, resource_name: str, use_error_v1: bool
 ) -> Iterator[None]:
     """
     Transforms ValidationError into HTTP error
@@ -47,7 +46,7 @@ def handle_validation_as_http_error(
                 {
                     "code": e["type"],
                     "message": e["msg"],
-                    "resource": f"{resource}",
+                    "resource": resource_name,
                     "field": e["loc"],
                 }
                 for e in details
@@ -61,7 +60,7 @@ def handle_validation_as_http_error(
                 {
                     "error": {
                         "msg": reason_msg,
-                        "resource": f"{resource}",  # optional
+                        "resource": resource_name,  # optional
                         "details": details,  # optional
                     }
                 }
@@ -94,7 +93,7 @@ def parse_request_path_parameters_as(
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request path",
-        resource=request.rel_url,
+        resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.match_info)
@@ -114,7 +113,7 @@ def parse_request_query_parameters_as(
 
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request query",
-        resource=request.rel_url,
+        resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.query)
@@ -133,7 +132,7 @@ async def parse_request_body_as(
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid field/s '{failed}' in request body",
-        resource=request.rel_url,
+        resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
         body = await request.json()
