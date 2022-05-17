@@ -8,6 +8,13 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# In case a dynamic sidecar must access a docker registry in a secure way using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
+update-ca-certificates
+
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
@@ -94,7 +101,7 @@ fi
 chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DY_VOLUMES}"
 # Allow owner and group to edit write and execute
 # files from all the subdirectories
-# When the service access files downloaded by the dynamic-sidecar 
+# When the service access files downloaded by the dynamic-sidecar
 # it uses group permissions
 chmod --verbose --recursive 774 "${DY_VOLUMES}"
 
