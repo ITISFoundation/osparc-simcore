@@ -104,9 +104,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}:
+  /projects/{project_uuid}:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -159,9 +159,9 @@ paths:
         "204":
           description: project has been successfully deleted
 
-  /projects/{project_id}/open:
+  /projects/{project_uuid}/open:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -188,9 +188,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/state:
+  /projects/{project_uuid}/state:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -211,9 +211,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/xport:
+  /projects/{project_uuid}/xport:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -234,9 +234,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/duplicate:
+  /projects/{project_uuid}/duplicate:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -287,9 +287,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/close:
+  /projects/{project_uuid}/close:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -313,9 +313,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes:
+  /projects/{project_uuid}/nodes:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -361,9 +361,9 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes/{node_id}:
+  /projects/{project_uuid}/nodes/{node_id}:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -401,9 +401,9 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes/{node_id}/retrieve:
+  /projects/{project_uuid}/nodes/{node_id}/retrieve:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -476,9 +476,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes/{node_id}/resources:
+  /projects/{project_uuid}/nodes/{node_id}/resources:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:

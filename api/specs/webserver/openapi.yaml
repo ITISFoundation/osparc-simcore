@@ -172,41 +172,41 @@ paths:
   /projects/active:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1active"
 
-  /projects/{project_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}"
+  /projects/{project_uuid}:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}"
 
-  /projects/{project_id}:open:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1open"
+  /projects/{project_uuid}:open:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1open"
 
-  /projects/{project_id}/state:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1state"
+  /projects/{project_uuid}/state:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1state"
 
-  /projects/{project_id}:xport: # do not change there "export" will not work
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1xport"
+  /projects/{project_uuid}:xport: # do not change there "export" will not work
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1xport"
 
-  /projects/{project_id}:duplicate:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1duplicate"
+  /projects/{project_uuid}:duplicate:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1duplicate"
 
   /projects:import:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1import"
 
-  /projects/{project_id}:close:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
+  /projects/{project_uuid}:close:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1close"
 
-  /projects/{project_id}/nodes:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes"
+  /projects/{project_uuid}/nodes:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes"
 
-  /projects/{project_id}/nodes/{node_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}"
+  /projects/{project_uuid}/nodes/{node_id}:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes~1{node_id}"
 
-  /projects/{project_id}/nodes/{node_id}:retrieve:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1retrieve"
+  /projects/{project_uuid}/nodes/{node_id}:retrieve:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes~1{node_id}~1retrieve"
 
   /projects/{project_uuid}/nodes/{node_id}:restart:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes~1{node_id}~1restart"
 
-  /projects/{project_id}/nodes/{node_id}/resources:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1resources"
+  /projects/{project_uuid}/nodes/{node_id}/resources:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes~1{node_id}~1resources"
 
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
