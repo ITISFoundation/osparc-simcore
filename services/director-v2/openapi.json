@@ -592,6 +592,71 @@
         }
       }
     },
+    "/v2/computations/{project_id}/tasks/{node_uuid}/logs": {
+      "get": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Gets computation task log",
+        "description": "Gets ``stdout`` and ``stderr`` logs from a computation task",
+        "operationId": "get_computation_task_logs_v2_computations__project_id__tasks__node_uuid__logs_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLogGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/dynamic_services": {
       "get": {
         "tags": [
@@ -2962,6 +3027,11 @@
           }
         },
         "additionalProperties": false
+      },
+      "TaskLogGet": {
+        "title": "TaskLogGet",
+        "type": "object",
+        "properties": {}
       },
       "TextArea": {
         "title": "TextArea",

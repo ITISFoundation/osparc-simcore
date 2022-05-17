@@ -45,3 +45,7 @@ class ComputationDelete(ComputationStop):
         False,
         description="if True then the pipeline will be removed even if it is running",
     )
+
+
+class TaskLogGet(BaseModel):
+    pass

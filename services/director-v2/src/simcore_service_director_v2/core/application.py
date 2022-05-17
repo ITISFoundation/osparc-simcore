@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
 
-from ..api.entrypoints import api_router
+from ..api.endpoints import api_router
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,

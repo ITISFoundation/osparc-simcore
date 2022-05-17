@@ -16,7 +16,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from starlette import status
 
-from ...models.schemas.comp_tasks import ComputationGet
+from ...models.schemas.comp_tasks import TaskLogGet
 
 log = logging.getLogger(__name__)
 
@@ -24,13 +24,14 @@ router = APIRouter()
 
 
 @router.get(
-    "/{project_id}/tasks/{node_uuid}/log",
-    summary="Returns a computation pipeline state",
-    response_model=ComputationGet,
+    "/{project_id}/tasks/{node_uuid}/logs",
+    summary="Gets computation task log",
+    response_model=TaskLogGet,
     status_code=status.HTTP_200_OK,
 )
-async def get_computation_task_log(
+async def get_computation_task_logs(
     user_id: UserID, project_id: ProjectID, node_uuid: NodeID
-) -> ComputationGet:
+) -> TaskLogGet:
+    """Gets ``stdout`` and ``stderr`` logs from a computation task"""
     # TODO: as close as possible to https://docs.docker.com/engine/api/v1.41/#operation/ContainerTop
     raise NotImplementedError()
