@@ -26,7 +26,7 @@ from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resourc
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import ProjectNotFoundError
-from .projects_handlers_crud import BaseRequestContext, ProjectPathParams
+from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -149,7 +149,7 @@ async def open_project(request: web.Request) -> web.Response:
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
 
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -184,7 +184,7 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def get_project_state(request: web.Request) -> web.Response:
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state

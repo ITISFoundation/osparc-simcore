@@ -68,7 +68,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class BaseRequestContext(BaseModel):
+class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
@@ -126,7 +126,7 @@ async def create_projects(request: web.Request):
     # pylint: disable=too-many-statements
 
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     q = parse_request_query_parameters_as(_ProjectCreateParams, request)
 
     new_project = {}
@@ -288,7 +288,7 @@ async def list_projects(request: web.Request):
     """
 
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     q = parse_request_query_parameters_as(_ProjectListParams, request)
 
     async def set_all_project_states(
@@ -353,7 +353,7 @@ async def get_project(request: web.Request):
     :raises web.HTTPBadRequest
     """
 
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services: List[
@@ -424,7 +424,7 @@ async def replace_project(request: web.Request):
     :raises web.HTTPBadRequest
     """
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -532,7 +532,7 @@ async def delete_project(request: web.Request):
     : raises web.HTTPNotFound
     :raises web.HTTPBadRequest
     """
-    c = BaseRequestContext.parse_obj(request)
+    c = RequestContext.parse_obj(request)
     p = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
