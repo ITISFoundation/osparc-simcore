@@ -16,11 +16,12 @@ from models_library.utils.change_case import (
     [
         ("snAke_Fun", "snakeFun"),
         ("", ""),
-        # since it assumes snake, notice how these cases get flatten
+        # WARNING: the algorithm does not check if the subject is already camelcase.
+        # It will flatten the output like you can see in these examples.
         ("camelAlready", "camelalready"),
         ("AlmostCamel", "almostcamel"),
         ("_S", "S"),
-        # From https://github.com/autoferrit/python-change-case/blob/master/change_case/change_case.py#L317
+        # NOTE : that conversion is not always reversable (non-injective)
         ("snakes_on_a_plane", "snakesOnAPlane"),
         ("Snakes_On_A_Plane", "snakesOnAPlane"),
         ("snakes_On_a_Plane", "snakesOnAPlane"),
@@ -36,6 +37,8 @@ def test_snake_to_camel(subject, expected):
 @pytest.mark.parametrize(
     "subject,expected",
     [
+        ("already_snake", "already_snake"),
+        # NOTE : that conversion is not always reversable (non-injective)
         ("snakesOnAPlane", "snakes_on_a_plane"),
         ("SnakesOnAPlane", "snakes_on_a_plane"),
         ("IPhoneHysteria", "i_phone_hysteria"),
@@ -43,13 +46,13 @@ def test_snake_to_camel(subject, expected):
     ],
 )
 def test_camel_to_snake(subject, expected):
-    # WARNING: not always reversable
     assert camel_to_snake(subject) == expected
 
 
 @pytest.mark.parametrize(
     "subject,expected",
     [
+        # NOTE : that conversion is not always reversable (non-injective)
         ("snakes_on_a_plane", "SnakesOnAPlane"),
         ("Snakes_On_A_Plane", "SnakesOnAPlane"),
         ("snakes_On_a_Plane", "SnakesOnAPlane"),
