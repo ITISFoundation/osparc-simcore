@@ -36,11 +36,11 @@ class ComputationCreate(BaseModel):
     )
 
 
-class ComputationTaskStop(BaseModel):
+class ComputationStop(BaseModel):
     user_id: UserID
 
 
-class ComputationDelete(ComputationTaskStop):
+class ComputationDelete(ComputationStop):
     force: Optional[bool] = Field(
         False,
         description="if True then the pipeline will be removed even if it is running",

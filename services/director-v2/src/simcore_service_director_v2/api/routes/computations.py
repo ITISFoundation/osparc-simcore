@@ -45,7 +45,7 @@ from ...models.schemas.comp_tasks import (
     ComputationCreate,
     ComputationDelete,
     ComputationGet,
-    ComputationTaskStop,
+    ComputationStop,
 )
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -295,7 +295,7 @@ async def get_computation(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def stop_computation(
-    comp_task_stop: ComputationTaskStop,
+    computation_stop: ComputationStop,
     project_id: ProjectID,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
@@ -308,7 +308,7 @@ async def stop_computation(
 ) -> ComputationGet:
     log.debug(
         "User %s stopping computation for project %s",
-        comp_task_stop.user_id,
+        computation_stop.user_id,
         project_id,
     )
     try:
@@ -330,13 +330,13 @@ async def stop_computation(
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         if is_pipeline_running(pipeline_state):
-            await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+            await scheduler.stop_pipeline(computation_stop.user_id, project_id)
 
         # get run details if any
         last_run: Optional[CompRunsAtDB] = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
-                user_id=comp_task_stop.user_id, project_id=project_id
+                user_id=computation_stop.user_id, project_id=project_id
             )
 
         return ComputationGet(
@@ -365,7 +365,7 @@ async def stop_computation(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_computation(
-    comp_task_stop: ComputationDelete,
+    computation_stop: ComputationDelete,
     project_id: ProjectID,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     comp_pipelines_repo: CompPipelinesRepository = Depends(
@@ -383,14 +383,14 @@ async def delete_computation(
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if is_pipeline_running(pipeline_state):
-            if not comp_task_stop.force:
+            if not computation_stop.force:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Projet {project_id} is currently running and cannot be deleted, current state is {pipeline_state}",
                 )
             # abort the pipeline first
             try:
-                await scheduler.stop_pipeline(comp_task_stop.user_id, project_id)
+                await scheduler.stop_pipeline(computation_stop.user_id, project_id)
             except SchedulerError as e:
                 log.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
