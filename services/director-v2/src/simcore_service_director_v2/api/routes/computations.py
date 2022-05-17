@@ -69,10 +69,11 @@ from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
 
-router = APIRouter()
+PIPELINE_ABORT_TIMEOUT_S = 10
+
 log = logging.getLogger(__name__)
 
-PIPELINE_ABORT_TIMEOUT_S = 10
+router = APIRouter()
 
 
 @router.post(
