@@ -74,7 +74,7 @@ class RequestContext(BaseModel):
 
 
 class ProjectPathParams(BaseModel):
-    project_uuid: UUID = Field(..., alias="project_id")
+    project_uuid: UUID
 
     class Config:
         allow_population_by_field_name = True
