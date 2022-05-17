@@ -16,7 +16,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
-from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -78,6 +78,7 @@ class ProjectPathParams(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        extra = Extra.forbid
 
 
 #
@@ -86,10 +87,25 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    template_uuid: Optional[UUIDStr] = None
-    as_template: Optional[UUIDStr] = None
-    copy_data: bool = True
-    hidden: bool = False
+    from_template: Optional[UUIDStr] = Field(
+        None,
+        description="Option to create a project from existing template: from_template={template_uuid}",
+    )
+    as_template: Optional[UUIDStr] = Field(
+        None,
+        description="Option to create a template from existing project: as_template={study_uuid}",
+    )
+    copy_data: bool = Field(
+        True,
+        description="Option to copy data when creating from an existing template or as a template, defaults to True",
+    )
+    hidden: bool = Field(
+        False,
+        description="Enables/disables hidden flag. Hidden projects are by default unlisted",
+    )
+
+    class Config:
+        extra = Extra.forbid
 
 
 @routes.post(f"/{VTAG}/projects", name="create_projects")
@@ -127,11 +143,11 @@ async def create_projects(request: web.Request):
                 user_id=c.user_id,
                 include_templates=False,
             )
-        elif q.template_uuid:  # create from template
-            source_project = await db.get_template_project(q.template_uuid)
+        elif q.from_template:  # create from template
+            source_project = await db.get_template_project(q.from_template)
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason="Invalid template uuid {}".format(q.template_uuid)
+                    reason="Invalid template uuid {}".format(q.from_template)
                 )
 
         if source_project:
@@ -141,7 +157,7 @@ async def create_projects(request: web.Request):
                 forced_copy_project_id=None,
                 clean_output_data=(q.copy_data == False),
             )
-            if q.template_uuid:
+            if q.from_template:
                 # remove template access rights
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
@@ -257,6 +273,9 @@ class _ProjectListParams(BaseModel):
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
     )
+
+    class Config:
+        extra = Extra.forbid
 
 
 @routes.get(f"/{VTAG}/projects", name="list_projects")
