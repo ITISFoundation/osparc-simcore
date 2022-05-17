@@ -14,6 +14,7 @@ import pytest
 import socketio
 import sqlalchemy as sa
 from faker.proxy import Faker
+from models_library.basic_types import UUIDStr
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
@@ -59,7 +60,6 @@ pytest_simcore_ops_services_selection = []
 
 logger = logging.getLogger(__name__)
 
-UUIDStr = str
 RabbitMessage = Dict[str, Any]
 LogMessages = List[LoggerRabbitMessage]
 InstrumMessages = List[InstrumentationRabbitMessage]

@@ -199,7 +199,7 @@ paths:
       tags:
         - project
       summary: returns the state of a project
-      operationId: state_project
+      operationId: get_project_state
       responses:
         "200":
           description: returns the project current state
@@ -450,9 +450,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_uuid}/nodes/{node_id}/restart:
+  /projects/{project_id}/nodes/{node_id}/restart:
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
