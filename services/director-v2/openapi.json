@@ -411,7 +411,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComputationTaskCreate"
+                "$ref": "#/components/schemas/ComputationCreate"
               }
             }
           },
@@ -423,7 +423,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ComputationTaskGet"
+                  "$ref": "#/components/schemas/ComputationGet"
                 }
               }
             }
@@ -477,7 +477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ComputationTaskGet"
+                  "$ref": "#/components/schemas/ComputationGet"
                 }
               }
             }
@@ -499,7 +499,7 @@
           "computations"
         ],
         "summary": "Deletes a computation pipeline",
-        "operationId": "delete_pipeline_v2_computations__project_id__delete",
+        "operationId": "delete_computation_v2_computations__project_id__delete",
         "parameters": [
           {
             "required": true,
@@ -516,7 +516,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComputationTaskDelete"
+                "$ref": "#/components/schemas/ComputationDelete"
               }
             }
           },
@@ -545,7 +545,7 @@
           "computations"
         ],
         "summary": "Stops a computation pipeline",
-        "operationId": "stop_computation_project_v2_computations__project_id__stop_post",
+        "operationId": "stop_computation_v2_computations__project_id__stop_post",
         "parameters": [
           {
             "required": true,
@@ -574,7 +574,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ComputationTaskGet"
+                  "$ref": "#/components/schemas/ComputationGet"
                 }
               }
             }
@@ -1819,8 +1819,8 @@
         ],
         "description": "An enumeration."
       },
-      "ComputationTaskCreate": {
-        "title": "ComputationTaskCreate",
+      "ComputationCreate": {
+        "title": "ComputationCreate",
         "required": [
           "user_id",
           "project_id"
@@ -1867,8 +1867,8 @@
           }
         }
       },
-      "ComputationTaskDelete": {
-        "title": "ComputationTaskDelete",
+      "ComputationDelete": {
+        "title": "ComputationDelete",
         "required": [
           "user_id"
         ],
@@ -1888,8 +1888,8 @@
           }
         }
       },
-      "ComputationTaskGet": {
-        "title": "ComputationTaskGet",
+      "ComputationGet": {
+        "title": "ComputationGet",
         "required": [
           "id",
           "state",
