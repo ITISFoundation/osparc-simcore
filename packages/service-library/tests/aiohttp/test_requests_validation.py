@@ -97,9 +97,15 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
         # NOTE: app context does NOT need to be validated everytime!
         context = MyRequestContext.parse_obj({**dict(request.app), **dict(request)})
 
-        path_params = parse_request_path_parameters_as(MyRequestPathParams, request)
-        query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
-        body = await parse_request_body_as(MyBody, request)
+        path_params = parse_request_path_parameters_as(
+            MyRequestPathParams, request, use_enveloped_error_v1=False
+        )
+        query_params = parse_request_query_parameters_as(
+            MyRequestQueryParams, request, use_enveloped_error_v1=False
+        )
+        body = await parse_request_body_as(
+            MyBody, request, use_enveloped_error_v1=False
+        )
         # ---------------------------
 
         return web.json_response(
@@ -196,12 +202,17 @@ async def test_parse_request_with_invalid_path_params(
     assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
     errors = await r.json()
-    assert "Invalid parameter/s 'project_uuid' in request path" in errors["error"].pop(
-        "msg"
-    )
+    assert errors["error"].pop("resource")
     assert errors == {
         "error": {
-            "details": [{"loc": "project_uuid", "msg": "value is not a valid uuid"}],
+            "msg": "Invalid parameter/s 'project_uuid' in request path",
+            "details": [
+                {
+                    "loc": "project_uuid",
+                    "msg": "value is not a valid uuid",
+                    "type": "type_error.uuid",
+                }
+            ],
         }
     }
 
@@ -220,10 +231,17 @@ async def test_parse_request_with_invalid_query_params(
     assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
     errors = await r.json()
-    assert "Invalid parameter/s 'label' in request query" in errors["error"].pop("msg")
+    assert errors["error"].pop("resource")
     assert errors == {
         "error": {
-            "details": [{"loc": "label", "msg": "field required"}],
+            "msg": "Invalid parameter/s 'label' in request query",
+            "details": [
+                {
+                    "loc": "label",
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                }
+            ],
         }
     }
 
@@ -243,12 +261,22 @@ async def test_parse_request_with_invalid_body(
 
     errors = await r.json()
 
-    assert "Invalid field/s 'x, z' in request body" in errors["error"].pop("msg")
+    assert errors["error"].pop("resource")
+
     assert errors == {
         "error": {
+            "msg": "Invalid field/s 'x, z' in request body",
             "details": [
-                {"loc": "x", "msg": "field required"},
-                {"loc": "z", "msg": "field required"},
+                {
+                    "loc": "x",
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+                {
+                    "loc": "z",
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
             ],
         }
     }
