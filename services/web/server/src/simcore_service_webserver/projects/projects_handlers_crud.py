@@ -126,28 +126,28 @@ async def create_projects(request: web.Request):
     # pylint: disable=too-many-statements
 
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = RequestContext.parse_obj(request)
-    q = parse_request_query_parameters_as(_ProjectCreateParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
 
     new_project = {}
     try:
-        new_project_was_hidden_before_data_was_copied = q.hidden
+        new_project_was_hidden_before_data_was_copied = query_params.hidden
 
         clone_data_coro: Optional[Coroutine] = None
         source_project: Optional[ProjectDict] = None
-        if q.as_template:  # create template from
+        if query_params.as_template:  # create template from
             await check_permission(request, "project.template.create")
             source_project = await projects_api.get_project_for_user(
                 request.app,
-                project_uuid=q.as_template,
-                user_id=c.user_id,
+                project_uuid=query_params.as_template,
+                user_id=req_ctx.user_id,
                 include_templates=False,
             )
-        elif q.from_template:  # create from template
-            source_project = await db.get_template_project(q.from_template)
+        elif query_params.from_template:  # create from template
+            source_project = await db.get_template_project(query_params.from_template)
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason="Invalid template uuid {}".format(q.from_template)
+                    reason="Invalid template uuid {}".format(query_params.from_template)
                 )
 
         if source_project:
@@ -155,18 +155,18 @@ async def create_projects(request: web.Request):
             new_project, nodes_map = clone_project_document(
                 source_project,
                 forced_copy_project_id=None,
-                clean_output_data=(q.copy_data == False),
+                clean_output_data=(query_params.copy_data == False),
             )
-            if q.from_template:
+            if query_params.from_template:
                 # remove template access rights
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
-            q.hidden = q.copy_data
+            query_params.hidden = query_params.copy_data
             clone_data_coro = (
                 copy_data_folders_from_project(
-                    request.app, source_project, new_project, nodes_map, c.user_id
+                    request.app, source_project, new_project, nodes_map, req_ctx.user_id
                 )
-                if q.copy_data
+                if query_params.copy_data
                 else None
             )
             # FIXME: parameterized inputs should get defaults provided by service
@@ -189,22 +189,22 @@ async def create_projects(request: web.Request):
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
             new_project,
-            c.user_id,
-            force_as_template=q.as_template is not None,
-            hidden=q.hidden,
+            req_ctx.user_id,
+            force_as_template=query_params.as_template is not None,
+            hidden=query_params.hidden,
         )
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
-            if q.as_template:
+            if query_params.as_template:
                 # we need to lock the original study while copying the data
                 async with projects_api.lock_with_notification(
                     request.app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,
-                    c.user_id,
-                    await get_user_name(request.app, c.user_id),
+                    req_ctx.user_id,
+                    await get_user_name(request.app, req_ctx.user_id),
                 ):
 
                     await clone_data_coro
@@ -222,14 +222,14 @@ async def create_projects(request: web.Request):
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            request.app, c.user_id, new_project["uuid"]
+            request.app, req_ctx.user_id, new_project["uuid"]
         )
 
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=c.user_id,
+            user_id=req_ctx.user_id,
             project=new_project,
-            is_template=q.as_template is not None,
+            is_template=query_params.as_template is not None,
             app=request.app,
         )
 
@@ -241,10 +241,11 @@ async def create_projects(request: web.Request):
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
         log.warning(
-            "cancelled creation of project for user '%s', cleaning up", f"{c.user_id=}"
+            "cancelled creation of project for user '%s', cleaning up",
+            f"{req_ctx.user_id=}",
         )
         await projects_api.submit_delete_project_task(
-            request.app, new_project["uuid"], c.user_id
+            request.app, new_project["uuid"], req_ctx.user_id
         )
         raise
     else:
@@ -288,8 +289,8 @@ async def list_projects(request: web.Request):
     """
 
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = RequestContext.parse_obj(request)
-    q = parse_request_query_parameters_as(_ProjectListParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
     async def set_all_project_states(
         projects: List[Dict[str, Any]], project_types: List[ProjectTypeDB]
@@ -297,7 +298,7 @@ async def list_projects(request: web.Request):
         await logged_gather(
             *[
                 projects_api.add_project_states_for_user(
-                    user_id=c.user_id,
+                    user_id=req_ctx.user_id,
                     project=prj,
                     is_template=prj_type == ProjectTypeDB.TEMPLATE,
                     app=request.app,
@@ -311,16 +312,18 @@ async def list_projects(request: web.Request):
     user_available_services: List[
         Dict
     ] = await catalog.get_services_for_user_in_product(
-        request.app, c.user_id, c.product_name, only_key_versions=True
+        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
     projects, project_types, total_number_projects = await db.load_projects(
-        user_id=c.user_id,
-        filter_by_project_type=ProjectTypeAPI.to_project_type_db(q.project_type),
+        user_id=req_ctx.user_id,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
+            query_params.project_type
+        ),
         filter_by_services=user_available_services,
-        offset=q.offset,
-        limit=q.limit,
-        include_hidden=q.show_hidden,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        include_hidden=query_params.show_hidden,
     )
     await set_all_project_states(projects, project_types)
     page = Page[ProjectDict].parse_obj(
@@ -328,8 +331,8 @@ async def list_projects(request: web.Request):
             chunk=projects,
             request_url=request.url,
             total=total_number_projects,
-            limit=q.limit,
-            offset=q.offset,
+            limit=query_params.limit,
+            offset=query_params.offset,
         )
     )
     return web.Response(
@@ -353,20 +356,20 @@ async def get_project(request: web.Request):
     :raises web.HTTPBadRequest
     """
 
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services: List[
         Dict
     ] = await catalog.get_services_for_user_in_product(
-        request.app, c.user_id, c.product_name, only_key_versions=True
+        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{p.project_uuid}",
-            user_id=c.user_id,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
         )
@@ -380,7 +383,7 @@ async def get_project(request: web.Request):
             # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
-                    f"Project '{p.project_uuid}' uses unavailable services. Please ask "
+                    f"Project '{path_params.project_uuid}' uses unavailable services. Please ask "
                     f"for permission for the following services {formatted_services}"
                 )
             )
@@ -392,10 +395,12 @@ async def get_project(request: web.Request):
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
-            reason=f"You do not have sufficient rights to read project {p.project_uuid}"
+            reason=f"You do not have sufficient rights to read project {path_params.project_uuid}"
         ) from exc
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from exc
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 #
@@ -424,8 +429,8 @@ async def replace_project(request: web.Request):
     :raises web.HTTPBadRequest
     """
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         new_project = await request.json()
@@ -440,8 +445,8 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
-            "project_id": f"{p.project_uuid}",
-            "user_id": c.user_id,
+            "project_id": f"{path_params.project_uuid}",
+            "user_id": req_ctx.user_id,
             "new_data": new_project,
         },
     )
@@ -451,8 +456,8 @@ async def replace_project(request: web.Request):
 
         current_project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{p.project_uuid}",
-            user_id=c.user_id,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
         )
@@ -461,7 +466,7 @@ async def replace_project(request: web.Request):
             await check_permission(request, "project.access_rights.update")
 
         if await director_v2_api.is_pipeline_running(
-            request.app, c.user_id, p.project_uuid
+            request.app, req_ctx.user_id, path_params.project_uuid
         ):
 
             if any_node_inputs_changed(new_project, current_project):
@@ -484,19 +489,24 @@ async def replace_project(request: web.Request):
                 #  and resubmit the request  (front-end will show a pop-up with message below)
                 #
                 raise web.HTTPConflict(
-                    reason=f"Project {p.project_uuid} cannot be modified while pipeline is still running."
+                    reason=f"Project {path_params.project_uuid} cannot be modified while pipeline is still running."
                 )
 
         new_project = await db.replace_user_project(
-            new_project, c.user_id, f"{p.project_uuid}", include_templates=True
+            new_project,
+            req_ctx.user_id,
+            f"{path_params.project_uuid}",
+            include_templates=True,
         )
-        await director_v2_api.projects_networks_update(request.app, p.project_uuid)
+        await director_v2_api.projects_networks_update(
+            request.app, path_params.project_uuid
+        )
         await director_v2_api.create_or_update_pipeline(
-            request.app, c.user_id, p.project_uuid
+            request.app, req_ctx.user_id, path_params.project_uuid
         )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=c.user_id,
+            user_id=req_ctx.user_id,
             project=new_project,
             is_template=False,
             app=request.app,
@@ -532,26 +542,26 @@ async def delete_project(request: web.Request):
     : raises web.HTTPNotFound
     :raises web.HTTPBadRequest
     """
-    c = RequestContext.parse_obj(request)
-    p = parse_request_path_parameters_as(ProjectPathParams, request)
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{p.project_uuid}",
-            user_id=c.user_id,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
             include_templates=True,
         )
         project_users: Set[int] = set()
-        with managed_resource(c.user_id, None, request.app) as rt:
+        with managed_resource(req_ctx.user_id, None, request.app) as rt:
             project_users = {
                 user_session.user_id
                 for user_session in await rt.find_users_of_resource(
-                    PROJECT_ID_KEY, f"{p.project_uuid}"
+                    PROJECT_ID_KEY, f"{path_params.project_uuid}"
                 )
             }
         # that project is still in use
-        if c.user_id in project_users:
+        if req_ctx.user_id in project_users:
             raise web.HTTPForbidden(
                 reason="Project is still open in another tab/browser."
                 "It cannot be deleted until it is closed."
@@ -566,7 +576,7 @@ async def delete_project(request: web.Request):
             )
 
         await projects_api.submit_delete_project_task(
-            request.app, p.project_uuid, c.user_id
+            request.app, path_params.project_uuid, req_ctx.user_id
         )
 
     except ProjectInvalidRightsError as err:
@@ -574,6 +584,8 @@ async def delete_project(request: web.Request):
             reason="You do not have sufficient rights to delete this project"
         ) from err
     except ProjectNotFoundError as err:
-        raise web.HTTPNotFound(reason=f"Project {p.project_uuid} not found") from err
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

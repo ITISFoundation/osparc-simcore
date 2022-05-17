@@ -12,7 +12,7 @@ from pydantic import BaseModel, ValidationError
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-M = TypeVar("M", bound=BaseModel)
+ModelType = TypeVar("ModelType", bound=BaseModel)
 
 
 @contextmanager
@@ -46,9 +46,9 @@ def handle_validation_as_http_error(*, error_msg_template: str) -> Iterator[None
 
 
 def parse_request_path_parameters_as(
-    parameters_schema: Type[M],
+    parameters_schema: Type[ModelType],
     request: web.Request,
-) -> M:
+) -> ModelType:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
     :raises HTTPBadRequest if validation of parameters  fail
@@ -61,9 +61,9 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    parameters_schema: Type[M],
+    parameters_schema: Type[ModelType],
     request: web.Request,
-) -> M:
+) -> ModelType:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
     :raises HTTPBadRequest if validation of queries fail
@@ -76,7 +76,9 @@ def parse_request_query_parameters_as(
         return parameters_schema.parse_obj(data)
 
 
-async def parse_request_body_as(model_schema: Type[M], request: web.Request) -> M:
+async def parse_request_body_as(
+    model_schema: Type[ModelType], request: web.Request
+) -> ModelType:
     """Parses and validates request body against schema
 
     :raises HTTPBadRequest
