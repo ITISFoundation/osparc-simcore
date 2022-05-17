@@ -70,7 +70,7 @@ async def test_get_node_resources(
     project_workbench = user_project["workbench"]
     for node_id in project_workbench:
         url = client.app.router["get_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
+            project_uuid=user_project["uuid"], node_id=node_id
         )
         response = await client.get(f"{url}")
         await assert_status(response, expected)
@@ -92,7 +92,7 @@ async def test_get_wrong_project_raises_not_found_error(
     project_workbench = user_project["workbench"]
     for node_id in project_workbench:
         url = client.app.router["get_node_resources"].url_for(
-            project_id=f"{uuid4()}", node_id=node_id
+            project_uuid=f"{uuid4()}", node_id=node_id
         )
         response = await client.get(f"{url}")
         await assert_status(response, expected)
@@ -112,7 +112,7 @@ async def test_get_wrong_node_raises_not_found_error(
 ):
     assert client.app
     url = client.app.router["get_node_resources"].url_for(
-        project_id=user_project["uuid"], node_id=f"{uuid4()}"
+        project_uuid=user_project["uuid"], node_id=f"{uuid4()}"
     )
     response = await client.get(f"{url}")
     await assert_status(response, expected)
@@ -138,7 +138,7 @@ async def test_replace_node_resources(
     project_workbench = user_project["workbench"]
     for node_id in project_workbench:
         url = client.app.router["replace_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
+            project_uuid=user_project["uuid"], node_id=node_id
         )
         response = await client.put(f"{url}", json={})
         await assert_status(response, expected)
