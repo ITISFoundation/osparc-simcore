@@ -2212,7 +2212,7 @@ paths:
                       - type: object
                         properties:
                           state:
-                            $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1state/get/responses/200/content/application~1json/schema/properties/data'
+                            $ref: '#/paths/~1projects~1%7Bproject_id%7D~1state/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
@@ -2233,9 +2233,9 @@ paths:
                 $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}':
+  '/projects/{project_id}':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2287,9 +2287,9 @@ paths:
       responses:
         '204':
           description: project has been successfully deleted
-  '/projects/{project_uuid}:open':
+  '/projects/{project_id}:open':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2316,9 +2316,9 @@ paths:
                 $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/state':
+  '/projects/{project_id}/state':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2367,9 +2367,9 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}:xport':
+  '/projects/{project_id}:xport':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2389,9 +2389,9 @@ paths:
                 format: binary
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}:duplicate':
+  '/projects/{project_id}:duplicate':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2440,9 +2440,9 @@ paths:
                     type: string
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}:close':
+  '/projects/{project_id}:close':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2458,15 +2458,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D%3Aopen/post/requestBody/content/application~1json/schema'
+              $ref: '#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/requestBody/content/application~1json/schema'
       responses:
         '204':
           description: project succesfuly closed
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes':
+  '/projects/{project_id}/nodes':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2524,9 +2524,9 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes/{node_id}':
+  '/projects/{project_id}/nodes/{node_id}':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2639,9 +2639,9 @@ paths:
           description: node has been successfully deleted from project
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes/{node_id}:retrieve':
+  '/projects/{project_id}/nodes/{node_id}:retrieve':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2685,9 +2685,9 @@ paths:
                         description: amount of transferred bytes
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes/{node_id}:restart':
+  '/projects/{project_id}/nodes/{node_id}:restart':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2707,9 +2707,9 @@ paths:
           description: Restarts containers started by the dynamic-sidecar
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes/{node_id}/resources':
+  '/projects/{project_id}/nodes/{node_id}/resources':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2735,7 +2735,7 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
                     default: null
@@ -2774,7 +2774,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
@@ -4712,7 +4712,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':

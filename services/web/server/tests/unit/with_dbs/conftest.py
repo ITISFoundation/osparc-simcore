@@ -252,7 +252,7 @@ def create_dynamic_service_mock(
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
-        url = client.app.router["create_node"].url_for(project_uuid=project_id)
+        url = client.app.router["create_node"].url_for(project_id=project_id)
         create_node_data = {
             "service_key": SERVICE_KEY,
             "service_version": SERVICE_VERSION,

@@ -34,7 +34,7 @@ async def test_start_computation(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["start_computation"].url_for(project_uuid=f"{project_id}")
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(url)
     data, error = await assert_status(
         rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
@@ -58,7 +58,7 @@ async def test_start_partial_computation(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["start_computation"].url_for(project_uuid=f"{project_id}")
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(
         url, json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
     )
@@ -84,7 +84,7 @@ async def test_get_computation(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["get_computation"].url_for(project_uuid=f"{project_id}")
+    url = client.app.router["get_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.get(url)
     await assert_status(rsp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok)
 
@@ -98,7 +98,7 @@ async def test_stop_computation(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-    url = client.app.router["stop_computation"].url_for(project_uuid=f"{project_id}")
+    url = client.app.router["stop_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(url)
     await assert_status(
         rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content

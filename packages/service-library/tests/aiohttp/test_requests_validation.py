@@ -133,7 +133,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     app["APP_IGNORE_CONTEXT"] = "not interesting"
 
     # adds handler
-    app.add_routes([web.get("/projects/{project_uuid}", _handler)])
+    app.add_routes([web.get("/projects/{project_id}", _handler)])
 
     return event_loop.run_until_complete(aiohttp_client(app))
 

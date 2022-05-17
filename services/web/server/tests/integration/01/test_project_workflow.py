@@ -156,7 +156,7 @@ async def _request_list(client) -> List[Dict]:
 
 
 async def _request_get(client, pid) -> Dict:
-    url = client.app.router["get_project"].url_for(project_uuid=pid)
+    url = client.app.router["get_project"].url_for(project_id=pid)
     resp = await client.get(url)
 
     project, _ = await assert_status(resp, web.HTTPOk)
@@ -174,8 +174,8 @@ async def _request_create(client, project):
 
 
 async def _request_update(client, project, pid):
-    # PUT /v0/projects/{project_uuid}
-    url = client.app.router["replace_project"].url_for(project_uuid=pid)
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=pid)
     resp = await client.put(url, json=project)
 
     updated_project, _ = await assert_status(resp, web.HTTPOk)
@@ -184,7 +184,7 @@ async def _request_update(client, project, pid):
 
 
 async def _request_delete(client, pid):
-    url = client.app.router["delete_project"].url_for(project_uuid=pid)
+    url = client.app.router["delete_project"].url_for(project_id=pid)
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNoContent)
@@ -286,7 +286,7 @@ async def test_get_invalid_project(
     simcore_services_ready,
     logged_user,
 ):
-    url = client.app.router["get_project"].url_for(project_uuid="some-fake-id")
+    url = client.app.router["get_project"].url_for(project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
@@ -300,7 +300,7 @@ async def test_update_invalid_project(
     simcore_services_ready,
     logged_user,
 ):
-    url = client.app.router["replace_project"].url_for(project_uuid="some-fake-id")
+    url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
@@ -314,7 +314,7 @@ async def test_delete_invalid_project(
     simcore_services_ready,
     logged_user,
 ):
-    url = client.app.router["delete_project"].url_for(project_uuid="some-fake-id")
+    url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)

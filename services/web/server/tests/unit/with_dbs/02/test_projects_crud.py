@@ -122,10 +122,10 @@ async def _assert_get_same_project(
     project: Dict,
     expected: Type[web.HTTPException],
 ) -> Dict:
-    # GET /v0/projects/{project_uuid}
+    # GET /v0/projects/{project_id}
 
     # with a project owned by user
-    url = client.app.router["get_project"].url_for(project_uuid=project["uuid"])
+    url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
@@ -235,9 +235,9 @@ async def _new_project(
 async def _replace_project(
     client, project_update: Dict, expected: Type[web.HTTPException]
 ) -> Dict:
-    # PUT /v0/projects/{project_uuid}
+    # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
-        project_uuid=project_update["uuid"]
+        project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
     resp = await client.put(url, json=project_update)
@@ -439,7 +439,8 @@ async def test_new_template_from_project(
     catalog_subsystem_mock: Callable,
     project_db_cleaner: None,
 ):
-    # POST /v0/projects?as_template={project_uuid}
+    assert client.app
+    # POST /v0/projects?as_template={project_id}
     url = (
         client.app.router["create_projects"]
         .url_for()

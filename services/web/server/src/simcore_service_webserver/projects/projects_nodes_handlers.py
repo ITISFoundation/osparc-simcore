@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes")
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
 @login_required
 @permission_required("project.node.create")
 async def create_node(request: web.Request) -> web.Response:
@@ -36,21 +36,21 @@ async def create_node(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
     try:
         # ensure the project exists
 
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
         data = {
             "node_id": await projects_api.add_project_node(
                 request,
-                f"{path_params.project_uuid}",
+                f"{path_params.project_id}",
                 req_ctx.user_id,
                 body["service_key"],
                 body["service_version"],
@@ -62,7 +62,7 @@ async def create_node(request: web.Request) -> web.Response:
         )
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
 
 
@@ -70,7 +70,7 @@ class _NodePathParams(ProjectPathParams):
     node_id: NodeID
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_id}}")
+@routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}")
 @login_required
 @permission_required("project.node.read")
 async def get_node(request: web.Request) -> web.Response:
@@ -81,7 +81,7 @@ async def get_node(request: web.Request) -> web.Response:
         # ensure the project exists
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
@@ -99,7 +99,7 @@ async def get_node(request: web.Request) -> web.Response:
         return web.json_response({"data": reply["data"]}, dumps=json_dumps)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
 
 
@@ -114,7 +114,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         # ensure the project exists
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
@@ -126,7 +126,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
     except NodeNotFoundError as exc:
         raise web.HTTPNotFound(
@@ -134,7 +134,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         ) from exc
 
 
-@routes.put(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_id}}/resources")
+@routes.put(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
 @login_required
 @permission_required("project.node.update")
 async def replace_node_resources(request: web.Request) -> web.Response:
@@ -144,14 +144,14 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     try:
         _body = await request.json()
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
     try:
 
         # ensure the project exists
         _project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
@@ -164,7 +164,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
     except NodeNotFoundError as exc:
         raise web.HTTPNotFound(
@@ -172,7 +172,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         ) from exc
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_id}}:retrieve")
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve")
 @login_required
 @permission_required("project.node.read")
 async def post_retrieve(request: web.Request) -> web.Response:
@@ -182,7 +182,7 @@ async def post_retrieve(request: web.Request) -> web.Response:
         data = await request.json()
         port_keys = data.get("port_keys", [])
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
     return web.json_response(
         await director_v2_api.retrieve(
@@ -192,7 +192,7 @@ async def post_retrieve(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_id}}:restart")
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
 @login_required
 @permission_required("project.node.read")
 async def post_restart(request: web.Request) -> web.Response:
@@ -214,14 +214,14 @@ async def delete_node(request: web.Request) -> web.Response:
 
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
 
         await projects_api.delete_project_node(
             request,
-            f"{path_params.project_uuid}",
+            f"{path_params.project_id}",
             req_ctx.user_id,
             f"{path_params.node_id}",
         )
@@ -229,5 +229,5 @@ async def delete_node(request: web.Request) -> web.Response:
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc

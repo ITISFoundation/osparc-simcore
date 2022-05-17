@@ -68,13 +68,13 @@ SERVICE_DELETION_DELAY = 1
 
 
 async def open_project(client, project_uuid: str, client_session_id: str) -> None:
-    url = client.app.router["open_project"].url_for(project_uuid=project_uuid)
+    url = client.app.router["open_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPOk)
 
 
 async def close_project(client, project_uuid: str, client_session_id: str) -> None:
-    url = client.app.router["close_project"].url_for(project_uuid=project_uuid)
+    url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
 

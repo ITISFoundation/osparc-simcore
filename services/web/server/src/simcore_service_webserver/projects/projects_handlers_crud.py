@@ -12,6 +12,7 @@ from uuid import UUID
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.basic_types import UUIDStr
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
@@ -74,7 +75,7 @@ class RequestContext(BaseModel):
 
 
 class ProjectPathParams(BaseModel):
-    project_uuid: UUID
+    project_id: ProjectID
 
     class Config:
         allow_population_by_field_name = True
@@ -346,7 +347,7 @@ async def list_projects(request: web.Request):
 #
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}", name="get_project")
+@routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
@@ -368,7 +369,7 @@ async def get_project(request: web.Request):
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
@@ -383,7 +384,7 @@ async def get_project(request: web.Request):
             # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
-                    f"Project '{path_params.project_uuid}' uses unavailable services. Please ask "
+                    f"Project '{path_params.project_id}' uses unavailable services. Please ask "
                     f"for permission for the following services {formatted_services}"
                 )
             )
@@ -395,11 +396,11 @@ async def get_project(request: web.Request):
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
-            reason=f"You do not have sufficient rights to read project {path_params.project_uuid}"
+            reason=f"You do not have sufficient rights to read project {path_params.project_id}"
         ) from exc
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
 
 
@@ -408,7 +409,7 @@ async def get_project(request: web.Request):
 #
 
 
-@routes.put(f"/{VTAG}/projects/{{project_uuid}}", name="replace_project")
+@routes.put(f"/{VTAG}/projects/{{project_id}}", name="replace_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -445,7 +446,7 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
-            "project_id": f"{path_params.project_uuid}",
+            "project_id": f"{path_params.project_id}",
             "user_id": req_ctx.user_id,
             "new_data": new_project,
         },
@@ -456,7 +457,7 @@ async def replace_project(request: web.Request):
 
         current_project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
@@ -466,7 +467,7 @@ async def replace_project(request: web.Request):
             await check_permission(request, "project.access_rights.update")
 
         if await director_v2_api.is_pipeline_running(
-            request.app, req_ctx.user_id, path_params.project_uuid
+            request.app, req_ctx.user_id, path_params.project_id
         ):
 
             if any_node_inputs_changed(new_project, current_project):
@@ -489,20 +490,20 @@ async def replace_project(request: web.Request):
                 #  and resubmit the request  (front-end will show a pop-up with message below)
                 #
                 raise web.HTTPConflict(
-                    reason=f"Project {path_params.project_uuid} cannot be modified while pipeline is still running."
+                    reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
                 )
 
         new_project = await db.replace_user_project(
             new_project,
             req_ctx.user_id,
-            f"{path_params.project_uuid}",
+            f"{path_params.project_id}",
             include_templates=True,
         )
         await director_v2_api.projects_networks_update(
-            request.app, path_params.project_uuid
+            request.app, path_params.project_id
         )
         await director_v2_api.create_or_update_pipeline(
-            request.app, req_ctx.user_id, path_params.project_uuid
+            request.app, req_ctx.user_id, path_params.project_id
         )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
@@ -533,13 +534,13 @@ async def replace_project(request: web.Request):
 #
 
 
-@routes.delete(f"/{VTAG}/projects/{{project_uuid}}", name="delete_project")
+@routes.delete(f"/{VTAG}/projects/{{project_id}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
     """
 
-    : raises web.HTTPNotFound
+    :raises web.HTTPNotFound
     :raises web.HTTPBadRequest
     """
     req_ctx = RequestContext.parse_obj(request)
@@ -548,7 +549,7 @@ async def delete_project(request: web.Request):
     try:
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
@@ -557,7 +558,7 @@ async def delete_project(request: web.Request):
             project_users = {
                 user_session.user_id
                 for user_session in await rt.find_users_of_resource(
-                    PROJECT_ID_KEY, f"{path_params.project_uuid}"
+                    PROJECT_ID_KEY, f"{path_params.project_id}"
                 )
             }
         # that project is still in use
@@ -576,7 +577,7 @@ async def delete_project(request: web.Request):
             )
 
         await projects_api.submit_delete_project_task(
-            request.app, path_params.project_uuid, req_ctx.user_id
+            request.app, path_params.project_id, req_ctx.user_id
         )
 
     except ProjectInvalidRightsError as err:
@@ -585,7 +586,7 @@ async def delete_project(request: web.Request):
         ) from err
     except ProjectNotFoundError as err:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

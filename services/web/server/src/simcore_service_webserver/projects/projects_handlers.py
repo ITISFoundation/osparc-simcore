@@ -79,7 +79,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}:open", name="open_project")
+@routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
@@ -95,7 +95,7 @@ async def open_project(request: web.Request) -> web.Response:
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=False,
             include_state=True,
@@ -103,7 +103,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
         ):
@@ -128,14 +128,14 @@ async def open_project(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
         await projects_api.try_close_project_for_user(
             user_id=req_ctx.user_id,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
         )
@@ -149,7 +149,7 @@ async def open_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}:close", name="close_project")
+@routes.post(f"/{VTAG}/projects/{{project_id}}:close", name="close_project")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
@@ -167,21 +167,21 @@ async def close_project(request: web.Request) -> web.Response:
         # ensure the project exists
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{path_params.project_uuid}",
+            project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=False,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(
             req_ctx.user_id,
-            f"{path_params.project_uuid}",
+            f"{path_params.project_id}",
             client_session_id,
             request.app,
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_uuid} not found"
+            reason=f"Project {path_params.project_id} not found"
         ) from exc
 
 
@@ -190,7 +190,7 @@ async def close_project(request: web.Request) -> web.Response:
 #
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}/state", name="get_project_state")
+@routes.get(f"/{VTAG}/projects/{{project_id}}/state", name="get_project_state")
 @login_required
 @permission_required("project.read")
 async def get_project_state(request: web.Request) -> web.Response:
@@ -200,7 +200,7 @@ async def get_project_state(request: web.Request) -> web.Response:
     # check that project exists and queries state
     validated_project = await projects_api.get_project_for_user(
         request.app,
-        project_uuid=f"{path_params.project_uuid}",
+        project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_templates=True,
         include_state=True,
