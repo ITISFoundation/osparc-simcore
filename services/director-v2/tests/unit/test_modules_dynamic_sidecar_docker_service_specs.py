@@ -275,7 +275,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             "Placement": {"Constraints": ["node.platform.os == linux"]},
             "Resources": {
                 "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
-                "Reservation": {
+                "Reservations": {
                     "GenericResources": [
                         {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
                     ],

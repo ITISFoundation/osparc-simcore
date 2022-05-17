@@ -35,9 +35,6 @@ SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
 
 
-# TODO: Reservation and not Reservations https://github.com/ITISFoundation/osparc-simcore/issues/3044
-
-
 def _parse_generic_resource(
     generic_resources: list[Any], service_resources: ServiceResources
 ) -> None:
