@@ -10,7 +10,7 @@ from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 
 from ..json_serialization import json_dumps
-from ..mime import APPLICATION_JSON
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
@@ -124,7 +124,7 @@ def create_error_response(
     payload = wrap_as_envelope(error=attr.asdict(error))
 
     response = http_error_cls(
-        reason=reason, text=json_dumps(payload), content_type=APPLICATION_JSON
+        reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
     )
 
     return response
