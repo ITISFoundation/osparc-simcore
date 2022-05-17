@@ -133,7 +133,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     app["APP_IGNORE_CONTEXT"] = "not interesting"
 
     # adds handler
-    app.add_routes([web.get("/projects/{project_id}", _handler)])
+    app.add_routes([web.get("/projects/{project_uuid}", _handler)])
 
     return event_loop.run_until_complete(aiohttp_client(app))
 
@@ -163,7 +163,7 @@ async def test_parse_request_as(
     query_params: MyRequestQueryParams,
     body: MyBody,
 ):
-
+    assert client.app
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -196,9 +196,11 @@ async def test_parse_request_with_invalid_path_params(
     assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
     errors = await r.json()
+    assert "Invalid parameter/s 'project_uuid' in request path" in errors["error"].pop(
+        "msg"
+    )
     assert errors == {
         "error": {
-            "msg": "Invalid parameter/s 'project_uuid' in request path",
             "details": [{"loc": "project_uuid", "msg": "value is not a valid uuid"}],
         }
     }
@@ -218,9 +220,9 @@ async def test_parse_request_with_invalid_query_params(
     assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
 
     errors = await r.json()
+    assert "Invalid parameter/s 'label' in request query" in errors["error"].pop("msg")
     assert errors == {
         "error": {
-            "msg": "Invalid parameter/s 'label' in request query",
             "details": [{"loc": "label", "msg": "field required"}],
         }
     }
@@ -241,9 +243,9 @@ async def test_parse_request_with_invalid_body(
 
     errors = await r.json()
 
+    assert "Invalid field/s 'x, z' in request body" in errors["error"].pop("msg")
     assert errors == {
         "error": {
-            "msg": "Invalid field/s 'x, z' in request body",
             "details": [
                 {"loc": "x", "msg": "field required"},
                 {"loc": "z", "msg": "field required"},

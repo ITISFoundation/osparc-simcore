@@ -28,11 +28,13 @@ def handle_validation_as_http_error(*, error_msg_template: str) -> Iterator[None
         details = [
             {"loc": ".".join(map(str, e["loc"])), "msg": e["msg"]} for e in err.errors()
         ]
-        msg = error_msg_template.format(failed=", ".join(d["loc"] for d in details))
+        reason_msg = error_msg_template.format(
+            failed=", ".join(d["loc"] for d in details)
+        )
 
         raise web.HTTPBadRequest(
-            reason=msg,
-            body=json_dumps({"error": {"msg": msg, "details": details}}),
+            reason=reason_msg,
+            text=json_dumps({"error": {"msg": reason_msg, "details": details}}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -54,7 +56,7 @@ def parse_request_path_parameters_as(
     :raises HTTPBadRequest if validation of parameters  fail
     """
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request path"
+        error_msg_template=f"Invalid parameter/s '{{failed}}' in request path at '{request.rel_url}'"
     ):
         data = dict(request.match_info)
         return parameters_schema.parse_obj(data)
@@ -70,7 +72,7 @@ def parse_request_query_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request query"
+        error_msg_template=f"Invalid parameter/s '{{failed}}' in request query at '{request.rel_url}'"
     ):
         data = dict(request.query)
         return parameters_schema.parse_obj(data)
@@ -84,7 +86,7 @@ async def parse_request_body_as(
     :raises HTTPBadRequest
     """
     with handle_validation_as_http_error(
-        error_msg_template="Invalid field/s '{failed}' in request body"
+        error_msg_template=f"Invalid field/s '{{failed}}' in request body at '{request.rel_url}'"
     ):
         body = await request.json()
         return model_schema.parse_obj(body)
