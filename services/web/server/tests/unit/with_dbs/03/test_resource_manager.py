@@ -34,6 +34,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
@@ -122,6 +123,7 @@ def client(
     setup_director(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_products(app)
 
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)
 

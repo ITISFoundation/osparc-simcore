@@ -439,7 +439,8 @@ async def test_new_template_from_project(
     catalog_subsystem_mock: Callable,
     project_db_cleaner: None,
 ):
-    # POST /v0/projects?as_template={project_uuid}
+    assert client.app
+    # POST /v0/projects?as_template={project_id}
     url = (
         client.app.router["create_projects"]
         .url_for()

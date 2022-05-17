@@ -1,17 +1,8 @@
 """ Handlers for STANDARD methods on /projects colletions
 
-
-Standard methods are
-- Get https://google.aip.dev/131
-- List https://google.aip.dev/132
-- Create https://google.aip.dev/133
-- Update https://google.aip.dev/134
-- Delete https://google.aip.dev/135
-
-and the acronym CRUD states for Create+Read(Get&List)+Update+Delete
+Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
-
 import asyncio
 import json
 import logging
@@ -19,11 +10,20 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 from uuid import UUID
 
 from aiohttp import web
-from jsonschema import ValidationError
+from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
+from models_library.users import UserID
+from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from servicelib.aiohttp.requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
+from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -69,58 +69,105 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{VTAG}/projects")
+class RequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+
+
+class ProjectPathParams(BaseModel):
+    project_id: ProjectID
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
+#
+# - Create https://google.aip.dev/133
+#
+
+
+class _ProjectCreateParams(BaseModel):
+    from_template: Optional[UUIDStr] = Field(
+        None,
+        description="Option to create a project from existing template: from_template={template_uuid}",
+    )
+    as_template: Optional[UUIDStr] = Field(
+        None,
+        description="Option to create a template from existing project: as_template={study_uuid}",
+    )
+    copy_data: bool = Field(
+        True,
+        description="Option to copy data when creating from an existing template or as a template, defaults to True",
+    )
+    hidden: bool = Field(
+        False,
+        description="Enables/disables hidden flag. Hidden projects are by default unlisted",
+    )
+
+    class Config:
+        extra = Extra.forbid
+
+
+@routes.post(f"/{VTAG}/projects", name="create_projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(
-    request: web.Request,
-):  # pylint: disable=too-many-branches, too-many-statements
-    user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-    template_uuid = request.query.get("from_template")
-    as_template = request.query.get("as_template")
-    copy_data: bool = bool(
-        request.query.get("copy_data", "true") in [1, "true", "True"]
-    )
-    hidden: bool = bool(request.query.get("hidden", False))
+async def create_projects(request: web.Request):
+    """
+
+    :raises web.HTTPBadRequest
+    :raises web.HTTPNotFound
+    :raises web.HTTPBadRequest
+    :raises web.HTTPNotFound
+    :raises web.HTTPUnauthorized
+    :raises web.HTTPCreated
+    """
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
+
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
 
     new_project = {}
-    new_project_was_hidden_before_data_was_copied = hidden
     try:
+        new_project_was_hidden_before_data_was_copied = query_params.hidden
+
         clone_data_coro: Optional[Coroutine] = None
-        source_project: Optional[Dict[str, Any]] = None
-        if as_template:  # create template from
+        source_project: Optional[ProjectDict] = None
+        if query_params.as_template:  # create template from
             await check_permission(request, "project.template.create")
             source_project = await projects_api.get_project_for_user(
                 request.app,
-                project_uuid=as_template,
-                user_id=user_id,
+                project_uuid=query_params.as_template,
+                user_id=req_ctx.user_id,
                 include_templates=False,
             )
-        elif template_uuid:  # create from template
-            source_project = await db.get_template_project(template_uuid)
+        elif query_params.from_template:  # create from template
+            source_project = await db.get_template_project(query_params.from_template)
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason="Invalid template uuid {}".format(template_uuid)
+                    reason="Invalid template uuid {}".format(query_params.from_template)
                 )
+
         if source_project:
             # clone template as user project
             new_project, nodes_map = clone_project_document(
                 source_project,
                 forced_copy_project_id=None,
-                clean_output_data=(copy_data == False),
+                clean_output_data=(query_params.copy_data == False),
             )
-            if template_uuid:
+            if query_params.from_template:
                 # remove template access rights
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
-            hidden = copy_data
+            query_params.hidden = query_params.copy_data
             clone_data_coro = (
                 copy_data_folders_from_project(
-                    request.app, source_project, new_project, nodes_map, user_id
+                    request.app, source_project, new_project, nodes_map, req_ctx.user_id
                 )
-                if copy_data
+                if query_params.copy_data
                 else None
             )
             # FIXME: parameterized inputs should get defaults provided by service
@@ -143,22 +190,22 @@ async def create_projects(
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
             new_project,
-            user_id,
-            force_as_template=as_template is not None,
-            hidden=hidden,
+            req_ctx.user_id,
+            force_as_template=query_params.as_template is not None,
+            hidden=query_params.hidden,
         )
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
-            if as_template:
+            if query_params.as_template:
                 # we need to lock the original study while copying the data
                 async with projects_api.lock_with_notification(
                     request.app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,
-                    user_id,
-                    await get_user_name(request.app, user_id),
+                    req_ctx.user_id,
+                    await get_user_name(request.app, req_ctx.user_id),
                 ):
 
                     await clone_data_coro
@@ -176,18 +223,18 @@ async def create_projects(
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            request.app, user_id, new_project["uuid"]
+            request.app, req_ctx.user_id, new_project["uuid"]
         )
 
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
+            user_id=req_ctx.user_id,
             project=new_project,
-            is_template=as_template is not None,
+            is_template=query_params.as_template is not None,
             app=request.app,
         )
 
-    except ValidationError as exc:
+    except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
@@ -195,44 +242,64 @@ async def create_projects(
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
         log.warning(
-            "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
+            "cancelled creation of project for user '%s', cleaning up",
+            f"{req_ctx.user_id=}",
         )
         await projects_api.submit_delete_project_task(
-            request.app, new_project["uuid"], user_id
+            request.app, new_project["uuid"], req_ctx.user_id
         )
         raise
     else:
         log.debug("project created successfuly")
         raise web.HTTPCreated(
-            text=json.dumps(new_project), content_type="application/json"
+            text=json.dumps(new_project), content_type=MIMETYPE_APPLICATION_JSON
         )
 
 
-@routes.get(f"/{VTAG}/projects")
+#
+# - List https://google.aip.dev/132
+#
+
+
+class _ProjectListParams(BaseModel):
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        description="maximum number of items to return (pagination)",
+        ge=1,
+        lt=50,
+    )
+    offset: NonNegativeInt = Field(
+        default=0, description="index to the first item to return (pagination)"
+    )
+    project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
+    show_hidden: bool = Field(
+        default=False, description="includes projects marked as hidden in the listing"
+    )
+
+    class Config:
+        extra = Extra.forbid
+
+
+@routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
-    # TODO: implement all query parameters as
-    # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
-    from servicelib.aiohttp.rest_utils import extract_and_validate
+    """
 
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    _, query, _ = await extract_and_validate(request)
+    :raises web.HTTPBadRequest
+    """
 
-    project_type = ProjectTypeAPI(query["type"])
-    offset = query["offset"]
-    limit = query["limit"]
-    show_hidden = query["show_hidden"]
-
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
     async def set_all_project_states(
-        projects: List[Dict[str, Any]], project_types: List[bool]
+        projects: List[Dict[str, Any]], project_types: List[ProjectTypeDB]
     ):
         await logged_gather(
             *[
                 projects_api.add_project_states_for_user(
-                    user_id=user_id,
+                    user_id=req_ctx.user_id,
                     project=prj,
                     is_template=prj_type == ProjectTypeDB.TEMPLATE,
                     app=request.app,
@@ -246,16 +313,18 @@ async def list_projects(request: web.Request):
     user_available_services: List[
         Dict
     ] = await catalog.get_services_for_user_in_product(
-        request.app, user_id, product_name, only_key_versions=True
+        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
     projects, project_types, total_number_projects = await db.load_projects(
-        user_id=user_id,
-        filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
+        user_id=req_ctx.user_id,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
+            query_params.project_type
+        ),
         filter_by_services=user_available_services,
-        offset=offset,
-        limit=limit,
-        include_hidden=show_hidden,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        include_hidden=query_params.show_hidden,
     )
     await set_all_project_states(projects, project_types)
     page = Page[ProjectDict].parse_obj(
@@ -263,36 +332,81 @@ async def list_projects(request: web.Request):
             chunk=projects,
             request_url=request.url,
             total=total_number_projects,
-            limit=limit,
-            offset=offset,
+            limit=query_params.limit,
+            offset=query_params.offset,
         )
     )
-    return page.dict(**RESPONSE_MODEL_POLICY)
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
-@routes.get(f"/{VTAG}/projects/{{project_uuid}}")
+#
+# - Get https://google.aip.dev/131
+# - Get active project: Singleton per-session resources https://google.aip.dev/156
+#
+
+
+class _ProjectActiveParams(BaseModel):
+    client_session_id: str
+
+
+@routes.get(f"/{VTAG}/projects/active", name="get_active_project")
+@login_required
+@permission_required("project.read")
+async def get_active_project(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
+
+    try:
+        project = None
+        user_active_projects = []
+        with managed_resource(
+            req_ctx.user_id, query_params.client_session_id, request.app
+        ) as rt:
+            # get user's projects
+            user_active_projects = await rt.find(PROJECT_ID_KEY)
+        if user_active_projects:
+
+            project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=user_active_projects[0],
+                user_id=req_ctx.user_id,
+                include_templates=True,
+                include_state=True,
+            )
+
+        return web.json_response({"data": project}, dumps=json_dumps)
+
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason="Project not found") from exc
+
+
+@routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
-    """Returns all projects accessible to a user (not necesarly owned)"""
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    try:
-        project_uuid = request.match_info["project_id"]
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    """Returns all projects accessible to a user (not necesarly owned)
+
+
+    :raises web.HTTPBadRequest
+    """
+
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services: List[
         Dict
     ] = await catalog.get_services_for_user_in_product(
-        request.app, user_id, product_name, only_key_versions=True
+        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
     try:
         project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
         )
@@ -306,7 +420,7 @@ async def get_project(request: web.Request):
             # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
-                    f"Project '{project_uuid}' uses unavailable services. Please ask "
+                    f"Project '{path_params.project_id}' uses unavailable services. Please ask "
                     f"for permission for the following services {formatted_services}"
                 )
             )
@@ -314,17 +428,24 @@ async def get_project(request: web.Request):
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
 
-        return {"data": project}
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
-            reason=f"You do not have sufficient rights to read project {project_uuid}"
+            reason=f"You do not have sufficient rights to read project {path_params.project_id}"
         ) from exc
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
 
 
-@routes.put(f"/{VTAG}/projects/{{project_uuid}}")
+#
+# - Update https://google.aip.dev/134
+#
+
+
+@routes.put(f"/{VTAG}/projects/{{project_id}}", name="replace_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -342,33 +463,27 @@ async def replace_project(request: web.Request):
      the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
 
     :raises web.HTTPNotFound: cannot find project id in repository
+    :raises web.HTTPBadRequest
     """
-    user_id: int = request[RQT_USERID_KEY]
-    try:
-        project_uuid = ProjectID(request.match_info["project_id"])
-        new_project = await request.json()
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
+    try:
+        new_project = await request.json()
         # Prune state field (just in case)
         new_project.pop("state", None)
 
-    except AttributeError as err:
-        # NOTE: if new_project is not a dict, .pop will raise this error
-        raise web.HTTPBadRequest(
-            reason="Invalid request payload, expected a project model"
-        ) from err
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
         request,
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
-            "project_id": f"{project_uuid}",
-            "user_id": user_id,
+            "project_id": f"{path_params.project_id}",
+            "user_id": req_ctx.user_id,
             "new_data": new_project,
         },
     )
@@ -378,8 +493,8 @@ async def replace_project(request: web.Request):
 
         current_project = await projects_api.get_project_for_user(
             request.app,
-            project_uuid=f"{project_uuid}",
-            user_id=user_id,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
             include_templates=True,
             include_state=True,
         )
@@ -388,7 +503,7 @@ async def replace_project(request: web.Request):
             await check_permission(request, "project.access_rights.update")
 
         if await director_v2_api.is_pipeline_running(
-            request.app, user_id, project_uuid
+            request.app, req_ctx.user_id, path_params.project_id
         ):
 
             if any_node_inputs_changed(new_project, current_project):
@@ -411,25 +526,30 @@ async def replace_project(request: web.Request):
                 #  and resubmit the request  (front-end will show a pop-up with message below)
                 #
                 raise web.HTTPConflict(
-                    reason=f"Project {project_uuid} cannot be modified while pipeline is still running."
+                    reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
                 )
 
         new_project = await db.replace_user_project(
-            new_project, user_id, f"{project_uuid}", include_templates=True
+            new_project,
+            req_ctx.user_id,
+            f"{path_params.project_id}",
+            include_templates=True,
         )
-        await director_v2_api.projects_networks_update(request.app, project_uuid)
+        await director_v2_api.projects_networks_update(
+            request.app, path_params.project_id
+        )
         await director_v2_api.create_or_update_pipeline(
-            request.app, user_id, project_uuid
+            request.app, req_ctx.user_id, path_params.project_id
         )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
+            user_id=req_ctx.user_id,
             project=new_project,
             is_template=False,
             app=request.app,
         )
 
-    except ValidationError as exc:
+    except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(
             reason=f"Invalid project update: {exc.message}"
         ) from exc
@@ -442,50 +562,58 @@ async def replace_project(request: web.Request):
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound from exc
 
-    return {"data": new_project}
+    return web.json_response({"data": new_project}, dumps=json_dumps)
 
 
-@routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
+#
+# - Delete https://google.aip.dev/135
+#
+
+
+@routes.delete(f"/{VTAG}/projects/{{project_id}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
-    # first check if the project exists
-    user_id: int = request[RQT_USERID_KEY]
-    try:
-        project_uuid = request.match_info["project_id"]
-    except KeyError as err:
-        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+    """
+
+    :raises web.HTTPNotFound
+    :raises web.HTTPBadRequest
+    """
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         await projects_api.get_project_for_user(
             request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
             include_templates=True,
         )
         project_users: Set[int] = set()
-        with managed_resource(user_id, None, request.app) as rt:
+        with managed_resource(req_ctx.user_id, None, request.app) as rt:
             project_users = {
                 user_session.user_id
                 for user_session in await rt.find_users_of_resource(
-                    PROJECT_ID_KEY, project_uuid
+                    PROJECT_ID_KEY, f"{path_params.project_id}"
                 )
             }
         # that project is still in use
-        if user_id in project_users:
+        if req_ctx.user_id in project_users:
             raise web.HTTPForbidden(
-                reason="Project is still open in another tab/browser. It cannot be deleted until it is closed."
+                reason="Project is still open in another tab/browser."
+                "It cannot be deleted until it is closed."
             )
         if project_users:
             other_user_names = {
                 await get_user_name(request.app, uid) for uid in project_users
             }
             raise web.HTTPForbidden(
-                reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
+                reason=f"Project is open by {other_user_names}. "
+                "It cannot be deleted until the project is closed."
             )
 
         await projects_api.submit_delete_project_task(
-            request.app, ProjectID(project_uuid), user_id
+            request.app, path_params.project_id, req_ctx.user_id
         )
 
     except ProjectInvalidRightsError as err:
@@ -493,6 +621,8 @@ async def delete_project(request: web.Request):
             reason="You do not have sufficient rights to delete this project"
         ) from err
     except ProjectNotFoundError as err:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from err
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from err
 
-    raise web.HTTPNoContent(content_type="application/json")
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
