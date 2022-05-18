@@ -570,11 +570,10 @@ qx.Class.define("osparc.component.form.Auto", {
       }
 
       let validator = null;
-      if (this.self().hasValidatableProp(s)) {
-        validator = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
-      }
       if ("getValidator" in control) {
         validator = control.getValidator();
+      } else if (this.self().hasValidatableProp(s)) {
+        validator = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
       }
       if (validator) {
         control.addListener("changeValue", () => validator.validate());
