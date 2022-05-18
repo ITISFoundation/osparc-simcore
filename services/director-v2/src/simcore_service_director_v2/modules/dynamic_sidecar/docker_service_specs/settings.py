@@ -11,14 +11,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.services_resources import (
-    CPU_10_PERCENT,
-    CPU_100_PERCENT,
-    GIGA,
-    MEMORY_1GB,
-    MEMORY_250MB,
-    ServiceResources,
-)
+from models_library.services_resources import CPU_100_PERCENT, GIGA, ServiceResources
 from servicelib.docker_compose import (
     MATCH_IMAGE_END,
     MATCH_IMAGE_START,
