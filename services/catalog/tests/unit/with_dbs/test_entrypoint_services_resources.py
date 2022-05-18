@@ -17,7 +17,7 @@ from models_library.services_resources import (
     ResourceValue,
     ServiceResources,
 )
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from respx.models import Route
 from simcore_service_catalog.core.settings import _DEFAULT_RESOURCES
 from starlette.testclient import TestClient
@@ -192,16 +192,17 @@ def create_mock_director_service_labels(
             encoded_key = urllib.parse.quote_plus(
                 f"simcore/services/dynamic/{service_name}"
             )
-            director_mockup.get(
-                url__regex=rf"v0/services/{encoded_key}/[0-9]+.[0-9]+.[0-9]+/labels",
-                name=f"get_service_labels_for_{service_name}",
-            ).respond(200, json={"data": data})
+            for k, mock_key in enumerate((encoded_key, service_name)):
+                director_mockup.get(
+                    url__regex=rf"v0/services/{mock_key}/[\w/.]+/labels",
+                    name=f"get_service_labels_for_{service_name}_{k}",
+                ).respond(200, json={"data": data})
 
     return factory
 
 
 @pytest.mark.parametrize(
-    "mapped_services_labels, expected_service_resources",
+    "mapped_services_labels, expected_service_resources, service_key, service_version",
     [
         pytest.param(
             {
@@ -217,7 +218,45 @@ def create_mock_director_service_labels(
             ServiceResources.parse_obj(
                 ServiceResources.Config.schema_extra["examples"][1]
             ),
+            "simcore/services/dynamic/sim4life-dy",
+            "3.0.0",
             id="s4l_case",
+        ),
+        pytest.param(
+            {
+                "jupyter-math": {
+                    "simcore.service.settings": "[]",
+                    "simcore.service.compose-spec": '{"version": "2.3", "services": {"jupyter-math":{"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:${SERVICE_VERSION}"}, "busybox": {"image": "busybox:latest"}}}',
+                },
+                "busybox": {"simcore.service.settings": "[]"},
+            },
+            ServiceResources.parse_obj(
+                {
+                    "jupyter-math": {
+                        "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                            },
+                        },
+                    },
+                    "busybox": {
+                        "image": "busybox:latest",
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {
+                                "limit": parse_obj_as(ByteSize, "2Gib"),
+                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                            },
+                        },
+                    },
+                }
+            ),
+            "simcore/services/dynamic/jupyter-math",
+            "2.0.5",
+            id="using_an_external_image",
         ),
     ],
 )
@@ -227,10 +266,9 @@ async def test_get_service_resources_sim4life_case(
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
     expected_service_resources: ServiceResources,
+    service_key: str,
+    service_version: str,
 ) -> None:
-    service_key = "simcore/services/dynamic/sim4life-dy"
-    service_version = "3.0.0"
-
     create_mock_director_service_labels(mapped_services_labels)
 
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
@@ -239,7 +277,7 @@ async def test_get_service_resources_sim4life_case(
     data = response.json()
     received_service_resources = ServiceResources.parse_obj(data)
 
-    assert received_service_resources == expected_service_resources
+    assert received_service_resources.dict() == expected_service_resources.dict()
 
 
 async def test_get_service_resources_raises_errors(

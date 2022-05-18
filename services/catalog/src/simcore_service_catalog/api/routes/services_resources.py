@@ -9,7 +9,7 @@ from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
 )
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import DockerImageKey, DockerImageVersion
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
@@ -54,10 +54,11 @@ def _parse_generic_resource(
             ).reservation = discrete_resource_spec["Value"]
 
 
+# TODO: ANE-> SAN need a hand merging this with mine!
 def _from_service_settings(
     settings: list[SimcoreServiceSettingLabelEntry],
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
+    service_key: DockerImageKey,
+    service_version: DockerImageVersion,
     default_service_resources: ServiceResources,
 ) -> ServiceResources:
     # filter resource entries
@@ -100,8 +101,8 @@ def _from_service_settings(
     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['service_key']}_{kwargs['service_version']}",
 )
 async def get_service_resources(
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
+    service_key: DockerImageKey,
+    service_version: DockerImageVersion,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
 ) -> ServiceResources:
