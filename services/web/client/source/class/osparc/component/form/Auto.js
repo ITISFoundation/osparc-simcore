@@ -366,14 +366,25 @@ qx.Class.define("osparc.component.form.Auto", {
           ctrl.bindProperty("label", "label", null, item, index);
         }
       });
+      // Content Schema
+      if ("enum" in s) {
+        const entries = [];
+        s.enum.forEach(entry => {
+          entries.push({
+            label: entry,
+            key: entry
+          });
+        });
+        s.widget["structure"] = entries;
+      }
       const cfg = s.widget;
-      let structure = cfg.structure;
-      if (structure) {
-        structure.forEach(item => {
+      let items = cfg.structure;
+      if (items) {
+        items.forEach(item => {
           item.label = item.label || "";
         }, this);
       } else {
-        structure = [{
+        items = [{
           label: "",
           key: null
         }];
@@ -381,7 +392,11 @@ qx.Class.define("osparc.component.form.Auto", {
       if (s.defaultValue) {
         s.set.value = [s.defaultValue];
       }
-      let sbModel = qx.data.marshal.Json.createModel(structure);
+      // Content Schema
+      if (s.default) {
+        s.set.value = [s.default];
+      }
+      let sbModel = qx.data.marshal.Json.createModel(items);
       controller.setModel(sbModel);
     },
     __setupComboBox: function(s, key, control) {
@@ -454,6 +469,13 @@ qx.Class.define("osparc.component.form.Auto", {
         }
         s.set.value = s.defaultValue;
       }
+      // Content Schema
+      if (s.default) {
+        if (!s.set) {
+          s.set = {};
+        }
+        s.set.value = s.default;
+      }
 
       if (!s.widget) {
         let type = s.type;
@@ -471,6 +493,10 @@ qx.Class.define("osparc.component.form.Auto", {
             "ref_contentSchema": "ContentSchema"
           }[type]
         };
+      }
+      // Content Schema
+      if ("enum" in s) {
+        s.widget["type"] = "SelectBox";
       }
       let control;
       let setup;
