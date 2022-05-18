@@ -398,6 +398,7 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       let sbModel = qx.data.marshal.Json.createModel(items);
       controller.setModel(sbModel);
+      control.setModelSelection(s.set.value);
     },
     __setupComboBox: function(s, key, control) {
       let ctrl = this.__boxCtrl[key] = new qx.data.controller.List(null, control);
@@ -532,6 +533,7 @@ qx.Class.define("osparc.component.form.Auto", {
         case "SelectBox":
           control = new qx.ui.form.SelectBox();
           setup = this.__setupSelectBox;
+          s.set["minWidth"] = 80;
           break;
         case "ComboBox":
           control = new qx.ui.form.ComboBox();
