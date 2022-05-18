@@ -91,7 +91,7 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
           const {
             unitPrefix
           } = osparc.utils.Units.decomposeXUnit(s["x_unit"]);
-          multiplier = osparc.utils.Units.getMultiplier(unitPrefix, this.unitPrefix);
+          multiplier = osparc.utils.Units.getMultiplier(unitPrefix, control.unitPrefix);
         }
         let valid = true;
         if ("items" in s) {
