@@ -37,6 +37,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -184,6 +185,7 @@ def client(
     setup_computation(app)
     setup_director_v2(app)
     setup_resource_manager(app)
+    setup_products(app)
     # no garbage collector
 
     return event_loop.run_until_complete(
@@ -294,7 +296,7 @@ async def _assert_and_wait_for_pipeline_state(
     expected_state: RunningState,
     expected_api_response: ExpectedResponse,
 ):
-    url_project_state = client.app.router["state_project"].url_for(
+    url_project_state = client.app.router["get_project_state"].url_for(
         project_id=project_id
     )
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
@@ -477,7 +479,7 @@ async def test_run_pipeline_and_check_state(
         check_outputs=False,
     )
 
-    url_project_state = client.app.router["state_project"].url_for(
+    url_project_state = client.app.router["get_project_state"].url_for(
         project_id=project_id
     )
     assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")

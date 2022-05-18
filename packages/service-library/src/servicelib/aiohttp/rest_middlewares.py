@@ -11,10 +11,10 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from openapi_core.schema.exceptions import OpenAPIError
 
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
-    JSON_CONTENT_TYPE,
     _DataType,
     create_data_response,
     create_error_response,
@@ -80,7 +80,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
             if not err.reason:
                 err.set_status(err.status_code, reason="Unexpected error")
 
-            err.content_type = JSON_CONTENT_TYPE
+            err.content_type = MIMETYPE_APPLICATION_JSON
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
@@ -98,7 +98,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
             raise
 
         except web.HTTPSuccessful as ex:
-            ex.content_type = JSON_CONTENT_TYPE
+            ex.content_type = MIMETYPE_APPLICATION_JSON
             if ex.text:
                 try:
                     payload = json.loads(ex.text)

@@ -10,6 +10,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
+from models_library.utils.change_case import snake_to_camel
 from pydantic import validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
@@ -39,7 +40,6 @@ from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
-from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
 

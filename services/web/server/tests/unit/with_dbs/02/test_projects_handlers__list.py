@@ -223,9 +223,9 @@ def standard_user_role() -> Tuple[str, Tuple[UserRole, ExpectedResponse]]:
 @pytest.mark.parametrize(
     "limit, offset, expected_error_msg",
     [
-        (-7, 0, "Invalid parameter value for `limit`"),
-        (0, 0, "Invalid parameter value for `limit`"),
-        (43, -2, "Invalid parameter value for `offset`"),
+        (-7, 0, "ensure this value is greater than or equal to 1"),
+        (0, 0, "ensure this value is greater than or equal to 1"),
+        (43, -2, "ensure this value is greater than or equal to 0"),
     ],
 )
 @pytest.mark.parametrize(*standard_user_role())
@@ -247,7 +247,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
         web.HTTPBadRequest,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
-        expected_error_code="InvalidParameterValue",
+        expected_error_code="value_error.number.not_ge",
     )
 
 

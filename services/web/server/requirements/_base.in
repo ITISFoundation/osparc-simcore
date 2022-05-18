@@ -36,7 +36,6 @@ aiohttp-swagger[performance]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
-change_case
 cryptography # security
 expiringdict
 gunicorn[setproctitle]
