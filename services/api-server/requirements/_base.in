@@ -19,6 +19,7 @@ aiofiles
 aiopg[sa]
 cryptography
 fastapi[all]
+fsspec
 httpx
 orjson
 packaging
