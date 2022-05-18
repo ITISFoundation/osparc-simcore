@@ -75,6 +75,8 @@ execnet==1.9.0
     # via pytest-xdist
 faker==13.7.0
     # via -r requirements/_test.in
+flaky==3.7.0
+    # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
     #   -c requirements/_base.txt

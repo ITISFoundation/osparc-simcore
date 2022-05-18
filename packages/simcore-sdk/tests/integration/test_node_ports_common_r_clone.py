@@ -156,6 +156,7 @@ def _is_file_present(postgres_db: sa.engine.Engine, s3_object: str) -> bool:
 # TESTS
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_sync_local_to_s3(
     r_clone_settings: RCloneSettings,
     s3_object: str,
