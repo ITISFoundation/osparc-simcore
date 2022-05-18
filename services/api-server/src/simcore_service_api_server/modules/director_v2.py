@@ -8,7 +8,7 @@ from fastapi.exceptions import HTTPException
 from httpx import HTTPStatusError, codes
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, Field, PositiveInt
+from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveInt, parse_obj_as
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -38,6 +38,9 @@ class ComputationTaskOut(ComputationTask):
             return 100
         return 0
 
+
+NodeName = str
+DownloadLink = AnyUrl
 
 # API CLASS ---------------------------------------------
 
@@ -158,6 +161,19 @@ class DirectorV2Api(BaseServiceClientApi):
                 "force": True,
             },
         )
+
+    async def get_computation_log(
+        self, user_id: PositiveInt, project_id: UUID
+    ) -> dict[NodeName, DownloadLink]:
+        resp = await self.client.get(
+            f"/v2/computations/{project_id}/tasks/-/logs",
+            params={
+                "user_id": user_id,
+            },
+        )
+        # probably not found
+        resp.raise_for_status()
+        return parse_obj_as(dict[NodeName, DownloadLink], resp.json())
 
     # TODO: HIGHER lever interface with job* resources
     # or better in another place?

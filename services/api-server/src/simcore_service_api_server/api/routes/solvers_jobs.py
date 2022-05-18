@@ -6,8 +6,11 @@ from collections import deque
 from typing import Callable, Deque, Dict, List, Union
 from uuid import UUID
 
+import fsspec
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from models_library.projects_nodes_io import BaseFileLink
+from pydantic import AnyUrl, parse_obj_as
 from pydantic.types import PositiveInt
 
 from ...models.domain.projects import NewProjectIn, Project
@@ -15,7 +18,12 @@ from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
+from ...modules.director_v2 import (
+    ComputationTaskOut,
+    DirectorV2Api,
+    DownloadLink,
+    NodeName,
+)
 from ...modules.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
@@ -271,3 +279,34 @@ async def get_job_outputs(
 
     job_outputs = JobOutputs(job_id=job_id, results=results)
     return job_outputs
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}/logs",
+    description="logs returned as a stream in response body.",
+)
+async def get_job_logs(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: UUID,
+    user_id: PositiveInt = Depends(get_current_user_id),
+    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+):
+    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_log(
+        user_id=user_id, project_id=job_id
+    )
+
+    def iter_file_logs():
+        for name, download_url in logs_urls.items():
+            prefix = (
+                f"{solver_key:path}/releases/{version}/jobs/{job_id}/task/{name}/logs"
+            )
+
+            log_url = parse_obj_as(AnyUrl, f"{download_url}.zip")
+            yield f"{prefix} BEGIN ---"
+            for open_file in fsspec.open_files(f"zip://*::{log_url}", mode="rt"):
+                with open_file as fp:
+                    yield from fp
+            yield f"{prefix} END ---"
+
+    return StreamingResponse(iter_file_logs(), media_type="text/plain")
