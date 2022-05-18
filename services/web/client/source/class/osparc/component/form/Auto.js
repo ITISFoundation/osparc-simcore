@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.form.Auto", {
   },
 
   statics: {
-    hasValidationProp: function(s) {
+    hasValidatableProp: function(s) {
       return Object.keys(s).some(r => ["minimum", "maximum"].includes(r));
     }
   },
@@ -584,9 +584,15 @@ qx.Class.define("osparc.component.form.Auto", {
         control.unit = unit;
       }
 
-      if (this.self().hasValidationProp(s)) {
-        const manager = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
-        control.addListener("changeValue", () => manager.validate());
+      let validator = null;
+      if (this.self().hasValidatableProp(s)) {
+        validator = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
+      }
+      if ("getValidator" in control) {
+        validator = control.getValidator();
+      }
+      if (validator) {
+        control.addListener("changeValue", () => validator.validate());
       }
 
       return control;
