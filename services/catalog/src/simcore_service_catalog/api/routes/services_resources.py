@@ -4,7 +4,7 @@ from typing import Any, Final, List, Optional, cast
 
 import yaml
 from aiocache import cached
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
@@ -167,19 +167,30 @@ async def get_service_resources(
 
         return service_resources
 
-    async def _get_service_labels(key: str, version: str) -> dict[str, Any]:
-        service_labels = cast(
-            dict[str, Any],
-            await director_client.get(
-                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
-            ),
-        )
-        logger.debug(
-            "received for %s %s",
-            f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
-            f"{service_labels=}",
-        )
-        return service_labels
+    async def _get_service_labels(
+        key: DockerImageKey, version: DockerImageVersion
+    ) -> Optional[dict[str, Any]]:
+        try:
+            service_labels = cast(
+                dict[str, Any],
+                await director_client.get(
+                    f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
+                ),
+            )
+            logger.debug(
+                "received for %s %s",
+                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
+                f"{service_labels=}",
+            )
+            return service_labels
+        except HTTPException as err:
+            # NOTE: some services will fail validation, eg:
+            # `busybox:latest` or `traefik:latest` because
+            # the director-v0 cannot extract labels from them
+            # and will fail validating the key or the version
+            if err.status_code == status.HTTP_400_BAD_REQUEST:
+                return None
+            raise err
 
     def _get_service_settings(
         labels: dict[str, Any]
@@ -191,7 +202,7 @@ async def get_service_resources(
         logger.debug("received %s", f"{service_settings=}")
         return service_settings
 
-    service_labels: dict[str, Any] = await _get_service_labels(
+    service_labels: Optional[dict[str, Any]] = await _get_service_labels(
         service_key, service_version
     )
 
