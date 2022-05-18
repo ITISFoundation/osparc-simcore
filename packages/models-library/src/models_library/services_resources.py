@@ -1,7 +1,6 @@
 import logging
-from typing import Final, Union
+from typing import Any, Final, Union
 
-from models_library.generics import DictModel
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -9,17 +8,19 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     constr,
-    root_validator,
     parse_obj_as,
+    root_validator,
 )
+
+from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
 
-
+ComposeImage = constr(regex=r"[\w/-]+:[\w.@]+")
+DockerComposeServiceName = constr(regex=r"^[a-zA-Z0-9._-]+$")
 ResourceName = str
 
-ComposeImage = constr(regex=r"[\w/-]+:[\w.@]+")
-
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = "container"
 
 _MB: Final[int] = 1024 * 1024
 MEMORY_50MB: Final[int] = 50 * _MB
@@ -47,7 +48,7 @@ class ResourceValue(BaseModel):
         return values
 
 
-ResourcesDict = DictModel[ResourceName, ResourceValue]
+ResourcesDict = dict[ResourceName, ResourceValue]
 
 
 class ImageResources(BaseModel):
@@ -80,21 +81,35 @@ class ImageResources(BaseModel):
         }
 
 
-class ServiceResources(DictModel[str, ImageResources]):
-    @classmethod
-    def from_resources(cls, resource: ResourcesDict, image: str) -> "ServiceResources":
-        service_resources = cls.parse_obj(
-            {"container": {"image": image, "resources": resource}}
+ServiceResourcesDict = dict[DockerComposeServiceName, ImageResources]
+
+
+class ServiceResourcesDictHelpers:
+    @staticmethod
+    def create_from_single_service(
+        image: DockerComposeServiceName, resources: ResourcesDict
+    ) -> ServiceResourcesDict:
+        return parse_obj_as(
+            ServiceResourcesDict,
+            {
+                DEFAULT_SINGLE_SERVICE_NAME: ImageResources.parse_obj(
+                    {"image": image, "resources": resources}
+                )
+            },
         )
-        logger.debug("%s", f"{service_resources}")
-        return service_resources
+
+    @staticmethod
+    def create_jsonable(
+        service_resources: ServiceResourcesDict,
+    ) -> dict[DockerComposeServiceName, Any]:
+        return jsonable_encoder(service_resources)
 
     class Config:
         schema_extra = {
             "examples": [
                 # no compose spec (majority of services)
                 {
-                    "container": {
+                    DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},

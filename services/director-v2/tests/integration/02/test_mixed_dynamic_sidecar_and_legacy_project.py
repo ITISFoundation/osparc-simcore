@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from models_library.projects import ProjectAtDB
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import ServiceResourcesDict
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -231,7 +231,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
     mock_dynamic_sidecar_client: None,
-    service_resources: ServiceResources,
+    service_resources: ServiceResourcesDict,
 ):
     """
     The test will start 3 dynamic services in the same project and check

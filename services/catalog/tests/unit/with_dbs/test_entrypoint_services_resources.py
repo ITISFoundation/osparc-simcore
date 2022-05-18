@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
+import json
 import urllib.parse
+from copy import deepcopy
 from random import choice, randint
 from typing import Any, Callable
 
@@ -15,7 +16,8 @@ from fastapi import FastAPI
 from models_library.services_resources import (
     ResourcesDict,
     ResourceValue,
-    ServiceResources,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
 )
 from pydantic import ByteSize, parse_obj_as
 from respx.models import Route
@@ -69,6 +71,12 @@ def mock_service_labels(faker: Faker) -> dict[str, Any]:
     }
 
 
+def _update_copy(dict_data: dict, update: dict) -> dict:
+    dict_data_copy = deepcopy(dict_data)
+    dict_data_copy.update(update)
+    return dict_data_copy
+
+
 @pytest.mark.parametrize(
     "director_labels, expected_resources",
     [
@@ -81,19 +89,18 @@ def mock_service_labels(faker: Faker) -> dict[str, Any]:
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
             },
-            _DEFAULT_RESOURCES.copy(
-                update={
-                    "__root__": {
-                        "CPU": ResourceValue(
-                            limit=4.0,
-                            reservation=_DEFAULT_RESOURCES["CPU"].reservation,
-                        ),
-                        "RAM": ResourceValue(
-                            limit=ByteSize(17179869184),
-                            reservation=_DEFAULT_RESOURCES["RAM"].reservation,
-                        ),
-                    },
-                }
+            _update_copy(
+                _DEFAULT_RESOURCES,
+                {
+                    "CPU": ResourceValue(
+                        limit=4.0,
+                        reservation=_DEFAULT_RESOURCES["CPU"].reservation,
+                    ),
+                    "RAM": ResourceValue(
+                        limit=ByteSize(17179869184),
+                        reservation=_DEFAULT_RESOURCES["RAM"].reservation,
+                    ),
+                },
             ),
             id="only_limits_defined_returns_default_reservations",
         ),
@@ -101,17 +108,16 @@ def mock_service_labels(faker: Faker) -> dict[str, Any]:
             {
                 "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "AIRAM", "Value": "some_string" } } ] } } } ]'
             },
-            _DEFAULT_RESOURCES.copy(
-                update={
-                    "__root__": {
-                        "CPU": ResourceValue(limit=4.0, reservation=0.1),
-                        "RAM": ResourceValue(
-                            limit=ByteSize(17179869184), reservation=ByteSize(536870912)
-                        ),
-                        "VRAM": ResourceValue(limit=0, reservation=1),
-                        "AIRAM": ResourceValue(limit=0, reservation="some_string"),
-                    }
-                }
+            _update_copy(
+                _DEFAULT_RESOURCES,
+                {
+                    "CPU": ResourceValue(limit=4.0, reservation=0.1),
+                    "RAM": ResourceValue(
+                        limit=ByteSize(17179869184), reservation=ByteSize(536870912)
+                    ),
+                    "VRAM": ResourceValue(limit=0, reservation=1),
+                    "AIRAM": ResourceValue(limit=0, reservation="some_string"),
+                },
             ),
             id="everything_rightly_defined",
         ),
@@ -119,19 +125,18 @@ def mock_service_labels(faker: Faker) -> dict[str, Any]:
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [  ] } } } ]'
             },
-            _DEFAULT_RESOURCES.copy(
-                update={
-                    "__root__": {
-                        "CPU": ResourceValue(
-                            limit=_DEFAULT_RESOURCES["CPU"].limit,
-                            reservation=0.1,
-                        ),
-                        "RAM": ResourceValue(
-                            limit=_DEFAULT_RESOURCES["RAM"].limit,
-                            reservation=ByteSize(536870912),
-                        ),
-                    }
-                }
+            _update_copy(
+                _DEFAULT_RESOURCES,
+                {
+                    "CPU": ResourceValue(
+                        limit=_DEFAULT_RESOURCES["CPU"].limit,
+                        reservation=0.1,
+                    ),
+                    "RAM": ResourceValue(
+                        limit=_DEFAULT_RESOURCES["RAM"].limit,
+                        reservation=ByteSize(536870912),
+                    ),
+                },
             ),
             id="no_limits_defined_returns_default_limits",
         ),
@@ -139,20 +144,19 @@ def mock_service_labels(faker: Faker) -> dict[str, Any]:
             {
                 "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
             },
-            _DEFAULT_RESOURCES.copy(
-                update={
-                    "__root__": {
-                        "CPU": ResourceValue(
-                            limit=10.0,
-                            reservation=10.0,
-                        ),
-                        "RAM": ResourceValue(
-                            limit=ByteSize(53687091232),
-                            reservation=ByteSize(53687091232),
-                        ),
-                        "VRAM": ResourceValue(limit=0, reservation=1),
-                    }
-                }
+            _update_copy(
+                _DEFAULT_RESOURCES,
+                {
+                    "CPU": ResourceValue(
+                        limit=10.0,
+                        reservation=10.0,
+                    ),
+                    "RAM": ResourceValue(
+                        limit=ByteSize(53687091232),
+                        reservation=ByteSize(53687091232),
+                    ),
+                    "VRAM": ResourceValue(limit=0, reservation=1),
+                },
             ),
             id="no_limits_with_reservations_above_default_returns_same_as_reservation",
         ),
@@ -172,14 +176,18 @@ async def test_get_service_resources(
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_resources = ServiceResources.parse_obj(data)
+    received_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, data)
+    assert type(received_resources) == dict
 
-    expected_service_resources = ServiceResources.from_resources(
-        expected_resources, f"{service_key}:{service_version}"
+    expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+        f"{service_key}:{service_version}",
+        expected_resources,
     )
+    assert type(expected_service_resources) == dict
+
     assert received_resources == expected_service_resources, "%s\n%s" % (
-        received_resources.json(indent=2),
-        expected_service_resources.dict(indent=2),
+        json.dumps(received_resources, indent=2),
+        json.dumps(expected_service_resources, indent=2),
     )
 
 
@@ -215,8 +223,9 @@ def create_mock_director_service_labels(
                 },
                 "sym-server": {"simcore.service.settings": "[]"},
             },
-            ServiceResources.parse_obj(
-                ServiceResources.Config.schema_extra["examples"][1]
+            parse_obj_as(
+                ServiceResourcesDict,
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1],
             ),
             "simcore/services/dynamic/sim4life-dy",
             "3.0.0",
@@ -230,7 +239,8 @@ def create_mock_director_service_labels(
                 },
                 "busybox": {"simcore.service.settings": "[]"},
             },
-            ServiceResources.parse_obj(
+            parse_obj_as(
+                ServiceResourcesDict,
                 {
                     "jupyter-math": {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -252,7 +262,7 @@ def create_mock_director_service_labels(
                             },
                         },
                     },
-                }
+                },
             ),
             "simcore/services/dynamic/jupyter-math",
             "2.0.5",
@@ -265,7 +275,7 @@ async def test_get_service_resources_sim4life_case(
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
-    expected_service_resources: ServiceResources,
+    expected_service_resources: ServiceResourcesDict,
     service_key: str,
     service_version: str,
 ) -> None:
@@ -275,9 +285,9 @@ async def test_get_service_resources_sim4life_case(
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_service_resources = ServiceResources.parse_obj(data)
+    received_service_resources = parse_obj_as(ServiceResourcesDict, data)
 
-    assert received_service_resources.dict() == expected_service_resources.dict()
+    assert received_service_resources == expected_service_resources
 
 
 async def test_get_service_resources_raises_errors(

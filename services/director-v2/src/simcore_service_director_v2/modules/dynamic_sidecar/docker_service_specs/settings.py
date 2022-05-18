@@ -11,7 +11,12 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.services_resources import CPU_100_PERCENT, GIGA, ServiceResources
+from models_library.services_resources import (
+    CPU_100_PERCENT,
+    DEFAULT_SINGLE_SERVICE_NAME,
+    GIGA,
+    ServiceResourcesDict,
+)
 from servicelib.docker_compose import (
     MATCH_IMAGE_END,
     MATCH_IMAGE_START,
@@ -19,7 +24,6 @@ from servicelib.docker_compose import (
 )
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
@@ -175,7 +179,7 @@ async def _extract_osparc_involved_service_labels(
         _default_key: service_labels
     }
     # maps form image_name to compose_spec key
-    reverse_mapping: Dict[str, str] = {_default_key: CONTAINER_NAME}
+    reverse_mapping: Dict[str, str] = {_default_key: DEFAULT_SINGLE_SERVICE_NAME}
 
     def remap_to_compose_spec_key() -> Dict[str, str]:
         # remaps from image_name as key to compose_spec key
@@ -250,7 +254,7 @@ def _add_compose_destination_container_to_settings_entries(
 
 def _merge_resources_in_settings(
     settings: Deque[SimcoreServiceSettingLabelEntry],
-    service_resources: ServiceResources,
+    service_resources: ServiceResourcesDict,
 ) -> Deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -420,7 +424,7 @@ async def merge_settings_before_use(
     service_key: str,
     service_tag: str,
     service_user_selection_boot_options: Dict[EnvVarKey, str],
-    service_resources: ServiceResources,
+    service_resources: ServiceResourcesDict,
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         director_v0_client=director_v0_client,

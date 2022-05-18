@@ -6,7 +6,12 @@ from typing import Any, Dict
 
 import pytest
 import yaml
-from models_library.services_resources import ResourcesDict, ServiceResources
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ResourcesDict,
+    ServiceResourcesDict,
+)
+from pydantic import parse_obj_as
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
 # TESTS
@@ -59,32 +64,34 @@ environment:
     "service_spec, service_resources",
     [
         pytest.param(
-            {"version": "2.3", "services": {"container": {}}},
-            ServiceResources.parse_obj(
+            {"version": "2.3", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
+            parse_obj_as(
+                ServiceResourcesDict,
                 {
-                    "container": {
+                    DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": {
                             "CPU": {"limit": 1.1, "reservation": 4.0},
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                         },
                     },
-                }
+                },
             ),
             id="compose_spec_2.3",
         ),
         pytest.param(
-            {"version": "3.7", "services": {"container": {}}},
-            ServiceResources.parse_obj(
+            {"version": "3.7", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
+            parse_obj_as(
+                ServiceResourcesDict,
                 {
-                    "container": {
+                    DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": {
                             "CPU": {"limit": 1.1, "reservation": 4.0},
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                         },
                     },
-                }
+                },
             ),
             id="compose_spec_3.7",
         ),
@@ -92,7 +99,7 @@ environment:
 )
 async def test_inject_resource_limits_and_reservations(
     service_spec: Dict[str, Any],
-    service_resources: ServiceResources,
+    service_resources: ServiceResourcesDict,
 ) -> None:
     docker_compose_specs._update_resource_limits_and_reservations(
         service_spec=service_spec, service_resources=service_resources
@@ -100,7 +107,7 @@ async def test_inject_resource_limits_and_reservations(
 
     compose_spec_version_major = int(service_spec["version"].split(".")[0])
 
-    resources: ResourcesDict = service_resources["container"].resources
+    resources: ResourcesDict = service_resources[DEFAULT_SINGLE_SERVICE_NAME].resources
     cpu = resources["CPU"]
     memory = resources["RAM"]
 

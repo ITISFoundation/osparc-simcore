@@ -24,7 +24,10 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
@@ -386,7 +389,7 @@ async def test_open_project(
     client_session_id_factory: Callable,
     expected,
     mocked_director_v2_api,
-    mock_service_resources: ServiceResources,
+    mock_service_resources: ServiceResourcesDict,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -413,7 +416,9 @@ async def test_open_project(
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
                     request_dns=request_dns,
-                    service_resources=mock_service_resources,
+                    service_resources=ServiceResourcesDictHelpers.create_jsonable(
+                        mock_service_resources
+                    ),
                 )
             )
         mocked_director_v2_api["director_v2_api.start_service"].assert_has_calls(calls)

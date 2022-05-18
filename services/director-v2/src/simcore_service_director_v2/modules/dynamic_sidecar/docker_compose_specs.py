@@ -6,14 +6,13 @@ from typing import Dict, List, Optional, Union
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
 from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
     ResourceValue,
-    ServiceResources,
+    ServiceResourcesDict,
 )
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from settings_library.docker_registry import RegistrySettings
-
-from ._constants import CONTAINER_NAME
 
 EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
@@ -104,7 +103,7 @@ def _update_paths_mappings(
 
 
 def _update_resource_limits_and_reservations(
-    service_resources: ServiceResources, service_spec: ComposeSpecLabel
+    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabel
 ) -> None:
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
@@ -150,7 +149,7 @@ def assemble_spec(
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
-    service_resources: ServiceResources,
+    service_resources: ServiceResourcesDict,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -170,12 +169,12 @@ def assemble_spec(
         service_spec: ComposeSpecLabel = {
             "version": docker_compose_version,
             "services": {
-                CONTAINER_NAME: {
+                DEFAULT_SINGLE_SERVICE_NAME: {
                     "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
                 }
             },
         }
-        container_name = CONTAINER_NAME
+        container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
         service_spec = compose_spec
         container_name = container_http_entry

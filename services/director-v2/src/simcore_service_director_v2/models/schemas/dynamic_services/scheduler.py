@@ -11,7 +11,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import ServiceResourcesDict
 from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
 
 from ..constants import (
@@ -321,7 +321,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     )
 
-    service_resources: ServiceResources = Field(
+    service_resources: ServiceResourcesDict = Field(
         ..., description="service resources used to enforce limits"
     )
 

@@ -12,9 +12,12 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic import PositiveInt, parse_obj_as
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -164,12 +167,12 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
 
 async def _get_service_resources(
     catalog_url: URL, service_key: str, service_version: str
-) -> ServiceResources:
+) -> ServiceResourcesDict:
     encoded_key = urllib.parse.quote_plus(service_key)
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{url}")
-        return ServiceResources.parse_obj(response.json())
+        return parse_obj_as(ServiceResourcesDict, response.json())
 
 
 async def assert_start_service(
@@ -183,7 +186,7 @@ async def assert_start_service(
     catalog_url: URL,
 ) -> None:
 
-    service_resources: ServiceResources = await _get_service_resources(
+    service_resources: ServiceResourcesDict = await _get_service_resources(
         catalog_url=catalog_url,
         service_key=service_key,
         service_version=service_version,
@@ -195,7 +198,9 @@ async def assert_start_service(
         service_version=service_version,
         service_uuid=service_uuid,
         basepath=basepath,
-        service_resources=service_resources.dict(),
+        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+            service_resources
+        ),
     )
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,

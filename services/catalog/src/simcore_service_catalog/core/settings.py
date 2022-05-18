@@ -27,14 +27,15 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_RESOURCES: Final[ResourcesDict] = ResourcesDict.parse_obj(
+_DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
+    ResourcesDict,
     {
         "CPU": {"limit": 0.1, "reservation": 0.1},
         "RAM": {
             "limit": parse_obj_as(ByteSize, "2Gib"),
             "reservation": parse_obj_as(ByteSize, "2Gib"),
         },
-    }
+    },
 )
 
 _DEFAULT_SERVICE_SPECIFICATIONS: Final[

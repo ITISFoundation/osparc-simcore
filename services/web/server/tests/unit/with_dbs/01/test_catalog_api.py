@@ -6,9 +6,13 @@ import re
 from typing import Type
 
 import pytest
+from pydantic import parse_obj_as
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
@@ -22,12 +26,18 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
 
     url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
-    data = ServiceResources.Config.schema_extra["examples"][0]
+    service_resources = parse_obj_as(
+        ServiceResourcesDict,
+        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    )
+    jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(
+        service_resources
+    )
 
-    aioresponses_mocker.get(url_pattern, payload=data)
-    aioresponses_mocker.post(url_pattern, payload=data)
-    aioresponses_mocker.put(url_pattern, payload=data)
-    aioresponses_mocker.patch(url_pattern, payload=data)
+    aioresponses_mocker.get(url_pattern, payload=jsonable_service_resources)
+    aioresponses_mocker.post(url_pattern, payload=jsonable_service_resources)
+    aioresponses_mocker.put(url_pattern, payload=jsonable_service_resources)
+    aioresponses_mocker.patch(url_pattern, payload=jsonable_service_resources)
     aioresponses_mocker.delete(url_pattern)
 
 

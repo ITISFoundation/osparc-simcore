@@ -7,7 +7,10 @@ import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pint import UnitRegistry
 from pydantic import ValidationError
 
@@ -297,12 +300,16 @@ async def get_service_resources_handler(request: Request):
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
 
-    service_resources: ServiceResources = await catalog_client.get_service_resources(
-        request.app, service_key=service_key, service_version=service_version
+    service_resources: ServiceResourcesDict = (
+        await catalog_client.get_service_resources(
+            request.app, service_key=service_key, service_version=service_version
+        )
     )
 
     # format response
-    enveloped: str = json_dumps({"data": service_resources.dict()})
+    enveloped: str = json_dumps(
+        {"data": ServiceResourcesDictHelpers.create_jsonable(service_resources)}
+    )
     return web.Response(text=enveloped, content_type="application/json")
 
 

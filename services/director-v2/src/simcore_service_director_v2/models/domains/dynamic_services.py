@@ -1,7 +1,10 @@
 from typing import List
 
 from models_library.services import PropertyName
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pydantic import BaseModel, ByteSize, Field
 
 from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDetails
@@ -33,7 +36,7 @@ class RetrieveDataOutEnveloped(BaseModel):
 
 
 class DynamicServiceCreate(ServiceDetails):
-    service_resources: ServiceResources
+    service_resources: ServiceResourcesDict
 
     class Config:
         schema_extra = {
@@ -44,9 +47,9 @@ class DynamicServiceCreate(ServiceDetails):
                 "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "service_resources": ServiceResources.Config.schema_extra["examples"][
-                    0
-                ],
+                "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+                    "examples"
+                ][0],
             }
         }
 

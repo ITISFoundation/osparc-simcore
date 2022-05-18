@@ -7,12 +7,13 @@ import urllib.parse
 from typing import Any, Dict, List, Mapping, Optional
 
 from aiohttp import ClientSession, ClientTimeout, web
+from pydantic import parse_obj_as
 from aiohttp.client_exceptions import (
     ClientConnectionError,
     ClientResponseError,
     InvalidURL,
 )
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import ServiceResourcesDict
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps
@@ -161,7 +162,7 @@ async def get_service_resources(
     app: web.Application,
     service_key: str,
     service_version: str,
-) -> ServiceResources:
+) -> ServiceResourcesDict:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
     url = (
@@ -173,7 +174,7 @@ async def get_service_resources(
         async with session.get(url) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
             dict_response = await resp.json()
-            return ServiceResources.parse_obj(dict_response)
+            return parse_obj_as(ServiceResourcesDict, dict_response)
 
     except asyncio.TimeoutError as err:
         logger.warning("Catalog service connection timeout error")
