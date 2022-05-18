@@ -253,9 +253,6 @@ qx.Class.define("osparc.component.form.Auto", {
           }
         }
       );
-      if (!s.set) {
-        s.set = {};
-      }
       s.set.dateFormat = new qx.util.format.DateFormat(
         this["tr"](
           s.set.dateFormat ?
@@ -293,9 +290,6 @@ qx.Class.define("osparc.component.form.Auto", {
       );
     },
     __setupNumberField: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
       if (s.defaultValue) {
         s.set.value = qx.lang.Type.isNumber(s.defaultValue) ? String(s.defaultValue) : s.defaultValue;
       } else {
@@ -333,9 +327,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__formCtrl.addBindingOptions(key, model2target, target2model);
     },
     __setupSpinner: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
       s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
       s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
       s.set.value = s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
@@ -371,7 +362,7 @@ qx.Class.define("osparc.component.form.Auto", {
         const entries = [];
         s.enum.forEach(entry => {
           entries.push({
-            label: entry,
+            label: entry.toString(),
             key: entry
           });
         });
@@ -389,11 +380,11 @@ qx.Class.define("osparc.component.form.Auto", {
           key: null
         }];
       }
-      if (s.defaultValue) {
+      if ("defaultValue" in s) {
         s.set.value = [s.defaultValue];
       }
       // Content Schema
-      if (s.default) {
+      if ("default" in s) {
         s.set.value = [s.default];
       }
       let sbModel = qx.data.marshal.Json.createModel(items);
@@ -414,9 +405,6 @@ qx.Class.define("osparc.component.form.Auto", {
       ctrl.setModel(sbModel);
     },
     __setupBoolField: function(s, key, control) {
-      if (!s.set) {
-        s.set = {};
-      }
       if (s.set.value && typeof s.set.value === "string") {
         s.set.value = Boolean(s.set.value.toLowerCase() === "true");
       }
@@ -464,17 +452,14 @@ qx.Class.define("osparc.component.form.Auto", {
         Object.assign(s, s.contentSchema);
       }
 
-      if (s.defaultValue) {
-        if (!s.set) {
-          s.set = {};
-        }
+      if (!s.set) {
+        s.set = {};
+      }
+      if ("defaultValue" in s) {
         s.set.value = s.defaultValue;
       }
       // Content Schema
-      if (s.default) {
-        if (!s.set) {
-          s.set = {};
-        }
+      if ("default" in s) {
         s.set.value = s.default;
       }
 
