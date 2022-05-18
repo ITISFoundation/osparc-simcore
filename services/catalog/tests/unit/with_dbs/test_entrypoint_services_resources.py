@@ -239,10 +239,6 @@ async def test_get_service_resources_sim4life_case(
     data = response.json()
     received_service_resources = ServiceResources.parse_obj(data)
 
-    # assemble expected!
-
-    assert received_service_resources.dict() == expected_service_resources.dict()
-    assert received_service_resources.json() == expected_service_resources.json()
     assert received_service_resources == expected_service_resources
 
 
