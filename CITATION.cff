@@ -15,6 +15,7 @@ abstract: >-
   Enables users to create predictive, multiscale, multi-physics
   models spanning from modulation sources acting on peripheral nervous system (PNS) to
   resulting modulation of organ functional response.
+  This project is funded by NIH SPARC Award #OT3OD025348.
 contact:
   - affiliation: "IT'IS Foundation"
     email: "support@osparc.io"
@@ -52,6 +53,7 @@ authors:
     family-names: Oetiker
     affiliation: "OETIKER+PARTNER AG"
 license: "MIT"
+url: "https://docs.osparc.io"
 repository-code: "https://github.com/ITISFoundation/osparc-simcore"
 identifiers:
   - type: url
