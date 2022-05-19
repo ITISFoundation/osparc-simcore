@@ -143,11 +143,6 @@ def compose_error_msg(msg: str) -> str:
 #
 
 
-def snake_to_camel(subject: str) -> str:
-    parts = subject.lower().split("_")
-    return parts[0] + "".join(x.title() for x in parts[1:])
-
-
 # -----------------------------------------------
 #
 # SERIALIZATION, CHECKSUMS,

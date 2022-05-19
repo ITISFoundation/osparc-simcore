@@ -275,17 +275,19 @@ def _merge_resources_in_settings(
 
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
-        SimcoreServiceSettingLabelEntry(
-            name="Resources",
-            setting_type="Resources",
-            value={
-                "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
-                "Reservations": {
-                    "NanoCPUs": 0,
-                    "MemoryBytes": 0,
-                    "GenericResources": [],
+        SimcoreServiceSettingLabelEntry.parse_obj(
+            dict(
+                name="Resources",
+                type="Resources",
+                value={
+                    "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                    "Reservations": {
+                        "NanoCPUs": 0,
+                        "MemoryBytes": 0,
+                        "GenericResources": [],
+                    },
                 },
-            },
+            )
         )
     )
 

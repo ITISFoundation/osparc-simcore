@@ -8,12 +8,12 @@ from models_library.services import (
     ServiceInput,
     ServiceOutput,
 )
+from models_library.utils.change_case import snake_to_camel
 from pint import UnitRegistry
 from pydantic import Extra, Field, constr
 from pydantic.main import BaseModel
 
 from .catalog_units import UnitHtmlFormat, get_html_formatted_unit
-from .utils import snake_to_camel
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)

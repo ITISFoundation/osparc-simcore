@@ -71,8 +71,6 @@ attrs==20.3.0
     #   openapi-core
 cffi==1.15.0
     # via cryptography
-change-case==0.5.2
-    # via -r requirements/_base.in
 charset-normalizer==2.0.12
     # via aiohttp
 click==8.1.3

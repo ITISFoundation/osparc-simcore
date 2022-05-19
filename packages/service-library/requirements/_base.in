@@ -5,8 +5,8 @@
 --constraint ./constraints.txt
 
 aiodebug
+aiofiles
 pydantic
 pyinstrument
 pyyaml
 tenacity
-aiofiles
