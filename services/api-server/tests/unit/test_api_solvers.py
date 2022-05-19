@@ -5,13 +5,22 @@
 from typing import Iterator
 
 import _catalog_fakes
+
+import urllib
+import urllib.parse
+
 import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
+from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
+from requests.auth import HTTPBasicAuth
+from respx.router import MockRouter
+from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 
@@ -97,3 +106,42 @@ async def test_list_solvers(
         assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
 
         # assert Solver(**resp2.json()) == Solver(**resp3.json())
+
+
+# -----------------------------------------------------
+@pytest.fixture
+def mocked_directorv2_service_api(app: FastAPI, faker: Faker):
+    assert app.state
+    with respx.mock(
+        base_url=app.state.settings.API_SERVER_DIRECTOR_V2.base_url,
+        assert_all_called=False,
+        assert_all_mocked=False,
+    ) as respx_mock:
+        respx_mock.get(
+            "/v2/computations/{project_id}/tasks/-/logs",
+            name="director_v2.get_computation_logs",
+        ).respond(
+            status.HTTP_200_OK,
+            json={"iSolve": faker.url()},
+        )
+
+        yield respx_mock
+
+
+def test_solver_logs(
+    sync_client: TestClient, faker: Faker, mocked_directorv2_service_api: MockRouter
+):
+    resp = sync_client.get("/v0/meta")
+    assert resp.status_code == 200
+
+    solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
+    version = "1.2.3"
+    job_id = faker.uuid4()
+
+    resp = sync_client.get(
+        f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
+        auth=HTTPBasicAuth("user", "pass"),
+    )
+
+    assert mocked_directorv2_service_api["director_v2.get_computation_logs"].called
+    assert resp.status_code == 200
