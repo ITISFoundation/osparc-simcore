@@ -182,8 +182,8 @@ def log_zip_path(faker: Faker, tmp_path: Path, project_id: str, node_id: str) ->
 @pytest.fixture
 def presigned_download_link(
     log_zip_path: Path,
-    project_id,
-    node_id,
+    project_id: str,
+    node_id: str,
     bucket_name: str,
     mocked_s3_server_url: HttpUrl,
 ) -> Iterator[AnyUrl]:
@@ -254,17 +254,20 @@ def test_download_presigned_link(
     # }
     assert r.status_code == status.HTTP_200_OK
 
-    downloaded_path = tmp_path / "downloaded.zip"
+    expected_fname = f"{project_id}-{node_id}.log"
+
+    downloaded_path = tmp_path / "test_download_presigned_link.zip"
     downloaded_path.write_bytes(r.content)
 
     extract_dir = tmp_path / "extracted"
     extract_dir.mkdir()
 
     with ZipFile(f"{downloaded_path}") as fzip:
-        assert f"{project_id}-{node_id}.log" in fzip.namelist()
+        assert any(Path(f).name == expected_fname for f in fzip.namelist())
         fzip.extractall(f"{extract_dir}")
 
-    print(list(extract_dir.glob("*.log")))
+    f = next(extract_dir.glob(f"*{expected_fname}"))
+    assert f"This is a log from {project_id}/{node_id}" in f.read_text()
 
 
 def test_solver_logs(
