@@ -45,8 +45,6 @@ KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_R
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
-DOCKER_IMAGE_KEY_RE = r"[\w/-]+"
-DOCKER_IMAGE_VERSION_RE = r"[\w/.]+"
 
 
 FILENAME_RE = r".+"
@@ -60,9 +58,6 @@ FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
-
-DockerImageKey = constr(regex=DOCKER_IMAGE_KEY_RE)
-DockerImageVersion = constr(regex=DOCKER_IMAGE_VERSION_RE)
 
 
 class ServiceType(str, Enum):

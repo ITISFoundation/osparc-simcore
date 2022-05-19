@@ -16,16 +16,15 @@ from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
 
-ComposeImage = constr(regex=r"[\w/-]+:[\w.@]+")
+DockerImage = constr(regex=r"[\w/-]+:[\w.@]+")
 DockerComposeServiceName = constr(regex=r"^[a-zA-Z0-9._-]+$")
 ResourceName = str
 
 DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = "container"
 
-_MB: Final[int] = 1024 * 1024
-MEMORY_50MB: Final[int] = 50 * _MB
-MEMORY_250MB: Final[int] = 50 * _MB
-MEMORY_1GB: Final[int] = 1024 * _MB
+MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
+MEMORY_250MB: Final[int] = parse_obj_as(ByteSize, "250mib")
+MEMORY_1GB: Final[int] = parse_obj_as(ByteSize, "1gib")
 
 GIGA: Final[float] = 1e9
 CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
@@ -52,7 +51,7 @@ ResourcesDict = dict[ResourceName, ResourceValue]
 
 
 class ImageResources(BaseModel):
-    image: ComposeImage = Field(
+    image: DockerImage = Field(
         ...,
         description=(
             "Used by the frontend to provide a context for the users."
