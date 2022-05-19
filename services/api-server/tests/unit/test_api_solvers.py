@@ -8,7 +8,13 @@ import _catalog_fakes
 
 import urllib
 import urllib.parse
+from pathlib import Path
+from pprint import pprint
+from typing import Iterator
+from zipfile import ZipFile
 
+import boto3
+import httpx
 import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
@@ -17,12 +23,46 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
+from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from requests.auth import HTTPBasicAuth
 from respx.router import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
+
+
+@pytest.fixture
+def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
+    # mock engine if db was not init
+    if app.state.settings.API_SERVER_POSTGRES is None:
+
+        engine = mocker.Mock()
+        engine.minsize = 1
+        engine.size = 10
+        engine.freesize = 3
+        engine.maxsize = 10
+        app.state.engine = engine
+
+    # patch authentication entry in repo
+    faker_user_id = faker.pyint()
+
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        return_value=faker_user_id,
+    )
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_user_id",
+        return_value=faker_user_id,
+    )
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
+        return_value=faker.email(),
+    )
+    return HTTPBasicAuth(faker.word(), faker.password())
+
+
+# test_list_solvers -----------------------------------------------------
 
 
 @pytest.fixture
@@ -108,40 +148,154 @@ async def test_list_solvers(
         # assert Solver(**resp2.json()) == Solver(**resp3.json())
 
 
-# -----------------------------------------------------
+# test_solver_logs -----------------------------------------------------
+
+
 @pytest.fixture
-def mocked_directorv2_service_api(app: FastAPI, faker: Faker):
-    assert app.state
+def bucket_name():
+    return "test-bucket"
+
+
+@pytest.fixture
+def project_id(faker: Faker):
+    return faker.uuid4()
+
+
+@pytest.fixture
+def node_id(faker: Faker):
+    return faker.uuid4()
+
+
+@pytest.fixture
+def log_zip_path(faker: Faker, tmp_path: Path, project_id: str, node_id: str) -> Path:
+    # a log file
+    log_path = tmp_path / f"{project_id}-{node_id}.log"
+    log_path.write_text(f"This is a log from {project_id}/{node_id}. {faker.text()}")
+
+    # zipped
+    zip_path = tmp_path / "log.zip"
+    with ZipFile(zip_path, "w") as zf:
+        zf.write(log_path)
+    return zip_path
+
+
+@pytest.fixture
+def presigned_download_link(
+    log_zip_path: Path,
+    project_id,
+    node_id,
+    bucket_name: str,
+    mocked_s3_server_url: HttpUrl,
+) -> Iterator[AnyUrl]:
+
+    s3_client = boto3.client("s3", endpoint_url=mocked_s3_server_url)
+    s3_client.create_bucket(Bucket=bucket_name)
+
+    # uploads file
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-uploading-files.html
+    object_name = f"{project_id}/{node_id}/{log_zip_path.name}"
+    s3_client.upload_file(f"{log_zip_path}", bucket_name, object_name)
+
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_url
+    presigned_url = s3_client.generate_presigned_url(
+        ClientMethod=s3_client.get_object.__name__,
+        Params={"Bucket": bucket_name, "Key": object_name},
+        ExpiresIn=3600,  # secs
+    )
+
+    # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
+    yield parse_obj_as(AnyUrl, presigned_url)
+
+
+@pytest.fixture
+def mocked_directorv2_service_api(
+    app: FastAPI, faker: Faker, presigned_download_link: AnyUrl
+):
+    settings: AppSettings = app.state.settings
+    assert settings.API_SERVER_DIRECTOR_V2
+
+    # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=app.state.settings.API_SERVER_DIRECTOR_V2.base_url,
+        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
         assert_all_mocked=False,
     ) as respx_mock:
+
         respx_mock.get(
-            "/v2/computations/{project_id}/tasks/-/logs",
-            name="director_v2.get_computation_logs",
+            path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logs",
+            name="get_computation_logs",
         ).respond(
             status.HTTP_200_OK,
-            json={"iSolve": faker.url()},
+            json={"iSolve": presigned_download_link},
         )
 
         yield respx_mock
 
 
+def test_download_presigned_link(
+    presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
+):
+    r = httpx.get(presigned_download_link)
+    pprint(dict(r.headers))
+    # r.headers looks like:
+    # {
+    #  'access-control-allow-origin': '*',
+    #  'connection': 'close',
+    #  'content-length': '491',
+    #  'content-md5': 'HoY5Kfgqb9VSdS44CYBxnA==',
+    #  'content-type': 'binary/octet-stream',
+    #  'date': 'Thu, 19 May 2022 22:16:48 GMT',
+    #  'etag': '"1e863929f82a6fd552752e380980719c"',
+    #  'last-modified': 'Thu, 19 May 2022 22:16:48 GMT',
+    #  'server': 'Werkzeug/2.1.2 Python/3.9.12',
+    #  'x-amz-version-id': 'null',
+    #  'x-amzn-requestid': 'WMAPXWFR2G4EJRVYBNJDRHTCXJ7NBRMDN7QQNHTQ5RYAQ34ZZNAL'
+    # }
+    assert r.status_code == status.HTTP_200_OK
+
+    downloaded_path = tmp_path / "downloaded.zip"
+    downloaded_path.write_bytes(r.content)
+
+    extract_dir = tmp_path / "extracted"
+    extract_dir.mkdir()
+
+    with ZipFile(f"{downloaded_path}") as fzip:
+        assert f"{project_id}-{node_id}.log" in fzip.namelist()
+        fzip.extractall(f"{extract_dir}")
+
+    print(list(extract_dir.glob("*.log")))
+
+
 def test_solver_logs(
-    sync_client: TestClient, faker: Faker, mocked_directorv2_service_api: MockRouter
+    sync_client: TestClient,
+    faker: Faker,
+    mocked_directorv2_service_api: MockRouter,
+    auth: HTTPBasicAuth,
+    project_id: str,
+    tmp_path: Path,
+    presigned_download_link: AnyUrl,
 ):
     resp = sync_client.get("/v0/meta")
     assert resp.status_code == 200
 
     solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
     version = "1.2.3"
-    job_id = faker.uuid4()
+    job_id = project_id
 
     resp = sync_client.get(
         f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
-        auth=HTTPBasicAuth("user", "pass"),
+        auth=auth,
     )
 
-    assert mocked_directorv2_service_api["director_v2.get_computation_logs"].called
-    assert resp.status_code == 200
+    # calls to directorv2 service
+    assert mocked_directorv2_service_api["get_computation_logs"].called
+
+    # was a re-direction
+    resp0 = resp.history[0]
+    assert resp0.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+    assert resp0.headers["location"] == presigned_download_link
+
+    assert resp.url == presigned_download_link
+    print(resp.headers)
+    assert resp.status_code == 200, resp.text
