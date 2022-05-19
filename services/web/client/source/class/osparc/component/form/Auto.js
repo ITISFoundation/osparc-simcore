@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.form.Auto", {
   },
 
   statics: {
-    hasValidationProp: function(s) {
+    hasValidatableProp: function(s) {
       return Object.keys(s).some(r => ["minimum", "maximum"].includes(r));
     }
   },
@@ -253,9 +253,6 @@ qx.Class.define("osparc.component.form.Auto", {
           }
         }
       );
-      if (!s.set) {
-        s.set = {};
-      }
       s.set.dateFormat = new qx.util.format.DateFormat(
         this["tr"](
           s.set.dateFormat ?
@@ -293,9 +290,6 @@ qx.Class.define("osparc.component.form.Auto", {
       );
     },
     __setupNumberField: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
       if (s.defaultValue) {
         s.set.value = qx.lang.Type.isNumber(s.defaultValue) ? String(s.defaultValue) : s.defaultValue;
       } else {
@@ -333,9 +327,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__formCtrl.addBindingOptions(key, model2target, target2model);
     },
     __setupSpinner: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
       s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
       s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
       s.set.value = s.defaultValue ? parseInt(String(s.defaultValue)) : 0;
@@ -366,23 +357,39 @@ qx.Class.define("osparc.component.form.Auto", {
           ctrl.bindProperty("label", "label", null, item, index);
         }
       });
+      // Content Schema
+      if ("enum" in s) {
+        const entries = [];
+        s.enum.forEach(entry => {
+          entries.push({
+            label: entry.toString(),
+            key: entry
+          });
+        });
+        s.widget["structure"] = entries;
+      }
       const cfg = s.widget;
-      let structure = cfg.structure;
-      if (structure) {
-        structure.forEach(item => {
+      let items = cfg.structure;
+      if (items) {
+        items.forEach(item => {
           item.label = item.label || "";
         }, this);
       } else {
-        structure = [{
+        items = [{
           label: "",
           key: null
         }];
       }
-      if (s.defaultValue) {
+      if ("defaultValue" in s) {
         s.set.value = [s.defaultValue];
       }
-      let sbModel = qx.data.marshal.Json.createModel(structure);
+      // Content Schema
+      if ("default" in s) {
+        s.set.value = [s.default];
+      }
+      let sbModel = qx.data.marshal.Json.createModel(items);
       controller.setModel(sbModel);
+      control.setModelSelection(s.set.value);
     },
     __setupComboBox: function(s, key, control) {
       let ctrl = this.__boxCtrl[key] = new qx.data.controller.List(null, control);
@@ -398,9 +405,6 @@ qx.Class.define("osparc.component.form.Auto", {
       ctrl.setModel(sbModel);
     },
     __setupBoolField: function(s, key, control) {
-      if (!s.set) {
-        s.set = {};
-      }
       if (s.set.value && typeof s.set.value === "string") {
         s.set.value = Boolean(s.set.value.toLowerCase() === "true");
       }
@@ -448,11 +452,15 @@ qx.Class.define("osparc.component.form.Auto", {
         Object.assign(s, s.contentSchema);
       }
 
-      if (s.defaultValue) {
-        if (!s.set) {
-          s.set = {};
-        }
+      if (!s.set) {
+        s.set = {};
+      }
+      if ("defaultValue" in s) {
         s.set.value = s.defaultValue;
+      }
+      // Content Schema
+      if ("default" in s) {
+        s.set.value = s.default;
       }
 
       if (!s.widget) {
@@ -471,6 +479,10 @@ qx.Class.define("osparc.component.form.Auto", {
             "ref_contentSchema": "ContentSchema"
           }[type]
         };
+      }
+      // Content Schema
+      if ("enum" in s) {
+        s.widget["type"] = "SelectBox";
       }
       let control;
       let setup;
@@ -506,6 +518,7 @@ qx.Class.define("osparc.component.form.Auto", {
         case "SelectBox":
           control = new qx.ui.form.SelectBox();
           setup = this.__setupSelectBox;
+          s.set["minWidth"] = 80;
           break;
         case "ComboBox":
           control = new qx.ui.form.ComboBox();
@@ -556,9 +569,14 @@ qx.Class.define("osparc.component.form.Auto", {
         control.unit = unit;
       }
 
-      if (this.self().hasValidationProp(s)) {
-        const manager = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
-        control.addListener("changeValue", () => manager.validate());
+      let validator = null;
+      if ("getValidator" in control) {
+        validator = control.getValidator();
+      } else if (this.self().hasValidatableProp(s)) {
+        validator = osparc.ui.form.ContentSchemaHelper.createValidator(control, s);
+      }
+      if (validator) {
+        control.addListener("changeValue", () => validator.validate());
       }
 
       return control;

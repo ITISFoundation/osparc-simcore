@@ -69,6 +69,49 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
         return Boolean(valid);
       });
       return manager;
+    },
+
+    createArrayValidator: function(control, s) {
+      const manager = new qx.ui.form.validation.Manager();
+      manager.add(control, (valuesInString, item) => {
+        const values = JSON.parse(valuesInString);
+        if ("minItems" in s && (values.length < s.minItems)) {
+          let oorInvalidMessage = qx.locale.Manager.tr("Minimum items: ") + s.minItems;
+          item.setInvalidMessage(oorInvalidMessage);
+          return false;
+        }
+        if ("maxItems" in s && (values.length > s.maxItems)) {
+          let oorInvalidMessage = qx.locale.Manager.tr("Maximum items: ") + s.maxItems;
+          item.setInvalidMessage(oorInvalidMessage);
+          return false;
+        }
+        let multiplier = 1;
+        let oorInvalidMessage = qx.locale.Manager.tr("Out of range");
+        if ("x_unit" in s) {
+          const {
+            unitPrefix
+          } = osparc.utils.Units.decomposeXUnit(s["x_unit"]);
+          multiplier = osparc.utils.Units.getMultiplier(unitPrefix, control.unitPrefix);
+        }
+        let valid = true;
+        if ("items" in s) {
+          if ("minimum" in s["items"] && values.some(v => v < multiplier*(s["items"].minimum))) {
+            valid = false;
+            oorInvalidMessage += "<br>";
+            oorInvalidMessage += qx.locale.Manager.tr("Minimum value: ") + multiplier*(s["items"].minimum);
+          }
+          if ("maximum" in s["items"] && values.some(v => v > multiplier*(s["items"].maximum))) {
+            valid = false;
+            oorInvalidMessage += "<br>";
+            oorInvalidMessage += qx.locale.Manager.tr("Maximum value: ") + multiplier*(s["items"].maximum);
+          }
+        }
+        if (!valid) {
+          item.setInvalidMessage(oorInvalidMessage);
+        }
+        return Boolean(valid);
+      });
+      return manager;
     }
   }
 });
