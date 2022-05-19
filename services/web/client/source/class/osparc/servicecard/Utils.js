@@ -199,7 +199,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
-        font: "title-12"
+        font: "title-11"
       });
       resourcesLayout.add(label);
 
