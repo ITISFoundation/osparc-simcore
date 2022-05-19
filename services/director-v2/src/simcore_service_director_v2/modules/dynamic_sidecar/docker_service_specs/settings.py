@@ -307,7 +307,8 @@ def _merge_resources_in_settings(
                 generic_resource = {
                     "DiscreteResourceSpec": {
                         "Kind": resource_name,
-                        # TODO: ANE-> SAN:which one should I use here reservation or limit?
+                        # NOTE: when dealing with generic resources only `reservation`
+                        # is set, `limit` is 0
                         "Value": resource_value.reservation,
                     }
                 }
