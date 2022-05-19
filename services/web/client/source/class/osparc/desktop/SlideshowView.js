@@ -169,7 +169,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     __isSelectedNodeReady: function(node, lastCurrentNodeId) {
-      const dependencies = node.getStatus().getDependencies();
+      const dependencies = node.getStatus().getDependencies(); // works when node is computational
+      const wb = this.getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamNodes(node, false);
+      upstreamNodeIds.forEach(upstreamNodeId => {
+        const upstreamNode = wb.getNode(upstreamNodeId);
+        if (upstreamNode.isComputational() && upstreamNode.getStatus().getRunning() !== "SUCCESS") {
+          dependencies.push(upstreamNode);
+        }
+      });
       if (dependencies && dependencies.length) {
         const msg = this.tr("Do you want to run the required steps?");
         const win = new osparc.ui.window.Confirmation(msg).set({
