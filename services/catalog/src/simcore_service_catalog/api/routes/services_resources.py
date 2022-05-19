@@ -6,11 +6,11 @@ from typing import Any, Final, Optional, cast
 import yaml
 from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
+from models_library.docker import DockerImageKey, DockerImageVersion
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
 )
-from models_library.services import DockerImageKey, DockerImageVersion
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,

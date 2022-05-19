@@ -15,6 +15,7 @@ from models_library.services_resources import (
     CPU_100_PERCENT,
     DEFAULT_SINGLE_SERVICE_NAME,
     GIGA,
+    MEMORY_1GB,
     ServiceResourcesDict,
 )
 from servicelib.docker_compose import (
@@ -318,6 +319,9 @@ def _merge_resources_in_settings(
     # properly
     empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
         empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
+    )
+    empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
+        empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
     )
 
     result.append(empty_resource_entry)
