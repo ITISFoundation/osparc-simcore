@@ -30,6 +30,13 @@ qx.Class.define("osparc.ui.form.ContentSchemaArray", {
     contentSchema: {
       check: "Object",
       init: null,
+      nullable: true,
+      apply: "__applyContentSchema"
+    },
+
+    validator: {
+      check: "qx.ui.form.validation.Manager",
+      init: null,
       nullable: true
     }
   },
@@ -74,6 +81,14 @@ qx.Class.define("osparc.ui.form.ContentSchemaArray", {
         }
       }
       this.base(arguments, value);
+    },
+
+    __applyContentSchema: function(contentSchema) {
+      const isValidatable = Object.keys(contentSchema).some(r => ["items", "minItems", "maxItems"].indexOf(r) >= 0);
+      if (isValidatable) {
+        const validator = osparc.ui.form.ContentSchemaHelper.createArrayValidator(this, contentSchema);
+        this.setValidator(validator);
+      }
     }
   }
 });
