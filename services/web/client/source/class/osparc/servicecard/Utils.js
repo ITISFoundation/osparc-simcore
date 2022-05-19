@@ -203,15 +203,35 @@ qx.Class.define("osparc.servicecard.Utils", {
       });
       resourcesLayout.add(label);
 
-      const grid = new qx.ui.layout.Grid(5, 3);
+      const grid = new qx.ui.layout.Grid(10, 5);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
       const resourcesInfo = new qx.ui.container.Composite(grid).set({
         allowGrowX: false,
         alignX: "left",
         alignY: "middle"
       });
       resourcesLayout.add(resourcesInfo);
+
+      const reservationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      reservationLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["reservation"].label).set({
+        font: "title-12"
+      }));
+      reservationLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["reservation"].tooltip));
+      resourcesInfo.add(reservationLayout, {
+        row: 0,
+        column: 2
+      });
+      const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      limitLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["limit"].label).set({
+        font: "title-12"
+      }));
+      limitLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip));
+      resourcesInfo.add(limitLayout, {
+        row: 0,
+        column: 3
+      });
 
       return resourcesLayout;
     },
@@ -227,51 +247,50 @@ qx.Class.define("osparc.servicecard.Utils", {
       }
     },
 
-    resourcesToResourcesInfo: function(resourcesLayout, resourcesInfo) {
+    resourcesToResourcesInfo: function(resourcesLayout, imagesResourcesInfo) {
       const layout = resourcesLayout.getChildren()[1];
-      let row = 0;
-      Object.keys(resourcesInfo).forEach(resourceKey => {
-        let column = 0;
-        const resourceInfo = resourcesInfo[resourceKey];
-        let label = resourceKey;
-        if (resourceKey === "RAM") {
-          label += " (GB)";
-        }
-        layout.add(new qx.ui.basic.Label(label).set({
+      let row = 1;
+      Object.entries(imagesResourcesInfo).forEach(([imageName, imageInfo]) => {
+        layout.add(new qx.ui.basic.Label(imageName).set({
           font: "title-12"
         }), {
           row,
-          column
+          column: 0
         });
-        column++;
-        Object.keys(this.RESOURCES_INFO).forEach(resourceInfoKey => {
-          if (resourceInfoKey in resourceInfo) {
-            layout.add(new qx.ui.basic.Label(this.RESOURCES_INFO[resourceInfoKey].label).set({
+        if ("resources" in imageInfo) {
+          const resourcesInfo = imageInfo["resources"];
+          Object.keys(resourcesInfo).forEach(resourceKey => {
+            let column = 1;
+            const resourceInfo = resourcesInfo[resourceKey];
+            let label = resourceKey;
+            if (resourceKey === "RAM") {
+              label += " (GB)";
+            }
+            layout.add(new qx.ui.basic.Label(label).set({
               font: "title-12"
             }), {
               row,
               column
             });
             column++;
-            layout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO[resourceInfoKey].tooltip), {
-              row,
-              column
+            Object.keys(this.RESOURCES_INFO).forEach(resourceInfoKey => {
+              if (resourceInfoKey in resourceInfo) {
+                let value = resourceInfo[resourceInfoKey];
+                if (resourceKey === "RAM") {
+                  value = osparc.utils.Utils.bytesToGB(value);
+                }
+                layout.add(new qx.ui.basic.Label(String(value)).set({
+                  font: "text-12"
+                }), {
+                  row,
+                  column
+                });
+                column++;
+              }
             });
-            column++;
-            let value = resourceInfo[resourceInfoKey];
-            if (resourceKey === "RAM") {
-              value = osparc.utils.Utils.bytesToGB(value);
-            }
-            layout.add(new qx.ui.basic.Label(String(value)).set({
-              font: "text-12"
-            }), {
-              row,
-              column
-            });
-            column++;
-          }
-        });
-        row++;
+            row++;
+          });
+        }
       });
     },
 
