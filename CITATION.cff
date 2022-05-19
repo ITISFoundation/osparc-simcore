@@ -51,7 +51,7 @@ authors:
   - given-names: Tobias
     family-names: Oetiker
     affiliation: "OETIKER+PARTNER AG"
-license: "MIT License"
+license: "MIT"
 repository-code: "https://github.com/ITISFoundation/osparc-simcore"
 identifiers:
   - type: url

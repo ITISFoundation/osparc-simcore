@@ -464,6 +464,9 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+.PHONY: CITATION-validate
+CITATION-validate: ## validates CITATION.cff file
+	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
 ## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
 
