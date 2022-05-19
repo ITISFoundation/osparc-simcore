@@ -6,11 +6,10 @@ from collections import deque
 from typing import Callable, Deque, Dict, List, Union
 from uuid import UUID
 
-import fsspec
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, status
+from fastapi.exceptions import HTTPException
+from fastapi.responses import RedirectResponse
 from models_library.projects_nodes_io import BaseFileLink
-from pydantic import AnyUrl, parse_obj_as
 from pydantic.types import PositiveInt
 
 from ...models.domain.projects import NewProjectIn, Project
@@ -56,6 +55,10 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
 #
 # @router.get("/releases/jobs", response_model=List[Job])
+
+common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {"description": "File not found"},
+}
 
 
 @router.get(
@@ -282,31 +285,46 @@ async def get_job_outputs(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}/logs",
-    description="logs returned as a stream in response body.",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs/logs",
+    description="Special extra output with persistent logs file of the solver run. "
+    "NOTE: this is not a log stream but a predefined output that is only available after the job is done.",
+    response_class=RedirectResponse,
+    responses={
+        **common_error_responses,
+        200: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "application/zip": {"schema": {"type": "string", "format": "binary"}},
+                "text/plain": {"schema": {"type": "string"}},
+            },
+            "description": "Returns a log file",
+        },
+    },
 )
-async def get_job_logs(
+async def get_job_output_logs(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
-    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_log(
+    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
         user_id=user_id, project_id=job_id
     )
 
-    def iter_file_logs():
-        for name, download_url in logs_urls.items():
-            prefix = (
-                f"{solver_key:path}/releases/{version}/jobs/{job_id}/task/{name}/logs"
-            )
+    # if more than one node? should rezip all of them??
+    assert len(logs_urls) == 1, "Current version only supports one node per solver"
+    for presigned_download_link in logs_urls.values():
+        logger.info(
+            "Downloading %s from %s ...",
+            f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
+            presigned_download_link,
+        )
 
-            log_url = parse_obj_as(AnyUrl, f"{download_url}.zip")
-            yield f"{prefix} BEGIN ---"
-            for open_file in fsspec.open_files(f"zip://*::{log_url}", mode="rt"):
-                with open_file as fp:
-                    yield from fp
-            yield f"{prefix} END ---"
-
-    return StreamingResponse(iter_file_logs(), media_type="text/plain")
+        return RedirectResponse(presigned_download_link)
+    return HTTPException(
+        status.HTTP_404_NOT_FOUND,
+        detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} is not available",
+    )

@@ -162,7 +162,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-    async def get_computation_log(
+    async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:
         resp = await self.client.get(
