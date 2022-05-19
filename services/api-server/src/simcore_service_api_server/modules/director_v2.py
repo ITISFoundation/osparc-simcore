@@ -8,7 +8,7 @@ from fastapi.exceptions import HTTPException
 from httpx import HTTPStatusError, codes
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveInt, parse_obj_as
+from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveInt, parse_raw_as
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -173,7 +173,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         # probably not found
         resp.raise_for_status()
-        return parse_obj_as(dict[NodeName, DownloadLink], resp.json())
+        return parse_raw_as(dict[NodeName, DownloadLink], resp.text or "{}")
 
     # TODO: HIGHER lever interface with job* resources
     # or better in another place?
