@@ -43,12 +43,6 @@ def compose_image() -> ComposeImage:
     return parse_obj_as(ComposeImage, "image:latest")
 
 
-def test_service_resources_from_resources(resources_dict: ResourcesDict) -> None:
-    assert ServiceResourcesDictHelpers.create_from_single_service(
-        image="key:version", resources=resources_dict
-    )
-
-
 def _ensure_resource_value_is_an_object(data: ResourcesDict) -> None:
     assert type(data) == dict
     print(data)
@@ -76,7 +70,12 @@ def test_image_resources_parsed_as_expected() -> None:
     _ensure_resource_value_is_an_object(result.resources)
 
 
-def test_service_resource_parsed_as_expected(compose_image: ComposeImage) -> None:
+@pytest.mark.parametrize(
+    "example", ServiceResourcesDictHelpers.Config.schema_extra["examples"]
+)
+def test_service_resource_parsed_as_expected(
+    example: dict[DockerComposeServiceName, Any], compose_image: ComposeImage
+) -> None:
     def _assert_service_resources_dict(
         service_resources_dict: ServiceResourcesDict,
     ) -> None:
@@ -86,20 +85,19 @@ def test_service_resource_parsed_as_expected(compose_image: ComposeImage) -> Non
         for _, image_resources in service_resources_dict.items():
             _ensure_resource_value_is_an_object(image_resources.resources)
 
-    for example_dict in ServiceResourcesDictHelpers.Config.schema_extra["examples"]:
-        service_resources_dict: ServiceResourcesDict = parse_obj_as(
-            ServiceResourcesDict, example_dict
-        )
-        _assert_service_resources_dict(service_resources_dict)
+    service_resources_dict: ServiceResourcesDict = parse_obj_as(
+        ServiceResourcesDict, example
+    )
+    _assert_service_resources_dict(service_resources_dict)
 
-        for image_resources in example_dict.values():
-            service_resources_dict_from_single_service = (
-                ServiceResourcesDictHelpers.create_from_single_service(
-                    image=compose_image,
-                    resources=ImageResources.parse_obj(image_resources).resources,
-                )
+    for image_resources in example.values():
+        service_resources_dict_from_single_service = (
+            ServiceResourcesDictHelpers.create_from_single_service(
+                image=compose_image,
+                resources=ImageResources.parse_obj(image_resources).resources,
             )
-            _assert_service_resources_dict(service_resources_dict_from_single_service)
+        )
+        _assert_service_resources_dict(service_resources_dict_from_single_service)
 
 
 @pytest.mark.parametrize(

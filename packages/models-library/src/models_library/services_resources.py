@@ -91,11 +91,7 @@ class ServiceResourcesDictHelpers:
     ) -> ServiceResourcesDict:
         return parse_obj_as(
             ServiceResourcesDict,
-            {
-                DEFAULT_SINGLE_SERVICE_NAME: ImageResources.parse_obj(
-                    {"image": image, "resources": resources}
-                )
-            },
+            {DEFAULT_SINGLE_SERVICE_NAME: {"image": image, "resources": resources}},
         )
 
     @staticmethod
