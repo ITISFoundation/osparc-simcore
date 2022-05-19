@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from copy import deepcopy
-from typing import Any, Final, List, Optional, cast
+from typing import Any, Final, Optional, cast
 
 import yaml
 from aiocache import cached
@@ -37,6 +37,97 @@ SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
 
 
+def _parse_generic_resource(
+    generic_resources: list[Any], service_resources: ResourcesDict
+) -> None:
+    for res in generic_resources:
+        if not isinstance(res, dict):
+            continue
+
+        if named_resource_spec := res.get("NamedResourceSpec"):
+            service_resources.setdefault(
+                named_resource_spec["Kind"],
+                ResourceValue(limit=0, reservation=named_resource_spec["Value"]),
+            ).reservation = named_resource_spec["Value"]
+        if discrete_resource_spec := res.get("DiscreteResourceSpec"):
+            service_resources.setdefault(
+                discrete_resource_spec["Kind"],
+                ResourceValue(limit=0, reservation=discrete_resource_spec["Value"]),
+            ).reservation = discrete_resource_spec["Value"]
+
+
+def _from_service_settings(
+    settings: list[SimcoreServiceSettingLabelEntry],
+    default_service_resources: ResourcesDict,
+    service_key: DockerImageKey,
+    service_version: DockerImageVersion,
+) -> ResourcesDict:
+    # filter resource entries
+    resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
+    # get the service resources
+    service_resources = deepcopy(default_service_resources)
+    for entry in resource_entries:
+        if not isinstance(entry.value, dict):
+            logger.warning(
+                "resource %s for %s got invalid type",
+                f"{entry.dict()!r}",
+                f"{service_key}:{service_version}",
+            )
+            continue
+        if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
+            service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
+        if nano_cpu_reservation := entry.value.get("Reservations", {}).get("NanoCPUs"):
+            service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
+        if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
+            service_resources["RAM"].limit = ram_limit
+        if ram_reservation := entry.value.get("Reservations", {}).get("MemoryBytes"):
+            service_resources["RAM"].reservation = ram_reservation
+
+        _parse_generic_resource(
+            entry.value.get("Reservations", {}).get("GenericResources", []),
+            service_resources,
+        )
+
+    return service_resources
+
+
+async def _get_service_labels(
+    director_client: DirectorApi, key: DockerImageKey, version: DockerImageVersion
+) -> Optional[dict[str, Any]]:
+    try:
+        service_labels = cast(
+            dict[str, Any],
+            await director_client.get(
+                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
+            ),
+        )
+        logger.debug(
+            "received for %s %s",
+            f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
+            f"{service_labels=}",
+        )
+        return service_labels
+    except HTTPException as err:
+        # NOTE: some services will fail validation, eg:
+        # `busybox:latest` or `traefik:latest` because
+        # the director-v0 cannot extract labels from them
+        # and will fail validating the key or the version
+        if err.status_code == status.HTTP_400_BAD_REQUEST:
+            return None
+        raise err
+
+
+def _get_service_settings(
+    labels: dict[str, Any]
+) -> list[SimcoreServiceSettingLabelEntry]:
+    service_settings = parse_raw_as(
+        list[SimcoreServiceSettingLabelEntry],
+        labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+    )
+    logger.debug("received %s", f"{service_settings=}")
+    return service_settings
+
+
 @router.get(
     "/{service_key:path}/{service_version}/resources",
     response_model=ServiceResourcesDict,
@@ -61,97 +152,8 @@ async def get_service_resources(
             image_version, default_service_resources
         )
 
-    def _from_service_settings(
-        settings: List[SimcoreServiceSettingLabelEntry],
-    ) -> ResourcesDict:
-        # filter resource entries
-        resource_entries = filter(
-            lambda entry: entry.name.lower() == "resources", settings
-        )
-        # get the service resources
-        service_resources = deepcopy(default_service_resources)
-        for entry in resource_entries:
-            if not isinstance(entry.value, dict):
-                logger.warning(
-                    "resource %s for %s got invalid type",
-                    f"{entry.dict()!r}",
-                    f"{service_key}:{service_version}",
-                )
-                continue
-            if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
-                service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
-            if nano_cpu_reservation := entry.value.get("Reservations", {}).get(
-                "NanoCPUs"
-            ):
-                service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
-            if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
-                service_resources["RAM"].limit = ram_limit
-            if ram_reservation := entry.value.get("Reservations", {}).get(
-                "MemoryBytes"
-            ):
-                service_resources["RAM"].reservation = ram_reservation
-
-            if generic_resources := entry.value.get("Reservations", {}).get(
-                "GenericResources", []
-            ):
-                for res in generic_resources:
-                    if not isinstance(res, dict):
-                        continue
-
-                    if named_resource_spec := res.get("NamedResourceSpec"):
-                        service_resources.setdefault(
-                            named_resource_spec["Kind"],
-                            ResourceValue(
-                                limit=0, reservation=named_resource_spec["Value"]
-                            ),
-                        ).reservation = named_resource_spec["Value"]
-                    if discrete_resource_spec := res.get("DiscreteResourceSpec"):
-                        service_resources.setdefault(
-                            discrete_resource_spec["Kind"],
-                            ResourceValue(
-                                limit=0, reservation=discrete_resource_spec["Value"]
-                            ),
-                        ).reservation = discrete_resource_spec["Value"]
-
-        return service_resources
-
-    async def _get_service_labels(
-        key: DockerImageKey, version: DockerImageVersion
-    ) -> Optional[dict[str, Any]]:
-        try:
-            service_labels = cast(
-                dict[str, Any],
-                await director_client.get(
-                    f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
-                ),
-            )
-            logger.debug(
-                "received for %s %s",
-                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
-                f"{service_labels=}",
-            )
-            return service_labels
-        except HTTPException as err:
-            # NOTE: some services will fail validation, eg:
-            # `busybox:latest` or `traefik:latest` because
-            # the director-v0 cannot extract labels from them
-            # and will fail validating the key or the version
-            if err.status_code == status.HTTP_400_BAD_REQUEST:
-                return None
-            raise err
-
-    def _get_service_settings(
-        labels: dict[str, Any]
-    ) -> List[SimcoreServiceSettingLabelEntry]:
-        service_settings = parse_raw_as(
-            List[SimcoreServiceSettingLabelEntry],
-            labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
-        )
-        logger.debug("received %s", f"{service_settings=}")
-        return service_settings
-
     service_labels: Optional[dict[str, Any]] = await _get_service_labels(
-        service_key, service_version
+        director_client, service_key, service_version
     )
 
     if not service_labels:
@@ -167,7 +169,9 @@ async def get_service_resources(
 
     if service_spec is None:
         service_settings = _get_service_settings(service_labels)
-        service_resources = _from_service_settings(service_settings)
+        service_resources = _from_service_settings(
+            service_settings, default_service_resources, service_key, service_version
+        )
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
         )
@@ -189,7 +193,7 @@ async def get_service_resources(
         image = spec_data["image"].lstrip("/")
         key, version = image.split(":")
         spec_service_labels: Optional[dict[str, Any]] = await _get_service_labels(
-            key, version
+            director_client, key, version
         )
 
         if not spec_service_labels:
@@ -197,7 +201,10 @@ async def get_service_resources(
         else:
             spec_service_settings = _get_service_settings(spec_service_labels)
             spec_service_resources: ResourcesDict = _from_service_settings(
-                spec_service_settings
+                spec_service_settings,
+                default_service_resources,
+                service_key,
+                service_version,
             )
 
         results[spec_key] = ImageResources.parse_obj(
