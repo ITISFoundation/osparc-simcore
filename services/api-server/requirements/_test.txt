@@ -83,6 +83,10 @@ faker==13.12.0
     # via -r requirements/_test.in
 fsspec==2022.5.0
     # via -r requirements/_test.in
+fsspec==2022.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
