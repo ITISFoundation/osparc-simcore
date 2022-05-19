@@ -1,7 +1,8 @@
-# pylint:disable=no-name-in-module
-# pylint:disable=redefined-outer-name
-# pylint:disable=unused-argument
-# pylint:disable=unused-variable
+# pylint: disable=no-name-in-module
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import os
 import shutil
