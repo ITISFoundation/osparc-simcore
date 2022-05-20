@@ -3,7 +3,7 @@
 
 import logging
 from collections import deque
-from typing import Callable, Deque, Dict, List, Union
+from typing import Callable, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -54,16 +54,12 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - Similar to docker container's API design (container = job and image = solver)
 # - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
 #
-# @router.get("/releases/jobs", response_model=List[Job])
-
-common_error_responses = {
-    status.HTTP_404_NOT_FOUND: {"description": "File not found"},
-}
+# @router.get("/releases/jobs", response_model=list[Job])
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
-    response_model=List[Job],
+    response_model=list[Job],
 )
 async def list_jobs(
     solver_key: SolverKeyId,
@@ -78,8 +74,8 @@ async def list_jobs(
     solver = await catalog_client.get_solver(user_id, solver_key, version)
     logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects: List[Project] = await webserver_api.list_projects(solver.name)
-    jobs: Deque[Job] = deque()
+    projects: list[Project] = await webserver_api.list_projects(solver.name)
+    jobs: deque[Job] = deque()
     for prj in projects:
         job = create_job_from_project(solver_key, version, prj, url_for)
         assert job.id == prj.uuid  # nosec
@@ -251,7 +247,7 @@ async def get_job_outputs(
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    outputs: Dict[
+    outputs: dict[
         str, Union[float, int, bool, BaseFileLink, str, None]
     ] = await get_solver_output_results(
         user_id=user_id,
@@ -260,7 +256,7 @@ async def get_job_outputs(
         db_engine=db_engine,
     )
 
-    results: Dict[str, ArgumentType] = {}
+    results: dict[str, ArgumentType] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
             # TODO: value.path exists??
@@ -286,12 +282,9 @@ async def get_job_outputs(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs/logs",
-    description="Special extra output with persistent logs file of the solver run. "
-    "NOTE: this is not a log stream but a predefined output that is only available after the job is done.",
     response_class=RedirectResponse,
     responses={
-        **common_error_responses,
-        200: {
+        status.HTTP_200_OK: {
             "content": {
                 "application/octet-stream": {
                     "schema": {"type": "string", "format": "binary"}
@@ -301,6 +294,7 @@ async def get_job_outputs(
             },
             "description": "Returns a log file",
         },
+        status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
     },
 )
 async def get_job_output_logs(
@@ -310,6 +304,12 @@ async def get_job_output_logs(
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
+    """Special extra output with persistent logs file for the solver run.
+
+    NOTE: this is not a log stream but a predefined output that is only
+    available after the job is done.
+    """
+
     logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
         user_id=user_id, project_id=job_id
     )
@@ -326,5 +326,6 @@ async def get_job_output_logs(
 
     raise HTTPException(
         status.HTTP_404_NOT_FOUND,
-        detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} is not available",
+        detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."
+        "Note that these logs are only available after the job is completed.",
     )
