@@ -187,7 +187,13 @@ def presigned_download_link(
     mocked_s3_server_url: HttpUrl,
 ) -> Iterator[AnyUrl]:
 
-    s3_client = boto3.client("s3", endpoint_url=mocked_s3_server_url)
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=mocked_s3_server_url,
+        # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
+        aws_secret_access_key="xxx",
+        aws_access_key_id="xxx",
+    )
     s3_client.create_bucket(Bucket=bucket_name)
 
     # uploads file
@@ -287,6 +293,7 @@ def test_solver_logs(
     resp = sync_client.get(
         f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
         auth=auth,
+        allow_redirects=True,
     )
 
     # calls to directorv2 service
