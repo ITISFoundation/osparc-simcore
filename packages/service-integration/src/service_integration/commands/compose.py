@@ -139,7 +139,7 @@ def main(
 
     config_filenames: Dict[str, List[Path]] = {}
     if basedir.exists():
-        for meta_cfg in basedir.rglob(meta_filename):
+        for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
             config_name = meta_cfg.parent.name
             config_filenames[config_name] = []
             # load meta
