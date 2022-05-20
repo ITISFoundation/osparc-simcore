@@ -15,13 +15,13 @@ from settings_library.utils_session import MixinSessionSettings
 
 
 class _UrlMixin:
-    def _build_base_url_with_vtag(self, prefix: str) -> str:
+    def _build_url(self, prefix: str) -> str:
         prefix = prefix.upper()
         return AnyHttpUrl.build(
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
-            path=f"/{getattr(self, f'{prefix}_VTAG')}",
+            path=f"/{getattr(self, f'{prefix}_VTAG')}",  # NOTE: it ends with /{VTAG}
         )
 
 
@@ -41,7 +41,7 @@ class WebServerSettings(BaseCustomSettings, _UrlMixin, MixinSessionSettings):
 
     @cached_property
     def base_url(self) -> str:
-        return self._build_base_url_with_vtag("WEBSERVER")
+        return self._build_url("WEBSERVER")
 
     @validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
@@ -56,7 +56,7 @@ class StorageSettings(BaseCustomSettings, _UrlMixin):
 
     @cached_property
     def base_url(self) -> str:
-        return self._build_base_url_with_vtag("STORAGE")
+        return self._build_url("STORAGE")
 
 
 class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
@@ -66,7 +66,7 @@ class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
 
     @cached_property
     def base_url(self) -> str:
-        return self._build_base_url_with_vtag("DIRECTOR_V2")
+        return self._build_url("DIRECTOR_V2")
 
 
 # MAIN SETTINGS --------------------------------------------
