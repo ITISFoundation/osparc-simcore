@@ -31,6 +31,7 @@ from pydantic import (
     validator,
 )
 from settings_library.base import BaseCustomSettings
+from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -119,21 +120,6 @@ class StorageSettings(BaseCustomSettings):
         in style host:port
         without scheme or version tag"""
         return f"{self.STORAGE_HOST}:{self.STORAGE_PORT}"
-
-
-class CatalogSettings(BaseCustomSettings):
-    CATALOG_HOST: str = "catalog"
-    CATALOG_PORT: int = 8000
-    CATALOG_VTAG: str = "v0"
-
-    @cached_property
-    def endpoint(self) -> str:
-        return AnyHttpUrl.build(
-            scheme="http",
-            host=self.CATALOG_HOST,
-            port=f"{self.CATALOG_PORT}",
-            path=f"/{self.CATALOG_VTAG}",
-        )
 
 
 class DirectorV0Settings(BaseCustomSettings):

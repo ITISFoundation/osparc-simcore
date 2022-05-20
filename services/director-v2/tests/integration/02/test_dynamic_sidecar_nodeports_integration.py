@@ -533,11 +533,6 @@ async def _assert_port_values(
     assert sleeper_out_1 == dy_compose_spec_file_output
 
 
-def _assert_command_successful(command: str) -> None:
-    print(command)
-    assert os.system(command) == 0
-
-
 async def _container_id_via_services(service_uuid: str) -> str:
     container_id = None
 
@@ -616,13 +611,13 @@ async def _fetch_data_via_aioboto(
     save_to.mkdir(parents=True, exist_ok=True)
 
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
     async with session.resource(
         "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
     ) as s3:
-        bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
+        bucket = await s3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():
             key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
             if s3_object.key.startswith(key_path):
@@ -640,6 +635,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     user_id: UserID,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
+    catalog_url: URL,
 ) -> Dict[str, str]:
     # start dynamic services
     await asyncio.gather(
@@ -652,6 +648,7 @@ async def _start_and_wait_for_dynamic_services_ready(
                 service_version=node.version,
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
+                catalog_url=catalog_url,
             )
             for service_uuid, node in workbench_dynamic_services.items()
         )
@@ -918,6 +915,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     # STEP 2
@@ -1116,6 +1114,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     dy_path_volume_after = (
