@@ -171,7 +171,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
 
 
 async def _download_files(
-    target_path: Path, download_tasks: Deque[Coroutine]
+    target_path: Path, download_tasks: Deque[Coroutine[Any, int, Any]]
 ) -> Tuple[dict[str, Any], ByteSize]:
     transferred_bytes = 0
     data: dict[str, Any] = {}
@@ -255,7 +255,7 @@ async def download_target_ports(
     )
 
     # let's gather all the data
-    download_tasks: Deque[Coroutine] = deque()
+    download_tasks: Deque[Coroutine[Any, int, Any]] = deque()
     for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
         logger.info("Checking node %s", port_value.key)
