@@ -7,7 +7,7 @@ import tempfile
 import time
 from collections import deque
 from pathlib import Path
-from typing import Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
 
 import magic
 from pydantic import ByteSize
@@ -170,6 +170,75 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
+async def _download_files(
+    target_path: Path, download_tasks: Deque[Coroutine]
+) -> Tuple[dict[str, Any], ByteSize]:
+    transferred_bytes = 0
+    data: dict[str, Any] = {}
+
+    if not download_tasks:
+        return data, ByteSize(transferred_bytes)
+
+    # TODO: limit concurrency to avoid saturating storage+db??
+    results: List[Tuple[Port, ItemConcreteValue]] = cast(
+        List[Tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
+    )
+    logger.info("completed download %s", results)
+    for port, value in results:
+
+        data[port.key] = {"key": port.key, "value": value}
+
+        if _FILE_TYPE_PREFIX in port.property_type:
+
+            # if there are files, move them to the final destination
+            downloaded_file: Optional[Path] = cast(Optional[Path], value)
+            dest_path: Path = target_path / port.key
+
+            if not downloaded_file or not downloaded_file.exists():
+                # the link may be empty
+                # remove files all files from disk when disconnecting port
+                logger.info("removing contents of dir %s", dest_path)
+                await remove_directory(
+                    dest_path, only_children=True, ignore_errors=True
+                )
+                continue
+
+            transferred_bytes = transferred_bytes + downloaded_file.stat().st_size
+
+            # in case of valid file, it is either uncompressed and/or moved to the final directory
+            logger.info("creating directory %s", dest_path)
+            dest_path.mkdir(exist_ok=True, parents=True)
+            data[port.key] = {"key": port.key, "value": str(dest_path)}
+
+            dest_folder = PrunableFolder(dest_path)
+
+            if _is_zip_file(downloaded_file):
+                # unzip updated data to dest_path
+                logger.info("unzipping %s", downloaded_file)
+                unarchived: Set[Path] = await unarchive_dir(
+                    archive_to_extract=downloaded_file, destination_folder=dest_path
+                )
+
+                dest_folder.prune(exclude=unarchived)
+
+                logger.info("all unzipped in %s", dest_path)
+            else:
+                logger.info("moving %s", downloaded_file)
+                dest_path = dest_path / Path(downloaded_file).name
+                await async_on_threadpool(
+                    # pylint: disable=cell-var-from-loop
+                    lambda: shutil.move(str(downloaded_file), dest_path)
+                )
+
+                dest_folder.prune(exclude={dest_path})
+
+                logger.info("all moved to %s", dest_path)
+        else:
+            transferred_bytes = transferred_bytes + sys.getsizeof(value)
+
+    return data, ByteSize(transferred_bytes)
+
+
 @run_sequentially_in_context()
 async def download_target_ports(
     port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
@@ -184,10 +253,9 @@ async def download_target_ports(
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
     )
-    data = {}
 
     # let's gather all the data
-    download_tasks = []
+    download_tasks: Deque[Coroutine] = deque()
     for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
         logger.info("Checking node %s", port_value.key)
@@ -197,64 +265,7 @@ async def download_target_ports(
         download_tasks.append(_get_data_from_port(port_value))
     logger.info("retrieving %s data", len(download_tasks))
 
-    transfer_bytes = 0
-    if download_tasks:
-        # TODO: limit concurrency to avoid saturating storage+db??
-        results: List[Tuple[Port, ItemConcreteValue]] = cast(
-            List[Tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
-        )
-        logger.info("completed download %s", results)
-        for port, value in results:
-
-            data[port.key] = {"key": port.key, "value": value}
-
-            if _FILE_TYPE_PREFIX in port.property_type:
-
-                # if there are files, move them to the final destination
-                downloaded_file: Optional[Path] = cast(Optional[Path], value)
-                dest_path: Path = target_path / port.key
-
-                if not downloaded_file or not downloaded_file.exists():
-                    # the link may be empty
-                    # remove files all files from disk when disconnecting port
-                    logger.info("removing contents of dir %s", dest_path)
-                    await remove_directory(
-                        dest_path, only_children=True, ignore_errors=True
-                    )
-                    continue
-
-                transfer_bytes = transfer_bytes + downloaded_file.stat().st_size
-
-                # in case of valid file, it is either uncompressed and/or moved to the final directory
-                logger.info("creating directory %s", dest_path)
-                dest_path.mkdir(exist_ok=True, parents=True)
-                data[port.key] = {"key": port.key, "value": str(dest_path)}
-
-                dest_folder = PrunableFolder(dest_path)
-
-                if _is_zip_file(downloaded_file):
-                    # unzip updated data to dest_path
-                    logger.info("unzipping %s", downloaded_file)
-                    unarchived: Set[Path] = await unarchive_dir(
-                        archive_to_extract=downloaded_file, destination_folder=dest_path
-                    )
-
-                    dest_folder.prune(exclude=unarchived)
-
-                    logger.info("all unzipped in %s", dest_path)
-                else:
-                    logger.info("moving %s", downloaded_file)
-                    dest_path = dest_path / Path(downloaded_file).name
-                    await async_on_threadpool(
-                        # pylint: disable=cell-var-from-loop
-                        lambda: shutil.move(str(downloaded_file), dest_path)
-                    )
-
-                    dest_folder.prune(exclude={dest_path})
-
-                    logger.info("all moved to %s", dest_path)
-            else:
-                transfer_bytes = transfer_bytes + sys.getsizeof(value)
+    data, transferred_bytes = await _download_files(target_path, download_tasks)
 
     # create/update the json file with the new values
     if data:
@@ -265,15 +276,13 @@ async def download_target_ports(
             data = {**current_data, **data}
         data_file.write_text(json.dumps(data))
 
-    transferred = ByteSize(transfer_bytes)
     elapsed_time = time.perf_counter() - start_time
     logger.info(
         "Downloaded %s in %s seconds",
-        transferred.human_readable(decimal=True),
+        transferred_bytes.human_readable(decimal=True),
         elapsed_time,
     )
-
-    return transferred
+    return transferred_bytes
 
 
 __all__ = ["dispatch_update_for_directory", "download_target_ports"]
