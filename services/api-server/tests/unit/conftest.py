@@ -4,14 +4,19 @@
 # pylint: disable=unused-variable
 
 from pprint import pprint
-from typing import AsyncIterator
+from typing import AsyncIterator, Iterator
 
+import aiohttp.test_utils
 import httpx
 import pytest
+import simcore_service_api_server.db.tables as orm
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from httpx._transports.asgi import ASGITransport
+from moto.server import ThreadedMotoServer
+from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -81,3 +86,29 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             setattr(client, "app", client._transport.app)
 
             yield client
+
+
+## MOCKED S3 service
+
+
+@pytest.fixture
+def mocked_s3_server_url(monkeypatch) -> Iterator[HttpUrl]:
+    """
+    For download links, the in-memory moto.mock_s3() does not suffice since
+    we need an http entrypoint
+    """
+    # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
+    server = ThreadedMotoServer(
+        ip_address=get_localhost_ip(), port=aiohttp.test_utils.unused_port()
+    )
+
+    # pylint: disable=protected-access
+    endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
+
+    print(f"--> started mock S3 server on {endpoint_url}")
+    server.start()
+
+    yield endpoint_url
+
+    server.stop()
+    print(f"<-- stopped mock S3 server on {endpoint_url}")
