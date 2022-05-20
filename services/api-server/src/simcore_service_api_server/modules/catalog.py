@@ -167,5 +167,5 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         settings = CatalogSettings()
 
     setup_client_instance(
-        app, CatalogApi, api_baseurl=settings.base_url, service_name="catalog"
+        app, CatalogApi, api_baseurl=settings.api_base_url, service_name="catalog"
     )
