@@ -13,7 +13,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const templateName = "sim4life";
+const templateName = "sim4life-dy";
 
 
 async function runTutorial() {
