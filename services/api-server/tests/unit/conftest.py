@@ -21,7 +21,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
-## APP & TEST CLIENT ------
+## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             yield client
 
 
-## MOCKED S3 service
+## MOCKED S3 service --------------------------------------------------
 
 
 @pytest.fixture

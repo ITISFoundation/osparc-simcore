@@ -12,12 +12,10 @@ from pprint import pprint
 from typing import Iterator
 from zipfile import ZipFile
 
-import _fakes_catalog
 import boto3
 import httpx
 import pytest
 import respx
-import simcore_service_api_server.api.routes.solvers
 from faker import Faker
 from fastapi import FastAPI
 from respx import MockRouter
@@ -25,7 +23,6 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx.router import MockRouter
 from simcore_service_api_server.core.settings import AppSettings
-from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 
 
@@ -239,6 +236,7 @@ def mocked_directorv2_service_api(
 def test_download_presigned_link(
     presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
 ):
+    """Cheks that the generation of presigned_download_link works as expected"""
     r = httpx.get(presigned_download_link)
     pprint(dict(r.headers))
     # r.headers looks like:
@@ -305,13 +303,4 @@ async def test_solver_logs(
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))
 
-    ## FIXME: link is not found!
-    try:
-        assert resp.status_code == 200, resp.text
-    except AssertionError:
-        print("Got", resp.status_code)
-        # really? let's try again
-        r = httpx.get(presigned_download_link)
-        pprint(dict(r.headers))
-        assert r.status_code == 200
-        assert r.text
+    assert resp.status_code == 200, resp.text
