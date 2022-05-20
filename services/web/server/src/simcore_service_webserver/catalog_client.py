@@ -7,13 +7,13 @@ import urllib.parse
 from typing import Any, Dict, List, Mapping, Optional
 
 from aiohttp import ClientSession, ClientTimeout, web
-from pydantic import parse_obj_as
 from aiohttp.client_exceptions import (
     ClientConnectionError,
     ClientResponseError,
     InvalidURL,
 )
 from models_library.services_resources import ServiceResourcesDict
+from pydantic import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps

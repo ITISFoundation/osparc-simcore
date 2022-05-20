@@ -6,13 +6,13 @@ import re
 from typing import Type
 
 import pytest
-from pydantic import parse_obj_as
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
