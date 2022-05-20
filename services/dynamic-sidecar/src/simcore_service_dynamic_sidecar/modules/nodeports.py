@@ -170,6 +170,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
+@run_sequentially_in_context()
 async def download_target_ports(
     port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
 ) -> ByteSize:
@@ -216,6 +217,7 @@ async def download_target_ports(
                 if not downloaded_file or not downloaded_file.exists():
                     # the link may be empty
                     # remove files all files from disk when disconnecting port
+                    logger.info("removing contents of dir %s", dest_path)
                     await remove_directory(
                         dest_path, only_children=True, ignore_errors=True
                     )
@@ -228,10 +230,9 @@ async def download_target_ports(
                 dest_path.mkdir(exist_ok=True, parents=True)
                 data[port.key] = {"key": port.key, "value": str(dest_path)}
 
+                dest_folder = PrunableFolder(dest_path)
+
                 if _is_zip_file(downloaded_file):
-
-                    dest_folder = PrunableFolder(dest_path)
-
                     # unzip updated data to dest_path
                     logger.info("unzipping %s", downloaded_file)
                     unarchived: Set[Path] = await unarchive_dir(
@@ -248,6 +249,9 @@ async def download_target_ports(
                         # pylint: disable=cell-var-from-loop
                         lambda: shutil.move(str(downloaded_file), dest_path)
                     )
+
+                    dest_folder.prune(exclude={dest_path})
+
                     logger.info("all moved to %s", dest_path)
             else:
                 transfer_bytes = transfer_bytes + sys.getsizeof(value)
