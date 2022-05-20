@@ -4,7 +4,6 @@
 
 from typing import Iterator
 
-import _catalog_fakes
 
 import urllib
 import urllib.parse
@@ -13,6 +12,7 @@ from pprint import pprint
 from typing import Iterator
 from zipfile import ZipFile
 
+import _fakes_catalog
 import boto3
 import httpx
 import pytest
@@ -20,11 +20,9 @@ import respx
 import simcore_service_api_server.api.routes.solvers
 from faker import Faker
 from fastapi import FastAPI
-from httpx import AsyncClient
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
-from requests.auth import HTTPBasicAuth
 from respx.router import MockRouter
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -32,7 +30,7 @@ from starlette import status
 
 
 @pytest.fixture
-def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
+def auth(mocker, app: FastAPI, faker: Faker) -> httpx.BasicAuth:
     # mock engine if db was not init
     if app.state.settings.API_SERVER_POSTGRES is None:
 
@@ -58,7 +56,7 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
         return_value=faker.email(),
     )
-    return HTTPBasicAuth(faker.word(), faker.password())
+    return httpx.BasicAuth(faker.word(), faker.password())
 
 
 # test_list_solvers -----------------------------------------------------
@@ -82,14 +80,14 @@ def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
             200,
             json=[
                 # one solver
-                _catalog_fakes.create_service_out(
+                _fakes_catalog.create_service_out(
                     key="simcore/services/comp/Foo", name="Foo"
                 ),
                 # two version of the same solver
-                _catalog_fakes.create_service_out(version="0.0.1"),
-                _catalog_fakes.create_service_out(version="1.0.1"),
+                _fakes_catalog.create_service_out(version="0.0.1"),
+                _fakes_catalog.create_service_out(version="1.0.1"),
                 # not a solver
-                _catalog_fakes.create_service_out(type="dynamic"),
+                _fakes_catalog.create_service_out(type="dynamic"),
             ],
         )
 
@@ -98,7 +96,7 @@ def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 async def test_list_solvers(
-    client: AsyncClient,
+    client: httpx.AsyncClient,
     mocked_catalog_service_api: MockRouter,
     mocker,
 ):
@@ -276,21 +274,21 @@ def test_download_presigned_link(
 
 
 @pytest.mark.xfail
-def test_solver_logs(
-    sync_client: TestClient,
+async def test_solver_logs(
+    client: httpx.AsyncClient,
     mocked_directorv2_service_api: MockRouter,
-    auth: HTTPBasicAuth,
+    auth: httpx.BasicAuth,
     project_id: str,
     presigned_download_link: AnyUrl,
 ):
-    resp = sync_client.get("/v0/meta")
+    resp = await client.get("/v0/meta")
     assert resp.status_code == 200
 
     solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
     version = "1.2.3"
     job_id = project_id
 
-    resp = sync_client.get(
+    resp = await client.get(
         f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
         auth=auth,
         allow_redirects=True,
