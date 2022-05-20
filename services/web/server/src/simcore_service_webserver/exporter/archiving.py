@@ -1,14 +1,13 @@
 import logging
-
 from pathlib import Path
 from typing import Tuple
+
 from passlib import pwd
+from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 from .async_hashing import Algorithm, checksum
 from .exceptions import ExporterException
 from .utils import rename
-
-from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 log = logging.getLogger(__name__)
 

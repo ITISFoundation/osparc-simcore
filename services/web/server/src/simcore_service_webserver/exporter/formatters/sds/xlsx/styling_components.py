@@ -1,9 +1,8 @@
 from typing import List
 
-
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.comments import Comment as PyXLComment
-from openpyxl.styles.borders import BORDER_THIN, BORDER_MEDIUM
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.styles.borders import BORDER_MEDIUM, BORDER_THIN
 
 from .xlsx_base import BaseXLSXCellData
 

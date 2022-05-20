@@ -126,6 +126,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
+            service_resources=scheduler_data.service_resources,
         )
 
         # these configuration should guarantee 245 address network
@@ -341,6 +342,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            service_resources=scheduler_data.service_resources,
         )
 
         await dynamic_sidecar_client.start_service_creation(

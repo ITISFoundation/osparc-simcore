@@ -15,6 +15,10 @@ from faker import Faker
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -78,6 +82,7 @@ def start_request_data(
     project_id: ProjectID,
     node_uuid: NodeID,
     dy_static_file_server_dynamic_sidecar_service: Dict,
+    service_resources: ServiceResourcesDict,
     ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
@@ -102,11 +107,14 @@ def start_request_data(
             },
         ],
         paths_mapping={"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
+        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+            service_resources
+        ),
     )
 
 
 @pytest.fixture
-async def test_client(
+async def director_v2_client(
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
@@ -117,6 +125,7 @@ async def test_client(
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
@@ -143,7 +152,7 @@ async def test_client(
 
 @pytest.fixture
 async def ensure_services_stopped(
-    start_request_data: Dict[str, Any], test_client: TestClient
+    start_request_data: Dict[str, Any], director_v2_client: TestClient
 ) -> AsyncIterator[None]:
     yield
     # ensure service cleanup when done testing
@@ -158,7 +167,7 @@ async def ensure_services_stopped(
                 assert delete_result is True
 
         scheduler_interval = (
-            test_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+            director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
         )
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval)
@@ -223,7 +232,7 @@ async def key_version_expected(
 
 
 async def test_start_status_stop(
-    test_client: TestClient,
+    director_v2_client: TestClient,
     node_uuid: str,
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
@@ -236,12 +245,14 @@ async def test_start_status_stop(
         "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
         "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
     }
-    response: Response = await test_client.post(
+    response: Response = await director_v2_client.post(
         "/v2/dynamic_services", json=start_request_data, headers=headers
     )
     assert response.status_code == 201, response.text
 
-    await patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
+    await patch_dynamic_service_url(
+        app=director_v2_client.application, node_uuid=node_uuid
+    )
 
     # awaiting for service to be running
     data = {}
@@ -249,7 +260,7 @@ async def test_start_status_stop(
         status_is_not_running = True
         while status_is_not_running:
 
-            response: Response = await test_client.get(
+            response: Response = await director_v2_client.get(
                 f"/v2/dynamic_services/{node_uuid}", json=start_request_data
             )
             logger.warning("sidecar status result %s", response.text)
@@ -264,7 +275,7 @@ async def test_start_status_stop(
     assert data["service_state"] == "running"
 
     # finally stopping the service
-    response: Response = await test_client.delete(
+    response: Response = await director_v2_client.delete(
         f"/v2/dynamic_services/{node_uuid}", json=start_request_data
     )
     assert response.status_code == 204, response.text

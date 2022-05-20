@@ -12,10 +12,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_service_webserver.catalog_settings import (
-    CatalogSettings,
-    get_plugin_settings,
-)
+from settings_library.catalog import CatalogSettings
+from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 
 
