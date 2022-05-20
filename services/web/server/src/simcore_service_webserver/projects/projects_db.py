@@ -32,6 +32,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
@@ -233,6 +234,53 @@ def _get_node_outputs_changes(
         _get_outputs_keys(old_node)
     )
     return outputs_changed, changed_keys
+
+
+async def _update_workbench(
+    app: web.Application,
+    user_id: UserID,
+    project_uuid: str,
+    old_project: Dict[str, Any],
+    new_project: Dict[str, Any],
+) -> Deque[Coroutine]:
+    # any non set entry in the new workbench is taken from the old one if available
+    old_workbench = old_project["workbench"]
+    new_workbench = new_project["workbench"]
+    nodes_update_tasks: Deque[Coroutine] = deque()
+
+    for node_key, node in new_workbench.items():
+        old_node = old_workbench.get(node_key)
+        if not old_node:
+            continue
+
+        # In the moment to detect changes in the outputs of
+        # frontend services
+        outputs_changed, changed_keys = _get_node_outputs_changes(
+            new_node=node,
+            old_node=old_node,
+            filter_key="simcore/services/frontend/file-picker",
+        )
+        if outputs_changed:
+            nodes_update_tasks.append(
+                update_node_outputs(
+                    app=app,
+                    user_id=user_id,
+                    project_uuid=project_uuid,
+                    node_uuid=node_key,
+                    outputs=node.get("outputs", {}),
+                    run_hash=None,
+                    node_errors=None,
+                    ui_changed_keys=changed_keys,
+                )
+            )
+
+        for prop in old_node:
+            # check if the key is missing in the new node
+            if prop not in node:
+                # use the old value
+                node[prop] = old_node[prop]
+
+    return nodes_update_tasks
 
 
 class ProjectDBAPI:
@@ -739,51 +787,12 @@ class ProjectDBAPI:
                     )
                 )
 
-                # update the workbench
-                async def _update_workbench(
-                    old_project: Dict[str, Any], new_project: Dict[str, Any]
-                ) -> Deque[Coroutine]:
-                    # any non set entry in the new workbench is taken from the old one if available
-                    old_workbench = old_project["workbench"]
-                    new_workbench = new_project["workbench"]
-                    nodes_update_tasks: Deque[Coroutine] = deque()
-
-                    for node_key, node in new_workbench.items():
-                        old_node = old_workbench.get(node_key)
-                        if not old_node:
-                            continue
-
-                        # In the moment to detect changes in the outputs of
-                        # frontend services
-                        outputs_changed, changed_keys = _get_node_outputs_changes(
-                            new_node=node,
-                            old_node=old_node,
-                            filter_key="simcore/services/frontend/file-picker",
-                        )
-                        if outputs_changed:
-                            nodes_update_tasks.append(
-                                update_node_outputs(
-                                    app=self._app,
-                                    user_id=user_id,
-                                    project_uuid=project_uuid,
-                                    node_uuid=node_key,
-                                    outputs=node.get("outputs", {}),
-                                    run_hash=None,
-                                    node_errors=None,
-                                    ui_changed_keys=changed_keys,
-                                )
-                            )
-
-                        for prop in old_node:
-                            # check if the key is missing in the new node
-                            if prop not in node:
-                                # use the old value
-                                node[prop] = old_node[prop]
-
-                    return nodes_update_tasks
-
                 nodes_update_tasks: Deque[Coroutine] = await _update_workbench(
-                    current_project, new_project_data
+                    app=self._app,
+                    user_id=user_id,
+                    project_uuid=project_uuid,
+                    old_project=current_project,
+                    new_project=new_project_data,
                 )
 
                 # update timestamps
