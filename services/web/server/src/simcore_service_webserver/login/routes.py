@@ -8,9 +8,11 @@ from pprint import pformat
 from typing import List
 
 from aiohttp import web
-
 from servicelib.aiohttp import openapi
-from servicelib.aiohttp.rest_routing import iter_path_operations, map_handlers_with_operations
+from servicelib.aiohttp.rest_routing import (
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
 from . import api_keys_handlers
 from . import handlers as login_handlers

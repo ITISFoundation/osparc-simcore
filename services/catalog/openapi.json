@@ -453,11 +453,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get",
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/ResourceValue"
-                  }
+                  "$ref": "#/components/schemas/ServiceResources"
                 }
               }
             }
@@ -892,6 +888,13 @@
           "label": "initial_WTstates"
         }
       },
+      "DictModel_str__ResourceValue_": {
+        "title": "DictModel[str, ResourceValue]",
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ResourceValue"
+        }
+      },
       "DownloadLink": {
         "title": "DownloadLink",
         "required": [
@@ -923,6 +926,50 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ImageResources": {
+        "title": "ImageResources",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "image": {
+            "title": "Image",
+            "pattern": "[\\w/-]+:[\\w.@]+",
+            "type": "string",
+            "description": "used by the fro"
+          },
+          "resources": {
+            "$ref": "#/components/schemas/DictModel_str__ResourceValue_"
+          }
+        },
+        "example": {
+          "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+          "resources": {
+            "CPU": {
+              "limit": 4,
+              "reservation": 0.1
+            },
+            "RAM": {
+              "limit": 103079215104,
+              "reservation": 536870912
+            },
+            "VRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
             }
           }
         }
@@ -1024,7 +1071,7 @@
           "inputsUnits": {
             "title": "Inputsunits",
             "type": "object",
-            "description": "values of input unit"
+            "description": "Overrides default unit (if any) defined in the service for each port"
           },
           "inputAccess": {
             "type": "object",
@@ -1570,6 +1617,13 @@
         },
         "additionalProperties": false,
         "description": "Base class for service input/outputs"
+      },
+      "ServiceResources": {
+        "title": "ServiceResources",
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ImageResources"
+        }
       },
       "ServiceType": {
         "title": "ServiceType",

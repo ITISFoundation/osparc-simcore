@@ -126,10 +126,10 @@ To upgrade a single requirement named `fastapi`run:
 
 **WARNING** This application is **still under development**.
 
-- [Git release workflow](ops/README.md)
+- [Git release workflow](docs/releasing-workflow-instructions.md)
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
 - Production in https://osparc.io
-- [Staging instructions](docs/staging-instructions.md)
+- [Staging instructions](docs/releasing-workflow-instructions.md#staging-example)
 - [User Manual](https://itisfoundation.github.io/osparc-manual/)
 
 ## Contributing

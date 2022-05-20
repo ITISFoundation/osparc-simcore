@@ -1,8 +1,6 @@
 def create_service_out(**overrides):
     # FIXME: should change when schema changes
 
-
-
     obj = {
         "name": "Fast Counter",
         "key": "simcore/service/dynanic/itis/sim4life"
