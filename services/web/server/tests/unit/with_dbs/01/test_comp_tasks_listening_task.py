@@ -42,8 +42,8 @@ async def mock_project_subsystem(
             "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
             return_value="",
         ),
-        "_update_project_outputs": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_outputs",
+        "update_node_outputs": mocker.patch(
+            "simcore_service_webserver.projects.projects_nodes_utils.update_node_outputs",
             return_value="",
         ),
     }
@@ -69,7 +69,7 @@ async def comp_task_listening_task(
             {
                 "outputs": {"some new stuff": "it is new"},
             },
-            ["_get_project_owner", "_update_project_outputs"],
+            ["_get_project_owner", "update_node_outputs"],
             id="new output shall trigger",
         ),
         pytest.param(
@@ -79,7 +79,7 @@ async def comp_task_listening_task(
         ),
         pytest.param(
             {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
-            ["_get_project_owner", "_update_project_outputs", "_update_project_state"],
+            ["_get_project_owner", "update_node_outputs", "_update_project_state"],
             id="new output and state shall double trigger",
         ),
         pytest.param(

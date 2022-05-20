@@ -35,6 +35,7 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_schema_names,
     _create_project_access_rights,
     _find_changed_dict_keys,
+    _get_node_outputs_changes,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -548,6 +549,170 @@ def test_find_changed_dict_keys_file_picker_case(
         _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
         == exp_changes
     )
+
+
+@pytest.mark.parametrize(
+    "new_node, old_node, expected",
+    [
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "test_local.log",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": 0,
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                    }
+                },
+                "progress": 100,
+            },
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "File Picker",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {},
+                "progress": 0,
+                "runHash": None,
+            },
+            (True, {"outFile"}),
+            id="file-picker outputs changed (file was added)",
+        ),
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "File Picker",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {},
+                "progress": 0,
+            },
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "test_local.log",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+                "progress": 100,
+                "runHash": None,
+            },
+            (True, {"outFile"}),
+            id="file-picker outputs changed (file was removed)",
+        ),
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "test_local.log",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+                "progress": 100,
+            },
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "test_local.log",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+                "progress": 100,
+                "runHash": None,
+            },
+            (False, set()),
+            id="file-picker outputs did not change",
+        ),
+        pytest.param(
+            {"key": "simcore/services/frontend/file-picker", "outputs": None},
+            {"key": "simcore/services/frontend/diffrenet", "outputs": None},
+            (False, set()),
+            id="different keys do not trigger",
+        ),
+        pytest.param(
+            {"key": "simcore/services/frontend/file-picker", "outputs": {}},
+            {"key": "simcore/services/frontend/file-picker", "outputs": None},
+            (True, set()),
+            id="no and not existing outputs trigger",
+        ),
+        pytest.param(
+            {},
+            {},
+            (False, set()),
+            id="all keys missing do not trigger",
+        ),
+        pytest.param(
+            {"a": "key"},
+            {"another": "key"},
+            (False, set()),
+            id="different keys but missing key and outputs do not trigger",
+        ),
+        pytest.param(
+            {"key": "simcore/services/frontend/file-picker"},
+            {"key": "simcore/services/frontend/file-picker"},
+            (False, set()),
+            id="missing outputs do not trigger",
+        ),
+    ],
+)
+def test_did_node_outputs_change(
+    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: bool
+) -> None:
+    assert (
+        _get_node_outputs_changes(
+            new_node=new_node,
+            old_node=old_node,
+            filter_key="simcore/services/frontend/file-picker",
+        )
+        == expected
+    )
+
 
 @pytest.mark.parametrize(
     "user_role",

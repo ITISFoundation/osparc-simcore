@@ -12,7 +12,18 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Coroutine,
+    Deque,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -26,6 +37,7 @@ from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
+from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
@@ -40,6 +52,7 @@ from .projects_exceptions import (
     ProjectNotFoundError,
     ProjectsException,
 )
+from .projects_nodes_utils import update_node_outputs
 from .projects_utils import project_uses_available_services
 
 log = logging.getLogger(__name__)
@@ -197,6 +210,29 @@ def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
         if len(user_groups) == 0
         else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
     )
+
+
+def _get_node_outputs_changes(
+    new_node: dict[str, Any], old_node: dict[str, Any], filter_key: str
+) -> Tuple[bool, set[str]]:
+    """if node is a specific type it checks if outputs changed"""
+    nodes_keys = {old_node.get("key"), new_node.get("key")}
+    if not (len(nodes_keys) == 1 and nodes_keys.pop() == filter_key):
+        return False, set()
+
+    log.debug("Comparing nodes %s %s", new_node, old_node)
+    outputs_changed = new_node.get("outputs") != old_node.get("outputs")
+
+    def _get_outputs_keys(node_data: dict[str, Any]) -> Set[str]:
+        outputs = node_data.get("outputs", {})
+        if outputs is None:
+            return set()
+        return set(outputs.keys())
+
+    changed_keys = _get_outputs_keys(new_node).symmetric_difference(
+        _get_outputs_keys(old_node)
+    )
+    return outputs_changed, changed_keys
 
 
 class ProjectDBAPI:
@@ -704,24 +740,51 @@ class ProjectDBAPI:
                 )
 
                 # update the workbench
-                def _update_workbench(
+                async def _update_workbench(
                     old_project: Dict[str, Any], new_project: Dict[str, Any]
-                ) -> None:
+                ) -> Deque[Coroutine]:
                     # any non set entry in the new workbench is taken from the old one if available
                     old_workbench = old_project["workbench"]
                     new_workbench = new_project["workbench"]
+                    nodes_update_tasks: Deque[Coroutine] = deque()
+
                     for node_key, node in new_workbench.items():
                         old_node = old_workbench.get(node_key)
                         if not old_node:
                             continue
+
+                        # In the moment to detect changes in the outputs of
+                        # frontend services
+                        outputs_changed, changed_keys = _get_node_outputs_changes(
+                            new_node=node,
+                            old_node=old_node,
+                            filter_key="simcore/services/frontend/file-picker",
+                        )
+                        if outputs_changed:
+                            nodes_update_tasks.append(
+                                update_node_outputs(
+                                    app=self._app,
+                                    user_id=user_id,
+                                    project_uuid=project_uuid,
+                                    node_uuid=node_key,
+                                    outputs=node.get("outputs", {}),
+                                    run_hash=None,
+                                    node_errors=None,
+                                    ui_changed_keys=changed_keys,
+                                )
+                            )
+
                         for prop in old_node:
                             # check if the key is missing in the new node
                             if prop not in node:
                                 # use the old value
                                 node[prop] = old_node[prop]
-                    return new_project
 
-                _update_workbench(current_project, new_project_data)
+                    return nodes_update_tasks
+
+                nodes_update_tasks: Deque[Coroutine] = await _update_workbench(
+                    current_project, new_project_data
+                )
 
                 # update timestamps
                 new_project_data["lastChangeDate"] = now_str()
@@ -739,6 +802,10 @@ class ProjectDBAPI:
                     .returning(literal_column("*"))
                 )
                 project: RowProxy = await result.fetchone()
+
+                for node_update_task in nodes_update_tasks:
+                    fire_and_forget_task(node_update_task)
+
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
