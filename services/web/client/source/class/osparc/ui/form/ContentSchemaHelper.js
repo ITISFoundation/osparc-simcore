@@ -71,6 +71,28 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
       return manager;
     },
 
+    getArrayDomainText: function(s) {
+      const s2 = osparc.utils.Utils.deepCloneObject(s);
+      if ("items" in s2) {
+        Object.keys(s2.items).forEach(item => {
+          s2[item] = s2.items[item];
+        });
+      }
+      let rangeText = this.getDomainText(s2.items);
+      if (rangeText === null) {
+        rangeText = "";
+      }
+      if ("minItems" in s) {
+        rangeText += "<br>";
+        rangeText += qx.locale.Manager.tr("Minimum items: ") + s.minItems;
+      }
+      if ("maxItems" in s) {
+        rangeText += "<br>";
+        rangeText += qx.locale.Manager.tr("Maximum items: ") + s.maxItems;
+      }
+      return rangeText;
+    },
+
     createArrayValidator: function(control, s) {
       const manager = new qx.ui.form.validation.Manager();
       manager.add(control, (valuesInString, item) => {
