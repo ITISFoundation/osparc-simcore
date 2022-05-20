@@ -281,7 +281,7 @@ async def get_job_outputs(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs/logs",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logs",
     response_class=RedirectResponse,
     responses={
         status.HTTP_200_OK: {
