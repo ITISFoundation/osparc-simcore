@@ -25,11 +25,11 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         CatalogClient.create(
             app,
             client=httpx.AsyncClient(
-                base_url=f"{settings.endpoint}",
+                base_url=f"{settings.api_base_url}",
                 timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
             ),
         )
-        logger.debug("created client for catalog: %s", settings.endpoint)
+        logger.debug("created client for catalog: %s", settings.api_base_url)
 
         # Here we currently do not ensure the catalog is up on start
         # This will need to be assessed.

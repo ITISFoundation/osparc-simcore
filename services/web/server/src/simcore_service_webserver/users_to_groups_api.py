@@ -1,8 +1,9 @@
 from typing import Set
+
 import sqlalchemy as sa
 from aiohttp import web
-
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+
 from .db_models import user_to_groups
 
 

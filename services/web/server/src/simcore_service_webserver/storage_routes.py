@@ -7,7 +7,6 @@ import logging
 from typing import List
 
 from aiohttp import web
-
 from servicelib.aiohttp import openapi
 
 from . import storage_handlers

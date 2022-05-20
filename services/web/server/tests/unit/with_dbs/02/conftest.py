@@ -19,6 +19,7 @@ from typing import (
 
 import pytest
 from aiohttp import web
+from pydantic import parse_obj_as
 from aioresponses import aioresponses
 from models_library.projects_access import Owner
 from models_library.projects_state import (
@@ -27,6 +28,10 @@ from models_library.projects_state import (
     ProjectState,
     ProjectStatus,
     RunningState,
+)
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
@@ -60,6 +65,7 @@ def client(
     postgres_db,
     mocked_director_v2_api,
     mock_orphaned_services,
+    mock_catalog_api: None,
     redis_client,
     monkeypatch_setenv_from_app_config: Callable,
 ):
@@ -133,6 +139,22 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=state,
+    )
+
+
+@pytest.fixture
+def mock_service_resources() -> ServiceResourcesDict:
+    return parse_obj_as(
+        ServiceResourcesDict,
+        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    )
+
+
+@pytest.fixture
+def mock_catalog_api(mocker, mock_service_resources: ServiceResourcesDict) -> None:
+    mocker.patch(
+        "simcore_service_webserver.catalog_client.get_service_resources",
+        return_value=mock_service_resources,
     )
 
 
