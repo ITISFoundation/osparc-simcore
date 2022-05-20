@@ -11,24 +11,24 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from models_library.services_resources import (
+    CPU_100_PERCENT,
+    DEFAULT_SINGLE_SERVICE_NAME,
+    GIGA,
+    MEMORY_1GB,
+    ServiceResourcesDict,
+)
+from servicelib.docker_compose import (
+    MATCH_IMAGE_END,
+    MATCH_IMAGE_START,
+    MATCH_SERVICE_VERSION,
+)
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
-# Notes on below env var names:
-# - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
-# deployed inside the platform
-# - SERVICE_VERSION will be replaced by the version of the service
-# to which this compos spec is attached
-# Example usage in docker compose:
-#   image: ${SIMCORE_REGISTRY}/${DOCKER_IMAGE_NAME}-dynamic-sidecar-compose-spec:${SERVICE_VERSION}
-MATCH_SERVICE_VERSION = "${SERVICE_VERSION}"
-MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
-MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
-MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
-
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
+
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 
 # pylint: disable=too-many-branches
-def inject_settings_to_create_service_params(
+def update_service_params_from_settings(
     labels_service_settings: SimcoreServiceSettingsLabel,
     create_service_params: Dict[str, Any],
 ) -> None:
@@ -169,8 +169,8 @@ async def _extract_osparc_involved_service_labels(
 
     If the service contains a compose-spec that will also be parsed for images.
     Searches for images like the following in the spec:
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:${SERVICE_VERSION}`
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
     """
 
     # initialize with existing labels
@@ -180,7 +180,7 @@ async def _extract_osparc_involved_service_labels(
         _default_key: service_labels
     }
     # maps form image_name to compose_spec key
-    reverse_mapping: Dict[str, str] = {_default_key: CONTAINER_NAME}
+    reverse_mapping: Dict[str, str] = {_default_key: DEFAULT_SINGLE_SERVICE_NAME}
 
     def remap_to_compose_spec_key() -> Dict[str, str]:
         # remaps from image_name as key to compose_spec key
@@ -190,7 +190,6 @@ async def _extract_osparc_involved_service_labels(
         ComposeSpecLabel, service_labels.compose_spec
     )
     if compose_spec is None:
-
         return remap_to_compose_spec_key()
 
     compose_spec_services = compose_spec.get("services", {})
@@ -210,7 +209,7 @@ async def _extract_osparc_involved_service_labels(
         ):
             continue
 
-        # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
+        # strips `${SIMCORE_REGISTRY}/`; replaces `${SERVICE_VERSION}` with `service_tag`
         osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(
             MATCH_IMAGE_START, ""
         )
@@ -256,22 +255,19 @@ def _add_compose_destination_container_to_settings_entries(
 
 def _merge_resources_in_settings(
     settings: Deque[SimcoreServiceSettingLabelEntry],
+    service_resources: ServiceResourcesDict,
 ) -> Deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
-    result: Deque[SimcoreServiceSettingLabelEntry] = deque()
-    resources_entries: Deque[SimcoreServiceSettingLabelEntry] = deque()
+    log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
 
-    log.debug("merging settings %s", settings)
+    result: Deque[SimcoreServiceSettingLabelEntry] = deque()
 
     for entry in settings:
         entry: SimcoreServiceSettingLabelEntry = entry
         if entry.name == "Resources" and entry.setting_type == "Resources":
-            resources_entries.append(entry)
-        else:
-            result.append(entry)
-
-    if len(resources_entries) <= 1:
-        return settings
+            # skipping resources
+            continue
+        result.append(entry)
 
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
@@ -291,26 +287,43 @@ def _merge_resources_in_settings(
         )
     )
 
-    for resource_entry in resources_entries:
-        resource_entry: SimcoreServiceSettingLabelEntry = resource_entry
-        limits = resource_entry.value.get("Limits", {})
-        empty_resource_entry.value["Limits"]["NanoCPUs"] += limits.get("NanoCPUs", 0)
-        empty_resource_entry.value["Limits"]["MemoryBytes"] += limits.get(
-            "MemoryBytes", 0
-        )
-
-        reservations = resource_entry.value.get("Reservations", {})
-        empty_resource_entry.value["Reservations"]["NanoCPUs"] = reservations.get(
-            "NanoCPUs", 0
-        )
-        empty_resource_entry.value["Reservations"]["MemoryBytes"] = reservations.get(
-            "MemoryBytes", 0
-        )
-        empty_resource_entry.value["Reservations"]["GenericResources"] = []
-        # put all generic resources together without looking for duplicates
-        empty_resource_entry.value["Reservations"]["GenericResources"].extend(
-            reservations.get("GenericResources", [])
-        )
+    for _, image_resources in service_resources.items():
+        for resource_name, resource_value in image_resources.resources.items():
+            if resource_name == "CPU":
+                empty_resource_entry.value["Limits"]["NanoCPUs"] += int(
+                    float(resource_value.limit) * GIGA
+                )
+                empty_resource_entry.value["Reservations"]["NanoCPUs"] += int(
+                    float(resource_value.reservation) * GIGA
+                )
+            elif resource_name == "RAM":
+                empty_resource_entry.value["Limits"][
+                    "MemoryBytes"
+                ] += resource_value.limit
+                empty_resource_entry.value["Reservations"][
+                    "MemoryBytes"
+                ] += resource_value.reservation
+            else:  # generic resources
+                generic_resource = {
+                    "DiscreteResourceSpec": {
+                        "Kind": resource_name,
+                        # NOTE: when dealing with generic resources only `reservation`
+                        # is set, `limit` is 0
+                        "Value": resource_value.reservation,
+                    }
+                }
+                empty_resource_entry.value["Reservations"]["GenericResources"].extend(
+                    [generic_resource]
+                )
+    # since some services do not define CPU limitations, by default 0.1% CPU is assigned
+    # ensuring limit is at least 1.0 CPUs otherwise the dynamic-sidecar is not able to work
+    # properly
+    empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
+        empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
+    )
+    empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
+        empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
+    )
 
     result.append(empty_resource_entry)
 
@@ -384,13 +397,9 @@ def _assemble_env_vars_for_boot_options(
     )
 
 
-async def merge_settings_before_use(
-    director_v0_client: DirectorV0Client,
-    service_key: str,
-    service_tag: str,
-    service_user_selection_boot_options: Dict[EnvVarKey, str],
-) -> SimcoreServiceSettingsLabel:
-
+async def get_labels_for_involved_services(
+    director_v0_client: DirectorV0Client, service_key: str, service_tag: str
+) -> Dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service_key, version=service_tag)
@@ -412,6 +421,21 @@ async def merge_settings_before_use(
         service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+    return labels_for_involved_services
+
+
+async def merge_settings_before_use(
+    director_v0_client: DirectorV0Client,
+    service_key: str,
+    service_tag: str,
+    service_user_selection_boot_options: Dict[EnvVarKey, str],
+    service_resources: ServiceResourcesDict,
+) -> SimcoreServiceSettingsLabel:
+    labels_for_involved_services = await get_labels_for_involved_services(
+        director_v0_client=director_v0_client,
+        service_key=service_key,
+        service_tag=service_tag,
+    )
 
     # merge the settings from the all the involved services
     settings: Deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
@@ -442,10 +466,10 @@ async def merge_settings_before_use(
                 )
             )
 
-    settings = _merge_resources_in_settings(settings)
+    settings = _merge_resources_in_settings(settings, service_resources)
     settings = _patch_target_service_into_env_vars(settings)
 
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
-__all__ = ["merge_settings_before_use", "inject_settings_to_create_service_params"]
+__all__ = ["merge_settings_before_use", "update_service_params_from_settings"]

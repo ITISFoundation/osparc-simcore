@@ -293,12 +293,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                             "version": "2.3",
                             "services": {
                                 "rt-web": {
-                                    "image": "${REGISTRY_URL}/simcore/services/dynamic/sim4life:${SERVICE_TAG}",
+                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
                                     "init": True,
                                     "depends_on": ["s4l-core"],
                                 },
                                 "s4l-core": {
-                                    "image": "${REGISTRY_URL}/simcore/services/dynamic/s4l-core:${SERVICE_TAG}",
+                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
                                     "runtime": "nvidia",
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],

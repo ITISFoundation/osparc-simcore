@@ -140,7 +140,6 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> None:
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
-
         response = await self._client.post(url, data=compose_spec)
         if response.status_code != status.HTTP_202_ACCEPTED:
             raise DynamicSidecarUnexpectedResponseStatus(response, "service creation")

@@ -2,7 +2,7 @@ from typing import Optional
 
 from models_library.services import ServiceDockerData, ServiceMetaData
 from models_library.services_access import ServiceAccessRights
-from models_library.services_resources import ServiceResources
+from models_library.services_resources import ServiceResourcesDict
 from pydantic import EmailStr, Extra
 from pydantic.main import BaseModel
 
@@ -135,4 +135,4 @@ class ServiceItem(BaseModel):
         }
 
 
-ServiceResourcesGet = ServiceResources
+ServiceResourcesGet = ServiceResourcesDict

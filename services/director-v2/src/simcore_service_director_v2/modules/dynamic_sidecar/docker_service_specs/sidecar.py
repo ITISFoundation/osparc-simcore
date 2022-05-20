@@ -11,7 +11,7 @@ from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namepsace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
-from .settings import inject_settings_to_create_service_params
+from .settings import update_service_params_from_settings
 
 log = logging.getLogger(__name__)
 
@@ -234,16 +234,13 @@ def get_dynamic_sidecar_spec(
             },
             # this will get overwritten
             "Resources": {
-                "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
-                "Reservation": {
-                    "NanoCPUs": 1 * pow(10, 8),
-                    "MemoryBytes": 500 * pow(1024, 2),
-                },
+                "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                "Reservation": {"NanoCPUs": 0, "MemoryBytes": 0},
             },
         },
     }
 
-    inject_settings_to_create_service_params(
+    update_service_params_from_settings(
         labels_service_settings=settings,
         create_service_params=create_service_params,
     )
