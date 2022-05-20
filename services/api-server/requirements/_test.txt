@@ -32,17 +32,17 @@ bcrypt==3.2.2
     # via
     #   paramiko
     #   passlib
-boto3==1.23.3
+boto3==1.23.4
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.26.3
+botocore==1.26.4
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -83,7 +83,7 @@ cryptography==36.0.2
     #   paramiko
     #   python-jose
     #   sshpubkeys
-dill==0.3.4
+dill==0.3.5
     # via pylint
 distro==1.7.0
     # via docker-compose
@@ -115,10 +115,6 @@ flask==2.1.2
     #   moto
 flask-cors==3.0.10
     # via moto
-fsspec==2022.3.0
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
 future==0.18.2
     # via aws-xray-sdk
 graphql-core==3.2.1
@@ -334,10 +330,6 @@ sqlalchemy==1.4.32
     #   alembic
 sshpubkeys==3.3.1
     # via moto
-tenacity==8.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
 texttable==1.6.4
     # via docker-compose
 tomli==2.0.1
