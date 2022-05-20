@@ -5,6 +5,7 @@
 
 import json
 import logging
+from importlib import reload
 from typing import Any, AsyncIterator, Dict, List
 from unittest import mock
 
@@ -16,6 +17,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_service_webserver import computation_comp_tasks_listening_task
 from simcore_service_webserver.computation_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
@@ -33,20 +35,23 @@ logger = logging.getLogger(__name__)
 async def mock_project_subsystem(
     mocker: MockerFixture,
 ) -> AsyncIterator[Dict[str, mock.MagicMock]]:
-    mocked_project_calls = {
-        "_get_project_owner": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
-            return_value="",
-        ),
-        "_update_project_state": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
-            return_value="",
-        ),
-        "update_node_outputs": mocker.patch(
-            "simcore_service_webserver.projects.projects_nodes_utils.update_node_outputs",
-            return_value="",
-        ),
-    }
+    mocked_project_calls = {}
+
+    mocked_project_calls["update_node_outputs"] = mocker.patch(
+        "simcore_service_webserver.projects.projects_nodes_utils.update_node_outputs",
+        return_value="",
+    )
+    reload(computation_comp_tasks_listening_task)
+
+    mocked_project_calls["_get_project_owner"] = mocker.patch(
+        "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
+        return_value="",
+    )
+    mocked_project_calls["_update_project_state"] = mocker.patch(
+        "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
+        return_value="",
+    )
+
     yield mocked_project_calls
 
 
