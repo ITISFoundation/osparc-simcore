@@ -1,0 +1,61 @@
+cff-version: 1.2.0
+title: o²S²PARC platform (SIM-Core NIH SPARC program)
+message: >-
+  If you use this software, please cite it using
+  these metadata
+type: software
+abstract: >-
+  o²S²PARC (Open Online Simulations for Stimulating Peripheral Activity to Relieve Conditions)
+  is a simulation platform responsible for the SIM-Core within [NIH SPARC program](https://sparc.science/).
+  This platform enables users to create, access, tune, and run models or
+  computational algorithms through web based interface. Web interactive simulation platform that
+  hosts SPARC computational models and solvers. Allows collaborative development and sharing, model
+  coupling and cloud based execution, data visualization and analysis, and ensures sustainability of
+  computational models developed within the [SPARC portal](https://sparc.science/).
+  Enables users to create predictive, multiscale, multi-physics
+  models spanning from modulation sources acting on peripheral nervous system (PNS) to
+  resulting modulation of organ functional response.
+  This project is funded by NIH SPARC Award #OT3OD025348.
+contact:
+  - affiliation: "IT'IS Foundation"
+    email: "support@osparc.io"
+    family-names: Neufeld
+    given-names: Esra
+authors:
+  - given-names: Sylvain
+    family-names: Anderegg
+    affiliation: "IT'IS Foundation"
+  - given-names: Odei
+    family-names: Maiz Barandiaran
+    affiliation: "IT'IS Foundation"
+  - given-names: Pedro
+    family-names: Crespo-Valero
+    orcid: "https://orcid.org/0000-0002-9441-1569"
+  - given-names: Andrei
+    family-names: Neagu
+    affiliation: "IT'IS Foundation"
+  - given-names: Manuel
+    family-names: Guidon
+    orcid: "https://orcid.org/0000-0003-3543-6683"
+  - given-names: Katie
+    family-names: Zhuang
+    orcid: "https://orcid.org/0000-0002-9469-4765"
+  - given-names: Ignacio
+    family-names: Pascual
+    affiliation: "IT'IS Foundation"
+  - given-names: Dustin
+    family-names: Kaiser
+    orcid: "https://orcid.org/0000-0003-2251-1509"
+  - given-names: Alexandre
+    family-names: Allexandre
+    affiliation: "IT'IS Foundation"
+  - given-names: Tobias
+    family-names: Oetiker
+    affiliation: "OETIKER+PARTNER AG"
+license: "MIT"
+url: "https://docs.osparc.io"
+repository-code: "https://github.com/ITISFoundation/osparc-simcore"
+identifiers:
+  - type: url
+    value: https://scicrunch.org/resolver/RRID:SCR_018997
+    description: "o²S²PARC Research Resource IDentification (RRID)"
