@@ -149,11 +149,26 @@ def _convert_to_schema_names(
 
 
 def _find_changed_dict_keys(
-    current_dict: Dict[str, Any],
-    new_dict: Dict[str, Any],
+    current_dict: dict[str, Any],
+    new_dict: dict[str, Any],
     *,
     look_for_removed_keys: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
+    # The `store` key inside outputs can be either `0` (integer) or `"0"` (string)
+    # this generates false positives.
+    # Casting to `str` to fix the issue.
+    # NOTE: this could make services relying on side effects to stop form propagating
+    # changes to downstream connected services.
+    # Will only fix the issue for `file-picker` to avoid issues.
+    def _cast_outputs_store(dict_data: dict[str, Any]) -> None:
+        for data in dict_data.get("outputs", {}).values():
+            if "store" in data:
+                data["store"] = f"{data['store']}"
+
+    if current_dict.get("key") == "simcore/services/frontend/file-picker":
+        _cast_outputs_store(current_dict)
+        _cast_outputs_store(new_dict)
+
     # start with the missing keys
     changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
     if look_for_removed_keys:

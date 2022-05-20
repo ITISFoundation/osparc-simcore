@@ -505,6 +505,51 @@ def test_find_changed_dict_keys(
 
 
 @pytest.mark.parametrize(
+    "dict_a, dict_b, exp_changes",
+    [
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "outputs": {"outFile": {"store": 0}},
+                "runHash": None,
+            },
+            {
+                "outputs": {"outFile": {"store": "0"}},
+                "runHash": None,
+            },
+            {},
+            id="cast store to string avoids triggering",
+        ),
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "File Picker",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {},
+                "progress": 0,
+                "runHash": None,
+            },
+            {"outputs": {}, "runHash": None},
+            # the result of the function is correct
+            {},
+            id="removing a file from file picker",
+        ),
+    ],
+)
+def test_find_changed_dict_keys_file_picker_case(
+    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
+):
+    assert (
+        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        == exp_changes
+    )
+
+@pytest.mark.parametrize(
     "user_role",
     [
         (UserRole.USER),
