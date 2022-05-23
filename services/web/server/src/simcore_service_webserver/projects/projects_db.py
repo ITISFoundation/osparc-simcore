@@ -45,6 +45,7 @@ from .projects_exceptions import (
 )
 from .projects_nodes_utils import update_node_outputs
 from .projects_utils import (
+    find_changed_dict_keys,
     project_uses_available_services,
     get_node_outputs_changes,
     OutputsChanges,
@@ -154,49 +155,6 @@ def _convert_to_schema_names(
         converted_args[snake_to_camel(key)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
-
-
-def _find_changed_dict_keys(
-    current_dict: dict[str, Any],
-    new_dict: dict[str, Any],
-    *,
-    look_for_removed_keys: bool,
-) -> dict[str, Any]:
-    # The `store` key inside outputs can be either `0` (integer) or `"0"` (string)
-    # this generates false positives.
-    # Casting to `str` to fix the issue.
-    # NOTE: this could make services relying on side effects to stop form propagating
-    # changes to downstream connected services.
-    # Will only fix the issue for `file-picker` to avoid issues.
-    def _cast_outputs_store(dict_data: dict[str, Any]) -> None:
-        for data in dict_data.get("outputs", {}).values():
-            if "store" in data:
-                data["store"] = int(data["store"])
-
-    if current_dict.get("key") == "simcore/services/frontend/file-picker":
-        _cast_outputs_store(current_dict)
-        _cast_outputs_store(new_dict)
-
-    # start with the missing keys
-    changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
-    if look_for_removed_keys:
-        changed_keys.update(
-            {k: current_dict[k] for k in current_dict.keys() - new_dict.keys()}
-        )
-    # then go for the modified ones
-    for k in current_dict.keys() & new_dict.keys():
-        if current_dict[k] == new_dict[k]:
-            continue
-        # if the entry was modified put the new one
-        modified_entry = {k: new_dict[k]}
-        if isinstance(new_dict[k], dict):
-            modified_entry = {
-                k: _find_changed_dict_keys(
-                    current_dict[k], new_dict[k], look_for_removed_keys=True
-                )
-            }
-        changed_keys.update(modified_entry)
-    return changed_keys
 
 
 def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
@@ -676,7 +634,7 @@ class ProjectDBAPI:
                         # find changed keys
                         changed_entries.update(
                             {
-                                node_key: _find_changed_dict_keys(
+                                node_key: find_changed_dict_keys(
                                     current_node_data,
                                     new_node_data,
                                     look_for_removed_keys=False,

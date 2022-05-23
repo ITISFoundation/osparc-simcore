@@ -28,7 +28,6 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
-    _find_changed_dict_keys,
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
     ProjectAccessRights,
@@ -37,6 +36,7 @@ from simcore_service_webserver.projects.projects_db import (
     SCHEMA_NON_NULL_KEYS,
 )
 from simcore_service_webserver.projects.projects_utils import (
+    find_changed_dict_keys,
     get_node_outputs_changes,
     OutputsChanges,
 )
@@ -503,7 +503,7 @@ def test_find_changed_dict_keys(
     dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
 ):
     assert (
-        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
         == exp_changes
     )
 
@@ -549,7 +549,7 @@ def test_find_changed_dict_keys_file_picker_case(
     dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
 ):
     assert (
-        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
         == exp_changes
     )
 
