@@ -421,7 +421,7 @@ class TutorialBase {
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
       // await this.waitForStudyUnlocked(studyId);
-      const nTries = 30;
+      const nTries = 10;
       let i
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);

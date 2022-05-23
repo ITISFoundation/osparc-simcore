@@ -40,26 +40,26 @@ async function runTutorial() {
 
 
       // Run the jlab nbook
-      let iframeHandles2 = await tutorial.getIframe();
+      const iframeHandles = await tutorial.getIframe();
       let iframes2 = [];
-      for (let i = 0; i < iframeHandles2.length; i++) {
-        const frame = await iframeHandles2[i].contentFrame();
+      for (let i = 0; i < iframeHandles.length; i++) {
+        const frame = await iframeHandles[i].contentFrame();
         iframes2.push(frame);
       }
-      let jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][j]));
+      const jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][j]));
 
-      let input2outputFileSelector = '[title~="jl_notebook.ipynb"]';
+      const input2outputFileSelector = '[title~="jl_notebook.ipynb"]';
       await jLabIframe.waitForSelector(input2outputFileSelector);
       await jLabIframe.click(input2outputFileSelector, {
         clickCount: 2
       });
       await tutorial.waitFor(5000);
       // click Run Menu
-      let mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)'; // select the Run Menu
+      const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)'; // select the Run Menu
       await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
 
       // click Run All Cells
-      let mainRunAllBtnSelector = '#jp-mainmenu-run > ul > li:nth-child(12)'; // select the Run
+      const mainRunAllBtnSelector = '#jp-mainmenu-run > ul > li:nth-child(12)'; // select the Run
       await utils.waitAndClick(jLabIframe, mainRunAllBtnSelector)
 
       if (j === 2) {
