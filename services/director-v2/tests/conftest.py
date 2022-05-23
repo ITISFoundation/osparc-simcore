@@ -5,6 +5,7 @@
 
 import json
 import logging
+import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterable, Dict, Iterable
@@ -116,6 +117,16 @@ def fake_workbench_complete_adjacency_file(mocks_dir: Path) -> Path:
 
 
 # APP/CLIENTS INITS --------------------------------------
+
+
+@pytest.fixture
+def dynamic_sidecar_docker_image_name() -> str:
+    """composes dynamic-sidecar names using env vars"""
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+    return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
 @pytest.fixture(scope="function")

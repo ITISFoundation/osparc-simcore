@@ -7,7 +7,6 @@
 
 import asyncio
 import json
-import os
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,16 +50,6 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 # FIXTURES ---------------------------------------
-
-
-@pytest.fixture
-def dynamic_sidecar_docker_image_name() -> str:
-    """composes dynamic-sidecar names using env vars"""
-    # Works as below line in docker.compose.yml
-    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
-    registry = os.environ.get("DOCKER_REGISTRY", "local")
-    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
-    return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
 @pytest.fixture(scope="function")
