@@ -254,7 +254,7 @@ class TutorialBase {
       for (let i = nodeIds.length - 1; i >= 0; i--) {
         const nodeId = nodeIds[i];
         let isLoaded = await utils.isServiceReady(this.__page, studyId, nodeId);
-        if(waitForConnected) {
+        if (waitForConnected) {
           isLoaded = isLoaded && await utils.isServiceConnected(this.__page, studyId, nodeId);
         }
 
