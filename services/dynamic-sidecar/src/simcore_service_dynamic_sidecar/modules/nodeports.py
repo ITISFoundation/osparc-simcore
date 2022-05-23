@@ -7,9 +7,10 @@ import tempfile
 import time
 from collections import deque
 from pathlib import Path
-from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, cast
 
 import magic
+from models_library.projects_nodes import OutputsDict
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -151,7 +152,7 @@ def _is_zip_file(file_path: Path) -> bool:
     return f"{mime_type}" == "application/zip"
 
 
-async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
+async def _get_data_from_port(port: Port) -> tuple[Port, Optional[ItemConcreteValue]]:
     tag = f"[{port.key}] "
     logger.info("%s transfer started for %s", tag, port.key)
     start_time = time.perf_counter()
@@ -167,21 +168,21 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
             size_mb,
             size_mb / elapsed_time,
         )
-    return (port, ret)
+    return port, ret
 
 
 async def _download_files(
     target_path: Path, download_tasks: Deque[Coroutine[Any, int, Any]]
-) -> Tuple[dict[str, Any], ByteSize]:
+) -> tuple[OutputsDict, ByteSize]:
     transferred_bytes = 0
-    data: dict[str, Any] = {}
+    data: OutputsDict = {}
 
     if not download_tasks:
         return data, ByteSize(transferred_bytes)
 
     # TODO: limit concurrency to avoid saturating storage+db??
-    results: List[Tuple[Port, ItemConcreteValue]] = cast(
-        List[Tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
+    results: List[tuple[Port, ItemConcreteValue]] = cast(
+        List[tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
     )
     logger.info("completed download %s", results)
     for port, value in results:
