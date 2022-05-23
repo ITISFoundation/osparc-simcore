@@ -157,10 +157,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const node = this.getStudy().getWorkbench().getNode(lastCurrentNodeId);
       if (node && node.isComputational()) {
         // run if last run was not succesful
-        let needsRun = node.getStatus().getRunning() !== "SUCCESS";
+        let isReady = node.getStatus().getRunning() !== "SUCCESS";
         // or inputs changed
-        needsRun = needsRun || node.getStatus().getOutput() === "out-of-date";
-        return !needsRun;
+        isReady = isReady || node.getStatus().getOutput() === "out-of-date";
+        return !isReady;
       }
       return true;
     },
@@ -172,7 +172,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       upstreamNodeIds.forEach(upstreamNodeId => {
         const upstreamNode = wb.getNode(upstreamNodeId);
         if (upstreamNode.isComputational() && upstreamNode.getStatus().getRunning() !== "SUCCESS") {
-          dependencies.push(upstreamNode);
+          dependencies.push(upstreamNodeId);
         }
       });
       return dependencies;
@@ -297,16 +297,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             win.addListener("close", () => {
               if (win.getConfirmed()) {
                 this.fireDataEvent("startPartialPipeline", dependencies);
-              }
-              // bring the user back to the old node or to the first dependency
-              if (lastCurrentNodeId === this.__currentNodeId) {
-                this.__moveToNode(dependencies[0]);
+                osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Preparing inputs"));
               } else {
+                // bring the user back to the old node
                 this.__moveToNode(lastCurrentNodeId);
+                // this.__currentNodeId = lastCurrentNodeId;
+                // studyUI.setCurrentNodeId(lastCurrentNodeId);
               }
             }, this);
-            this.__currentNodeId = lastCurrentNodeId;
-            studyUI.setCurrentNodeId(lastCurrentNodeId);
             return;
           }
         }
