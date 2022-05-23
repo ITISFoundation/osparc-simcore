@@ -166,7 +166,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     __getNotReadyDependencies: function(node) {
-      const dependencies = node.getStatus().getDependencies(); // works when node is computational
+      const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
       const upstreamNodeIds = wb.getUpstreamNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
