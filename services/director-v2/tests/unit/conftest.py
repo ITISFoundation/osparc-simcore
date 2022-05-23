@@ -45,8 +45,8 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    return SimcoreServiceLabels(
-        **SimcoreServiceLabels.Config.schema_extra["examples"][1]
+    return SimcoreServiceLabels.parse_obj(
+        SimcoreServiceLabels.Config.schema_extra["examples"][1]
     )
 
 
@@ -223,6 +223,15 @@ async def local_dask_gateway_server(
     print("...done")
 
 
+@pytest.fixture(params=list(FileLinkType))
+def tasks_file_link_type(request) -> FileLinkType:
+    """parametrized fixture on all FileLinkType enum variants"""
+    return request.param
+
+
+# MOCKS the STORAGE service API responses ----------------------------------------
+
+
 @pytest.fixture
 def fake_s3_settings(faker: Faker) -> S3Settings:
     return S3Settings(
@@ -235,8 +244,12 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 
 @pytest.fixture
-def mocked_storage_service_fcts(fake_s3_settings) -> Iterator[respx.MockRouter]:
+def mocked_storage_service_api(fake_s3_settings) -> Iterator[respx.MockRouter]:
     settings = AppSettings.create_from_envs()
+    assert settings
+    assert settings.DIRECTOR_V2_STORAGE
+
+    # pylint: disable=not-context-manager
     with respx.mock(  # type: ignore
         base_url=settings.DIRECTOR_V2_STORAGE.endpoint,
         assert_all_called=False,
@@ -250,9 +263,7 @@ def mocked_storage_service_fcts(fake_s3_settings) -> Iterator[respx.MockRouter]:
         yield respx_mock
 
 
-@pytest.fixture(params=list(FileLinkType))
-def tasks_file_link_type(request) -> FileLinkType:
-    return request.param
+# MOCKS the CATALOG service API responses ----------------------------------------
 
 
 @pytest.fixture
@@ -313,11 +324,15 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
 
 
 @pytest.fixture
-def mocked_catalog_service_fcts(
+def mocked_catalog_service_api(
     mock_service_key_version: ServiceKeyVersion,
     fake_service_specifications: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
     settings = AppSettings.create_from_envs()
+    assert settings
+    assert settings.DIRECTOR_V2_CATALOG
+
+    # pylint: disable=not-context-manager
     with respx.mock(  # type: ignore
         base_url=settings.DIRECTOR_V2_CATALOG.api_base_url,
         assert_all_called=False,

@@ -34,7 +34,7 @@ def user_id(faker: Faker) -> UserID:
 
 def test_get_catalog_client_instance(
     minimal_catalog_config: None,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
 ):
     catalog_client: CatalogClient = minimal_app.state.catalog_client
@@ -44,7 +44,7 @@ def test_get_catalog_client_instance(
 
 async def test_get_service_specifications(
     minimal_catalog_config: None,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     user_id: UserID,
     mock_service_key_version: ServiceKeyVersion,
