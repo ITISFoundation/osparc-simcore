@@ -7,6 +7,7 @@
 
 import asyncio
 import json
+import os
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -52,10 +53,20 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 # FIXTURES ---------------------------------------
 
 
+@pytest.fixture
+def dynamic_sidecar_docker_image_name() -> str:
+    """composes dynamic-sidecar names using env vars"""
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+    return f"{registry}/dynamic-sidecar:{image_tag}"
+
+
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch,
-    dynamic_sidecar_docker_image: str,
+    dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
 ) -> None:
     # used by the client fixture
@@ -67,7 +78,7 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image_name)
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")

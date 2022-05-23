@@ -1,9 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
-# pylint:disable=no-value-for-parameter
-# pylint:disable=too-many-arguments
+# pylint: disable=no-value-for-parameter
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from typing import Any, Callable, Dict, List
 
