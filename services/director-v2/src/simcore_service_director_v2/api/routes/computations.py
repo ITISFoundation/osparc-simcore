@@ -68,6 +68,7 @@ from ...utils.dags import (
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
+from .computations_tasks import analyze_pipeline
 
 PIPELINE_ABORT_TIMEOUT_S = 10
 
@@ -230,27 +231,9 @@ async def get_computation(
     # check that project actually exists
     await project_repo.get_project(project_id)
 
-    # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
-    # get the project pipeline
-    pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(
-        project_id
+    pipeline_dag, all_tasks, filtered_tasks = await analyze_pipeline(
+        project_id, comp_pipelines_repo, comp_tasks_repo
     )
-    pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
-
-    # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
-
-    # filter the tasks by the effective pipeline
-    filtered_tasks = [
-        t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
-    ]
-
-    # check that we have the expected tasks
-    if len(filtered_tasks) != len(pipeline_dag):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The tasks referenced by the pipeline are missing",
-        )
 
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 

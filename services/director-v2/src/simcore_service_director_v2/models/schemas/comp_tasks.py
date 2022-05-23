@@ -5,7 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field
 
 
 class ComputationGet(ComputationTask):
@@ -44,4 +44,11 @@ class ComputationDelete(ComputationStop):
     force: Optional[bool] = Field(
         False,
         description="if True then the pipeline will be removed even if it is running",
+    )
+
+
+class TaskLogFileGet(BaseModel):
+    task_id: NodeID
+    download_link: Optional[AnyUrl] = Field(
+        None, description="Presigned link for log file or None if still not available"
     )
