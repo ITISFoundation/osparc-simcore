@@ -25,9 +25,12 @@ DOCKER_API_VERSION ?= 1.41
 .PHONY: directorv2_rest_api_schemas.py
 directorv2_rest_api_schemas.py: openapi.json ## auto-generates pydantic models for Docker REST API models
 	# auto-generates $@ from $<
-	@$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
+	$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
 			--input $< \
-			--output $@
+			--output $@ \
+			--field-constraints \
+			--reuse-model \
+			--enum-field-as-literal=all
 
 	# formats
 	@black $@
