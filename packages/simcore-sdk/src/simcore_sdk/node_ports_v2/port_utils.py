@@ -68,8 +68,15 @@ async def get_value_from_link(
 
 async def get_download_link_from_storage(
     user_id: int, value: FileLink, link_type: LinkType
-) -> Optional[AnyUrl]:
+) -> AnyUrl:
+    """
+    :raises exceptions.NodeportsException
+    :raises exceptions.S3InvalidPathError
+    :raises exceptions.StorageInvalidCall
+    :raises exceptions.StorageServerIssue
+    """
     log.debug("getting link to file from storage %s", value)
+
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
         store_id=f"{value.store}",
@@ -77,7 +84,29 @@ async def get_download_link_from_storage(
         s3_object=value.path,
         link_type=link_type,
     )
-    return parse_obj_as(AnyUrl, f"{link}") if link else None
+
+    # could raise ValidationError but will never do it since
+    assert isinstance(link, URL)  # nosec
+    return parse_obj_as(AnyUrl, f"{link}")
+
+
+async def get_download_link_from_storage_v2(
+    user_id: int, project_id: str, node_id: str, file_name: str, link_type: LinkType
+) -> AnyUrl:
+    """Overloads get_download_link_from_storage with arguments that match those in
+    get_upload_link_from_storage
+
+    """
+    # NOTE: might consider using https://github.com/mrocklin/multipledispatch/ in the future?
+    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    link = await filemanager.get_download_link_from_s3(
+        user_id=user_id,
+        store_name=config.STORE,
+        store_id=None,
+        s3_object=s3_object,
+        link_type=link_type,
+    )
+    return parse_obj_as(AnyUrl, f"{link}")
 
 
 async def get_upload_link_from_storage(
