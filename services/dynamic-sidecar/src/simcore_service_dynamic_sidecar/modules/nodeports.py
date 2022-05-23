@@ -7,7 +7,7 @@ import tempfile
 import time
 from collections import deque
 from pathlib import Path
-from typing import Any, Coroutine, Deque, Optional, Set, cast
+from typing import Any, Coroutine, Optional, set, cast
 
 import magic
 from models_library.projects_nodes import OutputsDict
@@ -65,9 +65,9 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     )
 
     # let's gather the tasks
-    temp_paths: Deque[Path] = deque()
+    temp_paths: deque[Path] = deque()
     ports_values: dict[str, ItemConcreteValue] = {}
-    archiving_tasks: Deque[Coroutine[None, None, None]] = deque()
+    archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
     for port in (await PORTS.outputs).values():
         logger.info("Checking port %s", port.key)
@@ -172,7 +172,7 @@ async def _get_data_from_port(port: Port) -> tuple[Port, Optional[ItemConcreteVa
 
 
 async def _download_files(
-    target_path: Path, download_tasks: Deque[Coroutine[Any, int, Any]]
+    target_path: Path, download_tasks: deque[Coroutine[Any, int, Any]]
 ) -> tuple[OutputsDict, ByteSize]:
     transferred_bytes = 0
     data: OutputsDict = {}
@@ -216,7 +216,7 @@ async def _download_files(
             if _is_zip_file(downloaded_file):
                 # unzip updated data to dest_path
                 logger.info("unzipping %s", downloaded_file)
-                unarchived: Set[Path] = await unarchive_dir(
+                unarchived: set[Path] = await unarchive_dir(
                     archive_to_extract=downloaded_file, destination_folder=dest_path
                 )
 
@@ -258,7 +258,7 @@ async def download_target_ports(
     )
 
     # let's gather all the data
-    download_tasks: Deque[Coroutine[Any, int, Any]] = deque()
+    download_tasks: deque[Coroutine[Any, int, Any]] = deque()
     for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
         logger.info("Checking node %s", port_value.key)

@@ -12,7 +12,7 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Coroutine, Deque, Mapping, Optional, Union
+from typing import Any, Coroutine, Mapping, Optional, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -171,11 +171,11 @@ async def _update_workbench(
     project_uuid: str,
     old_project: dict[str, Any],
     new_project: dict[str, Any],
-) -> Deque[Coroutine]:
+) -> deque[Coroutine]:
     # any non set entry in the new workbench is taken from the old one if available
     old_workbench = old_project["workbench"]
     new_workbench = new_project["workbench"]
-    frontend_nodes_update_tasks: Deque[Coroutine] = deque()
+    frontend_nodes_update_tasks: deque[Coroutine] = deque()
 
     for node_key, node in new_workbench.items():
         old_node = old_workbench.get(node_key)
@@ -720,7 +720,7 @@ class ProjectDBAPI:
                     )
                 )
 
-                frontend_nodes_update_tasks: Deque[Coroutine] = await _update_workbench(
+                frontend_nodes_update_tasks: deque[Coroutine] = await _update_workbench(
                     app=self._app,
                     user_id=user_id,
                     project_uuid=project_uuid,
