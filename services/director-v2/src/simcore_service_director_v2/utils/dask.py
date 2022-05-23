@@ -34,6 +34,10 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ValidationError
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.exceptions import (
+    S3InvalidPathError,
+    StorageInvalidCall,
+)
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 
@@ -298,6 +302,32 @@ async def compute_service_log_file_upload_link(
         link_type=file_link_type,
     )
     return value_link
+
+
+async def get_service_log_file_download_link(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    file_link_type: FileLinkType,
+) -> Optional[AnyUrl]:
+    """Returns None if log file is not available (e.g. when tasks is not done)
+
+    : raises StorageServerIssue
+    : raises NodeportsException
+    """
+    try:
+        value_link = await port_utils.get_download_link_from_storage_v2(
+            user_id=user_id,
+            project_id=f"{project_id}",
+            node_id=f"{node_id}",
+            file_name=_LOGS_FILE_NAME,
+            link_type=file_link_type,
+        )
+        return value_link
+
+    except (S3InvalidPathError, StorageInvalidCall) as err:
+        logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
+        return None
 
 
 async def clean_task_output_and_log_files_if_invalid(

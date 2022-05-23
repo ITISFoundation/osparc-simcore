@@ -164,7 +164,6 @@ async def test_get_computation_from_published_computation_task(
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., List[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
-    faker: Faker,
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
