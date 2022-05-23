@@ -46,9 +46,9 @@ from .projects_exceptions import (
 from .projects_nodes_utils import update_node_outputs
 from .projects_utils import (
     find_changed_dict_keys,
+    FrontendOutputsChanges,
+    get_frontend_node_outputs_changes,
     project_uses_available_services,
-    get_node_outputs_changes,
-    OutputsChanges,
 )
 
 log = logging.getLogger(__name__)
@@ -185,7 +185,7 @@ async def _update_workbench(
         # check if there were any changes in the outputs of
         # frontend services
         # NOTE: for now only file-picker is handled
-        outputs_changes: OutputsChanges = get_node_outputs_changes(
+        outputs_changes: FrontendOutputsChanges = get_frontend_node_outputs_changes(
             new_node=node,
             old_node=old_node,
             filter_keys={

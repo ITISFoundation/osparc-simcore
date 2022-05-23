@@ -3,8 +3,8 @@ from typing import Any, Dict
 import pytest
 from simcore_service_webserver.projects.projects_utils import (
     find_changed_dict_keys,
-    get_node_outputs_changes,
-    OutputsChanges,
+    FrontendOutputsChanges,
+    get_frontend_node_outputs_changes,
 )
 
 
@@ -161,7 +161,7 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 0,
                 "runHash": None,
             },
-            OutputsChanges(True, {"outFile"}),
+            FrontendOutputsChanges(True, {"outFile"}),
             id="file-picker outputs changed (file was added)",
         ),
         pytest.param(
@@ -197,7 +197,7 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            OutputsChanges(True, {"outFile"}),
+            FrontendOutputsChanges(True, {"outFile"}),
             id="file-picker outputs changed (file was removed)",
         ),
         pytest.param(
@@ -240,46 +240,46 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            OutputsChanges(False, set()),
+            FrontendOutputsChanges(False, set()),
             id="file-picker outputs did not change",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
             {"key": "simcore/services/frontend/diffrenet", "outputs": None},
-            OutputsChanges(False, set()),
+            FrontendOutputsChanges(False, set()),
             id="different keys do not trigger",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": {}},
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
-            OutputsChanges(True, set()),
+            FrontendOutputsChanges(True, set()),
             id="no and not existing outputs trigger",
         ),
         pytest.param(
             {},
             {},
-            OutputsChanges(False, set()),
+            FrontendOutputsChanges(False, set()),
             id="all keys missing do not trigger",
         ),
         pytest.param(
             {"a": "key"},
             {"another": "key"},
-            OutputsChanges(False, set()),
+            FrontendOutputsChanges(False, set()),
             id="different keys but missing key and outputs do not trigger",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker"},
             {"key": "simcore/services/frontend/file-picker"},
-            OutputsChanges(False, set()),
+            FrontendOutputsChanges(False, set()),
             id="missing outputs do not trigger",
         ),
     ],
 )
 def test_did_node_outputs_change(
-    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: OutputsChanges
+    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: FrontendOutputsChanges
 ) -> None:
     assert (
-        get_node_outputs_changes(
+        get_frontend_node_outputs_changes(
             new_node=new_node,
             old_node=old_node,
             filter_keys={"simcore/services/frontend/file-picker"},

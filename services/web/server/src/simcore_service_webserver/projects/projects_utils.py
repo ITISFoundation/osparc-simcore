@@ -20,7 +20,7 @@ NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
 @dataclass
-class OutputsChanges:
+class FrontendOutputsChanges:
     changed: bool
     keys: set[str]
 
@@ -296,13 +296,13 @@ def any_node_inputs_changed(
     return False
 
 
-def get_node_outputs_changes(
+def get_frontend_node_outputs_changes(
     new_node: dict[str, Any], old_node: dict[str, Any], filter_keys: set[ServiceKey]
-) -> OutputsChanges:
+) -> FrontendOutputsChanges:
     """if node is a specific type it checks if outputs changed"""
     nodes_keys = {old_node.get("key"), new_node.get("key")}
     if not (len(nodes_keys) == 1 and nodes_keys.pop() in filter_keys):
-        return OutputsChanges(changed=False, keys=set())
+        return FrontendOutputsChanges(changed=False, keys=set())
 
     log.debug("Comparing nodes %s %s", new_node, old_node)
     outputs_changed = new_node.get("outputs") != old_node.get("outputs")
@@ -316,7 +316,7 @@ def get_node_outputs_changes(
     changed_keys = _get_outputs_keys(new_node).symmetric_difference(
         _get_outputs_keys(old_node)
     )
-    return OutputsChanges(changed=outputs_changed, keys=changed_keys)
+    return FrontendOutputsChanges(changed=outputs_changed, keys=changed_keys)
 
 
 def find_changed_dict_keys(
