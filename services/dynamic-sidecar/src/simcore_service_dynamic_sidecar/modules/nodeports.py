@@ -7,7 +7,7 @@ import tempfile
 import time
 from collections import deque
 from pathlib import Path
-from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, cast
+from typing import Any, Coroutine, Deque, Optional, Set, cast
 
 import magic
 from models_library.projects_nodes import OutputsDict
@@ -50,7 +50,7 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
 
 
 @run_sequentially_in_context()
-async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
+async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
     logger.info("uploading data to simcore...")
@@ -66,7 +66,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
 
     # let's gather the tasks
     temp_paths: Deque[Path] = deque()
-    ports_values: Dict[str, ItemConcreteValue] = {}
+    ports_values: dict[str, ItemConcreteValue] = {}
     archiving_tasks: Deque[Coroutine[None, None, None]] = deque()
 
     for port in (await PORTS.outputs).values():
@@ -231,6 +231,8 @@ async def _download_files(
                     lambda: shutil.move(str(downloaded_file), dest_path)
                 )
 
+                # NOTE: after the download the current value of the port
+                # makes sure previously downloaded files are removed
                 dest_folder.prune(exclude={dest_path})
 
                 logger.info("all moved to %s", dest_path)
@@ -242,7 +244,7 @@ async def _download_files(
 
 @run_sequentially_in_context()
 async def download_target_ports(
-    port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
+    port_type_name: PortTypeName, target_path: Path, port_keys: list[str]
 ) -> ByteSize:
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
