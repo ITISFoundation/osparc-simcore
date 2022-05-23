@@ -24,18 +24,19 @@ from psycopg2.errors import UniqueViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    ProjectAccessRights,
-    ProjectDBAPI,
-    ProjectInvalidRightsError,
     _check_project_permissions,
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
     _find_changed_dict_keys,
     _get_node_outputs_changes,
+    APP_PROJECT_DBAPI,
+    DB_EXCLUSIVE_COLUMNS,
+    OutputsChanges,
+    ProjectAccessRights,
+    ProjectDBAPI,
+    ProjectInvalidRightsError,
+    SCHEMA_NON_NULL_KEYS,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -587,7 +588,7 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 0,
                 "runHash": None,
             },
-            (True, {"outFile"}),
+            OutputsChanges(True, {"outFile"}),
             id="file-picker outputs changed (file was added)",
         ),
         pytest.param(
@@ -623,7 +624,7 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            (True, {"outFile"}),
+            OutputsChanges(True, {"outFile"}),
             id="file-picker outputs changed (file was removed)",
         ),
         pytest.param(
@@ -666,49 +667,49 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            (False, set()),
+            OutputsChanges(False, set()),
             id="file-picker outputs did not change",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
             {"key": "simcore/services/frontend/diffrenet", "outputs": None},
-            (False, set()),
+            OutputsChanges(False, set()),
             id="different keys do not trigger",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": {}},
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
-            (True, set()),
+            OutputsChanges(True, set()),
             id="no and not existing outputs trigger",
         ),
         pytest.param(
             {},
             {},
-            (False, set()),
+            OutputsChanges(False, set()),
             id="all keys missing do not trigger",
         ),
         pytest.param(
             {"a": "key"},
             {"another": "key"},
-            (False, set()),
+            OutputsChanges(False, set()),
             id="different keys but missing key and outputs do not trigger",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker"},
             {"key": "simcore/services/frontend/file-picker"},
-            (False, set()),
+            OutputsChanges(False, set()),
             id="missing outputs do not trigger",
         ),
     ],
 )
 def test_did_node_outputs_change(
-    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: bool
+    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: OutputsChanges
 ) -> None:
     assert (
         _get_node_outputs_changes(
             new_node=new_node,
             old_node=old_node,
-            filter_key="simcore/services/frontend/file-picker",
+            filter_keys={"simcore/services/frontend/file-picker"},
         )
         == expected
     )

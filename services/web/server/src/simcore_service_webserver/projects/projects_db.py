@@ -5,6 +5,7 @@
 
 """
 import asyncio
+from dataclasses import dataclass
 import logging
 import textwrap
 import uuid as uuidlib
@@ -12,18 +13,7 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import (
-    Any,
-    Coroutine,
-    Deque,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Coroutine, Deque, Mapping, Optional, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -31,6 +21,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.services import ServiceKey
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -69,10 +60,16 @@ class ProjectAccessRights(Enum):
     VIEWER = {"read": True, "write": False, "delete": False}
 
 
+@dataclass
+class OutputsChanges:
+    changed: bool
+    keys: set[str]
+
+
 def _check_project_permissions(
     project: Union[ProjectProxy, ProjectDict],
     user_id: int,
-    user_groups: List[RowProxy],
+    user_groups: list[RowProxy],
     permission: str,
 ) -> None:
     if not permission:
@@ -123,12 +120,12 @@ def _check_project_permissions(
 
 def _create_project_access_rights(
     gid: int, access: ProjectAccessRights
-) -> Dict[str, Dict[str, bool]]:
+) -> dict[str, dict[str, bool]]:
     return {f"{gid}": access.value}
 
 
 # TODO: check here how schema to model db works!?
-def _convert_to_db_names(project_document_data: Dict) -> Dict:
+def _convert_to_db_names(project_document_data: dict) -> dict:
     converted_args = {}
     exclude_keys = [
         "tags",
@@ -142,7 +139,7 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
 
 def _convert_to_schema_names(
     project_database_data: Mapping, user_email: str, **kwargs
-) -> Dict:
+) -> dict:
     converted_args = {}
     for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
@@ -177,7 +174,7 @@ def _find_changed_dict_keys(
     def _cast_outputs_store(dict_data: dict[str, Any]) -> None:
         for data in dict_data.get("outputs", {}).values():
             if "store" in data:
-                data["store"] = f"{data['store']}"
+                data["store"] = int(data["store"])
 
     if current_dict.get("key") == "simcore/services/frontend/file-picker":
         _cast_outputs_store(current_dict)
@@ -205,7 +202,7 @@ def _find_changed_dict_keys(
     return changed_keys
 
 
-def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
+def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
@@ -214,17 +211,17 @@ def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
 
 
 def _get_node_outputs_changes(
-    new_node: dict[str, Any], old_node: dict[str, Any], filter_key: str
-) -> Tuple[bool, set[str]]:
+    new_node: dict[str, Any], old_node: dict[str, Any], filter_keys: set[ServiceKey]
+) -> OutputsChanges:
     """if node is a specific type it checks if outputs changed"""
     nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if not (len(nodes_keys) == 1 and nodes_keys.pop() == filter_key):
-        return False, set()
+    if not (len(nodes_keys) == 1 and nodes_keys.pop() in filter_keys):
+        return OutputsChanges(changed=False, keys=set())
 
     log.debug("Comparing nodes %s %s", new_node, old_node)
     outputs_changed = new_node.get("outputs") != old_node.get("outputs")
 
-    def _get_outputs_keys(node_data: dict[str, Any]) -> Set[str]:
+    def _get_outputs_keys(node_data: dict[str, Any]) -> set[str]:
         outputs = node_data.get("outputs", {})
         if outputs is None:
             return set()
@@ -233,35 +230,39 @@ def _get_node_outputs_changes(
     changed_keys = _get_outputs_keys(new_node).symmetric_difference(
         _get_outputs_keys(old_node)
     )
-    return outputs_changed, changed_keys
+    return OutputsChanges(changed=outputs_changed, keys=changed_keys)
 
 
 async def _update_workbench(
     app: web.Application,
     user_id: UserID,
     project_uuid: str,
-    old_project: Dict[str, Any],
-    new_project: Dict[str, Any],
+    old_project: dict[str, Any],
+    new_project: dict[str, Any],
 ) -> Deque[Coroutine]:
     # any non set entry in the new workbench is taken from the old one if available
     old_workbench = old_project["workbench"]
     new_workbench = new_project["workbench"]
-    nodes_update_tasks: Deque[Coroutine] = deque()
+    frontend_nodes_update_tasks: Deque[Coroutine] = deque()
 
     for node_key, node in new_workbench.items():
         old_node = old_workbench.get(node_key)
         if not old_node:
             continue
 
-        # In the moment to detect changes in the outputs of
+        # check if there were any changes in the outputs of
         # frontend services
-        outputs_changed, changed_keys = _get_node_outputs_changes(
+        # NOTE: for now only file-picker is handled
+        outputs_changes: OutputsChanges = _get_node_outputs_changes(
             new_node=node,
             old_node=old_node,
-            filter_key="simcore/services/frontend/file-picker",
+            filter_keys={
+                "simcore/services/frontend/file-picker",
+            },
         )
-        if outputs_changed:
-            nodes_update_tasks.append(
+
+        if outputs_changes.changed:
+            frontend_nodes_update_tasks.append(
                 update_node_outputs(
                     app=app,
                     user_id=user_id,
@@ -270,7 +271,7 @@ async def _update_workbench(
                     outputs=node.get("outputs", {}),
                     run_hash=None,
                     node_errors=None,
-                    ui_changed_keys=changed_keys,
+                    ui_changed_keys=outputs_changes.keys,
                 )
             )
 
@@ -280,7 +281,7 @@ async def _update_workbench(
                 # use the old value
                 node[prop] = old_node[prop]
 
-    return nodes_update_tasks
+    return frontend_nodes_update_tasks
 
 
 class ProjectDBAPI:
@@ -303,7 +304,7 @@ class ProjectDBAPI:
         assert self._engine  # nosec
         return self._engine
 
-    async def add_projects(self, projects_list: List[Dict], user_id: int) -> List[str]:
+    async def add_projects(self, projects_list: list[dict], user_id: int) -> list[str]:
         """
             adds all projects and assigns to a user
 
@@ -318,20 +319,20 @@ class ProjectDBAPI:
 
     async def add_project(
         self,
-        prj: Dict[str, Any],
+        prj: dict[str, Any],
         user_id: Optional[int],
         *,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
         :param prj: schema-compliant project data
-        :type prj: Dict
+        :type prj: dict
         :param user_id: database's user identifier
         :type user_id: int
         :param force_project_uuid: enforces valid uuid, defaults to False
@@ -412,15 +413,15 @@ class ProjectDBAPI:
         user_id: PositiveInt,
         *,
         filter_by_project_type: Optional[ProjectType] = None,
-        filter_by_services: Optional[List[Dict]] = None,
+        filter_by_services: Optional[list[dict]] = None,
         only_published: Optional[bool] = False,
         include_hidden: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = None,
-    ) -> Tuple[List[Dict[str, Any]], List[ProjectType], int]:
+    ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
 
         async with self.engine.acquire() as conn:
-            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
 
             query = (
                 select([projects])
@@ -471,8 +472,8 @@ class ProjectDBAPI:
             )
 
     @staticmethod
-    async def __load_user_groups(conn: SAConnection, user_id: int) -> List[RowProxy]:
-        user_groups: List[RowProxy] = []
+    async def __load_user_groups(conn: SAConnection, user_id: int) -> list[RowProxy]:
+        user_groups: list[RowProxy] = []
         query = (
             select([groups])
             .select_from(groups.join(user_to_groups))
@@ -487,12 +488,12 @@ class ProjectDBAPI:
         conn: SAConnection,
         query: str,
         user_id: int,
-        user_groups: List[RowProxy],
-        filter_by_services: Optional[List[Dict]] = None,
-    ) -> Tuple[List[Dict[str, Any]], List[ProjectType]]:
-        api_projects: List[Dict] = []  # API model-compatible projects
-        db_projects: List[Dict] = []  # DB model-compatible projects
-        project_types: List[ProjectType] = []
+        user_groups: list[RowProxy],
+        filter_by_services: Optional[list[dict]] = None,
+    ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
+        api_projects: list[dict] = []  # API model-compatible projects
+        db_projects: list[dict] = []  # DB model-compatible projects
+        project_types: list[ProjectType] = []
         async for row in conn.execute(query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
@@ -542,13 +543,13 @@ class ProjectDBAPI:
         connection: SAConnection,
         user_id: int,
         project_uuid: str,
-        exclude_foreign: Optional[List[str]] = None,
+        exclude_foreign: Optional[list[str]] = None,
         include_templates: Optional[bool] = False,
         for_update: bool = False,
-    ) -> Dict:
+    ) -> dict:
         exclude_foreign = exclude_foreign or []
         # this retrieves the projects where user is owner
-        user_groups: List[RowProxy] = await self.__load_user_groups(connection, user_id)
+        user_groups: list[RowProxy] = await self.__load_user_groups(connection, user_id)
 
         # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
 
@@ -583,7 +584,7 @@ class ProjectDBAPI:
 
         return project
 
-    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
         async with self.engine.acquire() as conn:
             project = await self._get_project(
                 conn, user_id, project_uuid, include_templates=True
@@ -597,7 +598,7 @@ class ProjectDBAPI:
                     return _convert_to_schema_names(project, user_email)
                 raise ProjectsException()
 
-    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
         async with self.engine.acquire() as conn:
             project = await self._get_project(
                 conn, user_id, project_uuid, include_templates=True
@@ -615,7 +616,7 @@ class ProjectDBAPI:
                     project["tags"].remove(tag_id)
                 return _convert_to_schema_names(project, user_email)
 
-    async def get_user_project(self, user_id: int, project_uuid: str) -> Dict:
+    async def get_user_project(self, user_id: int, project_uuid: str) -> dict:
         """Returns all projects *owned* by the user
 
             - prj_owner
@@ -624,7 +625,7 @@ class ProjectDBAPI:
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
-        :rtype: Dict
+        :rtype: dict
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
@@ -634,7 +635,7 @@ class ProjectDBAPI:
 
     async def get_template_project(
         self, project_uuid: str, *, only_published=False
-    ) -> Dict:
+    ) -> dict:
         template_prj = {}
         async with self.engine.acquire() as conn:
             if only_published:
@@ -662,15 +663,15 @@ class ProjectDBAPI:
         return template_prj
 
     async def patch_user_project_workbench(
-        self, partial_workbench_data: Dict[str, Any], user_id: int, project_uuid: str
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        self, partial_workbench_data: dict[str, Any], user_id: int, project_uuid: str
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
         """
         log.info("Patching project %s for user %s", project_uuid, user_id)
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
-                current_project: Dict = await self._get_project(
+                current_project: dict = await self._get_project(
                     conn,
                     user_id,
                     project_uuid,
@@ -678,7 +679,7 @@ class ProjectDBAPI:
                     include_templates=False,
                     for_update=True,
                 )
-                user_groups: List[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__load_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(
@@ -686,8 +687,8 @@ class ProjectDBAPI:
                 )
 
                 def _patch_workbench(
-                    project: Dict[str, Any], new_partial_workbench_data: Dict[str, Any]
-                ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+                    project: dict[str, Any], new_partial_workbench_data: dict[str, Any]
+                ) -> tuple[dict[str, Any], dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
                     for node_key, new_node_data in new_partial_workbench_data.items():
@@ -747,11 +748,11 @@ class ProjectDBAPI:
 
     async def replace_user_project(
         self,
-        new_project_data: Dict[str, Any],
+        new_project_data: dict[str, Any],
         user_id: int,
         project_uuid: str,
         include_templates: Optional[bool] = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
         the old entries from the project workbench if they exists in the new project workbench.
@@ -760,7 +761,7 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
-                current_project: Dict = await self._get_project(
+                current_project: dict = await self._get_project(
                     conn,
                     user_id,
                     project_uuid,
@@ -768,7 +769,7 @@ class ProjectDBAPI:
                     include_templates=include_templates,
                     for_update=True,
                 )
-                user_groups: List[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__load_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(
@@ -787,7 +788,7 @@ class ProjectDBAPI:
                     )
                 )
 
-                nodes_update_tasks: Deque[Coroutine] = await _update_workbench(
+                frontend_nodes_update_tasks: Deque[Coroutine] = await _update_workbench(
                     app=self._app,
                     user_id=user_id,
                     project_uuid=project_uuid,
@@ -812,8 +813,8 @@ class ProjectDBAPI:
                 )
                 project: RowProxy = await result.fetchone()
 
-                for node_update_task in nodes_update_tasks:
-                    fire_and_forget_task(node_update_task)
+                for frontend_node_update_task in frontend_nodes_update_tasks:
+                    fire_and_forget_task(frontend_node_update_task)
 
                 log.debug(
                     "DB updated returned row project=%s",
@@ -839,7 +840,7 @@ class ProjectDBAPI:
                     conn, user_id, project_uuid, include_templates=True, for_update=True
                 )
                 # if we have delete access we delete the project
-                user_groups: List[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__load_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
@@ -858,7 +859,7 @@ class ProjectDBAPI:
                     conn, user_id, project_uuid, include_templates=True, for_update=True
                 )
                 # if we have delete access we delete the project
-                user_groups: List[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__load_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
@@ -903,7 +904,7 @@ class ProjectDBAPI:
         return primary_gid
 
     @staticmethod
-    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> List:
+    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
         query = sa.select([study_tags.c.tag_id]).where(
             study_tags.c.study_id == project_id
         )
@@ -920,7 +921,7 @@ class ProjectDBAPI:
         assert num_entries is not None  # nosec
         return bool(num_entries > 0)
 
-    async def get_node_ids_from_project(self, project_uuid: str) -> Set[str]:
+    async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
         """Returns a set containing all the node_ids from project with project_uuid"""
         result = set()
         async with self.engine.acquire() as conn:
@@ -932,7 +933,7 @@ class ProjectDBAPI:
                 result.update(row.as_tuple())  # type: ignore
         return result
 
-    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
+    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> list[str]:
         result = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
@@ -943,7 +944,7 @@ class ProjectDBAPI:
 
     async def update_project_without_checking_permissions(
         self,
-        project_data: Dict,
+        project_data: dict,
         project_uuid: ProjectIDStr,
         *,
         hidden: Optional[bool] = None,
