@@ -5,7 +5,6 @@
 
 """
 import asyncio
-from dataclasses import dataclass
 import logging
 import textwrap
 import uuid as uuidlib
@@ -21,7 +20,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.services import ServiceKey
+
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -45,7 +44,11 @@ from .projects_exceptions import (
     ProjectsException,
 )
 from .projects_nodes_utils import update_node_outputs
-from .projects_utils import project_uses_available_services
+from .projects_utils import (
+    project_uses_available_services,
+    get_node_outputs_changes,
+    OutputsChanges,
+)
 
 log = logging.getLogger(__name__)
 
@@ -58,12 +61,6 @@ class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
     COLLABORATOR = {"read": True, "write": True, "delete": False}
     VIEWER = {"read": True, "write": False, "delete": False}
-
-
-@dataclass
-class OutputsChanges:
-    changed: bool
-    keys: set[str]
 
 
 def _check_project_permissions(
@@ -210,29 +207,6 @@ def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
     )
 
 
-def _get_node_outputs_changes(
-    new_node: dict[str, Any], old_node: dict[str, Any], filter_keys: set[ServiceKey]
-) -> OutputsChanges:
-    """if node is a specific type it checks if outputs changed"""
-    nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if not (len(nodes_keys) == 1 and nodes_keys.pop() in filter_keys):
-        return OutputsChanges(changed=False, keys=set())
-
-    log.debug("Comparing nodes %s %s", new_node, old_node)
-    outputs_changed = new_node.get("outputs") != old_node.get("outputs")
-
-    def _get_outputs_keys(node_data: dict[str, Any]) -> set[str]:
-        outputs = node_data.get("outputs", {})
-        if outputs is None:
-            return set()
-        return set(outputs.keys())
-
-    changed_keys = _get_outputs_keys(new_node).symmetric_difference(
-        _get_outputs_keys(old_node)
-    )
-    return OutputsChanges(changed=outputs_changed, keys=changed_keys)
-
-
 async def _update_workbench(
     app: web.Application,
     user_id: UserID,
@@ -253,7 +227,7 @@ async def _update_workbench(
         # check if there were any changes in the outputs of
         # frontend services
         # NOTE: for now only file-picker is handled
-        outputs_changes: OutputsChanges = _get_node_outputs_changes(
+        outputs_changes: OutputsChanges = get_node_outputs_changes(
             new_node=node,
             old_node=old_node,
             filter_keys={

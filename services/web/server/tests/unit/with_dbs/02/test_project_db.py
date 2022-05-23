@@ -29,14 +29,16 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_schema_names,
     _create_project_access_rights,
     _find_changed_dict_keys,
-    _get_node_outputs_changes,
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
-    OutputsChanges,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
     SCHEMA_NON_NULL_KEYS,
+)
+from simcore_service_webserver.projects.projects_utils import (
+    get_node_outputs_changes,
+    OutputsChanges,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -706,7 +708,7 @@ def test_did_node_outputs_change(
     new_node: Dict[str, Any], old_node: Dict[str, Any], expected: OutputsChanges
 ) -> None:
     assert (
-        _get_node_outputs_changes(
+        get_node_outputs_changes(
             new_node=new_node,
             old_node=old_node,
             filter_keys={"simcore/services/frontend/file-picker"},

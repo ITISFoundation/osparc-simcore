@@ -1,10 +1,12 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, AnyStr, Match, Optional, Union
 from uuid import UUID, uuid1, uuid5
 
 from servicelib.decorators import safe_return
+from models_library.services import ServiceKey
 from yarl import URL
 
 from .project_models import ProjectDict
@@ -17,12 +19,18 @@ VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
 NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
+@dataclass
+class OutputsChanges:
+    changed: bool
+    keys: set[str]
+
+
 def clone_project_document(
-    project: Dict,
+    project: dict,
     *,
     forced_copy_project_id: Optional[UUID] = None,
     clean_output_data: bool = False,
-) -> Tuple[Dict, Dict]:
+) -> tuple[dict, dict]:
     project_copy = deepcopy(project)
 
     # Update project id
@@ -47,7 +55,7 @@ def clone_project_document(
 
     project_map = {project["uuid"]: project_copy["uuid"]}
 
-    def _replace_uuids(node: Union[str, List, Dict]) -> Union[str, List, Dict]:
+    def _replace_uuids(node: Union[str, list, dict]) -> Union[str, list, dict]:
         if isinstance(node, str):
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
@@ -88,8 +96,8 @@ def clone_project_document(
 
 @safe_return(if_fails_return=False, logger=log)
 def substitute_parameterized_inputs(
-    parameterized_project: Dict, parameters: Dict
-) -> Dict:
+    parameterized_project: dict, parameters: dict
+) -> dict:
     """Substitutes parameterized r/w inputs
 
     NOTE: project is is changed
@@ -142,7 +150,7 @@ def substitute_parameterized_inputs(
 
 
 def is_graph_equal(
-    lhs_workbench: Dict[str, Any], rhs_workbench: Dict[str, Any]
+    lhs_workbench: dict[str, Any], rhs_workbench: dict[str, Any]
 ) -> bool:
     """Checks whether both workbench contain the same graph
 
@@ -177,18 +185,18 @@ def is_graph_equal(
 
 
 async def project_uses_available_services(
-    project: Dict[str, Any], available_services: List[Dict[str, Any]]
+    project: dict[str, Any], available_services: list[dict[str, Any]]
 ) -> bool:
     if not project["workbench"]:
         # empty project
         return True
     # get project services
-    needed_services: Set[Tuple[str, str]] = {
+    needed_services: set[tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available_services_set: Set[Tuple[str, str]] = {
+    available_services_set: set[tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
@@ -196,15 +204,15 @@ async def project_uses_available_services(
 
 
 def get_project_unavailable_services(
-    project: Dict[str, Any], available_services: List[Dict[str, Any]]
-) -> Set[Tuple[str, str]]:
+    project: dict[str, Any], available_services: list[dict[str, Any]]
+) -> set[tuple[str, str]]:
     # get project services
-    required: Set[Tuple[str, str]] = {
+    required: set[tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available: Set[Tuple[str, str]] = {
+    available: set[tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
@@ -212,8 +220,8 @@ def get_project_unavailable_services(
 
 
 async def project_get_depending_nodes(
-    project: Dict[str, Any], node_uuid: str
-) -> Set[str]:
+    project: dict[str, Any], node_uuid: str
+) -> set[str]:
     depending_node_uuids = set()
     for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
         for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
@@ -286,3 +294,26 @@ def any_node_inputs_changed(
                     )
                     return True
     return False
+
+
+def get_node_outputs_changes(
+    new_node: dict[str, Any], old_node: dict[str, Any], filter_keys: set[ServiceKey]
+) -> OutputsChanges:
+    """if node is a specific type it checks if outputs changed"""
+    nodes_keys = {old_node.get("key"), new_node.get("key")}
+    if not (len(nodes_keys) == 1 and nodes_keys.pop() in filter_keys):
+        return OutputsChanges(changed=False, keys=set())
+
+    log.debug("Comparing nodes %s %s", new_node, old_node)
+    outputs_changed = new_node.get("outputs") != old_node.get("outputs")
+
+    def _get_outputs_keys(node_data: dict[str, Any]) -> set[str]:
+        outputs = node_data.get("outputs", {})
+        if outputs is None:
+            return set()
+        return set(outputs.keys())
+
+    changed_keys = _get_outputs_keys(new_node).symmetric_difference(
+        _get_outputs_keys(old_node)
+    )
+    return OutputsChanges(changed=outputs_changed, keys=changed_keys)
