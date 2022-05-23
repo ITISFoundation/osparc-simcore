@@ -7,7 +7,7 @@ import tempfile
 import time
 from collections import deque
 from pathlib import Path
-from typing import Any, Coroutine, Optional, set, cast
+from typing import Any, Coroutine, Optional, cast
 
 import magic
 from models_library.projects_nodes import OutputsDict
