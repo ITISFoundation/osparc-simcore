@@ -34,7 +34,7 @@ async function runTutorial() {
     await tutorial.waitFor(2000);
 
     for (let j = 1; j < 3; j++) {
-      // open jupyterNB
+      // open JLab
       await tutorial.openNode(j);
       await tutorial.waitFor(35000);
 
