@@ -181,8 +181,8 @@ async def _download_files(
         return data, ByteSize(transferred_bytes)
 
     # TODO: limit concurrency to avoid saturating storage+db??
-    results: List[tuple[Port, ItemConcreteValue]] = cast(
-        List[tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
+    results: list[tuple[Port, ItemConcreteValue]] = cast(
+        list[tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
     )
     logger.info("completed download %s", results)
     for port, value in results:
