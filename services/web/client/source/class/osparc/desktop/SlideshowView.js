@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }, this);
     slideshowToolbar.addListener("nodeSelected", e => {
       const nodeId = e.getData();
-      this.nodeSelected(nodeId);
+      this.__moveTo(nodeId);
     }, this);
     slideshowToolbar.addListener("addServiceBetween", e => {
       const {
@@ -85,7 +85,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     const prevNextButtons = this.__prevNextButtons = new osparc.navigation.PrevNextButtons();
     prevNextButtons.addListener("nodeSelected", e => {
       const nodeId = e.getData();
-      this.nodeSelected(nodeId);
+      this.__moveTo(nodeId);
     }, this);
     prevNextButtons.addListener("runPressed", e => {
       const nodeId = e.getData();
@@ -145,6 +145,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __nodeView: null,
     __currentNodeId: null,
 
+    __moveTo: function(nodeId) {
+      this.nodeSelected(nodeId);
+    },
+
     getSelectedNodeIDs: function() {
       return [this.__currentNodeId];
     },
@@ -192,9 +196,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
           // bring the user back to the old node or to the first dependency
           if (lastCurrentNodeId === this.__currentNodeId) {
-            this.nodeSelected(dependencies[0]);
+            this.__moveTo(dependencies[0]);
           } else {
-            this.nodeSelected(lastCurrentNodeId);
+            this.__moveTo(lastCurrentNodeId);
           }
         }, this);
         return false;
@@ -342,7 +346,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const isValid = Object.keys(slideshowData).indexOf(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
-        this.nodeSelected(currentNodeId);
+        this.__moveTo(currentNodeId);
       } else {
         this.__openFirstNode();
       }
@@ -360,9 +364,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       if (study) {
         const nodes = study.getUi().getSlideshow().getSortedNodes();
         if (nodes.length) {
-          this.nodeSelected(nodes[0].nodeId);
+          this.__moveTo(nodes[0].nodeId);
         } else {
-          this.nodeSelected(null);
+          this.__moveTo(null);
         }
       }
     },
