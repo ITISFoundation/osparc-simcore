@@ -592,14 +592,73 @@
         }
       }
     },
-    "/v2/computations/{project_id}/tasks/{node_uuid}/logs": {
+    "/v2/computations/{project_id}/tasks/-/logfile": {
       "get": {
         "tags": [
           "computations"
         ],
-        "summary": "Gets computation task log",
-        "description": "Gets ``stdout`` and ``stderr`` logs from a computation task",
-        "operationId": "get_computation_task_logs_v2_computations__project_id__tasks__node_uuid__logs_get",
+        "summary": "Gets computation task logs file after is done",
+        "description": "If a computation is done, it returns download links to log-files of\neach task in a computation",
+        "operationId": "get_all_tasks_log_files_v2_computations__project_id__tasks___logfile_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get All Tasks Log Files V2 Computations  Project Id  Tasks   Logfile Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskLogFileGet"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/computations/{project_id}/tasks/{node_uuid}/logfile": {
+      "get": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Gets computation task logs file after is done",
+        "description": "If a computation is done, it returns a link to download logs file of each task",
+        "operationId": "get_task_logs_file_v2_computations__project_id__tasks__node_uuid__logfile_get",
         "parameters": [
           {
             "required": true,
@@ -639,8 +698,71 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskLogGet"
+                  "$ref": "#/components/schemas/TaskLogFileGet"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/computations/{project_id}/tasks/{node_uuid}/logs": {
+      "get": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Gets computation task log",
+        "description": "Gets ``stdout`` and ``stderr`` logs from a computation task. It can return a list of the tail or stream live",
+        "operationId": "get_task_logs_v2_computations__project_id__tasks__node_uuid__logs_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -744,7 +866,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ServiceDetails"
+                "$ref": "#/components/schemas/DynamicServiceCreate"
               }
             }
           },
@@ -2069,6 +2191,81 @@
           "minimum": 0.0
         }
       },
+      "DynamicServiceCreate": {
+        "title": "DynamicServiceCreate",
+        "required": [
+          "service_key",
+          "service_version",
+          "user_id",
+          "project_id",
+          "service_uuid",
+          "service_resources"
+        ],
+        "type": "object",
+        "properties": {
+          "service_key": {
+            "title": "Service Key",
+            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_uuid": {
+            "title": "Service Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "service_basepath": {
+            "title": "Service Basepath",
+            "type": "string",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
+            "format": "path"
+          },
+          "service_resources": {
+            "title": "Service Resources",
+            "type": "object"
+          }
+        },
+        "example": {
+          "key": "simcore/services/dynamic/3dviewer",
+          "version": "2.4.5",
+          "user_id": 234,
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+          "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "service_resources": {
+            "container": {
+              "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+              "resources": {
+                "CPU": {
+                  "limit": 0.1,
+                  "reservation": 0.1
+                },
+                "RAM": {
+                  "limit": 2147483648,
+                  "reservation": 2147483648
+                }
+              }
+            }
+          }
+        }
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -2078,6 +2275,54 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ImageResources": {
+        "title": "ImageResources",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "image": {
+            "title": "Image",
+            "pattern": "[\\w/-]+:[\\w.@]+",
+            "type": "string",
+            "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
+          },
+          "resources": {
+            "title": "Resources",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResourceValue"
+            }
+          }
+        },
+        "example": {
+          "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+          "resources": {
+            "CPU": {
+              "limit": 4,
+              "reservation": 0.1
+            },
+            "RAM": {
+              "limit": 103079215104,
+              "reservation": 536870912
+            },
+            "VRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
             }
           }
         }
@@ -2265,6 +2510,44 @@
               "$ref": "#/components/schemas/NodeState"
             },
             "description": "The states of each of the computational nodes in the pipeline"
+          }
+        }
+      },
+      "ResourceValue": {
+        "title": "ResourceValue",
+        "required": [
+          "limit",
+          "reservation"
+        ],
+        "type": "object",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reservation": {
+            "title": "Reservation",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
           }
         }
       },
@@ -2604,61 +2887,6 @@
             "title": "Vcs Url",
             "type": "string"
           }
-        }
-      },
-      "ServiceDetails": {
-        "title": "ServiceDetails",
-        "required": [
-          "service_key",
-          "service_version",
-          "user_id",
-          "project_id",
-          "service_uuid"
-        ],
-        "type": "object",
-        "properties": {
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path"
-          },
-          "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "semantic version number of the node"
-          },
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "service_uuid": {
-            "title": "Service Uuid",
-            "type": "string",
-            "format": "uuid"
-          },
-          "service_basepath": {
-            "title": "Service Basepath",
-            "type": "string",
-            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
-            "format": "path"
-          }
-        },
-        "example": {
-          "key": "simcore/services/dynamic/3dviewer",
-          "version": "2.4.5",
-          "user_id": 234,
-          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-          "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-          "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa"
         }
       },
       "ServiceDockerData": {
@@ -3028,10 +3256,27 @@
         },
         "additionalProperties": false
       },
-      "TaskLogGet": {
-        "title": "TaskLogGet",
+      "TaskLogFileGet": {
+        "title": "TaskLogFileGet",
+        "required": [
+          "task_id"
+        ],
         "type": "object",
-        "properties": {}
+        "properties": {
+          "task_id": {
+            "title": "Task Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "download_link": {
+            "title": "Download Link",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "description": "Presigned link for log file or None if still not available",
+            "format": "uri"
+          }
+        }
       },
       "TextArea": {
         "title": "TextArea",
