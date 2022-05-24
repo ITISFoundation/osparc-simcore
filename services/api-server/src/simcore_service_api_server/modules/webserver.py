@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Deque, Optional
+from typing import Optional
 from uuid import UUID
 
 from cryptography import fernet
@@ -131,7 +131,7 @@ class AuthSession:
         data: ListAnyDict = self._process(resp) or []
 
         # FIXME: move filter to webserver API (next PR)
-        projects: Deque[Project] = deque()
+        projects: deque[Project] = deque()
         for prj in data:
             possible_job_name = prj.get("name", "")
             if possible_job_name.startswith(solver_name):
