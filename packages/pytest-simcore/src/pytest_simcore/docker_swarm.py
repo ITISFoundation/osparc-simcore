@@ -242,6 +242,7 @@ def docker_stack(
                 f"returncode={err.returncode}",
                 f"stdout={err.stdout}",
                 f"stderr={err.stderr}",
+                "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
             )
             raise
 
