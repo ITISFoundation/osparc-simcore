@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict
 
 import pytest
 from models_library.projects import Project
@@ -101,7 +100,7 @@ def test_job_to_node_inputs_conversion():
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
     got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
 
-    NodeInputs = create_model("NodeInputs", __root__=(Dict[str, InputTypes], ...))
+    NodeInputs = create_model("NodeInputs", __root__=(dict[str, InputTypes], ...))
     print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
     print(got_job_inputs.json(indent=2))
 

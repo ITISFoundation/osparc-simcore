@@ -117,7 +117,7 @@ class RWApiKeysRepository(BaseRepository):
 
 
 @pytest.fixture(scope="session")
-def environment() -> Dict:
+def environment() -> dict:
     env = {
         "WEBSERVER_HOST": "webserver",
         "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
@@ -132,7 +132,7 @@ def environment() -> Dict:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+def project_env_devel_dict(project_slug_dir: Path) -> dict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv_values(env_devel_file, verbose=True, interpolate=True)
