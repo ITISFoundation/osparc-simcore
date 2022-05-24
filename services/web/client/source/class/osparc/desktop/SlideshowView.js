@@ -328,8 +328,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
 
-    __showPreparingInputsForNode: function(nodeView, preparingNodes) {
-      nodeView.setEnabled(false);
+    __showPreparingInputsForNode: function(nodeView, preparingNodeIds = []) {
+      // eslint-disable-next-line no-underscore-dangle
+      nodeView._mainView.setEnabled(false);
       const iframe = nodeView.getNode().getIFrame();
       if (iframe) {
         // disable user interaction on iframe
@@ -339,6 +340,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         });
       }
       const title = this.tr("Preparing inputs...");
+      const preparingNodes = [];
+      const workbench = this.getStudy().getWorkbench();
+      preparingNodeIds.forEach(preparingNodeId => preparingNodes.push(workbench.getNode(preparingNodeId)));
       const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
       osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 600, 500).set({
         clickAwayClose: true,
