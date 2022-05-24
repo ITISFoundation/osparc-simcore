@@ -122,8 +122,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       this.__nextBtn.show();
       this.__runBtn.exclude();
       if (currentNode) {
-        const currentNodeStatus = currentNode.getStatus();
-        const currentNodeStatusOutput = currentNodeStatus.getOutput();
+        const currentNodeStatusOutput = currentNode.getStatus().getOutput();
         if (["busy"].includes(currentNodeStatusOutput)) {
           this.__updateNextButtonState("busy");
         } else if (currentNode.isFilePicker() && ["not-available"].includes(currentNodeStatusOutput)) {
