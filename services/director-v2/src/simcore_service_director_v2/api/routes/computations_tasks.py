@@ -7,14 +7,14 @@ Therefore,
 """
 
 import logging
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl
+from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
 from starlette import status
@@ -79,7 +79,7 @@ async def analyze_pipeline(
 
 async def _get_task_log_file(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> Optional[AnyUrl]:
+) -> TaskLogFileGet:
     try:
 
         log_file_url = await get_service_log_file_download_link(
@@ -96,7 +96,11 @@ async def _get_task_log_file(
             f"{user_id=}/{project_id=}/{node_id=}",
             err,
         )
-    return log_file_url
+
+    return TaskLogFileGet(
+        task_id=node_id,
+        download_link=log_file_url,
+    )
 
 
 # ROUTES HANDLERS --------------------------------------------------------------
@@ -120,14 +124,16 @@ async def get_all_tasks_log_files(
     """
     # gets computation task ids
     info = await analyze_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
+    iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
-    return [
-        TaskLogFileGet(
-            task_id=node_id,
-            download_link=await _get_task_log_file(user_id, project_id, node_id),
-        )
-        for node_id in (t.node_id for t in info.filtered_tasks)
-    ]
+    return await logged_gather(
+        *[
+            _get_task_log_file(user_id, project_id, node_id)
+            for node_id in iter_task_ids
+        ],
+        reraise=True,
+        log=log,
+    )
 
 
 @router.get(
@@ -135,7 +141,7 @@ async def get_all_tasks_log_files(
     summary="Gets computation task logs file after is done",
     response_model=TaskLogFileGet,
 )
-async def get_task_logs_file(
+async def get_task_log_file(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -151,10 +157,7 @@ async def get_task_logs_file(
             detail=[f"No task_id={node_uuid} found under computation {project_id}"],
         )
 
-    return TaskLogFileGet(
-        task_id=node_uuid,
-        download_link=await _get_task_log_file(user_id, project_id, node_uuid),
-    )
+    return await _get_task_log_file(user_id, project_id, node_uuid)
 
 
 # NOTE: added here as reference for near futuer extensions
@@ -169,5 +172,8 @@ async def get_task_logs(
     project_id: ProjectID,
     node_uuid: NodeID,
 ) -> str:
-    """Gets ``stdout`` and ``stderr`` logs from a computation task. It can return a list of the tail or stream live"""
+    """Gets ``stdout`` and ``stderr`` logs from a computation task.
+    It can return a list of the tail or stream live
+    """
+
     raise NotImplementedError(f"/{project_id=}/tasks/{node_uuid=}/logs")
