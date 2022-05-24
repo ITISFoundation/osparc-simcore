@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterator
 from unittest import mock
 
 import aiopg.sa
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 async def mock_project_subsystem(
     mocker: MockerFixture,
-) -> AsyncIterator[Dict[str, mock.MagicMock]]:
+) -> AsyncIterator[dict[str, mock.MagicMock]]:
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
@@ -54,7 +54,7 @@ async def mock_project_subsystem(
 
 @pytest.fixture
 async def comp_task_listening_task(
-    mock_project_subsystem: Dict, client: TestClient
+    mock_project_subsystem: dict, client: TestClient
 ) -> AsyncIterator:
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
@@ -92,11 +92,11 @@ async def comp_task_listening_task(
     ],
 )
 async def test_listen_comp_tasks_task(
-    mock_project_subsystem: Dict,
+    mock_project_subsystem: dict,
     comp_task_listening_task: None,
     client,
-    update_values: Dict[str, Any],
-    expected_calls: List[str],
+    update_values: dict[str, Any],
+    expected_calls: list[str],
     task_class: NodeClass,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
