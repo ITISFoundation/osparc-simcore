@@ -185,11 +185,7 @@ async def _update_workbench(
         # frontend services
         # NOTE: for now only file-picker is handled
         outputs_changes: set[str] = get_frontend_node_outputs_changes(
-            new_node=node,
-            old_node=old_node,
-            frontend_keys={
-                "simcore/services/frontend/file-picker",
-            },
+            new_node=node, old_node=old_node
         )
 
         if len(outputs_changes) > 0:

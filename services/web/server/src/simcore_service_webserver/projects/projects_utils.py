@@ -1,7 +1,6 @@
 import logging
 import re
 from copy import deepcopy
-from dataclasses import dataclass
 from typing import Any, AnyStr, Match, Optional, TypedDict, Union
 from uuid import UUID, uuid1, uuid5
 
@@ -17,6 +16,10 @@ VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
 
 # NOTE: InputTypes/OutputTypes that are NOT links
 NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
+
+SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
+    "simcore/services/frontend/file-picker",
+}
 
 
 class NodeDict(TypedDict, total=False):
@@ -296,14 +299,14 @@ def any_node_inputs_changed(
 
 
 def get_frontend_node_outputs_changes(
-    new_node: NodeDict, old_node: NodeDict, *, frontend_keys: set[ServiceKey]
+    new_node: NodeDict, old_node: NodeDict
 ) -> set[str]:
     changed_keys: set[str] = set()
 
-    # if node changes it's outputs and is not a frontend type
-    # return no frontend changes
+    # if node changes it's outputs and is not a supported
+    # frontend type, return no frontend changes
     nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if len(nodes_keys) == 1 and nodes_keys.pop() not in frontend_keys:
+    if len(nodes_keys) == 1 and nodes_keys.pop() not in SUPPORTED_FRONTEND_KEYS:
         return changed_keys
 
     log.debug("Comparing nodes %s %s", new_node, old_node)

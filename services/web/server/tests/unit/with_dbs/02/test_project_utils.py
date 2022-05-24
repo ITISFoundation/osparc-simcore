@@ -338,10 +338,6 @@ def test_did_node_outputs_change(
     new_node: NodeDict, old_node: NodeDict, expected: set[str]
 ) -> None:
     assert (
-        get_frontend_node_outputs_changes(
-            new_node=new_node,
-            old_node=old_node,
-            frontend_keys={"simcore/services/frontend/file-picker"},
-        )
+        get_frontend_node_outputs_changes(new_node=new_node, old_node=old_node)
         == expected
     )
