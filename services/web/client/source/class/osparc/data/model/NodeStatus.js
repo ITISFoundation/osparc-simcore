@@ -95,6 +95,17 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         return Number.parseFloat(value.toFixed(4));
       }
       return 0;
+    },
+
+    isCompNodeReady: function(node) {
+      if (node && node.isComputational()) {
+        // run if last run was not succesful
+        let isReady = node.getStatus().getRunning() !== "SUCCESS";
+        // or inputs changed
+        isReady = isReady || node.getStatus().getOutput() === "out-of-date";
+        return !isReady;
+      }
+      return true;
     }
   },
 

@@ -153,16 +153,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return this.__collapseWithUserMenu;
     },
 
-    __isLastCurrentNodeReady: function(lastCurrentNodeId) {
+    __isNodeReady: function(lastCurrentNodeId) {
       const node = this.getStudy().getWorkbench().getNode(lastCurrentNodeId);
-      if (node && node.isComputational()) {
-        // run if last run was not succesful
-        let isReady = node.getStatus().getRunning() !== "SUCCESS";
-        // or inputs changed
-        isReady = isReady || node.getStatus().getOutput() === "out-of-date";
-        return !isReady;
-      }
-      return true;
+      return osparc.data.model.NodeStatus.isCompNodeReady(node);
     },
 
     __getNotStartedDependencies: function(node) {
@@ -189,8 +182,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const wb = this.getStudy().getWorkbench();
       const upstreamNodeIds = wb.getUpstreamNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
-        const upstreamNode = wb.getNode(upstreamNodeId);
-        if (upstreamNode.isComputational() && upstreamNode.getStatus().getRunning() !== "SUCCESS") {
+        if (!this.__isNodeReady(upstreamNodeId)) {
           dependencies.push(upstreamNodeId);
         }
       });
@@ -296,7 +288,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         if (movingForward) {
           // check if lastCurrentNodeId has to be run
-          if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+          if (!this.__isNodeReady(lastCurrentNodeId)) {
             this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
             this.__currentNodeId = lastCurrentNodeId;
             studyUI.setCurrentNodeId(lastCurrentNodeId);
@@ -348,7 +340,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
       const title = this.tr("Preparing inputs...");
       const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
-      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 500, 400).set({
+      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 600, 500).set({
         clickAwayClose: true,
         showClose: false
       });
