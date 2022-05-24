@@ -60,7 +60,7 @@ attrs==20.3.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
-certifi==2022.5.18.1
+certifi==2021.10.8
     # via
     #   httpcore
     #   httpx
@@ -181,7 +181,7 @@ psycopg2-binary==2.9.3
     #   sqlalchemy
 pycparser==2.21
     # via cffi
-pydantic==1.9.1
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -300,8 +300,7 @@ typing-extensions==4.1.1
     # via
     #   aiodebug
     #   pydantic
-    #   starlette
-ujson==5.3.0
+ujson==4.3.0
     # via fastapi
 urllib3==1.26.9
     # via
