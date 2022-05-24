@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from simcore_service_webserver.projects.projects_utils import (
@@ -9,7 +9,7 @@ from simcore_service_webserver.projects.projects_utils import (
 
 
 @pytest.mark.parametrize(
-    "dict_a, dict_b, exp_changes",
+    "dict_a, dict_b, expected_changes",
     [
         pytest.param(
             {"state": "PUBLISHED"},
@@ -71,16 +71,16 @@ from simcore_service_webserver.projects.projects_utils import (
     ],
 )
 def test_find_changed_dict_keys(
-    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
+    dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
 ):
     assert (
         find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == exp_changes
+        == expected_changes
     )
 
 
 @pytest.mark.parametrize(
-    "dict_a, dict_b, exp_changes",
+    "dict_a, dict_b, expected_changes",
     [
         pytest.param(
             {
@@ -117,11 +117,11 @@ def test_find_changed_dict_keys(
     ],
 )
 def test_find_changed_dict_keys_file_picker_case(
-    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
+    dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
 ):
     assert (
         find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == exp_changes
+        == expected_changes
     )
 
 
@@ -276,7 +276,7 @@ def test_find_changed_dict_keys_file_picker_case(
     ],
 )
 def test_did_node_outputs_change(
-    new_node: Dict[str, Any], old_node: Dict[str, Any], expected: FrontendOutputsChanges
+    new_node: dict[str, Any], old_node: dict[str, Any], expected: FrontendOutputsChanges
 ) -> None:
     assert (
         get_frontend_node_outputs_changes(
