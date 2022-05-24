@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.widget.PreparingInputs", {
   extend: qx.ui.core.Widget,
 
-  construct: function(preparingNodes) {
+  construct: function(preparingNodes = []) {
     this.base(arguments);
 
     // Layout
@@ -31,8 +31,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
     });
     this._add(title);
 
-    this.__preparingNodes = preparingNodes || [];
-    this.__preparingNodes.forEach(nodeId => this._add(new qx.ui.basic.Label(nodeId)));
+    this.__preparingNodes = preparingNodes;
+    this.__preparingNodes.forEach(node => this._add(new qx.ui.basic.Label("- " + node.getLabel())));
 
     const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
     loggerView.getChildControl("pin-node").exclude();
