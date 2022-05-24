@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, Callable
+from typing import Any, Callable, NamedTuple
 from unittest import mock
 
 import httpx
@@ -68,6 +68,11 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
     # NOTE: mocking storage API would require aioresponses since the access to storage
     # is via node-ports which uses aiohttp-client! In order to avoid adding an extra
     # dependency we will patch storage-client functions in simcore-sdk's nodeports
+
+    class Loc(NamedTuple):
+        name: str
+        id: int
+
     return {
         "get_download_file_link": mocker.patch(
             "simcore_sdk.node_ports_common.storage_client.get_download_file_link",
@@ -77,7 +82,9 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
         "get_storage_locations": mocker.patch(
             "simcore_sdk.node_ports_common.storage_client.get_storage_locations",
             autospec=True,
-            return_value=[{"name": "simcore.s3", "id": 0}],
+            return_value=[
+                Loc(name="simcore.s3", id=0),
+            ],
         ),
     }
 
@@ -119,8 +126,8 @@ def project_id(
 
 
 @pytest.fixture
-def node_id(faker: Faker):
-    return faker.uuid4()
+def node_id(fake_workbench_adjacency: dict[str, Any]) -> NodeID:
+    return NodeID(next(nid for nid in fake_workbench_adjacency.keys()))
 
 
 # TESTS -------------------------------------
