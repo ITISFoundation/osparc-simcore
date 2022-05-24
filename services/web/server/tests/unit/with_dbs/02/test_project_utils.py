@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 from simcore_service_webserver.projects.projects_utils import (
     find_changed_dict_keys,
-    FrontendOutputsChanges,
     get_frontend_node_outputs_changes,
+    NodeDict,
 )
 
 
@@ -161,7 +161,7 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 0,
                 "runHash": None,
             },
-            FrontendOutputsChanges(True, {"outFile"}),
+            {"outFile"},
             id="file-picker outputs changed (file was added)",
         ),
         pytest.param(
@@ -197,8 +197,51 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            FrontendOutputsChanges(True, {"outFile"}),
+            {"outFile"},
             id="file-picker outputs changed (file was removed)",
+        ),
+        pytest.param(
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "File Picker",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+                "progress": 0,
+            },
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "test_local.log",
+                "inputs": {},
+                "inputsUnits": {},
+                "inputNodes": [],
+                "parent": None,
+                "thumbnail": "",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local2.log",
+                        "label": "test_local2.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+                "progress": 100,
+                "runHash": None,
+            },
+            {"outFile"},
+            id="file-picker outputs changed (file was replaced)",
         ),
         pytest.param(
             {
@@ -240,49 +283,65 @@ def test_find_changed_dict_keys_file_picker_case(
                 "progress": 100,
                 "runHash": None,
             },
-            FrontendOutputsChanges(False, set()),
+            set(),
             id="file-picker outputs did not change",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
-            {"key": "simcore/services/frontend/diffrenet", "outputs": None},
-            FrontendOutputsChanges(False, set()),
-            id="different keys do not trigger",
+            {"key": "simcore/services/dynamic/different", "outputs": None},
+            set(),
+            id="replacing frontend-type with",
+        ),
+        pytest.param(
+            {"key": "simcore/services/dynamic/different", "outputs": None},
+            {
+                "key": "simcore/services/frontend/file-picker",
+                "outputs": {
+                    "outFile": {
+                        "store": "0",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local.log",
+                        "label": "test_local.log",
+                        "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
+                    }
+                },
+            },
+            {"outFile"},
+            id="replaced not fronted type node with a frontend type node",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker", "outputs": {}},
             {"key": "simcore/services/frontend/file-picker", "outputs": None},
-            FrontendOutputsChanges(True, set()),
+            set(),
             id="no and not existing outputs trigger",
         ),
         pytest.param(
             {},
             {},
-            FrontendOutputsChanges(False, set()),
+            set(),
             id="all keys missing do not trigger",
         ),
         pytest.param(
             {"a": "key"},
             {"another": "key"},
-            FrontendOutputsChanges(False, set()),
+            set(),
             id="different keys but missing key and outputs do not trigger",
         ),
         pytest.param(
             {"key": "simcore/services/frontend/file-picker"},
             {"key": "simcore/services/frontend/file-picker"},
-            FrontendOutputsChanges(False, set()),
+            set(),
             id="missing outputs do not trigger",
         ),
     ],
 )
 def test_did_node_outputs_change(
-    new_node: dict[str, Any], old_node: dict[str, Any], expected: FrontendOutputsChanges
+    new_node: NodeDict, old_node: NodeDict, expected: set[str]
 ) -> None:
     assert (
         get_frontend_node_outputs_changes(
             new_node=new_node,
             old_node=old_node,
-            filter_keys={"simcore/services/frontend/file-picker"},
+            frontend_keys={"simcore/services/frontend/file-picker"},
         )
         == expected
     )

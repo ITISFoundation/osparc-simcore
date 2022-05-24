@@ -46,7 +46,6 @@ from .projects_exceptions import (
 from .projects_nodes_utils import update_node_outputs
 from .projects_utils import (
     find_changed_dict_keys,
-    FrontendOutputsChanges,
     get_frontend_node_outputs_changes,
     project_uses_available_services,
 )
@@ -185,15 +184,15 @@ async def _update_workbench(
         # check if there were any changes in the outputs of
         # frontend services
         # NOTE: for now only file-picker is handled
-        outputs_changes: FrontendOutputsChanges = get_frontend_node_outputs_changes(
+        outputs_changes: set[str] = get_frontend_node_outputs_changes(
             new_node=node,
             old_node=old_node,
-            filter_keys={
+            frontend_keys={
                 "simcore/services/frontend/file-picker",
             },
         )
 
-        if outputs_changes.changed:
+        if len(outputs_changes) > 0:
             frontend_nodes_update_tasks.append(
                 update_node_outputs(
                     app=app,
@@ -203,7 +202,7 @@ async def _update_workbench(
                     outputs=node.get("outputs", {}),
                     run_hash=None,
                     node_errors=None,
-                    ui_changed_keys=outputs_changes.keys,
+                    ui_changed_keys=outputs_changes,
                 )
             )
 

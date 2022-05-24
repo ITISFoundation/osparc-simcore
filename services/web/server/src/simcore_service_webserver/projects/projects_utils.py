@@ -2,7 +2,7 @@ import logging
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, AnyStr, Match, Optional, Union
+from typing import Any, AnyStr, Match, Optional, TypedDict, Union
 from uuid import UUID, uuid1, uuid5
 
 from servicelib.decorators import safe_return
@@ -19,10 +19,9 @@ VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
 NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
-@dataclass
-class FrontendOutputsChanges:
-    changed: bool
-    keys: set[str]
+class NodeDict(TypedDict, total=False):
+    key: Optional[ServiceKey]
+    outputs: Optional[dict[str, Any]]
 
 
 def clone_project_document(
@@ -297,26 +296,38 @@ def any_node_inputs_changed(
 
 
 def get_frontend_node_outputs_changes(
-    new_node: dict[str, Any], old_node: dict[str, Any], filter_keys: set[ServiceKey]
-) -> FrontendOutputsChanges:
-    """if node is a specific type it checks if outputs changed"""
+    new_node: NodeDict, old_node: NodeDict, *, frontend_keys: set[ServiceKey]
+) -> set[str]:
+    changed_keys: set[str] = set()
+
+    # if node changes it's outputs and is not a frontend type
+    # return no frontend changes
     nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if not (len(nodes_keys) == 1 and nodes_keys.pop() in filter_keys):
-        return FrontendOutputsChanges(changed=False, keys=set())
+    if len(nodes_keys) == 1 and nodes_keys.pop() not in frontend_keys:
+        return changed_keys
 
     log.debug("Comparing nodes %s %s", new_node, old_node)
-    outputs_changed = new_node.get("outputs") != old_node.get("outputs")
 
-    def _get_outputs_keys(node_data: dict[str, Any]) -> set[str]:
-        outputs = node_data.get("outputs", {})
-        if outputs is None:
-            return set()
-        return set(outputs.keys())
+    def _check_for_changes(d1: dict[str, Any], d2: dict[str, Any]) -> None:
+        """
+        Checks if d1's values have changed compared to d2's.
+        NOTE: Does not guarantee that d2's values have changed
+        compare to d1's.
+        """
+        for k, v in d1.items():
+            if k not in d2:
+                changed_keys.add(k)
+                continue
+            if v != d2[k]:
+                changed_keys.add(k)
 
-    changed_keys = _get_outputs_keys(new_node).symmetric_difference(
-        _get_outputs_keys(old_node)
-    )
-    return FrontendOutputsChanges(changed=outputs_changed, keys=changed_keys)
+    new_outputs: dict[str, Any] = new_node.get("outputs", {}) or {}
+    old_outputs: dict[str, Any] = old_node.get("outputs", {}) or {}
+
+    _check_for_changes(new_outputs, old_outputs)
+    _check_for_changes(old_outputs, new_outputs)
+
+    return changed_keys
 
 
 def find_changed_dict_keys(
