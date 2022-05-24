@@ -1,6 +1,6 @@
-from typing import Any, Dict, Union
+from typing import Any, Union
 
-AnyDict = Dict[str, Any]
+AnyDict = dict[str, Any]
 ListAnyDict = list[AnyDict]
 
 # Represent the type returned by e.g. json.load

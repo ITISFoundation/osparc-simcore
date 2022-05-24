@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Deque, Dict, Optional
+from typing import Deque, Optional
 from uuid import UUID
 
 from cryptography import fernet
@@ -35,10 +35,10 @@ class AuthSession:
 
     client: AsyncClient  # Its lifetime is attached to app
     vtag: str
-    session_cookies: Optional[Dict] = None
+    session_cookies: Optional[dict] = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: Dict):
+    def create(cls, app: FastAPI, session_cookies: dict):
         return cls(
             client=app.state.webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
@@ -86,7 +86,7 @@ class AuthSession:
 
         return self._process(resp)
 
-    async def put(self, path: str, body: Dict) -> Optional[JSON]:
+    async def put(self, path: str, body: dict) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)

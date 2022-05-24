@@ -2,7 +2,6 @@ import json
 import logging
 import types
 from pathlib import Path
-from typing import Dict
 
 import yaml
 from fastapi import FastAPI
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 def override_openapi_method(app: FastAPI):
     # TODO: test openapi(*) member does not change interface
 
-    def _custom_openapi_method(zelf: FastAPI) -> Dict:
+    def _custom_openapi_method(zelf: FastAPI) -> dict:
         """Overrides FastAPI.openapi member function
         returns OAS schema with vendor extensions
         """
