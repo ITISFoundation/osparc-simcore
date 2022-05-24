@@ -598,7 +598,7 @@
           "computations"
         ],
         "summary": "Gets computation task logs file after is done",
-        "description": "If a computation is done, it returns download links to log-files of\neach task in a computation",
+        "description": "Returns download links to log-files of each task in a computation.\nEach log is only available when the corresponding task is done",
         "operationId": "get_all_tasks_log_files_v2_computations__project_id__tasks___logfile_get",
         "parameters": [
           {
@@ -657,7 +657,7 @@
           "computations"
         ],
         "summary": "Gets computation task logs file after is done",
-        "description": "If a computation is done, it returns a link to download logs file of each task",
+        "description": "Returns a link to download logs file of a give task.\nThe log is only available when the task is done",
         "operationId": "get_task_logs_file_v2_computations__project_id__tasks__node_uuid__logfile_get",
         "parameters": [
           {
@@ -700,69 +700,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/TaskLogFileGet"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/computations/{project_id}/tasks/{node_uuid}/logs": {
-      "get": {
-        "tags": [
-          "computations"
-        ],
-        "summary": "Gets computation task log",
-        "description": "Gets ``stdout`` and ``stderr`` logs from a computation task. It can return a list of the tail or stream live",
-        "operationId": "get_task_logs_v2_computations__project_id__tasks__node_uuid__logs_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "project_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Node Uuid",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
-              "type": "integer",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },
