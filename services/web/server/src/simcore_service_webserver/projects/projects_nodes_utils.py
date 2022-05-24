@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from models_library.errors import ErrorDict
@@ -7,9 +7,22 @@ from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 
-from .projects_utils import project_get_depending_nodes
-
 log = logging.getLogger(__name__)
+
+
+async def project_get_depending_nodes(
+    project: dict[str, Any], node_uuid: str
+) -> set[str]:
+    depending_node_uuids = set()
+    for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
+        for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
+            if (
+                isinstance(dep_node_inputs_key_data, dict)
+                and dep_node_inputs_key_data.get("nodeUuid") == node_uuid
+            ):
+                depending_node_uuids.add(dep_node_uuid)
+
+    return depending_node_uuids
 
 
 @log_decorator(logger=log)

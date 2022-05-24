@@ -4,8 +4,8 @@ from copy import deepcopy
 from typing import Any, AnyStr, Match, Optional, TypedDict, Union
 from uuid import UUID, uuid1, uuid5
 
-from servicelib.decorators import safe_return
 from models_library.services import ServiceKey
+from servicelib.decorators import safe_return
 from yarl import URL
 
 from .project_models import ProjectDict
@@ -219,21 +219,6 @@ def get_project_unavailable_services(
     }
 
     return required - available
-
-
-async def project_get_depending_nodes(
-    project: dict[str, Any], node_uuid: str
-) -> set[str]:
-    depending_node_uuids = set()
-    for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
-        for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
-            if (
-                isinstance(dep_node_inputs_key_data, dict)
-                and dep_node_inputs_key_data.get("nodeUuid") == node_uuid
-            ):
-                depending_node_uuids.add(dep_node_uuid)
-
-    return depending_node_uuids
 
 
 def extract_dns_without_default_port(url: URL) -> str:
