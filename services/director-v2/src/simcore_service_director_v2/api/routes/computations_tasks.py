@@ -7,13 +7,15 @@ Therefore,
 """
 
 import logging
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import AnyUrl
+from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
 from starlette import status
 
@@ -75,6 +77,28 @@ async def analyze_pipeline(
     return PipelineInfo(pipeline_dag, all_tasks, filtered_tasks)
 
 
+async def _get_task_log_file(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> Optional[AnyUrl]:
+    try:
+
+        log_file_url = await get_service_log_file_download_link(
+            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
+        )
+
+    except NodeportsException as err:
+        # Unexpected error: Cannot determine the cause of failure
+        # to get donwload link and cannot handle it automatically.
+        # Will treat it as "not available" and log a warning
+        log_file_url = None
+        log.warning(
+            "Failed to get log-file of %s: %s.",
+            f"{user_id=}/{project_id=}/{node_id=}",
+            err,
+        )
+    return log_file_url
+
+
 # ROUTES HANDLERS --------------------------------------------------------------
 
 
@@ -91,25 +115,19 @@ async def get_all_tasks_log_files(
     ),
     comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
 ) -> list[TaskLogFileGet]:
-    """If a computation is done, it returns download links to log-files of
-    each task in a computation
+    """Returns download links to log-files of each task in a computation.
+    Each log is only available when the corresponding task is done
     """
-    result = []
-
     # gets computation task ids
     info = await analyze_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
 
-    for node_id in (t.node_id for t in info.filtered_tasks):
-        # FIXME: raises NodeportsException
-        log_file_url = await get_service_log_file_download_link(
-            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
+    return [
+        TaskLogFileGet(
+            task_id=node_id,
+            download_link=await _get_task_log_file(user_id, project_id, node_id),
         )
-
-        result.append(
-            TaskLogFileGet.construct(task_id=node_id, download_link=log_file_url)
-        )
-
-    return result
+        for node_id in (t.node_id for t in info.filtered_tasks)
+    ]
 
 
 @router.get(
@@ -118,27 +136,38 @@ async def get_all_tasks_log_files(
     response_model=TaskLogFileGet,
 )
 async def get_task_logs_file(
-    user_id: UserID, project_id: ProjectID, node_uuid: NodeID
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
 ) -> TaskLogFileGet:
-    """If a computation is done, it returns a link to download logs file of each task"""
+    """Returns a link to download logs file of a give task.
+    The log is only available when the task is done
+    """
 
-    # TODO: check valid node in projectid??
+    if not await comp_tasks_repo.check_task_exists(project_id, node_uuid):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=[f"No task_id={node_uuid} found under computation {project_id}"],
+        )
 
-    # FIXME: raises NodeportsException
-    log_file_url = await get_service_log_file_download_link(
-        user_id, project_id, node_uuid, file_link_type=FileLinkType.PRESIGNED
+    return TaskLogFileGet(
+        task_id=node_uuid,
+        download_link=await _get_task_log_file(user_id, project_id, node_uuid),
     )
 
-    return TaskLogFileGet.construct(task_id=node_uuid, download_link=log_file_url)
 
-
-@router.get(
-    "/{project_id}/tasks/{node_uuid}/logs",
-    summary="Gets computation task log",
-)
+# NOTE: added here as reference for near futuer extensions
+#
+# @router.get(
+#    "/{project_id}/tasks/{node_uuid}/logs",
+#    summary="Gets computation task log",
+# )
+# - Implement close as possible to https://docs.docker.com/engine/api/v1.41/#operation/ContainerTop
 async def get_task_logs(
-    user_id: UserID, project_id: ProjectID, node_uuid: NodeID
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
 ) -> str:
     """Gets ``stdout`` and ``stderr`` logs from a computation task. It can return a list of the tail or stream live"""
-    # TODO: as close as possible to https://docs.docker.com/engine/api/v1.41/#operation/ContainerTop
     raise NotImplementedError(f"/{project_id=}/tasks/{node_uuid=}/logs")
