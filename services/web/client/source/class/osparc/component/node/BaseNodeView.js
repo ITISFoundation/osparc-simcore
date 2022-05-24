@@ -72,8 +72,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
   members: {
     _header: null,
+    __inputsStateButton: null,
     __nodeStatusUI: null,
-    __retrieveButton: null,
     _mainView: null,
     _settingsLayout: null,
     _iFrameLayout: null,
@@ -120,18 +120,23 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
+      const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
+        label: this.tr("Preparing inputs..."),
+        icon: "@FontAwesome5Solid/circle-notch/14",
+        backgroundColor: "transparent",
+        toolTipText: this.tr("Input's state")
+      });
+      inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
+      inputsStateBtn.addListener("execute", () => {
+        console.log("Hey there");
+      }, this);
+      header.add(inputsStateBtn);
+
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
       });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
-
-      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/spinner/14").set({
-        backgroundColor: "transparent",
-        toolTipText: this.tr("Retrieve")
-      });
-      retrieveBtn.addListener("execute", () => this.getNode().callRetrieveInputs(), this);
-      header.add(retrieveBtn);
 
       header.add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -240,14 +245,49 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    __areInputsReady: function() {
+      const wb = this.getNode().getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamNodes(this.getNode(), false);
+      for (let i=0; i<upstreamNodeIds.length; i++) {
+        const upstreamNodeId = upstreamNodeIds[i];
+        if (!osparc.data.model.NodeStatus.isCompNodeReady(wb.getNode(upstreamNodeId))) {
+          return false;
+        }
+      }
+      return true;
+    },
+
+    __disableContent: function() {
+      this._mainView.setEnabled(false);
+      const iframe = this.getNode().getIFrame();
+      if (iframe) {
+        // disable user interaction on iframe
+        // eslint-disable-next-line no-underscore-dangle
+        iframe.__iframe.getContentElement().setStyles({
+          "pointer-events": "none"
+        });
+      }
+    },
+
+    showPreparingInputsForNode: function(preparingNodeIds = []) {
+      this.__disableContent();
+      const title = this.tr("Preparing inputs...");
+      const preparingNodes = [];
+      const workbench = this.getNode().getStudy().getWorkbench();
+      preparingNodeIds.forEach(preparingNodeId => preparingNodes.push(workbench.getNode(preparingNodeId)));
+      const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
+      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 600, 500).set({
+        clickAwayClose: true,
+        showClose: false
+      });
+    },
+
     __applyNode: function(node) {
       if (this.__nodeStatusUI) {
         this.__nodeStatusUI.setNode(node);
       }
 
-      if (this.__retrieveButton) {
-        this.__retrieveButton.setVisibility(node.isDynamic() ? "visible" : "excluded");
-      }
+      this.__inputsStateButton.setVisibility(this.__areInputsReady() ? "excluded" : "visible");
 
       this._mainView.removeAll();
       this._addSettings();

@@ -309,7 +309,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             win.addListener("close", () => {
               if (win.getConfirmed()) {
                 this.fireDataEvent("startPartialPipeline", notStartedDependencies);
-                this.__showPreparingInputsForNode(this.__nodeView, notReadyDependencies);
+                this.__nodeView.showPreparingInputsForNode(notReadyDependencies);
               } else {
                 // bring the user back to the old node
                 this.__moveToNode(lastCurrentNodeId);
@@ -319,35 +319,13 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             }, this);
             return;
           } else if (notReadyDependencies && notReadyDependencies.length) {
-            this.__showPreparingInputsForNode(this.__nodeView, notReadyDependencies);
+            this.__nodeView.showPreparingInputsForNode(notReadyDependencies);
           }
         }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
-    },
-
-    __showPreparingInputsForNode: function(nodeView, preparingNodeIds = []) {
-      // eslint-disable-next-line no-underscore-dangle
-      nodeView._mainView.setEnabled(false);
-      const iframe = nodeView.getNode().getIFrame();
-      if (iframe) {
-        // disable user interaction on iframe
-        // eslint-disable-next-line no-underscore-dangle
-        iframe.__iframe.getContentElement().setStyles({
-          "pointer-events": "none"
-        });
-      }
-      const title = this.tr("Preparing inputs...");
-      const preparingNodes = [];
-      const workbench = this.getStudy().getWorkbench();
-      preparingNodeIds.forEach(preparingNodeId => preparingNodes.push(workbench.getNode(preparingNodeId)));
-      const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
-      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 600, 500).set({
-        clickAwayClose: true,
-        showClose: false
-      });
     },
 
     __maximizeIframe: function(maximize) {
