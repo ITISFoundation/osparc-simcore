@@ -316,7 +316,7 @@ async def get_service_log_file_download_link(
     : raises NodeportsException
     """
     try:
-        value_link = await port_utils.get_download_link_from_storage_v2(
+        value_link = await port_utils.get_download_link_from_storage_overload(
             user_id=user_id,
             project_id=f"{project_id}",
             node_id=f"{node_id}",

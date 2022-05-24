@@ -160,7 +160,9 @@ async def get_task_log_file(
     return await _get_task_log_file(user_id, project_id, node_uuid)
 
 
-# NOTE: added here as reference for near futuer extensions
+# NOTE: This handler function is NOT ACTIVE
+# but still kept as reference for future extensions that will tackle
+# real-time log streaming (instead of logfile download)
 #
 # @router.get(
 #    "/{project_id}/tasks/{node_uuid}/logs",

@@ -90,7 +90,7 @@ async def get_download_link_from_storage(
     return parse_obj_as(AnyUrl, f"{link}")
 
 
-async def get_download_link_from_storage_v2(
+async def get_download_link_from_storage_overload(
     user_id: int, project_id: str, node_id: str, file_name: str, link_type: LinkType
 ) -> AnyUrl:
     """Overloads get_download_link_from_storage with arguments that match those in
