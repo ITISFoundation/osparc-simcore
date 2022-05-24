@@ -29,7 +29,7 @@ elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   APP_CONFIG=server-docker-prod.yaml
 fi
 
-APP_LOG_LEVEL=${WEBSERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL}}}
+APP_LOG_LEVEL=${WEBSERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 
 # RUNNING application ----------------------------------------

@@ -26,7 +26,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 fi
 
 # RUNNING application ----------------------------------------
-APP_LOG_LEVEL=${DIRECTOR_V2_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL}}}
+APP_LOG_LEVEL=${DIRECTOR_V2_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
