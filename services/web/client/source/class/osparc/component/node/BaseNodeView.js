@@ -269,7 +269,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
     },
 
-    showPreparingInputsForNode: function(preparingNodeIds = []) {
+    showPreparingInputsWin: function(preparingNodeIds = []) {
       this.__disableContent();
       const title = this.tr("Preparing inputs...");
       const preparingNodes = [];

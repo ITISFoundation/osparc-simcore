@@ -309,7 +309,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             win.addListener("close", () => {
               if (win.getConfirmed()) {
                 this.fireDataEvent("startPartialPipeline", notStartedDependencies);
-                this.__nodeView.showPreparingInputsForNode(notReadyDependencies);
+                this.__nodeView.showPreparingInputsWin(notReadyDependencies);
               } else {
                 // bring the user back to the old node
                 this.__moveToNode(lastCurrentNodeId);
@@ -319,7 +319,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             }, this);
             return;
           } else if (notReadyDependencies && notReadyDependencies.length) {
-            this.__nodeView.showPreparingInputsForNode(notReadyDependencies);
+            this.__nodeView.showPreparingInputsWin(notReadyDependencies);
           }
         }
       } else if (this.__nodeView) {
