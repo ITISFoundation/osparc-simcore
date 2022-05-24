@@ -1,11 +1,17 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Coroutine, Optional
 
 from aiohttp import web
 from models_library.errors import ErrorDict
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
+from collections import deque
+from models_library.users import UserID
+from models_library.projects import ProjectID
+from .projects_utils import get_frontend_node_outputs_changes
+from servicelib.utils import fire_and_forget_task
+from . import projects_api
 
 log = logging.getLogger(__name__)
 
@@ -37,14 +43,6 @@ async def update_node_outputs(
     *,
     ui_changed_keys: Optional[set[str]],
 ) -> None:
-    # FIXME: below relative import needs to be resolved
-    # https://github.com/ITISFoundation/osparc-simcore/issues/3069
-    # unsure how to deal with this circular dependency
-    # this function is called from:
-    # - `projects/projects_db.py`
-    # - `computation_comp_tasks_listening_task.py` (was originally here)
-    from . import projects_api
-
     # the new outputs might be {}, or {key_name: payload}
     project, keys_changed = await projects_api.update_project_node_outputs(
         app,
@@ -89,3 +87,44 @@ async def update_node_outputs(
     await projects_api.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=node_uuid, changed_keys=keys
     )
+
+
+async def update_frontend_outputs(
+    app: web.Application,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    old_project: dict[str, Any],
+    new_project: dict[str, Any],
+) -> None:
+    old_workbench = old_project["workbench"]
+    new_workbench = new_project["workbench"]
+    frontend_nodes_update_tasks: deque[Coroutine] = deque()
+
+    for node_key, node in new_workbench.items():
+        old_node = old_workbench.get(node_key)
+        if not old_node:
+            continue
+
+        # check if there were any changes in the outputs of
+        # frontend services
+        # NOTE: for now only file-picker is handled
+        outputs_changes: set[str] = get_frontend_node_outputs_changes(
+            new_node=node, old_node=old_node
+        )
+
+        if len(outputs_changes) > 0:
+            frontend_nodes_update_tasks.append(
+                update_node_outputs(
+                    app=app,
+                    user_id=user_id,
+                    project_uuid=f"{project_uuid}",
+                    node_uuid=node_key,
+                    outputs=node.get("outputs", {}),
+                    run_hash=None,
+                    node_errors=None,
+                    ui_changed_keys=outputs_changes,
+                )
+            )
+
+    for frontend_node_update_task in frontend_nodes_update_tasks:
+        fire_and_forget_task(frontend_node_update_task)

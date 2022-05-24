@@ -12,7 +12,7 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Coroutine, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -22,13 +22,12 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
-from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
-from servicelib.utils import fire_and_forget_task
+
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
@@ -43,12 +42,7 @@ from .projects_exceptions import (
     ProjectNotFoundError,
     ProjectsException,
 )
-from .projects_nodes_utils import update_node_outputs
-from .projects_utils import (
-    find_changed_dict_keys,
-    get_frontend_node_outputs_changes,
-    project_uses_available_services,
-)
+from .projects_utils import find_changed_dict_keys, project_uses_available_services
 
 log = logging.getLogger(__name__)
 
@@ -162,53 +156,6 @@ def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
         if len(user_groups) == 0
         else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
     )
-
-
-async def _update_workbench(
-    app: web.Application,
-    user_id: UserID,
-    project_uuid: str,
-    old_project: dict[str, Any],
-    new_project: dict[str, Any],
-) -> deque[Coroutine]:
-    # any non set entry in the new workbench is taken from the old one if available
-    old_workbench = old_project["workbench"]
-    new_workbench = new_project["workbench"]
-    frontend_nodes_update_tasks: deque[Coroutine] = deque()
-
-    for node_key, node in new_workbench.items():
-        old_node = old_workbench.get(node_key)
-        if not old_node:
-            continue
-
-        # check if there were any changes in the outputs of
-        # frontend services
-        # NOTE: for now only file-picker is handled
-        outputs_changes: set[str] = get_frontend_node_outputs_changes(
-            new_node=node, old_node=old_node
-        )
-
-        if len(outputs_changes) > 0:
-            frontend_nodes_update_tasks.append(
-                update_node_outputs(
-                    app=app,
-                    user_id=user_id,
-                    project_uuid=project_uuid,
-                    node_uuid=node_key,
-                    outputs=node.get("outputs", {}),
-                    run_hash=None,
-                    node_errors=None,
-                    ui_changed_keys=outputs_changes,
-                )
-            )
-
-        for prop in old_node:
-            # check if the key is missing in the new node
-            if prop not in node:
-                # use the old value
-                node[prop] = old_node[prop]
-
-    return frontend_nodes_update_tasks
 
 
 class ProjectDBAPI:
@@ -715,14 +662,6 @@ class ProjectDBAPI:
                     )
                 )
 
-                frontend_nodes_update_tasks: deque[Coroutine] = await _update_workbench(
-                    app=self._app,
-                    user_id=user_id,
-                    project_uuid=project_uuid,
-                    old_project=current_project,
-                    new_project=new_project_data,
-                )
-
                 # update timestamps
                 new_project_data["lastChangeDate"] = now_str()
 
@@ -739,9 +678,6 @@ class ProjectDBAPI:
                     .returning(literal_column("*"))
                 )
                 project: RowProxy = await result.fetchone()
-
-                for frontend_node_update_task in frontend_nodes_update_tasks:
-                    fire_and_forget_task(frontend_node_update_task)
 
                 log.debug(
                     "DB updated returned row project=%s",
