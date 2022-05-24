@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Deque, Dict, List, Optional
+from typing import Deque, Dict, Optional
 from uuid import UUID
 
 from cryptography import fernet
@@ -120,7 +120,7 @@ class AuthSession:
         data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
-    async def list_projects(self, solver_name: str) -> List[Project]:
+    async def list_projects(self, solver_name: str) -> list[Project]:
         # TODO: pagination?
         resp = await self.client.get(
             "/projects",

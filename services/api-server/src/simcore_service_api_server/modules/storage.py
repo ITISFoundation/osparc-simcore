@@ -2,7 +2,6 @@ import logging
 import re
 import urllib.parse
 from mimetypes import guess_type
-from typing import List
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -53,7 +52,7 @@ class StorageApi(BaseServiceClientApi):
     # async def get(self, path: str, *args, **kwargs) -> JSON:
     #     return await self.client.get(path, *args, **kwargs)
 
-    async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
+    async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
         resp = await self.client.post(
             "/simcore-s3/files/metadata:search",
@@ -70,7 +69,7 @@ class StorageApi(BaseServiceClientApi):
 
     async def search_files(
         self, user_id: int, file_id: UUID
-    ) -> List[StorageFileMetaData]:
+    ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
         # here there is no project, so it would always returns an empty

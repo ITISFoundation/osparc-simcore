@@ -20,7 +20,7 @@ def get_types(annotation) -> Tuple:
                 if issubclass(annotated_type, primitive_type):
                     return primitive_type
             except TypeError:
-                # List[Any] or Dict[str, Any]
+                # list[Any] or Dict[str, Any]
                 pass
 
         return annotated_type

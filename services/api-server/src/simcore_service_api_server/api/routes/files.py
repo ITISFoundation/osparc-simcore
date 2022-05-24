@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from datetime import datetime
 from textwrap import dedent
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import httpx
@@ -39,14 +39,14 @@ common_error_responses = {
 }
 
 
-@router.get("", response_model=List[File])
+@router.get("", response_model=list[File])
 async def list_files(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
     """Lists all files stored in the system"""
 
-    stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
+    stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
     files_meta = deque()
@@ -123,11 +123,11 @@ async def upload_file(
     return file_meta
 
 
-# DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
-async def upload_files(files: List[UploadFile] = FileParam(...)):
+# DISABLED @router.post(":upload-multiple", response_model=list[FileMetadata])
+async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
     # MaG suggested a single function that can upload one or multiple files instead of having
-    # two of them. Tried something like upload_file( files: Union[List[UploadFile], File] ) but it
+    # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
     # produces an error in the generated openapi.json
     #
     # Since there is no inmediate need of this functions, we decided to disable it
@@ -151,7 +151,7 @@ async def get_file(
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: List[StorageFileMetaData] = await storage_client.search_files(
+        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
             user_id, file_id
         )
         if not stored_files:
