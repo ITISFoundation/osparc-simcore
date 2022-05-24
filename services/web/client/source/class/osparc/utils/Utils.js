@@ -232,9 +232,9 @@ qx.Class.define("osparc.utils.Utils", {
     /**
       * @param value {Date Object} Date Object
       */
-    formatTime: function(value) {
+    formatTime: function(value, medium = false) {
       const timeFormat = new qx.util.format.DateFormat(
-        qx.locale.Date.getTimeFormat("short")
+        qx.locale.Date.getTimeFormat(medium ? "medium" : "short")
       );
       const timeStr = timeFormat.format(value);
       return timeStr;
