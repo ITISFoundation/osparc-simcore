@@ -30,6 +30,7 @@ elif [ "${SC_BUILD_TARGET}" = "production" ]; then
 fi
 
 APP_LOG_LEVEL=${WEBSERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL}}}
+SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 
 # RUNNING application ----------------------------------------
 echo "$INFO" "Selected config $APP_CONFIG w/ log-level $APP_LOG_LEVEL"
@@ -46,7 +47,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${APP_LOG_LEVEL:-info}" \
+    --log-level="${SERVER_LOG_LEVEL}"\
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
     --reload
@@ -57,7 +58,7 @@ else
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${APP_LOG_LEVEL:-warning}" \
+    --log-level="${SERVER_LOG_LEVEL}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
 fi
