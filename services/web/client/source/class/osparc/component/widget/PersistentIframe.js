@@ -203,10 +203,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         let divSize = qx.bom.element.Dimension.getSize(domElement);
         this.__iframe.setLayoutProperties({
           top: divPos.top - iframeParentPos.top + 25,
-          left: (divPos.left - iframeParentPos.left)
+          left: divPos.left - iframeParentPos.left
         });
         this.__iframe.set({
-          width: (divSize.width),
+          width: divSize.width,
           height: divSize.height - 25
         });
         this.__restartButton.setLayoutProperties({
