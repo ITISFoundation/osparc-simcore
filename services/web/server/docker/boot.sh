@@ -44,22 +44,23 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
   exec gunicorn simcore_service_webserver.cli:app_factory \
+    --log-level="${SERVER_LOG_LEVEL}"\
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${SERVER_LOG_LEVEL}"\
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
     --reload
 
 else
+
   exec gunicorn simcore_service_webserver.cli:app_factory \
+    --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${SERVER_LOG_LEVEL}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
 fi
