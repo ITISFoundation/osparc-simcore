@@ -165,6 +165,25 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return true;
     },
 
+    __getNotStartedDependencies: function(node) {
+      const dependencies = node.getStatus().getDependencies() || [];
+      const wb = this.getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamNodes(node, false);
+      upstreamNodeIds.forEach(upstreamNodeId => {
+        const upstreamNode = wb.getNode(upstreamNodeId);
+        if (upstreamNode.isComputational() &&
+          [
+            "UNKNOWN",
+            "NOT_STARTED",
+            "FAILED",
+            "ABORTED"
+          ].includes(upstreamNode.getStatus().getRunning())) {
+          dependencies.push(upstreamNodeId);
+        }
+      });
+      return dependencies;
+    },
+
     __getNotReadyDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
@@ -285,8 +304,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
 
           // check if upstream has to be run
-          const dependencies = this.__getNotReadyDependencies(node);
-          if (dependencies && dependencies.length) {
+          const notStartedDependencies = this.__getNotStartedDependencies(node);
+          const notReadyDependencies = this.__getNotReadyDependencies(node);
+          if (notStartedDependencies && notStartedDependencies.length) {
             const msg = this.tr("Do you want to run the required steps?");
             const win = new osparc.ui.window.Confirmation(msg).set({
               confirmText: this.tr("Run"),
@@ -296,8 +316,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             win.open();
             win.addListener("close", () => {
               if (win.getConfirmed()) {
-                this.fireDataEvent("startPartialPipeline", dependencies);
-                osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Preparing inputs"));
+                this.fireDataEvent("startPartialPipeline", notStartedDependencies);
+                this.__showPreparingInputsForNode(this.__nodeView, notReadyDependencies);
               } else {
                 // bring the user back to the old node
                 this.__moveToNode(lastCurrentNodeId);
@@ -306,12 +326,32 @@ qx.Class.define("osparc.desktop.SlideshowView", {
               }
             }, this);
             return;
+          } else if (notReadyDependencies && notReadyDependencies.length) {
+            this.__showPreparingInputsForNode(this.__nodeView, notReadyDependencies);
           }
         }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
+    },
+
+    __showPreparingInputsForNode: function(nodeView, preparingNodes) {
+      nodeView.setEnabled(false);
+      const iframe = nodeView.getNode().getIFrame();
+      if (iframe) {
+        // disable user interaction on iframe
+        // eslint-disable-next-line no-underscore-dangle
+        iframe.__iframe.getContentElement().setStyles({
+          "pointer-events": "none"
+        });
+      }
+      const title = this.tr("Preparing inputs...");
+      const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
+      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 500, 400).set({
+        clickAwayClose: true,
+        showClose: false
+      });
     },
 
     __maximizeIframe: function(maximize) {
