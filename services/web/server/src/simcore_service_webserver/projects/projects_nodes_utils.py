@@ -24,6 +24,8 @@ async def update_node_outputs(
     *,
     ui_changed_keys: Optional[set[str]],
 ) -> None:
+    # FIXME: below relative import needs to be resolved
+    # https://github.com/ITISFoundation/osparc-simcore/issues/3069
     # unsure how to deal with this circular dependency
     # this function is called from:
     # - `projects/projects_db.py`
