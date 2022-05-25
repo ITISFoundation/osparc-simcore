@@ -32,6 +32,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
@@ -132,7 +133,7 @@ def environment() -> dict:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict:
+def project_env_devel_dict(project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -140,7 +141,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> dict:
 
 
 @pytest.fixture
-def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+def project_env_devel_environment(
+    project_env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 

@@ -64,8 +64,9 @@ async def test_get_profile(
     assert profile.last_name == "Maxwell"
 
 
-@pytest.mark.skip(reason="fixture under dev")
-async def test_patch_profile(client: AsyncClient, auth, mocked_webserver_service_api):
+async def test_patch_profile(
+    client: AsyncClient, auth: BasicAuth, mocked_webserver_service_api
+):
 
     resp = await client.patch(
         f"/{API_VTAG}/me",

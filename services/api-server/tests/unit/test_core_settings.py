@@ -5,11 +5,15 @@
 
 import logging
 
+import pytest
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_api_server.core.settings import AppSettings, BootModeEnum
 from yarl import URL
 
 
-def test_min_environ_for_settings(project_env_devel_environment, monkeypatch):
+def test_min_environ_for_settings(
+    project_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
     # Adds Dockerfile environs
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
