@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import catalog_fakes
+import _catalog_fakes
 import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
@@ -50,14 +50,14 @@ def mocked_catalog_service_api(app: FastAPI):
             200,
             json=[
                 # one solver
-                catalog_fakes.create_service_out(
+                _catalog_fakes.create_service_out(
                     key="simcore/services/comp/Foo", name="Foo"
                 ),
                 # two version of the same solver
-                catalog_fakes.create_service_out(version="0.0.1"),
-                catalog_fakes.create_service_out(version="1.0.1"),
+                _catalog_fakes.create_service_out(version="0.0.1"),
+                _catalog_fakes.create_service_out(version="1.0.1"),
                 # not a solver
-                catalog_fakes.create_service_out(type="dynamic"),
+                _catalog_fakes.create_service_out(type="dynamic"),
             ],
         )
 
