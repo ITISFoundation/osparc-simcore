@@ -4,6 +4,7 @@ from ..meta import API_VTAG
 from .routes import (
     clusters,
     computations,
+    computations_tasks,
     dynamic_services,
     health,
     meta,
@@ -29,6 +30,9 @@ v0_router.include_router(
 v2_router = APIRouter()
 v2_router.include_router(
     computations.router, tags=["computations"], prefix="/computations"
+)
+v2_router.include_router(
+    computations_tasks.router, tags=["computations"], prefix="/computations"
 )
 v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
