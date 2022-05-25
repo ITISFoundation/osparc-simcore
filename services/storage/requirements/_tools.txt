@@ -17,9 +17,9 @@ click==8.0.4
     #   pip-tools
 distlib==0.3.4
     # via virtualenv
-filelock==3.6.0
+filelock==3.7.0
     # via virtualenv
-identify==2.5.0
+identify==2.5.1
     # via pre-commit
 isort==5.10.1
     # via
@@ -33,7 +33,7 @@ pathspec==0.9.0
     # via black
 pep517==0.12.0
     # via pip-tools
-pip-tools==6.6.1
+pip-tools==6.6.2
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==2.5.2
     # via
@@ -67,7 +67,7 @@ typing-extensions==4.1.1
     #   black
 virtualenv==20.14.1
     # via pre-commit
-watchdog==2.1.7
+watchdog==2.1.8
     # via -r requirements/_tools.in
 wheel==0.37.1
     # via pip-tools
