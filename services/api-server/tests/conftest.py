@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 import simcore_service_api_server
-from cryptography.fernet import Fernet
 from dotenv import dotenv_values
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 
@@ -22,20 +21,6 @@ pytest_plugins = [
 
 
 ## TEST_ENVIRON ---
-
-
-@pytest.fixture(scope="session")
-def default_test_env_vars() -> dict[str, str]:
-    return {
-        "WEBSERVER_HOST": "webserver",
-        "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
-        "POSTGRES_HOST": "127.0.0.1",
-        "POSTGRES_USER": "test",
-        "POSTGRES_PASSWORD": "test",
-        "POSTGRES_DB": "test",
-        "LOG_LEVEL": "debug",
-        "SC_BOOT_MODE": "production",
-    }
 
 
 @pytest.fixture(scope="session")

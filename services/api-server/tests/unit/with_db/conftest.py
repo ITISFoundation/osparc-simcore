@@ -7,7 +7,6 @@
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from pprint import pformat
 from typing import Callable, Dict, Iterator, Union
@@ -30,7 +29,17 @@ from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+@pytest.fixture(scope="session")
+def default_test_env_vars(default_test_env_vars: dict[str, str]) -> dict[str, str]:
+    override = {
+        "POSTGRES_HOST": "127.0.0.1",
+        "POSTGRES_USER": "test",
+        "POSTGRES_PASSWORD": "test",
+        "POSTGRES_DB": "test",
+    }
+    default_test_env_vars.update(override)
+    return default_test_env_vars
 
 
 ## POSTGRES -----

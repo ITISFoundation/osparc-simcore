@@ -8,9 +8,23 @@ from typing import AsyncIterator, Iterator
 import httpx
 import pytest
 from asgi_lifespan import LifespanManager
+from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
+
+
+@pytest.fixture(scope="session")
+def default_test_env_vars() -> dict[str, str]:
+    return {
+        "WEBSERVER_HOST": "webserver",
+        "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
+        "API_SERVER_POSTGRES": "null",
+        "API_SERVER_TRACING": "null",
+        "LOG_LEVEL": "debug",
+        "SC_BOOT_MODE": "production",
+    }
+
 
 ## APP & TEST CLIENT ------
 
