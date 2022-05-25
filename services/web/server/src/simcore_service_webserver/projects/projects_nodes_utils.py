@@ -3,12 +3,12 @@ from typing import Any, Coroutine, Optional
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from collections import deque
 from models_library.users import UserID
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeIDStr
 from .projects_utils import get_frontend_node_outputs_changes
 from servicelib.utils import fire_and_forget_task
 from . import projects_api
@@ -34,9 +34,9 @@ async def project_get_depending_nodes(
 @log_decorator(logger=log)
 async def update_node_outputs(
     app: web.Application,
-    user_id: PositiveInt,
-    project_uuid: str,
-    node_uuid: str,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_uuid: NodeIDStr,
     outputs: dict,
     run_hash: Optional[str],
     node_errors: Optional[list[ErrorDict]],
@@ -47,17 +47,17 @@ async def update_node_outputs(
     project, keys_changed = await projects_api.update_project_node_outputs(
         app,
         user_id,
-        project_uuid,
+        f"{project_uuid}",
         node_uuid,
         new_outputs=outputs,
         new_run_hash=run_hash,
     )
 
     await projects_api.notify_project_node_update(
-        app, project, f"{node_uuid}", errors=node_errors
+        app, project, node_uuid, errors=node_errors
     )
     # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
+    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
     await logged_gather(
         *[
             projects_api.notify_project_node_update(app, project, nid, errors=None)
@@ -117,7 +117,7 @@ async def update_frontend_outputs(
                 update_node_outputs(
                     app=app,
                     user_id=user_id,
-                    project_uuid=f"{project_uuid}",
+                    project_uuid=project_uuid,
                     node_uuid=node_key,
                     outputs=node.get("outputs", {}),
                     run_hash=None,
