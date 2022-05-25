@@ -2,6 +2,6 @@
 --constraint _base.txt
 
 pytest
-pytest-cov
 pytest-asyncio
+pytest-cov
 pytest-httpx
