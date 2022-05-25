@@ -13,6 +13,7 @@ from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_api_server.core.settings import ApplicationSettings
 
 
@@ -53,8 +54,7 @@ def app(
     from simcore_service_api_server.core.application import init_app
 
     # environ
-    for key, value in default_test_env_vars.items():
-        monkeypatch.setenv(key, value)
+    setenvs_from_dict(monkeypatch, default_test_env_vars)
 
     app = init_app()
     return app

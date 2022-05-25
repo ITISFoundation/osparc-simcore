@@ -3,12 +3,13 @@
 # pylint: disable=unused-variable
 
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 import simcore_service_api_server
 from dotenv import dotenv_values
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -35,11 +36,13 @@ def project_env_devel_vars(project_slug_dir: Path) -> EnvVarsDict:
 def patched_project_env_devel_vars(
     project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    for key, value in project_env_devel_vars.items():
-        monkeypatch.setenv(key, value)
 
+    env_vars = deepcopy(project_env_devel_vars)
     # overrides
-    monkeypatch.setenv("API_SERVER_DEV_FEATURES_ENABLED", "1")
+    env_vars["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
+
+    setenvs_from_dict(monkeypatch, env_vars)
+    return env_vars
 
 
 ## FOLDER LAYOUT ----

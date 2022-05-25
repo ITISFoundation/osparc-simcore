@@ -9,13 +9,13 @@ import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
+from httpx import AsyncClient
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
-from starlette.testclient import TestClient
 
 
 @pytest.fixture
@@ -23,7 +23,6 @@ def app(
     patched_project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> FastAPI:
     # overrides conftest.py: app
-    # uses packages/pytest-simcore/src/pytest_simcore/environment_configs.py: env_devel_config
 
     # Adds Dockerfile environs
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -45,7 +44,7 @@ def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=app.state.settings.API_SERVER_CATALOG.base_url,
+        base_url=settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -71,16 +70,17 @@ def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
 
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
-def test_list_solvers(
-    sync_client: TestClient, mocked_catalog_service_api: MockRouter, mocker
+async def test_list_solvers(
+    client: AsyncClient,
+    mocked_catalog_service_api: MockRouter,
+    mocker,
 ):
-    cli = sync_client
     warn = mocker.patch.object(
         simcore_service_api_server.api.routes.solvers.logger, "warning"
     )
 
     # list solvers latest releases
-    resp = cli.get("/v0/solvers")
+    resp = await client.get("/v0/solvers")
     assert resp.status_code == status.HTTP_200_OK
 
     # No warnings for ValidationError with the fixture
@@ -99,20 +99,20 @@ def test_list_solvers(
         assert solver.url.host == "api.testserver.io"  # cli.base_url
 
         # get_solver_latest_version_by_name
-        resp0 = cli.get(solver.url.path)
+        resp0 = await client.get(solver.url.path)
         assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
         # assert f"GET {solver.name}:{solver.version}"  in resp0.json()["errors"][0]
         assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
         # assert Solver(**resp0.json()) == solver
 
         # get_solver
-        resp1 = cli.get(f"/v0/solvers/{solver.id}")
+        resp1 = await client.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
         # assert Solver(**resp1.json()) == solver
 
         # get_solver_latest_version_by_name
-        resp2 = cli.get(f"/v0/solvers/{solver.id}/latest")
+        resp2 = await client.get(f"/v0/solvers/{solver.id}/latest")
 
         assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
