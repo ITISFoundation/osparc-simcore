@@ -1,0 +1,6 @@
+--constraint ../../../requirements/constraints.txt
+--constraint _base.txt
+
+pytest
+pytest-cov
+pytest-asyncio

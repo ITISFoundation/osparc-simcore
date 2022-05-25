@@ -1,0 +1,14 @@
+#
+# Specifies third-party dependencies for 'services/image-puller/src'
+#
+# NOTE: ALL version constraints MUST be commented
+--constraint ../../../requirements/constraints.txt
+
+# NOTE: These input-requirements under packages are tested using latest updates
+# NOTE: Make sure these packages are added in setup.install_requires
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+
+aiodocker
+httpx
+pydantic
