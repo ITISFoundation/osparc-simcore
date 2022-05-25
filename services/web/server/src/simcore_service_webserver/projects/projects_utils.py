@@ -318,7 +318,7 @@ def get_frontend_node_outputs_changes(
     return changed_keys
 
 
-def find_changed_dict_keys(
+def find_changed_node_keys(
     current_dict: dict[str, Any],
     new_dict: dict[str, Any],
     *,
@@ -326,7 +326,7 @@ def find_changed_dict_keys(
 ) -> dict[str, Any]:
     # The `store` key inside outputs can be either `0` (integer) or `"0"` (string)
     # this generates false positives.
-    # Casting to `str` to fix the issue.
+    # Casting to `int` to fix the issue.
     # NOTE: this could make services relying on side effects to stop form propagating
     # changes to downstream connected services.
     # Will only fix the issue for `file-picker` to avoid issues.
@@ -353,7 +353,7 @@ def find_changed_dict_keys(
         modified_entry = {k: new_dict[k]}
         if isinstance(new_dict[k], dict):
             modified_entry = {
-                k: find_changed_dict_keys(
+                k: find_changed_node_keys(
                     current_dict[k], new_dict[k], look_for_removed_keys=True
                 )
             }

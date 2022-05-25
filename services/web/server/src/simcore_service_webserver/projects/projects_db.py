@@ -42,7 +42,7 @@ from .projects_exceptions import (
     ProjectNotFoundError,
     ProjectsException,
 )
-from .projects_utils import find_changed_dict_keys, project_uses_available_services
+from .projects_utils import find_changed_node_keys, project_uses_available_services
 
 log = logging.getLogger(__name__)
 
@@ -576,7 +576,7 @@ class ProjectDBAPI:
                         # find changed keys
                         changed_entries.update(
                             {
-                                node_key: find_changed_dict_keys(
+                                node_key: find_changed_node_keys(
                                     current_node_data,
                                     new_node_data,
                                     look_for_removed_keys=False,

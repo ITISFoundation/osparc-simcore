@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 from simcore_service_webserver.projects.projects_utils import (
-    find_changed_dict_keys,
+    find_changed_node_keys,
     get_frontend_node_outputs_changes,
     NodeDict,
 )
@@ -70,11 +70,11 @@ from simcore_service_webserver.projects.projects_utils import (
         ),
     ],
 )
-def test_find_changed_dict_keys(
+def test_find_changed_node_keys(
     dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
 ):
     assert (
-        find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False)
         == expected_changes
     )
 
@@ -116,11 +116,11 @@ def test_find_changed_dict_keys(
         ),
     ],
 )
-def test_find_changed_dict_keys_file_picker_case(
+def test_find_changed_node_keys_file_picker_case(
     dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
 ):
     assert (
-        find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False)
         == expected_changes
     )
 
