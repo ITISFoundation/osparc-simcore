@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import sys
-from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,6 @@ from dotenv import dotenv_values
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 pytest_plugins = [
     "pytest_simcore.pydantic_models",
@@ -32,17 +30,43 @@ def project_env_devel_vars(project_slug_dir: Path) -> EnvVarsDict:
     return environ
 
 
-@pytest.fixture
-def patched_project_env_devel_vars(
-    project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.fixture(scope="session")
+def dockerfile_env_vars(project_slug_dir: Path) -> EnvVarsDict:
+    dockerfile = project_slug_dir / "Dockerfile"
+    assert dockerfile.exists()
+    # manual selection of ENV defined in Dockerfile
+    return {
+        "SC_USER_ID": "8004",
+        "SC_USER_NAME": "scu",
+        "SC_BUILD_TARGET": "production",
+        "SC_BOOT_MODE": "production",
+    }
 
-    env_vars = deepcopy(project_env_devel_vars)
-    # overrides
+
+@pytest.fixture(scope="session")
+def default_app_env_vars(
+    dockerfile_env_vars: EnvVarsDict,
+    project_env_devel_vars: EnvVarsDict,
+) -> EnvVarsDict:
+    """env-vars composed from the project's .env-devel and Dockerfile to set the app environment"""
+
+    env_vars = {}
+    # warning update order matters
+    env_vars.update(project_env_devel_vars)
+    env_vars.update(dockerfile_env_vars)
     env_vars["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 
-    setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
+
+
+@pytest.fixture
+def patched_default_app_environ(
+    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+) -> EnvVarsDict:
+    """default environment for testing"""
+
+    setenvs_from_dict(monkeypatch, default_app_env_vars)
+    return default_app_env_vars
 
 
 ## FOLDER LAYOUT ----

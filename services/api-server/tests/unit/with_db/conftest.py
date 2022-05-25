@@ -9,7 +9,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Dict, Iterator, Union
+from typing import Callable, Dict, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -24,36 +24,25 @@ import yaml
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from fastapi import FastAPI
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.base import metadata
+from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
-
-
-@pytest.fixture(scope="session")
-def default_test_env_vars(default_test_env_vars: dict[str, str]) -> dict[str, str]:
-    override = {
-        "POSTGRES_HOST": "127.0.0.1",
-        "POSTGRES_USER": "test",
-        "POSTGRES_PASSWORD": "test",
-        "POSTGRES_DB": "test",
-    }
-    default_test_env_vars.update(override)
-    return default_test_env_vars
-
 
 ## POSTGRES -----
 
 
 @pytest.fixture(scope="session")
 def docker_compose_file(
-    default_test_env_vars: dict[str, str], tests_utils_dir: Path, tmpdir_factory
+    default_app_env_vars: dict[str, str], tests_utils_dir: Path, tmpdir_factory
 ) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
     # NOTE: do not forget to add the current environ here, otherwise docker-compose fails
     environ = dict(os.environ)
-    environ.update(default_test_env_vars)
+    environ.update(default_app_env_vars)
 
     src_path = tests_utils_dir / "docker-compose.yml"
     assert src_path.exists
@@ -128,8 +117,7 @@ def make_engine(postgres_service: dict) -> Callable:
 
 
 @pytest.fixture
-def app(postgres_service: dict, make_engine) -> Iterator[FastAPI]:
-    """overrides app to ensure db is started"""
+def migrated_db(postgres_service: dict, make_engine: Callable):
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
     # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
     # fixture to have local scope
@@ -139,13 +127,23 @@ def app(postgres_service: dict, make_engine) -> Iterator[FastAPI]:
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
 
-    yield app
+    yield
 
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
     # FIXME: deletes all because downgrade is not reliable!
     engine = make_engine(is_async=False)
     metadata.drop_all(engine)
+
+
+@pytest.fixture
+def app(patched_default_app_environ: EnvVarsDict, migrated_db: None) -> FastAPI:
+    """Overrides app to ensure that:
+    - it uses default environ as pg
+    - db is started and initialized
+    """
+    the_app = init_app()
+    return the_app
 
 
 ## FAKE DATA injected at repositories interface ----------------------
@@ -210,9 +208,9 @@ class RWApiKeysRepository(BaseRepository):
 
 
 @pytest.fixture
-async def fake_user_id(initialized_app: FastAPI, faker: Faker) -> int:
+async def fake_user_id(app: FastAPI, faker: Faker) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    user_id = await RWUsersRepository(initialized_app.state.engine).create(
+    user_id = await RWUsersRepository(app.state.engine).create(
         email=faker.email(),
         password=faker.password(),
         name=faker.user_name(),
@@ -221,11 +219,9 @@ async def fake_user_id(initialized_app: FastAPI, faker: Faker) -> int:
 
 
 @pytest.fixture
-async def fake_api_key(
-    initialized_app: FastAPI, fake_user_id: int, faker: Faker
-) -> ApiKeyInDB:
+async def fake_api_key(app: FastAPI, fake_user_id: int, faker: Faker) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    apikey = await RWApiKeysRepository(initialized_app.state.engine).create(
+    apikey = await RWApiKeysRepository(app.state.engine).create(
         "test-api-key",
         api_key=faker.word(),
         api_secret=faker.password(),

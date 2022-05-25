@@ -5,18 +5,12 @@
 
 import logging
 
-import pytest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
 from yarl import URL
 
 
-def test_min_environ_for_settings(
-    patched_project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-    # Adds Dockerfile environs
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
+def test_default_app_environ(patched_default_app_environ: EnvVarsDict):
     # loads from environ
     settings = ApplicationSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
@@ -27,3 +21,10 @@ def test_min_environ_for_settings(
     assert URL(settings.API_SERVER_POSTGRES.dsn) == URL(
         "postgresql://test:test@127.0.0.1:5432/test"
     )
+
+
+def test_light_app_environ(patched_light_app_environ: EnvVarsDict):
+    settings = ApplicationSettings.create_from_envs()
+    print("captured settings: \n", settings.json(indent=2))
+
+    assert settings.API_SERVER_POSTGRES is None

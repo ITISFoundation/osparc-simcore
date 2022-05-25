@@ -2,8 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-# from starlette.testclient import TestClient
 
+import json
+from copy import deepcopy
+
+import httpx
 import pytest
 import respx
 from fastapi import FastAPI
@@ -15,11 +18,11 @@ from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 from simcore_service_api_server.models.schemas.profiles import Profile
 from starlette import status
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def mocked_webserver_service_api(app: FastAPI):
+    """Mocks some responses of web-server service"""
+
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
@@ -29,13 +32,24 @@ def mocked_webserver_service_api(app: FastAPI):
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        # NOTE: webserver-api uses the same schema as api-server!
+        # in-memory fake data
+        me = deepcopy(Profile.Config.schema_extra["example"])
 
-        respx_mock.get("/me", name="get_me").respond(
-            status.HTTP_200_OK,
-            # NOTE: webserver-api uses the same schema as api-server!
-            json={"data": Profile.Config.schema_extra["example"]},
-        )
+        def _get_me(request):
+            return httpx.Response(status.HTTP_200_OK, json={"data": me})
+
+        def _update_me(request: httpx.Request):
+            changes = json.loads(request.content.decode(request.headers.encoding))
+            me.update(changes)
+            return httpx.Response(status.HTTP_200_OK, json={"data": me})
+
+        respx_mock.get("/me", name="get_me").mock(side_effect=_get_me)
+        respx_mock.put("/me", name="update_me").mock(side_effect=_update_me)
+
         yield respx_mock
+
+        del me
 
 
 @pytest.fixture
@@ -64,17 +78,17 @@ async def test_get_profile(
     assert profile.last_name == "Maxwell"
 
 
-async def test_patch_profile(
+async def test_update_profile(
     client: AsyncClient, auth: BasicAuth, mocked_webserver_service_api: MockRouter
 ):
-
-    resp = await client.patch(
+    # needs auth
+    resp = await client.put(
         f"/{API_VTAG}/me",
-        data={"first_name": "Oliver", "last_name": "Heaviside"},
+        json={"first_name": "Oliver", "last_name": "Heaviside"},
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK, resp.text
 
-    profile = Profile(**resp.json())
+    profile = Profile.parse_obj(resp.json())
     assert profile.first_name == "Oliver"
     assert profile.last_name == "Heaviside"

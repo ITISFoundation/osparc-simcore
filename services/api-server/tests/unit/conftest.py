@@ -13,13 +13,22 @@ from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
+## APP & TEST CLIENT ------
 
-@pytest.fixture(scope="session")
-def default_test_env_vars() -> dict[str, str]:
-    #
+
+@pytest.fixture
+def patched_light_app_environ(
+    patched_default_app_environ: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    """Config that disables many plugins e.g. database or tracing"""
+
+    env_vars = {}
+    env_vars.update(patched_default_app_environ)
+
     pprint(list(ApplicationSettings.schema()["properties"].keys()))
     # [
     # 'SC_BOOT_MODE',
@@ -34,35 +43,31 @@ def default_test_env_vars() -> dict[str, str]:
     # 'API_SERVER_REMOTE_DEBUG_PORT'
     # ]
     #
-    return {
-        "WEBSERVER_HOST": "webserver",
-        "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
-        "API_SERVER_POSTGRES": "null",
-        "API_SERVER_TRACING": "null",
-        "LOG_LEVEL": "debug",
-        "SC_BOOT_MODE": "production",
-    }
-
-
-## APP & TEST CLIENT ------
+    env_vars.update(
+        {
+            "WEBSERVER_HOST": "webserver",
+            "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
+            "API_SERVER_POSTGRES": "null",
+            "API_SERVER_TRACING": "null",
+            "LOG_LEVEL": "debug",
+            "SC_BOOT_MODE": "production",
+        }
+    )
+    setenvs_from_dict(monkeypatch, env_vars)
+    return env_vars
 
 
 @pytest.fixture
-def app(
-    monkeypatch: pytest.MonkeyPatch, default_test_env_vars: dict[str, str]
-) -> FastAPI:
-    from simcore_service_api_server.core.application import init_app
-
-    # environ
-    setenvs_from_dict(monkeypatch, default_test_env_vars)
-
-    app = init_app()
-    return app
+def app(patched_light_app_environ: EnvVarsDict) -> FastAPI:
+    """Inits app on a light environment"""
+    the_app = init_app()
+    return the_app
 
 
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with LifespanManager(app):
+        # needed for app to trigger start/stop event handlers
         async with httpx.AsyncClient(
             app=app,
             base_url="http://api.testserver.io",

@@ -10,31 +10,10 @@ import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
 from httpx import AsyncClient
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
-from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
-
-
-@pytest.fixture
-def app(
-    patched_project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> FastAPI:
-    # overrides conftest.py: app
-
-    # Adds Dockerfile environs
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
-    # settings from environs
-    settings = ApplicationSettings.create_from_envs()
-    settings.API_SERVER_POSTGRES = None
-    settings.API_SERVER_WEBSERVER = None
-    settings.API_SERVER_CATALOG = None
-
-    mini_app = init_app(settings)
-    return mini_app
 
 
 @pytest.fixture
