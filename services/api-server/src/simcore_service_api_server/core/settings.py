@@ -72,7 +72,7 @@ class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
 # MAIN SETTINGS --------------------------------------------
 
 
-class AppSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # DOCKER
     SC_BOOT_MODE: Optional[BootModeEnum]

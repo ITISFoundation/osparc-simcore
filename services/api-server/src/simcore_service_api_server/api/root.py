@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 
-from ..core.settings import AppSettings
+from ..core.settings import ApplicationSettings
 from .routes import files, health, meta, solvers, solvers_jobs, users
 
 
-def create_router(settings: AppSettings):
+def create_router(settings: ApplicationSettings):
     router = APIRouter()
     router.include_router(health.router)
 

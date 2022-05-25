@@ -4,13 +4,13 @@ import typer
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME
-from .core.settings import AppSettings
+from .core.settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
 main = typer.Typer(name=PROJECT_NAME)
 
 
-main.command()(create_settings_command(settings_cls=AppSettings, logger=log))
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
 
 
 @main.command()
