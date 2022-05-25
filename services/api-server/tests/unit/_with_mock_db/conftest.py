@@ -6,10 +6,10 @@
 from typing import Iterator
 
 import pytest
-import pytest_simcore.helpers.catalog_data_fakers as catalog_data_fakers
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from pytest_simcore.helpers import catalog_data_fakers
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings

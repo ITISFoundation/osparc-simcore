@@ -164,7 +164,6 @@ async def test_solver_logs(
     resp = await client.get(
         f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
         auth=auth,
-        allow_redirects=True,
     )
 
     # calls to directorv2 service
