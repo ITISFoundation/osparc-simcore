@@ -1,4 +1,4 @@
-# Shortcut to install 'services/api-server' for production
+# Shortcut to install 'services/dynamic-sidecar' for production
 #
 # - As ci.txt but w/o tests
 #
