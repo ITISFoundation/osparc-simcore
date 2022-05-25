@@ -4,14 +4,13 @@
 # pylint: disable=unused-variable
 
 from pprint import pprint
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator
 
 import httpx
 import pytest
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_api_server.core.application import init_app
@@ -66,6 +65,9 @@ def app(patched_light_app_environ: EnvVarsDict) -> FastAPI:
 
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    #
+    # Prefer this client instead of fastapi.testclient.TestClient
+    #
     async with LifespanManager(app):
         # needed for app to trigger start/stop event handlers
         async with httpx.AsyncClient(
@@ -79,13 +81,3 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             setattr(client, "app", client._transport.app)
 
             yield client
-
-
-@pytest.fixture
-def sync_client(app: FastAPI) -> Iterator[TestClient]:
-    # test client:
-    # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
-    with TestClient(
-        app, base_url="http://api.testserver.io", raise_server_exceptions=True
-    ) as cli:
-        yield cli
