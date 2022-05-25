@@ -9,11 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Dict, Iterator, Union
+from typing import AsyncIterator, Callable, Dict, Iterator, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
 import faker
+import httpx
 import passlib.hash
 import pytest
 import simcore_postgres_database.cli as pg_cli
@@ -26,9 +27,10 @@ from aiopg.sa.result import RowProxy
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from dotenv import dotenv_values
+from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
+from httpx._transports.asgi import ASGITransport
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
@@ -292,23 +294,25 @@ def app(monkeypatch, environment, apply_migration) -> FastAPI:
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> Iterator[FastAPI]:
+async def initialized_app(app: FastAPI) -> AsyncIterator[FastAPI]:
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-async def client(initialized_app: FastAPI) -> Iterator[AsyncClient]:
-    async with AsyncClient(
+async def client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
         app=initialized_app,
         base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
+        assert isinstance(client._transport, ASGITransport)
+        setattr(client, "app", client._transport.app)  # rewires location of test app
         yield client
 
 
 @pytest.fixture
-def sync_client(app: FastAPI) -> TestClient:
+def sync_client(app: FastAPI) -> Iterator[TestClient]:
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
     with TestClient(
@@ -321,22 +325,25 @@ def sync_client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-async def test_user_id(initialized_app) -> int:
+async def fake_user_id(initialized_app: FastAPI, faker: Faker) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    async with initialized_app.state.engine.acquire() as conn:
-        user_id = await RWUsersRepository(conn).create(
-            email="test@test.com",
-            password="password",
-            name="username",
-        )
-        return user_id
+    user_id = await RWUsersRepository(initialized_app.state.engine).create(
+        email=faker.email(),
+        password=faker.password(),
+        name=faker.user_name(),
+    )
+    return user_id
 
 
 @pytest.fixture
-async def test_api_key(initialized_app, test_user_id) -> ApiKeyInDB:
+async def fake_api_key(
+    initialized_app: FastAPI, fake_user_id: int, faker: Faker
+) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    async with initialized_app.state.engine.acquire() as conn:
-        apikey = await RWApiKeysRepository(conn).create(
-            "test-api-key", api_key="key", api_secret="secret", user_id=test_user_id
-        )
-        return apikey
+    apikey = await RWApiKeysRepository(initialized_app.state.engine).create(
+        "test-api-key",
+        api_key=fake.word(),
+        api_secret=fake.password(),
+        user_id=fake_user_id,
+    )
+    return apikey
