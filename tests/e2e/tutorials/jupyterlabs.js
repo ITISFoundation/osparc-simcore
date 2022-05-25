@@ -48,24 +48,32 @@ async function runTutorial() {
       }
       const jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][j]));
 
+      await tutorial.takeScreenshot("before_nb_selection");
       const input2outputFileSelector = '[title~="jl_notebook.ipynb"]';
       await jLabIframe.waitForSelector(input2outputFileSelector);
       await jLabIframe.click(input2outputFileSelector, {
         clickCount: 2
       });
+      await tutorial.takeScreenshot("after_nb_selection");
+
       await tutorial.waitFor(5000);
       // click Run Menu
       const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)'; // select the Run Menu
       await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
 
+      await tutorial.takeScreenshot("after_run_menu");
+
       // click Run All Cells
       const mainRunAllBtnSelector = '#jp-mainmenu-run > ul > li:nth-child(12)'; // select the Run
       await utils.waitAndClick(jLabIframe, mainRunAllBtnSelector)
 
+      await tutorial.takeScreenshot("after_run_all_menu");
+
       if (j === 2) {
         await tutorial.waitFor(40000); // we are solving an em problem
+      } else {
+        await tutorial.waitFor(5000); // we are not solving an em problem
       }
-
 
       const outFiles = [
         "TheNumber.txt",
