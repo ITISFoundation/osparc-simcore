@@ -36,7 +36,7 @@ lazy-object-proxy==1.7.1
     # via astroid
 mccabe==0.7.0
     # via pylint
-mypy==0.950
+mypy==0.960
     # via -r requirements/_tools.in
 mypy-extensions==0.4.3
     # via

@@ -4,12 +4,38 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+anyio==3.6.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
     #   pytest
+certifi==2022.5.18.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
+    #   httpx
 coverage==6.4
     # via pytest-cov
+h11==0.12.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
+httpcore==0.15.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
+httpx==0.23.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest-httpx
+idna==3.3
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   rfc3986
 iniconfig==1.1.1
     # via pytest
 packaging==21.3
@@ -25,10 +51,23 @@ pytest==7.1.2
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-httpx
 pytest-asyncio==0.18.3
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
+pytest-httpx==0.21.0
+    # via -r requirements/_test.in
+rfc3986==1.5.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
+sniffio==1.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   httpcore
+    #   httpx
 tomli==2.0.1
     # via
     #   coverage
