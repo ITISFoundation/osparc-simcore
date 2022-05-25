@@ -139,6 +139,16 @@ class CompTasksRepository(BaseRepository):
         logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
+    async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
+        async with self.db_engine.acquire() as conn:
+            nid: Optional[str] = await conn.scalar(
+                sa.select([comp_tasks.c.node_id]).where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+            )
+            return nid is not None
+
     async def upsert_tasks_from_project(
         self,
         project: ProjectAtDB,

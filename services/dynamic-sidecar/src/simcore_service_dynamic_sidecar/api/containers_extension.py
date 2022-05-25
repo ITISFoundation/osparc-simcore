@@ -129,7 +129,7 @@ async def pull_input_ports(
         PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
     await send_message(rabbitmq, "Finished pulling inputs")
-    return transferred_bytes
+    return int(transferred_bytes)
 
 
 @containers_router.patch(
@@ -187,7 +187,7 @@ async def pull_output_ports(
         PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
     await send_message(rabbitmq, "Finished pulling output")
-    return transferred_bytes
+    return int(transferred_bytes)
 
 
 @containers_router.post(

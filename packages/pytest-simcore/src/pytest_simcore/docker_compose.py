@@ -145,7 +145,7 @@ def simcore_docker_compose(
         docker_compose_path.exists() for docker_compose_path in docker_compose_paths
     )
 
-    config = run_docker_compose_config(
+    compose_specs = run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         docker_compose_paths=docker_compose_paths,
         env_file_path=env_file_for_testing,
@@ -154,10 +154,10 @@ def simcore_docker_compose(
     # NOTE: do not add indent. Copy&Paste log into editor instead
     print(
         HEADER_STR.format("simcore docker-compose"),
-        json.dumps(config),
+        json.dumps(compose_specs),
         HEADER_STR.format("-"),
     )
-    return config
+    return compose_specs
 
 
 @pytest.fixture(scope="module")
@@ -214,7 +214,7 @@ def ops_docker_compose(
     )
     assert docker_compose_path.exists()
 
-    config = run_docker_compose_config(
+    compose_specs = run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
@@ -223,10 +223,10 @@ def ops_docker_compose(
     # NOTE: do not add indent. Copy&Paste log into editor instead
     print(
         HEADER_STR.format("ops docker-compose"),
-        json.dumps(config),
+        json.dumps(compose_specs),
         HEADER_STR.format("-"),
     )
-    return config
+    return compose_specs
 
 
 @pytest.fixture(scope="module")

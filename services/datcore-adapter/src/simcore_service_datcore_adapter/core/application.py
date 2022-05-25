@@ -39,7 +39,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         redoc_url=None,  # default disabled
     )
 
-    logger.debug(settings)
+    logger.debug(settings.json(indent=1))
     app.state.settings = settings
 
     # events

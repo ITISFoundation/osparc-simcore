@@ -457,7 +457,7 @@ async def test_send_computation_task(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
@@ -542,7 +542,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -627,7 +627,7 @@ async def test_abort_computation_tasks(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
@@ -706,7 +706,7 @@ async def test_failed_task_returns_exceptions(
     gpu_image: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -770,7 +770,7 @@ async def test_missing_resource_send_computation_task(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
 
     # remove the workers that can handle mpi
@@ -811,7 +811,7 @@ async def test_too_many_resources_send_computation_task(
     cluster_id: ClusterID,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -850,7 +850,7 @@ async def test_disconnected_backend_raises_exception(
     cpu_image: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -880,7 +880,7 @@ async def test_changed_scheduler_raises_exception(
     cpu_image: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -919,7 +919,7 @@ async def test_get_tasks_status(
     cpu_image: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
     fail_remote_fct: bool,
 ):
@@ -1000,7 +1000,7 @@ async def test_dask_sub_handlers(
     cpu_image: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
 ):
     dask_client.register_handlers(fake_task_handlers)
@@ -1077,7 +1077,7 @@ async def test_get_cluster_details(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
-    mocked_storage_service_fcts: respx.MockRouter,
+    mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
 ):
     cluster_details = await dask_client.get_cluster_details()
