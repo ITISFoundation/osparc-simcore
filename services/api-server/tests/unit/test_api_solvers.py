@@ -2,11 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Iterator
+
 import _catalog_fakes
 import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -15,7 +19,9 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def app(project_env_devel_environment, monkeypatch) -> FastAPI:
+def app(
+    patched_project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> FastAPI:
     # overrides conftest.py: app
     # uses packages/pytest-simcore/src/pytest_simcore/environment_configs.py: env_devel_config
 
@@ -33,7 +39,7 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
 
 
 @pytest.fixture
-def mocked_catalog_service_api(app: FastAPI):
+def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
     settings: AppSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
 
@@ -65,7 +71,9 @@ def mocked_catalog_service_api(app: FastAPI):
 
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
-def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocker):
+def test_list_solvers(
+    sync_client: TestClient, mocked_catalog_service_api: MockRouter, mocker
+):
     cli = sync_client
     warn = mocker.patch.object(
         simcore_service_api_server.api.routes.solvers.logger, "warning"

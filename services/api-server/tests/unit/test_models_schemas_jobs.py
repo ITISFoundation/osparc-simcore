@@ -77,7 +77,7 @@ def test_job_io_checksums(repeat):
 
 
 @pytest.fixture
-def app(project_env_devel_environment) -> FastAPI:
+def app(patched_project_env_devel_vars) -> FastAPI:
     _app: FastAPI = init_app()
     return _app
 

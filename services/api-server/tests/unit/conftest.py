@@ -4,122 +4,38 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
-import shutil
-import subprocess
 import sys
 from pathlib import Path
-from pprint import pformat
-from typing import AsyncIterator, Callable, Dict, Iterator, Union
+from typing import AsyncIterator, Iterator
 
-import aiopg.sa
-import aiopg.sa.engine as aiopg_sa_engine
-import faker
 import httpx
-import passlib.hash
 import pytest
-import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
-import simcore_service_api_server.db.tables as orm
-import sqlalchemy as sa
-import sqlalchemy.engine as sa_engine
-import yaml
-from aiopg.sa.result import RowProxy
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from dotenv import dotenv_values
-from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_postgres_database.models.base import metadata
-from simcore_service_api_server.db.repositories import BaseRepository
-from simcore_service_api_server.db.repositories.users import UsersRepository
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 pytestmark = pytest.mark.asyncio
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.repository_paths",
 ]
 
-
-# HELPERS -----------------------------------------------------------------
-
-
-fake = faker.Faker()
-
-
-def _hash_it(password: str) -> str:
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
-
-
-# TODO: this should be generated from the metadata in orm.users table
-def random_user(**overrides) -> Dict:
-    data = dict(
-        name=fake.name(),
-        email=fake.email(),
-        password_hash=_hash_it("secret"),
-        status=orm.UserStatus.ACTIVE,
-        created_ip=fake.ipv4(),
-    )
-
-    password = overrides.pop("password")
-    if password:
-        overrides["password_hash"] = _hash_it(password)
-
-    data.update(overrides)
-    return data
-
-
-class RWUsersRepository(UsersRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, **user) -> int:
-        values = random_user(**user)
-        async with self.db_engine.acquire() as conn:
-            user_id = await conn.scalar(orm.users.insert().values(**values))
-
-        print("Created user ", pformat(values), f"with user_id={user_id}")
-        return user_id
-
-
-class RWApiKeysRepository(BaseRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
-        values = dict(
-            display_name=name,
-            user_id=user_id,
-            api_key=api_key,
-            api_secret=api_secret,
-        )
-        async with self.db_engine.acquire() as conn:
-            _id = await conn.scalar(orm.api_keys.insert().values(**values))
-
-            # check inserted
-            row: RowProxy = await (
-                await conn.execute(
-                    orm.api_keys.select().where(orm.api_keys.c.id == _id)
-                )
-            ).first()
-
-        return ApiKeyInDB.from_orm(row)
-
-
-# FIXTURES -----------------------------------------------------------------
 
 ## TEST_ENVIRON ---
 
 
 @pytest.fixture(scope="session")
-def environment() -> dict:
-    env = {
+def default_test_env_vars() -> dict[str, str]:
+    return {
         "WEBSERVER_HOST": "webserver",
         "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
         "POSTGRES_HOST": "127.0.0.1",
@@ -129,11 +45,10 @@ def environment() -> dict:
         "LOG_LEVEL": "debug",
         "SC_BOOT_MODE": "production",
     }
-    return env
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> EnvVarsDict:
+def project_env_devel_vars(project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -141,10 +56,10 @@ def project_env_devel_dict(project_slug_dir: Path) -> EnvVarsDict:
 
 
 @pytest.fixture
-def project_env_devel_environment(
-    project_env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+def patched_project_env_devel_vars(
+    project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    for key, value in project_env_devel_dict.items():
+    for key, value in project_env_devel_vars.items():
         monkeypatch.setenv(key, value)
 
     # overrides
@@ -156,7 +71,7 @@ def project_env_devel_environment(
 
 @pytest.fixture(scope="session")
 def project_slug_dir() -> Path:
-    folder = current_dir.parent.parent
+    folder = CURRENT_DIR.parent.parent
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_api_server"))
     return folder
@@ -179,140 +94,37 @@ def tests_utils_dir(project_tests_dir: Path) -> Path:
     return utils_dir
 
 
-## POSTGRES -----
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
-    # Overrides fixture in https://github.com/avast/pytest-docker
-
-    # NOTE: do not forget to add the current environ here, otherwise docker-compose fails
-    environ = dict(os.environ)
-    environ.update(environment)
-
-    src_path = tests_utils_dir / "docker-compose.yml"
-    assert src_path.exists
-
-    dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
-
-    shutil.copy(src_path, dst_path.parent)
-    assert dst_path.exists()
-
-    # configs
-    subprocess.run(
-        f'docker-compose --file "{src_path}" config > "{dst_path}"',
-        shell=True,
-        check=True,
-        env=environ,
-    )
-
-    return dst_path
-
-
-@pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> Dict:
-
-    # check docker-compose's environ is resolved properly
-    config = yaml.safe_load(docker_compose_file.read_text())
-    environ = config["services"]["postgres"]["environment"]
-
-    # builds DSN
-    config = dict(
-        user=environ["POSTGRES_USER"],
-        password=environ["POSTGRES_PASSWORD"],
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-        database=environ["POSTGRES_DB"],
-    )
-
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**config)
-
-    def _create_checker() -> Callable:
-        def is_postgres_responsive() -> bool:
-            try:
-                engine = sa.create_engine(dsn)
-                conn = engine.connect()
-                conn.close()
-            except sa.exc.OperationalError:
-                return False
-            return True
-
-        return is_postgres_responsive
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=_create_checker(),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    config["dsn"] = dsn
-    return config
-
-
-@pytest.fixture(scope="session")
-def make_engine(postgres_service: Dict) -> Callable:
-    dsn = postgres_service["dsn"]  # session scope freezes dsn
-
-    def maker(*, is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
-        if is_async:
-            return aiopg.sa.create_engine(dsn)
-        return sa.create_engine(dsn)
-
-    return maker
-
-
-@pytest.fixture
-def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
-    # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
-    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
-    # fixture to have local scope
-    #
-    kwargs = postgres_service.copy()
-    kwargs.pop("dsn")
-    pg_cli.discover.callback(**kwargs)
-    pg_cli.upgrade.callback("head")
-
-    yield
-
-    pg_cli.downgrade.callback("base")
-    pg_cli.clean.callback()
-    # FIXME: deletes all because downgrade is not reliable!
-    engine = make_engine(is_async=False)
-    metadata.drop_all(engine)
-
-
 ## APP & TEST CLIENT ------
 
 
 @pytest.fixture
-def app(monkeypatch, environment, apply_migration) -> FastAPI:
-    # patching environs
-    for key, value in environment.items():
-        monkeypatch.setenv(key, value)
-
+def app(
+    monkeypatch: pytest.MonkeyPatch, default_test_env_vars: dict[str, str]
+) -> FastAPI:
     from simcore_service_api_server.core.application import init_app
+
+    # environ
+    for key, value in default_test_env_vars.items():
+        monkeypatch.setenv(key, value)
 
     app = init_app()
     return app
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> AsyncIterator[FastAPI]:
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with LifespanManager(app):
-        yield app
+        async with httpx.AsyncClient(
+            app=app,
+            base_url="http://api.testserver.io",
+            headers={"Content-Type": "application/json"},
+        ) as client:
 
+            assert isinstance(client._transport, ASGITransport)
+            # rewires location test's app to client.app
+            setattr(client, "app", client._transport.app)
 
-@pytest.fixture
-async def client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        app=initialized_app,
-        base_url="http://api.testserver.io",
-        headers={"Content-Type": "application/json"},
-    ) as client:
-        assert isinstance(client._transport, ASGITransport)
-        setattr(client, "app", client._transport.app)  # rewires location of test app
-        yield client
+            yield client
 
 
 @pytest.fixture
@@ -323,31 +135,3 @@ def sync_client(app: FastAPI) -> Iterator[TestClient]:
         app, base_url="http://api.testserver.io", raise_server_exceptions=True
     ) as cli:
         yield cli
-
-
-## FAKE DATA injected at repositories interface ----
-
-
-@pytest.fixture
-async def fake_user_id(initialized_app: FastAPI, faker: Faker) -> int:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    user_id = await RWUsersRepository(initialized_app.state.engine).create(
-        email=faker.email(),
-        password=faker.password(),
-        name=faker.user_name(),
-    )
-    return user_id
-
-
-@pytest.fixture
-async def fake_api_key(
-    initialized_app: FastAPI, fake_user_id: int, faker: Faker
-) -> ApiKeyInDB:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    apikey = await RWApiKeysRepository(initialized_app.state.engine).create(
-        "test-api-key",
-        api_key=fake.word(),
-        api_secret=fake.password(),
-        user_id=fake_user_id,
-    )
-    return apikey

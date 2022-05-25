@@ -65,7 +65,7 @@ async def test_get_profile(
 
 
 async def test_patch_profile(
-    client: AsyncClient, auth: BasicAuth, mocked_webserver_service_api
+    client: AsyncClient, auth: BasicAuth, mocked_webserver_service_api: MockRouter
 ):
 
     resp = await client.patch(

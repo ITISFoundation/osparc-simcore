@@ -12,7 +12,7 @@ from yarl import URL
 
 
 def test_min_environ_for_settings(
-    project_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    patched_project_env_devel_vars: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     # Adds Dockerfile environs
     monkeypatch.setenv("SC_BOOT_MODE", "production")
