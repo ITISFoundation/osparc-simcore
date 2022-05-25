@@ -31,16 +31,9 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
     });
     this._add(title);
 
-    this.__preparingNodes = preparingNodes;
     const list = this.__monitoredNodesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(list);
-    this.__updateMonitoredNodesList();
-    preparingNodes.forEach(preparingNode => {
-      [
-        "changeRunning",
-        "changeOutput"
-      ].forEach(changeEvent => preparingNode.getStatus().addListener(changeEvent, () => this.__updateMonitoredNodesList()));
-    });
+    this.setPreparingNodes(preparingNodes);
 
     const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
     loggerView.getChildControl("pin-node").exclude();
@@ -49,17 +42,41 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
     });
   },
 
+  properties: {
+    preparingNodes: {
+      check: "Array",
+      init: null,
+      apply: "__applyPreparingNodes"
+    }
+  },
+
   members: {
     __preparingNodes: null,
     __monitoredNodesList: null,
 
+    __applyPreparingNodes: function(preparingNodes) {
+      preparingNodes.forEach(preparingNode => {
+        [
+          "changeRunning",
+          "changeOutput"
+        ].forEach(changeEvent => preparingNode.getStatus().addListener(changeEvent, () => this.__updateMonitoredNodesList()));
+      });
+      this.__updateMonitoredNodesList();
+    },
+
     __updateMonitoredNodesList: function() {
       this.__monitoredNodesList.removeAll();
-      this.__preparingNodes.forEach(node => {
-        if (!osparc.data.model.NodeStatus.isCompNodeReady(node)) {
-          this.__monitoredNodesList.add(new qx.ui.basic.Label("- " + node.getLabel()));
-        }
-      });
+      const preparingNodes = this.getPreparingNodes();
+      this.__monitoredNodesList.add(new qx.ui.basic.Label(this.tr("Preparing:")));
+      if (preparingNodes && preparingNodes.length) {
+        preparingNodes.forEach(node => {
+          if (osparc.data.model.NodeStatus.isCompNodeReady(node)) {
+            this.__monitoredNodesList.add(new qx.ui.basic.Label("+ " + node.getLabel()));
+          } else {
+            this.__monitoredNodesList.add(new qx.ui.basic.Label("- " + node.getLabel()));
+          }
+        });
+      }
     }
   }
 });
