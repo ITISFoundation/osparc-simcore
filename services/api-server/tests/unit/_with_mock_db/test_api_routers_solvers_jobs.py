@@ -17,8 +17,7 @@ from faker import Faker
 from fastapi import FastAPI
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
-from respx.router import MockRouter
-from simcore_service_api_server.core.settings import AppSettings
+from simcore_service_api_server.core.settings import ApplicationSettings
 from starlette import status
 
 
@@ -89,7 +88,7 @@ def presigned_download_link(
 def mocked_directorv2_service_api(
     app: FastAPI, faker: Faker, presigned_download_link: AnyUrl
 ):
-    settings: AppSettings = app.state.settings
+    settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
 
     # pylint: disable=not-context-manager
@@ -148,7 +147,6 @@ def test_download_presigned_link(
     assert f"This is a log from {project_id}/{node_id}" in f.read_text()
 
 
-@pytest.mark.xfail
 async def test_solver_logs(
     client: httpx.AsyncClient,
     mocked_directorv2_service_api: MockRouter,
