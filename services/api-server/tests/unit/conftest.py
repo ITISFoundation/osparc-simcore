@@ -9,7 +9,6 @@ from typing import AsyncIterator, Iterator
 import aiohttp.test_utils
 import httpx
 import pytest
-import simcore_service_api_server.db.tables as orm
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from fastapi import FastAPI

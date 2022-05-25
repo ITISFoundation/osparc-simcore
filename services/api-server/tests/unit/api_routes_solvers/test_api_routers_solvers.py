@@ -3,47 +3,11 @@
 # pylint: disable=unused-variable
 
 
-import _fakes_catalog
 import pytest
-import respx
 import simcore_service_api_server.api.routes.solvers
-from fastapi import FastAPI
-from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 from starlette.testclient import TestClient
-
-
-@pytest.fixture
-def mocked_catalog_service_api(app: FastAPI):
-    settings: AppSettings = app.state.settings
-    assert settings.API_SERVER_CATALOG
-
-    # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=app.state.settings.API_SERVER_CATALOG.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-
-        respx_mock.get(
-            "/services?user_id=1&details=false", name="list_services"
-        ).respond(
-            200,
-            json=[
-                # one solver
-                _fakes_catalog.create_service_out(
-                    key="simcore/services/comp/Foo", name="Foo"
-                ),
-                # two version of the same solver
-                _fakes_catalog.create_service_out(version="0.0.1"),
-                _fakes_catalog.create_service_out(version="1.0.1"),
-                # not a solver
-                _fakes_catalog.create_service_out(type="dynamic"),
-            ],
-        )
-
-        yield respx_mock
 
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
