@@ -76,6 +76,10 @@ async def get_download_file_link(
     user_id: UserID,
     link_type: LinkType,
 ) -> AnyUrl:
+    """
+    :raises exceptions.StorageInvalidCall
+    :raises exceptions.StorageServerIssue
+    """
     if (
         not isinstance(file_id, str)
         or not isinstance(location_id, str)

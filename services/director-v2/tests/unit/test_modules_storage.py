@@ -42,7 +42,7 @@ def test_get_storage_client_instance(
 async def test_get_simcore_s3_access(
     minimal_storage_config: None,
     minimal_app: FastAPI,
-    mocked_storage_service_fcts,
+    mocked_storage_service_api,
     user_id: UserID,
     fake_s3_settings: S3Settings,
 ):
@@ -50,5 +50,5 @@ async def test_get_simcore_s3_access(
     assert storage_client
     simcore_s3_settings: S3Settings = await storage_client.get_s3_access(user_id)
 
-    assert mocked_storage_service_fcts["get_or_create_temporary_s3_access"].called
+    assert mocked_storage_service_api["get_or_create_temporary_s3_access"].called
     assert fake_s3_settings == simcore_s3_settings

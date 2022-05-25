@@ -295,7 +295,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
 # TESTS
 def test_get_dynamic_proxy_spec(
     project_env_devel_environment,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -324,7 +324,7 @@ def test_get_dynamic_proxy_spec(
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     # pylint: disable=too-many-arguments
     project_env_devel_environment,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,

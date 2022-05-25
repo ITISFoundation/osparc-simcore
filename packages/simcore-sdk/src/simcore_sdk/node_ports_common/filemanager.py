@@ -43,6 +43,11 @@ async def _get_download_link(
     session: ClientSession,
     link_type: storage_client.LinkType,
 ) -> URL:
+    """
+    :raises exceptions.S3InvalidPathError
+    :raises exceptions.StorageInvalidCall
+    :raises exceptions.StorageServerIssue
+    """
     link: AnyUrl = await storage_client.get_download_file_link(
         session, file_id, store_id, user_id, link_type
     )
@@ -145,7 +150,13 @@ async def get_download_link_from_s3(
     s3_object: str,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
-) -> Optional[URL]:
+) -> URL:
+    """
+    :raises exceptions.NodeportsException
+    :raises exceptions.S3InvalidPathError
+    :raises exceptions.StorageInvalidCall
+    :raises exceptions.StorageServerIssue
+    """
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
