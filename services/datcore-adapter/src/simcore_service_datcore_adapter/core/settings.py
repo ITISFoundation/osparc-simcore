@@ -23,7 +23,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
-        env=["DATCORE-ADAPTER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        env=["DATCORE_ADAPTER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
 
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
