@@ -17,13 +17,12 @@ from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
-from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from .computation_utils import convert_state_from_db
 from .projects import projects_api, projects_exceptions
-from .projects.projects_utils import project_get_depending_nodes
+from .projects.projects_nodes_utils import update_node_outputs
 
 log = logging.getLogger(__name__)
 
@@ -52,43 +51,6 @@ async def _update_project_state(
     )
     await projects_api.notify_project_node_update(app, project, node_uuid, node_errors)
     await projects_api.notify_project_state_update(app, project)
-
-
-@log_decorator(logger=log)
-async def _update_project_outputs(
-    app: web.Application,
-    user_id: PositiveInt,
-    project_uuid: str,
-    node_uuid: str,
-    outputs: Dict,
-    run_hash: Optional[str],
-    node_errors: Optional[List[ErrorDict]],
-) -> None:
-    # the new outputs might be {}, or {key_name: payload}
-    project, changed_keys = await projects_api.update_project_node_outputs(
-        app,
-        user_id,
-        project_uuid,
-        node_uuid,
-        new_outputs=outputs,
-        new_run_hash=run_hash,
-    )
-
-    await projects_api.notify_project_node_update(
-        app, project, f"{node_uuid}", errors=node_errors
-    )
-    # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
-    await logged_gather(
-        *[
-            projects_api.notify_project_node_update(app, project, nid, errors=None)
-            for nid in depending_node_uuids
-        ]
-    )
-    # notify
-    await projects_api.post_trigger_connected_service_retrieve(
-        app=app, project=project, updated_node_uuid=node_uuid, changed_keys=changed_keys
-    )
 
 
 async def listen(app: web.Application, db_engine: Engine):
@@ -138,7 +100,7 @@ async def listen(app: web.Application, db_engine: Engine):
                 if any(f in task_changes for f in ["outputs", "run_hash"]):
                     new_outputs = task_data.get("outputs", {})
                     new_run_hash = task_data.get("run_hash", None)
-                    await _update_project_outputs(
+                    await update_node_outputs(
                         app,
                         the_project_owner,
                         project_uuid,
@@ -146,6 +108,7 @@ async def listen(app: web.Application, db_engine: Engine):
                         new_outputs,
                         new_run_hash,
                         node_errors=task_data.get("errors", None),
+                        ui_changed_keys=None,
                     )
 
                 if "state" in task_changes:

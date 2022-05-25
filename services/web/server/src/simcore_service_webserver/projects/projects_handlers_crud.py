@@ -41,6 +41,7 @@ from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
     any_node_inputs_changed,
     clone_project_document,
@@ -535,6 +536,15 @@ async def replace_project(request: web.Request):
             f"{path_params.project_id}",
             include_templates=True,
         )
+
+        await update_frontend_outputs(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_uuid=path_params.project_id,
+            old_project=current_project,
+            new_project=new_project,
+        )
+
         await director_v2_api.projects_networks_update(
             request.app, path_params.project_id
         )

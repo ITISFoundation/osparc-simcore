@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterator
 from unittest import mock
 
 import aiopg.sa
@@ -32,27 +32,29 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 async def mock_project_subsystem(
     mocker: MockerFixture,
-) -> AsyncIterator[Dict[str, mock.MagicMock]]:
-    mocked_project_calls = {
-        "_get_project_owner": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
-            return_value="",
-        ),
-        "_update_project_state": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
-            return_value="",
-        ),
-        "_update_project_outputs": mocker.patch(
-            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_outputs",
-            return_value="",
-        ),
-    }
+) -> AsyncIterator[dict[str, mock.MagicMock]]:
+    mocked_project_calls = {}
+
+    mocked_project_calls["update_node_outputs"] = mocker.patch(
+        "simcore_service_webserver.computation_comp_tasks_listening_task.update_node_outputs",
+        return_value="",
+    )
+
+    mocked_project_calls["_get_project_owner"] = mocker.patch(
+        "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
+        return_value="",
+    )
+    mocked_project_calls["_update_project_state"] = mocker.patch(
+        "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
+        return_value="",
+    )
+
     yield mocked_project_calls
 
 
 @pytest.fixture
 async def comp_task_listening_task(
-    mock_project_subsystem: Dict, client: TestClient
+    mock_project_subsystem: dict, client: TestClient
 ) -> AsyncIterator:
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
@@ -69,7 +71,7 @@ async def comp_task_listening_task(
             {
                 "outputs": {"some new stuff": "it is new"},
             },
-            ["_get_project_owner", "_update_project_outputs"],
+            ["_get_project_owner", "update_node_outputs"],
             id="new output shall trigger",
         ),
         pytest.param(
@@ -79,7 +81,7 @@ async def comp_task_listening_task(
         ),
         pytest.param(
             {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
-            ["_get_project_owner", "_update_project_outputs", "_update_project_state"],
+            ["_get_project_owner", "update_node_outputs", "_update_project_state"],
             id="new output and state shall double trigger",
         ),
         pytest.param(
@@ -90,11 +92,11 @@ async def comp_task_listening_task(
     ],
 )
 async def test_listen_comp_tasks_task(
-    mock_project_subsystem: Dict,
+    mock_project_subsystem: dict,
     comp_task_listening_task: None,
     client,
-    update_values: Dict[str, Any],
-    expected_calls: List[str],
+    update_values: dict[str, Any],
+    expected_calls: list[str],
     task_class: NodeClass,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]

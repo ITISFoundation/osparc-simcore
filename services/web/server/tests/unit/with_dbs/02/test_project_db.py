@@ -24,17 +24,16 @@ from psycopg2.errors import UniqueViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    ProjectAccessRights,
-    ProjectDBAPI,
-    ProjectInvalidRightsError,
     _check_project_permissions,
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
-    _find_changed_dict_keys,
+    APP_PROJECT_DBAPI,
+    DB_EXCLUSIVE_COLUMNS,
+    ProjectAccessRights,
+    ProjectDBAPI,
+    ProjectInvalidRightsError,
+    SCHEMA_NON_NULL_KEYS,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -430,77 +429,6 @@ async def test_add_project_to_db(
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
-    )
-
-
-@pytest.mark.parametrize(
-    "dict_a, dict_b, exp_changes",
-    [
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"state": "PUBLISHED"},
-            {},
-            id="same entry",
-        ),
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            id="new entry",
-        ),
-        pytest.param({"state": "PUBLISHED"}, {}, {}, id="empty patch"),
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"state": "RUNNING"},
-            {"state": "RUNNING"},
-            id="patch with new data",
-        ),
-        pytest.param(
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_2": 5}},
-            {"inputs": {"in_1": 1, "in_2": 5}},
-            id="patch with new nested data",
-        ),
-        pytest.param(
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_1": 1, "in_2": 4, "in_6": "new_entry"}},
-            {"inputs": {"in_6": "new_entry"}},
-            id="patch with additional nested data",
-        ),
-        pytest.param(
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "lkjflsdkjfslkdj"}},
-                    "in_2": 4,
-                }
-            },
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "newEtag"}},
-                    "in_2": 4,
-                }
-            },
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "newEtag"}},
-                }
-            },
-            id="patch with 2x nested new data",
-        ),
-        pytest.param(
-            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-            {"remove_entries_in_dict": {"outputs": {}}},
-            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-            id="removal of data",
-        ),
-    ],
-)
-def test_find_changed_dict_keys(
-    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
-):
-    assert (
-        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == exp_changes
     )
 
 
