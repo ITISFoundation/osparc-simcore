@@ -14,6 +14,7 @@
 # installs this repo's packages
 --editable ../../packages/models-library
 --editable ../../packages/settings-library
+--editable ../../packages/service-library
 
 # installs current package
 --editable .

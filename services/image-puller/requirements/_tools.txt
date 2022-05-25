@@ -59,12 +59,15 @@ pre-commit==2.19.0
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.13.9
     # via -r requirements/_tools.in
-pyyaml==6.0
+pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   pre-commit
 six==1.16.0
-    # via virtualenv
+    # via
+    #   -c requirements/_base.txt
+    #   virtualenv
 toml==0.10.2
     # via pre-commit
 tomli==2.0.1
