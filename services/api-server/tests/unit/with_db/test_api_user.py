@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient, BasicAuth
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.core.settings import AppSettings
+from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 from simcore_service_api_server.models.schemas.profiles import Profile
 from starlette import status
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def mocked_webserver_service_api(app: FastAPI):
-    settings: AppSettings = app.state.settings
+    settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
     # pylint: disable=not-context-manager

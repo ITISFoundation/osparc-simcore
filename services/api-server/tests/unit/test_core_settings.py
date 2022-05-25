@@ -7,7 +7,7 @@ import logging
 
 import pytest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_service_api_server.core.settings import AppSettings, BootModeEnum
+from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
 from yarl import URL
 
 
@@ -18,7 +18,7 @@ def test_min_environ_for_settings(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     # loads from environ
-    settings = AppSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
 
     assert settings.SC_BOOT_MODE == BootModeEnum.PRODUCTION

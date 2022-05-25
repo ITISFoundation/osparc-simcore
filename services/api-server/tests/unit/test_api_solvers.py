@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
-from simcore_service_api_server.core.settings import AppSettings
+from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 from starlette.testclient import TestClient
@@ -29,7 +29,7 @@ def app(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     # settings from environs
-    settings = AppSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
     settings.API_SERVER_POSTGRES = None
     settings.API_SERVER_WEBSERVER = None
     settings.API_SERVER_CATALOG = None
@@ -40,7 +40,7 @@ def app(
 
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
-    settings: AppSettings = app.state.settings
+    settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
 
     # pylint: disable=not-context-manager

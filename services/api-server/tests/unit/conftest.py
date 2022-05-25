@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from pprint import pprint
 from typing import AsyncIterator, Iterator
 
 import httpx
@@ -12,10 +13,26 @@ from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx._transports.asgi import ASGITransport
+from simcore_service_api_server.core.settings import ApplicationSettings
 
 
 @pytest.fixture(scope="session")
 def default_test_env_vars() -> dict[str, str]:
+    #
+    pprint(list(ApplicationSettings.schema()["properties"].keys()))
+    # [
+    # 'SC_BOOT_MODE',
+    # 'LOG_LEVEL',
+    # 'API_SERVER_POSTGRES',
+    # 'API_SERVER_WEBSERVER',
+    # 'API_SERVER_CATALOG',
+    # 'API_SERVER_STORAGE',
+    # 'API_SERVER_DIRECTOR_V2',
+    # 'API_SERVER_TRACING',
+    # 'API_SERVER_DEV_FEATURES_ENABLED',
+    # 'API_SERVER_REMOTE_DEBUG_PORT'
+    # ]
+    #
     return {
         "WEBSERVER_HOST": "webserver",
         "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
