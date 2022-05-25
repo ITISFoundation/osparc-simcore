@@ -13,8 +13,12 @@ def get_shared_client(settings: ImagePullerSettings) -> AsyncClient:
     )
 
 
-async def get_images_to_pull(catalog_client: AsyncClient) -> list[DockerImage]:
-    result = await catalog_client.get("/sync/-/images")
+async def get_images_to_pull(
+    catalog_client: AsyncClient, docker_hostname: str
+) -> list[DockerImage]:
+    result = await catalog_client.get(
+        "/sync/-/images", params=dict(docker_hostname=docker_hostname)
+    )
     try:
         if result.status_code != codes.OK:
             raise ImagePullerError(

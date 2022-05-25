@@ -21,7 +21,8 @@ async def worker(app_state: AppState) -> None:
 
     async with app_state.worker_lock:
         images_to_pull: list[DockerImage] = await get_images_to_pull(
-            app_state.catalog_client
+            catalog_client=app_state.catalog_client,
+            docker_hostname=app_state.settings.IMAGE_PULLER_CHECK_HOSTNAME,
         )
         for image in images_to_pull:
             await pull_image(image)

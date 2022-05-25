@@ -5,6 +5,7 @@ import pytest
 from httpx import AsyncClient
 from models_library.docker import DockerImage
 from pytest_httpx import HTTPXMock
+
 from simcore_service_image_puller.catalog_client import (
     get_images_to_pull,
     get_shared_client,
@@ -15,8 +16,8 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def catalog_client() -> AsyncClient:
-    return get_shared_client(ImagePullerSettings.create_from_envs())
+def catalog_client(settings: ImagePullerSettings) -> AsyncClient:
+    return get_shared_client(settings)
 
 
 @pytest.fixture
@@ -29,10 +30,11 @@ def mock_catalog_client(
     httpx_mock: HTTPXMock,
     catalog_client: AsyncClient,
     images_to_pull: list[DockerImage],
+    hostname: str,
 ) -> None:
     httpx_mock.add_response(
         method="GET",
-        url=f"{catalog_client.base_url}sync/-/images",
+        url=f"{catalog_client.base_url}sync/-/images?docker_hostname={hostname}",
         json=images_to_pull,
     )
 
@@ -40,7 +42,10 @@ def mock_catalog_client(
 async def test_get_images_to_pull(
     catalog_client: AsyncClient,
     images_to_pull: list[DockerImage],
+    settings: ImagePullerSettings,
     mock_catalog_client: None,
 ) -> None:
-    result = await get_images_to_pull(catalog_client)
+    result = await get_images_to_pull(
+        catalog_client, settings.IMAGE_PULLER_CHECK_HOSTNAME
+    )
     assert result == images_to_pull

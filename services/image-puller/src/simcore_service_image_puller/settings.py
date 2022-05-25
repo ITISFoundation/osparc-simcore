@@ -21,3 +21,9 @@ class ImagePullerSettings(BaseCustomSettings):
             "for new images to sync"
         ),
     )
+
+    IMAGE_PULLER_CHECK_HOSTNAME: str = Field(
+        ...,
+        env=["HOSTNAME", "IMAGE_PULLER_CHECK_HOSTNAME"],
+        description="Used to uniquely identify the requesting client",
+    )
