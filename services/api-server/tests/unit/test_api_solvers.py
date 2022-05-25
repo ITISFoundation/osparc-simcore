@@ -1,6 +1,6 @@
-# pylint: disable=unused-variable
-# pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import catalog_fakes
 import pytest
@@ -34,6 +34,10 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
 
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI):
+    settings: AppSettings = app.state.settings
+    assert settings.API_SERVER_CATALOG
+
+    # pylint: disable=not-context-manager
     with respx.mock(
         base_url=app.state.settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
@@ -41,7 +45,7 @@ def mocked_catalog_service_api(app: FastAPI):
     ) as respx_mock:
 
         respx_mock.get(
-            "/v0/services?user_id=1&details=false", name="list_services"
+            "/services?user_id=1&details=false", name="list_services"
         ).respond(
             200,
             json=[
