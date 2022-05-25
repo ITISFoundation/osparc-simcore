@@ -10,30 +10,21 @@
 #
 --constraint _base.txt
 
-# 'services/api-server/tests/unit' dependencies
-
-# testing
+alembic
+asgi_lifespan
+click
+codecov
+coveralls
+docker
+faker
+fsspec # upload/download files to minio
+passlib[bcrypt]
+pylint
 pytest
 pytest-asyncio
 pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
-asgi_lifespan
-
-# fixtures
-faker
-passlib[bcrypt]
 respx
-
-# db migration
---requirement ../../../packages/postgres-database/requirements/_base.in
-alembic
-click
-docker
 tenacity
-
-# tools
-pylint
-coveralls
-codecov

@@ -55,8 +55,6 @@ platformdirs==2.5.2
     #   virtualenv
 pre-commit==2.19.0
     # via -r requirements/../../../requirements/devenv.txt
-ptvsd==4.3.2
-    # via -r requirements/_tools.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
