@@ -4,6 +4,7 @@ from pprint import pformat
 from typing import AsyncIterator
 
 from aiodocker import Docker, DockerError
+from models_library.docker import DockerImage
 
 
 @asynccontextmanager
@@ -12,7 +13,7 @@ async def docker_client() -> AsyncIterator[Docker]:
         yield docker
 
 
-async def pull_image(image: str) -> bool:
+async def pull_image(image: DockerImage) -> bool:
     async with docker_client() as docker:
         try:
             result = await docker.images.pull(image)
