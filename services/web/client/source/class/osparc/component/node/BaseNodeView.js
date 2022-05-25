@@ -73,6 +73,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   members: {
     _header: null,
     __inputsStateButton: null,
+    __preparingInputs: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -120,11 +121,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
+      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
       const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
         label: this.tr("Preparing inputs..."),
         icon: "@FontAwesome5Solid/circle-notch/14",
         backgroundColor: "transparent",
-        toolTipText: this.tr("Input's state")
+        toolTipText: this.tr("The view will remain disabled until the inputs are fetched")
       });
       inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
       inputsStateBtn.addListener("execute", () => {
@@ -257,29 +259,30 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return true;
     },
 
-    __disableContent: function() {
-      this._mainView.setEnabled(false);
+    __enableContent: function(enable) {
+      this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
-        // disable user interaction on iframe
+        // enable/disable user interaction on iframe
         // eslint-disable-next-line no-underscore-dangle
         iframe.__iframe.getContentElement().setStyles({
-          "pointer-events": "none"
+          "pointer-events": enable ? "auto" : "none"
         });
       }
     },
 
-    showPreparingInputsWin: function(preparingNodeIds = []) {
-      this.__disableContent();
-      const title = this.tr("Preparing inputs...");
-      const preparingNodes = [];
+    setNotReadyDependencies: function(notReadyNodeIds = []) {
+      const monitoredNodes = [];
       const workbench = this.getNode().getStudy().getWorkbench();
-      preparingNodeIds.forEach(preparingNodeId => preparingNodes.push(workbench.getNode(preparingNodeId)));
-      const preparingInputs = new osparc.component.widget.PreparingInputs(preparingNodes);
-      osparc.ui.window.Window.popUpInWindow(preparingInputs, title, 600, 500).set({
-        clickAwayClose: true,
-        showClose: false
-      });
+      notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
+      this.__preparingInputs.setMonitoredNodes(monitoredNodes);
+    },
+
+    __dependeciesChanged: function() {
+      const preparingNodes = this.__preparingInputs.getPreparingNodes();
+      const waiting = Boolean(preparingNodes && preparingNodes.length);
+      this.__inputsStateButton.setVisibility(waiting ? "visible" : "excluded");
+      this.__enableContent(!waiting);
     },
 
     __applyNode: function(node) {
@@ -287,7 +290,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__nodeStatusUI.setNode(node);
       }
 
-      this.__inputsStateButton.setVisibility(this.__areInputsReady() ? "excluded" : "visible");
+      this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
+      this.__dependeciesChanged();
 
       this._mainView.removeAll();
       this._addSettings();

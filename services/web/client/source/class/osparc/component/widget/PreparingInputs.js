@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.widget.PreparingInputs", {
   extend: qx.ui.core.Widget,
 
-  construct: function(preparingNodes = []) {
+  construct: function(monitoredNodes = []) {
     this.base(arguments);
 
     // Layout
@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
 
     const list = this.__monitoredNodesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(list);
-    this.setPreparingNodes(preparingNodes);
+    this.setMonitoredNodes(monitoredNodes);
 
     const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
     loggerView.getChildControl("pin-node").exclude();
@@ -43,33 +43,47 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   },
 
   properties: {
-    preparingNodes: {
+    monitoredNodes: {
       check: "Array",
       init: null,
-      apply: "__applyPreparingNodes"
+      apply: "__applyMonitoredNodes",
+      event: "changeMonitoredNodes"
+    },
+
+    preparingNodes: {
+      check: "Array",
+      init: null
     }
+  },
+
+  events: {
+    "changePreparingNodes": "qx.event.type.Event"
   },
 
   members: {
     __preparingNodes: null,
     __monitoredNodesList: null,
 
-    __applyPreparingNodes: function(preparingNodes) {
-      preparingNodes.forEach(preparingNode => {
+    __applyMonitoredNodes: function(monitoredNodes) {
+      monitoredNodes.forEach(monitoredNode => {
         [
           "changeRunning",
           "changeOutput"
-        ].forEach(changeEvent => preparingNode.getStatus().addListener(changeEvent, () => this.__updateMonitoredNodesList()));
+        ].forEach(changeEvent => monitoredNode.getStatus().addListener(changeEvent, () => {
+          this.__updateMonitoredNodesList();
+          this.__updatePreparingNodes();
+        }));
       });
       this.__updateMonitoredNodesList();
+      this.setPreparingNodes(monitoredNodes);
     },
 
     __updateMonitoredNodesList: function() {
       this.__monitoredNodesList.removeAll();
-      const preparingNodes = this.getPreparingNodes();
-      this.__monitoredNodesList.add(new qx.ui.basic.Label(this.tr("Preparing:")));
-      if (preparingNodes && preparingNodes.length) {
-        preparingNodes.forEach(node => {
+      const monitoredNodes = this.getMonitoredNodes();
+      this.__monitoredNodesList.add(new qx.ui.basic.Label(this.tr("Monitoring:")));
+      if (monitoredNodes && monitoredNodes.length) {
+        monitoredNodes.forEach(node => {
           if (osparc.data.model.NodeStatus.isCompNodeReady(node)) {
             this.__monitoredNodesList.add(new qx.ui.basic.Label("+ " + node.getLabel()));
           } else {
@@ -77,6 +91,17 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           }
         });
       }
+    },
+
+    __updatePreparingNodes: function() {
+      const preparingNodes = this.getPreparingNodes();
+      for (let i = preparingNodes.length - 1; i >= 0; i--) {
+        if (osparc.data.model.NodeStatus.isCompNodeReady(preparingNodes[i])) {
+          preparingNodes.splice(i, 1);
+        }
+      }
+      this.setPreparingNodes(preparingNodes);
+      this.fireEvent("changePreparingNodes");
     }
   }
 });
