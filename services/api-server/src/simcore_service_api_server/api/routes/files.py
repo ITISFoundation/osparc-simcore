@@ -132,14 +132,6 @@ async def upload_file(
 #
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
-    # async def save_file(file):
-    #     from ._files_faker import the_fake_impl
-
-    #     metadata = await the_fake_impl.save(file)
-    #     return metadata
-
-    # uploaded = await asyncio.gather(*[save_file(f) for f in files])
-    # return uploaded
     raise NotImplementedError()
 
 
