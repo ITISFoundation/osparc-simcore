@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from collections import deque
@@ -124,22 +123,24 @@ async def upload_file(
 
 
 # DISABLED @router.post(":upload-multiple", response_model=list[FileMetadata])
+# MaG suggested a single function that can upload one or multiple files instead of having
+# two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
+# produces an error in the generated openapi.json
+#
+# Since there is no inmediate need of this functions, we decided to disable it
+# but keep it here as a reminder for future re-designs
+#
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
-    # MaG suggested a single function that can upload one or multiple files instead of having
-    # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
-    # produces an error in the generated openapi.json
-    #
-    # Since there is no inmediate need of this functions, we decided to disable it
-    #
-    async def save_file(file):
-        from ._files_faker import the_fake_impl
+    # async def save_file(file):
+    #     from ._files_faker import the_fake_impl
 
-        metadata = await the_fake_impl.save(file)
-        return metadata
+    #     metadata = await the_fake_impl.save(file)
+    #     return metadata
 
-    uploaded = await asyncio.gather(*[save_file(f) for f in files])
-    return uploaded
+    # uploaded = await asyncio.gather(*[save_file(f) for f in files])
+    # return uploaded
+    raise NotImplementedError()
 
 
 @router.get("/{file_id}", response_model=File, responses={**common_error_responses})
