@@ -70,6 +70,7 @@ def presigned_download_link(
     # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-uploading-files.html
     object_name = f"{project_id}/{node_id}/{log_zip_path.name}"
     s3_client.upload_file(f"{log_zip_path}", bucket_name, object_name)
+    print("uploaded", object_name)
 
     # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_url
@@ -78,6 +79,7 @@ def presigned_download_link(
         Params={"Bucket": bucket_name, "Key": object_name},
         ExpiresIn=3600,  # secs
     )
+    print("generated link", presigned_url)
 
     # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
     yield parse_obj_as(AnyUrl, presigned_url)
@@ -107,7 +109,7 @@ def mocked_directorv2_service_api(
         # check that what we emulate, actually still exists
         path = "/v2/computations/{project_id}/tasks/-/logfile"
         assert path in openapis_specs["paths"]
-        assert "get" in openapis_specs["paths"]
+        assert "get" in openapis_specs["paths"][path]
 
         respx_mock.get(
             path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
@@ -173,8 +175,9 @@ async def test_solver_logs(
     job_id = project_id
 
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
+        f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
         auth=auth,
+        follow_redirects=True,
     )
 
     # calls to directorv2 service

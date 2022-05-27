@@ -131,7 +131,7 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
 
 
 @pytest.fixture
-def mocked_s3_server_url(monkeypatch) -> Iterator[HttpUrl]:
+def mocked_s3_server_url() -> Iterator[HttpUrl]:
     """
     For download links, the in-memory moto.mock_s3() does not suffice since
     we need an http entrypoint
