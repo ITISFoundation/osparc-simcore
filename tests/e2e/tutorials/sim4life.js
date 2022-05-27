@@ -27,11 +27,16 @@ async function runTutorial() {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], startTimeout);
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
+      [workbenchData["nodeIds"][0]],
+      startTimeout,
+      false
+    );
 
-    await tutorial.waitFor(12000, 'Wait for some time');
+    await tutorial.waitFor(35000, 'Wait for some time');
   }
-  catch(err) {
+  catch (err) {
     await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
