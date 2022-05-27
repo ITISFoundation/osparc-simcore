@@ -9,6 +9,7 @@
 import os
 import time
 from pathlib import Path
+from zipfile import ZipFile
 
 import osparc
 from dotenv import load_dotenv
@@ -83,6 +84,20 @@ with osparc.ApiClient(cfg) as api_client:
     print(f"Job {outputs.job_id} got these results:")
     for output_name, result in outputs.results.items():
         print(output_name, "=", result)
+
+    # download log
+    fpath: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
+    logfile_path = Path(fpath)
+    print(
+        f"{logfile_path=}",
+        f"{logfile_path.exists()=}",
+        f"{logfile_path.stat()=}",
+        "\nUnzipping ...",
+    )
+
+    with ZipFile(f"{logfile_path}") as fzip:
+        fzip.extractall()
+    print("Unzipped:", f"{list(Path().glob('*.log'))}")
 
     #
     # Job 19fc28f7-46fb-4e96-9129-5e924801f088 got these results:
