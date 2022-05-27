@@ -13,7 +13,6 @@ from fastapi import FastAPI
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 from simcore_service_api_server.models.schemas.profiles import Profile
 from starlette import status
 
@@ -49,13 +48,6 @@ def mocked_webserver_service_api(app: FastAPI):
         yield respx_mock
 
         del me
-
-
-@pytest.fixture
-def auth(fake_api_key: ApiKeyInDB) -> httpx.BasicAuth:
-    return httpx.BasicAuth(
-        fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
-    )
 
 
 async def test_get_profile(
