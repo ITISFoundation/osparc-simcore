@@ -52,9 +52,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 ## JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
-# - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
 #
-# @router.get("/releases/jobs", response_model=list[Job])
 
 
 @router.get(
@@ -281,7 +279,7 @@ async def get_job_outputs(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logs",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
     responses={
         status.HTTP_200_OK: {
@@ -297,7 +295,7 @@ async def get_job_outputs(
         status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
     },
 )
-async def get_job_output_logs(
+async def get_job_output_logfile(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
@@ -319,7 +317,7 @@ async def get_job_output_logs(
     for presigned_download_link in logs_urls.values():
         logger.info(
             "Redirecting '%s' to %s ...",
-            f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logs",
+            f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
             presigned_download_link,
         )
         return RedirectResponse(presigned_download_link)
