@@ -11,12 +11,14 @@ import httpx
 import pytest
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
+from faker import Faker
 from fastapi import FastAPI
 from httpx._transports.asgi import ASGITransport
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from requests.auth import HTTPBasicAuth
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -85,6 +87,44 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             setattr(client, "app", client._transport.app)
 
             yield client
+
+
+## MOCKED Repositories --------------------------------------------------
+
+
+@pytest.fixture
+def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
+    """
+    Auth mocking repositories and db engine (i.e. does not require db up)
+
+    """
+    # mock engine if db was not init
+    if app.state.settings.API_SERVER_POSTGRES is None:
+
+        engine = mocker.Mock()
+        engine.minsize = 1
+        engine.size = 10
+        engine.freesize = 3
+        engine.maxsize = 10
+        app.state.engine = engine
+
+    # patch authentication entry in repo
+    faker_user_id = faker.pyint()
+
+    # NOTE: here, instead of using the database, we patch repositories interface
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        return_value=faker_user_id,
+    )
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_user_id",
+        return_value=faker_user_id,
+    )
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
+        return_value=faker.email(),
+    )
+    return HTTPBasicAuth(faker.word(), faker.password())
 
 
 ## MOCKED S3 service --------------------------------------------------
