@@ -3,22 +3,26 @@
 # pylint: disable=unused-variable
 
 
+import httpx
 import pytest
 import simcore_service_api_server.api.routes.solvers
+from respx import MockRouter
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
-from starlette.testclient import TestClient
 
 
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
-def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocker):
-    cli = sync_client
+async def test_list_solvers(
+    client: httpx.AsyncClient,
+    mocked_catalog_service_api: MockRouter,
+    mocker,
+):
     warn = mocker.patch.object(
         simcore_service_api_server.api.routes.solvers.logger, "warning"
     )
 
     # list solvers latest releases
-    resp = cli.get("/v0/solvers")
+    resp = await client.get("/v0/solvers")
     assert resp.status_code == status.HTTP_200_OK
 
     # No warnings for ValidationError with the fixture
@@ -37,20 +41,20 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocke
         assert solver.url.host == "api.testserver.io"  # cli.base_url
 
         # get_solver_latest_version_by_name
-        resp0 = cli.get(solver.url.path)
+        resp0 = await client.get(solver.url.path)
         assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
         # assert f"GET {solver.name}:{solver.version}"  in resp0.json()["errors"][0]
         assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
         # assert Solver(**resp0.json()) == solver
 
         # get_solver
-        resp1 = cli.get(f"/v0/solvers/{solver.id}")
+        resp1 = await client.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
         # assert Solver(**resp1.json()) == solver
 
         # get_solver_latest_version_by_name
-        resp2 = cli.get(f"/v0/solvers/{solver.id}/latest")
+        resp2 = await client.get(f"/v0/solvers/{solver.id}/latest")
 
         assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
