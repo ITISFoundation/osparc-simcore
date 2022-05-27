@@ -10,6 +10,7 @@
     required fields in postgres_database.models tables or pydantic models.
 """
 
+
 import itertools
 import json
 import random
@@ -18,7 +19,10 @@ from typing import Any, Callable, Dict
 from uuid import uuid4
 
 import faker
+import passlib.hash
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.webserver_models import ProjectType, UserStatus
 
 STATES = [
@@ -30,17 +34,31 @@ STATES = [
 ]
 
 
-fake = faker.Faker()
+_faker = faker.Faker()
+
+
+def _hash_it(password: str) -> str:
+    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+
+_DEFAULT_HASH = _hash_it("secret")
 
 
 def random_user(**overrides) -> Dict[str, Any]:
     data = dict(
-        name=fake.name(),
-        email=fake.email(),
-        password_hash=fake.numerify(text="#" * 5),
+        name=_faker.name(),
+        email=_faker.email(),
+        password_hash=_DEFAULT_HASH,
         status=UserStatus.ACTIVE,
-        created_ip=fake.ipv4(),
+        created_ip=_faker.ipv4(),
     )
+    assert set(data.keys()).issubset(set(c.name for c in users.columns))  # nosec
+
+    # transform password in hash
+    password = overrides.pop("password", None)
+    if password:
+        overrides["password_hash"] = _hash_it(password)
+
     data.update(overrides)
     return data
 
@@ -48,22 +66,24 @@ def random_user(**overrides) -> Dict[str, Any]:
 def random_project(**overrides) -> Dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
     data = dict(
-        uuid=fake.uuid4(),
-        name=fake.word(),
-        description=fake.sentence(),
-        prj_owner=fake.pyint(),
-        thumbnail=fake.image_url(width=120, height=120),
+        uuid=_faker.uuid4(),
+        name=_faker.word(),
+        description=_faker.sentence(),
+        prj_owner=_faker.pyint(),
+        thumbnail=_faker.image_url(width=120, height=120),
         access_rights={},
         workbench={},
         published=False,
     )
+    assert set(data.keys()).issubset(set(c.name for c in projects.columns))  # nosec
+
     data.update(overrides)
     return data
 
 
 def random_group(**overrides) -> Dict[str, Any]:
     data = dict(
-        name=fake.company(), description=fake.text(), type=ProjectType.STANDARD.name
+        name=_faker.company(), description=_faker.text(), type=ProjectType.STANDARD.name
     )
     data.update(overrides)
     return data
