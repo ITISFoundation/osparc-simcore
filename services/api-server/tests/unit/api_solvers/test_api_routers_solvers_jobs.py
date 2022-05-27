@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 
 import json
-import urllib
-import urllib.parse
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Iterator
@@ -170,7 +168,7 @@ async def test_solver_logs(
     resp = await client.get("/v0/meta")
     assert resp.status_code == 200
 
-    solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
+    solver_key = "simcore/services/comp/itis/isolve"
     version = "1.2.3"
     job_id = project_id
 
