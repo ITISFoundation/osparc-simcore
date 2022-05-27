@@ -2,11 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 import urllib
 import urllib.parse
 from pathlib import Path
 from pprint import pprint
-from typing import Iterator
+from typing import Any, Iterator
 from zipfile import ZipFile
 
 import boto3
@@ -86,10 +87,17 @@ def presigned_download_link(
 
 @pytest.fixture
 def mocked_directorv2_service_api(
-    app: FastAPI, faker: Faker, presigned_download_link: AnyUrl
+    app: FastAPI,
+    presigned_download_link: AnyUrl,
+    osparc_simcore_services_dir: Path,
 ):
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
+
+    # director-v2 OAS
+    openapis_specs: dict[str, Any] = json.loads(
+        (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
+    )
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -98,8 +106,13 @@ def mocked_directorv2_service_api(
         assert_all_mocked=False,
     ) as respx_mock:
 
+        # check that what we emulate, actually still exists
+        path = "/v2/computations/{project_id}/tasks/-/logfile"
+        assert path in openapis_specs["paths"]
+        assert "get" in openapis_specs["paths"]
+
         respx_mock.get(
-            path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logs",
+            path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
             name="get_computation_logs",
         ).respond(
             status.HTTP_200_OK,

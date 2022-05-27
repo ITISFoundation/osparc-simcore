@@ -166,7 +166,7 @@ class DirectorV2Api(BaseServiceClientApi):
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:
         resp = await self.client.get(
-            f"/v2/computations/{project_id}/tasks/-/logs",
+            f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
                 "user_id": user_id,
             },
