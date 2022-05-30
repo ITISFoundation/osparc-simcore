@@ -158,19 +158,13 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return osparc.data.model.NodeStatus.isCompNodeReady(node);
     },
 
-    __getNotStartedDependencies: function(node) {
+    __getNeedToRunDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
       const upstreamNodeIds = wb.getUpstreamNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
         const upstreamNode = wb.getNode(upstreamNodeId);
-        if (upstreamNode.isComputational() &&
-          [
-            "UNKNOWN",
-            "NOT_STARTED",
-            "FAILED",
-            "ABORTED"
-          ].includes(upstreamNode.getStatus().getRunning())) {
+        if (upstreamNode.doesCompNodeNeedRun() {
           dependencies.push(upstreamNodeId);
         }
       });
@@ -301,7 +295,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
 
           // check if upstream has to be run
-          const notStartedDependencies = this.__getNotStartedDependencies(node);
+          const notStartedDependencies = this.__getNeedToRunDependencies(node);
           if (notStartedDependencies && notStartedDependencies.length) {
             const msg = this.tr("Do you want to run the required steps?");
             const win = new osparc.ui.window.Confirmation(msg).set({

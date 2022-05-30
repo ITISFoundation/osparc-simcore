@@ -102,11 +102,29 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         return (
           // run if last run was not succesful
           node.getStatus().getRunning() === "SUCCESS" &&
-          // and inputs changed
-          node.getStatus().getOutput() !== "out-of-date"
+          // and outputs up-to-date
+          node.getStatus().getOutput() === "up-to-date"
         );
       }
       return true;
+    },
+
+    doesCompNodeNeedRun: function(node) {
+      if (node && node.isComputational()) {
+        return (
+          [
+            "UNKNOWN",
+            "NOT_STARTED",
+            "FAILED",
+            "ABORTED"
+          ].includes(node.getStatus().getRunning()) ||
+          [
+            "not-available",
+            "out-of-date"
+          ].includes(node.getStatus().getOutput())
+        );
+      }
+      return false;
     }
   },
 

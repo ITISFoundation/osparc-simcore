@@ -57,6 +57,10 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   members: {
     __monitoredNodesList: null,
 
+    popUpInWindow: function() {
+      osparc.ui.window.Window.popUpInWindow(this, this.tr("Preparing Inputs"), 600, 500);
+    },
+
     __applyMonitoredNodes: function(monitoredNodes) {
       monitoredNodes.forEach(monitoredNode => {
         [

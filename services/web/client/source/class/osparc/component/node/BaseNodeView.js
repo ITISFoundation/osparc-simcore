@@ -130,7 +130,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
       inputsStateBtn.addListener("execute", () => {
-        osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, this.tr("Preparing Inputs"), 600, 500);
+        this.__preparingInputs.popUpInWindow();
       }, this);
       header.add(inputsStateBtn);
 
@@ -277,7 +277,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
       if (monitoredNodes.length) {
-        osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, this.tr("Preparing Inputs"), 600, 500);
+        this.__preparingInputs.popUpInWindow();
       }
     },
 
