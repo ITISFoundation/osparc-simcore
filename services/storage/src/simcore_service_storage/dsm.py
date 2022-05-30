@@ -13,7 +13,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Optional, Tuple, Union
+from typing import Any, Final, Optional, Union
 
 import attr
 import botocore
@@ -169,7 +169,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             aws_secret_access_key=self.s3_client.secret_key,
         )
 
-    def _get_datcore_tokens(self, user_id: str) -> Tuple[Optional[str], Optional[str]]:
+    def _get_datcore_tokens(self, user_id: str) -> tuple[Optional[str], Optional[str]]:
         # pylint: disable=no-member
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
@@ -531,7 +531,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
-        async def _init_metadata() -> Tuple[int, str]:
+        async def _init_metadata() -> tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)

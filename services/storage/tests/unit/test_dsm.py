@@ -14,7 +14,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Iterator, Optional
 
 import pytest
 import tests.utils
@@ -559,7 +559,7 @@ def test_fmd_build():
 
 async def test_dsm_complete_db(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     dsm = dsm_fixture
     _id = "21"
@@ -577,7 +577,7 @@ async def test_dsm_complete_db(
 
 async def test_delete_data_folders(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     file_1, file_2 = dsm_mockup_complete_db
     _id = "21"
@@ -709,7 +709,7 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
 async def test_sync_table_meta_data(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
     s3_client: MinioClientWrapper,
 ):
     dsm_fixture.has_project_db = True
@@ -759,7 +759,7 @@ async def test_dsm_list_datasets_datcore(
 
 async def test_dsm_list_dataset_files_s3(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     dsm_fixture.has_project_db = True
 
