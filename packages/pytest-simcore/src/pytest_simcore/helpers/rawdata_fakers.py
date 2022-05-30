@@ -36,23 +36,24 @@ STATES = [
 _faker = faker.Faker()
 
 
-def _hash_it(password: str) -> str:
+def _compute_hash(password: str) -> str:
     try:
-        # This way we does not force all
-        # modules to install passlib that need this for testing
-        # BUT use it if it is already in place.
+        # 'passlib' will be used only if already installed.
+        # This way we do not force all modules to install
+        # it only for testing.
         import passlib.hash
 
         return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
     except ImportError:
         print(
-            "Does not have passlib.hash installed, therefore faking hash."
+            "Does not have passlib.hash installed. We will fake _compute_hash."
             "WARNING: if you need a real hash then add passlib to requirements/_test.in"
         )
         return _faker.numerify(text="#" * len(password))
 
 
-_DEFAULT_HASH = _hash_it("secret")
+_DEFAULT_HASH = _compute_hash("secret")
 
 
 def random_user(**overrides) -> Dict[str, Any]:
@@ -68,7 +69,7 @@ def random_user(**overrides) -> Dict[str, Any]:
     # transform password in hash
     password = overrides.pop("password", None)
     if password:
-        overrides["password_hash"] = _hash_it(password)
+        overrides["password_hash"] = _compute_hash(password)
 
     data.update(overrides)
     return data
