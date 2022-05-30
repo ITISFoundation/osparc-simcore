@@ -58,33 +58,33 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
     path, handle = (
-        "/storage/locations/{location_id}/files/{fileId}/metadata",
+        "/storage/locations/{location_id}/files/{file_id}/metadata",
         storage_handlers.get_file_metadata,
     )
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
     # TODO: Implements update
-    # path, handle = '/{location_id}/files/{fileId}/metadata', handlers.update_file_metadata
+    # path, handle = '/{location_id}/files/{file_id}/metadata', handlers.update_file_metadata
     # operation_id = specs.paths[path].operations['patch'].operation_id
     # routes.append( web.patch(BASEPATH+path, handle, name=operation_id) )
 
     path, handle = (
-        "/storage/locations/{location_id}/files/{fileId}",
+        "/storage/locations/{location_id}/files/{file_id}",
         storage_handlers.download_file,
     )
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
     path, handle = (
-        "/storage/locations/{location_id}/files/{fileId}",
+        "/storage/locations/{location_id}/files/{file_id}",
         storage_handlers.delete_file,
     )
     operation_id = specs.paths[path].operations["delete"].operation_id
     routes.append(web.delete(BASEPATH + path, handle, name=operation_id))
 
     path, handle = (
-        "/storage/locations/{location_id}/files/{fileId}",
+        "/storage/locations/{location_id}/files/{file_id}",
         storage_handlers.upload_file,
     )
     operation_id = specs.paths[path].operations["put"].operation_id

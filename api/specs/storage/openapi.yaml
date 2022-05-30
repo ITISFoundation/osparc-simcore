@@ -214,12 +214,12 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /locations/{location_id}/files/{fileId}/metadata:
+  /locations/{location_id}/files/{file_id}/metadata:
     get:
       summary: Get file metadata
       operationId: get_file_metadata
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -247,7 +247,7 @@ paths:
       summary: Update file metadata
       operationId: update_file_meta_data
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -272,12 +272,12 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /locations/{location_id}/files/{fileId}:
+  /locations/{location_id}/files/{file_id}:
     get:
       summary: Gets download link for file at location
       operationId: download_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -315,7 +315,7 @@ paths:
       summary: Returns upload link or performs copy operation to datcore
       operationId: upload_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -362,7 +362,7 @@ paths:
       summary: Deletes file
       operationId: delete_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
