@@ -17,7 +17,7 @@ from osparc import UsersApi
 from osparc.api import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
-assert osparc.__version__ == "0.4.0"
+assert osparc.__version__ == "0.5.0"
 
 Path("file_with_number.txt").write_text("3")
 
@@ -85,7 +85,7 @@ with osparc.ApiClient(cfg) as api_client:
     for output_name, result in outputs.results.items():
         print(output_name, "=", result)
 
-    # download log (added on API version 0.4.0)
+    # download log (added on API version 0.4.0 / client version 0.5.0 )
     fpath: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
     logfile_path = Path(fpath)
     print(
