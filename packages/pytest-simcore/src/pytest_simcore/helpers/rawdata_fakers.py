@@ -19,7 +19,6 @@ from typing import Any, Callable, Dict
 from uuid import uuid4
 
 import faker
-import passlib.hash
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
@@ -38,7 +37,19 @@ _faker = faker.Faker()
 
 
 def _hash_it(password: str) -> str:
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+    try:
+        # This way we does not force all
+        # modules to install passlib that need this for testing
+        # BUT use it if it is already in place.
+        import passlib.hash
+
+        return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+    except ImportError:
+        print(
+            "Does not have passlib.hash installed, therefore faking hash."
+            "WARNING: if you need a real hash then add passlib to requirements/_test.in"
+        )
+        return _faker.numerify(text="#" * len(password))
 
 
 _DEFAULT_HASH = _hash_it("secret")
