@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
 
     this.setColumns([
       "Origin",
-      "Timestamp",
+      "Time",
       "Message"
     ], [
       "whoRich",
