@@ -13,7 +13,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Tuple, Union
+from typing import Any, Final, Optional, Union
 
 import attr
 import botocore
@@ -153,7 +153,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     simcore_bucket_name: str
     has_project_db: bool
     session: AioSession = field(default_factory=get_session)
-    datcore_tokens: Dict[str, DatCoreApiToken] = field(default_factory=dict)
+    datcore_tokens: dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
@@ -169,7 +169,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             aws_secret_access_key=self.s3_client.secret_key,
         )
 
-    def _get_datcore_tokens(self, user_id: str) -> Tuple[Optional[str], Optional[str]]:
+    def _get_datcore_tokens(self, user_id: str) -> tuple[Optional[str], Optional[str]]:
         # pylint: disable=no-member
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
@@ -201,7 +201,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-statements
     async def list_files(
         self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
-    ) -> List[FileMetaDataEx]:
+    ) -> list[FileMetaDataEx]:
         """Returns a list of file paths
 
         - Works for simcore.s3 and datcore
@@ -327,11 +327,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def list_files_dataset(
         self, user_id: str, location: str, dataset_id: str
-    ) -> Union[List[FileMetaData], List[FileMetaDataEx]]:
+    ) -> Union[list[FileMetaData], list[FileMetaDataEx]]:
         # this is a cheap shot, needs fixing once storage/db is in sync
         data = []
         if location == SIMCORE_S3_STR:
-            data: List[FileMetaDataEx] = await self.list_files(
+            data: list[FileMetaDataEx] = await self.list_files(
                 user_id, location, uuid_filter=dataset_id + "/"
             )
 
@@ -347,7 +347,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         return data
 
-    async def list_datasets(self, user_id: str, location: str) -> List[DatasetMetaData]:
+    async def list_datasets(self, user_id: str, location: str) -> list[DatasetMetaData]:
         """Returns a list of top level datasets
 
         Works for simcore.s3 and datcore
@@ -531,7 +531,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
-        async def _init_metadata() -> Tuple[int, str]:
+        async def _init_metadata() -> tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
@@ -745,9 +745,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     async def deep_copy_project_simcore_s3(
         self,
         user_id: str,
-        source_project: Dict[str, Any],
-        destination_project: Dict[str, Any],
-        node_mapping: Dict[str, str],
+        source_project: dict[str, Any],
+        destination_project: dict[str, Any],
+        node_mapping: dict[str, str],
     ):
         """Parses a given source project and copies all related files to the destination project
 
@@ -803,14 +803,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 source_folder,
             )
 
-            # Step 1: List all objects for this project replace them with the destination object name
+            # Step 1: list all objects for this project replace them with the destination object name
             # and do a copy at the same time collect some names
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
             response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=f"{source_folder}/"
             )
 
-            contents: List = response.get("Contents", [])
+            contents: list = response.get("Contents", [])
             logger.debug(
                 "Listed  %s items under %s:%s/",
                 len(contents),
@@ -853,9 +853,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     # SEE https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.copy_object
                     await aioboto_client.copy_object(**copy_kwargs)
 
-        # Step 2: List all references in outputs that point to datcore and copy over
+        # Step 2: list all references in outputs that point to datcore and copy over
         for node_id, node in destination_project["workbench"].items():
-            outputs: Dict = node.get("outputs", {})
+            outputs: dict = node.get("outputs", {})
             for _, output in outputs.items():
                 source = output["path"]
 
@@ -1022,7 +1022,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def search_files_starting_with(
         self, user_id: int, prefix: str
-    ) -> List[FileMetaDataEx]:
+    ) -> list[FileMetaDataEx]:
         # Avoids using list_files since it accounts for projects/nodes
         # Storage should know NOTHING about those concepts
         files_meta = deque()
@@ -1084,12 +1084,12 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def synchronise_meta_data_table(
         self, location: str, dry_run: bool
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
 
         PRUNE_CHUNK_SIZE = 20
 
-        removed: List[str] = []
-        to_remove: List[str] = []
+        removed: list[str] = []
+        to_remove: list[str] = []
 
         async def _prune_db_table(conn):
             if not dry_run:

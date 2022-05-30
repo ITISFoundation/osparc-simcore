@@ -120,14 +120,14 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /storage/locations/{location_id}/files/{fileId}:
+  /storage/locations/{location_id}/files/{file_id}:
     get:
       summary: Returns download link for requested file
       tags:
         - storage
       operationId: download_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -141,12 +141,12 @@ paths:
         "200":
           $ref: "#/components/responses/PresignedLink_200"
     put:
-      summary: Returns upload link or performs copy operation to datcore
+      summary: Returns upload link
       tags:
         - storage
       operationId: upload_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -154,16 +154,6 @@ paths:
         - name: location_id
           in: path
           required: true
-          schema:
-            type: string
-        - name: extra_location
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: extra_source
-          in: query
-          required: false
           schema:
             type: string
       responses:
@@ -175,7 +165,7 @@ paths:
         - storage
       operationId: delete_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -189,14 +179,14 @@ paths:
         "204":
           description: ""
 
-  /storage/locations/{location_id}/files/{fileId}/metadata:
+  /storage/locations/{location_id}/files/{file_id}/metadata:
     get:
       summary: Get File Metadata
       tags:
         - storage
       operationId: get_file_metadata
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -215,7 +205,7 @@ paths:
         - storage
       operationId: update_file_meta_data
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:

@@ -90,7 +90,7 @@ DatasetMetaDataArray = ListModel[DatasetMetaData]
 
 
 # /locations/{location_id}/files/metadata:
-# /locations/{location_id}/files/{fileId}/metadata:
+# /locations/{location_id}/files/{file_id}/metadata:
 class FileMetaData(BaseModel):
     file_uuid: Optional[str] = Field(
         description="Unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
@@ -189,7 +189,7 @@ class FileMetaDataArray(BaseModel):
     __root__: List[FileMetaData] = []
 
 
-# /locations/{location_id}/files/{fileId}
+# /locations/{location_id}/files/{file_id}
 
 
 class PresignedLink(BaseModel):

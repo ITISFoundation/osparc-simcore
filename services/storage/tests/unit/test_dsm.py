@@ -14,7 +14,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Iterator, Optional
 
 import pytest
 import tests.utils
@@ -30,7 +30,7 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 async def test_dsm_s3(
-    dsm_mockup_db: Dict[str, FileMetaData], dsm_fixture: DataStorageManager
+    dsm_mockup_db: dict[str, FileMetaData], dsm_fixture: DataStorageManager
 ):
     id_name_map = {}
     id_file_count = {}
@@ -170,7 +170,7 @@ async def _upload_file(
 async def test_update_metadata_from_storage(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -212,7 +212,7 @@ async def test_update_metadata_from_storage(
 async def test_links_s3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -276,7 +276,7 @@ async def test_links_s3(
 async def test_copy_s3_s3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -353,7 +353,7 @@ async def test_dsm_datcore(
 async def test_dsm_s3_to_datcore(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
@@ -408,7 +408,7 @@ async def test_dsm_s3_to_datcore(
 async def test_dsm_datcore_to_local(
     postgres_dsn_url,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket,
 ):
 
@@ -436,7 +436,7 @@ async def test_dsm_datcore_to_S3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
 ):
@@ -488,7 +488,7 @@ async def test_copy_datcore(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
 ):
@@ -559,7 +559,7 @@ def test_fmd_build():
 
 async def test_dsm_complete_db(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     dsm = dsm_fixture
     _id = "21"
@@ -577,7 +577,7 @@ async def test_dsm_complete_db(
 
 async def test_delete_data_folders(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     file_1, file_2 = dsm_mockup_complete_db
     _id = "21"
@@ -709,14 +709,14 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
 async def test_sync_table_meta_data(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
     s3_client: MinioClientWrapper,
 ):
     dsm_fixture.has_project_db = True
 
     expected_removed_files = []
     # the list should be empty on start
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=True
     )
     assert "removed" in list_changes
@@ -729,18 +729,18 @@ async def test_sync_table_meta_data(
         expected_removed_files.append(s3_key)
 
         # the list should now contain the removed entries
-        list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+        list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
             location=SIMCORE_S3_STR, dry_run=True
         )
         assert "removed" in list_changes
         assert list_changes["removed"] == expected_removed_files
 
     # now effectively call the function should really remove the files
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=False
     )
     # listing again will show an empty list again
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=True
     )
     assert "removed" in list_changes
@@ -759,7 +759,7 @@ async def test_dsm_list_datasets_datcore(
 
 async def test_dsm_list_dataset_files_s3(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: tuple[dict[str, str], dict[str, str]],
 ):
     dsm_fixture.has_project_db = True
 
@@ -811,7 +811,7 @@ async def test_dsm_list_dataset_files_datcore(
 async def test_download_links(
     datcore_structured_testbucket: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
 ):
     s3_client.create_bucket(BUCKET_NAME, delete_contents_if_exists=True)
     _file = mock_files_factory(1)[0]

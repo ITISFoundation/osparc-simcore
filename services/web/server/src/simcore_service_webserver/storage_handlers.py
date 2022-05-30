@@ -195,7 +195,7 @@ async def get_project_files_metadata(
 
 
 async def get_file_download_url(
-    app: web.Application, location_id: str, fileId: str, user_id: int
+    app: web.Application, location_id: str, file_id: str, user_id: int
 ) -> str:
     session = get_client_session(app)
 
@@ -204,7 +204,7 @@ async def get_file_download_url(
         / "locations"
         / location_id
         / "files"
-        / urllib.parse.quote(fileId, safe="")
+        / urllib.parse.quote(file_id, safe="")
     )
     params = dict(user_id=user_id)
     async with session.get(url, ssl=False, params=params) as resp:
@@ -213,7 +213,7 @@ async def get_file_download_url(
 
 
 async def get_file_upload_url(
-    app: web.Application, location_id: str, fileId: str, user_id: int
+    app: web.Application, location_id: str, file_id: str, user_id: int
 ) -> str:
     session = get_client_session(app)
 
@@ -222,7 +222,7 @@ async def get_file_upload_url(
         / "locations"
         / location_id
         / "files"
-        / urllib.parse.quote(fileId, safe="")
+        / urllib.parse.quote(file_id, safe="")
     )
     params = dict(user_id=user_id)
     async with session.put(url, ssl=False, params=params) as resp:
