@@ -13,7 +13,6 @@ from typing import Callable, Dict, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
-import faker
 import httpx
 import pytest
 import simcore_postgres_database.cli as pg_cli
