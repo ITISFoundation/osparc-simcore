@@ -18,7 +18,7 @@ from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, Job
 from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import (
-    ComputationTaskOut,
+    ComputationTaskGet,
     DirectorV2Api,
     DownloadLink,
     NodeName,
@@ -132,7 +132,7 @@ async def create_job(
 
     # -> director2:   ComputationTaskOut = JobStatus
     # consistency check
-    task: ComputationTaskOut = await director2_api.create_computation(job.id, user_id)
+    task: ComputationTaskGet = await director2_api.create_computation(job.id, user_id)
     assert task.id == job.id  # nosec
 
     job_status: JobStatus = create_jobstatus_from_task(task)

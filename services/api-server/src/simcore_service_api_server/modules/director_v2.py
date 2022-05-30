@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # TODO: shall schemas of internal APIs be in models_library as well?? or is against
 
 
-class ComputationTaskOut(ComputationTask):
+class ComputationTaskGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
@@ -103,7 +103,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     async def create_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         resp = await self.client.post(
             "/v2/computations",
             json={
@@ -114,12 +114,12 @@ class DirectorV2Api(BaseServiceClientApi):
         )
 
         resp.raise_for_status()
-        computation_task = ComputationTaskOut(**resp.json())
+        computation_task = ComputationTaskGet(**resp.json())
         return computation_task
 
     async def start_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
 
         with handle_errors_context(project_id):
             resp = await self.client.post(
@@ -131,12 +131,12 @@ class DirectorV2Api(BaseServiceClientApi):
                 },
             )
             resp.raise_for_status()
-            computation_task = ComputationTaskOut(**resp.json())
+            computation_task = ComputationTaskGet(**resp.json())
             return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         resp = await self.client.get(
             f"/v2/computations/{project_id}",
             params={
@@ -144,12 +144,12 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         resp.raise_for_status()
-        computation_task = ComputationTaskOut(**resp.json())
+        computation_task = ComputationTaskGet(**resp.json())
         return computation_task
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         data = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
@@ -157,7 +157,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTaskOut(**data.json())
+        computation_task = ComputationTaskGet(**data.json())
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
