@@ -1,4 +1,4 @@
-from typing import Callable, Dict
+from typing import Callable
 
 from fastapi import FastAPI
 from fastapi.applications import HTMLResponse, Request
@@ -19,7 +19,7 @@ def compose_long_description(description: str) -> str:
     return desc
 
 
-def add_vendor_extensions(openapi_schema: Dict):
+def add_vendor_extensions(openapi_schema: dict):
     # ReDoc vendor extensions
     # SEE https://github.com/Redocly/redoc/blob/master/docs/redoc-vendor-extensions.md
     openapi_schema["info"]["x-logo"] = {

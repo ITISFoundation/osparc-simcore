@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Union
+from typing import Union
 
 import aiopg
 from fastapi import status
@@ -20,7 +20,7 @@ ResultsTypes = Union[float, int, bool, BaseFileLink, str, None]
 
 async def get_solver_output_results(
     user_id: int, project_uuid: ProjectID, node_uuid: NodeID, db_engine: aiopg.sa.Engine
-) -> Dict[str, ResultsTypes]:
+) -> dict[str, ResultsTypes]:
     """
     Wraps calls via node_ports to retrieve project's output
     """

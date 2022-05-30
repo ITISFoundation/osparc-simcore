@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import random
 import urllib.parse
@@ -12,7 +11,6 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
     JobInputs,
@@ -75,12 +73,6 @@ def test_job_io_checksums(repeat):
     assert (
         inputs1.compute_checksum() == inputs2.compute_checksum()
     ), f"{inputs1}!={inputs2}"
-
-
-@pytest.fixture
-def app(project_env_devel_environment) -> FastAPI:
-    _app: FastAPI = init_app()
-    return _app
 
 
 def test_job_resouce_names_has_associated_url(app: FastAPI):

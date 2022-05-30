@@ -85,10 +85,12 @@ class FunctionServices:
             yield key, value
 
     def iter_metadata(self) -> Iterator[ServiceDockerData]:
+        """WARNING: this function might skip services marked as 'under development'"""
         for _, f in self._items():
             yield f.meta
 
     def iter_services_key_version(self) -> Iterator[Tuple[ServiceKey, ServiceVersion]]:
+        """WARNING: this function might skip services makred as 'under development'"""
         for kv, f in self._items():
             assert kv == (f.meta.key, f.meta.version)  # nosec
             yield kv

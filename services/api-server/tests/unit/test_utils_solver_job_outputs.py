@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, File
 from simcore_service_api_server.utils.solver_job_outputs import (

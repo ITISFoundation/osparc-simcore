@@ -22,14 +22,14 @@ from ..modules import catalog, director_v2, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
-from .settings import AppSettings, BootModeEnum
+from .settings import ApplicationSettings, BootModeEnum
 
 logger = logging.getLogger(__name__)
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def init_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_envs()
+        settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)

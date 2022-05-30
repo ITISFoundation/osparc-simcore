@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-from typing import Dict
 from uuid import uuid4
 
 import aiopg.sa
@@ -26,7 +25,7 @@ default_dsn = DSN_FORMAT.format(**default_db_settings)
 fake = faker.Faker()
 
 
-def load_db_config() -> Dict:
+def load_db_config() -> dict:
     # TODO:
     with open("docker-compose-resolved.yaml") as fh:
         config = yaml.safe_load(fh)

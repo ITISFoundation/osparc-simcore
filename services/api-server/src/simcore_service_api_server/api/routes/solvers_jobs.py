@@ -136,7 +136,9 @@ async def create_job(
     return job
 
 
-@router.get("/{solver_key:path}/releases/{version}/jobs/{job_id}", response_model=Job)
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}", response_model=Job
+)
 async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
@@ -157,7 +159,7 @@ async def get_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}:start",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
 )
 async def start_job(
@@ -177,7 +179,7 @@ async def start_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}:stop", response_model=Job
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop", response_model=Job
 )
 async def stop_job(
     solver_key: SolverKeyId,
@@ -198,7 +200,7 @@ async def stop_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}:inspect",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:inspect",
     response_model=JobStatus,
 )
 async def inspect_job(
@@ -218,7 +220,7 @@ async def inspect_job(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs",
     response_model=JobOutputs,
 )
 async def get_job_outputs(

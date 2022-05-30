@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -34,7 +34,7 @@ def get_session_cookie(
     identity: str = Depends(get_active_user_email),
     settings: WebServerSettings = Depends(_get_settings),
     fernet: Optional[Fernet] = Depends(_get_encrypt),
-) -> Dict:
+) -> dict:
     # Based on aiohttp_session and aiohttp_security
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
 
@@ -58,7 +58,7 @@ def get_session_cookie(
 
 def get_webserver_session(
     app: FastAPI = Depends(_get_app),
-    session_cookies: Dict = Depends(get_session_cookie),
+    session_cookies: dict = Depends(get_session_cookie),
 ) -> AuthSession:
     """
     Lifetime of AuthSession wrapper is one request because it needs different session cookies

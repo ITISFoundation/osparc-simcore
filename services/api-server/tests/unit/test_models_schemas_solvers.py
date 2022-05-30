@@ -1,12 +1,11 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from operator import attrgetter
 from pprint import pformat
 
 import pytest
-from fakes.solvers_faker import SolversFaker
 from simcore_service_api_server.models.schemas.solvers import Solver, Version
 
 
@@ -16,15 +15,6 @@ def test_solvers_model_examples(model_cls, model_cls_examples):
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
-
-
-def test_create_solver_from_image_metadata():
-    for image_metadata in SolversFaker.load_images():
-        solver = Solver.create_from_image(image_metadata)
-        print(solver.json())
-
-        assert solver.id is not None, "should be auto-generated"
-        assert solver.url is None
 
 
 def test_solvers_sorting_by_name_and_version(faker):

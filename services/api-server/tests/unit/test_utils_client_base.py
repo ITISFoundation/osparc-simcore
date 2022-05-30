@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from dataclasses import dataclass
 
@@ -19,6 +19,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def the_service():
+    # pylint: disable=not-context-manager
     with respx.mock(
         base_url="http://the_service",
         assert_all_mocked=True,

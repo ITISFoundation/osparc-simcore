@@ -6,7 +6,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 from models_library.projects_nodes import InputID, InputTypes
 
@@ -50,12 +50,12 @@ def now_str() -> str:
 #
 
 
-def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, InputTypes]:
+def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, InputTypes]:
 
     # map Job inputs with solver inputs
     # TODO: ArgumentType -> InputTypes dispatcher
 
-    node_inputs: Dict[InputID, InputTypes] = {}
+    node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
 
         assert isinstance(value, get_types(ArgumentType))  # nosec
@@ -76,12 +76,12 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, Input
     return node_inputs
 
 
-def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> JobInputs:
+def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> JobInputs:
     """Reverse  from create_node_inputs_from_job_inputs
 
     raises ValidationError
     """
-    input_values: Dict[str, ArgumentType] = {}
+    input_values: dict[str, ArgumentType] = {}
     for name, value in inputs.items():
 
         assert isinstance(name, get_types(InputID))  # nosec
@@ -130,7 +130,7 @@ def create_new_project_for_job(
 
     # map Job inputs with solveri nputs
     # TODO: ArgumentType -> InputTypes dispatcher and reversed
-    solver_inputs: Dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(
+    solver_inputs: dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(
         inputs
     )
 

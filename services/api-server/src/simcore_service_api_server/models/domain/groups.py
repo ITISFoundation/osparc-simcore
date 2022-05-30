@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,5 +11,5 @@ class UsersGroup(BaseModel):
 
 class Groups(BaseModel):
     me: UsersGroup
-    organizations: Optional[List[UsersGroup]] = []
+    organizations: Optional[list[UsersGroup]] = []
     all_: UsersGroup = Field(..., alias="all")
