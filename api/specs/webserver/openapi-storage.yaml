@@ -156,16 +156,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: extra_location
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: extra_source
-          in: query
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           $ref: "#/components/responses/PresignedLink_200"

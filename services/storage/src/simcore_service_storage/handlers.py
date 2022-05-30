@@ -344,31 +344,16 @@ async def upload_file(request: web.Request):
     link_type = query.get("link_type", "presigned")
 
     with handle_storage_errors():
-        location_id = params["location_id"]
         user_id = query["user_id"]
         file_uuid = params["file_id"]
 
         dsm = await _prepare_storage_manager(params, query, request)
-        location = dsm.location_from_id(location_id)
 
-        if query.get("extra_source") and query.get("extra_location"):
-            source_uuid = query["extra_source"]
-            source_id = query["extra_location"]
-            source_location = dsm.location_from_id(source_id)
-            # FIXME: this does not even return a link... nobody is using this??
-            link = await dsm.copy_file(
-                user_id=user_id,
-                dest_location=location,
-                dest_uuid=file_uuid,
-                source_location=source_location,
-                source_uuid=source_uuid,
-            )
-        else:
-            link = await dsm.upload_link(
-                user_id=user_id,
-                file_uuid=file_uuid,
-                as_presigned_link=bool(link_type == "presigned"),
-            )
+        link = await dsm.upload_link(
+            user_id=user_id,
+            file_uuid=file_uuid,
+            as_presigned_link=bool(link_type == "presigned"),
+        )
 
     return {"error": None, "data": {"link": link}}
 
