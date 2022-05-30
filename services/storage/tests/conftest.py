@@ -13,7 +13,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Callable, Iterable, Iterator, List
+from typing import Any, Callable, Iterable, Iterator
 
 import dotenv
 import pytest
@@ -114,8 +114,8 @@ def s3_client(minio_config: dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory) -> Callable[[int], List[Path]]:
-    def _create_files(count: int) -> List[Path]:
+def mock_files_factory(tmpdir_factory) -> Callable[[int], list[Path]]:
+    def _create_files(count: int) -> list[Path]:
         filepaths = []
         for _i in range(count):
             filepath = Path(tmpdir_factory.mktemp("data")) / f"{uuid.uuid4()}.txt"
@@ -175,7 +175,7 @@ def dsm_mockup_complete_db(
 def dsm_mockup_db(
     postgres_dsn_url,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     cleanup_user_projects_file_metadata,
 ) -> Iterator[dict[str, FileMetaData]]:
 
@@ -303,7 +303,7 @@ def dsm_fixture(
 
 @pytest.fixture(scope="function")
 async def datcore_structured_testbucket(
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     moduleless_app,
 ):
     api_token = os.environ.get("BF_API_KEY")

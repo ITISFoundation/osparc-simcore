@@ -39,7 +39,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -89,7 +89,7 @@ class InvalidFileIdentifier(AccessLayerError):
         return "Error in {}: {} [{}]".format(self.identifier, self.reason, self.details)
 
 
-async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
+async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> list[int]:
     stmt = sa.select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
     rows = await (await conn.execute(stmt)).fetchall()
     user_group_ids = [g.gid for g in rows]
@@ -97,7 +97,7 @@ async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
 
 
 def _aggregate_access_rights(
-    access_rights: dict[str, dict], group_ids: List[int]
+    access_rights: dict[str, dict], group_ids: list[int]
 ) -> AccessRights:
     try:
         prj_access = {"read": False, "write": False, "delete": False}
@@ -123,7 +123,7 @@ async def list_projects_access_rights(
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """
 
-    user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
+    user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
 
     smt = text(
         f"""\
@@ -164,7 +164,7 @@ async def get_project_access_rights(
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
-    user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
+    user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
 
     stmt = text(
         f"""\
@@ -281,7 +281,7 @@ async def get_file_access_rights(
 # HELPERS -----------------------------------------------
 
 
-async def get_readable_project_ids(conn: SAConnection, user_id: int) -> List[ProjectID]:
+async def get_readable_project_ids(conn: SAConnection, user_id: int) -> list[ProjectID]:
     """Returns a list of projects where user has granted read-access"""
     projects_access_rights = await list_projects_access_rights(conn, int(user_id))
     return [pid for pid, access in projects_access_rights.items() if access.read]

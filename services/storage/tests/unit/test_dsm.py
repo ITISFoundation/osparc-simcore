@@ -14,7 +14,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Callable, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Iterator, Optional, Tuple
 
 import pytest
 import tests.utils
@@ -170,7 +170,7 @@ async def _upload_file(
 async def test_update_metadata_from_storage(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -212,7 +212,7 @@ async def test_update_metadata_from_storage(
 async def test_links_s3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -276,7 +276,7 @@ async def test_links_s3(
 async def test_copy_s3_s3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     create_file_meta_for_s3: Callable,
 ):
@@ -353,7 +353,7 @@ async def test_dsm_datcore(
 async def test_dsm_s3_to_datcore(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     dsm_fixture: DataStorageManager,
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
@@ -408,7 +408,7 @@ async def test_dsm_s3_to_datcore(
 async def test_dsm_datcore_to_local(
     postgres_dsn_url,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket,
 ):
 
@@ -436,7 +436,7 @@ async def test_dsm_datcore_to_S3(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
 ):
@@ -488,7 +488,7 @@ async def test_copy_datcore(
     postgres_dsn_url: str,
     s3_client: MinioClientWrapper,
     dsm_fixture: DataStorageManager,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
     datcore_structured_testbucket: str,
     create_file_meta_for_s3: Callable,
 ):
@@ -811,7 +811,7 @@ async def test_dsm_list_dataset_files_datcore(
 async def test_download_links(
     datcore_structured_testbucket: str,
     s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], List[Path]],
+    mock_files_factory: Callable[[int], list[Path]],
 ):
     s3_client.create_bucket(BUCKET_NAME, delete_contents_if_exists=True)
     _file = mock_files_factory(1)[0]
