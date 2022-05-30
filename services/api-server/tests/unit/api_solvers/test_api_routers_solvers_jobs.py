@@ -111,11 +111,17 @@ def mocked_directorv2_service_api(
         assert path in openapis_specs["paths"]
         assert "get" in openapis_specs["paths"][path]
 
+        response = openapis_specs["paths"][path]["get"]["responses"]["200"]
+
+        assert response["content"]["application/json"]["schema"]["type"] == "array"
         assert (
-            openapis_specs["paths"][path]["get"]["responses"]["200"]["content"][
-                "application/json"
-            ]["schema"]["type"]
-            == "array"
+            response["content"]["application/json"]["schema"]["items"]["$ref"]
+            == "#/components/schemas/TaskLogFileGet"
+        )
+        assert {"task_id", "download_link"} == set(
+            openapis_specs["components"]["schemas"]["TaskLogFileGet"][
+                "properties"
+            ].keys()
         )
 
         respx_mock.get(
