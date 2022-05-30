@@ -1237,7 +1237,7 @@ paths:
         '200':
           $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/put/responses/200'
     put:
-      summary: Returns upload link or performs copy operation to datcore
+      summary: Returns upload link
       tags:
         - storage
       operationId: upload_file
