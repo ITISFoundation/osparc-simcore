@@ -111,12 +111,24 @@ def mocked_directorv2_service_api(
         assert path in openapis_specs["paths"]
         assert "get" in openapis_specs["paths"][path]
 
+        assert (
+            openapis_specs["paths"][path]["get"]["responses"]["200"]["content"][
+                "application/json"
+            ]["schema"]["type"]
+            == "array"
+        )
+
         respx_mock.get(
             path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
             name="get_computation_logs",
         ).respond(
             status.HTTP_200_OK,
-            json={"iSolve": presigned_download_link},
+            json=[
+                {
+                    "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "download_link": presigned_download_link,
+                }
+            ],
         )
 
         yield respx_mock
