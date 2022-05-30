@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const upstreamNodeIds = wb.getUpstreamNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
         const upstreamNode = wb.getNode(upstreamNodeId);
-        if (upstreamNode.doesCompNodeNeedRun()) {
+        if (osparc.data.model.NodeStatus.doesCompNodeNeedRun(upstreamNode)) {
           dependencies.push(upstreamNodeId);
         }
       });
