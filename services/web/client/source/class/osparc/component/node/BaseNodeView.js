@@ -130,7 +130,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
       inputsStateBtn.addListener("execute", () => {
-        console.log("Hey there");
+        osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, this.tr("Preparing Inputs"), 600, 500);
       }, this);
       header.add(inputsStateBtn);
 
@@ -276,6 +276,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const workbench = this.getNode().getStudy().getWorkbench();
       notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
+      if (monitoredNodes.length) {
+        osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, this.tr("Preparing Inputs"), 600, 500);
+      }
     },
 
     __dependeciesChanged: function() {

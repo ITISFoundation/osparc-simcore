@@ -35,9 +35,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
     this._add(list);
     this.setMonitoredNodes(monitoredNodes);
 
-    const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
-    loggerView.getChildControl("pin-node").exclude();
-    this._add(loggerView, {
+    const loggerLayout = this.__loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this._add(loggerLayout, {
       flex: 1
     });
   },
@@ -48,20 +47,14 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
       init: null,
       apply: "__applyMonitoredNodes",
       event: "changeMonitoredNodes"
-    },
-
-    preparingNodes: {
-      check: "Array",
-      init: null
     }
   },
 
   events: {
-    "changePreparingNodes": "qx.event.type.Event"
+    "changePreparingNodes": "qx.event.type.Data"
   },
 
   members: {
-    __preparingNodes: null,
     __monitoredNodesList: null,
 
     __applyMonitoredNodes: function(monitoredNodes) {
@@ -69,39 +62,63 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
         [
           "changeRunning",
           "changeOutput"
-        ].forEach(changeEvent => monitoredNode.getStatus().addListener(changeEvent, () => {
-          this.__updateMonitoredNodesList();
-          this.__updatePreparingNodes();
-        }));
+        ].forEach(changeEvent => {
+          monitoredNode.getStatus().addListener(changeEvent, () => {
+            this.__updateMonitoredNodesList();
+            this.__updatePreparingNodes();
+          });
+        });
       });
       this.__updateMonitoredNodesList();
-      this.setPreparingNodes(monitoredNodes);
     },
 
     __updateMonitoredNodesList: function() {
       this.__monitoredNodesList.removeAll();
       const monitoredNodes = this.getMonitoredNodes();
       this.__monitoredNodesList.add(new qx.ui.basic.Label(this.tr("Monitoring:")));
+      const group = new qx.ui.form.RadioGroup();
       if (monitoredNodes && monitoredNodes.length) {
         monitoredNodes.forEach(node => {
-          if (osparc.data.model.NodeStatus.isCompNodeReady(node)) {
-            this.__monitoredNodesList.add(new qx.ui.basic.Label("+ " + node.getLabel()));
-          } else {
-            this.__monitoredNodesList.add(new qx.ui.basic.Label("- " + node.getLabel()));
+          const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          const showLoggerBtn = new qx.ui.form.ToggleButton("Logger");
+          showLoggerBtn.addListener("execute", e => {
+            if (showLoggerBtn.getValue()) {
+              this.__loggerLayout.removeAll();
+              const nodeLogger = node.getLogger();
+              this.__loggerLayout.add(nodeLogger);
+            }
+          });
+          nodeLayout.add(showLoggerBtn);
+          group.add(showLoggerBtn);
+          if (group.getSelection().length === 0) {
+            group.setSelection(showLoggerBtn);
           }
+          const statusUI = new osparc.ui.basic.NodeStatusUI(node);
+          nodeLayout.add(statusUI);
+          nodeLayout.add(new qx.ui.basic.Label(node.getLabel()), {
+            flex: 1
+          });
+          this.__monitoredNodesList.add(nodeLayout);
         });
       }
     },
 
-    __updatePreparingNodes: function() {
-      const preparingNodes = this.getPreparingNodes();
-      for (let i = preparingNodes.length - 1; i >= 0; i--) {
-        if (osparc.data.model.NodeStatus.isCompNodeReady(preparingNodes[i])) {
-          preparingNodes.splice(i, 1);
+    getPreparingNodes: function() {
+      const preparingNodes = [];
+      const monitoredNodes = this.getMonitoredNodes();
+      monitoredNodes.forEach(monitoredNode => {
+        if (!osparc.data.model.NodeStatus.isCompNodeReady(monitoredNode)) {
+          preparingNodes.push(monitoredNode);
         }
-      }
-      this.setPreparingNodes(preparingNodes);
-      this.fireEvent("changePreparingNodes");
+      });
+      return preparingNodes;
+    },
+
+
+    __updatePreparingNodes: function() {
+      this.fireDataEvent("changePreparingNodes", this.getPreparingNodes().length);
     }
   }
 });
