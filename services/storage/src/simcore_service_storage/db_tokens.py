@@ -1,5 +1,4 @@
 import logging
-from typing import Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -30,7 +29,7 @@ async def _get_tokens_from_db(engine: sa.engine.Engine, userid: int):
 
 async def get_api_token_and_secret(
     app: web.Application, userid: int
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     # FIXME: this is a temporary solution. This information should be sent in some form
     # from the client side together with the userid?
     engine = app.get(APP_DB_ENGINE_KEY, None)

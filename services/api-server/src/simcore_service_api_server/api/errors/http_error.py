@@ -16,7 +16,7 @@ def make_http_error_handler_for_exception(
     status_code: int,
     exception_cls: Type[BaseException],
     *,
-    override_detail_message: Optional[str] = None
+    override_detail_message: Optional[str] = None,
 ) -> Callable:
     """
     Produces a handler for BaseException-type exceptions which converts them
@@ -27,7 +27,7 @@ def make_http_error_handler_for_exception(
 
     async def _http_error_handler(_: Request, exc: exception_cls) -> JSONResponse:
         assert isinstance(exc, exception_cls)  # nosec
-        details = override_detail_message or str(exc)
+        details = override_detail_message or f"{exc}"
         return JSONResponse(
             content=jsonable_encoder({"errors": [details]}), status_code=status_code
         )

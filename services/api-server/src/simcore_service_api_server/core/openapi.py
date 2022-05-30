@@ -2,12 +2,12 @@ import json
 import logging
 import types
 from pathlib import Path
-from typing import Dict
 
 import yaml
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
+from servicelib.fastapi.openapi import patch_openapi_specs
 
 from .redoc import add_vendor_extensions, compose_long_description
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def override_openapi_method(app: FastAPI):
     # TODO: test openapi(*) member does not change interface
 
-    def _custom_openapi_method(zelf: FastAPI) -> Dict:
+    def _custom_openapi_method(zelf: FastAPI) -> dict:
         """Overrides FastAPI.openapi member function
         returns OAS schema with vendor extensions
         """
@@ -38,8 +38,9 @@ def override_openapi_method(app: FastAPI):
             )
 
             add_vendor_extensions(openapi_schema)
-
+            patch_openapi_specs(openapi_schema)
             zelf.openapi_schema = openapi_schema
+
         return zelf.openapi_schema
 
     app.openapi = types.MethodType(_custom_openapi_method, app)

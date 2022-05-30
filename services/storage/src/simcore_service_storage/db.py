@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -87,7 +87,7 @@ async def is_service_responsive(app: web.Application):
     return is_responsive
 
 
-def get_engine_state(app: web.Application) -> Dict[str, Any]:
+def get_engine_state(app: web.Application) -> dict[str, Any]:
     engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
     if engine:
         return get_pg_engine_stateinfo(engine)

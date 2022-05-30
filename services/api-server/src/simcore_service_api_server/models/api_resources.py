@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Any, List
+from typing import Any
 
 from pydantic import BaseModel, Field, constr
 
@@ -45,7 +45,7 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
     return RelativeResourceName("/".join(quoted_parts))
 
 
-def split_resource_name(resource_name: RelativeResourceName) -> List[str]:
+def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
     quoted_parts = resource_name.split("/")
     return [f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts]
 

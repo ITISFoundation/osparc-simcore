@@ -1,11 +1,11 @@
-from typing import Dict, Tuple, Union, get_args, get_origin
+from typing import Tuple, Union, get_args, get_origin
 
 
 def get_types(annotation) -> Tuple:
     # WARNING: use for testing ONLY
 
-    assert get_origin(Dict[str, int]) is dict  # nosec
-    assert get_args(Dict[int, str]) == (int, str)  # nosec
+    assert get_origin(dict[str, int]) is dict  # nosec
+    assert get_args(dict[int, str]) == (int, str)  # nosec
     assert get_origin(Union[int, str]) is Union  # nosec
     assert get_args(Union[int, str]) == (int, str)  # nosec
 
@@ -20,7 +20,7 @@ def get_types(annotation) -> Tuple:
                 if issubclass(annotated_type, primitive_type):
                     return primitive_type
             except TypeError:
-                # List[Any] or Dict[str, Any]
+                # list[Any] or dict[str, Any]
                 pass
 
         return annotated_type

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Optional, Type, Union, cast
 
 import aiohttp
 from aiohttp import web
@@ -36,9 +36,9 @@ async def _request(
     api_secret: str,
     method: str,
     path: str,
-    json: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, Any]] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    json: Optional[dict[str, Any]] = None,
+    params: Optional[dict[str, Any]] = None,
+) -> Union[dict[str, Any], list[dict[str, Any]]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
     session: ClientSession = get_client_session(app)
@@ -78,10 +78,10 @@ async def _retrieve_all_pages(
     return_type_creator: Callable,
 ):
     page = 1
-    objs: List[return_type] = []
+    objs: list[return_type] = []
     while (
         response := cast(
-            Dict[str, Any],
+            dict[str, Any],
             await _request(
                 app, api_key, api_secret, method, path, params={"page": page}
             ),
@@ -127,14 +127,14 @@ async def check_user_can_connect(
 
 async def list_all_datasets_files_metadatas(
     app: web.Application, api_key: str, api_secret: str
-) -> List[FileMetaDataEx]:
-    all_datasets: List[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
+) -> list[FileMetaDataEx]:
+    all_datasets: list[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
     get_dataset_files_tasks = [
         list_all_files_metadatas_in_dataset(app, api_key, api_secret, d.dataset_id)
         for d in all_datasets
     ]
     results = await asyncio.gather(*get_dataset_files_tasks)
-    all_files_of_all_datasets: List[FileMetaDataEx] = []
+    all_files_of_all_datasets: list[FileMetaDataEx] = []
     for data in results:
         all_files_of_all_datasets += data
     return all_files_of_all_datasets
@@ -142,9 +142,9 @@ async def list_all_datasets_files_metadatas(
 
 async def list_all_files_metadatas_in_dataset(
     app: web.Application, api_key: str, api_secret: str, dataset_id: str
-) -> List[FileMetaDataEx]:
-    all_files: List[Dict[str, Any]] = cast(
-        List[Dict[str, Any]],
+) -> list[FileMetaDataEx]:
+    all_files: list[dict[str, Any]] = cast(
+        list[dict[str, Any]],
         await _request(
             app,
             api_key,
@@ -175,8 +175,8 @@ async def list_all_files_metadatas_in_dataset(
 
 async def list_datasets(
     app: web.Application, api_key: str, api_secret: str
-) -> List[DatasetMetaData]:
-    all_datasets: List[DatasetMetaData] = await _retrieve_all_pages(
+) -> list[DatasetMetaData]:
+    all_datasets: list[DatasetMetaData] = await _retrieve_all_pages(
         app,
         api_key,
         api_secret,
@@ -193,7 +193,7 @@ async def get_file_download_presigned_link(
     app: web.Application, api_key: str, api_secret: str, file_id: str
 ) -> URL:
     file_download_data = cast(
-        Dict[str, Any],
+        dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
     return file_download_data["link"]

@@ -2,7 +2,6 @@
 
 """
 import logging
-from typing import Dict
 
 from aiohttp import web
 from pydantic import AnyUrl, parse_obj_as
@@ -87,6 +86,6 @@ def setup_s3(app: web.Application):
     app.cleanup_ctx.append(_setup_s3_bucket)
 
 
-def get_config_s3(app: web.Application) -> Dict:
+def get_config_s3(app: web.Application) -> dict:
     cfg = app[APP_CONFIG_KEY].STORAGE_S3
     return cfg

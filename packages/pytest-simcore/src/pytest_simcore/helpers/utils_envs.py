@@ -25,3 +25,9 @@ def delenvs_as_envfile(
 
     assert all(env not in os.environ for env in envs)
     return envs
+
+
+def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
+    for key, value in envs.items():
+        assert value is not None  # key is defined w/o value
+        monkeypatch.setenv(key, str(value))

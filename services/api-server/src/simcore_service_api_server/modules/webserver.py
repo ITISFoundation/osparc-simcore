@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Deque, Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from cryptography import fernet
@@ -35,10 +35,10 @@ class AuthSession:
 
     client: AsyncClient  # Its lifetime is attached to app
     vtag: str
-    session_cookies: Optional[Dict] = None
+    session_cookies: Optional[dict] = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: Dict):
+    def create(cls, app: FastAPI, session_cookies: dict):
         return cls(
             client=app.state.webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
@@ -86,7 +86,7 @@ class AuthSession:
 
         return self._process(resp)
 
-    async def put(self, path: str, body: Dict) -> Optional[JSON]:
+    async def put(self, path: str, body: dict) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -120,7 +120,7 @@ class AuthSession:
         data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
-    async def list_projects(self, solver_name: str) -> List[Project]:
+    async def list_projects(self, solver_name: str) -> list[Project]:
         # TODO: pagination?
         resp = await self.client.get(
             "/projects",
@@ -131,7 +131,7 @@ class AuthSession:
         data: ListAnyDict = self._process(resp) or []
 
         # FIXME: move filter to webserver API (next PR)
-        projects: Deque[Project] = deque()
+        projects: deque[Project] = deque()
         for prj in data:
             possible_job_name = prj.get("name", "")
             if possible_job_name.startswith(solver_name):

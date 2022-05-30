@@ -3,7 +3,7 @@
 #
 import logging
 from datetime import timedelta
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 from minio import Minio
 from minio.commonconfig import CopySource
@@ -134,7 +134,7 @@ class MinioClientWrapper:
 
         return []
 
-    def remove_objects(self, bucket_name: str, objects: List[str]):
+    def remove_objects(self, bucket_name: str, objects: list[str]):
         try:
             delete = [DeleteObject(name, version_id=None) for name in objects]
             iter_errors: Iterator[DeleteError] = self._minio.remove_objects(

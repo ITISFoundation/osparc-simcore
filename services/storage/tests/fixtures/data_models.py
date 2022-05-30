@@ -8,12 +8,14 @@ from uuid import UUID
 
 import pytest
 from aiopg.sa.engine import Engine
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.storage_models import projects, users
 
 
 @pytest.fixture
-async def user_id(aiopg_engine: Engine) -> AsyncIterator[int]:
+async def user_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
     # inject a random user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
@@ -35,7 +37,7 @@ async def user_id(aiopg_engine: Engine) -> AsyncIterator[int]:
 
 
 @pytest.fixture
-async def project_id(user_id: int, aiopg_engine: Engine) -> AsyncIterator[UUID]:
+async def project_id(user_id: UserID, aiopg_engine: Engine) -> AsyncIterator[ProjectID]:
     # inject a random project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter

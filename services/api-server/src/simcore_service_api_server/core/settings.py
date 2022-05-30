@@ -66,15 +66,13 @@ class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
 
     @cached_property
     def base_url(self) -> str:
-        return self._build_url("DIRECTOR")
+        return self._build_url("DIRECTOR_V2")
 
 
 # MAIN SETTINGS --------------------------------------------
 
 
-class AppSettings(BaseCustomSettings, MixinLoggingSettings):
-    # pylint: disable=no-self-use
-    # pylint: disable=no-self-argument
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # DOCKER
     SC_BOOT_MODE: Optional[BootModeEnum]
@@ -97,12 +95,12 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True
     )
-    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
+    # DIAGNOSTICS
+    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
     )
-
     API_SERVER_REMOTE_DEBUG_PORT: int = 3000
 
     @cached_property

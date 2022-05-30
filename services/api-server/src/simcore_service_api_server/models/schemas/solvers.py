@@ -51,7 +51,7 @@ class Solver(BaseModel):
     description: Optional[str]
     maintainer: str
     # TODO: consider released: Optional[datetime]   required?
-    # TODO: consider version_aliases: List[str] = []  # remaining tags
+    # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
     url: Optional[HttpUrl] = Field(..., description="Link to get this resource")

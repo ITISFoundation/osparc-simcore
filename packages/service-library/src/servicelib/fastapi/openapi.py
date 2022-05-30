@@ -42,8 +42,11 @@ SKIP = (
 )
 
 
-def _patch_openapi_specs(app_openapi: Dict[str, Any]):
-    """Patches app.openapi with some fixes and osparc conventions"""
+def patch_openapi_specs(app_openapi: Dict[str, Any]):
+    """Patches app.openapi with some fixes and osparc conventions
+
+    Modifies fastapi auto-generated OAS to pass our openapi validation.
+    """
 
     def _patch(node):
         if isinstance(node, Dict):
@@ -84,7 +87,7 @@ def override_fastapi_openapi_method(app: FastAPI):
         # NOTE: see fastapi.applications.py:FastApi.openapi(self) implementation
         if not self.openapi_schema:
             self.openapi_schema = self._original_openapi()  # type: ignore
-            _patch_openapi_specs(self.openapi_schema)
+            patch_openapi_specs(self.openapi_schema)
 
         return self.openapi_schema
 

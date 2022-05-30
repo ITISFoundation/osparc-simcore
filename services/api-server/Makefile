@@ -87,8 +87,12 @@ run-fake-devel: # starts a fake server in a dev-container
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json
 openapi.json: .env
-	# generating openapi specs file
+	# generating openapi specs file under $<
+	@set -o allexport; \
+	source .env; \
+	set +o allexport; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+
 	# validates OAS file: $@
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@

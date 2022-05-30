@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 from urllib.parse import quote
 
 import pytest
@@ -25,7 +25,7 @@ from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import Settings
 from tests.helpers.utils_project import clone_project_data
-from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
+from tests.utils import USER_ID, has_datcore_tokens
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -194,50 +194,6 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
-@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
-async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
-
-    # copy N files
-    N = 2
-    counter = 0
-    for d in dsm_mockup_db.keys():
-        fmd = dsm_mockup_db[d]
-        source_uuid = fmd.file_uuid
-        datcore_id = datcore_structured_testbucket["coll1_id"]
-        resp = await client.put(
-            "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(
-                quote(datcore_id, safe=""),
-                fmd.user_id,
-                SIMCORE_S3_ID,
-                quote(source_uuid, safe=""),
-            )
-        )
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
-
-        data, error = tuple(payload.get(k) for k in ("data", "error"))
-        assert not error
-        assert data
-
-        counter = counter + 1
-        if counter == N:
-            break
-
-    # list files for every user
-    user_id = USER_ID
-    resp = await client.get(
-        "/v0/locations/1/files/metadata?user_id={}&uuid_filter={}".format(
-            user_id, BUCKET_NAME
-        )
-    )
-    payload = await resp.json()
-    assert resp.status == 200, str(payload)
-
-    data, error = tuple(payload.get(k) for k in ("data", "error"))
-    assert not error
-    assert len(data) > N
-
-
 async def test_delete_file(client, dsm_mockup_db):
     id_file_count, _id_name_map = parse_db(dsm_mockup_db)
 
@@ -284,7 +240,7 @@ async def test_action_check(client):
     assert data["query_value"] == QUERY
 
 
-def get_project_with_data() -> Dict[str, Any]:
+def get_project_with_data() -> dict[str, Any]:
     projects = []
     with open(current_dir / "../data/projects_with_data.json") as fp:
         projects = json.load(fp)
@@ -326,7 +282,7 @@ def mock_get_project_access_rights(mocker) -> None:
 
 
 async def _create_and_delete_folders_from_project(
-    project: Dict[str, Any], client: TestClient
+    project: dict[str, Any], client: TestClient
 ):
     destination_project, nodes_map = clone_project_data(project)
 
@@ -374,9 +330,9 @@ async def _create_and_delete_folders_from_project(
 )
 async def test_create_and_delete_folders_from_project(
     client: TestClient,
-    dsm_mockup_db: Dict[str, FileMetaData],
+    dsm_mockup_db: dict[str, FileMetaData],
     project_name: str,
-    project: Dict[str, Any],
+    project: dict[str, Any],
     mock_get_project_access_rights,
     mock_datcore_download,
 ):
