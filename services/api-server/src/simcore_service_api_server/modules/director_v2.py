@@ -6,9 +6,10 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from httpx import HTTPStatusError, codes
+from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveInt, parse_raw_as
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -37,6 +38,13 @@ class ComputationTaskOut(ComputationTask):
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return 100
         return 0
+
+
+class TaskLogFileGet(BaseModel):
+    task_id: NodeID
+    download_link: Optional[AnyUrl] = Field(
+        None, description="Presigned link for log file or None if still not available"
+    )
 
 
 NodeName = str
@@ -173,7 +181,8 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         # probably not found
         resp.raise_for_status()
-        return parse_raw_as(dict[NodeName, DownloadLink], resp.text or "{}")
+        payload = parse_raw_as(list[TaskLogFileGet], resp.text or "[]")
+        return {r.task_id: r.download_link for r in payload}
 
     # TODO: HIGHER lever interface with job* resources
     # or better in another place?
