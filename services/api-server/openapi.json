@@ -1596,7 +1596,8 @@
           "ANONYMOUS",
           "GUEST",
           "USER",
-          "TESTER"
+          "TESTER",
+          "ADMIN"
         ],
         "type": "string",
         "description": "An enumeration."
