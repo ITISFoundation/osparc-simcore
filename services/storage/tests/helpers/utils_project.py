@@ -1,9 +1,8 @@
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict, Tuple
 
 
-def clone_project_data(project: Dict) -> Tuple[Dict, Dict]:
+def clone_project_data(project: dict) -> Tuple[dict, dict]:
     project_copy = deepcopy(project)
 
     # Update project id

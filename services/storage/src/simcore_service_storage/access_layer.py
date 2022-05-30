@@ -39,7 +39,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -97,7 +97,7 @@ async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
 
 
 def _aggregate_access_rights(
-    access_rights: Dict[str, Dict], group_ids: List[int]
+    access_rights: dict[str, dict], group_ids: List[int]
 ) -> AccessRights:
     try:
         prj_access = {"read": False, "write": False, "delete": False}
@@ -118,7 +118,7 @@ def _aggregate_access_rights(
 
 async def list_projects_access_rights(
     conn: SAConnection, user_id: int
-) -> Dict[ProjectID, AccessRights]:
+) -> dict[ProjectID, AccessRights]:
     """
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """

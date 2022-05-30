@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, List, Optional, Type, Union, cast
 
 import aiohttp
 from aiohttp import web
@@ -36,9 +36,9 @@ async def _request(
     api_secret: str,
     method: str,
     path: str,
-    json: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, Any]] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    json: Optional[dict[str, Any]] = None,
+    params: Optional[dict[str, Any]] = None,
+) -> Union[dict[str, Any], List[dict[str, Any]]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
     session: ClientSession = get_client_session(app)
@@ -81,7 +81,7 @@ async def _retrieve_all_pages(
     objs: List[return_type] = []
     while (
         response := cast(
-            Dict[str, Any],
+            dict[str, Any],
             await _request(
                 app, api_key, api_secret, method, path, params={"page": page}
             ),
@@ -143,8 +143,8 @@ async def list_all_datasets_files_metadatas(
 async def list_all_files_metadatas_in_dataset(
     app: web.Application, api_key: str, api_secret: str, dataset_id: str
 ) -> List[FileMetaDataEx]:
-    all_files: List[Dict[str, Any]] = cast(
-        List[Dict[str, Any]],
+    all_files: List[dict[str, Any]] = cast(
+        List[dict[str, Any]],
         await _request(
             app,
             api_key,
@@ -193,7 +193,7 @@ async def get_file_download_presigned_link(
     app: web.Application, api_key: str, api_secret: str, file_id: str
 ) -> URL:
     file_download_data = cast(
-        Dict[str, Any],
+        dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
     return file_download_data["link"]

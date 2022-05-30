@@ -13,7 +13,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Callable, Dict, Iterable, Iterator, List
+from typing import Any, Callable, Iterable, Iterator, List
 
 import dotenv
 import pytest
@@ -86,7 +86,7 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+def project_env_devel_dict(project_slug_dir: Path) -> dict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -100,7 +100,7 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
 
 
 @pytest.fixture(scope="module")
-def s3_client(minio_config: Dict[str, Any]) -> MinioClientWrapper:
+def s3_client(minio_config: dict[str, Any]) -> MinioClientWrapper:
 
     s3_client = MinioClientWrapper(
         endpoint=minio_config["client"]["endpoint"],

@@ -5,7 +5,6 @@
 import json
 import os
 from io import StringIO
-from typing import Dict
 
 import pytest
 from dotenv import dotenv_values
@@ -30,7 +29,7 @@ def test_cli_settings_as_json(project_env_devel_environment, cli_runner):
     print(result.stdout)
 
     # reuse resulting json to build settings
-    settings: Dict = json.loads(result.stdout)
+    settings: dict = json.loads(result.stdout)
     assert Settings.parse_obj(settings)
 
 
@@ -42,7 +41,7 @@ def test_cli_settings_env_file(project_env_devel_environment, cli_runner):
     # reuse resulting env_file to build settings
     env_file = StringIO(result.stdout)
 
-    settings: Dict = dotenv_values(stream=env_file)
+    settings: dict = dotenv_values(stream=env_file)
     for key, value in settings.items():
         try:
             settings[key] = json.loads(str(value))

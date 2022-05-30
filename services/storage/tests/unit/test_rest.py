@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 from urllib.parse import quote
 
 import pytest
@@ -284,7 +284,7 @@ async def test_action_check(client):
     assert data["query_value"] == QUERY
 
 
-def get_project_with_data() -> Dict[str, Any]:
+def get_project_with_data() -> dict[str, Any]:
     projects = []
     with open(current_dir / "../data/projects_with_data.json") as fp:
         projects = json.load(fp)
@@ -326,7 +326,7 @@ def mock_get_project_access_rights(mocker) -> None:
 
 
 async def _create_and_delete_folders_from_project(
-    project: Dict[str, Any], client: TestClient
+    project: dict[str, Any], client: TestClient
 ):
     destination_project, nodes_map = clone_project_data(project)
 
@@ -374,9 +374,9 @@ async def _create_and_delete_folders_from_project(
 )
 async def test_create_and_delete_folders_from_project(
     client: TestClient,
-    dsm_mockup_db: Dict[str, FileMetaData],
+    dsm_mockup_db: dict[str, FileMetaData],
     project_name: str,
-    project: Dict[str, Any],
+    project: dict[str, Any],
     mock_get_project_access_rights,
     mock_datcore_download,
 ):

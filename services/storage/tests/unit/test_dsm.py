@@ -14,7 +14,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Iterator, List, Optional, Tuple
 
 import pytest
 import tests.utils
@@ -30,7 +30,7 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 async def test_dsm_s3(
-    dsm_mockup_db: Dict[str, FileMetaData], dsm_fixture: DataStorageManager
+    dsm_mockup_db: dict[str, FileMetaData], dsm_fixture: DataStorageManager
 ):
     id_name_map = {}
     id_file_count = {}
@@ -559,7 +559,7 @@ def test_fmd_build():
 
 async def test_dsm_complete_db(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
 ):
     dsm = dsm_fixture
     _id = "21"
@@ -577,7 +577,7 @@ async def test_dsm_complete_db(
 
 async def test_delete_data_folders(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
 ):
     file_1, file_2 = dsm_mockup_complete_db
     _id = "21"
@@ -709,14 +709,14 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
 async def test_sync_table_meta_data(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
     s3_client: MinioClientWrapper,
 ):
     dsm_fixture.has_project_db = True
 
     expected_removed_files = []
     # the list should be empty on start
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=True
     )
     assert "removed" in list_changes
@@ -729,18 +729,18 @@ async def test_sync_table_meta_data(
         expected_removed_files.append(s3_key)
 
         # the list should now contain the removed entries
-        list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+        list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
             location=SIMCORE_S3_STR, dry_run=True
         )
         assert "removed" in list_changes
         assert list_changes["removed"] == expected_removed_files
 
     # now effectively call the function should really remove the files
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=False
     )
     # listing again will show an empty list again
-    list_changes: Dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
+    list_changes: dict[str, Any] = await dsm_fixture.synchronise_meta_data_table(
         location=SIMCORE_S3_STR, dry_run=True
     )
     assert "removed" in list_changes
@@ -759,7 +759,7 @@ async def test_dsm_list_datasets_datcore(
 
 async def test_dsm_list_dataset_files_s3(
     dsm_fixture: DataStorageManager,
-    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+    dsm_mockup_complete_db: Tuple[dict[str, str], dict[str, str]],
 ):
     dsm_fixture.has_project_db = True
 

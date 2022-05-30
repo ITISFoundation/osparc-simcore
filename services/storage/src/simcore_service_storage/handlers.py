@@ -3,7 +3,7 @@ import json
 import logging
 import urllib.parse
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import attr
 from aiohttp import web
@@ -29,7 +29,7 @@ routes = RouteTableDef()
 
 
 async def _prepare_storage_manager(
-    params: Dict, query: Dict, request: web.Request
+    params: dict, query: dict, request: web.Request
 ) -> DataStorageManager:
     # FIXME: scope properly, either request or app level!!
     # Notice that every request is changing tokens!
@@ -244,7 +244,7 @@ async def synchronise_meta_data_table(request: web.Request):
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
 
-        sync_results: Dict[str, Any] = {
+        sync_results: dict[str, Any] = {
             "removed": [],
         }
         sync_coro = dsm.synchronise_meta_data_table(location, dry_run)

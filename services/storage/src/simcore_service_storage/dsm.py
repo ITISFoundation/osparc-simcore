@@ -13,7 +13,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, Tuple, Union
+from typing import Any, Final, List, Optional, Tuple, Union
 
 import attr
 import botocore
@@ -153,7 +153,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     simcore_bucket_name: str
     has_project_db: bool
     session: AioSession = field(default_factory=get_session)
-    datcore_tokens: Dict[str, DatCoreApiToken] = field(default_factory=dict)
+    datcore_tokens: dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
@@ -745,9 +745,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     async def deep_copy_project_simcore_s3(
         self,
         user_id: str,
-        source_project: Dict[str, Any],
-        destination_project: Dict[str, Any],
-        node_mapping: Dict[str, str],
+        source_project: dict[str, Any],
+        destination_project: dict[str, Any],
+        node_mapping: dict[str, str],
     ):
         """Parses a given source project and copies all related files to the destination project
 
@@ -855,7 +855,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         # Step 2: List all references in outputs that point to datcore and copy over
         for node_id, node in destination_project["workbench"].items():
-            outputs: Dict = node.get("outputs", {})
+            outputs: dict = node.get("outputs", {})
             for _, output in outputs.items():
                 source = output["path"]
 
@@ -1084,7 +1084,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def synchronise_meta_data_table(
         self, location: str, dry_run: bool
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
 
         PRUNE_CHUNK_SIZE = 20
 
