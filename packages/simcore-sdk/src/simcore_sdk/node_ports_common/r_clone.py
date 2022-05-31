@@ -1,12 +1,12 @@
 import asyncio
 import logging
+import os
 import re
 import shlex
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
-from aiocache import cached
 from aiofiles import tempfile
 from aiohttp import ClientSession
 from models_library.users import UserID
@@ -47,20 +47,8 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
     if proc.returncode != 0:
         raise _CommandFailedException(command=str_cmd, stdout=decoded_stdout)
 
-    logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
+    logger.debug("%s result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
-
-
-@cached()
-async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
-    """returns: True if the `rclone` cli is installed and a configuration is provided"""
-    if r_clone_settings is None:
-        return False
-    try:
-        await _async_command("rclone", "--version")
-        return True
-    except _CommandFailedException:
-        return False
 
 
 async def sync_local_to_s3(
@@ -108,18 +96,35 @@ async def sync_local_to_s3(
         #   --copy-links
         #   --include
         #   'filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt'
-        r_clone_command = (
-            "rclone",
-            "--config",
-            config_file_name,
+        r_clone_command = [
+            "docker",
+            "run",
+            f"--memory-reservation={r_clone_settings.R_CLONE_MEMORY_RESERVATION}",
+            f"--memory={r_clone_settings.R_CLONE_MEMORY_LIMIT}",
+            f"--cpus={r_clone_settings.R_CLONE_MAX_CPU_USAGE}",
+            "--rm",
+            "--volume",
+            f"{config_file_name}:/.rclone.conf",
+            "--volume",
+            f"{shlex.quote(f'{source_path.parent}')}:/data",
+            "--user",
+            f"{os.getuid()}:{os.getpid()}",
+            f"rclone/rclone:{r_clone_settings.R_CLONE_VERSION}",
             "sync",
-            shlex.quote(f"{source_path.parent}"),
+            "/data",
             shlex.quote(f"dst:{destination_path.parent}"),
             "--progress",
+            "--use-mmap",
+            "--transfers",
+            "1",
+            "--checkers",
+            "1",
             "--copy-links",
             "--include",
             shlex.quote(f"{file_name}"),
-        )
+        ]
+        # TODO: add limits CPU RAM IO
+        # add above in the R_CLONE_SETTINGS
 
         try:
             await _async_command(*r_clone_command, cwd=f"{source_path.parent}")

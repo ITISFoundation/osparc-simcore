@@ -60,19 +60,6 @@ def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
     yield mock
 
 
-async def test_is_r_clone_available_cached(
-    r_clone_settings: RCloneSettings,
-    mock_async_command: Mock,
-    skip_if_r_clone_is_missing: None,
-) -> None:
-    for _ in range(3):
-        result = await r_clone.is_r_clone_available(r_clone_settings)
-        assert type(result) is bool
-    assert mock_async_command.call_count == 1
-
-    assert await r_clone.is_r_clone_available(None) is False
-
-
 async def test__config_file(faker: Faker) -> None:
     text_to_write = faker.text()
     async with r_clone._config_file(text_to_write) as file_name:

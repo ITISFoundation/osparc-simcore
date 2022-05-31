@@ -16,7 +16,7 @@ from ..node_ports_common.client_session_manager import ClientSessionContextManag
 from ..node_ports_common.storage_client import update_file_meta_data
 from . import exceptions, storage_client
 from .constants import SIMCORE_LOCATION, ETag
-from .r_clone import is_r_clone_available, sync_local_to_s3
+from .r_clone import sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
@@ -300,10 +300,7 @@ async def upload_file(
         if not upload_link:
             raise exceptions.S3InvalidPathError(s3_object)
 
-        if (
-            await is_r_clone_available(r_clone_settings)
-            and store_id == SIMCORE_LOCATION
-        ):
+        if store_id == SIMCORE_LOCATION:
             await sync_local_to_s3(
                 session=session,
                 r_clone_settings=r_clone_settings,
