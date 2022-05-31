@@ -17,7 +17,8 @@ from osparc import UsersApi
 from osparc.api import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
-assert osparc.__version__ == "0.5.0"
+CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
+assert CLIENT_VERSION >= (0, 4, 3)
 
 Path("file_with_number.txt").write_text("3")
 
@@ -85,19 +86,22 @@ with osparc.ApiClient(cfg) as api_client:
     for output_name, result in outputs.results.items():
         print(output_name, "=", result)
 
-    # download log (added on API version 0.4.0 / client version 0.5.0 )
-    fpath: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
-    logfile_path = Path(fpath)
-    print(
-        f"{logfile_path=}",
-        f"{logfile_path.exists()=}",
-        f"{logfile_path.stat()=}",
-        "\nUnzipping ...",
-    )
+    # download log (NEW on API version 0.4.0 / client version 0.5.0 )
+    if CLIENT_VERSION >= (0, 5, 0):
+        fpath: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
+        logfile_path = Path(fpath)
+        print(
+            f"{logfile_path=}",
+            f"{logfile_path.exists()=}",
+            f"{logfile_path.stat()=}",
+            "\nUnzipping ...",
+        )
 
-    with ZipFile(f"{logfile_path}") as fzip:
-        fzip.extractall()
-    print("Unzipped:", f"{list(Path().glob('*.log'))}")
+        with ZipFile(f"{logfile_path}") as fzip:
+            fzip.extractall()
+        print("Unzipped:", f"{list(Path().glob('*.log'))}")
 
     #
     # Job 19fc28f7-46fb-4e96-9129-5e924801f088 got these results:

@@ -13,10 +13,15 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote_plus
+from zipfile import ZipFile
 
+import osparc
 import pytest
 from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
+
+OSPARC_CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
+assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
 
 
 @pytest.fixture(scope="module")
@@ -254,6 +259,27 @@ def test_run_job(
     else:
         # one of them is not finished
         assert output_file is None or number is None
+
+    # download log (Added in on API version 0.4.0 / client version 0.5.0 )
+    if OSPARC_CLIENT_VERSION >= (0, 5, 0):
+        print("Testing output logfile ...")
+        fpath: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
+        logfile_path = Path(fpath)
+        print(
+            f"{logfile_path=}",
+            f"{logfile_path.exists()=}",
+            f"{logfile_path.stat()=}",
+            "\nUnzipping ...",
+        )
+
+        with ZipFile(f"{logfile_path}") as fzip:
+            fzip.extractall()
+
+        logfiles = list(Path().glob("*.log"))
+        assert len(logfiles) == 1
+        print(logfiles[0].read_text())
 
 
 def test_sugar_syntax_on_solver_setup(
