@@ -71,6 +71,8 @@ qx.Class.define("osparc.ui.window.Window", {
 
       win.center();
       win.open();
+      win.addListener("close", () => scroll.remove(widget));
+
       return win;
     }
   }

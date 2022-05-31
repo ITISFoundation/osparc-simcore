@@ -290,6 +290,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           const notReadyDependencies = this.__getNotReadyDependencies(node);
           if (notReadyDependencies && notReadyDependencies.length) {
             this.__nodeView.setNotReadyDependencies(notReadyDependencies);
+            this.__nodeView.showPreparingInputs();
           }
 
           // check if upstream has to be run

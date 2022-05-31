@@ -121,7 +121,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
       const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
         label: this.tr("Preparing inputs..."),
         icon: "@FontAwesome5Solid/circle-notch/14",
@@ -129,9 +128,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         toolTipText: this.tr("The view will remain disabled until the inputs are fetched")
       });
       inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
-      inputsStateBtn.addListener("execute", () => {
-        this.__preparingInputs.popUpInWindow();
-      }, this);
+      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
       header.add(inputsStateBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
@@ -180,6 +177,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       hBox.add(outputsLayout);
 
       return hBox;
+    },
+
+    showPreparingInputs: function() {
+      const title = this.tr("Preparing Inputs");
+      const width = 600;
+      const height = 500;
+      osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
     },
 
     __openNodeDataManager: function() {
@@ -276,9 +280,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const workbench = this.getNode().getStudy().getWorkbench();
       notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
-      if (monitoredNodes.length) {
-        this.__preparingInputs.popUpInWindow();
-      }
     },
 
     __dependeciesChanged: function() {
@@ -293,6 +294,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__nodeStatusUI.setNode(node);
       }
 
+      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
       this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
       this.__dependeciesChanged();
 
