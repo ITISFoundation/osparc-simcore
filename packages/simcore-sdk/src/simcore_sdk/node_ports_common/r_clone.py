@@ -6,6 +6,9 @@ import shlex
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
+import socket
+import aiodocker
+import aiofiles
 
 from aiofiles import tempfile
 from aiohttp import ClientSession
@@ -25,11 +28,12 @@ class _CommandFailedException(PydanticErrorMixin, RuntimeError):
 
 
 @asynccontextmanager
-async def _config_file(config: str) -> AsyncGenerator[str, None]:
-    async with tempfile.NamedTemporaryFile("w") as f:
-        await f.write(config)
-        await f.flush()
-        yield f.name
+async def _config_file(config: str) -> AsyncGenerator[Path, None]:
+    async with tempfile.TemporaryDirectory() as d:
+        async with tempfile.NamedTemporaryFile("w", dir=d) as f:
+            await f.write(config)
+            await f.flush()
+            yield Path(f.name)
 
 
 async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
@@ -49,6 +53,40 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
 
     logger.debug("%s result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
+
+
+async def _get_container_id() -> Optional[str]:
+    """if running in a container returns the container's ID else None"""
+    try:
+        async with aiofiles.open("/proc/1/cgroup", "rt") as cgroup_file:
+            file_content: str = await cgroup_file.read()
+            for line in file_content.split("\n"):
+                if "pids:/docker/" in line:
+                    # 13:pids:/docker/987b04bb0e7525c17be5d022d12e63c8b8aadf0661ce9a43c9fb6abfd93dc0cc
+                    return line.split("pids:/docker/")[-1]
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
+async def _get_path_on_host(container_id: Optional[str], container_path: Path) -> Path:
+    """always returns the path on the host"""
+    container_id: Optional[str] = await _get_container_id()
+    logger.debug("%s", f"{container_id=}")
+    if container_id is None:
+        return container_path
+
+    async with aiodocker.Docker() as docker_client:
+        container = docker_client.containers.container(container_id)
+        container_data = await container.show()
+        logger.debug("%s", f"{container_data=}")
+        container_root_on_host = Path(
+            container_data["GraphDriver"]["Data"]["MergedDir"]
+        )
+        logger.debug("%s", f"{container_root_on_host=}")
+
+    return container_root_on_host / container_path.relative_to("/")
 
 
 async def sync_local_to_s3(
@@ -73,18 +111,21 @@ async def sync_local_to_s3(
     logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
 
     r_clone_config_file_content = get_r_clone_config(r_clone_settings)
-    async with _config_file(r_clone_config_file_content) as config_file_name:
+    async with _config_file(r_clone_config_file_content) as config_file_path:
         source_path = local_file_path
         destination_path = Path(s3_path)
         file_name = local_file_path.name
         # FIXME: capture progress and connect progressbars or some event to inform the UI
 
+        config_file_parent_host_path = await _get_path_on_host(config_file_path.parent)
+        source_path_parent_host_path = await _get_path_on_host(source_path.parent)
+
         # rclone only acts upon directories, so to target a specific file
         # we must run the command from the file's directory. See below
         # example for further details:
         #
-        # local_file_path=`/tmp/pytest-20/test_sync_local_to_s3__xf6_xe40/öä$äö2-34 no extension`
-        # s3_path=`simcore/e7b54a8d-61f4-4575-8e5a-343aebbeba1b/affb6e6b-83cd-442b-8a24-63a93917f6cf/öä$äö2-34 no extension`
+        # local_file_path=`/tmp8274wr8w/workspace.zip`
+        # s3_path=`simcore/30a298ba-e0bf-11ec-96a7-02420a000029/5d204f4a-253d-4c45-96af-d7fb78bd5a79/workspace.zip`
         #
         # docker
         #   run
@@ -93,14 +134,17 @@ async def sync_local_to_s3(
         #   --cpus=0.5
         #   --rm
         #   --volume
-        #   /tmp/tmpekoemohu:/.rclone.conf
-        #   --volume /tmp/pytest-20/test_sync_local_to_s3__xf6_xe40:/data
+        #   /var/lib/docker/overlay2/084f7a2ec58513e93276edebe9647706f1035c78bbf734ea8b2be99061fc6a84/merged/tmp/tmp6xetjtw9:/tmp
+        #   --volume
+        #   /var/lib/docker/overlay2/084f7a2ec58513e93276edebe9647706f1035c78bbf734ea8b2be99061fc6a84/merged/tmp/tmp8274wr8w:/data
         #   --user
-        #   1001:3083812
+        #   1001:7
         #   rclone/rclone:1.58.1
+        #   --config
+        #   /tmp/tmpqixh9_rj
         #   sync
         #   /data
-        #   dst:simcore/e7b54a8d-61f4-4575-8e5a-343aebbeba1b/affb6e6b-83cd-442b-8a24-63a93917f6cf
+        #   dst:simcore/30a298ba-e0bf-11ec-96a7-02420a000029/5d204f4a-253d-4c45-96af-d7fb78bd5a79
         #   --progress
         #   --use-mmap
         #   --transfers
@@ -109,7 +153,8 @@ async def sync_local_to_s3(
         #   1
         #   --copy-links
         #   --include
-        #   'öä$äö2-34 no extension'
+        #   workspace.zip
+
         r_clone_command = [
             "docker",
             "run",
@@ -118,12 +163,14 @@ async def sync_local_to_s3(
             f"--cpus={r_clone_settings.R_CLONE_MAX_CPU_USAGE}",
             "--rm",
             "--volume",
-            f"{config_file_name}:/.rclone.conf",
+            f"{config_file_parent_host_path}:/tmp",
             "--volume",
-            f"{shlex.quote(f'{source_path.parent}')}:/data",
+            f"{shlex.quote(f'{source_path_parent_host_path}')}:/data",
             "--user",
             f"{os.getuid()}:{os.getpid()}",
             f"rclone/rclone:{r_clone_settings.R_CLONE_VERSION}",
+            "--config",
+            f"/tmp/{config_file_path.name}",
             "sync",
             "/data",
             shlex.quote(f"dst:{destination_path.parent}"),
