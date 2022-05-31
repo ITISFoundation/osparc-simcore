@@ -86,29 +86,29 @@ async def sync_local_to_s3(
         # local_file_path=`/tmp/pytest-20/test_sync_local_to_s3__xf6_xe40/öä$äö2-34 no extension`
         # s3_path=`simcore/e7b54a8d-61f4-4575-8e5a-343aebbeba1b/affb6e6b-83cd-442b-8a24-63a93917f6cf/öä$äö2-34 no extension`
         #
-        # docker 
-        #   run 
-        #   --memory-reservation=100m 
-        #   --memory=1g 
-        #   --cpus=0.5 
-        #   --rm 
-        #   --volume 
-        #   /tmp/tmpekoemohu:/.rclone.conf 
-        #   --volume /tmp/pytest-20/test_sync_local_to_s3__xf6_xe40:/data 
-        #   --user 
-        #   1001:3083812 
-        #   rclone/rclone:1.58.1 
-        #   sync 
-        #   /data 
-        #   dst:simcore/e7b54a8d-61f4-4575-8e5a-343aebbeba1b/affb6e6b-83cd-442b-8a24-63a93917f6cf 
-        #   --progress 
-        #   --use-mmap 
-        #   --transfers 
-        #   1 
-        #   --checkers 
-        #   1 
-        #   --copy-links 
-        #   --include 
+        # docker
+        #   run
+        #   --memory-reservation=100m
+        #   --memory=1g
+        #   --cpus=0.5
+        #   --rm
+        #   --volume
+        #   /tmp/tmpekoemohu:/.rclone.conf
+        #   --volume /tmp/pytest-20/test_sync_local_to_s3__xf6_xe40:/data
+        #   --user
+        #   1001:3083812
+        #   rclone/rclone:1.58.1
+        #   sync
+        #   /data
+        #   dst:simcore/e7b54a8d-61f4-4575-8e5a-343aebbeba1b/affb6e6b-83cd-442b-8a24-63a93917f6cf
+        #   --progress
+        #   --use-mmap
+        #   --transfers
+        #   1
+        #   --checkers
+        #   1
+        #   --copy-links
+        #   --include
         #   'öä$äö2-34 no extension'
         r_clone_command = [
             "docker",

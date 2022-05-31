@@ -8,9 +8,9 @@ from typing import Iterable, List, Optional
 from unittest.mock import Mock
 
 import pytest
-from pytest_mock.plugin import MockerFixture
 from faker import Faker
 from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
 from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.r_clone import RCloneSettings

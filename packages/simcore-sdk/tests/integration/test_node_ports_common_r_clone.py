@@ -1,14 +1,13 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 import shutil
-from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, AsyncIterable, Iterator, Optional
+from typing import AsyncIterable, Iterator, Optional
 from uuid import uuid4
 
-import aioboto3
+import aiofiles
+import aiohttp
 import pytest
 import sqlalchemy as sa
 from _pytest.fixtures import FixtureRequest
@@ -19,9 +18,11 @@ from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from simcore_sdk.node_ports_common.filemanager import (
+    delete_file,
+    get_download_link_from_s3,
+)
+from simcore_sdk.node_ports_common.storage_client import LinkType
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -81,12 +82,9 @@ def s3_object(project_id: str, node_uuid: str, file_name: str) -> str:
 
 
 @pytest.fixture
-async def cleanup_s3(
-    r_clone_settings: RCloneSettings, s3_object: str
-) -> AsyncIterable[None]:
+async def cleanup_s3(s3_object: str, user_id: int) -> AsyncIterable[None]:
     yield
-    async with _get_s3_object(r_clone_settings, s3_object) as s3_object:
-        await s3_object.delete()
+    await delete_file(user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object)
 
 
 @pytest.fixture
@@ -116,31 +114,21 @@ async def client_session(filemanager_cfg: None) -> AsyncIterable[ClientSession]:
 # UTILS
 
 
-@asynccontextmanager
-async def _get_s3_object(
-    r_clone_settings: RCloneSettings, s3_path: str
-) -> AsyncGenerator["aioboto3.resources.factory.s3.Object", None]:
-    session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+async def _download_s3_object(s3_path: str, local_path: Path, user_id: int):
+    s3_download_link = await get_download_link_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
+        s3_object=s3_path,
+        link_type=LinkType.PRESIGNED,
     )
-    async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
-    ) as s3:
-        s3_object = await s3.Object(
-            bucket_name=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
-            key=s3_path.lstrip(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME),
-        )
-        yield s3_object
 
-
-async def _download_s3_object(
-    r_clone_settings: RCloneSettings, s3_path: str, local_path: Path
-):
-    async for attempt in AsyncRetrying(stop=stop_after_delay(20), wait=wait_fixed(1)):
-        with attempt:
-            async with _get_s3_object(r_clone_settings, s3_path) as s3_object:
-                await s3_object.download_file(f"{local_path}")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(s3_download_link) as resp:
+            if resp.status == 200:
+                f = await aiofiles.open(local_path, mode="wb")
+                await f.write(await resp.read())
+                await f.close()
 
 
 def _is_file_present(postgres_db: sa.engine.Engine, s3_object: str) -> bool:
@@ -179,9 +167,9 @@ async def test_sync_local_to_s3(
     )
 
     await _download_s3_object(
-        r_clone_settings=r_clone_settings,
         s3_path=s3_object,
         local_path=local_file_for_download,
+        user_id=user_id,
     )
 
     # check same file contents after upload and download
