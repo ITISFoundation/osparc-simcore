@@ -6,12 +6,22 @@ These models are used for request bodies and response payloads of operations on 
 from typing import Optional
 
 import orjson
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
+from models_library.rest_pagination import Page
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl
 from servicelib.json_serialization import json_dumps
 
+# db models
 
+
+class ProjectSQLModel(ProjectAtDB):
+    id: Optional[int] = Field(default=None, x_primary_key=True)
+    uuid: ProjectID = Field(..., x_unique=True)
+
+
+# rest API models
 class ProjectCreate(BaseModel):
     """
         -> POST /projects (ProjectCreate)
@@ -46,3 +56,14 @@ class ProjectGet(BaseModel):
         extra = Extra.allow
         alias_generator = snake_to_camel
         json_dumps = json_dumps
+
+
+class ProjectReplace(BaseModel):
+    pass
+
+
+class ProjectItem(ProjectGet):
+    ...
+
+
+assert Page[ProjectItem], "response model for list projects"  # nosec
