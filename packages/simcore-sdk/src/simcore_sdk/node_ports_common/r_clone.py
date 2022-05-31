@@ -70,7 +70,7 @@ async def _get_container_id() -> Optional[str]:
     return None
 
 
-async def _get_path_on_host(container_id: Optional[str], container_path: Path) -> Path:
+async def _get_path_on_host(container_path: Path) -> Path:
     """always returns the path on the host"""
     container_id: Optional[str] = await _get_container_id()
     logger.debug("%s", f"{container_id=}")
