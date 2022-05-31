@@ -257,11 +257,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
         const lastCurrentNodeId = this.__currentNodeId;
-
-        // If the user is moving forward do some run checks:
-        const studyUI = this.getStudy().getUi();
-        const movingForward = studyUI.getSlideshow().isMovingForward(lastCurrentNodeId, nodeId);
-
         this.__currentNodeId = nodeId;
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
@@ -280,6 +275,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           this.__nodeView = view;
         }
 
+        // If the user is moving forward do some run checks:
+        const studyUI = this.getStudy().getUi();
+        const movingForward = studyUI.getSlideshow().isMovingForward(lastCurrentNodeId, nodeId);
         if (movingForward) {
           // check if lastCurrentNodeId has to be run
           if (!this.__isNodeReady(lastCurrentNodeId)) {

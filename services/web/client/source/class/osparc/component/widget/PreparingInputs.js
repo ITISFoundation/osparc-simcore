@@ -79,9 +79,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
     __updateMonitoredNodesList: function() {
       this.__monitoredNodesList.removeAll();
       const monitoredNodes = this.getMonitoredNodes();
-      this.__monitoredNodesList.add(new qx.ui.basic.Label(this.tr("Monitoring:")));
-      const group = new qx.ui.form.RadioGroup();
       if (monitoredNodes && monitoredNodes.length) {
+        const group = new qx.ui.form.RadioGroup();
         monitoredNodes.forEach(node => {
           const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
@@ -97,7 +96,9 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           nodeLayout.add(showLoggerBtn);
           group.add(showLoggerBtn);
           if (group.getSelection().length === 0) {
-            group.setSelection(showLoggerBtn);
+            group.setSelection([showLoggerBtn]);
+            const nodeLogger = node.getLogger();
+            this.__loggerLayout.add(nodeLogger);
           }
           const statusUI = new osparc.ui.basic.NodeStatusUI(node);
           nodeLayout.add(statusUI);
