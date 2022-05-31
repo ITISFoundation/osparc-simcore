@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
-          const showLoggerBtn = new qx.ui.form.ToggleButton("Logger");
+          const showLoggerBtn = new qx.ui.form.ToggleButton(this.tr("Logs"));
           showLoggerBtn.node = node;
           nodeLayout.add(showLoggerBtn);
           group.add(showLoggerBtn);
