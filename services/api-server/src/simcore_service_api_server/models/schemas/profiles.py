@@ -22,6 +22,7 @@ class UserRoleEnum(str, Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    ADMIN = "ADMIN"
 
 
 class Profile(ProfileCommon):

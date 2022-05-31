@@ -5,17 +5,18 @@ from .routes import files, health, meta, solvers, solvers_jobs, users
 
 
 def create_router(settings: ApplicationSettings):
+    assert (  # nosec
+        settings
+    ), "Might be used e.g. to enable/disable entrypoints settings.API_SERVER_DEV_FEATURES_ENABLED"
     router = APIRouter()
     router.include_router(health.router)
 
     # API
     router.include_router(meta.router, tags=["meta"], prefix="/meta")
     router.include_router(users.router, tags=["users"], prefix="/me")
-
-    if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        router.include_router(files.router, tags=["files"], prefix="/files")
-        router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
-        router.include_router(solvers_jobs.router, tags=["solvers"], prefix="/solvers")
+    router.include_router(files.router, tags=["files"], prefix="/files")
+    router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
+    router.include_router(solvers_jobs.router, tags=["solvers"], prefix="/solvers")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

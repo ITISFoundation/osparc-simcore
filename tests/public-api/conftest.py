@@ -252,6 +252,8 @@ def api_client(registered_user) -> osparc.ApiClient:
         password=registered_user["api_secret"],
     )
 
+    print("Configuration:", cfg.to_debug_report())
+
     def as_dict(obj: object):
         return {
             attr: getattr(obj, attr)
