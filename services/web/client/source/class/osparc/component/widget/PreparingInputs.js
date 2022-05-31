@@ -67,10 +67,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           "changeRunning",
           "changeOutput"
         ].forEach(changeEvent => {
-          monitoredNode.getStatus().addListener(changeEvent, () => {
-            this.__updateMonitoredNodesList();
-            this.__updatePreparingNodes();
-          });
+          monitoredNode.getStatus().addListener(changeEvent, () => this.__updatePreparingNodes());
         });
       });
       this.__updateMonitoredNodesList();
@@ -81,24 +78,23 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
       const monitoredNodes = this.getMonitoredNodes();
       if (monitoredNodes && monitoredNodes.length) {
         const group = new qx.ui.form.RadioGroup();
+        group.addListener("changeSelection", e => {
+          const selectedButton = e.getData()[0];
+          this.__loggerLayout.removeAll();
+          const nodeLogger = selectedButton.node.getLogger();
+          nodeLogger.getChildControl("pin-node").exclude();
+          this.__loggerLayout.add(nodeLogger);
+        }, this);
         monitoredNodes.forEach(node => {
           const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
           const showLoggerBtn = new qx.ui.form.ToggleButton("Logger");
-          showLoggerBtn.addListener("execute", e => {
-            if (showLoggerBtn.getValue()) {
-              this.__loggerLayout.removeAll();
-              const nodeLogger = node.getLogger();
-              this.__loggerLayout.add(nodeLogger);
-            }
-          });
+          showLoggerBtn.node = node;
           nodeLayout.add(showLoggerBtn);
           group.add(showLoggerBtn);
           if (group.getSelection().length === 0) {
             group.setSelection([showLoggerBtn]);
-            const nodeLogger = node.getLogger();
-            this.__loggerLayout.add(nodeLogger);
           }
           const statusUI = new osparc.ui.basic.NodeStatusUI(node);
           nodeLayout.add(statusUI);
