@@ -63,7 +63,7 @@ class AuthSession:
 
         if resp.is_server_error:
             logger.error(
-                "webserver error %d [%s]: %s",
+                "webserver error %s [%s]: %s",
                 f"{resp.status_code=}",
                 f"{resp.reason_phrase=}",
                 error,
