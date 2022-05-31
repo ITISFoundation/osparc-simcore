@@ -88,20 +88,25 @@ with osparc.ApiClient(cfg) as api_client:
 
     # download log (NEW on API version 0.4.0 / client version 0.5.0 )
     if CLIENT_VERSION >= (0, 5, 0):
-        fpath: str = solvers_api.get_job_output_logfile(
+        logfile_path: str = solvers_api.get_job_output_logfile(
             solver.id, solver.version, job.id
         )
-        logfile_path = Path(fpath)
+        zip_path = Path(logfile_path)
         print(
-            f"{logfile_path=}",
-            f"{logfile_path.exists()=}",
-            f"{logfile_path.stat()=}",
+            f"{zip_path=}",
+            f"{zip_path.exists()=}",
+            f"{zip_path.stat()=}",
             "\nUnzipping ...",
         )
 
-        with ZipFile(f"{logfile_path}") as fzip:
-            fzip.extractall()
-        print("Unzipped:", f"{list(Path().glob('*.log'))}")
+        extract_dir = Path("./extracted")
+        extract_dir.mkdir()
+
+        with ZipFile(f"{zip_path}") as fzip:
+            fzip.extractall(f"{extract_dir}")
+
+        logfiles = list(extract_dir.glob("*.log*"))
+        print("Unzipped", logfiles[0], "contains:\n", logfiles[0].read_text())
 
     #
     # Job 19fc28f7-46fb-4e96-9129-5e924801f088 got these results:

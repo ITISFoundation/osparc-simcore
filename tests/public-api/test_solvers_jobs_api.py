@@ -176,6 +176,7 @@ def test_run_job(
     solvers_api: SolversApi,
     sleeper_solver: Solver,
     expected_outcome: str,
+    tmp_path: Path,
 ):
     # get solver
     solver = sleeper_solver
@@ -263,23 +264,25 @@ def test_run_job(
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
     if OSPARC_CLIENT_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
-        fpath: str = solvers_api.get_job_output_logfile(
+        logfile: str = solvers_api.get_job_output_logfile(
             solver.id, solver.version, job.id
         )
-        logfile_path = Path(fpath)
+        zip_path = Path(logfile)
         print(
-            f"{logfile_path=}",
-            f"{logfile_path.exists()=}",
-            f"{logfile_path.stat()=}",
+            f"{zip_path=}",
+            f"{zip_path.exists()=}",
+            f"{zip_path.stat()=}",
             "\nUnzipping ...",
         )
+        extract_dir = tmp_path / "log-extracted"
+        extract_dir.mkdir()
+        with ZipFile(f"{zip_path}") as fzip:
+            fzip.extractall(extract_dir)
 
-        with ZipFile(f"{logfile_path}") as fzip:
-            fzip.extractall()
-
-        logfiles = list(Path().glob("*.log"))
+        logfiles = list(extract_dir.glob("*.log*"))
+        print("Unzipped", logfiles[0], "contains:\n", logfiles[0].read_text())
         assert len(logfiles) == 1
-        print(logfiles[0].read_text())
+        assert logfiles[0].read_text()
 
 
 def test_sugar_syntax_on_solver_setup(
