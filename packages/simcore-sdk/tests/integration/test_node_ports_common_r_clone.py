@@ -5,7 +5,7 @@ import asyncio
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, AsyncIterable, Final, Iterator, Optional
+from typing import AsyncGenerator, AsyncIterable, Iterator, Optional
 from uuid import uuid4
 
 import aioboto3
@@ -19,6 +19,9 @@ from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -30,9 +33,6 @@ pytest_simcore_ops_services_selection = [
     "minio",
     "adminer",
 ]
-
-
-WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
 class _TestException(Exception):
@@ -137,9 +137,10 @@ async def _get_s3_object(
 async def _download_s3_object(
     r_clone_settings: RCloneSettings, s3_path: str, local_path: Path
 ):
-    await asyncio.sleep(WAIT_FOR_S3_BACKEND_TO_UPDATE)
-    async with _get_s3_object(r_clone_settings, s3_path) as s3_object:
-        await s3_object.download_file(f"{local_path}")
+    async for attempt in AsyncRetrying(stop=stop_after_delay(20), wait=wait_fixed(1)):
+        with attempt:
+            async with _get_s3_object(r_clone_settings, s3_path) as s3_object:
+                await s3_object.download_file(f"{local_path}")
 
 
 def _is_file_present(postgres_db: sa.engine.Engine, s3_object: str) -> bool:
