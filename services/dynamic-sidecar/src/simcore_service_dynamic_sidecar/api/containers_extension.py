@@ -212,7 +212,7 @@ async def push_output_ports(
     await nodeports.upload_outputs(
         mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
-    await send_message(rabbitmq, "Finished pulling outputs")
+    await send_message(rabbitmq, "Finished pushing outputs")
 
 
 @containers_router.post(
