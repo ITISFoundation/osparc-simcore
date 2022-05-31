@@ -3,10 +3,12 @@
 
 import logging
 from collections import deque
-from typing import Callable, Deque, Dict, List, Union
+from typing import Callable, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+from fastapi.exceptions import HTTPException
+from fastapi.responses import RedirectResponse
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
@@ -15,7 +17,12 @@ from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
+from ...modules.director_v2 import (
+    ComputationTaskGet,
+    DirectorV2Api,
+    DownloadLink,
+    NodeName,
+)
 from ...modules.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
@@ -45,14 +52,12 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 ## JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
-# - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
 #
-# @router.get("/releases/jobs", response_model=List[Job])
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
-    response_model=List[Job],
+    response_model=list[Job],
 )
 async def list_jobs(
     solver_key: SolverKeyId,
@@ -67,8 +72,8 @@ async def list_jobs(
     solver = await catalog_client.get_solver(user_id, solver_key, version)
     logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects: List[Project] = await webserver_api.list_projects(solver.name)
-    jobs: Deque[Job] = deque()
+    projects: list[Project] = await webserver_api.list_projects(solver.name)
+    jobs: deque[Job] = deque()
     for prj in projects:
         job = create_job_from_project(solver_key, version, prj, url_for)
         assert job.id == prj.uuid  # nosec
@@ -127,7 +132,7 @@ async def create_job(
 
     # -> director2:   ComputationTaskOut = JobStatus
     # consistency check
-    task: ComputationTaskOut = await director2_api.create_computation(job.id, user_id)
+    task: ComputationTaskGet = await director2_api.create_computation(job.id, user_id)
     assert task.id == job.id  # nosec
 
     job_status: JobStatus = create_jobstatus_from_task(task)
@@ -240,7 +245,7 @@ async def get_job_outputs(
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    outputs: Dict[
+    outputs: dict[
         str, Union[float, int, bool, BaseFileLink, str, None]
     ] = await get_solver_output_results(
         user_id=user_id,
@@ -249,7 +254,7 @@ async def get_job_outputs(
         db_engine=db_engine,
     )
 
-    results: Dict[str, ArgumentType] = {}
+    results: dict[str, ArgumentType] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
             # TODO: value.path exists??
@@ -271,3 +276,54 @@ async def get_job_outputs(
 
     job_outputs = JobOutputs(job_id=job_id, results=results)
     return job_outputs
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
+    response_class=RedirectResponse,
+    responses={
+        status.HTTP_200_OK: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "application/zip": {"schema": {"type": "string", "format": "binary"}},
+                "text/plain": {"schema": {"type": "string"}},
+            },
+            "description": "Returns a log file",
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
+    },
+)
+async def get_job_output_logfile(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: UUID,
+    user_id: PositiveInt = Depends(get_current_user_id),
+    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+):
+    """Special extra output with persistent logs file for the solver run.
+
+    NOTE: this is not a log stream but a predefined output that is only
+    available after the job is done.
+    """
+
+    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
+        user_id=user_id, project_id=job_id
+    )
+
+    # if more than one node? should rezip all of them??
+    assert len(logs_urls) <= 1, "Current version only supports one node per solver"
+    for presigned_download_link in logs_urls.values():
+        logger.info(
+            "Redirecting '%s' to %s ...",
+            f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
+            presigned_download_link,
+        )
+        return RedirectResponse(presigned_download_link)
+
+    raise HTTPException(
+        status.HTTP_404_NOT_FOUND,
+        detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."
+        "Note that these logs are only available after the job is completed.",
+    )

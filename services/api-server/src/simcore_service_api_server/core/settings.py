@@ -21,7 +21,7 @@ class _UrlMixin:
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
-            path=f"/{getattr(self, f'{prefix}_VTAG')}",
+            path=f"/{getattr(self, f'{prefix}_VTAG')}",  # NOTE: it ends with /{VTAG}
         )
 
 
