@@ -46,11 +46,11 @@ def _compute_hash(password: str) -> str:
         return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
 
     except ImportError:
-        print(
-            "Does not have passlib.hash installed. We will fake _compute_hash."
-            "WARNING: if you need a real hash then add passlib to requirements/_test.in"
-        )
-        return _faker.numerify(text="#" * len(password))
+        # if 'passlib' is not installed, we will use a library
+        # from the python distribution for convenience
+        import hashlib
+
+        return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
 _DEFAULT_HASH = _compute_hash("secret")
