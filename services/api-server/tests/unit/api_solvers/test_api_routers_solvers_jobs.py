@@ -208,6 +208,3 @@ async def test_solver_logs(
 
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))
-    # FIXME: there is something wrong with this test... cannot dwonload after redirection
-
-    # assert resp.status_code == 200, resp.text
