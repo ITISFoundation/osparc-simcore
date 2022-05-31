@@ -19,13 +19,33 @@ astroid==2.11.5
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
+    #   jschema-to-python
     #   jsonschema
     #   pytest
     #   pytest-docker
+    #   sarif-om
+aws-sam-translator==1.45.0
+    # via cfn-lint
+aws-xray-sdk==2.9.0
+    # via moto
 bcrypt==3.2.2
     # via
     #   paramiko
     #   passlib
+boto3==1.23.4
+    # via
+    #   aws-sam-translator
+    #   moto
+boto3-stubs==1.23.9
+    # via types-boto3
+botocore==1.26.4
+    # via
+    #   aws-xray-sdk
+    #   boto3
+    #   moto
+    #   s3transfer
+botocore-stubs==1.26.9
+    # via boto3-stubs
 certifi==2021.10.8
     # via
     #   -c requirements/_base.txt
@@ -38,6 +58,8 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
+cfn-lint==0.60.1
+    # via moto
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
@@ -47,6 +69,7 @@ click==8.0.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   flask
 codecov==2.1.12
     # via -r requirements/_test.in
 coverage==6.4
@@ -60,8 +83,11 @@ cryptography==36.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   moto
     #   paramiko
-dill==0.3.5.1
+    #   python-jose
+    #   sshpubkeys
+dill==0.3.5
     # via pylint
 distro==1.7.0
     # via docker-compose
@@ -69,6 +95,7 @@ docker==5.0.3
     # via
     #   -r requirements/_test.in
     #   docker-compose
+    #   moto
 docker-compose==1.29.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -79,10 +106,23 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==13.12.0
+ecdsa==0.17.0
+    # via
+    #   moto
+    #   python-jose
+    #   sshpubkeys
+faker==13.11.1
     # via -r requirements/_test.in
-fsspec==2022.5.0
-    # via -r requirements/_test.in
+flask==2.1.2
+    # via
+    #   flask-cors
+    #   moto
+flask-cors==3.0.10
+    # via moto
+future==0.18.2
+    # via aws-xray-sdk
+graphql-core==3.2.1
+    # via moto
 greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
@@ -103,16 +143,47 @@ idna==3.3
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   moto
     #   requests
     #   rfc3986
+importlib-metadata==4.11.3
+    # via flask
 iniconfig==1.1.1
     # via pytest
 isort==5.10.1
     # via pylint
+itsdangerous==2.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   flask
+jinja2==3.1.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   flask
+    #   moto
+jmespath==1.0.0
+    # via
+    #   boto3
+    #   botocore
+jschema-to-python==1.2.3
+    # via cfn-lint
+jsondiff==2.0.0
+    # via moto
+jsonpatch==1.32
+    # via cfn-lint
+jsonpickle==2.2.0
+    # via jschema-to-python
+jsonpointer==2.3
+    # via jsonpatch
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
+    #   aws-sam-translator
+    #   cfn-lint
     #   docker-compose
+junit-xml==1.9
+    # via cfn-lint
 lazy-object-proxy==1.7.1
     # via astroid
 mako==1.2.0
@@ -122,9 +193,15 @@ mako==1.2.0
 markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
+    #   jinja2
     #   mako
+    #   moto
 mccabe==0.7.0
     # via pylint
+moto==3.1.9
+    # via -r requirements/_test.in
+networkx==2.8.1
+    # via cfn-lint
 packaging==21.3
     # via
     #   -c requirements/_base.txt
@@ -135,6 +212,10 @@ paramiko==2.11.0
     #   docker
 passlib==1.7.4
     # via -r requirements/_test.in
+pbr==5.9.0
+    # via
+    #   jschema-to-python
+    #   sarif-om
 platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
@@ -145,6 +226,10 @@ psycopg2-binary==2.9.3
     #   sqlalchemy
 py==1.11.0
     # via pytest
+pyasn1==0.4.8
+    # via
+    #   python-jose
+    #   rsa
 pycparser==2.21
     # via
     #   -c requirements/_base.txt
@@ -156,6 +241,7 @@ pynacl==1.5.0
 pyparsing==3.0.7
     # via
     #   -c requirements/_base.txt
+    #   moto
     #   packaging
 pyrsistent==0.18.1
     # via
@@ -179,16 +265,25 @@ pytest-mock==3.7.0
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   botocore
+    #   faker
+    #   moto
 python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
+python-jose==3.3.0
+    # via moto
+pytz==2022.1
+    # via moto
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   cfn-lint
     #   docker-compose
+    #   moto
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
@@ -196,17 +291,32 @@ requests==2.27.1
     #   coveralls
     #   docker
     #   docker-compose
+    #   moto
+    #   responses
+responses==0.20.0
+    # via moto
 respx==0.19.2
     # via -r requirements/_test.in
 rfc3986==1.5.0
     # via
     #   -c requirements/_base.txt
     #   httpx
+rsa==4.8
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   python-jose
+s3transfer==0.5.2
+    # via boto3
+sarif-om==1.0.4
+    # via cfn-lint
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   dockerpty
+    #   ecdsa
+    #   flask-cors
     #   jsonschema
+    #   junit-xml
     #   paramiko
     #   python-dateutil
     #   websocket-client
@@ -222,10 +332,8 @@ sqlalchemy==1.4.32
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+sshpubkeys==3.3.1
+    # via moto
 texttable==1.6.4
     # via docker-compose
 tomli==2.0.1
@@ -233,22 +341,38 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
+types-boto3==1.0.2
+    # via -r requirements/_test.in
 typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   astroid
+    #   boto3-stubs
+    #   botocore-stubs
     #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   botocore
     #   requests
+    #   responses
 websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
+werkzeug==2.1.2
+    # via
+    #   flask
+    #   moto
 wrapt==1.14.1
-    # via astroid
+    # via
+    #   astroid
+    #   aws-xray-sdk
+xmltodict==0.13.0
+    # via moto
+zipp==3.8.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

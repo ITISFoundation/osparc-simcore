@@ -2,55 +2,18 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Iterator
 
-import _catalog_fakes
+import httpx
 import pytest
-import respx
 import simcore_service_api_server.api.routes.solvers
-from fastapi import FastAPI
-from httpx import AsyncClient
 from respx import MockRouter
-from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 
 
-@pytest.fixture
-def mocked_catalog_service_api(app: FastAPI) -> Iterator[MockRouter]:
-    settings: ApplicationSettings = app.state.settings
-    assert settings.API_SERVER_CATALOG
-
-    # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=settings.API_SERVER_CATALOG.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-
-        respx_mock.get(
-            "/services?user_id=1&details=false", name="list_services"
-        ).respond(
-            200,
-            json=[
-                # one solver
-                _catalog_fakes.create_service_out(
-                    key="simcore/services/comp/Foo", name="Foo"
-                ),
-                # two version of the same solver
-                _catalog_fakes.create_service_out(version="0.0.1"),
-                _catalog_fakes.create_service_out(version="1.0.1"),
-                # not a solver
-                _catalog_fakes.create_service_out(type="dynamic"),
-            ],
-        )
-
-        yield respx_mock
-
-
 @pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 async def test_list_solvers(
-    client: AsyncClient,
+    client: httpx.AsyncClient,
     mocked_catalog_service_api: MockRouter,
     mocker,
 ):

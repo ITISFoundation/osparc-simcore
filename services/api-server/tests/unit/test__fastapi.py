@@ -17,6 +17,7 @@ and early detection of changes in the specs of selected features
 when fastapi or related libraries are upgraded.
 """
 
+import urllib
 from uuid import UUID
 
 import pytest
@@ -80,6 +81,36 @@ def client() -> TestClient:
     the_app.include_router(router, prefix="/v0")
 
     return TestClient(the_app)
+
+
+def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
+    solver_key = "simcore/services/comp/itis/isolve"
+    version = "1.2.3"
+    job_id = faker.uuid4()
+
+    # can be raw
+    raw_solver_key = solver_key
+    resp = client.get(f"/v0/solvers/{raw_solver_key}/releases/{version}/jobs/{job_id}")
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == {
+        "action": "get_job",
+        "solver_key": solver_key,
+        "version": version,
+        "job_id": job_id,
+    }
+
+    # can be quoted
+    quoted_solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
+    resp = client.get(
+        f"/v0/solvers/{quoted_solver_key}/releases/{version}/jobs/{job_id}"
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == {
+        "action": "get_job",
+        "solver_key": solver_key,
+        "version": version,
+        "job_id": job_id,
+    }
 
 
 def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):

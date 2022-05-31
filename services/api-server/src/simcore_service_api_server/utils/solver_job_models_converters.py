@@ -21,7 +21,7 @@ from ..models.domain.projects import (
 from ..models.schemas.files import File
 from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
 from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
-from ..modules.director_v2 import ComputationTaskOut
+from ..modules.director_v2 import ComputationTaskGet
 from .typing_extra import get_types
 
 # UTILS ------
@@ -242,7 +242,7 @@ def create_job_from_project(
     return job
 
 
-def create_jobstatus_from_task(task: ComputationTaskOut) -> JobStatus:
+def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
 
     job_status = JobStatus(
         job_id=task.id,

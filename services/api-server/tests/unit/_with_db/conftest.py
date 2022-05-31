@@ -13,8 +13,7 @@ from typing import Callable, Dict, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
-import faker
-import passlib.hash
+import httpx
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server.db.tables as orm
@@ -24,6 +23,7 @@ import yaml
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from fastapi import FastAPI
+from pytest_simcore.helpers.rawdata_fakers import random_user
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.core.application import init_app
@@ -149,30 +149,7 @@ def app(patched_default_app_environ: EnvVarsDict, migrated_db: None) -> FastAPI:
 ## FAKE DATA injected at repositories interface ----------------------
 
 
-def _hash_it(password: str) -> str:
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
-
-
-# TODO: this should be generated from the metadata in orm.users table
-def random_user(**overrides) -> Dict:
-    fake = faker.Faker()
-    data = dict(
-        name=fake.name(),
-        email=fake.email(),
-        password_hash=_hash_it("secret"),
-        status=orm.UserStatus.ACTIVE,
-        created_ip=fake.ipv4(),
-    )
-
-    password = overrides.pop("password")
-    if password:
-        overrides["password_hash"] = _hash_it(password)
-
-    data.update(overrides)
-    return data
-
-
-class RWUsersRepository(UsersRepository):
+class _ExtendedUsersRepository(UsersRepository):
     # pylint: disable=no-value-for-parameter
 
     async def create(self, **user) -> int:
@@ -184,7 +161,7 @@ class RWUsersRepository(UsersRepository):
         return user_id
 
 
-class RWApiKeysRepository(BaseRepository):
+class _ExtendedApiKeysRepository(BaseRepository):
     # pylint: disable=no-value-for-parameter
 
     async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
@@ -210,7 +187,7 @@ class RWApiKeysRepository(BaseRepository):
 @pytest.fixture
 async def fake_user_id(app: FastAPI, faker: Faker) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    user_id = await RWUsersRepository(app.state.engine).create(
+    user_id = await _ExtendedUsersRepository(app.state.engine).create(
         email=faker.email(),
         password=faker.password(),
         name=faker.user_name(),
@@ -221,10 +198,18 @@ async def fake_user_id(app: FastAPI, faker: Faker) -> int:
 @pytest.fixture
 async def fake_api_key(app: FastAPI, fake_user_id: int, faker: Faker) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    apikey = await RWApiKeysRepository(app.state.engine).create(
+    apikey = await _ExtendedApiKeysRepository(app.state.engine).create(
         "test-api-key",
         api_key=faker.word(),
         api_secret=faker.password(),
         user_id=fake_user_id,
     )
     return apikey
+
+
+@pytest.fixture
+def auth(fake_api_key: ApiKeyInDB) -> httpx.BasicAuth:
+    """overrides auth and uses access to real repositories instead of mocks"""
+    return httpx.BasicAuth(
+        fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
+    )

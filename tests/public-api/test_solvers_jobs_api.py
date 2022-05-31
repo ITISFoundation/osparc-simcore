@@ -13,10 +13,15 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote_plus
+from zipfile import ZipFile
 
+import osparc
 import pytest
 from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
+
+OSPARC_CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
+assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
 
 
 @pytest.fixture(scope="module")
@@ -171,6 +176,7 @@ def test_run_job(
     solvers_api: SolversApi,
     sleeper_solver: Solver,
     expected_outcome: str,
+    tmp_path: Path,
 ):
     # get solver
     solver = sleeper_solver
@@ -254,6 +260,29 @@ def test_run_job(
     else:
         # one of them is not finished
         assert output_file is None or number is None
+
+    # download log (Added in on API version 0.4.0 / client version 0.5.0 )
+    if OSPARC_CLIENT_VERSION >= (0, 5, 0):
+        print("Testing output logfile ...")
+        logfile: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
+        zip_path = Path(logfile)
+        print(
+            f"{zip_path=}",
+            f"{zip_path.exists()=}",
+            f"{zip_path.stat()=}",
+            "\nUnzipping ...",
+        )
+        extract_dir = tmp_path / "log-extracted"
+        extract_dir.mkdir()
+        with ZipFile(f"{zip_path}") as fzip:
+            fzip.extractall(extract_dir)
+
+        logfiles = list(extract_dir.glob("*.log*"))
+        print("Unzipped", logfiles[0], "contains:\n", logfiles[0].read_text())
+        assert len(logfiles) == 1
+        assert logfiles[0].read_text()
 
 
 def test_sugar_syntax_on_solver_setup(

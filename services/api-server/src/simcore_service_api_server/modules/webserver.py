@@ -9,7 +9,7 @@ from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, codes
+from httpx import AsyncClient, Response
 from pydantic import ValidationError
 from starlette import status
 
@@ -49,22 +49,28 @@ class AuthSession:
     def _process(cls, resp: Response) -> Optional[JSON]:
         # enveloped answer
         data, error = None, None
-        try:
-            body = resp.json()
-            data, error = body.get("data"), body.get("error")
-        except (json.JSONDecodeError, KeyError):
-            logger.warning("Failed to unenvelop webserver response", exc_info=True)
 
-        if codes.is_server_error(resp.status_code):
+        if resp.status_code != status.HTTP_204_NO_CONTENT:
+            try:
+                body = resp.json()
+                data, error = body.get("data"), body.get("error")
+            except json.JSONDecodeError:
+                logger.warning(
+                    "Failed to unenvelop webserver response %s",
+                    f"{resp.text=}",
+                    exc_info=True,
+                )
+
+        if resp.is_server_error:
             logger.error(
-                "webserver error %d [%s]: %s",
-                resp.status_code,
-                resp.reason_phrase,
+                "webserver error %s [%s]: %s",
+                f"{resp.status_code=}",
+                f"{resp.reason_phrase=}",
                 error,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if codes.is_client_error(resp.status_code):
+        if resp.is_client_error:
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
