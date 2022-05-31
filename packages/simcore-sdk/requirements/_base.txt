@@ -6,6 +6,8 @@
 #
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
+    # via -r requirements/_base.in
 aiofiles==0.8.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -18,6 +20,7 @@ aiohttp==3.8.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
+    #   aiodocker
 aiopg==1.3.3
     # via -r requirements/_base.in
 aiosignal==1.2.0
@@ -120,6 +123,7 @@ typer==0.4.1
 typing-extensions==4.2.0
     # via
     #   aiodebug
+    #   aiodocker
     #   pydantic
 yarl==1.7.2
     # via
