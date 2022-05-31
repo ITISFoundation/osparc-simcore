@@ -137,8 +137,6 @@ async def sync_local_to_s3(
             "--include",
             shlex.quote(f"{file_name}"),
         ]
-        # TODO: add limits CPU RAM IO
-        # add above in the R_CLONE_SETTINGS
 
         try:
             await _async_command(*r_clone_command, cwd=f"{source_path.parent}")
