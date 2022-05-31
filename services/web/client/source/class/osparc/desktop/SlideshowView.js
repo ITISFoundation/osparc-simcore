@@ -287,33 +287,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           this.__nodeView = view;
         }
 
+        // check if upstream has to be run
+        const notStartedDependencies = this.__getNeedToRunDependencies(node);
+        if (notStartedDependencies && notStartedDependencies.length) {
+          this.fireDataEvent("startPartialPipeline", notStartedDependencies);
+        }
+
         const notReadyDependencies = this.__getNotReadyDependencies(node);
         if (notReadyDependencies && notReadyDependencies.length) {
           this.__nodeView.setNotReadyDependencies(notReadyDependencies);
           this.__nodeView.showPreparingInputs();
-        }
-
-        // check if upstream has to be run
-        const notStartedDependencies = this.__getNeedToRunDependencies(node);
-        if (notStartedDependencies && notStartedDependencies.length) {
-          const msg = this.tr("Do you want to run the required steps?");
-          const win = new osparc.ui.window.Confirmation(msg).set({
-            confirmText: this.tr("Run"),
-            confirmAction: "create"
-          });
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.fireDataEvent("startPartialPipeline", notStartedDependencies);
-            } else {
-              // bring the user back to the old node
-              this.__moveToNode(lastCurrentNodeId);
-              // this.__currentNodeId = lastCurrentNodeId;
-              // studyUI.setCurrentNodeId(lastCurrentNodeId);
-            }
-          }, this);
-          return;
         }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);
