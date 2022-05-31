@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -27,7 +27,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_MONITORING_ENABLED: bool = False
 
-    STORAGE_DISABLE_SERVICES: List[str] = []
+    STORAGE_DISABLE_SERVICES: list[str] = []
 
     STORAGE_TESTING: bool = Field(
         False, description="Flag to enable some fakes for testing purposes"

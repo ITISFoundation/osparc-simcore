@@ -410,7 +410,7 @@ async def extract_download_links_from_storage(
         link = await get_file_download_url(
             app=app,
             location_id=location_id,
-            fileId=raw_file_path,
+            file_id=raw_file_path,
             user_id=int(user_id),
         )
         return seq_key, link

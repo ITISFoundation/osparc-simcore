@@ -685,7 +685,7 @@ define create_github_release_url
 endef
 
 .PHONY: release-staging release-prod
-release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
 	$(create_github_release_url)
 
 .PHONY: release-hotfix release-staging-hotfix

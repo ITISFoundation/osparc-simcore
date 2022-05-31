@@ -4,7 +4,7 @@
 import datetime
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Union
 from uuid import UUID
 
 import attr
@@ -31,7 +31,7 @@ _LOCATION_ID_TO_TAG_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
 UNDEFINED_LOCATION_TAG: str = "undefined"
 
 
-def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
+def _parse_datcore(file_uuid: str) -> tuple[str, str]:
     # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
 
     file_path = Path(file_uuid)

@@ -102,7 +102,7 @@ async def extract_download_links(
             download_link = await get_file_download_url(
                 app=app,
                 location_id=file_metadata["location_id"],
-                fileId=file_metadata["raw_file_path"],
+                file_id=file_metadata["raw_file_path"],
                 user_id=user_id,
             )
         except Exception as e:
@@ -175,7 +175,7 @@ async def upload_file_to_storage(
         upload_url = await get_file_upload_url(
             app=app,
             location_id=str(link_and_path.storage_type),
-            fileId=str(link_and_path.relative_path_to_file),
+            file_id=str(link_and_path.relative_path_to_file),
             user_id=user_id,
         )
     except Exception as e:
