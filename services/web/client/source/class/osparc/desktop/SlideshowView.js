@@ -257,6 +257,18 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
         const lastCurrentNodeId = this.__currentNodeId;
+
+        // If the user is moving forward do some run checks:
+        const studyUI = this.getStudy().getUi();
+        const movingForward = studyUI.getSlideshow().isMovingForward(lastCurrentNodeId, nodeId);
+        if (movingForward) {
+          // check if lastCurrentNodeId has to be run
+          if (!this.__isNodeReady(lastCurrentNodeId)) {
+            this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
+            return;
+          }
+        }
+
         this.__currentNodeId = nodeId;
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
@@ -275,46 +287,33 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           this.__nodeView = view;
         }
 
-        // If the user is moving forward do some run checks:
-        const studyUI = this.getStudy().getUi();
-        const movingForward = studyUI.getSlideshow().isMovingForward(lastCurrentNodeId, nodeId);
-        if (movingForward) {
-          // check if lastCurrentNodeId has to be run
-          if (!this.__isNodeReady(lastCurrentNodeId)) {
-            this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
-            this.__currentNodeId = lastCurrentNodeId;
-            studyUI.setCurrentNodeId(lastCurrentNodeId);
-            return;
-          }
+        const notReadyDependencies = this.__getNotReadyDependencies(node);
+        if (notReadyDependencies && notReadyDependencies.length) {
+          this.__nodeView.setNotReadyDependencies(notReadyDependencies);
+          this.__nodeView.showPreparingInputs();
+        }
 
-          const notReadyDependencies = this.__getNotReadyDependencies(node);
-          if (notReadyDependencies && notReadyDependencies.length) {
-            this.__nodeView.setNotReadyDependencies(notReadyDependencies);
-            this.__nodeView.showPreparingInputs();
-          }
-
-          // check if upstream has to be run
-          const notStartedDependencies = this.__getNeedToRunDependencies(node);
-          if (notStartedDependencies && notStartedDependencies.length) {
-            const msg = this.tr("Do you want to run the required steps?");
-            const win = new osparc.ui.window.Confirmation(msg).set({
-              confirmText: this.tr("Run"),
-              confirmAction: "create"
-            });
-            win.center();
-            win.open();
-            win.addListener("close", () => {
-              if (win.getConfirmed()) {
-                this.fireDataEvent("startPartialPipeline", notStartedDependencies);
-              } else {
-                // bring the user back to the old node
-                this.__moveToNode(lastCurrentNodeId);
-                // this.__currentNodeId = lastCurrentNodeId;
-                // studyUI.setCurrentNodeId(lastCurrentNodeId);
-              }
-            }, this);
-            return;
-          }
+        // check if upstream has to be run
+        const notStartedDependencies = this.__getNeedToRunDependencies(node);
+        if (notStartedDependencies && notStartedDependencies.length) {
+          const msg = this.tr("Do you want to run the required steps?");
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Run"),
+            confirmAction: "create"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.fireDataEvent("startPartialPipeline", notStartedDependencies);
+            } else {
+              // bring the user back to the old node
+              this.__moveToNode(lastCurrentNodeId);
+              // this.__currentNodeId = lastCurrentNodeId;
+              // studyUI.setCurrentNodeId(lastCurrentNodeId);
+            }
+          }, this);
+          return;
         }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);
