@@ -155,12 +155,12 @@ async def sync_local_to_s3(
         logger.debug("%s", f"{container_run_config=}")
 
         try:
+            #FIXME: evaluate using events to detect when the container exits
             container = await docker_client.containers.run(container_run_config)
             try:
                 for _ in range(r_clone_settings.R_CLONE_UPLOAD_TIMEOUT_S):
                     container_inspect = await container.show()
                     container_status = container_inspect["State"]["Status"]
-                    # logger.debug(json.dumps(container_inspect["State"], indent=2))
                     if container_status != "running":
                         exit_code = container_inspect["State"]["ExitCode"]
                         if exit_code == 0:
@@ -169,7 +169,11 @@ async def sync_local_to_s3(
                         logs = "\n".join(
                             x for x in await container.log(stdout=True, stderr=True)
                         )
-                        logger.warning("Run logs:\n%s", f"{logs}")
+                        logger.warning(
+                            "Run logs:\n%s\n%s",
+                            f"{logs}",
+                            json.dumps(container_inspect, indent=2),
+                        )
                         raise RuntimeError(json.dumps(container_inspect["State"]))
 
                     await asyncio.sleep(1)
