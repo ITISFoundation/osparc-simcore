@@ -202,6 +202,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                     "REGISTRY_URL": "registry.osparc-master.speag.com",
                     "REGISTRY_USER": "test",
                     "R_CLONE_PROVIDER": "MINIO",
+                    "R_CLONE_ENABLED": "False",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
