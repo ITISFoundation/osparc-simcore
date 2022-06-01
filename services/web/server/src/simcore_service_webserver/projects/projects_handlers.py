@@ -10,11 +10,16 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
+from pydantic import BaseModel, Extra, Field
+from servicelib.aiohttp.requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
@@ -32,6 +37,76 @@ log = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+#
+# clone project: custom methods https://google.aip.dev/136
+#
+
+
+class _ProjectCloneParams(BaseModel):
+    # override some attributes: force_type,
+    as_template: False = Field(
+        None,
+        description="Whether the clone is set as template",
+    )
+    copy_data: bool = Field(
+        True,
+        description="Whether stored data is also cloned or not",
+    )
+
+    class Config:
+        extra = Extra.forbid
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:clone", name="clone_project")
+@login_required
+@permission_required("project.create")
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
+async def clone_project(request: web.Request) -> web.Response:
+    """
+
+    :raises web.HTTPBadRequest
+    :raises web.HTTPNotFound
+    :raises web.HTTPUnauthorized
+
+    returns web.HTTPCreated
+    """
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    query_params = parse_request_query_parameters_as(_ProjectCloneParams, request)
+
+    # TODO: implement handle_project_as_http_errors and install around handlers with decorator?
+    cloned_project = await projects_api.clone_project(
+        request.app, path_params.project_id, req_ctx.user_id, query_params.copy_data
+    )
+
+    await director_v2_api.projects_networks_update(request.app, cloned_project["uuid"])
+
+    # This is a new project and every new graph needs to be reflected in the pipeline tables
+    await director_v2_api.create_or_update_pipeline(
+        request.app, req_ctx.user_id, cloned_project.uuid
+    )
+
+    # Appends state
+    cloned_project = await projects_api.add_project_states_for_user(
+        user_id=req_ctx.user_id,
+        project=cloned_project["uuid"],
+        is_template=query_params.as_template is not None,
+        app=request.app,
+    )
+
+    # TODO: validate returned project again as ProjectGet
+    # TODO: refactor common parts with ``create_projects``
+
+    return web.HTTPCreated(
+        text=json_dumps(cloned_project), content_type=MIMETYPE_APPLICATION_JSON
+    )
+
+
+#
+# open project: custom methods https://google.aip.dev/136
+#
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
