@@ -300,7 +300,7 @@ async def upload_file(
         if not upload_link:
             raise exceptions.S3InvalidPathError(s3_object)
 
-        if store_id == SIMCORE_LOCATION:
+        if store_id == SIMCORE_LOCATION and r_clone_settings:
             await sync_local_to_s3(
                 session=session,
                 r_clone_settings=r_clone_settings,

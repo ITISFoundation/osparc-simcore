@@ -24,19 +24,6 @@ RUN set -eux && \
   # verify that the binary works
   gosu nobody true
 
-# Install docker
-ENV DOCKER_VERSION="5:20.10.16~3-0~debian-buster"
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-  echo \
-  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-  docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io\
-  && apt-get autoremove -y \
-  && apt-get clean -y \
-  && rm --recursive --force /var/lib/apt/lists/*
-
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
   SC_USER_NAME=scu \
