@@ -5,7 +5,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import aiodocker
 import aiofiles
@@ -31,7 +31,9 @@ async def _config_file(config: str) -> AsyncGenerator[Path, None]:
             yield Path(f.name)
 
 
-async def _get_container_id() -> Optional[str]:
+async def _inspect_container(
+    docker_client: aiodocker.Docker,
+) -> Optional[dict[str, Any]]:
     """if running in a container returns the container's ID else None"""
     try:
         async with aiofiles.open("/proc/1/cgroup", "rt") as cgroup_file:
@@ -39,7 +41,10 @@ async def _get_container_id() -> Optional[str]:
             for line in file_content.split("\n"):
                 if "pids:/docker/" in line:
                     # 13:pids:/docker/987b04bb0e7525c17be5d022d12e63c8b8aadf0661ce9a43c9fb6abfd93dc0cc
-                    return line.split("pids:/docker/")[-1]
+                    container_id = line.split("pids:/docker/")[-1]
+                    container = docker_client.containers.container(container_id)
+                    container_inspect = await container.show()
+                    return container_inspect
     except FileNotFoundError:
         pass
 
@@ -47,20 +52,27 @@ async def _get_container_id() -> Optional[str]:
 
 
 async def _get_path_on_host(
-    docker_client: aiodocker.Docker, container_path: Path
+    container_inspect: Optional[dict[str, Any]], container_path: Path
 ) -> Path:
     """always returns the real path on the host, even when running in a docker container"""
-    container_id: Optional[str] = await _get_container_id()
-    logger.debug("%s", f"{container_id=}")
-    if container_id is None:
+    if container_inspect is None:
         return container_path
 
-    container = docker_client.containers.container(container_id)
-    container_data = await container.show()
-    logger.debug("%s", f"{container_data=}")
-    container_root_on_host = Path(container_data["GraphDriver"]["Data"]["MergedDir"])
-    logger.debug("%s", f"{container_root_on_host=}")
+    # NOTE: trying to map from container space to HOST space
+    # the file is either present on one of the Mounts
+    # the file is present inside the container's file system
 
+    # is file coming from a mount?
+    container_path_str = f"{container_path}"
+    for mount in container_inspect["Mounts"]:
+        logger.debug("%s startswith %s", container_path_str, mount["Destination"])
+        if container_path_str.startswith(mount["Destination"]):
+            destination_path = Path(mount["Destination"])
+            return Path(mount["Source"]) / container_path.relative_to(destination_path)
+
+    # we assume the file is placed on the container's root fs (only available place remaining)
+    container_root_on_host = Path(container_inspect["GraphDriver"]["Data"]["MergedDir"])
+    logger.debug("%s", f"{container_root_on_host=}")
     return container_root_on_host / container_path.relative_to("/")
 
 
@@ -92,11 +104,14 @@ async def sync_local_to_s3(
         destination_path = Path(s3_path)
         file_name = source_path.name
 
+        container_inspect: Optional[dict[str, Any]] = await _inspect_container(
+            docker_client
+        )
         config_file_parent_host_path = await _get_path_on_host(
-            docker_client, config_file_path.parent
+            container_inspect, config_file_path.parent
         )
         source_path_parent_host_path = await _get_path_on_host(
-            docker_client, source_path.parent
+            container_inspect, source_path.parent
         )
 
         container_run_config = {
