@@ -204,6 +204,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                     "R_CLONE_MAX_CPU_USAGE": "0.5",
                     "R_CLONE_MEMORY_LIMIT": "1g",
                     "R_CLONE_MEMORY_RESERVATION": "100m",
+                    "R_CLONE_UPLOAD_TIMEOUT_S": "3600",
                     "R_CLONE_VERSION": "1.58.1",
                     "R_CLONE_PROVIDER": "MINIO",
                     "R_CLONE_ENABLED": "True",
