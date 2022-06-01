@@ -253,6 +253,7 @@ async def _create_projects(
     :raises web.HTTPBadRequest
     :raises web.HTTPNotFound
     :raises web.HTTPUnauthorized
+
     :raises web.HTTPCreated
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
