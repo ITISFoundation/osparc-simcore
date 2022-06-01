@@ -110,7 +110,7 @@ async def sync_local_to_s3(
                     {
                         "Type": "bind",
                         "Source": f"{config_file_parent_host_path}",
-                        "Target": "/tmp",
+                        "Target": "/rclone_config",
                     },
                     {
                         "Type": "bind",
@@ -123,7 +123,7 @@ async def sync_local_to_s3(
             "Image": f"rclone/rclone:{r_clone_settings.R_CLONE_VERSION}",
             "Cmd": [
                 "--config",
-                f"/tmp/{config_file_path.name}",
+                f"/rclone_config/{config_file_path.name}",
                 "sync",
                 "/data",
                 f"dst:{destination_path.parent}",
