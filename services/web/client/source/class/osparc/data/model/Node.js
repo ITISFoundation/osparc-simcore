@@ -305,10 +305,6 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isComputational(this.getMetaData());
     },
 
-    hasIteratorUpstream: function() {
-      return osparc.data.model.Workbench.hasIteratorUpstream(this.getStudy().getWorkbench(), this);
-    },
-
     getMetaData: function() {
       return this.__metaData;
     },

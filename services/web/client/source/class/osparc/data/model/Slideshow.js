@@ -134,6 +134,15 @@ qx.Class.define("osparc.data.model.Slideshow", {
       nodes.splice(to, numberOfDeletedElm, elm);
     },
 
+    isMovingForward: function(lastNodeId, targetNodeId) {
+      let movingForward = false;
+      if (lastNodeId && targetNodeId) {
+        const sortedNodeIds = this.getSortedNodeIds();
+        movingForward = sortedNodeIds.indexOf(lastNodeId) < sortedNodeIds.indexOf(targetNodeId);
+      }
+      return movingForward;
+    },
+
     serialize: function() {
       return this.getData();
     }
