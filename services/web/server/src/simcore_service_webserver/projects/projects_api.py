@@ -34,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import PositiveInt, parse_obj_as
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
@@ -67,6 +67,7 @@ from .project_lock import (
     is_project_locked,
     lock_project,
 )
+from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -131,6 +132,94 @@ async def get_project_for_user(
     # Notice that db model does not include a check on project schema.
     await validate_project(app, project)
     return project
+
+
+async def clone_project(
+    app: web.Application,
+    project_id: ProjectID,
+    user_id: UserID,
+    copy_data: bool,
+    forced_copy_project_id: str = "",
+) -> ProjectDict:
+    """Clones both the project in the database row and data stored
+
+    - database
+        - get new identifiers for project and nodes
+    - storage
+        - folder name composes as project_uuid/node_uuid
+        - data is deep-copied to new folder corresponding to new identifiers
+        - managed by storage uservice
+
+
+    :raises ProjectNotFoundError
+    """
+
+    raise NotImplementedError()
+
+
+async def start_project_interactive_services(
+    request: web.Request, project: dict, user_id: PositiveInt
+) -> None:
+    # first get the services if they already exist
+    log.debug(
+        "getting running interactive services of project %s for user %s",
+        f"{project['uuid']=}",
+        f"{user_id=}",
+    )
+    running_services = await director_v2_api.get_services(
+        request.app, user_id, project["uuid"]
+    )
+    log.debug(
+        "Currently running services %s for user %s",
+        f"{running_services=}",
+        f"{user_id=}",
+    )
+
+    running_service_uuids = [x["service_uuid"] for x in running_services]
+    # now start them if needed
+    project_needed_services = {
+        service_uuid: service
+        for service_uuid, service in project["workbench"].items()
+        if _is_node_dynamic(service["key"])
+        and service_uuid not in running_service_uuids
+    }
+    log.debug("Starting services: %s", f"{project_needed_services=}")
+
+    unique_project_needed_services = set(project_needed_services.keys())
+    service_resources_result: list[ServiceResourcesDict] = await logged_gather(
+        *[
+            get_project_node_resources(request.app, project=project, node_id=node_uuid)
+            for node_uuid in unique_project_needed_services
+        ],
+        reraise=True,
+    )
+    service_resources_search: dict[str, ServiceResourcesDict] = dict(
+        zip(unique_project_needed_services, service_resources_result)
+    )
+
+    start_service_tasks = [
+        director_v2_api.start_service(
+            request.app,
+            user_id=user_id,
+            project_id=project["uuid"],
+            service_key=service["key"],
+            service_version=service["version"],
+            service_uuid=service_uuid,
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+            service_resources=service_resources_search[service_uuid],
+        )
+        for service_uuid, service in project_needed_services.items()
+    ]
+    results = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", results)
+    for entry in results:
+        if entry:
+            # if the status is present in the results for the start_service
+            # it means that the API call failed
+            # also it is enforced that the status is different from 200 OK
+            if entry.get("status", 200) != 200:
+                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 #
