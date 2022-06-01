@@ -201,9 +201,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
+      colModel.setDataCellRenderer(2, new osparc.ui.table.cellrenderer.Html().set({
+        defaultCellStyle: "user-select: text"
+      }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(0, "20%");
-      resizeBehavior.setWidth(1, "80%");
+      resizeBehavior.setWidth(0, "15%");
+      resizeBehavior.setWidth(1, "10%");
+      resizeBehavior.setWidth(2, "75%");
 
       this.__applyFilters();
 
@@ -215,8 +219,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __currentNodeClicked: function(checked) {
-      const currentNodeId = this.getCurrentNodeId();
       if (checked) {
+        const currentNodeId = this.getCurrentNodeId();
         this.__nodeSelected(currentNodeId);
       }
     },
@@ -225,12 +229,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
       const node = workbench.getNode(nodeId);
-      if (node) {
-        this.__textFilterField.setValue(node.getLabel());
-      } else {
-        // Root selected
-        this.__textFilterField.setValue("");
-      }
+      this.__textFilterField.setValue(node ? node.getLabel() : "");
     },
 
     __copyLogsToClipboard: function() {
@@ -286,6 +285,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         const msgLog = {
           nodeId,
           label,
+          timeStamp: new Date(),
           msg,
           logLevel
         };

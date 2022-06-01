@@ -72,8 +72,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
   members: {
     _header: null,
+    __inputsStateButton: null,
+    __preparingInputs: null,
     __nodeStatusUI: null,
-    __retrieveButton: null,
     _mainView: null,
     _settingsLayout: null,
     _iFrameLayout: null,
@@ -120,18 +121,21 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
+      const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
+        label: this.tr("Preparing inputs..."),
+        icon: "@FontAwesome5Solid/circle-notch/14",
+        backgroundColor: "transparent",
+        toolTipText: this.tr("The view will remain disabled until the inputs are fetched")
+      });
+      inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
+      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
+      header.add(inputsStateBtn);
+
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
       });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
-
-      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/spinner/14").set({
-        backgroundColor: "transparent",
-        toolTipText: this.tr("Retrieve")
-      });
-      retrieveBtn.addListener("execute", () => this.getNode().callRetrieveInputs(), this);
-      header.add(retrieveBtn);
 
       header.add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -175,12 +179,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return hBox;
     },
 
+    showPreparingInputs: function() {
+      const title = this.tr("Preparing Inputs");
+      const width = 600;
+      const height = 500;
+      osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
+    },
+
     __openNodeDataManager: function() {
       this.self().openNodeDataManager(this.getNode());
     },
 
     __openServiceDetails: function() {
-      const serviceDetails = new osparc.servicecard.Large(this.getNode().getMetaData(), this.getNode().getNodeId(), this.getStudy());
+      const node = this.getNode();
+      const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), node.getNodeId(), node.getStudy());
       const title = this.tr("Service information");
       const width = 600;
       const height = 700;
@@ -239,14 +251,52 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    __areInputsReady: function() {
+      const wb = this.getNode().getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamNodes(this.getNode(), false);
+      for (let i=0; i<upstreamNodeIds.length; i++) {
+        const upstreamNodeId = upstreamNodeIds[i];
+        if (!osparc.data.model.NodeStatus.isCompNodeReady(wb.getNode(upstreamNodeId))) {
+          return false;
+        }
+      }
+      return true;
+    },
+
+    __enableContent: function(enable) {
+      this._mainView.setEnabled(enable);
+      const iframe = this.getNode().getIFrame();
+      if (iframe) {
+        // enable/disable user interaction on iframe
+        // eslint-disable-next-line no-underscore-dangle
+        iframe.__iframe.getContentElement().setStyles({
+          "pointer-events": enable ? "auto" : "none"
+        });
+      }
+    },
+
+    setNotReadyDependencies: function(notReadyNodeIds = []) {
+      const monitoredNodes = [];
+      const workbench = this.getNode().getStudy().getWorkbench();
+      notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
+      this.__preparingInputs.setMonitoredNodes(monitoredNodes);
+    },
+
+    __dependeciesChanged: function() {
+      const preparingNodes = this.__preparingInputs.getPreparingNodes();
+      const waiting = Boolean(preparingNodes && preparingNodes.length);
+      this.__inputsStateButton.setVisibility(waiting ? "visible" : "excluded");
+      this.__enableContent(!waiting);
+    },
+
     __applyNode: function(node) {
       if (this.__nodeStatusUI) {
         this.__nodeStatusUI.setNode(node);
       }
 
-      if (this.__retrieveButton) {
-        this.__retrieveButton.setVisibility(node.isDynamic() ? "visible" : "excluded");
-      }
+      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
+      this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
+      this.__dependeciesChanged();
 
       this._mainView.removeAll();
       this._addSettings();

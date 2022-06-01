@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   let tableModel = this.__logModel = new osparc.component.widget.logger.LoggerTable();
- *   tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
+ *   tableModel.setColumns(["Origin", "Timestamp", "Message"], ["whoRich", "whatRich", "whatRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
  *       return new qx.ui.table.columnmodel.Resize(obj);
@@ -50,9 +50,11 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
 
     this.setColumns([
       "Origin",
+      "Time",
       "Message"
     ], [
       "whoRich",
+      "timeRich",
       "msgRich"
     ]);
 
@@ -136,6 +138,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
         newRow["msgColor"] = this.self().getLevelColor(newRow.logLevel);
 
         newRow["whoRich"] = this.self().addColorTag(newRow.label, newRow.nodeColor);
+        newRow["timeRich"] = this.self().addColorTag(osparc.utils.Utils.formatTime(newRow.timeStamp, true), newRow.msgColor);
         newRow["msgRich"] = this.self().addColorTag(newRow.msg, newRow.msgColor);
 
         this.__rawData.push(newRow);
@@ -159,6 +162,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
         row["msgColor"] = this.self().getLevelColor(row.logLevel);
 
         row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
+        row["timeRich"] = this.self().addColorTag(osparc.utils.Utils.formatTime(row.timeStamp, true), row.msgColor);
         row["msgRich"] = this.self().addColorTag(row.msg, row.msgColor);
       });
     },
