@@ -180,10 +180,11 @@ async def sync_local_to_s3(
             logger.warning(
                 "There was an error while uploading %s. Removing metadata", s3_object
             )
-            await delete_file(
-                session=session,
-                file_id=s3_object,
-                location_id=store_id,
-                user_id=user_id,
-            )
+            # FIXME: ANE Not a good idea, needs some rethinking in case of error
+            # await delete_file(
+            #     session=session,
+            #     file_id=s3_object,
+            #     location_id=store_id,
+            #     user_id=user_id,
+            # )
             raise error
