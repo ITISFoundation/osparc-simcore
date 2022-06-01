@@ -7,16 +7,16 @@
 aio-pika==6.8.0
     # via -r requirements/_base.in
 aiocache==0.11.1
-    # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/_base.in
+    # via -r requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.19.1
-    # via -r requirements/_base.in
+aiodocker==0.21.0
+    # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiofiles==0.8.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -183,7 +183,9 @@ jsonschema==3.2.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
 locket==0.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
