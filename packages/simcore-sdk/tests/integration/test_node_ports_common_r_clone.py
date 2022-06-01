@@ -3,7 +3,7 @@
 
 import shutil
 from pathlib import Path
-from typing import AsyncIterable, Iterator, Optional
+from typing import AsyncIterable, Iterable, Iterator
 from uuid import uuid4
 
 import aiofiles
@@ -11,9 +11,9 @@ import aiohttp
 import pytest
 import sqlalchemy as sa
 from _pytest.fixtures import FixtureRequest
+from aiodocker import docker
 from aiohttp import ClientSession
 from faker import Faker
-from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import RCloneSettings
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_sdk.node_ports_common import r_clone
@@ -34,10 +34,6 @@ pytest_simcore_ops_services_selection = [
     "minio",
     "adminer",
 ]
-
-
-class _TestException(Exception):
-    pass
 
 
 # FIXTURES
@@ -88,21 +84,27 @@ async def cleanup_s3(s3_object: str, user_id: int) -> AsyncIterable[None]:
 
 
 @pytest.fixture
-def raise_error_after_upload(
-    mocker: MockerFixture, postgres_db: sa.engine.Engine, s3_object: str
-) -> None:
-    handler = r_clone._async_command  # pylint: disable=protected-access
+def return_error_after_upload(
+    postgres_db: sa.engine.Engine, s3_object: str
+) -> Iterable[None]:
+    handler = docker.DockerContainer.show
 
-    async def _mock_async_command(*cmd: str, cwd: Optional[str] = None) -> str:
-        await handler(*cmd, cwd=cwd)
+    async def _mock_show(self, **kwargs) -> dict:
+        await handler(self, **kwargs)
         assert _is_file_present(postgres_db=postgres_db, s3_object=s3_object) is True
+        return {
+            "State": {
+                "Status": "exited",
+                "ExitCode": 9999,
+                "Error": "there is an error here",
+            },
+            # mock for show used in container.log
+            "Config": {"Tty": False},
+        }
 
-        raise _TestException()
-
-    mocker.patch(
-        "simcore_sdk.node_ports_common.r_clone._async_command",
-        side_effect=_mock_async_command,
-    )
+    docker.DockerContainer.show = _mock_show
+    yield
+    docker.DockerContainer.show = handler
 
 
 @pytest.fixture
@@ -186,9 +188,9 @@ async def test_sync_local_to_s3_cleanup_on_error(
     postgres_db: sa.engine.Engine,
     client_session: ClientSession,
     cleanup_s3: None,
-    raise_error_after_upload: None,
+    return_error_after_upload: None,
 ) -> None:
-    with pytest.raises(_TestException):
+    with pytest.raises(RuntimeError):
         await r_clone.sync_local_to_s3(
             session=client_session,
             r_clone_settings=r_clone_settings,
