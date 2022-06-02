@@ -26,7 +26,6 @@ from simcore_service_dynamic_sidecar.core.settings import (
 )
 
 from ..models.schemas.ports import PortTypeName
-from .r_clone_utils import get_r_clone_settings
 
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
@@ -62,7 +61,7 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-        r_clone_settings=get_r_clone_settings(settings.DY_SIDECAR_R_CLONE_SETTINGS),
+        r_clone_settings=settings.rclone_settings_for_nodeports,
     )
 
     # let's gather the tasks
@@ -255,7 +254,7 @@ async def download_target_ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-        r_clone_settings=get_r_clone_settings(settings.DY_SIDECAR_R_CLONE_SETTINGS),
+        r_clone_settings=settings.rclone_settings_for_nodeports,
     )
 
     # let's gather all the data

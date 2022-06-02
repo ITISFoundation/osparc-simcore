@@ -105,6 +105,18 @@ class DynamicSidecarSettings(BaseCustomSettings):
     def loglevel(self) -> int:
         return int(getattr(logging, self.LOG_LEVEL))
 
+    @property
+    def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:
+        """
+        If R_CLONE_ENABLED is False it returns None which indicates
+        nodeports to disable rclone and fallback to the previous storage mechanim.
+        """
+        return (
+            self.DY_SIDECAR_R_CLONE_SETTINGS
+            if self.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_ENABLED
+            else None
+        )
+
 
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:

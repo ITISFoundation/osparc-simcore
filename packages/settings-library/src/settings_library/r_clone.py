@@ -13,8 +13,12 @@ class S3Provider(str, Enum):
 
 
 class RCloneSettings(BaseCustomSettings):
+    # TODO: PC this flag is actually ONLY used by the dynamic sidecar.
+    # It determines how the dynamic sidecar sets up node-ports storage
+    # mechanism. I propose it is added as an extra independent variable in
+    # simcore_service_dynamic_idecar.core.settings.Settings instead of here.
     R_CLONE_ENABLED: bool = Field(
-        False,  # NOTE: feature is still experimental disabling by default
+        True,
         description=(
             "simple way to enable/disable the usage of rclone "
             "in parts of the system where it is optional "

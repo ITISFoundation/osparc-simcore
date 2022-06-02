@@ -13,8 +13,6 @@ from simcore_service_dynamic_sidecar.core.settings import (
     get_settings,
 )
 
-from .r_clone_utils import get_r_clone_settings
-
 logger = logging.getLogger(__name__)
 
 
@@ -78,6 +76,6 @@ async def upload_path_if_exists(path: Path, state_exclude: List[str]) -> None:
             project_id=str(settings.DY_SIDECAR_PROJECT_ID),
             node_uuid=str(settings.DY_SIDECAR_NODE_ID),
             file_or_folder=path,
-            r_clone_settings=get_r_clone_settings(settings.DY_SIDECAR_R_CLONE_SETTINGS),
+            r_clone_settings=settings.rclone_settings_for_nodeports,
         )
     logger.info("Finished upload of %s", path)
