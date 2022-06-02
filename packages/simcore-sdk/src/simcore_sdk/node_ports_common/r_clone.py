@@ -109,7 +109,8 @@ async def sync_local_to_s3(
 
     logger.debug(
         "Spawming r-clone container [%s] for %s; %s",
-        f"{container_name=}" f"{s3_link=}",
+        f"{container_name=}",
+        f"{s3_link=}",
         f"{s3_path=}, ",
     )
 
