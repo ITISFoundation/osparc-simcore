@@ -6,6 +6,7 @@ import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional
+from uuid import uuid4
 
 import aiodocker
 import aiofiles
@@ -17,7 +18,7 @@ from settings_library.r_clone import RCloneSettings, docker_size_as_bytes
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import SIMCORE_LOCATION
-from .storage_client import LinkType, delete_file, get_upload_file_link
+from .storage_client import LinkType, get_upload_file_link
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,15 @@ async def _get_path_on_host(
     return container_root_on_host / container_path.relative_to("/")
 
 
+def guess_container_name() -> Optional[str]:
+    # If used inside a dynamic sidecar it tries to guess a name that
+    # resembles dy-sidecar and dy-proxy... in the container's list
+    if node_id := os.environ.get("DY_SIDECAR_NODE_ID"):
+        random_tail: int = uuid4().time_mid
+        return f"dy-rclone-{node_id}-{random_tail}"
+    return None
+
+
 async def sync_local_to_s3(
     session: ClientSession,
     r_clone_settings: RCloneSettings,
@@ -95,7 +105,13 @@ async def sync_local_to_s3(
         link_type=LinkType.S3,
     )
     s3_path = re.sub(r"^s3://", "", s3_link)
-    logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
+    container_name = guess_container_name()
+
+    logger.debug(
+        "Spawming r-clone container [%s] for %s; %s",
+        f"{container_name=}" f"{s3_link=}",
+        f"{s3_path=}, ",
+    )
 
     async with _config_file(
         get_r_clone_config(r_clone_settings)
@@ -155,8 +171,10 @@ async def sync_local_to_s3(
         logger.debug("%s", f"{container_run_config=}")
 
         try:
-            #FIXME: evaluate using events to detect when the container exits
-            container = await docker_client.containers.run(container_run_config)
+            # FIXME: evaluate using events to detect when the container exits
+            container = await docker_client.containers.run(
+                container_run_config, name=container_name
+            )
             try:
                 for _ in range(r_clone_settings.R_CLONE_UPLOAD_TIMEOUT_S):
                     container_inspect = await container.show()
