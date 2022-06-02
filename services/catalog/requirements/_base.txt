@@ -215,3 +215,6 @@ websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
