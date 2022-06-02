@@ -60,7 +60,7 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
 
-PlacementConstraint = constr(
+PlacementConstraintStr = constr(
     strip_whitespace=True, regex=r"^[a-zA-Z0-9. ]*(!=|==){1}[a-zA-Z0-9. ]*$"
 )
 
@@ -443,7 +443,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraint] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraintStr] = Field(
         default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )

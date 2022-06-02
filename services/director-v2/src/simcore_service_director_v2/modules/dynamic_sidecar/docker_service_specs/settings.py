@@ -73,6 +73,7 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 
 # pylint: disable=too-many-branches
+# TODO: PC->ANE: i tend to agree with pylint, perhaps we can refactor this together
 def update_service_params_from_settings(
     labels_service_settings: SimcoreServiceSettingsLabel,
     create_service_params: Dict[str, Any],
@@ -122,13 +123,17 @@ def update_service_params_from_settings(
 
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
+
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
+
         elif param.setting_type == "Constraints":  # REST-API compatible
+
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
+
         elif param.name == "env":
             log.debug("Found env parameter %s", param.value)
             env_settings = _parse_env_settings(param.value)
@@ -152,6 +157,13 @@ def update_service_params_from_settings(
     container_spec["Labels"]["mem_limit"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
+
+    # Cleanup repeated constraints.
+    # Observed in deploy how constraint 'node.platform.os == linux' was appended many many times
+    constraints = create_service_params["task_template"]["Placement"]["Constraints"]
+    if constraints:
+        assert isinstance(constraints, list)  # nosec
+        constraints = list(set(constraints))
 
 
 def _assemble_key(service_key: str, service_tag: str) -> str:
