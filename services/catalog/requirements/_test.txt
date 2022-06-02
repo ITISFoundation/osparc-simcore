@@ -48,10 +48,7 @@ chardet==3.0.4
     #   -c requirements/_base.txt
     #   requests
 charset-normalizer==2.0.10
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   httpx
+    # via aiohttp
 click==8.0.3
     # via
     #   -c requirements/_base.txt
