@@ -17,7 +17,7 @@ from settings_library.r_clone import RCloneSettings, docker_size_as_bytes
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import SIMCORE_LOCATION
-from .storage_client import LinkType, delete_file, get_upload_file_link
+from .storage_client import LinkType, get_upload_file_link
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +155,7 @@ async def sync_local_to_s3(
         logger.debug("%s", f"{container_run_config=}")
 
         try:
-            #FIXME: evaluate using events to detect when the container exits
+            # FIXME: evaluate using events to detect when the container exits
             container = await docker_client.containers.run(container_run_config)
             try:
                 for _ in range(r_clone_settings.R_CLONE_UPLOAD_TIMEOUT_S):
