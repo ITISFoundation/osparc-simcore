@@ -125,6 +125,9 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
 COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends make && \
+  rm -rf /var/lib/apt/lists/*
 
 # disabled healthcheck as director-v2 is already taking care of it
 # in oder to have similar performance a more aggressive healethcek
