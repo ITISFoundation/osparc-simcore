@@ -80,10 +80,6 @@ WORKDIR /build
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
-# copy utility devops scripts
-COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
-COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
-
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
@@ -125,6 +121,10 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
+
+# copy utility devops scripts
+COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
 
 # disabled healthcheck as director-v2 is already taking care of it
 # in oder to have similar performance a more aggressive healethcek
