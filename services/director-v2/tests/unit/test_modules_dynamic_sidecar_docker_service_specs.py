@@ -207,6 +207,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                     "R_CLONE_UPLOAD_TIMEOUT_S": "3600",
                     "R_CLONE_VERSION": "1.58.1",
                     "R_CLONE_PROVIDER": "MINIO",
+                    "R_CLONE_ENABLED": "True",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
