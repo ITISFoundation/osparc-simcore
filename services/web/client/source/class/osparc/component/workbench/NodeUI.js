@@ -297,7 +297,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const title = this.getChildControl("title");
       title.set({
         wrap: true,
-        maxHeight: 28
+        maxHeight: 28,
+        maxWidth: 90
       });
 
       const outputs = this.getNode().getOutputs();
