@@ -418,10 +418,9 @@ async def close_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
     client: Optional[DynamicSidecarClient]
     if client := app.state.dynamic_sidecar_api_client:
-        # FIXME: Remove this print. ONly to debug
         # pylint: disable=protected-access
-        print(
-            "REQUESTS WHILE CLOSING --> ",
+        logger.debug(
+            "REQUESTS WHILE CLOSING %s",
             [r.request for r in client._client._transport._pool._requests],
         )
         await client.close()
