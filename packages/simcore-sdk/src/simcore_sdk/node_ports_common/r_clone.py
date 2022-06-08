@@ -14,7 +14,7 @@ from aiofiles import tempfile
 from aiohttp import ClientSession
 from models_library.services_resources import GIGA
 from models_library.users import UserID
-from settings_library.r_clone import RCloneSettings, docker_size_as_bytes
+from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import SIMCORE_LOCATION
@@ -133,10 +133,8 @@ async def sync_local_to_s3(
 
         container_run_config = {
             "HostConfig": {
-                "Memory": docker_size_as_bytes(r_clone_settings.R_CLONE_MEMORY_LIMIT),
-                "MemoryReservation": docker_size_as_bytes(
-                    r_clone_settings.R_CLONE_MEMORY_RESERVATION
-                ),
+                "Memory": r_clone_settings.R_CLONE_MEMORY_LIMIT,
+                "MemoryReservation": r_clone_settings.R_CLONE_MEMORY_RESERVATION,
                 "NanoCpus": int(r_clone_settings.R_CLONE_MAX_CPU_USAGE * GIGA),
                 "Mounts": [
                     {
