@@ -416,13 +416,15 @@ async def setup_api_client(app: FastAPI) -> None:
 
 async def close_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
+    client: Optional[DynamicSidecarClient]
     if client := app.state.dynamic_sidecar_api_client:
-        client: DynamicSidecarClient
+        # FIXME: Remove this print. ONly to debug
         print("REQUESTS WHILE CLOSING --> ", client._client._transport._pool._requests)
         await client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
+    assert app.state.dynamic_sidecar_api_client  # nosec
     return app.state.dynamic_sidecar_api_client
 
 
