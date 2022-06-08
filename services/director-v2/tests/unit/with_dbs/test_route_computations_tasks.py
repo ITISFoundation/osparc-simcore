@@ -54,6 +54,7 @@ def mock_env(
 @pytest.fixture
 def client(async_client: httpx.AsyncClient, mocker) -> httpx.AsyncClient:
     # overrides client
+    # WARNING: this is an httpx.AsyncClient and not a TestClient!!
     app = get_app(async_client)
 
     settings: AppSettings = app.state.settings

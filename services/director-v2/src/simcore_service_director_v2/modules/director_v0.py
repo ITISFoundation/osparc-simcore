@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV0Settings):
+def setup(app: FastAPI, settings: Optional[DirectorV0Settings]):
     if not settings:
         settings = DirectorV0Settings()
 
@@ -85,7 +85,7 @@ class DirectorV0Client:
             request.method,
             str(url_tail),
             params=dict(request.query_params),
-            data=body,
+            content=body,
             headers=dict(request.headers),
         )
 

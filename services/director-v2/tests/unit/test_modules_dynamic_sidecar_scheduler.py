@@ -121,9 +121,9 @@ async def _assert_get_dynamic_services_mocked(
 
 @pytest.fixture
 def mocked_director_v0(
-    dynamic_sidecar_settings: AppSettings, scheduler_data: SchedulerData
+    app_settings: AppSettings, scheduler_data: SchedulerData
 ) -> Iterator[MockRouter]:
-    endpoint = dynamic_sidecar_settings.DIRECTOR_V0.endpoint
+    endpoint = app_settings.DIRECTOR_V0.endpoint
 
     with respx.mock as mock:
         mock.get(
@@ -175,7 +175,7 @@ def ensure_scheduler_runs_once() -> Callable:
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(
+def app_settings(
     simcore_services_network_name: str, monkeypatch: MonkeyPatch
 ) -> AppSettings:
     monkeypatch.setenv("REGISTRY_AUTH", "false")
@@ -209,17 +209,20 @@ def dynamic_sidecar_settings(
 
 @pytest.fixture
 async def mocked_app(
-    dynamic_sidecar_settings: AppSettings,
+    app_settings: AppSettings,
     mocked_director_v0: MockRouter,
     docker_swarm: None,
 ) -> AsyncIterator[FastAPI]:
+
     app = FastAPI()
-    app.state.settings = dynamic_sidecar_settings
-    log.info("AppSettings=%s", dynamic_sidecar_settings)
+    app.state.settings = app_settings
+    log.info("AppSettings=%s", app_settings)
+
     try:
+        # TODO: PC->ANE: use instead setup for corresponding modules!
         async with httpx.AsyncClient(
-            base_url=f"{dynamic_sidecar_settings.DIRECTOR_V0.endpoint}",
-            timeout=dynamic_sidecar_settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+            base_url=f"{app_settings.DIRECTOR_V0.endpoint}",
+            timeout=app_settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         ) as httpx_client:
             DirectorV0Client.create(
                 app,
@@ -521,11 +524,12 @@ async def test_get_stack_status_ok(
 
 
 def test_module_setup(
-    dynamic_sidecar_settings: AppSettings,
+    app_settings: AppSettings,
     docker_swarm: None,
 ) -> None:
     app = FastAPI()
-    app.state.settings = dynamic_sidecar_settings
+    app.state.settings = app_settings
     module_setup.setup(app)
     with TestClient(app):
+
         pass

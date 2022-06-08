@@ -83,9 +83,7 @@ certifi==2021.5.30
 chardet==4.0.0
     # via requests
 charset-normalizer==2.0.10
-    # via
-    #   aiohttp
-    #   httpx
+    # via aiohttp
 click==8.1.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -143,12 +141,26 @@ heapdict==1.0.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   zict
-httpcore==0.14.4
+httpcore==0.15.0
     # via httpx
 httptools==0.2.0
     # via uvicorn
-httpx==0.21.3
-    # via -r requirements/_base.in
+httpx==0.23.0
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 idna==2.10
     # via
     #   anyio
@@ -183,7 +195,9 @@ jsonschema==3.2.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
 locket==0.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
