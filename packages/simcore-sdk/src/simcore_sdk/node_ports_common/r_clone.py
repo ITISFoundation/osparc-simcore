@@ -18,7 +18,7 @@ from settings_library.r_clone import RCloneSettings, docker_size_as_bytes
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .constants import SIMCORE_LOCATION
-from .storage_client import LinkType, get_upload_file_link
+from .storage_client import LinkType, delete_file, get_upload_file_link
 
 logger = logging.getLogger(__name__)
 
