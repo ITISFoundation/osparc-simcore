@@ -1,3 +1,3 @@
-from models_library.settings.http_clients import ClientRequestSettings
+from settings_library.http_client_request import ClientRequestSettings
 
 client_request_settings = ClientRequestSettings()
