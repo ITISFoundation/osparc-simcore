@@ -65,7 +65,7 @@ class DynamicSidecarClient:
 
         self._app: FastAPI = app
 
-        self._client: httpx.AsyncClient = httpx.AsyncClient(
+        self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(
                 dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
                 connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
@@ -73,16 +73,16 @@ class DynamicSidecarClient:
         )
 
         # timeouts
-        self._health_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
-        self._save_restore_timeout: httpx.Timeout = httpx.Timeout(
+        self._health_request_timeout = httpx.Timeout(1.0, connect=1.0)
+        self._save_restore_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
-        self._restart_containers_timeout: httpx.Timeout = httpx.Timeout(
+        self._restart_containers_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
-        self._attach_detach_network_timeout: httpx.Timeout = httpx.Timeout(
+        self._attach_detach_network_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )

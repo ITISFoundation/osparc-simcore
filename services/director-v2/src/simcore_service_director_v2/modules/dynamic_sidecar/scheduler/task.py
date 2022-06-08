@@ -497,8 +497,15 @@ async def setup_scheduler(app: FastAPI):
 
 
 async def shutdown_scheduler(app: FastAPI):
-    dynamic_sidecar_scheduler = app.state.dynamic_sidecar_scheduler
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler = (
+        app.state.dynamic_sidecar_scheduler
+    )
+    assert isinstance(dynamic_sidecar_scheduler, DynamicSidecarsScheduler)  # nosec
     await dynamic_sidecar_scheduler.shutdown()
 
 
-__all__ = ["DynamicSidecarsScheduler", "setup_scheduler", "shutdown_scheduler"]
+__all__: tuple[str] = (
+    "DynamicSidecarsScheduler",
+    "setup_scheduler",
+    "shutdown_scheduler",
+)

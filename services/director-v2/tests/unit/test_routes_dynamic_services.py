@@ -7,8 +7,7 @@ import logging
 import os
 import urllib.parse
 from argparse import Namespace
-from collections import namedtuple
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any, AsyncIterator, Dict, NamedTuple, Optional
 from uuid import UUID
 
 import pytest
@@ -36,9 +35,13 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from starlette import status
 from starlette.testclient import TestClient
 
-ServiceParams = namedtuple(
-    "ServiceParams", "service, service_labels, exp_status_code, is_legacy"
-)
+
+class ServiceParams(NamedTuple):
+    service: dict[str, Any]
+    service_labels: dict[str, Any]
+    exp_status_code: int
+    is_legacy: bool
+
 
 logger = logging.getLogger(__name__)
 
