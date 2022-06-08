@@ -59,7 +59,7 @@ class DynamicSidecarClient:
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
+        settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
@@ -67,24 +67,24 @@ class DynamicSidecarClient:
 
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+                settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+                connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
 
         # timeouts
         self._health_request_timeout = httpx.Timeout(1.0, connect=1.0)
         self._save_restore_timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
-            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._attach_detach_network_timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
-            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
+            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
     async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
@@ -417,6 +417,8 @@ async def setup_api_client(app: FastAPI) -> None:
 async def close_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
     if client := app.state.dynamic_sidecar_api_client:
+        client: DynamicSidecarClient
+        print("REQUESTS WHILE CLOSING --> ", client._client._transport._pool._requests)
         await client.close()
 
 
