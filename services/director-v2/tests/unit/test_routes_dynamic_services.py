@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import logging
@@ -13,11 +13,11 @@ from uuid import UUID
 
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from httpx import URL, QueryParams
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from respx import MockRouter
 from simcore_service_director_v2.models.domains.dynamic_services import (
@@ -113,6 +113,7 @@ async def mock_retrieve_features(
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
 ) -> AsyncIterator[Optional[MockRouter]]:
+    # pylint: disable=not-context-manager
     with respx.mock(
         assert_all_called=False,
         assert_all_mocked=True,
@@ -153,6 +154,7 @@ async def mock_retrieve_features(
 def mocked_director_v0_service_api(
     minimal_app: FastAPI, service: Dict[str, Any], service_labels: Dict[str, Any]
 ) -> MockRouter:
+    # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,

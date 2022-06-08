@@ -85,7 +85,7 @@ class DirectorV0Client:
             request.method,
             str(url_tail),
             params=dict(request.query_params),
-            data=body,
+            content=body,
             headers=dict(request.headers),
         )
 

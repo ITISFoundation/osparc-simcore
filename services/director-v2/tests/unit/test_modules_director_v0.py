@@ -1,15 +1,13 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import re
 import urllib.parse
-from collections import namedtuple
 from pathlib import Path
 from random import choice
-from typing import Any, Dict, List
+from typing import Any, NamedTuple
 from uuid import uuid4
 
 import pytest
@@ -43,8 +41,9 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
 
 @pytest.fixture
 def mocked_director_v0_service_api(
-    minimal_app, entrypoint, exp_data: Dict, resp_alias: str
+    minimal_app, entrypoint, exp_data: dict, resp_alias: str
 ):
+    # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
@@ -64,12 +63,14 @@ def mock_service_key_version() -> ServiceKeyVersion:
     return ServiceKeyVersion(key=MOCK_SERVICE_KEY, version=MOCK_SERVICE_VERSION)
 
 
-ForwardToDirectorParams = namedtuple(
-    "ForwardToDirectorParams", "entrypoint,exp_status,exp_data,resp_alias"
-)
+class ForwardToDirectorParams(NamedTuple):
+    entrypoint: str
+    exp_status: int
+    exp_data: dict[str, Any]
+    resp_alias: str
 
 
-def _get_list_services_calls() -> List[ForwardToDirectorParams]:
+def _get_list_services_calls() -> list[ForwardToDirectorParams]:
     return [
         ForwardToDirectorParams(
             entrypoint="services",
@@ -92,7 +93,7 @@ def _get_list_services_calls() -> List[ForwardToDirectorParams]:
     ]
 
 
-def _get_service_version_calls() -> List[ForwardToDirectorParams]:
+def _get_service_version_calls() -> list[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
@@ -101,11 +102,11 @@ def _get_service_version_calls() -> List[ForwardToDirectorParams]:
             exp_status=status.HTTP_200_OK,
             exp_data={"data": ["stuff about my service"]},
             resp_alias="get_service_version",
-        )
+        ),
     ]
 
 
-def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
+def _get_service_version_extras_calls() -> list[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     quoted_key = urllib.parse.quote_plus(MOCK_SERVICE_KEY)
     return [
@@ -114,7 +115,7 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
             exp_status=status.HTTP_200_OK,
             exp_data={"data": "extra stuff about my service"},
             resp_alias="get_service_extras",
-        )
+        ),
     ]
 
 
@@ -130,7 +131,7 @@ def test_forward_to_director(
     mocked_director_v0_service_api,
     entrypoint,
     exp_status,
-    exp_data: Dict,
+    exp_data: dict,
     resp_alias,
 ):
     response = client.get(f"v0/{entrypoint}")
@@ -163,7 +164,7 @@ def fake_running_service_details() -> RunningDynamicServiceDetails:
 
 
 @pytest.fixture
-def fake_service_labels() -> Dict[str, Any]:
+def fake_service_labels() -> dict[str, Any]:
     return choice(SimcoreServiceLabels.Config.schema_extra["examples"])
 
 
@@ -173,9 +174,10 @@ def mocked_director_service_fcts(
     mock_service_key_version: ServiceKeyVersion,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
-    fake_service_labels: Dict[str, Any],
+    fake_service_labels: dict[str, Any],
     fake_running_service_details: RunningDynamicServiceDetails,
 ):
+    # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
@@ -243,7 +245,7 @@ async def test_get_service_labels(
     minimal_director_config: None,
     minimal_app: FastAPI,
     mocked_director_service_fcts,
-    fake_service_labels: Dict[str, Any],
+    fake_service_labels: dict[str, Any],
     mock_service_key_version: ServiceKeyVersion,
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
