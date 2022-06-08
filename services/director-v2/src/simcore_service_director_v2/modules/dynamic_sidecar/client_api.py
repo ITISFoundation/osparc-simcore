@@ -421,7 +421,10 @@ async def close_api_client(app: FastAPI) -> None:
         # pylint: disable=protected-access
         logger.debug(
             "REQUESTS WHILE CLOSING %s",
-            [r.request for r in client._client._transport._pool._requests],
+            [
+                (r.request.method, r.request.url, r.request.headers)
+                for r in client._client._transport._pool._requests
+            ],
         )
         await client.close()
 
