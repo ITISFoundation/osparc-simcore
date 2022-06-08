@@ -264,6 +264,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         extra = Extra.allow
         schema_extra = {
             "examples": [
+                # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
                     "simcore.service.settings": json.dumps(

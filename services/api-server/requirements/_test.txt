@@ -63,7 +63,6 @@ cfn-lint==0.60.1
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
-    #   httpx
     #   requests
 click==8.0.4
     # via
@@ -131,12 +130,13 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.14.7
+httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.22.0
+httpx==0.23.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 idna==3.3

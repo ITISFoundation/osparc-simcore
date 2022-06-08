@@ -48,10 +48,7 @@ chardet==3.0.4
     #   -c requirements/_base.txt
     #   requests
 charset-normalizer==2.0.10
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   httpx
+    # via aiohttp
 click==8.0.3
     # via
     #   -c requirements/_base.txt
@@ -101,12 +98,13 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.14.4
+httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.21.3
+httpx==0.23.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 idna==2.10
