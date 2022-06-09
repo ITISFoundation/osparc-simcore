@@ -24,7 +24,7 @@ attrs==20.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   requests

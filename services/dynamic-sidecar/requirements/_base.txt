@@ -69,7 +69,7 @@ attrs==20.3.0
     #   jsonschema
 bcrypt==3.2.0
     # via paramiko
-certifi==2021.5.30
+certifi==2022.5.18.1
     # via
     #   httpcore
     #   httpx
@@ -82,9 +82,7 @@ cffi==1.14.5
 chardet==4.0.0
     # via requests
 charset-normalizer==2.0.7
-    # via
-    #   aiohttp
-    #   httpx
+    # via aiohttp
 click==8.1.3
     # via
     #   typer

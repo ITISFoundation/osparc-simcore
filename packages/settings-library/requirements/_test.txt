@@ -8,7 +8,7 @@ astroid==2.11.5
     # via pylint
 attrs==21.4.0
     # via pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 charset-normalizer==2.0.12
     # via requests

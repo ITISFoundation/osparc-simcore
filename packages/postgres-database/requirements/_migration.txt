@@ -8,7 +8,7 @@ alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 charset-normalizer==2.0.12
     # via requests

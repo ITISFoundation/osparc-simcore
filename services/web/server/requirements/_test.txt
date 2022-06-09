@@ -37,7 +37,7 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.2
     # via paramiko
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 cffi==1.15.0
     # via

@@ -33,15 +33,13 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
-certifi==2020.12.5
+certifi==2022.5.18.1
     # via
     #   httpcore
     #   httpx
     #   requests
 chardet==3.0.4
     # via requests
-charset-normalizer==2.0.10
-    # via httpx
 click==8.0.3
     # via
     #   typer

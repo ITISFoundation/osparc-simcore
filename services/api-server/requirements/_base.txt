@@ -60,7 +60,7 @@ attrs==20.3.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   httpcore
     #   httpx

@@ -45,7 +45,7 @@ botocore==1.24.21
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   minio
     #   requests
