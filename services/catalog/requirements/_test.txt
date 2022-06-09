@@ -129,7 +129,7 @@ mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==1.1.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
