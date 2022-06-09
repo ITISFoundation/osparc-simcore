@@ -115,7 +115,7 @@ opentracing==2.4.0
     # via
     #   fastapi-contrib
     #   jaeger-client
-orjson==3.4.8
+orjson==3.7.2
     # via fastapi
 packaging==20.9
     # via -r requirements/_base.in
