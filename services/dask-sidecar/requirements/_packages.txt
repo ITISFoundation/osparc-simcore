@@ -131,7 +131,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   tenacity
 sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
@@ -140,7 +139,7 @@ tblib==1.7.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-tenacity==6.2.0
+tenacity==8.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.11.1
     # via

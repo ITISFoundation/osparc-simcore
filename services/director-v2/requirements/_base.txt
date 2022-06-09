@@ -330,7 +330,6 @@ six==1.15.0
     # via
     #   jsonschema
     #   python-multipart
-    #   tenacity
     #   thrift
 sniffio==1.2.0
     # via
@@ -366,7 +365,7 @@ tblib==1.7.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==7.0.0
+tenacity==8.0.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
