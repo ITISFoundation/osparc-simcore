@@ -258,7 +258,7 @@ typing-extensions==4.2.0
     # via
     #   aiodebug
     #   pydantic
-ujson==5.2.0
+ujson==5.3.0
     # via aiohttp-swagger
 werkzeug==2.1.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in

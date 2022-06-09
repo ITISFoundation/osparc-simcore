@@ -201,7 +201,7 @@ typing-extensions==4.2.0
     #   aiodebug
     #   aioitertools
     #   pydantic
-ujson==5.1.0
+ujson==5.3.0
     # via aiohttp-swagger
 urllib3==1.26.9
     # via

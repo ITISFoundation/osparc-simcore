@@ -211,7 +211,7 @@ typing-extensions==4.2.0
     #   aiodebug
     #   aioredis
     #   pydantic
-ujson==4.0.2
+ujson==4.3.0
     # via fastapi
 urllib3==1.26.7
     # via

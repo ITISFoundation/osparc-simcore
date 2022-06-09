@@ -5,9 +5,8 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
-from ctypes import Union
 from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple, Optional, Set
+from typing import Dict, List, Literal, NamedTuple, Optional, Set, Union
 
 from packaging.version import Version
 
@@ -208,7 +207,7 @@ def parse_dependencies(
     reqs = []
     exclude = exclude or set()
     for reqfile in repodir.rglob("**/requirements/_*.txt"):
-        if any(fnmatch.fnmatch(reqfile, x) for x in exclude):
+        if any(fnmatch.fnmatch(f"{reqfile}", x) for x in exclude):
             continue
         try:
             t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[
@@ -238,7 +237,7 @@ def repo_wide_changes(exclude: Optional[Set] = None) -> None:
     print("- #reqs files parsed:", len(reqs))
     print()
 
-    deps: dict[str, dict[str, Union[List, str]]] = defaultdict(lambda: defaultdict(list))
+    deps: dict[str, dict[str, Union[list, str]]] = defaultdict(lambda: defaultdict(list))
     for r in reqs:
         for name, version in r.dependencies.items():
             deps[name]["name"] = name
