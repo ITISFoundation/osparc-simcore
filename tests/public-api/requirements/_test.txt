@@ -54,7 +54,7 @@ idna==3.3
     #   yarl
 iniconfig==1.1.1
     # via pytest
-jsonschema==4.5.1
+jsonschema==4.6.0
     # via -r requirements/_test.in
 multidict==6.0.2
     # via

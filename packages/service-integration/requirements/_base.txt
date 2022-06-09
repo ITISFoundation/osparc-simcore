@@ -26,7 +26,7 @@ idna==3.3
     #   requests
 iniconfig==1.1.1
     # via pytest
-jsonschema==4.5.1
+jsonschema==4.6.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
