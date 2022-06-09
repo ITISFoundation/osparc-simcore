@@ -6,7 +6,7 @@ import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple, Optional, Set, Union
+from typing import Dict, List, Literal, NamedTuple, Optional, Set
 
 from packaging.version import Version
 
@@ -237,10 +237,10 @@ def repo_wide_changes(exclude: Optional[Set] = None) -> None:
     print("- #reqs files parsed:", len(reqs))
     print()
 
-    deps: dict[str, dict[str, Union[list, str]]] = defaultdict(lambda: defaultdict(list))
+    deps: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
     for r in reqs:
         for name, version in r.dependencies.items():
-            deps[name]["name"] = name
+            deps[name]["name"] = name  # type: ignore
             deps[name][r.target].append(version)
 
     with printing_table(
