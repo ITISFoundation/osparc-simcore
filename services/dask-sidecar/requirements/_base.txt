@@ -323,7 +323,7 @@ websocket-client==0.59.0
     # via jupyter-server
 wrapt==1.14.0
     # via aiobotocore
-yarl==1.6.3
+yarl==1.7.2
     # via aiohttp
 zict==2.0.0
     # via distributed

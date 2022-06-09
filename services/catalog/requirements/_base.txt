@@ -231,7 +231,7 @@ watchgod==0.8.2
     # via uvicorn
 websockets==10.1
     # via uvicorn
-yarl==1.6.3
+yarl==1.7.2
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 
 # The following packages are considered to be unsafe in a requirements file:

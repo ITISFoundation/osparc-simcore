@@ -193,7 +193,7 @@ wrapt==1.14.0
     # via
     #   -c requirements/_base.txt
     #   astroid
-yarl==1.6.3
+yarl==1.7.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
