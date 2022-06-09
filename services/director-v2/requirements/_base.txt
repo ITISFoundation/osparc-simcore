@@ -83,8 +83,10 @@ certifi==2021.5.30
 chardet==4.0.0
     # via requests
 charset-normalizer==2.0.10
-    # via aiohttp
-click==8.1.2
+    # via
+    #   aiohttp
+    #   httpx
+click==8.1.3
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed

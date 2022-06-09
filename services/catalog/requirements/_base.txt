@@ -40,6 +40,8 @@ certifi==2020.12.5
     #   requests
 chardet==3.0.4
     # via requests
+charset-normalizer==2.0.10
+    # via httpx
 click==8.0.3
     # via
     #   typer
