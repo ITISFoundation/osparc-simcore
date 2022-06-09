@@ -189,7 +189,7 @@ minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp

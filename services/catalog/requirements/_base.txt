@@ -109,7 +109,7 @@ markupsafe==2.1.1
     #   mako
 msgpack==1.0.3
     # via aiocache
-multidict==5.1.0
+multidict==6.0.2
     # via yarl
 opentracing==2.4.0
     # via

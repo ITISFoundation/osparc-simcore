@@ -181,7 +181,7 @@ mako==1.1.5
     # via alembic
 markupsafe==2.1.1
     # via mako
-multidict==5.1.0
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl

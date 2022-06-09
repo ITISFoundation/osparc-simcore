@@ -28,7 +28,7 @@ idna==2.10
     #   requests
 iniconfig==1.1.1
     # via pytest
-multidict==5.1.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient

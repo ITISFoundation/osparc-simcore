@@ -216,7 +216,7 @@ msgpack==1.0.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   aiocache
     #   distributed
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
