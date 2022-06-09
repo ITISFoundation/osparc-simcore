@@ -85,7 +85,7 @@ distributed==2022.4.0
     #   dask-gateway
 dnspython==2.0.0
     # via email-validator
-email-validator==1.1.1
+email-validator==1.2.1
     # via pydantic
 entrypoints==0.3
     # via nbconvert

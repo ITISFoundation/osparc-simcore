@@ -155,7 +155,7 @@ openapi-spec-validator==0.4.0
     # via openapi-core
 openpyxl==3.0.9
     # via -r requirements/_base.in
-orjson==3.6.8
+orjson==3.7.2
     # via -r requirements/_base.in
 packaging==21.3
     # via
