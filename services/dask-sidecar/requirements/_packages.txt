@@ -113,7 +113,7 @@ pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema

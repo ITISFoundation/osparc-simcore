@@ -247,7 +247,7 @@ pynacl==1.4.0
     # via paramiko
 pyparsing==3.0.9
     # via packaging
-pyrsistent==0.18.0
+pyrsistent==0.18.1
     # via jsonschema
 python-dotenv==0.18.0
     # via docker-compose
