@@ -77,7 +77,7 @@ six==1.16.0
     #   isodate
     #   jsonschema
     #   openapi-core
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/./../../../requirements/constraints.txt
     #   aiopg

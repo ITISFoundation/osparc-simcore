@@ -199,7 +199,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

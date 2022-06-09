@@ -341,7 +341,7 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==1.4.31
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

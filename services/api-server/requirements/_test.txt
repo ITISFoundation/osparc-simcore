@@ -325,7 +325,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

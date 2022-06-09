@@ -40,7 +40,7 @@ requests==2.27.1
     # via docker
 six==1.16.0
     # via websocket-client
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

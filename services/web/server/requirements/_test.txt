@@ -252,7 +252,7 @@ six==1.16.0
     #   websocket-client
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

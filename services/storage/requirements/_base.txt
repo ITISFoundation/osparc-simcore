@@ -174,7 +174,7 @@ six==1.16.0
     #   jsonschema
     #   openapi-core
     #   python-dateutil
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

@@ -266,7 +266,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

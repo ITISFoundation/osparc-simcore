@@ -101,7 +101,7 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 six==1.16.0
     # via jsonschema
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

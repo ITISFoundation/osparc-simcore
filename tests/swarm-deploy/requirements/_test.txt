@@ -223,7 +223,7 @@ six==1.16.0
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   jsonschema
     #   websocket-client
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt

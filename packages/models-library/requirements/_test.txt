@@ -127,7 +127,7 @@ requests==2.27.1
     # via coveralls
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
