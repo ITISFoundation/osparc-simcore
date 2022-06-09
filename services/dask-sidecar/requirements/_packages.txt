@@ -72,7 +72,7 @@ locket==0.2.1
     # via
     #   -c requirements/_base.txt
     #   partd
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2

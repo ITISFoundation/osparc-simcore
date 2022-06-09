@@ -206,7 +206,7 @@ lz4==4.0.0
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 mako==1.1.5
     # via alembic
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2

@@ -52,7 +52,7 @@ lz4==4.0.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/./_base.txt
     #   jinja2

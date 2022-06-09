@@ -150,7 +150,7 @@ locket==0.2.1
     # via partd
 lz4==4.0.0
     # via -r requirements/_base.in
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   jinja2
     #   nbconvert
