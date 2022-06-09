@@ -38,7 +38,7 @@ certifi==2022.5.18.1
     #   httpcore
     #   httpx
     #   requests
-chardet==3.0.4
+charset-normalizer==2.0.12
     # via requests
 click==8.0.3
     # via
@@ -164,7 +164,7 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
     #   fastapi
     #   uvicorn
-requests==2.25.1
+requests==2.27.1
     # via fastapi
 rfc3986==1.4.0
     # via httpx

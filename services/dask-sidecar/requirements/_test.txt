@@ -154,7 +154,7 @@ python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.26.0
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   coveralls

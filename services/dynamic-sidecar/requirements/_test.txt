@@ -14,7 +14,7 @@ certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   requests
-chardet==4.0.0
+charset-normalizer==2.0.7
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -58,7 +58,7 @@ pytest-mock==3.7.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient

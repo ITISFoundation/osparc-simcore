@@ -44,12 +44,11 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
-charset-normalizer==2.0.10
-    # via aiohttp
 click==8.0.3
     # via
     #   -c requirements/_base.txt
@@ -211,7 +210,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   codecov

@@ -79,10 +79,10 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
-    # via requests
 charset-normalizer==2.0.7
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   requests
 click==8.1.3
     # via
     #   typer
@@ -274,7 +274,7 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   docker
     #   docker-compose

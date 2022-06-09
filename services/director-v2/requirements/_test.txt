@@ -77,14 +77,11 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
 charset-normalizer==2.0.10
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
@@ -286,7 +283,7 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   bokeh
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
