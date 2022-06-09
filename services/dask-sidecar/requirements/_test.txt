@@ -34,7 +34,7 @@ cffi==1.15.0
     # via
     #   -c requirements/_base.txt
     #   cryptography
-charset-normalizer==2.0.6
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
     #   aiohttp
