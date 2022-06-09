@@ -215,7 +215,7 @@ urllib3==1.26.9
     #   minio
 werkzeug==2.0.3
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
-wrapt==1.14.0
+wrapt==1.14.1
     # via aiobotocore
 yarl==1.7.2
     # via

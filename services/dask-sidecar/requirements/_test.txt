@@ -189,7 +189,7 @@ websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
     #   docker
-wrapt==1.14.0
+wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
     #   astroid
