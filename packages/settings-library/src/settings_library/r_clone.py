@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import Field, ByteSize
+from pydantic import ByteSize, Field
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings
@@ -28,7 +28,7 @@ class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: S3Settings = Field(auto_default_from_env=True)
     R_CLONE_PROVIDER: S3Provider
     R_CLONE_VERSION: str = "1.58.1"
-    R_CLONE_MEMORY_RESERVATION: ByteSize = ByteSize.validate("100mb")
-    R_CLONE_MEMORY_LIMIT: ByteSize = ByteSize.validate("1gb")
+    R_CLONE_MEMORY_RESERVATION: ByteSize = ByteSize.validate("100mib")
+    R_CLONE_MEMORY_LIMIT: ByteSize = ByteSize.validate("1gib")
     R_CLONE_MAX_CPU_USAGE: float = 0.5
     R_CLONE_UPLOAD_TIMEOUT_S: int = 3600
