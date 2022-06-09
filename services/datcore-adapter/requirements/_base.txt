@@ -20,6 +20,11 @@ anyio==3.5.0
     #   watchgod
 asgiref==3.5.0
     # via uvicorn
+attrs==20.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   jsonschema
 boto3==1.21.33
     # via pennsieve
 botocore==1.24.33
@@ -97,6 +102,11 @@ jmespath==1.0.0
     # via
     #   boto3
     #   botocore
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 opentracing==2.4.0
     # via
     #   fastapi-contrib
@@ -129,6 +139,8 @@ pyinstrument==4.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+pyrsistent==0.18.1
+    # via jsonschema
 python-dateutil==2.8.2
     # via
     #   botocore
@@ -159,7 +171,6 @@ rfc3986==1.5.0
     # via httpx
 rsa==4.0
     # via
-    #   -r requirements/_base.in
     #   pennsieve
     #   python-jose
 s3transfer==0.5.2
@@ -169,6 +180,7 @@ semver==2.13.0
 six==1.16.0
     # via
     #   ecdsa
+    #   jsonschema
     #   python-dateutil
     #   python-jose
     #   python-multipart

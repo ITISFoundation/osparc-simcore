@@ -10,6 +10,11 @@ aiofiles==0.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+attrs==20.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/_base.txt
+    #   jsonschema
 click==8.1.2
     # via
     #   -c requirements/_base.txt
@@ -57,6 +62,12 @@ jinja2==2.11.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   distributed
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 locket==0.2.1
     # via
     #   -c requirements/_base.txt
@@ -102,6 +113,10 @@ pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
     #   packaging
+pyrsistent==0.17.3
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -117,6 +132,7 @@ pyyaml==5.4.1
 six==1.15.0
     # via
     #   -c requirements/_base.txt
+    #   jsonschema
     #   packaging
     #   tenacity
 sortedcontainers==2.4.0
@@ -157,3 +173,6 @@ zict==2.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

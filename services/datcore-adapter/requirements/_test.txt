@@ -12,8 +12,10 @@ asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.11.5
     # via pylint
-attrs==21.4.0
-    # via pytest
+attrs==20.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 certifi==2021.10.8
     # via
     #   -c requirements/_base.txt

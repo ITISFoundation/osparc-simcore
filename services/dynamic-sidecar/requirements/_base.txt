@@ -193,7 +193,7 @@ packaging==21.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pamqp==2.3.0
     # via aiormq
-paramiko==2.10.3
+paramiko==2.11.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

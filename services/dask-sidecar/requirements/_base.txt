@@ -126,7 +126,9 @@ jmespath==1.0.0
     # via botocore
 jsonschema==3.2.0
     # via
+    #   -c requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   nbformat
 jupyter-client==6.1.12
     # via

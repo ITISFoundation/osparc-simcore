@@ -24,8 +24,9 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==21.4.0
+attrs==20.3.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   pytest
@@ -120,6 +121,7 @@ isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via
+    #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   docker-compose
 lazy-object-proxy==1.7.1
@@ -143,7 +145,7 @@ packaging==20.9
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.10.4
+paramiko==2.11.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
@@ -172,7 +174,9 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   packaging
 pyrsistent==0.18.1
-    # via jsonschema
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pytest==7.1.2
     # via
     #   -r requirements/_test.in

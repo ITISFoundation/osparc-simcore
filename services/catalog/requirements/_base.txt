@@ -28,6 +28,11 @@ async-timeout==4.0.2
     # via aioredis
 asyncpg==0.25.0
     # via -r requirements/_base.in
+attrs==20.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   jsonschema
 certifi==2020.12.5
     # via
     #   httpcore
@@ -91,6 +96,11 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 mako==1.1.5
     # via alembic
 markupsafe==1.1.1
@@ -131,6 +141,8 @@ pyinstrument==4.0.3
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==2.4.7
     # via packaging
+pyrsistent==0.18.1
+    # via jsonschema
 python-dotenv==0.15.0
     # via
     #   pydantic
@@ -158,6 +170,7 @@ rfc3986==1.4.0
     # via httpx
 six==1.15.0
     # via
+    #   jsonschema
     #   python-multipart
     #   tenacity
     #   thrift
