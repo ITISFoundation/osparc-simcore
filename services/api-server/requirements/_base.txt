@@ -71,7 +71,6 @@ cffi==1.15.0
 charset-normalizer==2.0.12
     # via
     #   aiohttp
-    #   httpx
     #   requests
 click==8.0.4
     # via
@@ -114,12 +113,24 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.14.7
+httpcore==0.15.0
     # via httpx
 httptools==0.2.0
     # via uvicorn
-httpx==0.22.0
-    # via -r requirements/_base.in
+httpx==0.23.0
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 idna==3.3
     # via
     #   anyio

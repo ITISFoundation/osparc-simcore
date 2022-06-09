@@ -161,8 +161,8 @@ def client(mock_env: None) -> Iterable[TestClient]:
     print("Application settings\n", settings.json(indent=2))
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
-    with TestClient(app, raise_server_exceptions=True) as client:
-        yield client
+    with TestClient(app, raise_server_exceptions=True) as test_client:
+        yield test_client
 
 
 @pytest.fixture(scope="function")

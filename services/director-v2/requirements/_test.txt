@@ -85,7 +85,6 @@ charset-normalizer==2.0.10
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   httpx
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
@@ -141,12 +140,13 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.14.4
+httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.21.3
+httpx==0.23.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 icdiff==2.0.5

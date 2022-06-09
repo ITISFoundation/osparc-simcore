@@ -16,17 +16,16 @@
 --requirement ../../../packages/simcore-sdk/requirements/_base.in
 
 
-fastapi
-httpx
-pydantic
-uvicorn
-
 aio-pika
 aiodocker
 aiofiles
 async_generator
 async-timeout
 docker-compose
+fastapi
+httpx
+pydantic
 python-magic
 PyYAML
+uvicorn
 watchdog

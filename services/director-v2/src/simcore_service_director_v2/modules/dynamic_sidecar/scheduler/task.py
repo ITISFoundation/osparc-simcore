@@ -484,8 +484,10 @@ class DynamicSidecarsScheduler:
 
 
 async def setup_scheduler(app: FastAPI):
-    dynamic_sidecars_scheduler = DynamicSidecarsScheduler(app)
-    app.state.dynamic_sidecar_scheduler = dynamic_sidecars_scheduler
+    scheduler = DynamicSidecarsScheduler(app)
+    app.state.dynamic_sidecar_scheduler = scheduler
+    assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
@@ -493,12 +495,20 @@ async def setup_scheduler(app: FastAPI):
         logger.warning("dynamic-sidecar scheduler will not be started!!!")
         return
 
-    await dynamic_sidecars_scheduler.start()
+    await scheduler.start()
 
 
 async def shutdown_scheduler(app: FastAPI):
-    dynamic_sidecar_scheduler = app.state.dynamic_sidecar_scheduler
-    await dynamic_sidecar_scheduler.shutdown()
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    ## FIXME: somehow this does not work
+    # assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+
+    # FIXME: PC->ANE: if not started, should it be shutdown?
+    await scheduler.shutdown()
 
 
-__all__ = ["DynamicSidecarsScheduler", "setup_scheduler", "shutdown_scheduler"]
+__all__: tuple[str] = (
+    "DynamicSidecarsScheduler",
+    "setup_scheduler",
+    "shutdown_scheduler",
+)

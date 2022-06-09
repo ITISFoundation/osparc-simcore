@@ -35,8 +35,6 @@ certifi==2020.12.5
     #   requests
 chardet==3.0.4
     # via requests
-charset-normalizer==2.0.10
-    # via httpx
 click==8.0.3
     # via
     #   typer
@@ -60,12 +58,19 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.14.4
+httpcore==0.15.0
     # via httpx
 httptools==0.2.0
     # via uvicorn
-httpx==0.21.3
-    # via -r requirements/_base.in
+httpx==0.23.0
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 idna==2.10
     # via
     #   anyio
@@ -215,3 +220,6 @@ websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
