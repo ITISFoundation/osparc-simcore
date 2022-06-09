@@ -5,6 +5,7 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
+from ctypes import Union
 from pathlib import Path
 from typing import Dict, List, Literal, NamedTuple, Optional, Set
 
@@ -233,11 +234,11 @@ def repo_wide_changes(exclude: Optional[Set] = None) -> None:
     reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format
-    print("## Repositroy-wide overview of libraries")
+    print("### Repo-wide overview of libraries")
     print("- #reqs files parsed:", len(reqs))
     print()
 
-    deps = defaultdict(lambda: defaultdict(list))
+    deps: dict[str, dict[str, Union[List, str]]] = defaultdict(lambda: defaultdict(list))
     for r in reqs:
         for name, version in r.dependencies.items():
             deps[name]["name"] = name

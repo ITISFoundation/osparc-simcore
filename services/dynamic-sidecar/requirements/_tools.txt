@@ -78,7 +78,7 @@ tomli==2.0.1
     #   mypy
     #   pep517
     #   pylint
-typing-extensions==3.10.0.2
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   astroid
