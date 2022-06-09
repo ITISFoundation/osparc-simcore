@@ -505,7 +505,7 @@ async def setup_scheduler(app: FastAPI):
 async def shutdown_scheduler(app: FastAPI):
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     ## FIXME: somehow this does not work
-    assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+    # assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
 
     # FIXME: PC->ANE: if not started, should it be shutdown?
     await scheduler.shutdown()
