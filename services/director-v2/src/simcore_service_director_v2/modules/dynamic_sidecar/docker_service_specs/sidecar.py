@@ -73,12 +73,12 @@ def _get_environment_variables(
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
-        "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",        
+        "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",
         "R_CLONE_VERSION": r_clone_settings.R_CLONE_VERSION,
         "R_CLONE_MEMORY_RESERVATION": r_clone_settings.R_CLONE_MEMORY_RESERVATION,
         "R_CLONE_MEMORY_LIMIT": r_clone_settings.R_CLONE_MEMORY_LIMIT,
         "R_CLONE_MAX_CPU_USAGE": f"{r_clone_settings.R_CLONE_MAX_CPU_USAGE}",
-        "R_CLONE_UPLOAD_TIMEOUT_S": f"{r_clone_settings.R_CLONE_UPLOAD_TIMEOUT_S}"
+        "R_CLONE_UPLOAD_TIMEOUT_S": f"{r_clone_settings.R_CLONE_UPLOAD_TIMEOUT_S}",
     }
 
 
