@@ -30,7 +30,7 @@ certifi==2022.5.18.1
     #   -c requirements/_base.txt
     #   minio
     #   requests
-cffi==1.14.5
+cffi==1.15.0
     # via
     #   -c requirements/_base.txt
     #   cryptography

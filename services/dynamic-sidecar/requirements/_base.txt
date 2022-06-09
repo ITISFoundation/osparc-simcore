@@ -74,7 +74,7 @@ certifi==2022.5.18.1
     #   httpcore
     #   httpx
     #   requests
-cffi==1.14.5
+cffi==1.15.0
     # via
     #   bcrypt
     #   cryptography
