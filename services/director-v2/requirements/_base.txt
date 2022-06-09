@@ -290,7 +290,7 @@ pyparsing==3.0.9
     #   packaging
 pyrsistent==0.18.1
     # via jsonschema
-python-dotenv==0.18.0
+python-dotenv==0.20.0
     # via
     #   pydantic
     #   uvicorn

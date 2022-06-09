@@ -249,7 +249,7 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-python-dotenv==0.18.0
+python-dotenv==0.20.0
     # via docker-compose
 python-magic==0.4.25
     # via -r requirements/_base.in
