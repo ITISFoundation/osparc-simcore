@@ -103,7 +103,8 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     try:
         yield file_path
     finally:
-        await aiofiles_os.remove(file_path)
+        if file_path.exists():
+            await aiofiles_os.remove(file_path)
 
 
 async def async_command(
