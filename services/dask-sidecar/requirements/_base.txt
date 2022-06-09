@@ -36,7 +36,7 @@ argon2-cffi==20.1.0
     # via jupyter-server
 async-generator==1.10
     # via nbclient
-async-timeout==4.0.1
+async-timeout==4.0.2
     # via aiohttp
 attrs==20.2.0
     # via
@@ -304,7 +304,6 @@ typing-extensions==4.2.0
     # via
     #   aiodocker
     #   aioitertools
-    #   async-timeout
     #   bokeh
     #   pydantic
 urllib3==1.26.7

@@ -15,7 +15,7 @@ aiosignal==1.2.0
     #   aiohttp
 astroid==2.11.5
     # via pylint
-async-timeout==4.0.1
+async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -177,7 +177,6 @@ typing-extensions==4.2.0
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   astroid
-    #   async-timeout
     #   pylint
 urllib3==1.26.7
     # via
