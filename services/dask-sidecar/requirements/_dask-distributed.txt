@@ -98,7 +98,7 @@ urllib3==1.26.9
     # via
     #   -c requirements/./_base.txt
     #   distributed
-zict==2.0.0
+zict==2.2.0
     # via
     #   -c requirements/./_base.txt
     #   distributed

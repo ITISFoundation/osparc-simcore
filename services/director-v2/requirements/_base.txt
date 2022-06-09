@@ -436,7 +436,7 @@ yarl==1.7.2
     #   aio-pika
     #   aiohttp
     #   aiormq
-zict==2.0.0
+zict==2.2.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed

@@ -325,7 +325,7 @@ wrapt==1.14.0
     # via aiobotocore
 yarl==1.7.2
     # via aiohttp
-zict==2.0.0
+zict==2.2.0
     # via distributed
 
 # The following packages are considered to be unsafe in a requirements file:
