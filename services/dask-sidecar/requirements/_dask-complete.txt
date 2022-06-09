@@ -133,7 +133,7 @@ typing-extensions==4.2.0
     # via
     #   -c requirements/./_base.txt
     #   bokeh
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/./_base.txt
     #   distributed

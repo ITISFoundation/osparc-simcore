@@ -340,7 +340,7 @@ typing-extensions==4.2.0
     #   aiodebug
     #   aiodocker
     #   pydantic
-urllib3==1.26.6
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

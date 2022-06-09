@@ -156,7 +156,7 @@ typing-extensions==4.2.0
     #   -c requirements/_base.txt
     #   aiodebug
     #   pydantic
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

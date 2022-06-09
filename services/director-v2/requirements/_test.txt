@@ -340,7 +340,7 @@ typing-extensions==4.2.0
     #   astroid
     #   bokeh
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
