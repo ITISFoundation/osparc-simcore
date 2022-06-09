@@ -331,7 +331,7 @@ uvicorn==0.15.0
     # via fastapi
 uvloop==0.16.0
     # via uvicorn
-watchgod==0.8.1
+watchgod==0.8.2
     # via uvicorn
 websockets==10.2
     # via uvicorn

@@ -22,6 +22,7 @@ anyio==3.6.1
     # via
     #   httpcore
     #   starlette
+    #   watchgod
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
@@ -226,7 +227,7 @@ uvicorn==0.15.0
     # via fastapi
 uvloop==0.16.0
     # via uvicorn
-watchgod==0.6
+watchgod==0.8.2
     # via uvicorn
 websockets==10.1
     # via uvicorn
