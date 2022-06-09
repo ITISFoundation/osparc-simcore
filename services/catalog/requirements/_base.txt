@@ -117,7 +117,7 @@ opentracing==2.4.0
     #   jaeger-client
 orjson==3.7.2
     # via fastapi
-packaging==20.9
+packaging==21.3
     # via -r requirements/_base.in
 psycopg2-binary==2.8.6
     # via sqlalchemy

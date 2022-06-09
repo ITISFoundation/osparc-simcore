@@ -230,7 +230,7 @@ orjson==3.7.2
     # via
     #   -r requirements/_base.in
     #   fastapi
-packaging==20.4
+packaging==21.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -328,9 +328,7 @@ rfc3986==1.4.0
     # via httpx
 six==1.15.0
     # via
-    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jsonschema
-    #   packaging
     #   python-multipart
     #   tenacity
     #   thrift

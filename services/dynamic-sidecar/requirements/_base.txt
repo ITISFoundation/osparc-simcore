@@ -189,7 +189,7 @@ opentracing==2.4.0
     # via
     #   fastapi-contrib
     #   jaeger-client
-packaging==21.0
+packaging==21.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pamqp==2.3.0
     # via aiormq

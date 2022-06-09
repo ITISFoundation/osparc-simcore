@@ -80,7 +80,7 @@ msgpack==1.0.3
     # via
     #   -c requirements/_base.txt
     #   distributed
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -133,7 +133,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   packaging
     #   tenacity
 sortedcontainers==2.4.0
     # via

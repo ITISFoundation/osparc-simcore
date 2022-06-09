@@ -179,7 +179,7 @@ numpy==1.22.3
     #   bokeh
     #   dask
     #   pandas
-packaging==20.4
+packaging==21.3
     # via
     #   bleach
     #   bokeh
@@ -265,7 +265,6 @@ six==1.15.0
     #   argon2-cffi
     #   bleach
     #   jsonschema
-    #   packaging
     #   python-dateutil
     #   websocket-client
 sniffio==1.2.0
