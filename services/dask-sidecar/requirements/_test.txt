@@ -114,7 +114,7 @@ pylint==2.13.8
     # via -r requirements/_test.in
 pyopenssl==22.0.0
     # via pytest-localftpserver
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt

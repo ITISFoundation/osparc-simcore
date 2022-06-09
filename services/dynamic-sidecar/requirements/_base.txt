@@ -245,7 +245,7 @@ pyinstrument==4.0.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pynacl==1.4.0
     # via paramiko
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.0
     # via jsonschema

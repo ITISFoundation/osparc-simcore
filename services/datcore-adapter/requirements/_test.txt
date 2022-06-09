@@ -91,7 +91,7 @@ py==1.11.0
     #   pytest-forked
 pylint==2.13.8
     # via -r requirements/_test.in
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via packaging
 pytest==7.1.2
     # via

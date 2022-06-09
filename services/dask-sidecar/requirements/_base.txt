@@ -222,7 +222,7 @@ pygments==2.9.0
     # via
     #   jupyterlab-pygments
     #   nbconvert
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.17.3
     # via jsonschema

@@ -238,7 +238,7 @@ pylint==2.13.9
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   moto

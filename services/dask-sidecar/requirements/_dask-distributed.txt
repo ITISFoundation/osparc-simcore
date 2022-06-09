@@ -67,7 +67,7 @@ psutil==5.8.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -c requirements/./_base.txt
     #   packaging

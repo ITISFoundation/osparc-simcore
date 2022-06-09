@@ -109,7 +109,7 @@ pyinstrument==3.4.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyinstrument-cext==0.2.4
     # via pyinstrument
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
