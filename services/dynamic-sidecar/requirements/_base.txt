@@ -51,7 +51,7 @@ anyio==3.6.1
     # via
     #   httpcore
     #   starlette
-asgiref==3.4.1
+asgiref==3.5.2
     # via uvicorn
 async-generator==1.10
     # via -r requirements/_base.in

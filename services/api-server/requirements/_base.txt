@@ -47,7 +47,7 @@ anyio==3.6.1
     #   httpcore
     #   starlette
     #   watchgod
-asgiref==3.5.0
+asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
     # via

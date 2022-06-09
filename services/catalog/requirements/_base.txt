@@ -22,7 +22,7 @@ anyio==3.6.1
     # via
     #   httpcore
     #   starlette
-asgiref==3.4.1
+asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
     # via aioredis
