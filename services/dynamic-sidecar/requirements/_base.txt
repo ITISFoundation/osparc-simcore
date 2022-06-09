@@ -209,7 +209,7 @@ paramiko==2.11.0
     #   docker
 pint==0.19.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-psycopg2-binary==2.9.1
+psycopg2-binary==2.9.3
     # via
     #   aiopg
     #   sqlalchemy

@@ -153,7 +153,7 @@ platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy

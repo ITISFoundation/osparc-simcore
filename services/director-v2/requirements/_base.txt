@@ -248,7 +248,7 @@ psutil==5.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.3
     # via
     #   aiopg
     #   sqlalchemy
