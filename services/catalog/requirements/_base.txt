@@ -198,7 +198,7 @@ tenacity==8.0.1
     #   -r requirements/_base.in
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.13.0
+thrift==0.16.0
     # via jaeger-client
 tornado==6.1
     # via
