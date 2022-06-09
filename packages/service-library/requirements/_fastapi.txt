@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_fastapi.txt --strip-extras requirements/_fastapi.in
 #
-anyio==3.5.0
+anyio==3.6.1
     # via starlette
 fastapi==0.76.0
     # via

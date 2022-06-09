@@ -42,7 +42,7 @@ alembic==1.8.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.5.0
+anyio==3.6.1
     # via
     #   httpcore
     #   starlette

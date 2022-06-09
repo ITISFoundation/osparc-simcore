@@ -18,7 +18,7 @@ aioredis==2.0.1
     # via aiocache
 alembic==1.8.0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.5.0
+anyio==3.6.1
     # via
     #   httpcore
     #   starlette

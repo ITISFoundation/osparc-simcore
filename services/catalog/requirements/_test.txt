@@ -14,7 +14,7 @@ alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.5.0
+anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore

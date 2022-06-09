@@ -10,7 +10,7 @@ aiohttp==3.8.1
     #   -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.5.0
+anyio==3.6.1
     # via httpcore
 async-timeout==4.0.2
     # via aiohttp

@@ -30,7 +30,7 @@ aioitertools==0.10.0
     # via aiobotocore
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.2.0
+anyio==3.6.1
     # via jupyter-server
 argon2-cffi==20.1.0
     # via jupyter-server
