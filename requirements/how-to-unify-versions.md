@@ -37,7 +37,10 @@ For instance, in this table (a part taken from ``upgrade-report.ignore.md``) we 
 in order to unify the versions, we can upgrade each of them individually in batch as follows
 
 ```bash
-for u in orjson packaging prometheus-client psycopg2-binary pyparsing pyrsistent python-dotenv requests sqlalchemy
+
+packages=orjson,packaging,prometheus-client,psycopg2-binary,pyparsing,pyrsistent,python-dotenv,requests # ... and many more
+
+for u in ${packages//,/ }
 do
    make reqs-all upgrade=$u &> reqs-$u.log
    git commit -am "upgrades $u" --no-verify
