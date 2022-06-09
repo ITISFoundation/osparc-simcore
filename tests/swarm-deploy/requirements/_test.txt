@@ -39,7 +39,7 @@ aiormq==6.2.3
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.7.7
+alembic==1.8.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in

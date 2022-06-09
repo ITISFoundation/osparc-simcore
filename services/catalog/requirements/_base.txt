@@ -16,7 +16,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioredis==2.0.1
     # via aiocache
-alembic==1.7.4
+alembic==1.8.0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.5.0
     # via

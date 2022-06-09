@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-alembic==1.7.7
+alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
