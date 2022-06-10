@@ -7,7 +7,6 @@ import logging
 import re
 import urllib.parse
 from contextlib import asynccontextmanager, contextmanager
-from importlib import reload
 from typing import AsyncGenerator, AsyncIterator, Callable, Iterator, List, Type, Union
 from unittest.mock import AsyncMock
 
@@ -42,7 +41,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
     setup_scheduler,
     shutdown_scheduler,
-    task,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
@@ -266,10 +264,9 @@ def mocked_client_api(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 @pytest.fixture
 def mock_service_running(mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.docker_api.get_dynamic_sidecar_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
     )
-    reload(task)
 
     yield mock
 
@@ -277,10 +274,9 @@ def mock_service_running(mocker: MockerFixture) -> Iterator[AsyncMock]:
 @pytest.fixture
 def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.docker_api.update_scheduler_data_label",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.update_scheduler_data_label",
         return_value=None,
     )
-    reload(task)
 
     yield None
 
