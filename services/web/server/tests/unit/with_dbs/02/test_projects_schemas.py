@@ -34,11 +34,16 @@ from simcore_service_webserver.projects.projects_schemas import (
 
 
 @pytest.mark.parametrize("api_call", (NEW_PROJECT,))
-def test_new_project_models(api_call: HttpApiCallCapture):
-    model = ProjectCreate.parse_obj(api_call.request_payload)
+async def test_new_project_models(api_call: HttpApiCallCapture):
+    create_schema = ProjectCreate.parse_obj(api_call.request_payload)
+
+    # prune and get into ProjectSQLModel
+    ProjectSQLModel.from_orm(create_schema)
+
+    db_model = self.db_model(**model.dict())
 
     assert api_call.response_body
-    model = ProjectGet.parse_obj(api_call.response_body["data"])
+    get_schema = ProjectGet.parse_obj(api_call.response_body["data"])
 
 
 @pytest.mark.parametrize("api_call", (GET_PROJECT,))
@@ -114,8 +119,8 @@ def test_build_project_model(faker: Faker):
 
 
 def test_create_workbench(faker: Faker):
+    """DEV: some tools to build pipelines"""
 
-    # some tools to build pipelines
     def create_sleeper(
         label, *, input_1: Optional[str] = None, input_2: int = 2, input_3: bool = False
     ):

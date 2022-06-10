@@ -9,6 +9,7 @@ import json
 import logging
 
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState
 from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
@@ -46,8 +47,8 @@ routes = web.RouteTableDef()
 
 class _ProjectCloneParams(BaseModel):
     # override some attributes: force_type,
-    as_template: False = Field(
-        None,
+    as_template: bool = Field(
+        False,
         description="Whether the clone is set as template",
     )
     copy_data: bool = Field(
@@ -85,7 +86,7 @@ async def clone_project(request: web.Request) -> web.Response:
 
     # This is a new project and every new graph needs to be reflected in the pipeline tables
     await director_v2_api.create_or_update_pipeline(
-        request.app, req_ctx.user_id, cloned_project.uuid
+        request.app, req_ctx.user_id, ProjectID(cloned_project["uuid"])
     )
 
     # Appends state
