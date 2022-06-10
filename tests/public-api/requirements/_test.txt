@@ -10,7 +10,7 @@ aiohttp==3.8.1
     #   -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.5.0
+anyio==3.6.1
     # via httpcore
 async-timeout==4.0.2
     # via aiohttp
@@ -19,7 +19,7 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   httpcore
     #   httpx
@@ -54,7 +54,7 @@ idna==3.3
     #   yarl
 iniconfig==1.1.1
     # via pytest
-jsonschema==4.5.1
+jsonschema==4.6.0
     # via -r requirements/_test.in
 multidict==6.0.2
     # via
@@ -66,7 +66,7 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema

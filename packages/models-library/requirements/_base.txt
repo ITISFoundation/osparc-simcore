@@ -12,7 +12,7 @@ email-validator==1.2.1
     # via pydantic
 idna==3.3
     # via email-validator
-jsonschema==4.5.1
+jsonschema==4.6.0
     # via -r requirements/_base.in
 pydantic==1.9.0
     # via

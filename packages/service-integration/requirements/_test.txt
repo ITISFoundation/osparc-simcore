@@ -10,7 +10,7 @@ attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -60,7 +60,7 @@ py==1.11.0
     #   pytest
 pylint==2.13.8
     # via -r requirements/_test.in
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
