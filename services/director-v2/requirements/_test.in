@@ -9,9 +9,20 @@
 #
 --constraint _base.txt
 
-
-# testing
+aio_pika
+aioboto3
+alembic # migration due to pytest_simcore.postgres_service2
+asgi_lifespan
+async-asgi-testclient
+bokeh
+codecov
+coveralls
+dask-gateway-server[local]
+docker
+Faker
 flaky
+minio
+pylint
 pytest
 pytest-aiohttp
 pytest-cov
@@ -20,26 +31,4 @@ pytest-icdiff
 pytest-mock
 pytest-runner
 pytest-xdist
-
-# fixtures
-asgi_lifespan
-Faker
-
-# helpers
-aioboto3
-async-asgi-testclient
-minio
-
-
-# migration due to pytest_simcore.postgres_service2
-aio_pika
-alembic
-bokeh
-dask-gateway-server[local]
-docker
 respx
-
-# tools
-codecov
-coveralls
-pylint

@@ -4,23 +4,16 @@
 
 import os
 from pathlib import Path
-from typing import Any, List
+from typing import List
 
 import pytest
 from simcore_service_dynamic_sidecar.modules import mounted_fs
-
-pytestmark = pytest.mark.asyncio
 
 # UTILS
 
 
 def _replace_slashes(path: Path) -> str:
     return str(path).replace(os.sep, "_")
-
-
-def _assert_same_object(first: Any, second: Any) -> None:
-    assert first == second
-    assert id(first) == id(second)
 
 
 # FIXTURES
