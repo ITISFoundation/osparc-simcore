@@ -7,7 +7,8 @@ import logging
 import os
 import urllib.parse
 from argparse import Namespace
-from typing import Any, AsyncIterator, Dict, NamedTuple, Optional
+from time import sleep
+from typing import Any, AsyncIterator, Dict, Final, NamedTuple, Optional
 from uuid import UUID
 
 import pytest
@@ -34,6 +35,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 )
 from starlette import status
 from starlette.testclient import TestClient
+
+WAIT_FOR_HEALTH_CALLS: Final[float] = 1.0
 
 
 class ServiceParams(NamedTuple):
@@ -280,6 +283,8 @@ def test_create_dynamic_services(
     if exp_status_code == status.HTTP_201_CREATED:
         # check the returned data
         pass
+
+    sleep(WAIT_FOR_HEALTH_CALLS)
 
 
 @pytest.mark.parametrize(

@@ -409,6 +409,10 @@ class DynamicSidecarsScheduler:
         settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
+        logger.debug(
+             "dynamic-sidecars observation interval %s",
+             settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+         )
 
         while self._keep_running:
             logger.debug("Observing dynamic-sidecars %s", self._to_observe.keys())
@@ -500,14 +504,13 @@ async def setup_scheduler(app: FastAPI):
 
 async def shutdown_scheduler(app: FastAPI):
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    ## FIXME: somehow this does not work
-    # assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+    assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
 
     # FIXME: PC->ANE: if not started, should it be shutdown?
     await scheduler.shutdown()
 
 
-__all__: tuple[str] = (
+__all__: tuple[str, ...] = (
     "DynamicSidecarsScheduler",
     "setup_scheduler",
     "shutdown_scheduler",
