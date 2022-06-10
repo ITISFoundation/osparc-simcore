@@ -39,7 +39,7 @@ aiormq==6.2.3
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.7.7
+alembic==1.8.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -55,7 +55,7 @@ attrs==20.3.0
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   minio
@@ -169,7 +169,7 @@ pyinstrument==4.1.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
@@ -223,7 +223,7 @@ six==1.16.0
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   jsonschema
     #   websocket-client
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt

@@ -10,11 +10,11 @@ aiohttp==3.8.1
     #   pytest-aiohttp
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.7.4
+alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.5.0
+anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -24,15 +24,16 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==21.4.0
+attrs==20.3.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   pytest
     #   pytest-docker
 bcrypt==3.2.2
     # via paramiko
-certifi==2020.12.5
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -43,12 +44,11 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
-charset-normalizer==2.0.10
-    # via aiohttp
 click==8.0.3
     # via
     #   -c requirements/_base.txt
@@ -120,6 +120,7 @@ isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via
+    #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   docker-compose
 lazy-object-proxy==1.7.1
@@ -128,22 +129,22 @@ mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==1.1.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
 mccabe==0.7.0
     # via pylint
-multidict==5.1.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-packaging==20.9
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.10.4
+paramiko==2.11.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
@@ -151,7 +152,7 @@ platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -167,12 +168,14 @@ pylint==2.13.8
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
 pyrsistent==0.18.1
-    # via jsonschema
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pytest==7.1.2
     # via
     #   -r requirements/_test.in
@@ -198,7 +201,7 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.15.0
+python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
@@ -207,7 +210,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   codecov
@@ -234,7 +237,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.31
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -246,12 +249,12 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-typing-extensions==3.10.0.2
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -262,7 +265,7 @@ websocket-client==0.59.0
     #   docker-compose
 wrapt==1.14.1
     # via astroid
-yarl==1.6.3
+yarl==1.7.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp

@@ -16,7 +16,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.7.7
+alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -37,7 +37,7 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.2
     # via paramiko
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 cffi==1.15.0
     # via
@@ -252,7 +252,7 @@ six==1.16.0
     #   websocket-client
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==1.4.36
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
