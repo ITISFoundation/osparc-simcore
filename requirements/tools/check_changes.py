@@ -278,7 +278,7 @@ def main() -> None:
     if args.changed_reqs:
         main_changes_stats()
     else:
-        repo_wide_changes(exclude={"*/director/*"})
+        repo_wide_changes(exclude={"*/director/*", "*/ci/*"})
 
 
 if __name__ == "__main__":
