@@ -60,6 +60,12 @@ class LockedStore:
             return list(self._queue)
 
 
+def _compensate_for_slow_systems(number: float) -> float:
+    # NOTE: in slower systems it is important to allow for enough time to pass
+    # raising by one order of magnitude
+    return number * 10
+
+
 async def test_context_aware_dispatch(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
@@ -151,12 +157,10 @@ async def test_context_aware_wrong_target_args_name(
     assert str(excinfo.value).startswith(message) is True
 
 
-@pytest.mark.flaky(max_runs=3)  # FIXME: ANE pls review and remove this flaky mark
 async def test_context_aware_measure_parallelism(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-    # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
@@ -169,8 +173,8 @@ async def test_context_aware_measure_parallelism(
     result = await asyncio.gather(*functions)
     elapsed = time() - start
 
-    assert elapsed < sleep_duration * 2  # allow for some internal delay
     assert control_sequence == result
+    assert elapsed < _compensate_for_slow_systems(sleep_duration)
 
 
 async def test_context_aware_measure_serialization(
