@@ -17,12 +17,12 @@ cloudpickle==2.0.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2022.4.0
+dask==2022.5.2
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
     #   distributed
-distributed==2022.4.0
+distributed==2022.5.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -38,9 +38,10 @@ jinja2==2.11.3
     # via
     #   -c requirements/./_base.txt
     #   distributed
-locket==0.2.1
+locket==1.0.0
     # via
     #   -c requirements/./_base.txt
+    #   distributed
     #   partd
 lz4==4.0.0
     # via

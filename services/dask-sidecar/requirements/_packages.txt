@@ -24,12 +24,12 @@ cloudpickle==2.0.0
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-dask==2022.4.0
+dask==2022.5.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   distributed
-distributed==2022.4.0
+distributed==2022.5.2
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -68,9 +68,10 @@ jsonschema==3.2.0
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-locket==0.2.1
+locket==1.0.0
     # via
     #   -c requirements/_base.txt
+    #   distributed
     #   partd
 markupsafe==2.1.1
     # via

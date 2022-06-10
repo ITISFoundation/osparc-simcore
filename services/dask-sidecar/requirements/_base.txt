@@ -69,7 +69,7 @@ cloudpickle==2.0.0
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2022.4.0
+dask==2022.5.2
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -79,7 +79,7 @@ dask-gateway==0.9.0
     # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
-distributed==2022.4.0
+distributed==2022.5.2
     # via
     #   dask
     #   dask-gateway
@@ -146,8 +146,10 @@ jupyter-server-proxy==3.2.1
     # via -r requirements/_base.in
 jupyterlab-pygments==0.1.2
     # via nbconvert
-locket==0.2.1
-    # via partd
+locket==1.0.0
+    # via
+    #   distributed
+    #   partd
 lz4==4.0.0
     # via -r requirements/_base.in
 markupsafe==2.1.1
