@@ -29,3 +29,9 @@ PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"
 MIME_TYPE_RE = (
     r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
 )
+
+# Storage basic file ID
+FILE_ID_RE = r"^(api|(.+))/((.+))/(.+)$"
+
+# S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
+S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
