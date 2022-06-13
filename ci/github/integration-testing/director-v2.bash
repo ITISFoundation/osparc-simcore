@@ -26,7 +26,7 @@ test() {
     --cov=simcore_service_director_v2 --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     --asyncio-mode=auto \
-    -v -m "not travis" "services/director-v2/tests/integration/$1" --log-level=DEBUG
+    -vvv -s --log-level=DEBUG -m "not travis" "services/director-v2/tests/integration/$1"
 }
 
 clean_up() {
