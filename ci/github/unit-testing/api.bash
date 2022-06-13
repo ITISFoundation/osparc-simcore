@@ -12,8 +12,14 @@ install() {
 }
 
 test() {
-  pytest --durations=10 \
-          -v -m "not travis" api/tests
+  pytest \
+    --color=yes \
+    --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+    api/tests
 }
 
 # Check if the function exists (bash specific)

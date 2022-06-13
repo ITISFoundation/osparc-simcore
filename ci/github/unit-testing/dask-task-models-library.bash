@@ -31,7 +31,10 @@ test() {
     --cov-report=xml \
     --cov=dask_task_models_library \
     --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
     --verbose \
+    -m "not heavy_load" \
     packages/dask-task-models-library/tests
 }
 
