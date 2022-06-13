@@ -5,7 +5,17 @@
 
 import json
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+)
 from urllib.parse import quote_plus
 from uuid import uuid4
 
@@ -19,42 +29,9 @@ from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports import node_config
+from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
-
-
-def _set_configuration(
-    create_task: Callable[..., str],
-    project_id: str,
-    node_id: str,
-    json_configuration: str,
-) -> Dict[str, Any]:
-    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", f"{node_id}")
-    configuration = json.loads(json_configuration)
-    create_task(project_id, node_id, **configuration)
-    return configuration
-
-
-def _assign_config(
-    config_dict: dict, port_type: str, entries: List[Tuple[str, str, Any]]
-):
-    if entries is None:
-        return
-    for entry in entries:
-
-        config_dict["schema"][port_type].update(
-            {
-                entry[0]: {
-                    "label": "some label",
-                    "description": "some description",
-                    "displayOrder": 2,
-                    "type": entry[1],
-                }
-            }
-        )
-        if not entry[2] is None:
-            config_dict[port_type].update({entry[0]: entry[2]})
 
 
 @pytest.fixture
@@ -70,7 +47,9 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
     print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
-        [usr_id] = result.fetchone()
+        row = result.first()
+        assert row
+        usr_id = row[users.c.id]
 
     yield usr_id
 
@@ -91,7 +70,9 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
     print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
-        [prj_uuid] = result.fetchone()
+        row = result.first()
+        assert row
+        prj_uuid = row[projects.c.uuid]
 
     yield prj_uuid
 
@@ -164,7 +145,7 @@ def create_store_link(
     project_id: str,
     node_uuid: str,
     storage_service: URL,  # packages/pytest-simcore/src/pytest_simcore/simcore_storage_service.py
-) -> Callable[[Path], Dict[str, str]]:
+) -> Callable[[Path], Awaitable[Dict[str, str]]]:
     async def _create(file_path: Path) -> Dict[str, str]:
         file_path = Path(file_path)
         assert file_path.exists()
@@ -207,8 +188,8 @@ def create_special_configuration(
     node_uuid: str,
 ) -> Callable:
     def _create(
-        inputs: List[Tuple[str, str, Any]] = None,
-        outputs: List[Tuple[str, str, Any]] = None,
+        inputs: Optional[List[Tuple[str, str, Any]]] = None,
+        outputs: Optional[List[Tuple[str, str, Any]]] = None,
         project_id: str = project_id,
         node_id: str = node_uuid,
     ) -> Tuple[Dict, str, str]:
@@ -274,7 +255,7 @@ def create_2nodes_configuration(
 
 
 @pytest.fixture
-def create_pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
+def create_pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[[str], str]]:
     created_pipeline_ids: List[str] = []
 
     def _create(project_id: str) -> str:
@@ -284,7 +265,9 @@ def create_pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
                 .values(project_id=project_id)
                 .returning(comp_pipeline.c.project_id)
             )
-            new_pipeline_id = result.first()[comp_pipeline.c.project_id]
+            row = result.first()
+            assert row
+            new_pipeline_id = row[comp_pipeline.c.project_id]
         created_pipeline_ids.append(f"{new_pipeline_id}")
         return new_pipeline_id
 
@@ -300,7 +283,7 @@ def create_pipeline(postgres_db: sa.engine.Engine) -> Callable[[str], str]:
 
 
 @pytest.fixture
-def create_task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
+def create_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., str]]:
     created_task_ids: List[int] = []
 
     def _create(project_id: str, node_uuid: str, **overrides) -> str:
@@ -315,7 +298,9 @@ def create_task(postgres_db: sa.engine.Engine) -> Callable[..., str]:
                 .values(**task_config)
                 .returning(comp_tasks.c.task_id)
             )
-            new_task_id = result.first()[comp_tasks.c.task_id]
+            row = result.first()
+            assert row
+            new_task_id = row[comp_tasks.c.task_id]
         created_task_ids.append(new_task_id)
         return node_uuid
 
