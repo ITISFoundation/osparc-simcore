@@ -19,8 +19,8 @@ class ClientSessionContextManager:
         self.active_session = session or ClientSession(
             timeout=ClientTimeout(
                 total=None,
-                connect=client_request_settings.aiohttp_connect_timeout,
-                sock_connect=client_request_settings.aiohttp_sock_connect_timeout,
+                connect=client_request_settings.HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT,
+                sock_connect=client_request_settings.HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT,
             )  # type: ignore
         )
         self.is_owned = self.active_session is not session

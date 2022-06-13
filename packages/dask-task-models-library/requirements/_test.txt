@@ -19,7 +19,7 @@ attrs==21.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 charset-normalizer==2.0.12
     # via
@@ -78,7 +78,7 @@ py==1.11.0
     # via pytest
 pylint==2.13.8
     # via -r requirements/_test.in
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging

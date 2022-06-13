@@ -16,7 +16,7 @@ Makefile                                  @pcrespov @sanderegg
 /docs/                                    @pcrespov
 /packages/models-library/                 @sanderegg @pcrespov
 /packages/pytest-simcore/                 @pcrespov @sanderegg
-/packages/service-integration/            @pcrespov @sanderegg @KZzizzle
+/packages/service-integration/            @pcrespov @sanderegg
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov

@@ -36,7 +36,6 @@ ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at"
 DEFAULT_COMMAND_TIMEOUT = 5.0
 WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
-pytestmark = pytest.mark.asyncio
 
 # FIXTURES
 

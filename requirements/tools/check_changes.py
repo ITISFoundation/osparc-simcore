@@ -207,7 +207,7 @@ def parse_dependencies(
     reqs = []
     exclude = exclude or set()
     for reqfile in repodir.rglob("**/requirements/_*.txt"):
-        if any(fnmatch.fnmatch(reqfile, x) for x in exclude):
+        if any(fnmatch.fnmatch(f"{reqfile}", x) for x in exclude):
             continue
         try:
             t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[
@@ -233,14 +233,14 @@ def repo_wide_changes(exclude: Optional[Set] = None) -> None:
     reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format
-    print("## Repositroy-wide overview of libraries")
+    print("### Repo-wide overview of libraries")
     print("- #reqs files parsed:", len(reqs))
     print()
 
-    deps = defaultdict(lambda: defaultdict(list))
+    deps: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
     for r in reqs:
         for name, version in r.dependencies.items():
-            deps[name]["name"] = name
+            deps[name]["name"] = name  # type: ignore
             deps[name][r.target].append(version)
 
     with printing_table(

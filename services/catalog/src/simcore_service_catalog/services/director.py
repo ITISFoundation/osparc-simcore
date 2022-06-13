@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -27,29 +27,38 @@ director_startup_retry_policy = dict(
 )
 
 
+class UnresponsiveService(RuntimeError):
+    pass
+
+
 async def setup_director(app: FastAPI) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
         # init client-api
-        logger.debug("Setup director at %s...", settings.base_url)
-        director_client = DirectorApi(base_url=settings.base_url, app=app)
+        logger.debug("Setup director at %s ...", f"{settings.base_url=}")
+        client = DirectorApi(base_url=settings.base_url, app=app)
 
         # check that the director is accessible
-        async for attempt in AsyncRetrying(**director_startup_retry_policy):
-            with attempt:
-                if not await director_client.is_responsive():
-                    raise ValueError("Director-v0 is not responsive")
+        try:
+            async for attempt in AsyncRetrying(**director_startup_retry_policy):
+                with attempt:
+                    if not await client.is_responsive():
+                        raise UnresponsiveService("Director-v0 is not responsive")
 
-                logger.info(
-                    "Connection to director-v0 succeded [%s]",
-                    json_dumps(attempt.retry_state.retry_object.statistics),
-                )
+                    logger.info(
+                        "Connection to director-v0 succeded [%s]",
+                        json_dumps(attempt.retry_state.retry_object.statistics),
+                    )
+        except UnresponsiveService:
+            await client.close()
+            raise
 
-        app.state.director_api = director_client
+        app.state.director_api = client
 
 
 async def close_director(app: FastAPI) -> None:
-    if director_client := app.state.director_api:
-        await director_client.delete()
+    client: Optional[DirectorApi]
+    if client := app.state.director_api:
+        await client.close()
 
     logger.debug("Director client closed successfully")
 
@@ -131,7 +140,7 @@ class DirectorApi:
         )
         self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
 
-    async def delete(self):
+    async def close(self):
         await self.client.aclose()
 
     # OPERATIONS

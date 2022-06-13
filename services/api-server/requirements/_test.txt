@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-alembic==1.7.7
+alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.5.0
+anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -46,7 +46,7 @@ botocore==1.26.4
     #   s3transfer
 botocore-stubs==1.26.9
     # via boto3-stubs
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -64,7 +64,7 @@ charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.0.4
+click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -156,7 +156,7 @@ itsdangerous==2.1.2
     # via
     #   -c requirements/_base.txt
     #   flask
-jinja2==3.1.1
+jinja2==3.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -238,7 +238,7 @@ pylint==2.13.9
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   moto
@@ -327,7 +327,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -343,7 +343,7 @@ tomli==2.0.1
     #   pytest
 types-boto3==1.0.2
     # via -r requirements/_test.in
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   astroid
