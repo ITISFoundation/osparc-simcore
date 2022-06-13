@@ -337,7 +337,7 @@ async def _inspect_service_and_print_logs(
             print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
         logs = await docker_client.services.logs(
-            service_details["ID"], stderr=True, stdout=True, tail=50
+            service_details["ID"], stderr=True, stdout=True, tail=500
         )
         formatted_logs = "".join(logs)
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
@@ -422,11 +422,6 @@ async def assert_services_reply_200(
             service_data,
         )
 
-        await _inspect_service_and_print_logs(
-            tag=f"before_port_forward {service_uuid}",
-            service_name=service_data["service_host"],
-            is_legacy=is_legacy(node_data),
-        )
         exposed_port = (
             await _port_forward_legacy_service(
                 service_name=service_data["service_host"],
@@ -435,12 +430,6 @@ async def assert_services_reply_200(
             if is_legacy(node_data)
             else await _get_proxy_port(node_uuid=service_uuid)
         )
-        await _inspect_service_and_print_logs(
-            tag=f"after_port_forward {service_uuid}",
-            service_name=service_data["service_host"],
-            is_legacy=is_legacy(node_data),
-        )
-
         try:
             await assert_service_is_available(
                 exposed_port=exposed_port,
