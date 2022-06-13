@@ -432,7 +432,7 @@ async def get_labels_for_involved_services(
         service_tag=service_tag,
         service_labels=simcore_service_labels,
     )
-    logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+    log.info("labels_for_involved_services=%s", labels_for_involved_services)
     return labels_for_involved_services
 
 

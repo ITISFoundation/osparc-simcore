@@ -144,7 +144,7 @@ def run_sequentially_in_context(
                             result = e
                         await out_q.put(result)
 
-                    logging.info(
+                    logger.info(
                         "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
                         decorated_function.__name__,
                         target_args,

@@ -498,7 +498,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 delete_tasks.append(task)
 
             except ProjectNotFoundError:
-                logging.warning(
+                logger.warning(
                     "Project with %s was not found, skipping removal",
                     f"{project_uuid=}",
                 )

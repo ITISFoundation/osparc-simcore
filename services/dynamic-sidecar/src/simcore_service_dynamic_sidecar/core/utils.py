@@ -54,7 +54,7 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
 
                 protocol = "https" if registry_settings.REGISTRY_SSL else "http"
                 url = f"{protocol}://{registry_settings.api_url}/"
-                logging.info("Registry test url ='%s'", url)
+                logger.info("Registry test url ='%s'", url)
                 response = await client.get(url, timeout=1, **params)
                 reachable = (
                     response.status_code == status.HTTP_200_OK and response.json() == {}

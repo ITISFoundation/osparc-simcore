@@ -55,7 +55,7 @@ async def remove_the_compose_spec(
 
 
 async def on_shutdown_handler(app: FastAPI) -> None:
-    logging.info("Going to remove spawned containers")
+    logger.info("Going to remove spawned containers")
     shared_store: SharedStore = app.state.shared_store
     settings: DynamicSidecarSettings = app.state.settings
 
@@ -64,4 +64,4 @@ async def on_shutdown_handler(app: FastAPI) -> None:
         settings=settings,
         command_timeout=settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
     )
-    logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])
+    logger.info("Container removal did_succeed=%s\n%s", result[0], result[1])

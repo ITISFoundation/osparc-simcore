@@ -41,7 +41,7 @@ def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
 
 def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> None:
     # mainly used to debug issues with the API
-    logging.debug(
+    logger.debug(
         (
             "%s -> %s generated:\n %s\nThe above logs can safely "
             "be ignored, except when debugging an issue "
