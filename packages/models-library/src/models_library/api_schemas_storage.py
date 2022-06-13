@@ -6,16 +6,30 @@
     IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
+import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Pattern, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, constr
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, LocationName, NodeID
+from models_library.users import UserID
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field
 from pydantic.networks import AnyUrl
 
-from .basic_regex import UUID_RE
+from .basic_regex import FILE_ID_RE, S3_BUCKET_NAME_RE, UUID_RE
 from .generics import ListModel
+
+ETag = str
+
+
+class FileID(ConstrainedStr):
+    regex = re.compile(FILE_ID_RE)
+
+
+class S3BucketName(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(S3_BUCKET_NAME_RE)
 
 
 # /
@@ -37,8 +51,8 @@ class Fake(BaseModel):
 
 
 class FileLocation(BaseModel):
-    name: str
-    id: int
+    name: LocationName
+    id: LocationID
 
     class Config:
         schema_extra = {
@@ -50,7 +64,9 @@ FileLocationArray = ListModel[FileLocation]
 
 # /locations/{location_id}/datasets
 
-DatCoreId = constr(regex=r"^N:dataset:" + UUID_RE)
+
+class DatCoreId(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(rf"^N:dataset:{UUID_RE}")
 
 
 class DatasetMetaData(BaseModel):
@@ -92,24 +108,26 @@ DatasetMetaDataArray = ListModel[DatasetMetaData]
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
 class FileMetaData(BaseModel):
-    file_uuid: Optional[str] = Field(
+    file_uuid: Optional[FileID] = Field(
         description="Unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
     )
 
-    user_id: Optional[int]
+    user_id: Optional[UserID]
     user_name: Optional[str]
 
-    location_id: Optional[int] = Field(description="Storage location")
-    location: Optional[str] = Field(description="Storage location display name")
+    location_id: Optional[LocationID] = Field(description="Storage location")
+    location: Optional[LocationName] = Field(
+        description="Storage location display name"
+    )
 
     bucket_name: Optional[str] = Field(description="Name of the s3 bucket")
-    object_name: Optional[str] = Field(
+    object_name: Optional[FileID] = Field(
         description="Name of the s3 object within the bucket"
     )
 
-    project_id: Optional[UUID]
+    project_id: Optional[ProjectID]
     project_name: Optional[str]
-    node_id: Optional[UUID]
+    node_id: Optional[NodeID]
     node_name: Optional[str]
     file_name: Optional[str] = Field(description="Display name for a file")
 
@@ -123,8 +141,8 @@ class FileMetaData(BaseModel):
 
     created_at: Optional[datetime]
     last_modified: Optional[datetime]
-    file_size: Optional[int] = Field(-1, description="File size in bytes")
-    entity_tag: Optional[str] = Field(
+    file_size: Optional[ByteSize] = Field(-1, description="File size in bytes")
+    entity_tag: Optional[ETag] = Field(
         description="Entity tag (or ETag), represents a specific version of the file",
     )
     is_soft_link: bool = Field(
@@ -141,7 +159,7 @@ class FileMetaData(BaseModel):
                 # FIXME: this is the old example and might be wrong!
                 {
                     "file_uuid": "simcore-testing/85eef642-e808-4a90-82f5-1ee55da79e25/1000/3",
-                    "location_id": "0",
+                    "location_id": 0,
                     "location_name": "simcore.s3",
                     "bucket_name": "simcore-testing",
                     "object_name": "85eef642-e808-4a90-82f5-1ee55da79e25/d5ac1d43-db04-422c-95a1-38b59f45f70b/3",
@@ -162,7 +180,7 @@ class FileMetaData(BaseModel):
                 },
                 {
                     "file_uuid": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
-                    "location_id": "0",
+                    "location_id": 0,
                     "location": "simcore.s3",
                     "bucket_name": "master-simcore",
                     "object_name": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",

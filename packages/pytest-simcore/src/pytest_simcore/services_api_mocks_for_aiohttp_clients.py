@@ -369,7 +369,7 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_locations_link_pattern,
         status=web.HTTPOk.status_code,
-        payload={"data": [{"name": "simcore.s3", "id": "0"}]},
+        payload={"data": [{"name": "simcore.s3", "id": 0}]},
     )
 
     return aioresponses_mocker

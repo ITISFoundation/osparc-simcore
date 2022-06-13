@@ -94,7 +94,7 @@ def test_store_discriminator():
             "thumbnail": "",
             "outputs": {
                 "outFile": {
-                    "store": "0",
+                    "store": 0,
                     "dataset": "05e9404a-acb4-11e9-bf0f-02420aff77ac",
                     "path": "05e9404a-acb4-11e9-bf0f-02420aff77ac/4b3ac665-f692-5f7f-8b27-dadcb3f77260/output.csv",
                     "label": "output.csv",
@@ -110,7 +110,9 @@ def test_store_discriminator():
     simcore_node = Node.parse_obj(workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"])
 
     # must cast to the right subclass within project_nodes.py's InputTypes and OutputTypes unions
+    assert datacore_node.outputs
     assert isinstance(datacore_node.outputs["outFile"], DatCoreFileLink)
+    assert simcore_node.outputs
     assert isinstance(simcore_node.outputs["outFile"], SimCoreFileLink)
-
+    assert rawgraph_node.inputs
     assert isinstance(rawgraph_node.inputs["input_1"], PortLink)

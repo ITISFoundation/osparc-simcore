@@ -7,7 +7,7 @@
 """
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, constr, validator
@@ -22,6 +22,9 @@ UUID_REGEX = (
     r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
 NodeIDStr = constr(regex=UUID_REGEX)
+
+LocationID = Union[Literal[0], Literal[1]]
+LocationName = Union[Literal["simcore.s3"], Literal["datcore"]]
 
 
 class PortLink(BaseModel):
@@ -73,12 +76,9 @@ class DownloadLink(BaseModel):
 class BaseFileLink(BaseModel):
     """Base class for I/O port types with links to storage services"""
 
-    # TODO: constructor will always cast to str here. We should perhaps set is as str. Actually
-    # if we want to do hash in inputs/outputs ... we should have a single type for identifiers
-    # Recall lru_cache options regarding types!!
-    store: Union[str, int] = Field(
+    store: LocationID = Field(
         ...,
-        description="The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore",
+        description="The store identifier: 0 for simcore S3, 1 for datcore",
     )
 
     path: str = Field(
@@ -112,9 +112,9 @@ class SimCoreFileLink(BaseFileLink):
     @classmethod
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
-        if v != "0":
+        if v != 0:
             raise ValueError(f"SimCore store identifier must be set to 0, got {v}")
-        return "0"
+        return 0
 
     @validator("label", always=True, pre=True)
     @classmethod
@@ -128,7 +128,7 @@ class SimCoreFileLink(BaseFileLink):
         schema_extra = {
             # a project file
             "example": {
-                "store": "0",
+                "store": 0,
                 "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
                 "label": "input.txt",
@@ -136,7 +136,7 @@ class SimCoreFileLink(BaseFileLink):
             "examples": [
                 # minimal
                 {
-                    "store": "0",
+                    "store": 0,
                     "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 },
                 # w/ store id as int
@@ -183,7 +183,7 @@ class DatCoreFileLink(BaseFileLink):
             "examples": [
                 # with store id as str
                 {
-                    "store": "1",
+                    "store": 1,
                     "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
                     "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
                     "label": "initial_WTstates",
