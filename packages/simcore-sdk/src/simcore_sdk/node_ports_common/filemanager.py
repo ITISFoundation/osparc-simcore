@@ -7,6 +7,9 @@ from typing import Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession
+from models_library.api_schemas_storage import ETag, FileID, FileMetaData
+from models_library.projects_nodes_io import LocationID, LocationName
+from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from settings_library.r_clone import RCloneSettings
 from tqdm import tqdm
@@ -15,8 +18,8 @@ from yarl import URL
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from ..node_ports_common.storage_client import update_file_meta_data
 from . import exceptions, storage_client
-from .constants import SIMCORE_LOCATION, ETag
-from .r_clone import is_r_clone_available, sync_local_to_s3
+from .constants import SIMCORE_LOCATION
+from .r_clone import RCloneFailedError, is_r_clone_available, sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
@@ -24,22 +27,22 @@ CHUNK_SIZE = 1 * 1024 * 1024
 
 
 async def _get_location_id_from_location_name(
-    user_id: int,
-    store: str,
+    user_id: UserID,
+    store: LocationName,
     session: ClientSession,
-) -> str:
+) -> LocationID:
     resp = await storage_client.get_storage_locations(session, user_id)
     for location in resp:
         if location.name == store:
-            return f"{location.id}"
+            return location.id
     # location id not found
     raise exceptions.S3InvalidStore(store)
 
 
 async def _get_download_link(
-    user_id: int,
-    store_id: str,
-    file_id: str,
+    user_id: UserID,
+    store_id: LocationID,
+    file_id: FileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
 ) -> URL:
@@ -57,10 +60,10 @@ async def _get_download_link(
     return URL(link)
 
 
-async def _get_upload_link(
-    user_id: int,
-    store_id: str,
-    file_id: str,
+async def _get_upload_links(
+    user_id: UserID,
+    store_id: LocationID,
+    file_id: FileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
 ) -> URL:
@@ -144,10 +147,10 @@ async def _upload_file_to_link(
 
 async def get_download_link_from_s3(
     *,
-    user_id: int,
-    store_name: Optional[str],
-    store_id: Optional[str],
-    s3_object: str,
+    user_id: UserID,
+    store_name: Optional[LocationName],
+    store_id: Optional[LocationID],
+    s3_object: FileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
 ) -> URL:
@@ -173,13 +176,13 @@ async def get_download_link_from_s3(
 
 async def get_upload_link_from_s3(
     *,
-    user_id: int,
-    store_name: Optional[str],
-    store_id: Optional[str],
-    s3_object: str,
+    user_id: UserID,
+    store_name: Optional[LocationName],
+    store_id: Optional[LocationID],
+    s3_object: FileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
-) -> Tuple[str, URL]:
+) -> Tuple[LocationID, URL]:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
@@ -197,10 +200,10 @@ async def get_upload_link_from_s3(
 
 async def download_file_from_s3(
     *,
-    user_id: int,
-    store_name: Optional[str],
-    store_id: Optional[str],
-    s3_object: str,
+    user_id: UserID,
+    store_name: Optional[LocationName],
+    store_id: Optional[LocationID],
+    s3_object: FileID,
     local_folder: Path,
     client_session: Optional[ClientSession] = None,
 ) -> Path:
@@ -264,14 +267,14 @@ async def download_file_from_link(
 
 async def upload_file(
     *,
-    user_id: int,
-    store_id: Optional[str],
-    store_name: Optional[str],
-    s3_object: str,
+    user_id: UserID,
+    store_id: Optional[LocationID],
+    store_name: Optional[LocationName],
+    s3_object: FileID,
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-) -> Tuple[str, str]:
+) -> Tuple[LocationID, ETag]:
     """Uploads a file to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -281,59 +284,71 @@ async def upload_file(
     :return: stored id
     """
     log.debug(
-        "Trying to upload file to S3: store name %s, store id %s, s3object %s, file path %s",
-        store_name,
-        store_id,
-        s3_object,
-        local_file_path,
+        "Uploading %s to %s:%s@%s",
+        f"{local_file_path=}",
+        f"{store_id=}",
+        f"{store_name=}",
+        f"{s3_object=}",
     )
+
+    use_rclone = (
+        await is_r_clone_available(r_clone_settings) and store_id == SIMCORE_LOCATION
+    )
+
     async with ClientSessionContextManager(client_session) as session:
-        store_id, upload_link = await get_upload_link_from_s3(
-            user_id=user_id,
-            store_name=store_name,
-            store_id=store_id,
-            s3_object=s3_object,
-            client_session=session,
-            link_type=storage_client.LinkType.PRESIGNED,
-        )
-
-        if not upload_link:
-            raise exceptions.S3InvalidPathError(s3_object)
-
-        if (
-            await is_r_clone_available(r_clone_settings)
-            and store_id == SIMCORE_LOCATION
-        ):
-            await sync_local_to_s3(
-                session=session,
-                r_clone_settings=r_clone_settings,
-                s3_object=s3_object,
-                local_file_path=local_file_path,
+        upload_link = None
+        try:
+            store_id, upload_link = await get_upload_link_from_s3(
                 user_id=user_id,
+                store_name=store_name,
                 store_id=store_id,
+                s3_object=s3_object,
+                client_session=session,
+                link_type=storage_client.LinkType.S3
+                if use_rclone
+                else storage_client.LinkType.PRESIGNED,
             )
-        else:
-            try:
-                await _upload_file_to_link(session, upload_link, local_file_path)
-            except exceptions.S3TransferError as err:
-                await delete_file(
-                    user_id=user_id,
-                    store_id=store_id,
-                    s3_object=s3_object,
-                    client_session=session,
-                )
-                raise err
 
-        e_tag = await update_file_meta_data(
-            session=session, s3_object=s3_object, user_id=user_id
-        )
+            if not upload_link:
+                raise exceptions.S3InvalidPathError(s3_object)
+
+            if use_rclone:
+                assert r_clone_settings  # nosec
+                await sync_local_to_s3(
+                    local_file_path,
+                    r_clone_settings,
+                    upload_link,
+                )
+            else:
+                try:
+                    await _upload_file_to_link(session, upload_link, local_file_path)
+                except exceptions.S3TransferError as err:
+                    await delete_file(
+                        user_id=user_id,
+                        store_id=store_id,
+                        s3_object=s3_object,
+                        client_session=session,
+                    )
+                    raise err
+
+            e_tag = await update_file_meta_data(
+                session=session, s3_object=s3_object, user_id=user_id
+            )
+        except (RCloneFailedError, exceptions.S3TransferError) as exc:
+            log.error("The upload failed with an unexpected error:", exc_info=True)
+            if upload_link:
+                # abort the upload correctly, so it can revert back to last version
+                assert store_id  # nosec
+                await delete_file(user_id, store_id, s3_object, session)
+                log.warning("Upload aborted")
+            raise exceptions.S3TransferError from exc
         return store_id, e_tag
 
 
 async def entry_exists(
-    user_id: int,
-    store_id: str,
-    s3_object: str,
+    user_id: UserID,
+    store_id: LocationID,
+    s3_object: FileID,
     client_session: Optional[ClientSession] = None,
 ) -> bool:
     """Returns True if metadata for s3_object is present"""
@@ -341,36 +356,46 @@ async def entry_exists(
         async with ClientSessionContextManager(client_session) as session:
             log.debug("Will request metadata for s3_object=%s", s3_object)
 
-            result = await storage_client.get_file_metadata(
+            file_metadata: FileMetaData = await storage_client.get_file_metadata(
                 session, s3_object, store_id, user_id
             )
-            log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
-            return result.get("object_name") == s3_object if result else False
+            log.debug(
+                "Result for metadata s3_object=%s, result=%s",
+                s3_object,
+                f"{file_metadata=}",
+            )
+            return bool(file_metadata.object_name == s3_object)
     except exceptions.S3InvalidPathError:
         return False
 
 
 async def get_file_metadata(
-    user_id: int,
-    store_id: str,
-    s3_object: str,
+    user_id: UserID,
+    store_id: LocationID,
+    s3_object: FileID,
     client_session: Optional[ClientSession] = None,
-) -> Tuple[str, str]:
+) -> Tuple[LocationID, ETag]:
+    """
+    :raises S3InvalidPathError
+    """
     async with ClientSessionContextManager(client_session) as session:
         log.debug("Will request metadata for s3_object=%s", s3_object)
-        result = await storage_client.get_file_metadata(
+        file_metadata = await storage_client.get_file_metadata(
             session, s3_object, store_id, user_id
         )
-    if not result:
-        raise exceptions.StorageInvalidCall(f"The file '{s3_object}' cannot be found")
-    log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
-    return (f"{result.get('location_id', '')}", result.get("entity_tag", ""))
+
+    log.debug(
+        "Result for metadata s3_object=%s, result=%s", s3_object, f"{file_metadata=}"
+    )
+    assert file_metadata.location_id  # nosec
+    assert file_metadata.entity_tag  # nosec
+    return (file_metadata.location_id, file_metadata.entity_tag)
 
 
 async def delete_file(
-    user_id: int,
-    store_id: str,
-    s3_object: str,
+    user_id: UserID,
+    store_id: LocationID,
+    s3_object: FileID,
     client_session: Optional[ClientSession] = None,
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:

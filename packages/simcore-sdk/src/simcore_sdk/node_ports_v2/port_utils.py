@@ -9,7 +9,8 @@ from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.storage_client import LinkType
 from yarl import URL
 
-from ..node_ports_common import config, data_items_utils, filemanager
+from ..node_ports_common import data_items_utils, filemanager
+from ..node_ports_common.constants import SIMCORE_LOCATION
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ async def get_download_link_from_storage(
 
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
-        store_id=f"{value.store}",
+        store_id=value.store,
         store_name=None,
         s3_object=value.path,
         link_type=link_type,
@@ -101,8 +102,8 @@ async def get_download_link_from_storage_overload(
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
-        store_name=config.STORE,
-        store_id=None,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
         link_type=link_type,
     )
@@ -116,8 +117,8 @@ async def get_upload_link_from_storage(
     s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
     _, link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
-        store_id=None,
-        store_name=config.STORE,
+        store_id=SIMCORE_LOCATION,
+        store_name=None,
         s3_object=s3_object,
         link_type=link_type,
     )
@@ -186,8 +187,8 @@ async def push_file_to_store(
 
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
-        store_id=None,
-        store_name=config.STORE,
+        store_id=SIMCORE_LOCATION,
+        store_name=None,
         s3_object=s3_object,
         local_file_path=file,
         r_clone_settings=r_clone_settings,
@@ -242,7 +243,7 @@ async def get_file_link_from_url(
     )
     store_id, e_tag = await filemanager.get_file_metadata(
         user_id=user_id,
-        store_id="0",
+        store_id=0,
         s3_object=s3_object,
     )
     log.debug("file meta data for %s found, received ETag %s", new_value, e_tag)
