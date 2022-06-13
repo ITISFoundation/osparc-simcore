@@ -126,7 +126,7 @@ class DynamicSidecarClient:
 
         response = await self._client.get(url=url, params=dict(only_status=True))
         if response.status_code != status.HTTP_200_OK:
-            logging.warning(
+            logger.warning(
                 "Unexpected response: status=%s, body=%s",
                 response.status_code,
                 response.text,
