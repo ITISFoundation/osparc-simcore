@@ -316,31 +316,32 @@ async def _inspect_service_and_print_logs(
         print(f"Skipping service logs and inspect for {service_name}")
         return
 
-    target_service = service_name.replace(
+    proxy_service = service_name.replace(
         DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
     )
 
-    async with aiodocker.Docker() as docker_client:
-        service_details = await docker_client.services.inspect(target_service)
+    for target_service in (proxy_service, service_name):
+        async with aiodocker.Docker() as docker_client:
+            service_details = await docker_client.services.inspect(target_service)
 
-        print(f"{SEPARATOR} - {tag}\nService inspect: {target_service}")
+            print(f"{SEPARATOR} - {tag}\nService inspect: {target_service}")
 
-        formatted_inspect = json.dumps(service_details, indent=2)
-        print(f"{formatted_inspect}\n{SEPARATOR}")
+            formatted_inspect = json.dumps(service_details, indent=2)
+            print(f"{formatted_inspect}\n{SEPARATOR}")
 
-        # print containers inspect to see them all
-        for container in await docker_client.containers.list():
-            container_inspect = await container.show()
-            formatted_container_inspect = json.dumps(container_inspect, indent=2)
-            container_name = container_inspect["Name"][1:]
-            print(f"Container inspect: {container_name}")
-            print(f"{formatted_container_inspect}\n{SEPARATOR}")
+            # print containers inspect to see them all
+            for container in await docker_client.containers.list():
+                container_inspect = await container.show()
+                formatted_container_inspect = json.dumps(container_inspect, indent=2)
+                container_name = container_inspect["Name"][1:]
+                print(f"Container inspect: {container_name}")
+                print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
-        logs = await docker_client.services.logs(
-            service_details["ID"], stderr=True, stdout=True, tail=500
-        )
-        formatted_logs = "".join(logs)
-        print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
+            logs = await docker_client.services.logs(
+                service_details["ID"], stderr=True, stdout=True, tail=500
+            )
+            formatted_logs = "".join(logs)
+            print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
 
 def run_command(command: str) -> str:
