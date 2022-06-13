@@ -3,6 +3,9 @@
 import os
 from typing import Dict, Type
 
+from models_library.api_schemas_storage import LocationName
+from pydantic import parse_obj_as
+
 # required configurations
 STORAGE_ENDPOINT: str = os.environ.get("STORAGE_ENDPOINT", default="undefined")
 STORAGE_VERSION: str = "v0"
@@ -13,7 +16,9 @@ POSTGRES_PW: str = os.environ.get("POSTGRES_PASSWORD", "simcore")
 POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "simcore")
 
 # overridable required configurations
-STORE: str = os.environ.get("STORAGE_STORE_LOCATION_NAME", default="simcore.s3")
+STORE: LocationName = parse_obj_as(
+    LocationName, os.environ.get("STORAGE_STORE_LOCATION_NAME", default="simcore.s3")
+)
 BUCKET: str = os.environ.get("S3_BUCKET_NAME", default="simcore")
 
 

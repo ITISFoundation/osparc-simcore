@@ -1,25 +1,28 @@
 import tempfile
 import threading
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Any, Union
+
+from models_library.api_schemas_storage import FileID
+from models_library.projects_nodes_io import LocationID
 
 from . import config
 
 
-def is_value_link(item_value: Union[int, float, bool, str, Dict]) -> bool:
+def is_value_link(item_value: Union[int, float, bool, str, dict]) -> bool:
     # a link is composed of {nodeUuid:uuid, output:port_key}
     return isinstance(item_value, dict) and all(
         k in item_value for k in ("nodeUuid", "output")
     )
 
 
-def is_value_on_store(item_value: Union[int, float, bool, str, Dict]) -> bool:
+def is_value_on_store(item_value: Union[int, float, bool, str, dict]) -> bool:
     return isinstance(item_value, dict) and all(
         k in item_value for k in ("store", "path")
     )
 
 
-def is_value_a_download_link(item_value: Union[int, float, bool, str, Dict]) -> bool:
+def is_value_a_download_link(item_value: Union[int, float, bool, str, dict]) -> bool:
     return isinstance(item_value, dict) and all(
         k in item_value for k in ("downloadLink", "label")
     )
@@ -29,21 +32,20 @@ def is_file_type(item_type: str) -> bool:
     return f"{item_type}".startswith(config.FILE_TYPE_PREFIX)
 
 
-def decode_link(value: Dict) -> Tuple[str, str]:
+def decode_link(value: dict) -> tuple[str, str]:
     return value["nodeUuid"], value["output"]
 
 
-def decode_store(value: Dict) -> Tuple[str, str]:
+def decode_store(value: dict) -> tuple[LocationID, str]:
     return value["store"], value["path"]
 
 
-def encode_store(store: str, s3_object: str) -> Dict[str, str]:
-    return {"store": f"{store}", "path": s3_object}
+def encode_store(store: LocationID, s3_object: FileID) -> dict[str, Any]:
+    return {"store": store, "path": s3_object}
 
 
-def encode_file_id(file_path: Path, project_id: str, node_id: str) -> str:
-    file_id = "{}/{}/{}".format(project_id, node_id, file_path.name)
-    return file_id
+def encode_file_id(file_path: Path, project_id: str, node_id: str) -> FileID:
+    return FileID(f"{project_id}/{node_id}/{file_path.name}")
 
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
