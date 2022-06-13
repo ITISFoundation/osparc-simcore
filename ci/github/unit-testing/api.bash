@@ -13,7 +13,10 @@ install() {
 
 test() {
   pytest \
+    --color=yes \
     --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
     --verbose \
     -m "not heavy_load" \
     api/tests
