@@ -15,13 +15,16 @@ test() {
     pytest \
       --asyncio-mode=auto \
       --color=yes \
-      --durations=10 \
-      --cov=simcore_postgres_database \
       --cov-append \
+      --cov-config=.coveragerc \
       --cov-report=term-missing \
       --cov-report=xml \
-      --cov-config=.coveragerc \
+      --cov=simcore_postgres_database \
+      --log-date-format="%Y-%m-%d %H:%M:%S" \
+      --log-format="%(asctime)s %(levelname)s %(message)s" \
+      --durations=10 \
       --verbose \
+      -m "not heavy_load" \
       packages/postgres-database/tests
 }
 

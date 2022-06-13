@@ -12,8 +12,11 @@ install() {
 }
 
 test() {
-  pytest --durations=10 \
-          -v -m "not travis" api/tests
+  pytest \
+    --durations=10 \
+    --verbose \
+    -m "not heavy_load" \
+    api/tests
 }
 
 # Check if the function exists (bash specific)

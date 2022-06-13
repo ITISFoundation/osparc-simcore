@@ -14,17 +14,39 @@ install() {
 }
 
 test() {
-  pytest --numprocesses=auto --cov=simcore_service_director_v2 --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/director-v2/tests/unit --ignore=services/director-v2/tests/unit/with_dbs \
+  # tests without DB can be safely run in parallel
+  pytest \
     --asyncio-mode=auto \
-  # these tests cannot be run in parallel
-  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=simcore_service_director_v2 \
+    --durations=10 \
+    --ignore=services/director-v2/tests/unit/with_dbs \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --cov=simcore_service_director_v2 --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --numprocesses=auto \
+    --verbose \
+    -m "not heavy_load" \
+    services/director-v2/tests/unit
+
+  # these tests cannot be run in parallel
+  pytest \
     --asyncio-mode=auto \
-    -v -m "not travis" services/director-v2/tests/unit/with_dbs
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=simcore_service_director_v2 \
+    --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+    services/director-v2/tests/unit/with_dbs
 }
 
 # Check if the function exists (bash specific)
