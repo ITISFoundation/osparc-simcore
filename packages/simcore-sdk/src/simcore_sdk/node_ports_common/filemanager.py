@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import aiofiles
-from aiohttp import ClientPayloadError, ClientSession
+from aiohttp import ClientError, ClientPayloadError, ClientSession
 from models_library.api_schemas_storage import ETag, FileID, FileMetaData
 from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
@@ -127,23 +127,25 @@ async def _upload_file_to_link(
 
     data_provider = _file_sender(file_path, file_size)
     headers = {"Content-Length": f"{file_size}"}
+    try:
+        async with session.put(url, data=data_provider, headers=headers) as resp:
+            if resp.status > 299:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Could not upload file {}:{}".format(file_path, response_text)
+                )
+            if resp.status != 200:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Issue when uploading file {}:{}".format(file_path, response_text)
+                )
 
-    async with session.put(url, data=data_provider, headers=headers) as resp:
-        if resp.status > 299:
-            response_text = await resp.text()
-            raise exceptions.S3TransferError(
-                "Could not upload file {}:{}".format(file_path, response_text)
-            )
-        if resp.status != 200:
-            response_text = await resp.text()
-            raise exceptions.S3TransferError(
-                "Issue when uploading file {}:{}".format(file_path, response_text)
-            )
-
-        # get the S3 etag from the headers
-        e_tag = json.loads(resp.headers.get("Etag", ""))
-        log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
-        return e_tag
+            # get the S3 etag from the headers
+            e_tag = json.loads(resp.headers.get("Etag", ""))
+            log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
+            return e_tag
+    except ClientError as err:
+        raise exceptions.S3TransferError(f"Could not upload file {file_path}:{err}")
 
 
 async def get_download_link_from_s3(
