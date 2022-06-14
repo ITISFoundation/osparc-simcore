@@ -166,9 +166,9 @@ class DatCoreFileLink(BaseFileLink):
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
 
-        if v != "1":
+        if v != 1:
             raise ValueError(f"DatCore store must be set to 1, got {v}")
-        return "1"
+        return 1
 
     class Config:
         extra = Extra.forbid

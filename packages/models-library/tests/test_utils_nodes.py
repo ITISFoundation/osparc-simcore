@@ -61,7 +61,7 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     ),
                 },
             },
-            "829cb6d6e62142b27d0a07f56f279bdf68fa9ddcb6e61fdc0a77f2d2e9a18752",
+            "2ae08699e849d249a60c9568a72d5a61e725bc793571ae4ea9a28a48ca7d1d5f",
         ),
     ],
 )

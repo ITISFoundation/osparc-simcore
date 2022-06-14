@@ -21,7 +21,7 @@ def minimal_simcore_file_link() -> Dict[str, Any]:
 def test_simcore_file_link_default_label(minimal_simcore_file_link: Dict[str, Any]):
     simcore_file_link = SimCoreFileLink(**minimal_simcore_file_link)
 
-    assert simcore_file_link.store == str(minimal_simcore_file_link["store"])
+    assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "file.ext"
     assert simcore_file_link.e_tag == None
@@ -32,7 +32,7 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: Dict[str, Any])
     old_link.update({"label": "some new label that is amazing"})
     simcore_file_link = SimCoreFileLink(**old_link)
 
-    assert simcore_file_link.store == str(minimal_simcore_file_link["store"])
+    assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "some new label that is amazing"
     assert simcore_file_link.e_tag == None
