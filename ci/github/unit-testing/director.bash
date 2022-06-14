@@ -27,11 +27,19 @@ install() {
 }
 
 test() {
-  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+  pytest \
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=simcore_service_director \
+    --durations=10 \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --cov=simcore_service_director --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/director/tests
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+    services/director/tests
 }
 
 # Check if the function exists (bash specific)

@@ -14,12 +14,20 @@ install() {
 }
 
 test() {
-  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --cov=simcore_service_api_server --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+  pytest \
     --asyncio-mode=auto \
-    -v -m "not travis" services/api-server/tests/unit
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=simcore_service_api_server \
+    --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+    services/api-server/tests/unit
 }
 
 # Check if the function exists (bash specific)
