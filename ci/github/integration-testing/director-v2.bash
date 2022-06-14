@@ -33,7 +33,7 @@ test() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
     --log-level=DEBUG \
-    --verbose \
+    -vvv -s --log-cli-level=DEBUG \
     -m "not heavy_load" \
     "services/director-v2/tests/integration/$1"
 }
