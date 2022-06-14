@@ -7,7 +7,18 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
+from copy import deepcopy
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+)
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -526,7 +537,12 @@ async def try_to_remove_network(network_name: str) -> None:
             log.warning("Could not remove network %s", network_name)
 
 
-async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+async def _update_service_spec(
+    service_name: str, *, update_spec_data: Callable[[dict], dict]
+) -> None:
+    """
+    Updates the spec of a service. The `update_spec_data` must always return the updated spec.
+    """
     async with docker_client() as client:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
@@ -544,28 +560,24 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             with attempt:
                 try:
                     # fetch information from service name
-                    service_inspect = await client.services.inspect(
-                        scheduler_data.service_name
-                    )
+                    service_inspect = await client.services.inspect(service_name)
+                    service_inspect = await client.services.inspect(service_name)
                     service_version = service_inspect["Version"]["Index"]
                     service_id = service_inspect["ID"]
                     spec = service_inspect["Spec"]
 
-                    spec["Labels"][
-                        DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-                    ] = scheduler_data.as_label_data()
+                    updated_spec = update_spec_data(deepcopy(spec))
 
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",
                         method="POST",
-                        data=json.dumps(clean_map(spec)),
+                        data=json.dumps(clean_map(updated_spec)),
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:
                     if not (
                         e.status == status.HTTP_404_NOT_FOUND
-                        and e.message
-                        == f"service {scheduler_data.service_name} not found"
+                        and e.message == f"service {service_name} not found"
                     ):
                         raise e
                     if (
@@ -576,5 +588,27 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
                         raise _RetryError() from e
                     log.debug(
                         "Skip update for service '%s' which could not be found",
-                        scheduler_data.service_name,
+                        service_name,
                     )
+
+
+async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+    def _update_labels_in_spec(spec: dict) -> dict:
+        spec["Labels"][
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
+        ] = scheduler_data.as_label_data()
+        return spec
+
+    await _update_service_spec(
+        service_name=scheduler_data.service_name,
+        update_spec_data=_update_labels_in_spec,
+    )
+
+
+async def constrain_service_to_node(service_name: str, node_id: str) -> None:
+    def _add_placement_constraint(spec: dict) -> dict:
+        spec["TaskTemplate"]["Placement"]["Constraints"].append(f"node.id == {node_id}")
+        return spec
+
+    await _update_service_spec(service_name, update_spec_data=_add_placement_constraint)
+    log.info("Constraining service %s to node %s", service_name, node_id)
