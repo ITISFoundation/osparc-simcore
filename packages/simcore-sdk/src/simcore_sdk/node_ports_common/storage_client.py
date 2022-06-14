@@ -8,11 +8,11 @@ from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     ETag,
-    FileID,
     FileLocationArray,
     FileMetaData,
     LocationID,
     PresignedLink,
+    StorageFileID,
 )
 from models_library.generics import Envelope
 from models_library.users import UserID
@@ -73,7 +73,7 @@ class LinkType(str, Enum):
 @handle_client_exception
 async def get_download_file_link(
     session: ClientSession,
-    file_id: FileID,
+    file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
@@ -110,7 +110,7 @@ async def get_download_file_link(
 @handle_client_exception
 async def get_upload_file_link(
     session: ClientSession,
-    file_id: FileID,
+    file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
@@ -135,7 +135,10 @@ async def get_upload_file_link(
 
 @handle_client_exception
 async def get_file_metadata(
-    session: ClientSession, file_id: FileID, location_id: LocationID, user_id: UserID
+    session: ClientSession,
+    file_id: StorageFileID,
+    location_id: LocationID,
+    user_id: UserID,
 ) -> FileMetaData:
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
@@ -156,7 +159,10 @@ async def get_file_metadata(
 
 @handle_client_exception
 async def delete_file(
-    session: ClientSession, file_id: FileID, location_id: LocationID, user_id: UserID
+    session: ClientSession,
+    file_id: StorageFileID,
+    location_id: LocationID,
+    user_id: UserID,
 ) -> None:
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
@@ -171,7 +177,7 @@ async def delete_file(
 
 @handle_client_exception
 async def update_file_meta_data(
-    session: ClientSession, s3_object: FileID, user_id: UserID
+    session: ClientSession, s3_object: StorageFileID, user_id: UserID
 ) -> ETag:
     url = f"{_base_url()}/locations/0/files/{quote(s3_object, safe='')}/metadata"
     result = await session.patch(url, params=dict(user_id=user_id))

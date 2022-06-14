@@ -23,8 +23,7 @@ import np_helpers
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
-from models_library.api_schemas_storage import FileID
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -105,8 +104,10 @@ def filemanager_cfg(
 
 
 @pytest.fixture
-def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable[[Path], FileID]:
-    def _create(file_path: Path) -> FileID:
+def create_valid_file_uuid(
+    project_id: str, node_uuid: str
+) -> Callable[[Path], SimcoreS3FileID]:
+    def _create(file_path: Path) -> SimcoreS3FileID:
         return np_helpers.file_uuid(file_path, project_id, node_uuid)
 
     return _create
@@ -142,7 +143,7 @@ def create_node_link() -> Callable[[str], Dict[str, str]]:
 @pytest.fixture()
 def create_store_link(
     bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     user_id: int,
     project_id: str,

@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientError, ClientPayloadError, ClientSession
-from models_library.api_schemas_storage import ETag, FileID, FileMetaData
+from models_library.api_schemas_storage import ETag, FileMetaData, StorageFileID
 from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
@@ -42,7 +42,7 @@ async def _get_location_id_from_location_name(
 async def _get_download_link(
     user_id: UserID,
     store_id: LocationID,
-    file_id: FileID,
+    file_id: StorageFileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
 ) -> URL:
@@ -63,7 +63,7 @@ async def _get_download_link(
 async def _get_upload_link(
     user_id: UserID,
     store_id: LocationID,
-    file_id: FileID,
+    file_id: StorageFileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
 ) -> URL:
@@ -153,7 +153,7 @@ async def get_download_link_from_s3(
     user_id: UserID,
     store_name: Optional[LocationName],
     store_id: Optional[LocationID],
-    s3_object: FileID,
+    s3_object: StorageFileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
 ) -> URL:
@@ -182,7 +182,7 @@ async def get_upload_link_from_s3(
     user_id: UserID,
     store_name: Optional[LocationName],
     store_id: Optional[LocationID],
-    s3_object: FileID,
+    s3_object: StorageFileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
 ) -> Tuple[LocationID, URL]:
@@ -206,7 +206,7 @@ async def download_file_from_s3(
     user_id: UserID,
     store_name: Optional[LocationName],
     store_id: Optional[LocationID],
-    s3_object: FileID,
+    s3_object: StorageFileID,
     local_folder: Path,
     client_session: Optional[ClientSession] = None,
 ) -> Path:
@@ -273,7 +273,7 @@ async def upload_file(
     user_id: UserID,
     store_id: Optional[LocationID],
     store_name: Optional[LocationName],
-    s3_object: FileID,
+    s3_object: StorageFileID,
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
@@ -351,7 +351,7 @@ async def upload_file(
 async def entry_exists(
     user_id: UserID,
     store_id: LocationID,
-    s3_object: FileID,
+    s3_object: StorageFileID,
     client_session: Optional[ClientSession] = None,
 ) -> bool:
     """Returns True if metadata for s3_object is present"""
@@ -367,7 +367,7 @@ async def entry_exists(
                 s3_object,
                 f"{file_metadata=}",
             )
-            return bool(file_metadata.object_name == s3_object)
+            return bool(file_metadata.file_id == s3_object)
     except exceptions.S3InvalidPathError:
         return False
 
@@ -375,7 +375,7 @@ async def entry_exists(
 async def get_file_metadata(
     user_id: UserID,
     store_id: LocationID,
-    s3_object: FileID,
+    s3_object: StorageFileID,
     client_session: Optional[ClientSession] = None,
 ) -> Tuple[LocationID, ETag]:
     """
@@ -398,7 +398,7 @@ async def get_file_metadata(
 async def delete_file(
     user_id: UserID,
     store_id: LocationID,
-    s3_object: FileID,
+    s3_object: StorageFileID,
     client_session: Optional[ClientSession] = None,
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:

@@ -10,8 +10,7 @@ from uuid import uuid4
 
 import np_helpers
 import pytest
-from models_library.api_schemas_storage import FileID
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
@@ -60,7 +59,7 @@ async def test_valid_upload_download(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     file_size: ByteSize,
     create_file_of_size: Callable[[ByteSize, str], Path],
@@ -122,7 +121,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
 async def test_failed_upload_is_properly_removed_from_storage(
     node_ports_config: None,
     create_file_of_size: Callable[[ByteSize], Path],
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     optional_r_clone: Optional[RCloneSettings],
     file_size: ByteSize,
@@ -159,7 +158,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
 async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     node_ports_config: None,
     create_file_of_size: Callable[[ByteSize], Path],
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     optional_r_clone: Optional[RCloneSettings],
     file_size: ByteSize,
@@ -217,7 +216,7 @@ async def test_invalid_file_path(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     file_path = Path(tmpdir) / "test.test"
@@ -302,7 +301,7 @@ async def test_invalid_store(
     filemanager_cfg: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -334,7 +333,7 @@ async def test_valid_metadata(
     filemanager_cfg: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     # first we go with a non-existing file
@@ -377,7 +376,7 @@ async def test_invalid_call_raises_exception(
     filemanager_cfg: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     fct: Callable[[int, str, str, Optional[Any]], Awaitable],
 ):
@@ -401,7 +400,7 @@ async def test_delete_File(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], FileID],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     file_path = Path(tmpdir) / "test.test"

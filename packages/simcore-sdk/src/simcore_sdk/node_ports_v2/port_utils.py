@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional
 
-from models_library.api_schemas_storage import FileID
 from models_library.users import UserID
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
@@ -84,7 +83,7 @@ async def get_download_link_from_storage(
         user_id=user_id,
         store_id=value.store,
         store_name=None,
-        s3_object=FileID(value.path),
+        s3_object=value.path,
         link_type=link_type,
     )
 
@@ -101,7 +100,9 @@ async def get_download_link_from_storage_overload(
 
     """
     # NOTE: might consider using https://github.com/mrocklin/multipledispatch/ in the future?
-    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(
+        Path(file_name), project_id, node_id
+    )
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
         store_name=None,
@@ -116,7 +117,9 @@ async def get_upload_link_from_storage(
     user_id: UserID, project_id: str, node_id: str, file_name: str, link_type: LinkType
 ) -> AnyUrl:
     log.debug("getting link to file from storage for %s", file_name)
-    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(
+        Path(file_name), project_id, node_id
+    )
     _, link = await filemanager.get_upload_link_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
@@ -133,7 +136,9 @@ async def target_link_exists(
     log.debug(
         "checking if target of link to file from storage for %s exists", file_name
     )
-    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(
+        Path(file_name), project_id, node_id
+    )
     return await filemanager.entry_exists(
         user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
@@ -143,7 +148,9 @@ async def delete_target_link(
     user_id: UserID, project_id: str, node_id: str, file_name: str
 ) -> None:
     log.debug("deleting target of link to file from storage for %s", file_name)
-    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(
+        Path(file_name), project_id, node_id
+    )
     return await filemanager.delete_file(
         user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
@@ -162,7 +169,7 @@ async def pull_file_from_store(
         user_id=user_id,
         store_id=value.store,
         store_name=None,
-        s3_object=FileID(value.path),
+        s3_object=value.path,
         local_folder=local_path,
     )
     # if a file alias is present use it to rename the file accordingly
@@ -185,7 +192,7 @@ async def push_file_to_store(
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
-    s3_object = data_items_utils.encode_file_id(file, project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(file, project_id, node_id)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
@@ -239,7 +246,7 @@ async def get_file_link_from_url(
 ) -> FileLink:
     log.debug("url %s will now be converted to a file link", new_value)
     assert new_value.path  # nosec
-    s3_object = data_items_utils.encode_file_id(
+    s3_object = data_items_utils.create_simcore_file_id(
         Path(new_value.path), project_id, node_id
     )
     store_id, e_tag = await filemanager.get_file_metadata(

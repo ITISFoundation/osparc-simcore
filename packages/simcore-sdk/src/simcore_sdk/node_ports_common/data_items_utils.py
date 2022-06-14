@@ -2,11 +2,13 @@ import tempfile
 import threading
 from pathlib import Path
 
-from models_library.api_schemas_storage import FileID
+from models_library.api_schemas_storage import SimcoreS3FileID
 
 
-def encode_file_id(file_path: Path, project_id: str, node_id: str) -> FileID:
-    return FileID(f"{project_id}/{node_id}/{file_path.name}")
+def create_simcore_file_id(
+    file_path: Path, project_id: str, node_id: str
+) -> SimcoreS3FileID:
+    return SimcoreS3FileID(f"{project_id}/{node_id}/{file_path.name}")
 
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
