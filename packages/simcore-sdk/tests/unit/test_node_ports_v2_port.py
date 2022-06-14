@@ -28,6 +28,7 @@ from unittest.mock import AsyncMock
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
+from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
@@ -75,12 +76,12 @@ def user_id() -> int:
     return 666
 
 
-def simcore_store_id() -> str:
-    return "0"
+def simcore_store_id() -> LocationID:
+    return 0
 
 
-def datcore_store_id() -> str:
-    return "1"
+def datcore_store_id() -> LocationID:
+    return 1
 
 
 def e_tag() -> str:

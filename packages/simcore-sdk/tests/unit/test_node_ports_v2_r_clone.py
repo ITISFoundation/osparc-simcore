@@ -8,9 +8,9 @@ from typing import Iterable, List, Optional
 from unittest.mock import Mock
 
 import pytest
-from pytest_mock.plugin import MockerFixture
 from faker import Faker
 from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
 from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.r_clone import RCloneSettings
@@ -92,7 +92,7 @@ async def test__async_command_ok() -> None:
     ],
 )
 async def test__async_command_error(cmd: List[str]) -> None:
-    with pytest.raises(r_clone._CommandFailedException) as exe_info:
+    with pytest.raises(r_clone.RCloneFailedError) as exe_info:
         await r_clone._async_command(*cmd)
     assert (
         f"{exe_info.value}"

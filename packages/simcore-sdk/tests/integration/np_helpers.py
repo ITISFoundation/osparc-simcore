@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict
 
 import sqlalchemy as sa
+from models_library.api_schemas_storage import FileID
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 
 log = logging.getLogger(__name__)
@@ -41,9 +42,8 @@ def update_configuration(
     log.debug("Updated configuration")
 
 
-SIMCORE_STORE = "0"
+SIMCORE_STORE = 0
 
 
-def file_uuid(file_path: Path, project_id: str, node_uuid: str) -> str:
-    file_id = f"{project_id}/{node_uuid}/{Path(file_path).name}"
-    return file_id
+def file_uuid(file_path: Path, project_id: str, node_uuid: str) -> FileID:
+    return FileID(f"{project_id}/{node_uuid}/{Path(file_path).name}")

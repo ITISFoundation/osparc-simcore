@@ -143,7 +143,8 @@ def e_tag() -> str:
 async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_file",
-        return_value=("0", e_tag),
+        return_value=(0, e_tag),
+        autospec=True,
     )
     yield mock
 
