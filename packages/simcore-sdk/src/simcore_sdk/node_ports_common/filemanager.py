@@ -60,7 +60,7 @@ async def _get_download_link(
     return URL(link)
 
 
-async def _get_upload_links(
+async def _get_upload_link(
     user_id: UserID,
     store_id: LocationID,
     file_id: FileID,
@@ -104,27 +104,28 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url) from exc
 
 
+async def _file_sender(file_path: Path, file_size: int):
+    with tqdm(
+        desc=f"uploading {file_path} [{file_size} bytes]",
+        total=file_size,
+        unit="byte",
+        unit_scale=True,
+    ) as pbar:
+        async with aiofiles.open(file_path, "rb") as f:
+            chunk = await f.read(CHUNK_SIZE)
+            while chunk:
+                pbar.update(len(chunk))
+                yield chunk
+                chunk = await f.read(CHUNK_SIZE)
+
+
 async def _upload_file_to_link(
     session: ClientSession, url: URL, file_path: Path
 ) -> ETag:
     log.debug("Uploading from %s to %s", file_path, url)
     file_size = file_path.stat().st_size
 
-    async def file_sender(file_name: Path):
-        with tqdm(
-            desc=f"uploading {file_path} [{file_size} bytes]",
-            total=file_size,
-            unit="byte",
-            unit_scale=True,
-        ) as pbar:
-            async with aiofiles.open(file_name, "rb") as f:
-                chunk = await f.read(CHUNK_SIZE)
-                while chunk:
-                    pbar.update(len(chunk))
-                    yield chunk
-                    chunk = await f.read(CHUNK_SIZE)
-
-    data_provider = file_sender(file_path)
+    data_provider = _file_sender(file_path, file_size)
     headers = {"Content-Length": f"{file_size}"}
 
     async with session.put(url, data=data_provider, headers=headers) as resp:
