@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
@@ -44,7 +44,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
     Specifically the section under ``TaskTemplate``
     """
 
-    _destination_container: str = PrivateAttr()
+    _destination_containers: list[str] = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
     setting_type: Literal[
         "string",
@@ -162,7 +162,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = Dict[str, Any]
+ComposeSpecLabel = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):

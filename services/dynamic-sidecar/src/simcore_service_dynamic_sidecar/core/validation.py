@@ -49,9 +49,9 @@ def _get_forwarded_env_vars(container_key: str) -> List[str]:
         if key.startswith("FORWARD_ENV_"):
             new_entry_key = key.replace("FORWARD_ENV_", "")
 
-            # parsing `VAR={"destination_container": "destination_container", "env_var": "PAYLOAD"}`
+            # parsing `VAR={"destination_containers": ["destination_container"], "env_var": "PAYLOAD"}`
             new_entry_payload = json.loads(os.environ[key])
-            if new_entry_payload["destination_container"] != container_key:
+            if container_key not in new_entry_payload["destination_containers"]:
                 continue
 
             new_entry_value = new_entry_payload["env_var"]
