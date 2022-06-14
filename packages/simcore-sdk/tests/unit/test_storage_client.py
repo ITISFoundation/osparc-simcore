@@ -4,6 +4,7 @@
 # pylint:disable=too-many-arguments
 
 from typing import Any, Awaitable, Callable
+from uuid import uuid4
 
 import aiohttp
 import pytest
