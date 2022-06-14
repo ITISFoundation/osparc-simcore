@@ -6,25 +6,39 @@
         - Link to another port: PortLink
 """
 
+import re
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Pattern, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, constr, validator
+from pydantic import AnyUrl, BaseModel, ConstrainedStr, Extra, Field, validator
 
+from .basic_regex import DATCORE_FILE_ID_RE, SIMCORE_S3_FILE_ID_RE, UUID_RE
 from .services import PROPERTY_KEY_RE
 
 NodeID = UUID
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
 # this is a regex for having uuids of type: 8-4-4-4-12 digits
-UUID_REGEX = (
-    r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-)
-NodeIDStr = constr(regex=UUID_REGEX)
+
+
+class NodeIDStr(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(UUID_RE)
+
 
 LocationID = Union[Literal[0], Literal[1]]
 LocationName = Union[Literal["simcore.s3"], Literal["datcore"]]
+
+
+class SimcoreS3FileID(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(SIMCORE_S3_FILE_ID_RE)
+
+
+class DatCoreFileID(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(DATCORE_FILE_ID_RE)
+
+
+StorageFileID = Union[SimcoreS3FileID, DatCoreFileID]
 
 
 class PortLink(BaseModel):
@@ -81,9 +95,8 @@ class BaseFileLink(BaseModel):
         description="The store identifier: 0 for simcore S3, 1 for datcore",
     )
 
-    path: str = Field(
+    path: StorageFileID = Field(
         ...,
-        regex=r"^.+$",
         description="The path to the file in the storage provider domain",
     )
 

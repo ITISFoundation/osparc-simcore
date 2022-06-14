@@ -12,41 +12,23 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Pattern, Union
 
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import LocationID, LocationName
+from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, validator
 from pydantic.networks import AnyUrl
 
-from .basic_regex import (
-    DATCORE_BUCKET_NAME_RE,
-    DATCORE_FILE_ID_RE,
-    S3_BUCKET_NAME_RE,
-    SIMCORE_S3_FILE_ID_RE,
-)
+from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .generics import ListModel
 
 ETag = str
-
-
-class S3FileID(ConstrainedStr):
-    regex = re.compile(SIMCORE_S3_FILE_ID_RE)
-
-
-class DatCoreFileID(ConstrainedStr):
-    regex = re.compile(DATCORE_FILE_ID_RE)
-
-
-StorageFileID = Union[S3FileID, DatCoreFileID]
 
 
 class S3BucketName(ConstrainedStr):
     regex: Optional[Pattern[str]] = re.compile(S3_BUCKET_NAME_RE)
 
 
-class DatCoreBucketName(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(DATCORE_BUCKET_NAME_RE)
+class DatCoreDatasetName(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(DATCORE_DATASET_NAME_RE)
 
-
-StorageBucketName = Union[S3BucketName, DatCoreBucketName]
 
 # /
 class HealthCheck(BaseModel):
@@ -82,7 +64,7 @@ FileLocationArray = ListModel[FileLocation]
 
 
 class DatasetMetaData(BaseModel):
-    dataset_id: Union[ProjectID, DatCoreBucketName]
+    dataset_id: Union[ProjectID, DatCoreDatasetName]
     display_name: str
 
     class Config:

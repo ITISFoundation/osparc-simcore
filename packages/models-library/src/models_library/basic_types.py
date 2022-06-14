@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import conint, constr
 
-from .basic_regex import UUID_RE, VERSION_RE
+from .basic_regex import UUID_RE_BASE, VERSION_RE
 
 # port number range
 PortInt = conint(gt=0, lt=65535)
@@ -21,7 +21,7 @@ MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
 EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
-UUIDStr = constr(regex=UUID_RE)
+UUIDStr = constr(regex=UUID_RE_BASE)
 
 
 class LogLevel(str, Enum):

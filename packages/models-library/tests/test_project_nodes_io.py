@@ -4,6 +4,7 @@
 
 from pprint import pformat
 from typing import Any, Dict
+from uuid import uuid4
 
 import pytest
 from models_library.projects_nodes import Node, PortLink
@@ -14,7 +15,7 @@ from models_library.projects_nodes_io import DatCoreFileLink, SimCoreFileLink
 def minimal_simcore_file_link() -> Dict[str, Any]:
     return dict(
         store=0,
-        path="/some/path/to/a/file.ext",
+        path=f"{uuid4()}/{uuid4()}/file.ext",
     )
 
 
