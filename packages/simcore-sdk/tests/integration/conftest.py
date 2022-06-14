@@ -29,7 +29,6 @@ from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports import node_config
 from simcore_sdk.node_ports_common import config as node_config
 from yarl import URL
 
