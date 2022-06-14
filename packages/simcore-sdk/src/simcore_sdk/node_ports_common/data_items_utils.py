@@ -2,7 +2,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from models_library.api_schemas_storage import SimcoreS3FileID
+from models_library.projects_nodes_io import SimcoreS3FileID
 
 
 def create_simcore_file_id(
