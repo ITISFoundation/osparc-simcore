@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Awaitable, Coroutine, List, Optional, Union
+from typing import Any, Awaitable, Coroutine, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ async def logged_gather(
     reraise: bool = True,
     log: logging.Logger = logger,
     max_concurrency: int = 0,
-) -> List[Optional[Any]]:
+) -> list[Any]:
     """
         Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
         even if any of them fail. Finally, all errors are logged and the first raised (if reraise=True)
