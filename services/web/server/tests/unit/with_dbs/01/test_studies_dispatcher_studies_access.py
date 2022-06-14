@@ -266,6 +266,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
     ), f"STANDARD studies are NOT sharable: {content}"
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_access_study_anonymously(
     client,
     published_project,
