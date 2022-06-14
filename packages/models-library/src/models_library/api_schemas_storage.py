@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Pattern, Union
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, validator
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Extra, Field, validator
 from pydantic.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
@@ -140,6 +140,7 @@ class FileMetaData(BaseModel):
         return v
 
     class Config:
+        extra = Extra.forbid
         schema_extra = {
             "examples": [
                 # typical S3 entry
@@ -187,7 +188,6 @@ class FileMetaData(BaseModel):
                 # datcore entry
                 {
                     "created_at": "2020-05-28T15:48:34.386302+00:00",
-                    "display_file_path": "templatetemplate.json",
                     "entity_tag": None,
                     "file_id": "N:package:ce145b61-7e4f-470b-a113-033653e86d3d",
                     "file_name": "templatetemplate.json",
