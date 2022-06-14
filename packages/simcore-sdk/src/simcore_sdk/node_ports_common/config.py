@@ -10,7 +10,3 @@ POSTGRES_ENDPOINT: str = os.environ.get("POSTGRES_ENDPOINT", "postgres:5432")
 POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "simcoredb")
 POSTGRES_PW: str = os.environ.get("POSTGRES_PASSWORD", "simcore")
 POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "simcore")
-
-
-# -------------------------------------------------------------------------
-FILE_TYPE_PREFIX: str = "data:"
