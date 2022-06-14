@@ -177,7 +177,7 @@ class CompTaskAtDB(BaseModel):
                     },
                     "outputs": {
                         "output_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
                         }
                     },
