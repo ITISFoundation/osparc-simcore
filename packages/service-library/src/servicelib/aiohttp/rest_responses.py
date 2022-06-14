@@ -69,7 +69,7 @@ def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
 
 
 def create_data_response(
-    data: _DataType, *, skip_internal_error_details=False
+    data: _DataType, *, skip_internal_error_details=False, status=web.HTTPOk.status_code
 ) -> web.Response:
     response = None
     try:
@@ -78,7 +78,7 @@ def create_data_response(
         else:
             payload = data
 
-        response = web.json_response(payload, dumps=json_dumps)
+        response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
