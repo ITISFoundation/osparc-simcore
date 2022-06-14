@@ -31,13 +31,6 @@ attrs==20.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest
-boto3==1.21.21
-    # via aiobotocore
-botocore==1.24.21
-    # via
-    #   aiobotocore
-    #   boto3
-    #   s3transfer
 certifi==2022.5.18.1
     # via
     #   minio
