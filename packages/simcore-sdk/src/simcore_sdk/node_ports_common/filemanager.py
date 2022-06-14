@@ -339,7 +339,7 @@ async def upload_file(
             log.error("The upload failed with an unexpected error:", exc_info=True)
             if upload_link:
                 # abort the upload correctly, so it can revert back to last version
-                assert store_id  # nosec
+                assert store_id is not None  # nosec
                 await delete_file(user_id, store_id, s3_object, session)
                 log.warning("Upload aborted")
             raise exceptions.S3TransferError from exc
@@ -388,8 +388,8 @@ async def get_file_metadata(
     log.debug(
         "Result for metadata s3_object=%s, result=%s", s3_object, f"{file_metadata=}"
     )
-    assert file_metadata.location_id  # nosec
-    assert file_metadata.entity_tag  # nosec
+    assert file_metadata.location_id is not None  # nosec
+    assert file_metadata.entity_tag is not None  # nosec
     return (file_metadata.location_id, file_metadata.entity_tag)
 
 
