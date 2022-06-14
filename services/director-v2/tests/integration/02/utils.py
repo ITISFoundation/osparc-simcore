@@ -309,28 +309,30 @@ async def assert_stop_service(
 
 
 async def _inspect_service_and_print_logs(
-    tag: str, service_name: str, is_legacy: bool
+    tag: str, service_uuid: str, is_legacy: bool
 ) -> None:
     """inspects proxy and prints logs from it"""
     if is_legacy:
-        print(f"Skipping service logs and inspect for {service_name}")
+        print(f"Skipping service logs and inspect for {service_uuid}")
         return
 
-    proxy_service = service_name.replace(
-        DYNAMIC_SIDECAR_SERVICE_PREFIX, DYNAMIC_PROXY_SERVICE_PREFIX
-    )
+    dy_sidecar_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{service_uuid}"
+    dy_proxy_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{service_uuid}"
 
-    for target_service in (proxy_service, service_name):
+    for service_name in (dy_proxy_name, dy_sidecar_name):
         async with aiodocker.Docker() as docker_client:
-            service_details = await docker_client.services.inspect(target_service)
+            service_details = await docker_client.services.inspect(service_name)
 
-            print(f"{SEPARATOR} - {tag}\nService inspect: {target_service}")
+            print(f"{SEPARATOR} - {tag}\nService inspect: {service_name}")
 
             formatted_inspect = json.dumps(service_details, indent=2)
             print(f"{formatted_inspect}\n{SEPARATOR}")
 
-            # print containers inspect to see them all
-            for container in await docker_client.containers.list():
+            # Find all associated service containers and print logs from them
+            services_containers = await docker_client.containers.list(
+                filters={"label": [f"com.docker.swarm.service.name={service_name}"]}
+            )
+            for container in services_containers:
                 container_inspect = await container.show()
                 formatted_container_inspect = json.dumps(container_inspect, indent=2)
                 container_name = container_inspect["Name"][1:]
@@ -338,7 +340,7 @@ async def _inspect_service_and_print_logs(
                 print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
             logs = await docker_client.services.logs(
-                service_details["ID"], stderr=True, stdout=True, tail=500
+                service_details["ID"], stderr=True, stdout=True
             )
             formatted_logs = "".join(logs)
             print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
@@ -440,7 +442,7 @@ async def assert_services_reply_200(
         finally:
             await _inspect_service_and_print_logs(
                 tag=f"after_service_is_available {service_uuid}",
-                service_name=service_data["service_host"],
+                service_uuid=service_uuid,
                 is_legacy=is_legacy(node_data),
             )
 
