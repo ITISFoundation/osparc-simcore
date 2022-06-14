@@ -15,7 +15,7 @@ from uuid import UUID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Field
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, validator
 from pydantic.networks import AnyUrl
 
 from .basic_regex import FILE_ID_RE, S3_BUCKET_NAME_RE, UUID_RE
@@ -152,6 +152,13 @@ class FileMetaData(BaseModel):
     )
 
     parent_id: Optional[str]
+
+    @validator("location_id", pre=True)
+    @classmethod
+    def convert_from_str(cls, v):
+        if isinstance(v, str):
+            return int(v)
+        return v
 
     class Config:
         schema_extra = {
