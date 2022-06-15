@@ -743,10 +743,10 @@ async def test_regression_update_service_skip_if_service_not_found(
     docker: aiodocker.Docker,
 ) -> None:
     # NOTE: checks that docker engine replies with
-    # `service service-is-not-defined-test not found`
+    # `service service-does-not-exist-test not found`
     # the error is handled
     await docker_api._update_service_spec(
-        service_name="service-is-not-defined-test", update_spec_data=lambda x: x
+        service_name="service-does-not-exist-test", update_in_service_spec={}
     )
 
 
@@ -762,9 +762,30 @@ async def test_regression_update_service_update_out_of_sequence(
             *[
                 docker_api._update_service_spec(
                     service_name=mock_service,
-                    update_spec_data=lambda x: x,
+                    update_in_service_spec={},
                     stop_delay=3,
                 )
                 for _ in range(10)
             ]
         )
+
+
+async def test_constrain_service_to_node(
+    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
+) -> None:
+    # get a node's ID
+    docker_nodes = await docker.nodes.list()
+    target_node_id = docker_nodes[0]["ID"]
+
+    await docker_api.constrain_service_to_node(mock_service, node_id=target_node_id)
+
+    # check constraint was added
+    service_inspect = await docker.services.inspect(mock_service)
+    constraints: list[str] = service_inspect["Spec"]["TaskTemplate"]["Placement"][
+        "Constraints"
+    ]
+    assert len(constraints) == 1, constraints
+    node_id_constraint = constraints[0]
+    label, value = node_id_constraint.split("==")
+    assert label.strip() == "node.id"
+    assert value.strip() == target_node_id

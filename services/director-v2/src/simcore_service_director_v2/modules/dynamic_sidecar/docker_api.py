@@ -36,6 +36,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
+from ...utils.dict_utils import get_longest_key_paths, nested_update
 from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -540,7 +541,7 @@ async def try_to_remove_network(network_name: str) -> None:
 async def _update_service_spec(
     service_name: str,
     *,
-    update_spec_data: Callable[[dict], dict],
+    update_in_service_spec: dict,
     stop_delay: float = 10.0,
 ) -> None:
     """
@@ -568,7 +569,11 @@ async def _update_service_spec(
                     service_id = service_inspect["ID"]
                     spec = service_inspect["Spec"]
 
-                    updated_spec = update_spec_data(deepcopy(spec))
+                    updated_spec = nested_update(
+                        spec,
+                        update_in_service_spec,
+                        include=get_longest_key_paths(update_in_service_spec),
+                    )
 
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",
@@ -596,22 +601,21 @@ async def _update_service_spec(
 
 
 async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
-    def _update_labels_in_spec(spec: dict) -> dict:
-        spec["Labels"][
-            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-        ] = scheduler_data.as_label_data()
-        return spec
-
     await _update_service_spec(
         service_name=scheduler_data.service_name,
-        update_spec_data=_update_labels_in_spec,
+        update_in_service_spec={
+            "Labels": {
+                DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data()
+            }
+        },
     )
 
 
 async def constrain_service_to_node(service_name: str, node_id: str) -> None:
-    def _add_placement_constraint(spec: dict) -> dict:
-        spec["TaskTemplate"]["Placement"]["Constraints"].append(f"node.id == {node_id}")
-        return spec
-
-    await _update_service_spec(service_name, update_spec_data=_add_placement_constraint)
+    await _update_service_spec(
+        service_name,
+        update_in_service_spec={
+            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
+        },
+    )
     log.info("Constraining service %s to node %s", service_name, node_id)
