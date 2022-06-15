@@ -91,7 +91,7 @@ class DatasetMetaData(BaseModel):
 
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
-class FileMetaData(BaseModel):
+class FileMetaDataGet(BaseModel):
     # Used by frontend
     file_uuid: str = Field(
         description="NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure",
@@ -195,7 +195,7 @@ class FileMetaData(BaseModel):
 
 
 class FileMetaDataArray(BaseModel):
-    __root__: List[FileMetaData] = []
+    __root__: List[FileMetaDataGet] = []
 
 
 # /locations/{location_id}/files/{file_id}

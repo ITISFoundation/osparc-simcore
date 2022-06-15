@@ -11,7 +11,7 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from models_library.api_schemas_storage import (
     FileLocationArray,
-    FileMetaData,
+    FileMetaDataGet,
     LocationID,
 )
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -112,8 +112,8 @@ async def test_get_file_metada(
     async with aiohttp.ClientSession() as session:
         file_metadata = await get_file_metadata(session, file_id, location_id, user_id)
     assert file_metadata
-    assert file_metadata == FileMetaData.parse_obj(
-        FileMetaData.Config.schema_extra["examples"][0]
+    assert file_metadata == FileMetaDataGet.parse_obj(
+        FileMetaDataGet.Config.schema_extra["examples"][0]
     )
 
 

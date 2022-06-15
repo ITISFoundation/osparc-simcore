@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientError, ClientPayloadError, ClientSession
-from models_library.api_schemas_storage import ETag, FileMetaData, StorageFileID
+from models_library.api_schemas_storage import ETag, FileMetaDataGet, StorageFileID
 from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
@@ -359,7 +359,7 @@ async def entry_exists(
         async with ClientSessionContextManager(client_session) as session:
             log.debug("Will request metadata for s3_object=%s", s3_object)
 
-            file_metadata: FileMetaData = await storage_client.get_file_metadata(
+            file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
                 session, s3_object, store_id, user_id
             )
             log.debug(

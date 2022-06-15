@@ -9,7 +9,7 @@ from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     ETag,
     FileLocationArray,
-    FileMetaData,
+    FileMetaDataGet,
     LocationID,
     PresignedLink,
     StorageFileID,
@@ -139,7 +139,7 @@ async def get_file_metadata(
     file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
-) -> FileMetaData:
+) -> FileMetaDataGet:
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
@@ -149,7 +149,7 @@ async def get_file_metadata(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-        file_metadata_enveloped = Envelope[FileMetaData].parse_obj(
+        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
             await response.json()
         )
         if file_metadata_enveloped.data is None:

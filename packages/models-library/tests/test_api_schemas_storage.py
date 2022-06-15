@@ -6,11 +6,11 @@ import pytest
 from models_library.api_schemas_storage import (
     DatasetMetaData,
     FileLocation,
-    FileMetaData,
+    FileMetaDataGet,
 )
 
 
-@pytest.mark.parametrize("model_cls", (FileLocation, FileMetaData, DatasetMetaData))
+@pytest.mark.parametrize("model_cls", (FileLocation, FileMetaDataGet, DatasetMetaData))
 def test_storage_api_models_examples(model_cls):
     examples = model_cls.Config.schema_extra["examples"]
 

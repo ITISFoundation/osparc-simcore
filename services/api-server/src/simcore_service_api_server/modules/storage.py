@@ -5,8 +5,9 @@ from mimetypes import guess_type
 from uuid import UUID
 
 from fastapi import FastAPI
-from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
-from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
+from models_library.api_schemas_storage import FileMetaDataArray
+from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
+from models_library.api_schemas_storage import PresignedLink
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
