@@ -8,6 +8,7 @@ from typing import Any, Optional
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from settings_library.s3 import S3Settings
@@ -29,7 +30,10 @@ routes = RouteTableDef()
 
 
 async def _prepare_storage_manager(
-    params: dict, query: dict, request: web.Request
+    params: dict,
+    query: dict,
+    request: web.Request,
+    force_check_datcore_tokens: bool = False,
 ) -> DataStorageManager:
     # FIXME: scope properly, either request or app level!!
     # Notice that every request is changing tokens!
@@ -41,7 +45,7 @@ async def _prepare_storage_manager(
     user_id = query.get("user_id")
     location = dsm.location_from_id(params.get("location_id", 0))
 
-    if user_id and location in (INIT_STR, DATCORE_STR):
+    if user_id and (location in (INIT_STR, DATCORE_STR) or force_check_datcore_tokens):
         # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
         # re-query when needed.
 
@@ -86,8 +90,10 @@ async def get_storage_locations(request: web.Request):
 
     with handle_storage_errors():
         user_id = query["user_id"]
-
-        dsm = await _prepare_storage_manager(params, query, request)
+        # NOTE: temporary, will be refactored
+        dsm = await _prepare_storage_manager(
+            params, query, request, force_check_datcore_tokens=True
+        )
         locs = await dsm.locations(user_id)
 
         return {"error": None, "data": locs}
@@ -116,7 +122,7 @@ async def get_datasets_metadata(request: web.Request):
         location = dsm.location_from_id(location_id)
         # To implement
         data: list[DatasetMetaData] = await dsm.list_datasets(user_id, location)
-        py_data = [convert_to_api_dataset(d).json(by_alias=True) for d in data]
+        py_data = [jsonable_encoder(convert_to_api_dataset(d)) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -146,7 +152,7 @@ async def get_files_metadata(request: web.Request):
         data: list[FileMetaDataEx] = await dsm.list_files(
             user_id=user_id, location=location, uuid_filter=uuid_filter
         )
-        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -179,7 +185,7 @@ async def get_files_metadata_dataset(request: web.Request):
             user_id=user_id, location=location, dataset_id=dataset_id
         )
 
-        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -214,7 +220,7 @@ async def get_file_metadata(request: web.Request):
 
         return {
             "error": None,
-            "data": convert_to_api_fmd(data).json(by_alias=True),
+            "data": jsonable_encoder(convert_to_api_fmd(data)),
         }
 
 
@@ -283,7 +289,7 @@ async def update_file_meta_data(request: web.Request):
 
         return {
             "error": None,
-            "data": convert_to_api_fmd(data).json(by_alias=True),
+            "data": jsonable_encoder(convert_to_api_fmd(data)),
         }
 
 
@@ -452,7 +458,7 @@ async def search_files_starting_with(request: web.Request):
             int(user_id), prefix=startswith
         )
         log.debug("Found %d files starting with '%s'", len(data), startswith)
-        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
         return py_data
 
 
@@ -478,4 +484,4 @@ async def copy_as_soft_link(request: web.Request):
             user_id, target_uuid, link_uuid
         )
 
-        return convert_to_api_fmd(file_link).json(by_alias=True)
+        return jsonable_encoder(convert_to_api_fmd(file_link))
