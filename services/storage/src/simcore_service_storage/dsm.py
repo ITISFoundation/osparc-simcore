@@ -13,7 +13,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Optional, TypedDict, Union
+from typing import Any, Final, Optional, TypedDict
 
 import attr
 import botocore
@@ -337,7 +337,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def list_files_dataset(
         self, user_id: str, location: LocationName, dataset_id: str
-    ) -> Union[list[FileMetaData], list[FileMetaDataEx]]:
+    ) -> list[FileMetaDataEx]:
         # this is a cheap shot, needs fixing once storage/db is in sync
         data = []
         if location == SIMCORE_S3_STR:
