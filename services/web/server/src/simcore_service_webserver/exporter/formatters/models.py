@@ -5,8 +5,9 @@ from typing import Callable, Dict, List, Union
 
 import aiofiles
 from models_library.projects import Project
+from models_library.projects_nodes_io import Location, StorageFileID
 from models_library.projects_state import ProjectStatus
-from pydantic import BaseModel, DirectoryPath, Field, validator
+from pydantic import BaseModel, DirectoryPath, Field, parse_obj_as, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
@@ -21,11 +22,11 @@ class LinkAndPath2(BaseModel):
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
-    storage_type: str = Field(
+    storage_type: Location = Field(
         ...,
         description="usually 0 for S3 or 1 for Pennsieve",
     )
-    relative_path_to_file: Path = Field(
+    relative_path_to_file: StorageFileID = Field(
         ...,
         description="full path to where the file is going to be stored",
     )
@@ -45,7 +46,7 @@ class LinkAndPath2(BaseModel):
     @property
     def store_path(self) -> Path:
         """Returns an absolute path to the file"""
-        return Path(self.storage_type) / self.relative_path_to_file
+        return Path(f"{self.storage_type}") / self.relative_path_to_file
 
     @property
     def storage_path_to_file(self) -> Path:
@@ -63,7 +64,9 @@ class LinkAndPath2(BaseModel):
             relative_path_to_file_str = relative_path_to_file_str.replace(
                 old_uuid, new_uuid
             )
-        self.relative_path_to_file = Path(relative_path_to_file_str)
+        self.relative_path_to_file = parse_obj_as(
+            StorageFileID, relative_path_to_file_str
+        )
 
         # finally move file to new target path
         destination = self.storage_path_to_file

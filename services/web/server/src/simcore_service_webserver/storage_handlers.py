@@ -4,9 +4,11 @@
 """
 import logging
 import urllib
+import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from aiohttp import web
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.aiohttp.rest_utils import extract_and_validate
@@ -173,12 +175,16 @@ async def get_storage_locations_for_user(
 
 
 async def get_project_files_metadata(
-    app: web.Application, location_id: str, uuid_filter: str, user_id: int
+    app: web.Application, location_id: LocationID, uuid_filter: str, user_id: int
 ) -> List[Dict[str, Any]]:
     session = get_client_session(app)
 
     url: URL = (
-        _get_base_storage_url(app) / "locations" / location_id / "files" / "metadata"
+        _get_base_storage_url(app)
+        / "locations"
+        / f"{location_id}"
+        / "files"
+        / "metadata"
     )
     params = dict(user_id=user_id, uuid_filter=uuid_filter)
     async with session.get(url, ssl=False, params=params) as resp:
@@ -195,14 +201,14 @@ async def get_project_files_metadata(
 
 
 async def get_file_download_url(
-    app: web.Application, location_id: str, file_id: str, user_id: int
+    app: web.Application, location_id: LocationID, file_id: StorageFileID, user_id: int
 ) -> str:
     session = get_client_session(app)
 
     url: URL = (
         _get_base_storage_url(app)
         / "locations"
-        / location_id
+        / f"{location_id}"
         / "files"
         / urllib.parse.quote(file_id, safe="")
     )
@@ -213,14 +219,14 @@ async def get_file_download_url(
 
 
 async def get_file_upload_url(
-    app: web.Application, location_id: str, file_id: str, user_id: int
+    app: web.Application, location_id: LocationID, file_id: StorageFileID, user_id: int
 ) -> str:
     session = get_client_session(app)
 
     url: URL = (
         _get_base_storage_url(app)
         / "locations"
-        / location_id
+        / f"{location_id}"
         / "files"
         / urllib.parse.quote(file_id, safe="")
     )
