@@ -102,18 +102,18 @@ async def extract_download_links(
             download_link = await get_file_download_url(
                 app=app,
                 location_id=file_metadata["location_id"],
-                file_id=file_metadata["raw_file_path"],
+                file_id=file_metadata["file_id"],
                 user_id=user_id,
             )
         except Exception as e:
             raise ExporterException(
-                f'Error while requesting download url for file {file_metadata["raw_file_path"]}'
+                f'Error while requesting download url for file {file_metadata["file_id"]}'
             ) from e
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
                 storage_type=file_metadata["location_id"],
-                relative_path_to_file=file_metadata["raw_file_path"],
+                relative_path_to_file=file_metadata["file_id"],
                 download_link=download_link,
             )
         )
