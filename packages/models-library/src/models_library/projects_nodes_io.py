@@ -7,6 +7,7 @@
 """
 
 import re
+from enum import IntEnum
 from pathlib import Path
 from typing import Literal, Optional, Pattern, Union
 from uuid import UUID
@@ -18,13 +19,16 @@ from .services import PROPERTY_KEY_RE
 
 NodeID = UUID
 
-# Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
-# this is a regex for having uuids of type: 8-4-4-4-12 digits
-
 
 class NodeIDStr(ConstrainedStr):
     regex: Optional[Pattern[str]] = re.compile(UUID_RE)
 
+
+# NOTE: this trick is used to keep backward compatility simcore.s3 is not a valid python variable name
+Location = IntEnum(
+    value="Location",
+    names=[("simcore.s3", 0), ("SIMCORE_S3", 0), ("datcore", 1), ("DATCORE", 1)],
+)
 
 LocationID = Union[Literal[0], Literal[1]]
 LocationName = Union[Literal["simcore.s3"], Literal["datcore"]]

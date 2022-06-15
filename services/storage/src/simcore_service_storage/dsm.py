@@ -24,7 +24,7 @@ from aiobotocore.session import AioSession, ClientCreatorContext, get_session
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.projects_nodes_io import LocationID, LocationName
+from models_library.projects_nodes_io import Location, LocationID, LocationName
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
@@ -61,7 +61,6 @@ from .models import (
     FileMetaData,
     FileMetaDataEx,
     file_meta_data,
-    get_location_from_id,
     projects,
 )
 from .s3wrapper.s3_client import MinioClientWrapper
@@ -197,8 +196,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         return locs
 
     @classmethod
-    def location_from_id(cls, location_id: LocationID) -> LocationName:
-        return get_location_from_id(location_id)
+    def location_from_id(cls, location_id: int) -> LocationName:
+        location = parse_obj_as(Location, location_id)
+        return location.name
 
     # LIST/GET ---------------------------
 

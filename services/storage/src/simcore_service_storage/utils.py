@@ -100,6 +100,8 @@ def create_resource_uuid(*resource_name_parts) -> UUID:
 def to_meta_data_extended(row: Union[ResultProxy, RowProxy]) -> FileMetaDataEx:
     assert row  # nosec
     meta = FileMetaData(**dict(row))  # type: ignore
+    # NOTE: I know this is sad but this is fixed in a later PR where the class is replaced by a pydantic class
+    meta.location_id = int(meta.location_id)
     meta_extended = FileMetaDataEx(
         fmd=meta,
         parent_id=str(Path(meta.object_name).parent),

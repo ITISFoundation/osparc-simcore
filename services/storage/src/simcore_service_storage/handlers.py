@@ -39,10 +39,7 @@ async def _prepare_storage_manager(
     INIT_STR = "init"
     dsm: DataStorageManager = request.app[APP_DSM_KEY]
     user_id = query.get("user_id")
-    location_id = params.get("location_id")
-    location = (
-        dsm.location_from_id(location_id) if location_id is not None else INIT_STR
-    )
+    location = dsm.location_from_id(params.get("location_id", 0))
 
     if user_id and location in (INIT_STR, DATCORE_STR):
         # TODO: notify from db instead when tokens changed, then invalidate resource which enforces

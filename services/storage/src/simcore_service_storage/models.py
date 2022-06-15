@@ -7,8 +7,6 @@ from pathlib import Path
 from uuid import UUID
 
 import attr
-from models_library.projects_nodes_io import LocationID, LocationName
-from pydantic import validate_arguments
 from simcore_postgres_database.storage_models import (
     file_meta_data,
     groups,
@@ -19,24 +17,13 @@ from simcore_postgres_database.storage_models import (
     users,
 )
 
-from .constants import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+from .constants import SIMCORE_S3_ID, SIMCORE_S3_STR
 
 # FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 # from sqlalchemy.dialects.postgresql import UUID
 
 # FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
 # pylint: disable=R0902
-
-
-_LOCATION_ID_TO_TAG_MAP: dict[LocationID, LocationName] = {
-    SIMCORE_S3_ID: SIMCORE_S3_STR,
-    DATCORE_ID: DATCORE_STR,
-}
-
-
-@validate_arguments
-def get_location_from_id(location_id: LocationID) -> LocationName:
-    return _LOCATION_ID_TO_TAG_MAP[location_id]
 
 
 @dataclass

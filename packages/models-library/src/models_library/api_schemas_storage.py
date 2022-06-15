@@ -89,8 +89,6 @@ class DatasetMetaData(BaseModel):
         }
 
 
-DatasetMetaDataArray = ListModel[DatasetMetaData]
-
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
 class FileMetaData(BaseModel):
