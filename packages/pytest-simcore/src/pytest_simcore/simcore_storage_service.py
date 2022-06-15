@@ -3,12 +3,15 @@
 # pylint:disable=redefined-outer-name
 import os
 from copy import deepcopy
-from typing import Dict, Iterable
+from typing import Callable, Dict, Iterable
 
 import aiohttp
 import pytest
 import tenacity
 from minio import Minio
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from pydantic import parse_obj_as
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
@@ -55,3 +58,13 @@ async def wait_till_storage_responsive(storage_endpoint: URL):
             data = await resp.json()
             assert "data" in data
             assert data["data"] is not None
+
+
+@pytest.fixture
+def create_file_uuid() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
+    def _creator(
+        project_id: ProjectID, node_id: NodeID, file_name: str
+    ) -> SimcoreS3FileID:
+        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
+
+    return _creator

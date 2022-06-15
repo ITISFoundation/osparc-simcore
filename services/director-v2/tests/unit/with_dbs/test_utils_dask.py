@@ -8,7 +8,7 @@
 
 
 from random import choice
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 from unittest import mock
 
 import aiopg
@@ -23,7 +23,7 @@ from dask_task_models_library.container_tasks.io import (
 )
 from faker import Faker
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
@@ -154,11 +154,16 @@ def fake_io_schema(
 
 
 @pytest.fixture()
-def fake_io_data(fake_io_config: Dict[str, str], faker: Faker) -> Dict[str, Any]:
+def fake_io_data(
+    fake_io_config: Dict[str, str],
+    create_file_uuid: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
+) -> Dict[str, Any]:
     def generate_simcore_file_link() -> Dict[str, Any]:
-        return SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+        return SimCoreFileLink(
+            store=0,
+            path=create_file_uuid(faker.uuid4(), faker.uuid4(), faker.file_name()),
+        ).dict(by_alias=True, exclude_unset=True)
 
     TYPE_TO_FAKE_CALLABLE_MAP = {
         "number": faker.pyfloat,
@@ -257,6 +262,7 @@ async def test_compute_input_data(
     published_project: PublishedProject,
     fake_io_schema: Dict[str, Dict[str, str]],
     fake_io_data: Dict[str, Any],
+    create_file_uuid: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     faker: Faker,
     mocker: MockerFixture,
     tasks_file_link_type: FileLinkType,
@@ -265,9 +271,12 @@ async def test_compute_input_data(
 
     # set some fake inputs
     fake_inputs = {
-        key: SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+        key: SimCoreFileLink(
+            store=0,
+            path=create_file_uuid(
+                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
+            ),
+        ).dict(by_alias=True, exclude_unset=True)
         if value_type["type"] == "data:*/*"
         else fake_io_data[key]
         for key, value_type in fake_io_schema.items()
@@ -361,6 +370,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     user_id: UserID,
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: Dict[str, mock.MagicMock],
+    create_file_uuid: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     entry_exists_returns: bool,
     fake_io_schema: Dict[str, Dict[str, str]],
     faker: Faker,
@@ -377,9 +387,12 @@ async def test_clean_task_output_and_log_files_if_invalid(
 
     # simulate pre-created file links
     fake_outputs = {
-        key: SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+        key: SimCoreFileLink(
+            store=0,
+            path=create_file_uuid(
+                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
+            ),
+        ).dict(by_alias=True, exclude_unset=True)
         for key, value_type in fake_io_schema.items()
         if value_type["type"] == "data:*/*"
     }
@@ -396,14 +409,14 @@ async def test_clean_task_output_and_log_files_if_invalid(
     expected_calls = [
         mock.call(
             user_id=user_id,
-            store_id="0",
+            store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
         )
         for key in fake_outputs.keys()
     ] + [
         mock.call(
             user_id=user_id,
-            store_id="0",
+            store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
         )
     ]
