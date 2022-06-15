@@ -229,7 +229,7 @@ def dsm_mockup_db(
 
         d = {
             "file_uuid": file_uuid,
-            "location_id": "0",
+            "location_id": 0,
             "location": location,
             "bucket_name": bucket_name,
             "object_name": object_name,

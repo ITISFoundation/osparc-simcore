@@ -62,7 +62,7 @@ async def output_file(
 
         # hacks defect
         file.user_id = str(user_id)
-        file.location_id = str(file.location_id)
+        file.location_id = file.location_id
         # --
         assert file == FileMetaData(**dict(row))  # type: ignore
 
