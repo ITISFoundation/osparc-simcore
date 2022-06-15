@@ -311,7 +311,7 @@ async def download_file(request: web.Request):
         user_id = query["user_id"]
         file_uuid = params["file_id"]
 
-        if int(location_id) != SIMCORE_S3_ID:
+        if int(location_id) != SIMCORE_S3_ID and link_type == "s3":
             raise web.HTTPPreconditionFailed(
                 reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
             )
