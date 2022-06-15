@@ -32,7 +32,7 @@ from packaging import version
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
@@ -538,7 +538,10 @@ async def try_to_remove_network(network_name: str) -> None:
 
 
 async def _update_service_spec(
-    service_name: str, *, update_spec_data: Callable[[dict], dict]
+    service_name: str,
+    *,
+    update_spec_data: Callable[[dict], dict],
+    stop_delay: float = 10.0,
 ) -> None:
     """
     Updates the spec of a service. The `update_spec_data` must always return the updated spec.
@@ -551,9 +554,9 @@ async def _update_service_spec(
         # might get raised. This is caused by the `service_version` being out of sync
         # with what is currently stored in the docker daemon.
         async for attempt in AsyncRetrying(
-            # waits 1, 4, 8 seconds between retries and gives up
-            stop=stop_after_attempt(3),
-            wait=wait_exponential(),
+            # waits exponentially to a max of `stop_delay` seconds
+            stop=stop_after_delay(stop_delay),
+            wait=wait_exponential(min=1),
             retry=retry_if_exception_type(_RetryError),
             reraise=True,
         ):
@@ -574,21 +577,22 @@ async def _update_service_spec(
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:
-                    if not (
+                    if (
                         e.status == status.HTTP_404_NOT_FOUND
                         and e.message == f"service {service_name} not found"
                     ):
-                        raise e
-                    if (
+                        log.debug(
+                            "Skip update for service '%s' which could not be found.",
+                            service_name,
+                        )
+                    elif (
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and e.message
                         == "rpc error: code = Unknown desc = update out of sequence"
                     ):
                         raise _RetryError() from e
-                    log.debug(
-                        "Skip update for service '%s' which could not be found",
-                        service_name,
-                    )
+                    else:
+                        raise e
 
 
 async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:

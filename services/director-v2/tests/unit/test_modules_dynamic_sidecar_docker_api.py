@@ -29,9 +29,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_api import (
-    update_scheduler_data_label,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     GenericDockerError,
@@ -731,7 +728,7 @@ async def test_update_scheduler_data_label(
     mock_scheduler_data: SchedulerData,
     docker_swarm: None,
 ) -> None:
-    await update_scheduler_data_label(mock_scheduler_data)
+    await docker_api.update_scheduler_data_label(mock_scheduler_data)
 
     # fetch stored data in labels
     service_inspect = await docker.services.inspect(mock_service)
@@ -740,3 +737,34 @@ async def test_update_scheduler_data_label(
         labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
     )
     assert scheduler_data == mock_scheduler_data
+
+
+async def test_regression_update_service_skip_if_service_not_found(
+    docker: aiodocker.Docker,
+) -> None:
+    # NOTE: checks that docker engine replies with
+    # `service service-is-not-defined-test not found`
+    # the error is handled
+    await docker_api._update_service_spec(
+        service_name="service-is-not-defined-test", update_spec_data=lambda x: x
+    )
+
+
+async def test_regression_update_service_update_out_of_sequence(
+    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
+) -> None:
+    # NOTE: checks that the docker engine replies with
+    # `rpc error: code = Unknown desc = update out of sequence`
+    # the error is captured and raised as `docker_api._RetryError`
+    with pytest.raises(docker_api._RetryError):
+        # starting concurrent updates will trigger the error
+        await asyncio.gather(
+            *[
+                docker_api._update_service_spec(
+                    service_name=mock_service,
+                    update_spec_data=lambda x: x,
+                    stop_delay=3,
+                )
+                for _ in range(10)
+            ]
+        )
