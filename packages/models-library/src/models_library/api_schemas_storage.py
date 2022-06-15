@@ -56,7 +56,7 @@ FileLocationArray = ListModel[FileLocation]
 # /locations/{location_id}/datasets
 
 
-class DatasetMetaData(BaseModel):
+class DatasetMetaDataGet(BaseModel):
     dataset_id: Union[UUID, DatCoreDatasetName]
     display_name: str
 
