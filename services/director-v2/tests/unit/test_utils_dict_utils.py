@@ -3,8 +3,8 @@ from typing import Any
 
 import pytest
 from simcore_service_director_v2.utils.dict_utils import (
-    nested_update,
     get_longest_key_paths,
+    nested_update,
 )
 
 

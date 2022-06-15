@@ -7,18 +7,7 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from copy import deepcopy
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -36,12 +25,12 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
-from ...utils.dict_utils import get_longest_key_paths, nested_update
 from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ...utils.dict_utils import get_longest_key_paths, nested_update
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
