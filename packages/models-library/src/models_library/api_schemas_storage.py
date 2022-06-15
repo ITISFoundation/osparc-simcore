@@ -8,7 +8,6 @@
 
 import re
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional, Pattern, Union
 from uuid import UUID
 
@@ -46,6 +45,7 @@ class FileLocation(BaseModel):
     id: LocationID
 
     class Config:
+        extra = Extra.forbid
         schema_extra = {
             "examples": [{"name": "simcore.s3", "id": 0}, {"name": "datcore", "id": 1}]
         }
@@ -61,6 +61,7 @@ class DatasetMetaDataGet(BaseModel):
     display_name: str
 
     class Config:
+        extra = Extra.forbid
         schema_extra = {
             "examples": [
                 # simcore dataset
@@ -206,44 +207,3 @@ class PresignedLink(BaseModel):
 
 
 # /simcore-s3/
-
-# TODO: class Project(BaseModel):
-
-
-# ERRORS/ LOGS ---------------
-#
-#
-
-
-class ErrorItem(BaseModel):
-    code: str = Field(
-        ...,
-        description="Typically the name of the exception that produced it otherwise some known error code",
-    )
-    message: str = Field(..., description="Error message specific to this item")
-    resource: Optional[str] = Field(description="API resource affected by this error")
-    field: Optional[str] = Field(description="Specific field within the resource")
-
-
-class Level(Enum):
-    DEBUG = "DEBUG"
-    WARNING = "WARNING"
-    INFO = "INFO"
-    ERROR = "ERROR"
-
-
-class LogMessage(BaseModel):
-    level: Optional[Level] = Field("INFO", description="Log level")
-    message: str = Field(
-        ...,
-        description="Log message. If logger is USER, then it MUST be human readable",
-    )
-    logger: Optional[str] = Field(
-        description="Name of the logger receiving this message"
-    )
-
-
-class Error(BaseModel):
-    logs: Optional[List[LogMessage]] = Field(description="Log messages")
-    errors: Optional[List[ErrorItem]] = Field(description="Errors metadata")
-    status: Optional[int] = Field(description="HTTP error code")
