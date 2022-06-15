@@ -62,6 +62,7 @@ class DatasetMetaDataGet(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        orm_mode = True
         schema_extra = {
             "examples": [
                 # simcore dataset
@@ -133,6 +134,7 @@ class FileMetaDataGet(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        orm_mode = True
         schema_extra = {
             "examples": [
                 # typical S3 entry

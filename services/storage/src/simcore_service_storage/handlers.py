@@ -7,9 +7,7 @@ from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from settings_library.s3 import S3Settings
@@ -23,6 +21,7 @@ from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .models import DatasetMetaData, FileMetaDataEx
 from .settings import Settings
+from .temporary_handlers_utils import convert_to_api_dataset, convert_to_api_fmd
 
 log = logging.getLogger(__name__)
 
@@ -68,15 +67,6 @@ def handle_storage_errors():
         raise web.HTTPUnprocessableEntity(
             reason=f"{err} is an invalid file identifier"
         ) from err
-
-
-# NOTE: TEMPORARY UTILS (will be removed in the next PRs for refactoring storage)
-def _convert_to_api_dataset(x: DatasetMetaData) -> DatasetMetaDataGet:
-    return parse_obj_as(DatasetMetaDataGet, x)
-
-
-def _convert_to_api_fmd(x: FileMetaDataEx) -> FileMetaDataGet:
-    return parse_obj_as(FileMetaDataGet, x)
 
 
 # HANDLERS ---------------------------------------------------
@@ -126,7 +116,7 @@ async def get_datasets_metadata(request: web.Request):
         location = dsm.location_from_id(location_id)
         # To implement
         data: list[DatasetMetaData] = await dsm.list_datasets(user_id, location)
-        py_data = [_convert_to_api_dataset(d).json(by_alias=True) for d in data]
+        py_data = [convert_to_api_dataset(d).json(by_alias=True) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -156,7 +146,7 @@ async def get_files_metadata(request: web.Request):
         data: list[FileMetaDataEx] = await dsm.list_files(
             user_id=user_id, location=location, uuid_filter=uuid_filter
         )
-        py_data = [_convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -189,7 +179,7 @@ async def get_files_metadata_dataset(request: web.Request):
             user_id=user_id, location=location, dataset_id=dataset_id
         )
 
-        py_data = [_convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
         return {"error": None, "data": py_data}
 
 
@@ -224,7 +214,7 @@ async def get_file_metadata(request: web.Request):
 
         return {
             "error": None,
-            "data": _convert_to_api_fmd(data).json(by_alias=True),
+            "data": convert_to_api_fmd(data).json(by_alias=True),
         }
 
 
@@ -293,7 +283,7 @@ async def update_file_meta_data(request: web.Request):
 
         return {
             "error": None,
-            "data": _convert_to_api_fmd(data).json(by_alias=True),
+            "data": convert_to_api_fmd(data).json(by_alias=True),
         }
 
 
@@ -462,7 +452,7 @@ async def search_files_starting_with(request: web.Request):
             int(user_id), prefix=startswith
         )
         log.debug("Found %d files starting with '%s'", len(data), startswith)
-        py_data = [_convert_to_api_fmd(d).json(by_alias=True) for d in data]
+        py_data = [convert_to_api_fmd(d).json(by_alias=True) for d in data]
         return py_data
 
 
@@ -488,4 +478,4 @@ async def copy_as_soft_link(request: web.Request):
             user_id, target_uuid, link_uuid
         )
 
-        return _convert_to_api_fmd(file_link).json(by_alias=True)
+        return convert_to_api_fmd(file_link).json(by_alias=True)
