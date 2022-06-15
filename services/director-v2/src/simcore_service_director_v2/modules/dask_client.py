@@ -274,14 +274,14 @@ class DaskClient:
                 project_id=project_id,
                 node_id=node_id,
             )
-
+            # NOTE: for download there is no need to go with S3 links
             input_data = await compute_input_data(
                 self.app,
                 user_id,
                 project_id,
                 node_id,
                 ports=node_ports,
-                file_link_type=self.tasks_file_link_type,
+                file_link_type=FileLinkType.PRESIGNED,
             )
             output_data_keys = await compute_output_data_schema(
                 self.app,
