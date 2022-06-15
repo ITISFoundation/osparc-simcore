@@ -9,9 +9,9 @@
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Pattern, Union
+from typing import List, Optional, Pattern, Union
+from uuid import UUID
 
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from pydantic import BaseModel, ByteSize, ConstrainedStr, Extra, Field, validator
 from pydantic.networks import AnyUrl
@@ -38,13 +38,6 @@ class HealthCheck(BaseModel):
     version: Optional[str]
 
 
-# /check/{action}:
-class Fake(BaseModel):
-    path_value: str
-    query_value: str
-    body_value: Dict[str, Any]
-
-
 # /locations
 
 
@@ -64,7 +57,7 @@ FileLocationArray = ListModel[FileLocation]
 
 
 class DatasetMetaData(BaseModel):
-    dataset_id: Union[ProjectID, DatCoreDatasetName]
+    dataset_id: Union[UUID, DatCoreDatasetName]
     display_name: str
 
     class Config:
