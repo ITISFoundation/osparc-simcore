@@ -35,7 +35,7 @@ from ..docker_api import (
     constrain_service_to_node,
     create_network,
     create_service_and_get_id,
-    get_node_id_from_task_for_service,
+    get_service_placement,
     get_projects_networks_containers,
     get_swarm_network,
     is_dynamic_sidecar_missing,
@@ -187,7 +187,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+        dynamic_sidecar_node_id = await get_service_placement(
             dynamic_sidecar_id, dynamic_sidecar_settings
         )
         await constrain_service_to_node(
@@ -407,7 +407,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+        dynamic_sidecar_node_id = await get_service_placement(
             scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
         )
 

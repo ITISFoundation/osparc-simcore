@@ -261,7 +261,7 @@ async def _extract_task_data_from_service_for_state(
         return task
 
 
-async def get_node_id_from_task_for_service(
+async def get_service_placement(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> str:
     """Awaits until the service has a running task and returns the
@@ -560,7 +560,6 @@ async def _update_service_spec(
             with attempt:
                 try:
                     # fetch information from service name
-                    service_inspect = await client.services.inspect(service_name)
                     service_inspect = await client.services.inspect(service_name)
                     service_version = service_inspect["Version"]["Index"]
                     service_id = service_inspect["ID"]

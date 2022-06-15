@@ -513,7 +513,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     )
     assert service_id
 
-    node_id = await docker_api.get_node_id_from_task_for_service(
+    node_id = await docker_api.get_service_placement(
         service_id, dynamic_sidecar_settings
     )
     assert node_id
