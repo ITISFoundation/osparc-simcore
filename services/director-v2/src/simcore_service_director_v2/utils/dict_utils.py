@@ -66,7 +66,7 @@ def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
     def _get_parent_keys(
         dict_data: dict[str, Any], parents: Optional[list[str]]
     ) -> list[list[str]]:
-        root_parents: list[str] = [] if parents is None else parents
+        root_parents: list[str] = parents or []
 
         parents_collection: list[list[str]] = []
 
