@@ -6,9 +6,9 @@ import os
 from pathlib import Path
 from typing import List
 from uuid import UUID
-from fastapi import FastAPI
 
 import pytest
+from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 # UTILS

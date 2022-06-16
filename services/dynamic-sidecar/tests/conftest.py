@@ -13,7 +13,6 @@ from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
-from faker import Faker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient

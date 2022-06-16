@@ -4,8 +4,8 @@ from typing import AsyncIterable
 from uuid import UUID
 
 import aiodocker
-from faker import Faker
 import pytest
+from faker import Faker
 from simcore_service_dynamic_sidecar.core.docker_utils import get_volume_by_label
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
