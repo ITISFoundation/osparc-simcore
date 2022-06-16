@@ -3,6 +3,7 @@
 
 from pprint import pprint
 from typing import Any, Dict, Iterator, cast
+from uuid import UUID
 
 import pytest
 import respx
@@ -76,7 +77,12 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec() -> dict[str, Any]:
+def observation_id(scheduler_data: SchedulerData) -> UUID:
+    return scheduler_data.observation_id
+
+
+@pytest.fixture
+def expected_dynamic_sidecar_spec(observation_id: UUID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -110,6 +116,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
             '"75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
             '"service_name": '
             '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
+            f'"observation_id": "{observation_id}", '
             '"dynamic_sidecar": {"status": '
             '{"current": "ok", "info": ""}, '
             '"hostname": '
@@ -169,6 +176,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                 "Env": {
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "DY_SIDECAR_OBSERVATION_ID": f"{observation_id}",
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -226,6 +234,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "observation_id": f"{observation_id}",
                                 "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_inputs",
                                 "swarm_stack_name": "test_swarm_name",
                                 "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -237,6 +246,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "observation_id": f"{observation_id}",
                                 "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_outputs",
                                 "swarm_stack_name": "test_swarm_name",
                                 "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -248,6 +258,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "observation_id": f"{observation_id}",
                                 "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_1",
                                 "swarm_stack_name": "test_swarm_name",
                                 "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -259,6 +270,7 @@ def expected_dynamic_sidecar_spec() -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "observation_id": f"{observation_id}",
                                 "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_2",
                                 "swarm_stack_name": "test_swarm_name",
                                 "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",

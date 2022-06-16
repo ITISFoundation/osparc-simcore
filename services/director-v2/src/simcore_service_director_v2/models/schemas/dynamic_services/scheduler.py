@@ -3,7 +3,7 @@ import logging
 from asyncio import Lock
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -293,6 +293,11 @@ class DynamicSidecarNames(BaseModel):
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     service_name: str = Field(
         ..., description="Name of the current dynamic-sidecar being observed"
+    )
+
+    observation_id: UUID = Field(
+        default_factory=uuid4,
+        description="Used to uniquely identify resources between runs",
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
