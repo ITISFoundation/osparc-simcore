@@ -7,7 +7,7 @@ import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
+from typing import Any, AsyncIterator, Mapping, Optional
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -17,7 +17,6 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from packaging import version
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -42,49 +41,6 @@ NO_PENDING_OVERWRITE = {
 log = logging.getLogger(__name__)
 
 
-def _monkey_patch_aiodocker() -> None:
-    """Raises an error once the library is up to date."""
-    from aiodocker import volumes
-    from aiodocker.volumes import DockerVolume
-
-    if version.parse(aiodocker.__version__) > version.parse("0.21.0"):
-        raise RuntimeError(
-            "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
-            "is not part of the current bump version. "
-            "Otherwise, if the current PR is part of this new release "
-            "remove monkey_patch."
-        )
-
-    # pylint: disable=protected-access
-    async def _custom_volumes_list(self, *, filters=None):
-        """
-        Return a list of volumes
-
-        Args:
-            filters: a dict with a list of filters
-
-        Available filters:
-            dangling=<boolean>
-            driver=<volume-driver-name>
-            label=<key> or label=<key>:<value>
-            name=<volume-name>
-        """
-        params = {} if filters is None else {"filters": clean_filters(filters)}
-
-        data = await self.docker._query_json("volumes", params=params)
-        return data
-
-    async def _custom_volumes_get(self, id):  # pylint: disable=redefined-builtin
-        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
-        return DockerVolume(self.docker, data["Name"])
-
-    setattr(volumes.DockerVolumes, "list", _custom_volumes_list)
-    setattr(volumes.DockerVolumes, "get", _custom_volumes_get)
-
-
-_monkey_patch_aiodocker()
-
-
 class _RetryError(Exception):
     pass
 
@@ -105,7 +61,7 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
             await client.close()
 
 
-async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> Dict:
+async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
     async with docker_client() as client:
         all_networks = await client.networks.list()
 
@@ -126,7 +82,7 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     return networks[0]
 
 
-async def create_network(network_config: Dict[str, Any]) -> str:
+async def create_network(network_config: dict[str, Any]) -> str:
     async with docker_client() as client:
         try:
             docker_network = await client.networks.create(network_config)
@@ -167,17 +123,17 @@ async def create_service_and_get_id(create_service_data: AioDockerServiceSpec) -
     return service_start_result["ID"]
 
 
-async def inspect_service(service_id: str) -> Dict[str, Any]:
+async def inspect_service(service_id: str) -> dict[str, Any]:
     async with docker_client() as client:
         return await client.services.inspect(service_id)
 
 
 async def get_dynamic_sidecars_to_observe(
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> List[SchedulerData]:
+) -> list[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services: List[
+        running_dynamic_sidecar_services: list[
             Mapping[str, Any]
         ] = await client.services.list(
             filters={
@@ -195,12 +151,12 @@ async def get_dynamic_sidecars_to_observe(
 async def _extract_task_data_from_service_for_state(
     service_id: str,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    target_statuses: Set[str],
-) -> Dict[str, Any]:
+    target_statuses: set[str],
+) -> dict[str, Any]:
     """Waits until the dynamic-sidecar task is in one of the target_statuses
     and then returns the task"""
 
-    async def _sleep_or_error(started: float, task: Dict):
+    async def _sleep_or_error(started: float, task: dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
         if (
@@ -216,7 +172,7 @@ async def _extract_task_data_from_service_for_state(
 
     async with docker_client() as client:
         service_state: Optional[str] = None
-        task: Dict[str, Any] = {}
+        task: dict[str, Any] = {}
 
         started = time.time()
 
@@ -274,8 +230,8 @@ async def get_node_id_from_task_for_service(
     return task["NodeID"]
 
 
-async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]:
-    def _make_pending() -> Tuple[ServiceState, str]:
+async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]:
+    def _make_pending() -> tuple[ServiceState, str]:
         pending_task_state = {"State": ServiceState.PENDING.value}
         return extract_task_state(task_status=pending_task_state)
 
@@ -385,38 +341,11 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def remove_dynamic_sidecar_volumes(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> Set[str]:
-    async with docker_client() as client:
-        volumes_response = await client.volumes.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
-                ]
-            }
-        )
-        volumes = volumes_response["Volumes"]
-        log.debug("Removing volumes: %s", [v["Name"] for v in volumes])
-        if len(volumes) == 0:
-            log.warning("Expected to find at least 1 volume to remove, 0 were found")
-
-        removed_volumes: Set[str] = set()
-
-        for volume_data in volumes:
-            volume = await client.volumes.get(volume_data["Name"])
-            await volume.delete()
-            removed_volumes.add(volume_data["Name"])
-
-        return removed_volumes
-
-
 async def list_dynamic_sidecar_services(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     service_filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -450,8 +379,8 @@ async def is_dynamic_service_running(
 
 
 async def get_or_create_networks_ids(
-    networks: List[str], project_id: ProjectID
-) -> Dict[str, str]:
+    networks: list[str], project_id: ProjectID
+) -> dict[str, str]:
     async def _get_id_from_name(client, network_name: str) -> str:
         network = await client.networks.get(network_name)
         network_inspect = await network.show()
@@ -495,7 +424,7 @@ async def get_or_create_networks_ids(
 
 async def get_projects_networks_containers(
     project_id: ProjectID,
-) -> Dict[str, int]:
+) -> dict[str, int]:
     """
     Returns all current projects_networks for the project with
     the amount of containers attached to them.
@@ -510,8 +439,8 @@ async def get_projects_networks_containers(
     if not filtered_networks:
         return {}
 
-    def _count_containers(item: Dict[str, Any]) -> int:
-        containers: Optional[List] = item.get("Containers")
+    def _count_containers(item: dict[str, Any]) -> int:
+        containers: Optional[list] = item.get("Containers")
         return 0 if containers is None else len(containers)
 
     return {x["Name"]: _count_containers(x) for x in filtered_networks}
