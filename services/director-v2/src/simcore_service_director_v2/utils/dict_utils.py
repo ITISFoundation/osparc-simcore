@@ -71,13 +71,11 @@ def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
         parents_collection: list[list[str]] = []
 
         for key, value in dict_data.items():
+            parents_copy = deepcopy(root_parents)
+            parents_copy.append(key)
             if isinstance(value, dict):
-                parents_copy = deepcopy(root_parents)
-                parents_copy.append(key)
                 parents_collection += _get_parent_keys(value, parents_copy)
             else:
-                parents_copy = deepcopy(root_parents)
-                parents_copy.append(key)
                 parents_collection.append(parents_copy)
 
         if len(dict_data) == 0 and len(root_parents) > 0:
