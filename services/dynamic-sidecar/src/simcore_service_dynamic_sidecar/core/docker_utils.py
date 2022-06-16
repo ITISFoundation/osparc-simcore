@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict
+from uuid import UUID
 
 import aiodocker
 from aiodocker.utils import clean_filters
@@ -24,9 +25,9 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def get_volume_by_label(label: str) -> Dict[str, Any]:
+async def get_volume_by_label(label: str, observation_id: UUID) -> Dict[str, Any]:
     async with docker_client() as docker:
-        filters = {"label": [f"source={label}"]}
+        filters = {"label": [f"source={label}", f"observation_id={observation_id}"]}
         params = {"filters": clean_filters(filters)}
         data = await docker._query_json(  # pylint: disable=protected-access
             "volumes", method="GET", params=params
@@ -36,6 +37,6 @@ async def get_volume_by_label(label: str) -> Dict[str, Any]:
             f"volumes query for {label=} {volumes=}"
         )
         if len(volumes) != 1:
-            raise VolumeNotFoundError(label, volumes)
+            raise VolumeNotFoundError(label, observation_id, volumes)
         volume_details = volumes[0]
         return volume_details  # type: ignore

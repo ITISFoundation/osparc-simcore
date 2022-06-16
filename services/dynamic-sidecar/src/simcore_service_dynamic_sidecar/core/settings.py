@@ -2,6 +2,7 @@ import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, cast
+from uuid import UUID
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
@@ -90,6 +91,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
+    DY_SIDECAR_OBSERVATION_ID: UUID
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

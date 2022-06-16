@@ -215,11 +215,21 @@ async def validate_compose_spec(
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
 
-        service_volumes.append(await mounted_volumes.get_inputs_docker_volume())
-        service_volumes.append(await mounted_volumes.get_outputs_docker_volume())
+        service_volumes.append(
+            await mounted_volumes.get_inputs_docker_volume(
+                settings.DY_SIDECAR_OBSERVATION_ID
+            )
+        )
+        service_volumes.append(
+            await mounted_volumes.get_outputs_docker_volume(
+                settings.DY_SIDECAR_OBSERVATION_ID
+            )
+        )
         async for (
             state_paths_docker_volume
-        ) in mounted_volumes.iter_state_paths_to_docker_volumes():
+        ) in mounted_volumes.iter_state_paths_to_docker_volumes(
+            settings.DY_SIDECAR_OBSERVATION_ID
+        ):
             service_volumes.append(state_paths_docker_volume)
 
         service_content["volumes"] = service_volumes
