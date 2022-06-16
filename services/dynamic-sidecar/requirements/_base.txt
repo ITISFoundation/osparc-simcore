@@ -124,7 +124,7 @@ docopt==0.6.2
     # via docker-compose
 email-validator==1.2.1
     # via pydantic
-fastapi==0.71.0
+fastapi==0.78.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -311,7 +311,7 @@ sqlalchemy==1.4.37
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.17.1
+starlette==0.19.1
     # via fastapi
 tenacity==8.0.1
     # via
@@ -344,6 +344,7 @@ typing-extensions==4.3.0
     #   aiodebug
     #   aiodocker
     #   pydantic
+    #   starlette
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
