@@ -2,25 +2,22 @@ import asyncio
 import logging
 import re
 import shlex
+import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
 from aiocache import cached
 from aiofiles import tempfile
-from aiohttp import ClientSession
-from models_library.users import UserID
 from pydantic.errors import PydanticErrorMixin
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
-
-from .constants import SIMCORE_LOCATION
-from .storage_client import LinkType, delete_file, get_upload_file_link
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
 
-class _CommandFailedException(PydanticErrorMixin, RuntimeError):
+class RCloneFailedError(PydanticErrorMixin, RuntimeError):
     msg_template: str = "Command {command} finished with exception:\n{stdout}"
 
 
@@ -45,7 +42,7 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
     stdout, _ = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise _CommandFailedException(command=str_cmd, stdout=decoded_stdout)
+        raise RCloneFailedError(command=str_cmd, stdout=decoded_stdout)
 
     logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
@@ -59,28 +56,20 @@ async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bo
     try:
         await _async_command("rclone", "--version")
         return True
-    except _CommandFailedException:
+    except RCloneFailedError:
         return False
 
 
 async def sync_local_to_s3(
-    session: ClientSession,
-    r_clone_settings: RCloneSettings,
-    s3_object: str,
     local_file_path: Path,
-    user_id: UserID,
-    store_id: str,
+    r_clone_settings: RCloneSettings,
+    upload_file_link: URL,
 ) -> None:
-    """NOTE: only works with simcore location"""
-    assert store_id == SIMCORE_LOCATION  # nosec
+    """_summary_
 
-    s3_link = await get_upload_file_link(
-        session=session,
-        file_id=s3_object,
-        location_id=store_id,
-        user_id=user_id,
-        link_type=LinkType.S3,
-    )
+    :raises e: RCloneFailedError
+    """
+    s3_link = urllib.parse.unquote(f"{upload_file_link}")
     s3_path = re.sub(r"^s3://", "", s3_link)
     logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
 
@@ -121,16 +110,4 @@ async def sync_local_to_s3(
             shlex.quote(f"{file_name}"),
         )
 
-        try:
-            await _async_command(*r_clone_command, cwd=f"{source_path.parent}")
-        except Exception as e:
-            logger.warning(
-                "There was an error while uploading %s. Removing metadata", s3_object
-            )
-            await delete_file(
-                session=session,
-                file_id=s3_object,
-                location_id=store_id,
-                user_id=user_id,
-            )
-            raise e
+        await _async_command(*r_clone_command, cwd=f"{source_path.parent}")

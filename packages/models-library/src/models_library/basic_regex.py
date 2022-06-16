@@ -12,7 +12,11 @@
 
 # Universally unique Identifier. Pattern taken from https://stackoverflow.com/questions/136505/searching-for-uuids-in-text-with-regex
 
-UUID_RE = r"\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b"
+
+UUID_RE_BASE = (
+    r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
+)
+UUID_RE = rf"^{UUID_RE_BASE}$"
 
 # Formatted timestamps with date and time
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
@@ -29,3 +33,13 @@ PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"
 MIME_TYPE_RE = (
     r"([\w\*]*)\/(([\w\-\*]+\.)+)?([\w\-\*]+)(\+([\w\-\.]+))?(; ([\w+-\.=]+))?"
 )
+
+# Storage basic file ID
+SIMCORE_S3_FILE_ID_RE = rf"^(api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/([^\/]+)$"
+
+# S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
+S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+
+# Datcore file ID
+DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"
+DATCORE_DATASET_NAME_RE = rf"^N:dataset:{UUID_RE_BASE}$"

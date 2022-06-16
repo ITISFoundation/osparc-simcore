@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
-from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
+from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from pydantic import ValidationError
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.modules.storage import to_file_api_model

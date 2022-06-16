@@ -142,7 +142,7 @@ async def test_s3_files_metadata(
         data, error = tuple(payload.get(k) for k in ("data", "error"))
         assert not error
         for d in data:
-            assert os.path.join(d["project_id"], d["node_id"]) == uuid_filter
+            assert d["file_id"].startswith(uuid_filter)
 
 
 async def test_s3_file_metadata(client, dsm_mockup_db):

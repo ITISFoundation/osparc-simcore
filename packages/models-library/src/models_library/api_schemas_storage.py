@@ -6,16 +6,27 @@
     IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
+import re
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Pattern, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, constr
+from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Extra, Field, validator
 from pydantic.networks import AnyUrl
 
-from .basic_regex import UUID_RE
+from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .generics import ListModel
+
+ETag = str
+
+
+class S3BucketName(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(S3_BUCKET_NAME_RE)
+
+
+class DatCoreDatasetName(ConstrainedStr):
+    regex: Optional[Pattern[str]] = re.compile(DATCORE_DATASET_NAME_RE)
 
 
 # /
@@ -26,21 +37,15 @@ class HealthCheck(BaseModel):
     version: Optional[str]
 
 
-# /check/{action}:
-class Fake(BaseModel):
-    path_value: str
-    query_value: str
-    body_value: Dict[str, Any]
-
-
 # /locations
 
 
 class FileLocation(BaseModel):
-    name: str
-    id: int
+    name: LocationName
+    id: LocationID
 
     class Config:
+        extra = Extra.forbid
         schema_extra = {
             "examples": [{"name": "simcore.s3", "id": 0}, {"name": "datcore", "id": 1}]
         }
@@ -50,14 +55,14 @@ FileLocationArray = ListModel[FileLocation]
 
 # /locations/{location_id}/datasets
 
-DatCoreId = constr(regex=r"^N:dataset:" + UUID_RE)
 
-
-class DatasetMetaData(BaseModel):
-    dataset_id: Union[UUID, DatCoreId]
+class DatasetMetaDataGet(BaseModel):
+    dataset_id: Union[UUID, DatCoreDatasetName]
     display_name: str
 
     class Config:
+        extra = Extra.forbid
+        orm_mode = True
         schema_extra = {
             "examples": [
                 # simcore dataset
@@ -86,46 +91,33 @@ class DatasetMetaData(BaseModel):
         }
 
 
-DatasetMetaDataArray = ListModel[DatasetMetaData]
-
-
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
-class FileMetaData(BaseModel):
-    file_uuid: Optional[str] = Field(
-        description="Unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
+class FileMetaDataGet(BaseModel):
+    # Used by frontend
+    file_uuid: str = Field(
+        description="NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure",
     )
-
-    user_id: Optional[int]
-    user_name: Optional[str]
-
-    location_id: Optional[int] = Field(description="Storage location")
-    location: Optional[str] = Field(description="Storage location display name")
-
-    bucket_name: Optional[str] = Field(description="Name of the s3 bucket")
-    object_name: Optional[str] = Field(
-        description="Name of the s3 object within the bucket"
+    location_id: LocationID = Field(..., description="Storage location")
+    project_name: Optional[str] = Field(
+        default=None,
+        description="optional project name, used by frontend to display path",
     )
-
-    project_id: Optional[UUID]
-    project_name: Optional[str]
-    node_id: Optional[UUID]
-    node_name: Optional[str]
-    file_name: Optional[str] = Field(description="Display name for a file")
-
-    file_id: Optional[str] = Field(
-        description="Unique uuid for the file. For simcore.s3: uuid created upon insertion and datcore: datcore uuid",
+    node_name: Optional[str] = Field(
+        default=None,
+        description="optional node name, used by frontend to display path",
     )
-    raw_file_path: Optional[str] = Field(description="Raw path to file")
-    display_file_path: Optional[str] = Field(
-        description="Human readlable  path to file"
+    file_name: str = Field(..., description="Display name for a file")
+    file_id: StorageFileID = Field(
+        ...,
+        description="THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore",
     )
-
-    created_at: Optional[datetime]
-    last_modified: Optional[datetime]
-    file_size: Optional[int] = Field(-1, description="File size in bytes")
-    entity_tag: Optional[str] = Field(
-        description="Entity tag (or ETag), represents a specific version of the file",
+    created_at: datetime
+    last_modified: datetime
+    file_size: ByteSize = Field(-1, description="File size in bytes (-1 means invalid)")
+    entity_tag: Optional[ETag] = Field(
+        default=None,
+        description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
     )
     is_soft_link: bool = Field(
         False,
@@ -133,60 +125,80 @@ class FileMetaData(BaseModel):
         "i.e. is another entry with the same object_name",
     )
 
-    parent_id: Optional[str]
+    @validator("location_id", pre=True)
+    @classmethod
+    def convert_from_str(cls, v):
+        if isinstance(v, str):
+            return int(v)
+        return v
 
     class Config:
+        extra = Extra.forbid
+        orm_mode = True
         schema_extra = {
             "examples": [
-                # FIXME: this is the old example and might be wrong!
+                # typical S3 entry
                 {
-                    "file_uuid": "simcore-testing/85eef642-e808-4a90-82f5-1ee55da79e25/1000/3",
-                    "location_id": "0",
-                    "location_name": "simcore.s3",
-                    "bucket_name": "simcore-testing",
-                    "object_name": "85eef642-e808-4a90-82f5-1ee55da79e25/d5ac1d43-db04-422c-95a1-38b59f45f70b/3",
-                    "project_id": "85eef642-e808-4a90-82f5-1ee55da79e25",
-                    "project_name": "futurology",
-                    "node_id": "d5ac1d43-db04-422c-95a1-38b59f45f70b",
-                    "node_name": "alpha",
-                    "file_name": "example.txt",
-                    "user_id": "12",
-                    "user_name": "dennis",
-                    "file_id": "N:package:e263da07-2d89-45a6-8b0f-61061b913873",
-                    "raw_file_path": "Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv",
-                    "display_file_path": "Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv",
-                    "created_at": "2019-06-19T12:29:03.308611Z",
-                    "last_modified": "2019-06-19T12:29:03.78852Z",
-                    "file_size": 73,
-                    "parent_id": "N:collection:e263da07-2d89-45a6-8b0f-61061b913873",
-                },
-                {
-                    "file_uuid": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
-                    "location_id": "0",
-                    "location": "simcore.s3",
-                    "bucket_name": "master-simcore",
-                    "object_name": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
-                    "project_id": "1c46752c-b096-11ea-a3c4-02420a00392e",
-                    "project_name": "Octave JupyterLab",
-                    "node_id": "e603724d-4af1-52a1-b866-0d4b792f8c4a",
-                    "node_name": "JupyterLab Octave",
-                    "file_name": "work.zip",
-                    "user_id": "7",
-                    "user_name": None,
-                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
-                    "raw_file_path": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
-                    "display_file_path": "Octave JupyterLab/JupyterLab Octave/work.zip",
                     "created_at": "2020-06-17 12:28:55.705340",
-                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "entity_tag": "8711cf258714b2de5498f5a5ef48cc7b",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "file_name": "work.zip",
                     "file_size": 17866343,
-                    "parent_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a",
+                    "file_uuid": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "is_soft_link": False,
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "location_id": 0,
+                    "node_name": "JupyterLab Octave",
+                    "project_name": "Octave JupyterLab",
+                },
+                # api entry (not soft link)
+                {
+                    "created_at": "2020-06-17 12:28:55.705340",
+                    "entity_tag": "8711cf258714b2de5498f5a5ef48cc7b",
+                    "file_id": "api/7b6b4e3d-39ae-3559-8765-4f815a49984e/tmpf_qatpzx",
+                    "file_name": "tmpf_qatpzx",
+                    "file_size": 86,
+                    "file_uuid": "api/7b6b4e3d-39ae-3559-8765-4f815a49984e/tmpf_qatpzx",
+                    "is_soft_link": False,
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "location_id": 0,
+                    "node_name": None,
+                    "project_name": None,
+                },
+                # api entry (soft link)
+                {
+                    "created_at": "2020-06-17 12:28:55.705340",
+                    "entity_tag": "36aa3644f526655a6f557207e4fd25b8",
+                    "file_id": "api/6f788ad9-0ad8-3d0d-9722-72f08c24a212/output_data.json",
+                    "file_name": "output_data.json",
+                    "file_size": 183,
+                    "file_uuid": "api/6f788ad9-0ad8-3d0d-9722-72f08c24a212/output_data.json",
+                    "is_soft_link": True,
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "location_id": 0,
+                    "node_name": None,
+                    "project_name": None,
+                },
+                # datcore entry
+                {
+                    "created_at": "2020-05-28T15:48:34.386302+00:00",
+                    "entity_tag": None,
+                    "file_id": "N:package:ce145b61-7e4f-470b-a113-033653e86d3d",
+                    "file_name": "templatetemplate.json",
+                    "file_size": 238,
+                    "file_uuid": "Kember Cardiac Nerve Model/templatetemplate.json",
+                    "is_soft_link": False,
+                    "last_modified": "2020-05-28T15:48:37.507387+00:00",
+                    "location_id": 1,
+                    "node_name": None,
+                    "project_name": None,
                 },
             ]
         }
 
 
 class FileMetaDataArray(BaseModel):
-    __root__: List[FileMetaData] = []
+    __root__: List[FileMetaDataGet] = []
 
 
 # /locations/{location_id}/files/{file_id}
@@ -197,44 +209,3 @@ class PresignedLink(BaseModel):
 
 
 # /simcore-s3/
-
-# TODO: class Project(BaseModel):
-
-
-# ERRORS/ LOGS ---------------
-#
-#
-
-
-class ErrorItem(BaseModel):
-    code: str = Field(
-        ...,
-        description="Typically the name of the exception that produced it otherwise some known error code",
-    )
-    message: str = Field(..., description="Error message specific to this item")
-    resource: Optional[str] = Field(description="API resource affected by this error")
-    field: Optional[str] = Field(description="Specific field within the resource")
-
-
-class Level(Enum):
-    DEBUG = "DEBUG"
-    WARNING = "WARNING"
-    INFO = "INFO"
-    ERROR = "ERROR"
-
-
-class LogMessage(BaseModel):
-    level: Optional[Level] = Field("INFO", description="Log level")
-    message: str = Field(
-        ...,
-        description="Log message. If logger is USER, then it MUST be human readable",
-    )
-    logger: Optional[str] = Field(
-        description="Name of the logger receiving this message"
-    )
-
-
-class Error(BaseModel):
-    logs: Optional[List[LogMessage]] = Field(description="Log messages")
-    errors: Optional[List[ErrorItem]] = Field(description="Errors metadata")
-    status: Optional[int] = Field(description="HTTP error code")

@@ -1,7 +1,7 @@
 from typing import List, Optional
 
+from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
-from models_library.projects_nodes_io import UUID_REGEX
 from models_library.service_settings_labels import ContainerSpec
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field
@@ -108,7 +108,7 @@ class RunningServiceDetails(BaseModel):
         description="The entry point where the service provides its interface",
     )
     service_uuid: str = Field(
-        ..., regex=UUID_REGEX, description="The node UUID attached to the service"
+        ..., regex=UUID_RE, description="The node UUID attached to the service"
     )
     service_key: str = Field(
         ...,

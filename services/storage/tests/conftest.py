@@ -210,10 +210,10 @@ def dsm_mockup_db(
         user_id = idx + 10
         idx = randrange(len(projects))
         project_name = projects[idx]
-        project_id = idx + 100
+        project_id = uuid.uuid4()
         idx = randrange(len(nodes))
         node = nodes[idx]
-        node_id = idx + 10000
+        node_id = uuid.uuid4()
         file_name = str(counter)
         object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
         file_uuid = Path(object_name).as_posix()
@@ -229,7 +229,7 @@ def dsm_mockup_db(
 
         d = {
             "file_uuid": file_uuid,
-            "location_id": "0",
+            "location_id": 0,
             "location": location,
             "bucket_name": bucket_name,
             "object_name": object_name,
@@ -240,7 +240,7 @@ def dsm_mockup_db(
             "file_name": file_name,
             "user_id": str(user_id),
             "user_name": user_name,
-            "file_id": str(uuid.uuid4()),
+            "file_id": object_name,
             "raw_file_path": file_uuid,
             "display_file_path": display_file_path,
             "created_at": created_at,

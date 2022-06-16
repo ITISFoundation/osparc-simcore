@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response,
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
-from simcore_sdk.node_ports_common.data_items_utils import is_file_type
+from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.dependencies import (
     get_application,

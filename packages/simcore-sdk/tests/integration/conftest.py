@@ -23,10 +23,12 @@ import np_helpers
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports_common import config as node_config
@@ -86,12 +88,12 @@ def node_uuid() -> str:
 
 
 @pytest.fixture(scope="session")
-def s3_simcore_location() -> str:
+def s3_simcore_location() -> LocationID:
     return np_helpers.SIMCORE_STORE
 
 
 @pytest.fixture
-async def filemanager_cfg(
+def filemanager_cfg(
     storage_service: URL,
     testing_environ_vars: Dict,
     user_id: str,
@@ -102,8 +104,10 @@ async def filemanager_cfg(
 
 
 @pytest.fixture
-def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable[[Path], str]:
-    def _create(file_path: Path) -> str:
+def create_valid_file_uuid(
+    project_id: str, node_uuid: str
+) -> Callable[[Path], SimcoreS3FileID]:
+    def _create(file_path: Path) -> SimcoreS3FileID:
         return np_helpers.file_uuid(file_path, project_id, node_uuid)
 
     return _create
@@ -139,14 +143,14 @@ def create_node_link() -> Callable[[str], Dict[str, str]]:
 @pytest.fixture()
 def create_store_link(
     bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
-    create_valid_file_uuid: Callable,
-    s3_simcore_location: str,
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    s3_simcore_location: LocationID,
     user_id: int,
     project_id: str,
     node_uuid: str,
     storage_service: URL,  # packages/pytest-simcore/src/pytest_simcore/simcore_storage_service.py
-) -> Callable[[Path], Awaitable[Dict[str, str]]]:
-    async def _create(file_path: Path) -> Dict[str, str]:
+) -> Callable[[Path], Awaitable[Dict[str, Any]]]:
+    async def _create(file_path: Path) -> Dict[str, Any]:
         file_path = Path(file_path)
         assert file_path.exists()
 
@@ -378,3 +382,10 @@ async def r_clone_settings(
     r_clone_settings_factory: Awaitable[RCloneSettings],
 ) -> RCloneSettings:
     return await r_clone_settings_factory
+
+
+@pytest.fixture
+def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(file_meta_data.delete())

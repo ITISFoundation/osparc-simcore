@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
-from .basic_regex import DATE_RE, UUID_RE
+from .basic_regex import DATE_RE, UUID_RE_BASE
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
@@ -17,7 +17,7 @@ from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
 ProjectID = UUID
-ProjectIDStr = constr(regex=UUID_RE)
+ProjectIDStr = constr(regex=UUID_RE_BASE)
 
 ClassifierID = str
 

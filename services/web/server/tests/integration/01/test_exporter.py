@@ -37,6 +37,7 @@ import pytest
 import redis.asyncio as aioredis
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
@@ -401,16 +402,16 @@ def extract_original_files_for_node_sequence(
 
 async def extract_download_links_from_storage(
     app: aiohttp.web.Application,
-    original_files: Dict[str, Dict[str, str]],
+    original_files: Dict[str, Dict[str, Any]],
     user_id: str,
 ) -> Dict[str, str]:
     async def _get_mapped_link(
-        seq_key: str, location_id: str, raw_file_path: str
+        seq_key: str, location_id: LocationID, file_id: StorageFileID
     ) -> Tuple[str, str]:
         link = await get_file_download_url(
             app=app,
             location_id=location_id,
-            file_id=raw_file_path,
+            file_id=file_id,
             user_id=int(user_id),
         )
         return seq_key, link
@@ -421,7 +422,7 @@ async def extract_download_links_from_storage(
             _get_mapped_link(
                 seq_key=seq_key,
                 location_id=data["store"],
-                raw_file_path=data["path"],
+                file_id=data["path"],
             )
         )
 
@@ -530,7 +531,7 @@ async def test_import_export_import_duplicate(
 
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
     async with await client.post(
-        f"{url_export}", headers=headers, timeout=10
+        f"{url_export}", headers=headers, timeout=100000
     ) as export_response:
         assert export_response.status == 200, await export_response.text()
 

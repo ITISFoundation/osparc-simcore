@@ -1,22 +1,24 @@
 from enum import Enum
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, Callable, Dict
-from urllib.parse import quote, quote_plus
+from typing import Callable
+from urllib.parse import quote
 
 from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
+    ETag,
     FileLocationArray,
-    FileMetaData,
+    FileMetaDataGet,
+    LocationID,
     PresignedLink,
+    StorageFileID,
 )
 from models_library.generics import Envelope
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
 
 from . import config, exceptions
-from .constants import ETag
 
 
 def handle_client_exception(handler: Callable):
@@ -71,8 +73,8 @@ class LinkType(str, Enum):
 @handle_client_exception
 async def get_download_file_link(
     session: ClientSession,
-    file_id: str,
-    location_id: str,
+    file_id: StorageFileID,
+    location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
 ) -> AnyUrl:
@@ -80,14 +82,6 @@ async def get_download_file_link(
     :raises exceptions.StorageInvalidCall
     :raises exceptions.StorageServerIssue
     """
-    if (
-        not isinstance(file_id, str)
-        or not isinstance(location_id, str)
-        or not isinstance(user_id, int)
-    ):
-        raise exceptions.StorageInvalidCall(
-            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
-        )
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
@@ -97,32 +91,30 @@ async def get_download_file_link(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
+        if response.status == web.HTTPNotFound.status_code:
+            raise exceptions.S3InvalidPathError(
+                f"file {location_id}@{file_id} not found"
+            )
         response.raise_for_status()
 
         presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
         if presigned_link_enveloped.data is None:
-            raise exceptions.StorageServerIssue("Storage server is not reponding")
+            raise exceptions.S3InvalidPathError(
+                f"file {location_id}@{file_id} not found"
+            )
         return presigned_link_enveloped.data.link
 
 
 @handle_client_exception
 async def get_upload_file_link(
     session: ClientSession,
-    file_id: str,
-    location_id: str,
+    file_id: StorageFileID,
+    location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
 ) -> AnyUrl:
-    if (
-        not isinstance(file_id, str)
-        or not isinstance(location_id, str)
-        or not isinstance(user_id, int)
-    ):
-        raise exceptions.StorageInvalidCall(
-            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
-        )
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
@@ -143,16 +135,11 @@ async def get_upload_file_link(
 
 @handle_client_exception
 async def get_file_metadata(
-    session: ClientSession, file_id: str, location_id: str, user_id: UserID
-) -> Dict[str, Any]:
-    if (
-        not isinstance(file_id, str)
-        or not isinstance(location_id, str)
-        or not isinstance(user_id, int)
-    ):
-        raise exceptions.StorageInvalidCall(
-            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
-        )
+    session: ClientSession,
+    file_id: StorageFileID,
+    location_id: LocationID,
+    user_id: UserID,
+) -> FileMetaDataGet:
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
@@ -162,26 +149,21 @@ async def get_file_metadata(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-        file_metadata_enveloped = Envelope[FileMetaData].parse_obj(
+        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
             await response.json()
         )
         if file_metadata_enveloped.data is None:
             raise exceptions.S3InvalidPathError(file_id)
-        return file_metadata_enveloped.data.dict(by_alias=True)
+        return file_metadata_enveloped.data
 
 
 @handle_client_exception
 async def delete_file(
-    session: ClientSession, file_id: str, location_id: str, user_id: UserID
+    session: ClientSession,
+    file_id: StorageFileID,
+    location_id: LocationID,
+    user_id: UserID,
 ) -> None:
-    if (
-        not isinstance(file_id, str)
-        or not isinstance(location_id, str)
-        or not isinstance(user_id, int)
-    ):
-        raise exceptions.StorageInvalidCall(
-            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
-        )
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
@@ -195,9 +177,9 @@ async def delete_file(
 
 @handle_client_exception
 async def update_file_meta_data(
-    session: ClientSession, s3_object: str, user_id: UserID
+    session: ClientSession, s3_object: StorageFileID, user_id: UserID
 ) -> ETag:
-    url = f"{_base_url()}/locations/0/files/{quote_plus(s3_object)}/metadata"
+    url = f"{_base_url()}/locations/0/files/{quote(s3_object, safe='')}/metadata"
     result = await session.patch(url, params=dict(user_id=user_id))
     if result.status != web.HTTPOk.status_code:
         raise exceptions.StorageInvalidCall(

@@ -1235,7 +1235,16 @@ paths:
             type: string
       responses:
         '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/put/responses/200'
+          description: Returns presigned link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    type: string
+                example:
+                  link: example_link
     put:
       summary: Returns upload link
       tags:
@@ -1254,16 +1263,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Returns presigned link
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
+          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/get/responses/200'
     delete:
       summary: Deletes File
       tags:
@@ -1333,31 +1333,13 @@ paths:
                   type: string
                 location_id:
                   type: string
-                location:
-                  type: string
-                bucket_name:
-                  type: string
-                object_name:
-                  type: string
-                project_id:
-                  type: string
                 project_name:
-                  type: string
-                node_id:
                   type: string
                 node_name:
                   type: string
                 file_name:
                   type: string
-                user_id:
-                  type: string
-                user_name:
-                  type: string
                 file_id:
-                  type: string
-                raw_file_path:
-                  type: string
-                display_file_path:
                   type: string
                 created_at:
                   type: string
@@ -1365,30 +1347,18 @@ paths:
                   type: string
                 file_size:
                   type: integer
-                parent_id:
-                  type: string
                 entity_tag:
                   type: string
               example:
                 file_uuid: simcore-testing/105/1000/3
                 location_id: '0'
-                location_name: simcore.s3
-                bucket_name: simcore-testing
-                object_name: 105/10000/3
-                project_id: '105'
                 project_name: futurology
-                node_id: '10000'
                 node_name: alpha
                 file_name: example.txt
-                user_id: '12'
-                user_name: dennis
                 file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
                 created_at: '2019-06-19T12:29:03.308611Z'
                 last_modified: '2019-06-19T12:29:03.78852Z'
                 file_size: 73
-                parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
                 entity_tag: a87ff679a2f3e71d9181a67b7542122c
       responses:
         '200':
@@ -2720,7 +2690,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -2756,15 +2734,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
@@ -4702,7 +4672,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':

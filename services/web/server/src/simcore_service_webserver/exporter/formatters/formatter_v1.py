@@ -83,7 +83,7 @@ async def extract_download_links(
             *[
                 get_project_files_metadata(
                     app=app,
-                    location_id=str(loc["id"]),
+                    location_id=loc["id"],
                     uuid_filter=project_id,
                     user_id=user_id,
                 )
@@ -102,18 +102,18 @@ async def extract_download_links(
             download_link = await get_file_download_url(
                 app=app,
                 location_id=file_metadata["location_id"],
-                file_id=file_metadata["raw_file_path"],
+                file_id=file_metadata["file_id"],
                 user_id=user_id,
             )
         except Exception as e:
             raise ExporterException(
-                f'Error while requesting download url for file {file_metadata["raw_file_path"]}'
+                f'Error while requesting download url for file {file_metadata["file_id"]}'
             ) from e
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
                 storage_type=file_metadata["location_id"],
-                relative_path_to_file=file_metadata["raw_file_path"],
+                relative_path_to_file=file_metadata["file_id"],
                 download_link=download_link,
             )
         )
@@ -174,8 +174,8 @@ async def upload_file_to_storage(
     try:
         upload_url = await get_file_upload_url(
             app=app,
-            location_id=str(link_and_path.storage_type),
-            file_id=str(link_and_path.relative_path_to_file),
+            location_id=link_and_path.storage_type,
+            file_id=link_and_path.relative_path_to_file,
             user_id=user_id,
         )
     except Exception as e:
@@ -185,7 +185,7 @@ async def upload_file_to_storage(
         ) from e
     log.debug(">>> upload url >>> %s", upload_url)
 
-    async def file_sender(file_name=None):
+    async def file_sender(file_name):
         async with aiofiles.open(file_name, "rb") as f:
             chunk = await f.read(64 * 1024)
             while chunk:
@@ -270,13 +270,14 @@ async def _fix_file_e_tags(
 ) -> None:
     for link_and_path, e_tag in links_to_etags:
         file_path = link_and_path.relative_path_to_file
-        if len(file_path.parts) < 3:
+        parts = link_and_path.relative_path_to_file.split("/")
+        if len(parts) < 3:
             log.warning(
                 "fixing eTag while importing issue: the path is not expected, skipping %s",
                 file_path,
             )
             continue
-        node_id = file_path.parts[-2]
+        node_id = parts[-2]
 
         # now try to fix the eTag if any
         node = project.workbench.get(node_id)

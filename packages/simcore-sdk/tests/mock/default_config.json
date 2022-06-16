@@ -2,7 +2,7 @@
   "schema": {
     "inputs": {
       "in_1": {
-        "displayOrder": 0,
+        "displayOrder": 0.0,
         "label": "computational data",
         "description": "these are computed data out of a pipeline",
         "type": "data:*/*",
@@ -13,7 +13,7 @@
         "widget": null
       },
       "in_5": {
-        "displayOrder": 2,
+        "displayOrder": 2.0,
         "label": "some number",
         "description": "numbering things",
         "type": "integer",
@@ -24,7 +24,7 @@
     },
     "outputs": {
       "out_1": {
-        "displayOrder": 0,
+        "displayOrder": 0.0,
         "label": "some boolean output",
         "description": "could be true or false...",
         "type": "boolean",
@@ -33,7 +33,7 @@
         "widget": null
       },
       "out_2": {
-        "displayOrder": 1,
+        "displayOrder": 1.0,
         "label": "some file output",
         "description": "could be anything...",
         "type": "data:*/*",
@@ -52,9 +52,9 @@
   "outputs": {
     "out_1": false,
     "out_2": {
-      "store": "z43-s3",
-      "path": "/simcore/outputControllerOut.dat"
+      "store": 0,
+      "path": "f1eeab8e-b02b-45fe-8230-248b99f160b3/363d5ea6-92c9-4021-9053-1e19ddfa81ec/outputControllerOut.dat"
     }
   },
-  "run_hash": "08e7efdeaffd57d453ab458bffdedb8bfbbca0cb2312772a555044162b3c2e59"
+  "run_hash": "ce7232014e9586accba094c87f854d684203eb6eb88028c48aba4a4e3e8748f9"
 }
