@@ -30,7 +30,7 @@ from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
-from ...utils.dict_utils import get_longest_key_paths, nested_update
+from ...utils.dict_utils import get_leaf_key_paths, nested_update
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -561,7 +561,7 @@ async def _update_service_spec(
                     updated_spec = nested_update(
                         spec,
                         update_in_service_spec,
-                        include=get_longest_key_paths(update_in_service_spec),
+                        include=get_leaf_key_paths(update_in_service_spec),
                     )
 
                     await client._query_json(  # pylint: disable=protected-access

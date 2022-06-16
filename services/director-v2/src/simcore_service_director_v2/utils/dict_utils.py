@@ -40,12 +40,14 @@ def nested_update(
     return merged_dict
 
 
-def get_longest_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
+def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
     """
-    returns: a tuple containing all the paths the keys are taking
+    All nested dict keys are considered as being part of a tree.
+    This functions returns the paths of all the leafs,
+    starting from the root and finishing with the leaf key.
 
     example:
-    >>> get_longest_key_paths({
+    >>> get_leaf_key_paths({
         "a": 3,
         "c": {
             "p": 12,

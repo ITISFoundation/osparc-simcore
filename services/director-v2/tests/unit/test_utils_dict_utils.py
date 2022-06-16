@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from simcore_service_director_v2.utils.dict_utils import (
-    get_longest_key_paths,
+    get_leaf_key_paths,
     nested_update,
 )
 
@@ -184,5 +184,5 @@ class GetLongestKeyPathTestParams:
         ),
     ],
 )
-def test_get_longest_key_paths(test_params: GetLongestKeyPathTestParams) -> None:
-    assert get_longest_key_paths(test_params.data) == test_params.expected
+def test_get_leaf_key_paths(test_params: GetLongestKeyPathTestParams) -> None:
+    assert get_leaf_key_paths(test_params.data) == test_params.expected
