@@ -572,32 +572,29 @@ async def _update_service_spec(
                     )
                 except aiodocker.exceptions.DockerError as e:
                     if (
-                        e.status == status.HTTP_404_NOT_FOUND
-                        and e.message == f"service {service_name} not found"
-                    ):
-                        log.debug(
-                            "Skip update for service '%s' which could not be found.",
-                            service_name,
-                        )
-                    elif (
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
-                        and e.message
-                        == "rpc error: code = Unknown desc = update out of sequence"
+                        and "out of sequence" in e.message
                     ):
                         raise _RetryError() from e
-                    else:
-                        raise e
+                    raise e
 
 
 async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
-    await _update_service_spec(
-        service_name=scheduler_data.service_name,
-        update_in_service_spec={
-            "Labels": {
-                DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data()
-            }
-        },
-    )
+    try:
+        await _update_service_spec(
+            service_name=scheduler_data.service_name,
+            update_in_service_spec={
+                "Labels": {
+                    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data()
+                }
+            },
+        )
+    except GenericDockerError as e:
+        if e.original_exception.status == status.HTTP_500_INTERNAL_SERVER_ERROR:
+            log.warning(
+                "Skipped labels update for service '%s' which could not be found.",
+                scheduler_data.service_name,
+            )
 
 
 async def constrain_service_to_node(service_name: str, node_id: str) -> None:

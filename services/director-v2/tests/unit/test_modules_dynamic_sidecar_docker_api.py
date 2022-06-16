@@ -740,15 +740,13 @@ async def test_update_scheduler_data_label(
     assert scheduler_data == mock_scheduler_data
 
 
-async def test_regression_update_service_skip_if_service_not_found(
-    docker: aiodocker.Docker,
+async def test_update_scheduler_data_label_skip_if_service_is_missing(
+    docker: aiodocker.Docker, mock_scheduler_data: SchedulerData
 ) -> None:
     # NOTE: checks that docker engine replies with
-    # `service service-does-not-exist-test not found`
-    # the error is handled
-    await docker_api._update_service_spec(
-        service_name="service-does-not-exist-test", update_in_service_spec={}
-    )
+    # `service mock-service-name not found`
+    # the error is handled and that the error is not raised
+    await docker_api.update_scheduler_data_label(mock_scheduler_data)
 
 
 async def test_regression_update_service_update_out_of_sequence(
