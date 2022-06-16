@@ -130,7 +130,7 @@ def test_create_job_from_project():
                         "input_3": 0,
                         "input_2": 3,
                         "input_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "api/bfb821c0-a4ef-305e-a23b-4d79065f0078/file_with_number.txt",
                             "eTag": None,
                             "label": "file_with_number.txt",
@@ -140,7 +140,7 @@ def test_create_job_from_project():
                     "inputNodes": [],
                     "outputs": {
                         "output_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt",
                             "eTag": "6c22e9b968b205c0dd3614edd1b28d35-1",
                         },

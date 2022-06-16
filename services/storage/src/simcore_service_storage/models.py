@@ -4,7 +4,6 @@
 import datetime
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 from uuid import UUID
 
 import attr
@@ -18,35 +17,13 @@ from simcore_postgres_database.storage_models import (
     users,
 )
 
-from .constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+from .constants import SIMCORE_S3_ID, SIMCORE_S3_STR
 
 # FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 # from sqlalchemy.dialects.postgresql import UUID
 
 # FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
 # pylint: disable=R0902
-
-
-_LOCATION_ID_TO_TAG_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
-UNDEFINED_LOCATION_TAG: str = "undefined"
-
-
-def _parse_datcore(file_uuid: str) -> tuple[str, str]:
-    # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
-
-    file_path = Path(file_uuid)
-    destination = str(file_path.parent)
-    file_name = str(file_path.name)
-
-    return destination, file_name
-
-
-def get_location_from_id(location_id: Union[str, int]) -> str:
-    try:
-        loc_id = int(location_id)
-        return _LOCATION_ID_TO_TAG_MAP[loc_id]
-    except (ValueError, KeyError):
-        return UNDEFINED_LOCATION_TAG
 
 
 @dataclass

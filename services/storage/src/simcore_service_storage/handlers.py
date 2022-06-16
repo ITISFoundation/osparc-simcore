@@ -5,10 +5,10 @@ import urllib.parse
 from contextlib import contextmanager
 from typing import Any, Optional
 
-import attr
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from settings_library.s3 import S3Settings
@@ -20,8 +20,9 @@ from .access_layer import InvalidFileIdentifier
 from .constants import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
-from .models import FileMetaDataEx
+from .models import DatasetMetaData, FileMetaDataEx
 from .settings import Settings
+from .temporary_handlers_utils import convert_to_api_dataset, convert_to_api_fmd
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +30,10 @@ routes = RouteTableDef()
 
 
 async def _prepare_storage_manager(
-    params: dict, query: dict, request: web.Request
+    params: dict,
+    query: dict,
+    request: web.Request,
+    force_check_datcore_tokens: bool = False,
 ) -> DataStorageManager:
     # FIXME: scope properly, either request or app level!!
     # Notice that every request is changing tokens!
@@ -39,12 +43,9 @@ async def _prepare_storage_manager(
     INIT_STR = "init"
     dsm: DataStorageManager = request.app[APP_DSM_KEY]
     user_id = query.get("user_id")
-    location_id = params.get("location_id")
-    location = (
-        dsm.location_from_id(location_id) if location_id is not None else INIT_STR
-    )
+    location = dsm.location_from_id(params.get("location_id", 0))
 
-    if user_id and location in (INIT_STR, DATCORE_STR):
+    if user_id and (location in (INIT_STR, DATCORE_STR) or force_check_datcore_tokens):
         # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
         # re-query when needed.
 
@@ -89,8 +90,10 @@ async def get_storage_locations(request: web.Request):
 
     with handle_storage_errors():
         user_id = query["user_id"]
-
-        dsm = await _prepare_storage_manager(params, query, request)
+        # NOTE: temporary, will be refactored
+        dsm = await _prepare_storage_manager(
+            params, query, request, force_check_datcore_tokens=True
+        )
         locs = await dsm.locations(user_id)
 
         return {"error": None, "data": locs}
@@ -118,9 +121,9 @@ async def get_datasets_metadata(request: web.Request):
 
         location = dsm.location_from_id(location_id)
         # To implement
-        data = await dsm.list_datasets(user_id, location)
-
-        return {"error": None, "data": data}
+        data: list[DatasetMetaData] = await dsm.list_datasets(user_id, location)
+        py_data = [jsonable_encoder(convert_to_api_dataset(d)) for d in data]
+        return {"error": None, "data": py_data}
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/metadata")  # type: ignore
@@ -146,16 +149,11 @@ async def get_files_metadata(request: web.Request):
 
         log.debug("list files %s %s %s", user_id, location, uuid_filter)
 
-        data = await dsm.list_files(
+        data: list[FileMetaDataEx] = await dsm.list_files(
             user_id=user_id, location=location, uuid_filter=uuid_filter
         )
-
-        data_as_dict = []
-        for d in data:
-            log.info("DATA %s", attr.asdict(d.fmd))
-            data_as_dict.append({**attr.asdict(d.fmd), "parent_id": d.parent_id})
-
-        return {"error": None, "data": data_as_dict}
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
+        return {"error": None, "data": py_data}
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata")  # type: ignore
@@ -183,16 +181,12 @@ async def get_files_metadata_dataset(request: web.Request):
 
         log.debug("list files %s %s %s", user_id, location, dataset_id)
 
-        data = await dsm.list_files_dataset(
+        data: list[FileMetaDataEx] = await dsm.list_files_dataset(
             user_id=user_id, location=location, dataset_id=dataset_id
         )
 
-        data_as_dict = []
-        for d in data:
-            log.info("DATA %s", attr.asdict(d.fmd))
-            data_as_dict.append({**attr.asdict(d.fmd), "parent_id": d.parent_id})
-
-        return {"error": None, "data": data_as_dict}
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
+        return {"error": None, "data": py_data}
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}/metadata")  # type: ignore
@@ -215,7 +209,7 @@ async def get_file_metadata(request: web.Request):
         dsm = await _prepare_storage_manager(params, query, request)
         location = dsm.location_from_id(location_id)
 
-        data = await dsm.list_file(
+        data: Optional[FileMetaDataEx] = await dsm.list_file(
             user_id=user_id, location=location, file_uuid=file_uuid
         )
         # when no metadata is found
@@ -226,7 +220,7 @@ async def get_file_metadata(request: web.Request):
 
         return {
             "error": None,
-            "data": {**attr.asdict(data.fmd), "parent_id": data.parent_id},
+            "data": jsonable_encoder(convert_to_api_fmd(data)),
         }
 
 
@@ -237,7 +231,7 @@ async def synchronise_meta_data_table(request: web.Request):
     assert params["location_id"]  # nosec
 
     with handle_storage_errors():
-        location_id: str = params["location_id"]
+        location_id: int = params["location_id"]
         fire_and_forget: bool = query["fire_and_forget"]
         dry_run: bool = query["dry_run"]
 
@@ -295,7 +289,7 @@ async def update_file_meta_data(request: web.Request):
 
         return {
             "error": None,
-            "data": {**attr.asdict(data.fmd), "parent_id": data.parent_id},
+            "data": jsonable_encoder(convert_to_api_fmd(data)),
         }
 
 
@@ -317,7 +311,7 @@ async def download_file(request: web.Request):
         user_id = query["user_id"]
         file_uuid = params["file_id"]
 
-        if int(location_id) != SIMCORE_S3_ID:
+        if int(location_id) != SIMCORE_S3_ID and link_type == "s3":
             raise web.HTTPPreconditionFailed(
                 reason=f"Only allowed to fetch s3 link for '{SIMCORE_S3_STR}'"
             )
@@ -460,10 +454,12 @@ async def search_files_starting_with(request: web.Request):
             {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
         )
 
-        data = await dsm.search_files_starting_with(int(user_id), prefix=startswith)
+        data: list[FileMetaDataEx] = await dsm.search_files_starting_with(
+            int(user_id), prefix=startswith
+        )
         log.debug("Found %d files starting with '%s'", len(data), startswith)
-
-        return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
+        py_data = [jsonable_encoder(convert_to_api_fmd(d)) for d in data]
+        return py_data
 
 
 @routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")  # type: ignore
@@ -484,7 +480,8 @@ async def copy_as_soft_link(request: web.Request):
             {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
         )
 
-        file_link = await dsm.create_soft_link(user_id, target_uuid, link_uuid)
+        file_link: FileMetaDataEx = await dsm.create_soft_link(
+            user_id, target_uuid, link_uuid
+        )
 
-        data = {**attr.asdict(file_link.fmd), "parent_id": file_link.parent_id}
-        return data
+        return jsonable_encoder(convert_to_api_fmd(file_link))

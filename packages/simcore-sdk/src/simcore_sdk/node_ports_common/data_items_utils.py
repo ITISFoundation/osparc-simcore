@@ -1,49 +1,14 @@
 import tempfile
 import threading
 from pathlib import Path
-from typing import Dict, Tuple, Union
 
-from . import config
-
-
-def is_value_link(item_value: Union[int, float, bool, str, Dict]) -> bool:
-    # a link is composed of {nodeUuid:uuid, output:port_key}
-    return isinstance(item_value, dict) and all(
-        k in item_value for k in ("nodeUuid", "output")
-    )
+from models_library.projects_nodes_io import SimcoreS3FileID
 
 
-def is_value_on_store(item_value: Union[int, float, bool, str, Dict]) -> bool:
-    return isinstance(item_value, dict) and all(
-        k in item_value for k in ("store", "path")
-    )
-
-
-def is_value_a_download_link(item_value: Union[int, float, bool, str, Dict]) -> bool:
-    return isinstance(item_value, dict) and all(
-        k in item_value for k in ("downloadLink", "label")
-    )
-
-
-def is_file_type(item_type: str) -> bool:
-    return f"{item_type}".startswith(config.FILE_TYPE_PREFIX)
-
-
-def decode_link(value: Dict) -> Tuple[str, str]:
-    return value["nodeUuid"], value["output"]
-
-
-def decode_store(value: Dict) -> Tuple[str, str]:
-    return value["store"], value["path"]
-
-
-def encode_store(store: str, s3_object: str) -> Dict[str, str]:
-    return {"store": f"{store}", "path": s3_object}
-
-
-def encode_file_id(file_path: Path, project_id: str, node_id: str) -> str:
-    file_id = "{}/{}/{}".format(project_id, node_id, file_path.name)
-    return file_id
+def create_simcore_file_id(
+    file_path: Path, project_id: str, node_id: str
+) -> SimcoreS3FileID:
+    return SimcoreS3FileID(f"{project_id}/{node_id}/{file_path.name}")
 
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")

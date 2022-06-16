@@ -149,7 +149,7 @@ async def test_get_all_tasks_log_files(
     )
 
     # calls storage
-    assert mocked_nodeports_storage_client["get_storage_locations"].called
+    mocked_nodeports_storage_client["get_storage_locations"].assert_not_called()
     assert mocked_nodeports_storage_client["get_download_file_link"].called
 
     # test expected response according to OAS!

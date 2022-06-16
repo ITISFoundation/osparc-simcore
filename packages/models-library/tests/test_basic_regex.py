@@ -12,7 +12,7 @@ import pytest
 from models_library.basic_regex import (
     DATE_RE,
     PUBLIC_VARIABLE_NAME_RE,
-    UUID_RE,
+    UUID_RE_BASE,
     VERSION_RE,
 )
 from packaging.version import Version
@@ -56,7 +56,7 @@ def test_VERSION_RE(version_str, expected):
     ],
 )
 def test_UUID_RE(uuid_str, expected):
-    assert_match_and_get_capture(UUID_RE, uuid_str, expected)
+    assert_match_and_get_capture(UUID_RE_BASE, uuid_str, expected)
 
 
 class webserver_timedate_utils:

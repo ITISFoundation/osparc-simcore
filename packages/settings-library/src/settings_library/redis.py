@@ -20,10 +20,12 @@ class RedisSettings(BaseCustomSettings):
 
     # db
     REDIS_RESOURCES_DB: int = Field(
-        0,
+        default=0,
         description="typical redis DB have 16 'tables', for convenience we use this table for user resources",
     )
-    REDIS_LOCKS_DB: int = Field(1, description="This redis table is used to put locks")
+    REDIS_LOCKS_DB: int = Field(
+        default=1, description="This redis table is used to put locks"
+    )
 
     @cached_property
     def dsn_resources(self) -> str:

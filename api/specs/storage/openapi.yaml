@@ -814,31 +814,13 @@ components:
           type: string
         location_id:
           type: string
-        location:
-          type: string
-        bucket_name:
-          type: string
-        object_name:
-          type: string
-        project_id:
-          type: string
         project_name:
-          type: string
-        node_id:
           type: string
         node_name:
           type: string
         file_name:
           type: string
-        user_id:
-          type: string
-        user_name:
-          type: string
         file_id:
-          type: string
-        raw_file_path:
-          type: string
-        display_file_path:
           type: string
         created_at:
           type: string
@@ -846,8 +828,6 @@ components:
           type: string
         file_size:
           type: integer
-        parent_id:
-          type: string
         entity_tag:
           type: string
 

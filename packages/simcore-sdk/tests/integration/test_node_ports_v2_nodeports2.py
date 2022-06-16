@@ -17,6 +17,7 @@ from uuid import uuid4
 import np_helpers
 import pytest
 import sqlalchemy as sa
+from models_library.projects_nodes_io import LocationID
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
@@ -129,7 +130,7 @@ def symlink_path(tmp_path: Path) -> Iterable[Path]:
 
 @pytest.fixture
 def config_value_symlink_path(symlink_path: Path) -> Dict[str, Any]:
-    return {"store": "0", "path": symlink_path}
+    return {"store": 0, "path": symlink_path}
 
 
 @pytest.fixture(params=[True, False])
@@ -238,9 +239,9 @@ async def test_port_value_accessors(
 @pytest.mark.parametrize(
     "item_type, item_value, item_pytype, config_value",
     [
-        ("data:*/*", __file__, Path, {"store": "0", "path": __file__}),
-        ("data:text/*", __file__, Path, {"store": "0", "path": __file__}),
-        ("data:text/py", __file__, Path, {"store": "0", "path": __file__}),
+        ("data:*/*", __file__, Path, {"store": 0, "path": __file__}),
+        ("data:text/*", __file__, Path, {"store": 0, "path": __file__}),
+        ("data:text/py", __file__, Path, {"store": 0, "path": __file__}),
         (
             "data:text/py",
             pytest.lazy_fixture("symlink_path"),
@@ -252,7 +253,7 @@ async def test_port_value_accessors(
 async def test_port_file_accessors(
     create_special_configuration: Callable,
     filemanager_cfg: None,
-    s3_simcore_location: str,
+    s3_simcore_location: LocationID,
     bucket: str,
     item_type: str,
     item_value: str,
@@ -283,7 +284,7 @@ async def test_port_file_accessors(
     )
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.S3InvalidPathError):
         await (await PORTS.inputs)["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
@@ -302,7 +303,9 @@ async def test_port_file_accessors(
 
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     assert isinstance(await (await PORTS.outputs)["out_34"].get(), item_pytype)
-    assert (await (await PORTS.outputs)["out_34"].get()).exists()
+    downloaded_file = await (await PORTS.outputs)["out_34"].get()
+    assert isinstance(downloaded_file, Path)
+    assert downloaded_file.exists()
     assert str(await (await PORTS.outputs)["out_34"].get()).startswith(
         str(
             Path(
@@ -314,7 +317,7 @@ async def test_port_file_accessors(
         )
     )
     filecmp.clear_cache()
-    assert filecmp.cmp(item_value, await (await PORTS.outputs)["out_34"].get())
+    assert filecmp.cmp(item_value, downloaded_file)
 
 
 async def test_adding_new_ports(
@@ -501,6 +504,7 @@ async def test_get_file_from_previous_node(
         "in_15",
         Path(item_value).name,
     )
+    assert isinstance(file_path, Path)
     assert file_path.exists()
     filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
@@ -561,6 +565,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         "in_15",
         item_alias,
     )
+    assert isinstance(file_path, Path)
     assert file_path.exists()
     filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
@@ -581,7 +586,7 @@ async def test_file_mapping(
     project_id: str,
     node_uuid: str,
     filemanager_cfg: None,
-    s3_simcore_location: str,
+    s3_simcore_location: LocationID,
     bucket: str,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,
@@ -636,7 +641,7 @@ async def test_file_mapping(
     invalid_alias = Path("invalid_alias.fjfj")
     with pytest.raises(exceptions.PortNotFound):
         await PORTS.set_file_by_keymap(invalid_alias)
-
+    assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
     file_id = np_helpers.file_uuid(file_path, project_id, node_uuid)
     received_file_link = (await PORTS.outputs)["out_1"].value.dict(

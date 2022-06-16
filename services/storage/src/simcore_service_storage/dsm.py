@@ -13,7 +13,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Optional, Union
+from typing import Any, Final, Optional, TypedDict
 
 import attr
 import botocore
@@ -24,6 +24,7 @@ from aiobotocore.session import AioSession, ClientCreatorContext, get_session
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.projects_nodes_io import Location, LocationID, LocationName
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
@@ -60,7 +61,6 @@ from .models import (
     FileMetaData,
     FileMetaDataEx,
     file_meta_data,
-    get_location_from_id,
     projects,
 )
 from .s3wrapper.s3_client import MinioClientWrapper
@@ -111,6 +111,11 @@ class DatCoreApiToken:
 
     def to_tuple(self):
         return (self.api_token, self.api_secret)
+
+
+class LocationDict(TypedDict):
+    name: LocationName
+    id: LocationID
 
 
 @dataclass
@@ -174,7 +179,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
 
-    async def locations(self, user_id: str):
+    async def locations(self, user_id: str) -> list[LocationDict]:
         locs = []
         simcore_s3 = {"name": SIMCORE_S3_STR, "id": SIMCORE_S3_ID}
         locs.append(simcore_s3)
@@ -191,8 +196,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         return locs
 
     @classmethod
-    def location_from_id(cls, location_id: str):
-        return get_location_from_id(location_id)
+    def location_from_id(cls, location_id: int) -> LocationName:
+        location = parse_obj_as(Location, location_id)
+        return location.name
 
     # LIST/GET ---------------------------
 
@@ -200,7 +206,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
     async def list_files(
-        self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
+        self,
+        user_id: str,
+        location: LocationName,
+        uuid_filter: str = "",
+        regex: str = "",
     ) -> list[FileMetaDataEx]:
         """Returns a list of file paths
 
@@ -326,8 +336,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         return list(data)
 
     async def list_files_dataset(
-        self, user_id: str, location: str, dataset_id: str
-    ) -> Union[list[FileMetaData], list[FileMetaDataEx]]:
+        self, user_id: str, location: LocationName, dataset_id: str
+    ) -> list[FileMetaDataEx]:
         # this is a cheap shot, needs fixing once storage/db is in sync
         data = []
         if location == SIMCORE_S3_STR:
@@ -347,7 +357,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         return data
 
-    async def list_datasets(self, user_id: str, location: str) -> list[DatasetMetaData]:
+    async def list_datasets(
+        self, user_id: str, location: LocationName
+    ) -> list[DatasetMetaData]:
         """Returns a list of top level datasets
 
         Works for simcore.s3 and datcore
@@ -387,7 +399,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         return data
 
     async def list_file(
-        self, user_id: str, location: str, file_uuid: str
+        self, user_id: str, location: LocationName, file_uuid: str
     ) -> Optional[FileMetaDataEx]:
 
         if location == SIMCORE_S3_STR:
@@ -726,9 +738,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     async def copy_file(
         self,
         user_id: str,
-        dest_location: str,
+        dest_location: LocationName,
         dest_uuid: str,
-        source_location: str,
+        source_location: LocationName,
         source_uuid: str,
     ) -> None:
         if source_location == SIMCORE_S3_STR:
@@ -923,7 +935,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     # DELETE -------------------------------------
 
-    async def delete_file(self, user_id: str, location: str, file_uuid: str):
+    async def delete_file(self, user_id: str, location: LocationName, file_uuid: str):
         """Deletes a file given its fmd and location
 
         Additionally requires a user_id for 3rd party auth
@@ -1083,7 +1095,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             return link
 
     async def synchronise_meta_data_table(
-        self, location: str, dry_run: bool
+        self, location: LocationName, dry_run: bool
     ) -> dict[str, Any]:
 
         PRUNE_CHUNK_SIZE = 20

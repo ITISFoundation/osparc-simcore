@@ -4,11 +4,17 @@
 # pylint:disable=too-many-arguments
 
 from typing import Any, Awaitable, Callable
+from uuid import uuid4
 
 import aiohttp
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
-from models_library.api_schemas_storage import FileLocationArray, FileMetaData
+from models_library.api_schemas_storage import (
+    FileLocationArray,
+    FileMetaDataGet,
+    LocationID,
+)
+from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from simcore_sdk.node_ports_common import config as node_config
@@ -31,13 +37,13 @@ def mock_environment():
 
 
 @pytest.fixture()
-def file_id() -> str:
-    return "some_fake_file_id"
+def file_id() -> SimcoreS3FileID:
+    return SimcoreS3FileID(f"{uuid4()}/{uuid4()}/some_fake_file_id")
 
 
 @pytest.fixture()
-def location_id() -> str:
-    return "21"
+def location_id() -> LocationID:
+    return 0
 
 
 async def test_get_storage_locations(
@@ -62,8 +68,8 @@ async def test_get_download_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
-    file_id: str,
-    location_id: str,
+    file_id: SimcoreS3FileID,
+    location_id: LocationID,
     link_type: LinkType,
     expected_scheme: tuple[str],
 ):
@@ -83,8 +89,8 @@ async def test_get_upload_file_link(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
-    file_id: str,
-    location_id: str,
+    file_id: SimcoreS3FileID,
+    location_id: LocationID,
     link_type: LinkType,
     expected_scheme: tuple[str],
 ):
@@ -100,14 +106,14 @@ async def test_get_file_metada(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
-    file_id: str,
-    location_id: str,
+    file_id: SimcoreS3FileID,
+    location_id: LocationID,
 ):
     async with aiohttp.ClientSession() as session:
         file_metadata = await get_file_metadata(session, file_id, location_id, user_id)
-    assert isinstance(file_metadata, dict)
-    assert file_metadata == FileMetaData.parse_obj(
-        FileMetaData.Config.schema_extra["examples"][0]
+    assert file_metadata
+    assert file_metadata == FileMetaDataGet.parse_obj(
+        FileMetaDataGet.Config.schema_extra["examples"][0]
     )
 
 
@@ -123,8 +129,8 @@ async def test_invalid_calls(
     mock_environment: None,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
-    file_id: str,
-    location_id: str,
+    file_id: SimcoreS3FileID,
+    location_id: LocationID,
     fct_call: Callable[..., Awaitable],
     additional_kwargs: dict[str, Any],
 ):

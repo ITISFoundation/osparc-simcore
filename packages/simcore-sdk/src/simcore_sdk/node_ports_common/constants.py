@@ -1,4 +1,5 @@
 from typing import Final
 
-SIMCORE_LOCATION: Final[str] = "0"
-ETag = str
+from models_library.api_schemas_storage import LocationID
+
+SIMCORE_LOCATION: Final[LocationID] = 0

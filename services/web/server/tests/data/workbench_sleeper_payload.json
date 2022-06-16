@@ -8,7 +8,7 @@
       "inputNodes": [],
       "outputs": {
         "outFile": {
-          "store": "0",
+          "store": 0,
           "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
         }
       },

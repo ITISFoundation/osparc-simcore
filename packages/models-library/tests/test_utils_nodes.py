@@ -7,8 +7,14 @@ from uuid import uuid4
 
 import pytest
 from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import DownloadLink, PortLink, SimCoreFileLink
+from models_library.projects_nodes_io import (
+    DownloadLink,
+    PortLink,
+    SimCoreFileLink,
+    SimcoreS3FileID,
+)
 from models_library.utils.nodes import compute_node_hash
+from pydantic import AnyUrl, parse_obj_as
 
 
 @pytest.fixture()
@@ -39,10 +45,15 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     "input_bool": True,
                     "input_string": "string",
                     "input_downloadlink": DownloadLink(
-                        downloadLink="http://httpbin.org/image/jpeg"
+                        downloadLink=parse_obj_as(
+                            AnyUrl, "http://httpbin.org/image/jpeg"
+                        )
                     ),
                     "input_simcorelink": SimCoreFileLink(
-                        store=0, path="/path/to/some/file"
+                        store=0,
+                        path=SimcoreS3FileID(
+                            "api/6cb6d306-2b05-49ed-8d6a-5deca53d184a/file.ext"
+                        ),
                     ),
                     "input_portlink": PortLink(
                         nodeUuid=ANOTHER_NODE_ID, output=ANOTHER_NODE_OUTPUT_KEY
@@ -54,11 +65,14 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     "output_bool": False,
                     "output_string": "some string",
                     "output_simcorelink": SimCoreFileLink(
-                        store=0, path="/path/to/some/file"
+                        store=0,
+                        path=SimcoreS3FileID(
+                            "80af5a16-b066-496f-bfbc-bde359630381/6cb6d306-2b05-49ed-8d6a-5deca53d184a/file.ext"
+                        ),
                     ),
                 },
             },
-            "829cb6d6e62142b27d0a07f56f279bdf68fa9ddcb6e61fdc0a77f2d2e9a18752",
+            "5ff07b563f9b3d3fad6bfa596bbd6155d3dda02681342f86e5db2d7bcdccd76d",
         ),
     ],
 )

@@ -12,7 +12,7 @@ import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
-from models_library.api_schemas_storage import FileMetaData
+from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.clusters import Cluster
 from models_library.projects_state import RunningState
 from yarl import URL
@@ -358,7 +358,7 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=web.HTTPOk.status_code,
-        payload={"data": FileMetaData.Config.schema_extra["examples"][0]},
+        payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
     )
     aioresponses_mocker.get(
         get_download_link_pattern, callback=get_download_link_cb, repeat=True
@@ -369,7 +369,7 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_locations_link_pattern,
         status=web.HTTPOk.status_code,
-        payload={"data": [{"name": "simcore.s3", "id": "0"}]},
+        payload={"data": [{"name": "simcore.s3", "id": 0}]},
     )
 
     return aioresponses_mocker
