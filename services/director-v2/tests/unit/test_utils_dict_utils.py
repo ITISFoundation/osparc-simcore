@@ -132,7 +132,7 @@ def test_merge_complex_structures(test_params: MergeStructureTestParams):
 @dataclass(
     frozen=True,
 )
-class GetLongestKeyPathTestParams:
+class GetLeafKeyPathsTestParams:
     data: dict[str, Any]
     expected: tuple[list[str], ...]
 
@@ -140,7 +140,7 @@ class GetLongestKeyPathTestParams:
 @pytest.mark.parametrize(
     "test_params",
     [
-        GetLongestKeyPathTestParams(
+        GetLeafKeyPathsTestParams(
             data={
                 "a": 3,
                 "b": 3,
@@ -166,7 +166,7 @@ class GetLongestKeyPathTestParams:
                 ["d"],
             ),
         ),
-        GetLongestKeyPathTestParams(
+        GetLeafKeyPathsTestParams(
             data={
                 "a": 3,
                 "c": {
@@ -184,5 +184,5 @@ class GetLongestKeyPathTestParams:
         ),
     ],
 )
-def test_get_leaf_key_paths(test_params: GetLongestKeyPathTestParams) -> None:
+def test_get_leaf_key_paths(test_params: GetLeafKeyPathsTestParams) -> None:
     assert get_leaf_key_paths(test_params.data) == test_params.expected
