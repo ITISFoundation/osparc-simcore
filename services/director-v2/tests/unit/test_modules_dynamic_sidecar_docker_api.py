@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import asyncio
 from typing import Any, AsyncIterable, AsyncIterator, Dict, List
@@ -29,9 +30,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_api import (
-    update_scheduler_data_label,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     GenericDockerError,
@@ -513,7 +511,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     )
     assert service_id
 
-    node_id = await docker_api.get_node_id_from_task_for_service(
+    node_id = await docker_api.get_service_placement(
         service_id, dynamic_sidecar_settings
     )
     assert node_id
@@ -731,7 +729,7 @@ async def test_update_scheduler_data_label(
     mock_scheduler_data: SchedulerData,
     docker_swarm: None,
 ) -> None:
-    await update_scheduler_data_label(mock_scheduler_data)
+    await docker_api.update_scheduler_data_label(mock_scheduler_data)
 
     # fetch stored data in labels
     service_inspect = await docker.services.inspect(mock_service)
@@ -740,3 +738,53 @@ async def test_update_scheduler_data_label(
         labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
     )
     assert scheduler_data == mock_scheduler_data
+
+
+async def test_update_scheduler_data_label_skip_if_service_is_missing(
+    docker: aiodocker.Docker, mock_scheduler_data: SchedulerData
+) -> None:
+    # NOTE: checks that docker engine replies with
+    # `service mock-service-name not found`
+    # the error is handled and that the error is not raised
+    await docker_api.update_scheduler_data_label(mock_scheduler_data)
+
+
+async def test_regression_update_service_update_out_of_sequence(
+    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
+) -> None:
+    # NOTE: checks that the docker engine replies with
+    # `rpc error: code = Unknown desc = update out of sequence`
+    # the error is captured and raised as `docker_api._RetryError`
+    with pytest.raises(docker_api._RetryError):
+        # starting concurrent updates will trigger the error
+        await asyncio.gather(
+            *[
+                docker_api._update_service_spec(
+                    service_name=mock_service,
+                    update_in_service_spec={},
+                    stop_delay=3,
+                )
+                for _ in range(10)
+            ]
+        )
+
+
+async def test_constrain_service_to_node(
+    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
+) -> None:
+    # get a node's ID
+    docker_nodes = await docker.nodes.list()
+    target_node_id = docker_nodes[0]["ID"]
+
+    await docker_api.constrain_service_to_node(mock_service, node_id=target_node_id)
+
+    # check constraint was added
+    service_inspect = await docker.services.inspect(mock_service)
+    constraints: list[str] = service_inspect["Spec"]["TaskTemplate"]["Placement"][
+        "Constraints"
+    ]
+    assert len(constraints) == 1, constraints
+    node_id_constraint = constraints[0]
+    label, value = node_id_constraint.split("==")
+    assert label.strip() == "node.id"
+    assert value.strip() == target_node_id

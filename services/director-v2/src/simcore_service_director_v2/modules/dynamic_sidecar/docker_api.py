@@ -21,7 +21,7 @@ from packaging import version
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
@@ -30,6 +30,7 @@ from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ...utils.dict_utils import get_leaf_key_paths, nested_update
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -250,7 +251,7 @@ async def _extract_task_data_from_service_for_state(
         return task
 
 
-async def get_node_id_from_task_for_service(
+async def get_service_placement(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> str:
     """Awaits until the service has a running task and returns the
@@ -526,7 +527,15 @@ async def try_to_remove_network(network_name: str) -> None:
             log.warning("Could not remove network %s", network_name)
 
 
-async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+async def _update_service_spec(
+    service_name: str,
+    *,
+    update_in_service_spec: dict,
+    stop_delay: float = 10.0,
+) -> None:
+    """
+    Updates the spec of a service. The `update_spec_data` must always return the updated spec.
+    """
     async with docker_client() as client:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
@@ -535,46 +544,64 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         # might get raised. This is caused by the `service_version` being out of sync
         # with what is currently stored in the docker daemon.
         async for attempt in AsyncRetrying(
-            # waits 1, 4, 8 seconds between retries and gives up
-            stop=stop_after_attempt(3),
-            wait=wait_exponential(),
+            # waits exponentially to a max of `stop_delay` seconds
+            stop=stop_after_delay(stop_delay),
+            wait=wait_exponential(min=1),
             retry=retry_if_exception_type(_RetryError),
             reraise=True,
         ):
             with attempt:
                 try:
                     # fetch information from service name
-                    service_inspect = await client.services.inspect(
-                        scheduler_data.service_name
-                    )
+                    service_inspect = await client.services.inspect(service_name)
                     service_version = service_inspect["Version"]["Index"]
                     service_id = service_inspect["ID"]
                     spec = service_inspect["Spec"]
 
-                    spec["Labels"][
-                        DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-                    ] = scheduler_data.as_label_data()
+                    updated_spec = nested_update(
+                        spec,
+                        update_in_service_spec,
+                        include=get_leaf_key_paths(update_in_service_spec),
+                    )
 
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",
                         method="POST",
-                        data=json.dumps(clean_map(spec)),
+                        data=json.dumps(clean_map(updated_spec)),
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:
-                    if not (
-                        e.status == status.HTTP_404_NOT_FOUND
-                        and e.message
-                        == f"service {scheduler_data.service_name} not found"
-                    ):
-                        raise e
                     if (
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
-                        and e.message
-                        == "rpc error: code = Unknown desc = update out of sequence"
+                        and "out of sequence" in e.message
                     ):
                         raise _RetryError() from e
-                    log.debug(
-                        "Skip update for service '%s' which could not be found",
-                        scheduler_data.service_name,
-                    )
+                    raise e
+
+
+async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+    try:
+        await _update_service_spec(
+            service_name=scheduler_data.service_name,
+            update_in_service_spec={
+                "Labels": {
+                    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data()
+                }
+            },
+        )
+    except GenericDockerError as e:
+        if e.original_exception.status == status.HTTP_404_NOT_FOUND:
+            log.warning(
+                "Skipped labels update for service '%s' which could not be found.",
+                scheduler_data.service_name,
+            )
+
+
+async def constrain_service_to_node(service_name: str, node_id: str) -> None:
+    await _update_service_spec(
+        service_name,
+        update_in_service_spec={
+            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
+        },
+    )
+    log.info("Constraining service %s to node %s", service_name, node_id)
