@@ -40,8 +40,8 @@ P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {0}
 
 
 def setup_logger(settings: DynamicSidecarSettings):
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
 
 
 def assemble_application() -> FastAPI:
