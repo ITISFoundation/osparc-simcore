@@ -97,8 +97,7 @@ class Port(BaseServiceIOModel):
             if port_utils.is_file_type(property_type):
                 if not isinstance(v, (FileLink, DownloadLink)):
                     raise ValueError(
-                        f"{property_type!r} must follow "
-                        f"{FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
+                        f"{property_type!r} does not validat against any of FileLink, DownloadLink or PortLink schemas"
                     )
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(

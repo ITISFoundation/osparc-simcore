@@ -262,3 +262,79 @@ async def test_port_with_units_and_constraints(mocker):
         await port.set_value(-3.14)
 
     assert exc_info.value.errors()[0] == validation_error
+
+
+def test_incident__port_validator_check_value():
+    # SEE incident https://git.speag.com/oSparc/e2e-portal-testing/-/issues/2)
+
+    # schema in comp_tasks table
+    comp_tasks_schema = {
+        "inputs": {
+            "input_1": {
+                "displayOrder": 1.0,
+                "label": "input_file",
+                "description": "Input file for the solver. Generated with sim4life",
+                "type": "data:*/*",
+                "fileToKeyMap": {"input.h5": "input_1"},
+                "defaultValue": "some_value(optional)",
+            },
+            "NGPU": {
+                "displayOrder": 2.0,
+                "label": "Number of GPUs",
+                "description": "Defines the number of GPUs used for the computation (0 uses all)",
+                "type": "integer",
+                "defaultValue": 1,
+            },
+        },
+        "outputs": {
+            "output_1": {
+                "displayOrder": 1.0,
+                "label": "output_file",
+                "description": "Output file from solver.",
+                "type": "data:*/*",
+                "fileToKeyMap": {"output.h5": "output_1"},
+            },
+            "output_2": {
+                "displayOrder": 2.0,
+                "label": "solver_logs",
+                "description": "Log files from solver.",
+                "type": "data:*/*",
+                "fileToKeyMap": {"log.tgz": "output_2"},
+            },
+        },
+    }
+
+    # check outputs from project.workbench table
+    inputs_value = {
+        "outFile": {
+            "store": 0,
+            "dataset": "50339632-ee1d-11ec-a0c2-02420a0194e4",
+            "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/52ee5b71-be10-50dc-8bc6-2c14568c41ef/isolve_gpu_input.h5",
+            "label": "isolve_gpu_input.h5",
+        }
+    }
+
+    port_meta = comp_tasks_schema["inputs"]["input_1"]
+    value = inputs_value["outFile"]
+
+    Port(key="port-name-goes-here", value=value, **port_meta)
+
+    # check outputs from comp_tasks table
+    comp_tasks_outputs = {
+        "output_1": {
+            "store": "0",  # <---Here is the legacy issue
+            "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+            "eTag": "f7e4c7076761a42a871e978c8691c676",
+        },
+        "output_2": {
+            "store": "0",  # <---Here is the legacy issue
+            "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/log.tgz",
+            "eTag": "badfe49a41ef260bd5c148eb477aa1aa",
+        },
+    }
+
+    for i in range(1, 3):
+        port_meta = comp_tasks_schema["outputs"][f"output_{i}"]
+        value = comp_tasks_outputs[f"output_{i}"]
+
+        p = Port(key="port-name-goes-here", value=value, **port_meta)
