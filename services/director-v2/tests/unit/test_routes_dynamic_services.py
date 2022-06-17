@@ -212,6 +212,11 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         side_effect=remove_service,
     )
 
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler._discover_running_services",
+        return_value=None,
+    )
+
 
 @pytest.mark.parametrize(
     "service, service_labels, exp_status_code, is_legacy",

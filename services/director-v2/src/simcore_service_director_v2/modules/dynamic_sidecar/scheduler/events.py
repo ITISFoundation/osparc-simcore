@@ -31,10 +31,11 @@ from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     are_all_services_present,
+    constrain_service_to_node,
     create_network,
     create_service_and_get_id,
-    get_node_id_from_task_for_service,
     get_projects_networks_containers,
+    get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
@@ -180,6 +181,13 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_service_final_spec
+        )
+        # constrain service to the same node
+        dynamic_sidecar_node_id = await get_service_placement(
+            dynamic_sidecar_id, dynamic_sidecar_settings
+        )
+        await constrain_service_to_node(
+            service_name=scheduler_data.service_name, node_id=dynamic_sidecar_node_id
         )
 
         # update service_port and assing it to the status
@@ -395,7 +403,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+        dynamic_sidecar_node_id = await get_service_placement(
             scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
         )
 
