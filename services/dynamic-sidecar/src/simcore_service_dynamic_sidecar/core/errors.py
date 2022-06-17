@@ -17,8 +17,8 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
     ) -> None:
         super().__init__(
             (
-                f"Expected 1 volume with {source_label=}, observation_id={observation_id}, "
-                f"query returned: {volumes}"
+                f"Expected 1 volume with {source_label=}, {observation_id=}, "
+                f"found: {volumes=}"
             ),
             status=404,
         )
