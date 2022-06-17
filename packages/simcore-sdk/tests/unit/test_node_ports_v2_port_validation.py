@@ -265,7 +265,7 @@ async def test_port_with_units_and_constraints(mocker):
 
 
 def test_incident__port_validator_check_value():
-    # SEE incident https://git.speag.com/oSparc/e2e-portal-testing/-/issues/2)
+    # SEE incident https://git.speag.com/oSparc/e2e-testing/-/issues/1)
 
     # schema in comp_tasks table
     comp_tasks_schema = {

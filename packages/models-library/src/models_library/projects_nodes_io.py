@@ -159,7 +159,7 @@ class SimCoreFileLink(BaseFileLink):
                 "label": "input.txt",
             },
             "examples": [
-                # legacy: store as string (SEE incident https://git.speag.com/oSparc/e2e-portal-testing/-/issues/2)
+                # legacy: store as string (SEE incident https://git.speag.com/oSparc/e2e-testing/-/issues/1)
                 {
                     "store": "0",
                     "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
