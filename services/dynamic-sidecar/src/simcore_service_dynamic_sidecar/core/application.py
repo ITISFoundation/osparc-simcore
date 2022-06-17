@@ -87,7 +87,7 @@ def assemble_application() -> FastAPI:
 
     # EVENTS ---------------------
     async def _on_startup() -> None:
-        await login_registry(application.state.settings.REGISTRY_SETTINGS)
+        await login_registry(settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(application.state.mounted_volumes)
         print(WELCOME_MSG, flush=True)
 

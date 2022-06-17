@@ -75,9 +75,16 @@ class MountedVolumes:
     def disk_outputs_path(self) -> Path:
         return _ensure_path(DY_VOLUMES / self.outputs_path.relative_to("/"))
 
-    def disk_state_paths(self) -> Generator[Path, None, None]:
+    def disk_state_paths(self) -> Iterator[Path]:
+        # TODO: PC->ANE: len(state_paths)~1 - 2 ?? really need an iterator?
         for state_path in self.state_paths:
             yield _ensure_path(DY_VOLUMES / state_path.relative_to("/"))
+
+    def all_disk_paths(self) -> Iterator[Path]:
+        # PC: keeps iterator to follow same style as disk_state_paths but IMO it is overreaching
+        yield self.disk_inputs_path
+        yield self.disk_outputs_path
+        yield from self.disk_state_paths()
 
     def _ensure_directories(self) -> None:
         """
