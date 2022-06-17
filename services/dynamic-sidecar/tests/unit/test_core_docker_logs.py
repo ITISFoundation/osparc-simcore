@@ -46,7 +46,7 @@ def app(
     monkeypatch_module.setenv("DY_SIDECAR_USER_ID", "1")
     monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid4()}")
     monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{uuid4()}")
-    monkeypatch_module.setenv("DY_SIDECAR_OBSERVATION_ID", f"{uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_RUN_ID", f"{uuid4()}")
     monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch_module.setenv(

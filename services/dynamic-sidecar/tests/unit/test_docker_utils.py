@@ -18,21 +18,19 @@ def volume_name() -> str:
 
 
 @pytest.fixture
-def observation_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> UUID:
     return faker.uuid4(cast_to=None)
 
 
 @pytest.fixture
-async def volume_with_label(
-    volume_name: str, observation_id: str
-) -> AsyncIterable[None]:
+async def volume_with_label(volume_name: str, run_id: str) -> AsyncIterable[None]:
     async with aiodocker.Docker() as docker_client:
         volume = await docker_client.volumes.create(
             {
                 "Name": "test_volume_name_1",
                 "Labels": {
                     "source": volume_name,
-                    "observation_id": f"{observation_id}",
+                    "run_id": f"{run_id}",
                 },
             }
         )
@@ -43,15 +41,15 @@ async def volume_with_label(
 
 
 async def test_volume_with_label(
-    volume_with_label: None, volume_name: str, observation_id: UUID
+    volume_with_label: None, volume_name: str, run_id: UUID
 ) -> None:
-    assert await get_volume_by_label(volume_name, observation_id)
+    assert await get_volume_by_label(volume_name, run_id)
 
 
-async def test_volume_label_missing(observation_id: UUID) -> None:
+async def test_volume_label_missing(run_id: UUID) -> None:
     with pytest.raises(VolumeNotFoundError) as info:
-        await get_volume_by_label("not_exist", observation_id)
+        await get_volume_by_label("not_exist", run_id)
     assert info.value.args[0] == (
         f"Expected 1 volume with source_label='not_exist', "
-        f"observation_id=UUID('{observation_id}'), found: volumes=[]"
+        f"run_id=UUID('{run_id}'), found: volumes=[]"
     )

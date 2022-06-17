@@ -25,9 +25,9 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def get_volume_by_label(label: str, observation_id: UUID) -> Dict[str, Any]:
+async def get_volume_by_label(label: str, run_id: UUID) -> Dict[str, Any]:
     async with docker_client() as docker:
-        filters = {"label": [f"source={label}", f"observation_id={observation_id}"]}
+        filters = {"label": [f"source={label}", f"run_id={run_id}"]}
         params = {"filters": clean_filters(filters)}
         data = await docker._query_json(  # pylint: disable=protected-access
             "volumes", method="GET", params=params
@@ -37,6 +37,6 @@ async def get_volume_by_label(label: str, observation_id: UUID) -> Dict[str, Any
             f"volumes query for {label=} {volumes=}"
         )
         if len(volumes) != 1:
-            raise VolumeNotFoundError(label, observation_id, volumes)
+            raise VolumeNotFoundError(label, run_id, volumes)
         volume_details = volumes[0]
         return volume_details  # type: ignore

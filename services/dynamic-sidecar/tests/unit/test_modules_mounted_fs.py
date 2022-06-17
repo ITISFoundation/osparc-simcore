@@ -27,8 +27,8 @@ def path_to_transform() -> Path:
 
 
 @pytest.fixture
-def observation_id(app: FastAPI) -> UUID:
-    return app.state.settings.DY_SIDECAR_OBSERVATION_ID
+def run_id(app: FastAPI) -> UUID:
+    return app.state.settings.DY_SIDECAR_RUN_ID
 
 
 # TESTS
@@ -50,7 +50,7 @@ async def test_expected_paths_and_volumes(
     outputs_dir: Path,
     state_paths_dirs: List[Path],
     compose_namespace: str,
-    observation_id: UUID,
+    run_id: UUID,
 ) -> None:
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
@@ -58,7 +58,7 @@ async def test_expected_paths_and_volumes(
             {
                 x
                 async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
-                    observation_id
+                    run_id
                 )
             }
         )
@@ -98,21 +98,15 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        _get_container_mount(
-            await mounted_volumes.get_inputs_docker_volume(observation_id)
-        )
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume(run_id))
         == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        _get_container_mount(
-            await mounted_volumes.get_outputs_docker_volume(observation_id)
-        )
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume(run_id))
         == f"{mounted_volumes.outputs_path}"
     )
 
     assert {
         _get_container_mount(x)
-        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
-            observation_id
-        )
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(run_id)
     } == {f"{state_path}" for state_path in state_paths_dirs}

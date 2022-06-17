@@ -64,7 +64,7 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture(scope="module")
-def observation_id() -> uuid.UUID:
+def run_id() -> uuid.UUID:
     return uuid.uuid4()
 
 
@@ -81,7 +81,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    observation_id: uuid.UUID,
+    run_id: uuid.UUID,
     rabbit_service: RabbitSettings,
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
@@ -92,7 +92,7 @@ def mock_environment(
     monkeypatch_module.setenv("REGISTRY_SSL", "false")
     monkeypatch_module.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
     monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
-    monkeypatch_module.setenv("DY_SIDECAR_OBSERVATION_ID", f"{observation_id}")
+    monkeypatch_module.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
     monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
     monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))

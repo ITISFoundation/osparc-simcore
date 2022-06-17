@@ -91,7 +91,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
-    DY_SIDECAR_OBSERVATION_ID: UUID
+    DY_SIDECAR_RUN_ID: UUID
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

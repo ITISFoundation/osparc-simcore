@@ -128,6 +128,16 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
+    run_id: UUID = Field(
+        default_factory=uuid4,
+        description=(
+            "Used to discriminate between dynamic-sidecar docker resources "
+            "generated during different runs. Sometimes artifacts remain in the"
+            "system after an error. This helps avoiding collisions."
+            "For now used by anonymous volumes involved in data sharing"
+        ),
+    )
+
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
@@ -293,11 +303,6 @@ class DynamicSidecarNames(BaseModel):
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     service_name: str = Field(
         ..., description="Name of the current dynamic-sidecar being observed"
-    )
-
-    observation_id: UUID = Field(
-        default_factory=uuid4,
-        description="Used to uniquely identify resources between runs",
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
