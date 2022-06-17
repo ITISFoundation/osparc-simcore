@@ -1,4 +1,3 @@
-import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, cast
@@ -13,9 +12,10 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 
-class DynamicSidecarSettings(BaseCustomSettings):
+class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     SC_BOOT_MODE: Optional[BootModeEnum] = Field(
         ...,
@@ -24,15 +24,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     # LOGGING
     LOG_LEVEL: str = Field("WARNING")
-
-    @validator("LOG_LEVEL")
-    @classmethod
-    def match_logging_level(cls, v: str) -> str:
-        try:
-            getattr(logging, v.upper())
-        except AttributeError as err:
-            raise ValueError(f"{v.upper()} is not a valid level") from err
-        return v.upper()
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     DYNAMIC_SIDECAR_HOST: str = Field(
@@ -98,14 +89,15 @@ class DynamicSidecarSettings(BaseCustomSettings):
     RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
+    @validator("LOG_LEVEL")
+    @classmethod
+    def _check_log_level(cls, value) -> str:
+        return cls.validate_log_level(value)
+
     @property
     def is_development_mode(self) -> bool:
         """If in development mode this will be True"""
         return self.SC_BOOT_MODE is BootModeEnum.DEVELOPMENT
-
-    @property
-    def loglevel(self) -> int:
-        return int(getattr(logging, self.LOG_LEVEL))
 
     @property
     def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:
@@ -123,4 +115,5 @@ class DynamicSidecarSettings(BaseCustomSettings):
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
+    # TODO: PC->ANE: this is a global!! should use instead app.state.settings!!!
     return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())
