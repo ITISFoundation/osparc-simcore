@@ -1,12 +1,11 @@
-# pylint: disable=redefined-builtin
-
-
 import logging
 from collections import deque
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Set
 
 from aiodocker.networks import DockerNetwork
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException
+from fastapi import Path as PathParam
+from fastapi import Query, Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
@@ -31,12 +30,6 @@ from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes
 from .containers import send_message
 
-# NOTE: importing the `containers_router` router from .containers
-# and generating the openapi spec, will not add the below entrypoints
-# we need to create a new one in order for all the APIs to be
-# detected as before
-containers_router = APIRouter(tags=["containers"])
-
 logger = logging.getLogger(__name__)
 
 
@@ -60,10 +53,19 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
 
 
+# NOTE: importing the `containers_router` router from .containers
+# and generating the openapi spec, will not add the below entrypoints
+# we need to create a new one in order for all the APIs to be
+# detected as before
+containers_router = APIRouter(
+    tags=["containers"],
+    default_response_class=Response,  # TODO: PC->ANE: necessary? defaults in JsonResponse otherwise?
+)
+
+
 @containers_router.post(
     "/containers/state:restore",
     summary="Restores the state of the dynamic service",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def restore_state(
@@ -91,7 +93,6 @@ async def restore_state(
 @containers_router.post(
     "/containers/state:save",
     summary="Stores the state of the dynamic service",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def save_state(
@@ -135,7 +136,6 @@ async def pull_input_ports(
 @containers_router.patch(
     "/containers/directory-watcher",
     summary="Enable/disable directory-watcher event propagation",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def toggle_directory_watcher(
@@ -156,7 +156,6 @@ async def toggle_directory_watcher(
         "since it already has all the machinery to call into director-v0 "
         "to retrieve them."
     ),
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def create_output_dirs(
@@ -193,7 +192,6 @@ async def pull_output_ports(
 @containers_router.post(
     "/containers/ports/outputs:push",
     summary="Push output ports data",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -217,7 +215,6 @@ async def push_output_ports(
 
 @containers_router.post(
     "/containers:restart",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
@@ -274,14 +271,14 @@ async def restarts_containers(
 @containers_router.post(
     "/containers/{id}/networks:attach",
     summary="attach container to a network, if not already attached",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def attach_container_to_network(
-    id: str, item: AttachContainerToNetworkItem
+    id_: str = PathParam(..., alias="id"),
+    item: AttachContainerToNetworkItem = Body(...),
 ) -> None:
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(id_)
         container_inspect = await container_instance.show()
 
         attached_network_ids: Set[str] = {
@@ -291,7 +288,7 @@ async def attach_container_to_network(
 
         if item.network_id in attached_network_ids:
             logger.info(
-                "Container %s already attached to network %s", id, item.network_id
+                "Container %s already attached to network %s", id_, item.network_id
             )
             return
 
@@ -300,7 +297,7 @@ async def attach_container_to_network(
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.connect(
             {
-                "Container": id,
+                "Container": id_,
                 "EndpointConfig": {"Aliases": item.network_aliases},
             }
         )
@@ -309,14 +306,14 @@ async def attach_container_to_network(
 @containers_router.post(
     "/containers/{id}/networks:detach",
     summary="detach container from a network, if not already detached",
-    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def detach_container_from_network(
-    id: str, item: DetachContainerFromNetworkItem
+    id_: str = PathParam(..., alias="id"),
+    item: DetachContainerFromNetworkItem = Body(...),
 ) -> None:
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(id_)
         container_inspect = await container_instance.show()
 
         attached_network_ids: Set[str] = {
