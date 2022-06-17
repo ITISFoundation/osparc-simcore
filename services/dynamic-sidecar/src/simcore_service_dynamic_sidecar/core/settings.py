@@ -91,7 +91,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @validator("LOG_LEVEL")
     @classmethod
-    def _check_log_level(cls, value) -> str:
+    def _check_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
     @property
