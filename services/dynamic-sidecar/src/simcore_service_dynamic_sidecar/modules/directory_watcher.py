@@ -208,7 +208,9 @@ def setup_directory_watcher(app: FastAPI) -> None:
         app.state.dir_watcher.start()
 
     async def on_shutdown() -> None:
-        if app.state.dir_watcher is not None:
+        if (
+            app.state.dir_watcher is not None
+        ):  # TODO: PC->ANE when is this actually happening?
             await app.state.dir_watcher.stop()
 
     app.add_event_handler("startup", on_startup)
@@ -216,12 +218,16 @@ def setup_directory_watcher(app: FastAPI) -> None:
 
 
 def disable_directory_watcher(app: FastAPI) -> None:
-    if app.state.dir_watcher is not None:
+    if (
+        app.state.dir_watcher is not None
+    ):  # TODO: PC->ANE when is this actually happening?
         app.state.dir_watcher.disable_event_propagation()
 
 
 def enable_directory_watcher(app: FastAPI) -> None:
-    if app.state.dir_watcher is not None:
+    if (
+        app.state.dir_watcher is not None
+    ):  # TODO: PC->ANE when is this actually happening?
         app.state.dir_watcher.enable_event_propagation()
 
 
