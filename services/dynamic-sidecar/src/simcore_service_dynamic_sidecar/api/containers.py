@@ -1,21 +1,12 @@
-# pylint: disable=redefined-builtin
-
 import functools
 import json
 import logging
 import traceback
 from typing import Any, Dict, List, Union
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    HTTPException,
-    Query,
-    Request,
-    status,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import Path as PathParam
+from fastapi import Query, Request, status
 from fastapi.responses import PlainTextResponse
 
 from ..core.dependencies import (
@@ -44,15 +35,13 @@ from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
 
-containers_router = APIRouter(tags=["containers"])
-
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
     logger.info(message)
     await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
-async def _task_docker_compose_up(
+async def docker_compose_up_and_log(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     app: FastAPI,
@@ -62,14 +51,18 @@ async def _task_docker_compose_up(
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "up --no-build --detach"
+        "docker-compose",
+        "--project-name {project}",
+        "--file \"{file_path}'",
+        "up",
+        "--no-build",
+        "--detach",
     )
     with directory_watcher_disabled(app):
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
             file_content=shared_store.compose_spec,
-            command=command,
+            command=" ".join(command),
             command_timeout=None,
         )
     message = f"Finished {command} with output\n{stdout}"
@@ -88,13 +81,17 @@ async def _task_docker_compose_up(
     return None
 
 
-def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
+def _raise_if_container_is_missing(
+    container_id: str, container_names: List[str]
+) -> None:
     if id not in container_names:
-        message = (
-            f"No container '{id}' was started. Started containers '{container_names}'"
-        )
+        message = f"No container '{container_id}' was started. Started containers '{container_names}'"
         logger.warning(message)
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
+
+
+# ROUTES ------------------
+containers_router = APIRouter(tags=["containers"])
 
 
 @containers_router.post(
@@ -137,7 +134,7 @@ async def runs_docker_compose_up(
     # run docker-compose in a background queue and return early
     background_tasks.add_task(
         functools.partial(
-            _task_docker_compose_up,
+            docker_compose_up_and_log,
             settings=settings,
             shared_store=shared_store,
             app=app,
@@ -245,7 +242,7 @@ async def containers_docker_inspect(
     },
 )
 async def get_container_logs(
-    id: str,
+    id_: str = PathParam(..., alias="id"),
     since: int = Query(
         0,
         title="Timestamp",
@@ -264,10 +261,10 @@ async def get_container_logs(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> List[str]:
     """Returns the logs of a given container if found"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
+    _raise_if_container_is_missing(id_, shared_store.container_names)
 
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(id_)
 
         args = dict(stdout=True, stderr=True, since=since, until=until)
         if timestamps:
@@ -289,6 +286,7 @@ async def get_container_logs(
     },
 )
 async def get_entrypoint_container_name(
+    # TODO: PC->ANE: did you try pydantic.Json ??
     filters: str = Query(
         ...,
         description=(
@@ -347,15 +345,16 @@ async def get_entrypoint_container_name(
     },
 )
 async def inspect_container(
-    id: str, shared_store: SharedStore = Depends(get_shared_store)
+    id_: str = PathParam(..., alias="id"),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> Dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
+    _raise_if_container_is_missing(id_, shared_store.container_names)
 
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(id_)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
 
 
-__all__ = ["containers_router"]
+__all__: tuple[str, ...] = ("containers_router",)
