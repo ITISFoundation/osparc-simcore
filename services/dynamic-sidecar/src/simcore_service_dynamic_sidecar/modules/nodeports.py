@@ -56,7 +56,9 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     logger.info("uploading data to simcore...")
     start_time = time.perf_counter()
 
+    # TODO: PC->ANE: replace by app.state.settings
     settings: DynamicSidecarSettings = get_settings()
+
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=str(settings.DY_SIDECAR_PROJECT_ID),
@@ -249,6 +251,7 @@ async def download_target_ports(
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
+    # TODO: PC->ANE: replace by app.state.settings
     settings: DynamicSidecarSettings = get_settings()
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,

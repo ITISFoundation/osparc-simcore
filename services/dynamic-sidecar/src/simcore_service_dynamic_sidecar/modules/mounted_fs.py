@@ -54,15 +54,18 @@ class MountedVolumes:
     @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
+        # TODO: PC->ANE: replace by app.state.settings
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}{_name_from_full_path(self.inputs_path)}"
 
     @cached_property
     def volume_name_outputs(self) -> str:
+        # TODO: PC->ANE: replace by app.state.settings
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         return f"{compose_namespace}{_name_from_full_path(self.outputs_path)}"
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
+        # TODO: PC->ANE: replace by app.state.settings
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         for state_path in self.state_paths:
             yield f"{compose_namespace}{_name_from_full_path(state_path)}"
@@ -126,8 +129,7 @@ class MountedVolumes:
 
 
 def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    # TODO: replace this with app version
-    settings: DynamicSidecarSettings = get_settings()
+    settings: DynamicSidecarSettings = app.state.settings
 
     app.state.mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,

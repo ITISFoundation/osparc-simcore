@@ -23,6 +23,7 @@ async def pull_path_if_exists(path: Path) -> None:
 
     In each and every other case an error is raised and logged
     """
+    # TODO: PC->ANE: replace by app.state.settings
     settings: DynamicSidecarSettings = get_settings()
 
     if not await data_manager.is_file_present_in_storage(
@@ -59,6 +60,7 @@ async def upload_path_if_exists(path: Path, state_exclude: List[str]) -> None:
     """
     Zips the path in a temporary directory and uploads to storage
     """
+    # TODO: PC->ANE: replace by app.state.settings
     settings: DynamicSidecarSettings = get_settings()
     # pylint: disable=unnecessary-comprehension
     logger.info("Files in %s: %s", path, [x for x in path.rglob("*")])
