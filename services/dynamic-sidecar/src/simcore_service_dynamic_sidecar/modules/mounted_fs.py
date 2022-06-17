@@ -2,6 +2,7 @@ import os
 from functools import cached_property
 from pathlib import Path
 from typing import AsyncGenerator, Generator, List
+from uuid import UUID
 
 from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.core.settings import (
@@ -89,23 +90,31 @@ class MountedVolumes:
         set(self.disk_state_paths())
 
     @staticmethod
-    async def _get_bind_path_from_label(label: str) -> Path:
-        volume_details = await get_volume_by_label(label=label)
+    async def _get_bind_path_from_label(label: str, run_id: UUID) -> Path:
+        volume_details = await get_volume_by_label(label=label, run_id=run_id)
         return Path(volume_details["Mountpoint"])
 
-    async def get_inputs_docker_volume(self) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_inputs)
+    async def get_inputs_docker_volume(self, run_id: UUID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(
+            self.volume_name_inputs, run_id
+        )
         return f"{bind_path}:{self.inputs_path}"
 
-    async def get_outputs_docker_volume(self) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_outputs)
+    async def get_outputs_docker_volume(self, run_id: UUID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(
+            self.volume_name_outputs, run_id
+        )
         return f"{bind_path}:{self.outputs_path}"
 
-    async def iter_state_paths_to_docker_volumes(self) -> AsyncGenerator[str, None]:
+    async def iter_state_paths_to_docker_volumes(
+        self, run_id: UUID
+    ) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths
         ):
-            bind_path: Path = await self._get_bind_path_from_label(volume_state_path)
+            bind_path: Path = await self._get_bind_path_from_label(
+                volume_state_path, run_id
+            )
             yield f"{bind_path}:{state_path}"
 
 

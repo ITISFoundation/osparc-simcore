@@ -49,6 +49,7 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
+        "DY_SIDECAR_RUN_ID": f"{scheduler_data.dynamic_sidecar.run_id}",
         "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
         "POSTGRES_ENDPOINT": f"{app_settings.POSTGRES.POSTGRES_HOST}:{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_PASSWORD": f"{app_settings.POSTGRES.POSTGRES_PASSWORD.get_secret_value()}",
@@ -121,6 +122,7 @@ def get_dynamic_sidecar_spec(
                 compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.dynamic_sidecar.run_id,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -134,6 +136,7 @@ def get_dynamic_sidecar_spec(
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.dynamic_sidecar.run_id,
                     r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
@@ -144,6 +147,7 @@ def get_dynamic_sidecar_spec(
                     compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.dynamic_sidecar.run_id,
                 )
             )
 

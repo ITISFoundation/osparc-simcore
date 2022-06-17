@@ -3,7 +3,7 @@ import logging
 from asyncio import Lock
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -128,6 +128,16 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
+    run_id: UUID = Field(
+        default_factory=uuid4,
+        description=(
+            "Used to discriminate between dynamic-sidecar docker resources "
+            "generated during different runs. Sometimes artifacts remain in the"
+            "system after an error. This helps avoiding collisions."
+            "For now used by anonymous volumes involved in data sharing"
+        ),
+    )
+
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
