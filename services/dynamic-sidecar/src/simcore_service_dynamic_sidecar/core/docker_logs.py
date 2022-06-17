@@ -1,3 +1,11 @@
+"""
+    BackgroundLogFetcher:
+        Creates background task that
+        reads every line of a container's log and
+        posts it as a message to rabbit's log channel (logger)
+"""
+
+
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
@@ -15,6 +23,7 @@ async def _logs_fetcher_worker(
     container_name: str, dispatch_log: Callable[..., Coroutine[Any, Any, None]]
 ) -> None:
     logger.info("Started log fetching for container %s", container_name)
+
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
@@ -52,18 +61,19 @@ class BackgroundLogFetcher:
             _logs_fetcher_worker(
                 container_name=container_name, dispatch_log=self._dispatch_logs
             ),
-            name="rabbitmq_log_processor_tasks",
+            name="rabbitmq_log_processor_tasks",  # TODO: PC->ANE: should not have container_name in the task name as well?
         )
 
         logger.info("Subscribed to fetch logs from '%s'", container_name)
 
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
-        task = self._log_processor_tasks[container_name]
+
+        task = self._log_processor_tasks.pop(container_name)
         task.cancel()
         with suppress(CancelledError):
             await task
-        del self._log_processor_tasks[container_name]
+
         logger.debug("Logs fetching stopped for container '%s'", container_name)
 
     async def stop_fetcher(self) -> None:

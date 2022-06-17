@@ -15,7 +15,7 @@ from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from .mounted_fs import MountedVolumes, setup_mounted_fs
+from .mounted_fs import MountedVolumes
 
 DETECTION_INTERVAL: float = 1.0
 TASK_NAME_FOR_CLEANUP = f"{name}.InvokeTask"
@@ -199,7 +199,8 @@ class DirectoryWatcherObservers:
 
 def setup_directory_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
-        mounted_volumes: MountedVolumes = setup_mounted_fs(app)
+        mounted_volumes: MountedVolumes
+        mounted_volumes = app.state.mounted_volumes  # nosec
 
         app.state.dir_watcher = DirectoryWatcherObservers()
         app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
@@ -207,7 +208,9 @@ def setup_directory_watcher(app: FastAPI) -> None:
         app.state.dir_watcher.start()
 
     async def on_shutdown() -> None:
-        if app.state.dir_watcher is not None:
+        if (
+            app.state.dir_watcher is not None
+        ):  # TODO: PC->ANE when is this actually happening?
             await app.state.dir_watcher.stop()
 
     app.add_event_handler("startup", on_startup)
@@ -215,12 +218,16 @@ def setup_directory_watcher(app: FastAPI) -> None:
 
 
 def disable_directory_watcher(app: FastAPI) -> None:
-    if app.state.dir_watcher is not None:
+    if (
+        app.state.dir_watcher is not None
+    ):  # TODO: PC->ANE when is this actually happening?
         app.state.dir_watcher.disable_event_propagation()
 
 
 def enable_directory_watcher(app: FastAPI) -> None:
-    if app.state.dir_watcher is not None:
+    if (
+        app.state.dir_watcher is not None
+    ):  # TODO: PC->ANE when is this actually happening?
         app.state.dir_watcher.enable_event_propagation()
 
 

@@ -1,7 +1,11 @@
+"""
+    TODO: PC->ANE shared handlers? the most important function here is remove_the_compose_spec.
+    rename this file?
+
+"""
+
 import logging
 from typing import Optional
-
-from fastapi import FastAPI
 
 from ..models.domains.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
@@ -58,8 +62,8 @@ async def remove_the_compose_spec(
     await cleanup_containers_and_volumes(shared_store, settings)
 
     command = (
-        "docker-compose -p {project} -f {file_path} "
-        "down --volumes --remove-orphans -t {stop_and_remove_timeout}"
+        "docker-compose --project-name {project} --file \"{file_path}\" "
+        "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
         settings=settings,
@@ -72,16 +76,3 @@ async def remove_the_compose_spec(
     shared_store.container_names = []
 
     return result
-
-
-async def on_shutdown_handler(app: FastAPI) -> None:
-    logging.info("Going to remove spawned containers")
-    shared_store: SharedStore = app.state.shared_store
-    settings: DynamicSidecarSettings = app.state.settings
-
-    result = await remove_the_compose_spec(
-        shared_store=shared_store,
-        settings=settings,
-        command_timeout=settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
-    )
-    logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])
