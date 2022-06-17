@@ -16,6 +16,7 @@ health_router = APIRouter()
 async def health_endpoint(
     application_health: ApplicationHealth = Depends(get_application_health),
 ) -> ApplicationHealth:
+    # TODO: PC->ANE what is the use of ApplicationHealth?? SEE services/web/server/src/simcore_service_webserver/rest_healthcheck.py
     if not application_health.is_healthy:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.dict()

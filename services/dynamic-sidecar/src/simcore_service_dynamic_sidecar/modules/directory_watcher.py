@@ -199,8 +199,7 @@ class DirectoryWatcherObservers:
 
 def setup_directory_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
-        mounted_volumes: MountedVolumes
-        mounted_volumes = app.state.mounted_volumes  # nosec
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
         app.state.dir_watcher = DirectoryWatcherObservers()
         app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
