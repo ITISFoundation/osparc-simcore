@@ -115,6 +115,14 @@ class BaseFileLink(BaseModel):
         alias="eTag",
     )
 
+    @validator("store", pre=True)
+    @classmethod
+    def legacy_enforce_str_to_int(cls, v):
+        """SEE"""
+        if isinstance(v, str):
+            return int(v)
+        return v
+
 
 class SimCoreFileLink(BaseFileLink):
     """I/O port type to hold a link to a file in simcore S3 storage"""
@@ -151,6 +159,12 @@ class SimCoreFileLink(BaseFileLink):
                 "label": "input.txt",
             },
             "examples": [
+                # legacy (SEE incident https://git.speag.com/oSparc/e2e-portal-testing/-/issues/2)
+                {
+                    "store": "0",
+                    "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                    "eTag": "f7e4c7076761a42a871e978c8691c676",
+                },
                 # minimal
                 {
                     "store": 0,
