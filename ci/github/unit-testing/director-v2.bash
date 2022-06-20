@@ -25,11 +25,12 @@ test() {
     --cov=simcore_service_director_v2 \
     --durations=10 \
     --ignore=services/director-v2/tests/unit/with_dbs \
+    --log-cli-level=DEBUG \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --numprocesses=auto \
     --setup-show \
     --verbose \
-    --log-cli-level=INFO \
     -m "not heavy_load" \
     services/director-v2/tests/unit
 
