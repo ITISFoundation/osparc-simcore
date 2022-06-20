@@ -1,6 +1,7 @@
-from typing import Optional
+# SKIP pyupgrade (used in director)
+from typing import Optional, Dict
 
-EnvVarsDict = dict[str, Optional[str]]
+EnvVarsDict = Dict[str, Optional[str]]
 #
 # NOTE: that this means that env vars do not require a value. If that happens a None is assigned
 #   For instance, a valid env file is
