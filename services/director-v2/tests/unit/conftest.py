@@ -4,7 +4,7 @@
 import json
 import random
 import urllib.parse
-from typing import Any, AsyncIterable, AsyncIterator, Iterator, Mapping
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterator, Mapping
 
 import pytest
 import respx
@@ -180,11 +180,13 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
-def local_dask_gateway_server_config() -> traitlets.config.Config:
+def local_dask_gateway_server_config(
+    unused_tcp_port_factory: Callable,
+) -> traitlets.config.Config:
     c = traitlets.config.Config()
     c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
-    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
-    c.Proxy.address = "127.0.0.1:0"  # type: ignore
+    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
+    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
     c.ClusterConfig.worker_cmd = [  # type: ignore
