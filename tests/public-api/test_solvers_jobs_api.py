@@ -11,7 +11,7 @@
 import time
 from operator import attrgetter
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
@@ -27,7 +27,7 @@ assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
 @pytest.fixture(scope="module")
 def sleeper_solver(
     solvers_api: SolversApi,
-    services_registry: Dict[str, Any],
+    services_registry: dict[str, Any],
 ) -> Solver:
     # this part is tested in test_solvers_api so it becomes a fixture here
 
