@@ -150,18 +150,11 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
             '"request_scheme": null, '
             '"proxy_service_name": '
             '"dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa"}',
-            "io.simcore.zone": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
             "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
             "swarm_stack_name": "test_swarm_name",
-            "traefik.docker.network": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "traefik.enable": "true",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.entrypoints": "http",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.priority": "10",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.rule": "PathPrefix(`/`)",
-            "traefik.http.services.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.loadbalancer.server.port": "8000",
             "type": "main-v2",
             "user_id": "234",
             "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
