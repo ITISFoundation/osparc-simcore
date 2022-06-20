@@ -30,6 +30,7 @@ test() {
     --numprocesses=auto \
     --setup-show \
     --verbose \
+    -x \
     -m "not heavy_load" \
     services/director-v2/tests/unit
 
