@@ -28,6 +28,7 @@ test() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
     --numprocesses=auto \
+    --setup-show \
     --verbose \
     -m "not heavy_load" \
     services/director-v2/tests/unit
