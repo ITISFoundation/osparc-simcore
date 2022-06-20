@@ -161,7 +161,6 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     session: AioSession = field(default_factory=get_session)
     datcore_tokens: dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
-    _auto_update_fire_and_forget_tasks: set[asyncio.Task] = field(default_factory=set)
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
         assert hasattr(self.session, "create_client")  # nosec
