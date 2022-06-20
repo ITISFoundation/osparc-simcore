@@ -11,7 +11,13 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-  # NOTE: Keep order as pycln (remove unused imports), then isort (sort them) and black (final formatting)
+  # NOTE: Keep order as pyupgrade (will update code) then pycln (remove unused imports), then isort (sort them) and black (final formatting)
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.34.0
+    hooks:
+      - id: pyupgrade
+        args:
+          - "--py39-plus"
   - repo: https://github.com/hadialqattan/pycln
     rev: v1.2.5
     hooks:
