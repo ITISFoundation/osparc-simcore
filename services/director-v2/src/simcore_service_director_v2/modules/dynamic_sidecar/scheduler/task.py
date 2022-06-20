@@ -489,7 +489,7 @@ class DynamicSidecarsScheduler:
 
         for task in self._service_observation_task.values():
             task.cancel()
-        asyncio.gather(
+        await asyncio.gather(
             *(self._service_observation_task.values()), return_exceptions=True
         )
 
