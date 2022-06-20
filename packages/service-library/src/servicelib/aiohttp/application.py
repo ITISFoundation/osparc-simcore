@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY, APP_FIRE_AND_FORGET_TASKS_KEY
 from .client_session import persistent_client_session
 
 
@@ -19,6 +19,7 @@ def create_safe_application(config: Optional[Dict] = None) -> web.Application:
 
     # Ensures config entry
     app[APP_CONFIG_KEY] = config or {}
+    app[APP_FIRE_AND_FORGET_TASKS_KEY] = set()
 
     app.on_startup.append(startup_info)
     app.on_cleanup.append(shutdown_info)

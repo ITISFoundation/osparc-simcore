@@ -27,6 +27,8 @@ APP_DB_ENGINE_KEY: Final[str] = f"{__name__ }.db_engine"
 
 APP_CLIENT_SESSION_KEY: Final[str] = f"{__name__ }.session"
 
+APP_FIRE_AND_FORGET_TASKS_KEY: Final[str] = f"{__name__}.tasks"
+
 #
 # web.Response keys, i.e. app[RSP_*_KEY]
 #
