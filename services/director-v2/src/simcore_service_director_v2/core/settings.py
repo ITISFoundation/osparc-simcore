@@ -185,6 +185,9 @@ class DynamicSidecarSettings(BaseCustomSettings):
         regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
+    DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES: int = Field(
+        3, description="maximum attempts to retry a request before giving up"
+    )
     DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
         15.0,
         description=(

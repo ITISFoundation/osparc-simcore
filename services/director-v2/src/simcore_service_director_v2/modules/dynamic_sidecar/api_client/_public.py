@@ -1,12 +1,22 @@
-from requests import Response
+from bdb import set_trace
 from ._thin_client import ThinDynamicSidecarClient
 from pydantic import AnyHttpUrl
 from httpx import HTTPError
-from ..errors import DynamicSidecarUnexpectedResponseStatus
+from fastapi import status
+from ..errors import (
+    DynamicSidecarUnexpectedResponseStatus,
+    NodeportsDidNotFindNodeError,
+    EntrypointContainerNotFoundError,
+)
+from models_library.projects import ProjectID
+from models_library.projects_networks import DockerNetworkAlias
 from ....utils.logging_utils import log_decorator
 import logging
-from typing import Any
+from typing import Any, Optional
 from ._errors import UnexpectedStatusError
+from collections import deque
+from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
+from servicelib.utils import logged_gather
 
 logger = logging.getLogger(__name__)
 
@@ -53,5 +63,218 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         response = await self.post_containers(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
-        # request was ok
         logger.info("Spec submit result %s", response.text)
+
+    @log_decorator(logger=logger)
+    async def begin_service_destruction(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        """runs docker compose down on the started spec"""
+        response = await self.post_containers_down(dynamic_sidecar_endpoint)
+        logger.info("Compose down result %s", response.text)
+
+    @log_decorator(logger=logger)
+    async def service_save_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        await self.post_containers_state_save(dynamic_sidecar_endpoint)
+
+    @log_decorator(logger=logger)
+    async def service_restore_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        await self.post_containers_state_restore(dynamic_sidecar_endpoint)
+
+    @log_decorator(logger=logger)
+    async def service_pull_input_ports(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
+    ) -> int:
+        port_keys = [] if port_keys is None else port_keys
+        response = await self.post_containers_ports_inputs_pull(
+            dynamic_sidecar_endpoint, port_keys=port_keys
+        )
+        return int(response.text)
+
+    @log_decorator(logger=logger)
+    async def service_disable_dir_watcher(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self.patch_containers_directory_watcher(
+            dynamic_sidecar_endpoint, is_enabled=False
+        )
+
+    @log_decorator(logger=logger)
+    async def service_enable_dir_watcher(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self.patch_containers_directory_watcher(
+            dynamic_sidecar_endpoint, is_enabled=True
+        )
+
+    @log_decorator(logger=logger)
+    async def service_outputs_create_dirs(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
+    ) -> None:
+        await self.post_containers_ports_outputs_dirs(
+            dynamic_sidecar_endpoint, outputs_labels=outputs_labels
+        )
+
+    @log_decorator(logger=logger)
+    async def service_pull_output_ports(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
+    ) -> int:
+        response = await self.post_containers_ports_outputs_pull(
+            dynamic_sidecar_endpoint, port_keys=port_keys
+        )
+        return int(response.text)
+
+    @log_decorator(logger=logger)
+    async def service_push_output_ports(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
+    ) -> None:
+        port_keys = [] if port_keys is None else port_keys
+        try:
+            await self.post_containers_ports_outputs_push(
+                dynamic_sidecar_endpoint, port_keys=port_keys
+            )
+        except UnexpectedStatusError as e:
+            if e.response.status_code == status.HTTP_404_NOT_FOUND:
+                json_error = e.response.json()
+                if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
+                    raise NodeportsDidNotFindNodeError(
+                        node_uuid=json_error["node_uuid"]
+                    )
+            raise DynamicSidecarUnexpectedResponseStatus(
+                e.response, "output ports push"
+            )
+
+    @log_decorator(logger=logger)
+    async def get_entrypoint_container_name(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
+    ) -> str:
+        """
+        While this API raises EntrypointContainerNotFoundError
+        it should be called again, because in the menwhile the containers
+        might still be starting.
+        """
+        try:
+            response = await self.get_containers_name(
+                dynamic_sidecar_endpoint,
+                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+            )
+            return response.json()
+        except UnexpectedStatusError as e:
+            if e.response.status_code == status.HTTP_404_NOT_FOUND:
+                raise EntrypointContainerNotFoundError()
+
+    @log_decorator(logger=logger)
+    async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        """
+        runs docker-compose stop and docker-compose start in succession
+        resulting in a container restart without loosing state
+        """
+        await self.post_containers_restart(dynamic_sidecar_endpoint)
+
+    async def _attach_container_to_network(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        container_id: str,
+        network_id: str,
+        network_aliases: list[str],
+    ) -> None:
+        """attaches a container to a network if not already attached"""
+        await self.post_containers_networks_attach(
+            dynamic_sidecar_endpoint,
+            container_id=container_id,
+            network_id=network_id,
+            network_aliases=network_aliases,
+        )
+
+    async def _detach_container_from_network(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, container_id: str, network_id: str
+    ) -> None:
+        """detaches a container from a network if not already detached"""
+        await self.post_containers_networks_detach(
+            dynamic_sidecar_endpoint, container_id=container_id, network_id=network_id
+        )
+
+    async def attach_service_containers_to_project_network(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_network_name: str,
+        project_network: str,
+        project_id: ProjectID,
+        network_alias: DockerNetworkAlias,
+    ) -> None:
+        """All containers spawned by the dynamic-sidecar need to be attached to the project network"""
+        try:
+            containers_status = await self.containers_docker_status(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+            )
+        except HTTPError:
+            return
+
+        sorted_container_names = sorted(containers_status.keys())
+
+        entrypoint_container_name = await self.get_entrypoint_container_name(
+            dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+        )
+
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
+            [project_network], project_id
+        )
+        network_id = network_names_to_ids[project_network]
+
+        tasks = deque()
+
+        for k, container_name in enumerate(sorted_container_names):
+            # by default we attach `alias-0`, `alias-1`, etc...
+            # to all containers
+            aliases = [f"{network_alias}-{k}"]
+            if container_name == entrypoint_container_name:
+                # by definition the entrypoint container will be exposed as the `alias`
+                aliases.append(network_alias)
+
+            tasks.append(
+                self._attach_container_to_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                    network_aliases=aliases,
+                )
+            )
+
+        await logged_gather(*tasks)
+
+    async def detach_service_containers_from_project_network(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        project_network: str,
+        project_id: ProjectID,
+    ) -> None:
+        # the network needs to be detached from all started containers
+        try:
+            containers_status = await self.containers_docker_status(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+            )
+        except HTTPError:
+            return
+
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
+            [project_network], project_id
+        )
+        network_id = network_names_to_ids[project_network]
+
+        await logged_gather(
+            *[
+                self._detach_container_from_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                )
+                for container_name in containers_status
+            ]
+        )
