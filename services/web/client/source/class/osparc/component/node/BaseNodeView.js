@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       const outputsLayout = this._outputsLayout = this.self().createSettingsGroupBox(this.tr("Outputs")).set({
-        padding: 6,
+        padding: 4,
         width: 280
       });
       mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
