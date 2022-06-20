@@ -57,7 +57,7 @@ def dynamic_service_create() -> DynamicServiceCreate:
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def dynamic_sidecar_port() -> int:
     return 1222
 
