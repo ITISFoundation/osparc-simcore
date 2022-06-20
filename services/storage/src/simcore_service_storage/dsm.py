@@ -27,6 +27,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects_nodes_io import Location, LocationID, LocationName
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -160,6 +161,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     session: AioSession = field(default_factory=get_session)
     datcore_tokens: dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
+    _auto_update_fire_and_forget_tasks: set[asyncio.Task] = field(default_factory=set)
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
         assert hasattr(self.session, "create_client")  # nosec
@@ -580,8 +582,11 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
-            )
+            ),
+            task_name=f"auto_update_{file_uuid=}_{user_id=}",
+            fire_and_forget_tasks_collection=self.app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
+
         link = f"s3://{bucket_name}/{urllib.parse.quote( object_name)}"
         if as_presigned_link:
             link = self.s3_client.create_presigned_put_url(bucket_name, object_name)

@@ -11,6 +11,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
@@ -150,7 +151,11 @@ async def on_user_logout(
         sockets = await rt.find_socket_ids()
         if sockets:
             # let's do it as a task so it does not block us here
-            fire_and_forget_task(disconnect_other_sockets(sio, sockets))
+            fire_and_forget_task(
+                disconnect_other_sockets(sio, sockets),
+                task_name=f"disconnect_other_sockets_{user_id=}",
+                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            )
 
 
 @register_socketio_handler

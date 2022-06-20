@@ -1,17 +1,18 @@
 import logging
+from collections import deque
 from typing import Any, Coroutine, Optional
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from servicelib.logging_utils import log_decorator
-from servicelib.utils import logged_gather
-from collections import deque
-from models_library.users import UserID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeIDStr
-from .projects_utils import get_frontend_node_outputs_changes
-from servicelib.utils import fire_and_forget_task
+from models_library.users import UserID
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.logging_utils import log_decorator
+from servicelib.utils import fire_and_forget_task, logged_gather
+
 from . import projects_api
+from .projects_utils import get_frontend_node_outputs_changes
 
 log = logging.getLogger(__name__)
 
@@ -126,5 +127,9 @@ async def update_frontend_outputs(
                 )
             )
 
-    for frontend_node_update_task in frontend_nodes_update_tasks:
-        fire_and_forget_task(frontend_node_update_task)
+    for task_index, frontend_node_update_task in enumerate(frontend_nodes_update_tasks):
+        fire_and_forget_task(
+            frontend_node_update_task,
+            task_name=f"frontend_node_update_task_{task_index}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
