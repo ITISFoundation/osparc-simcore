@@ -487,6 +487,12 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
+        for task in self._service_observation_task.values():
+            task.cancel()
+        asyncio.gather(
+            *(self._service_observation_task.values()), return_exceptions=True
+        )
+
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
 
