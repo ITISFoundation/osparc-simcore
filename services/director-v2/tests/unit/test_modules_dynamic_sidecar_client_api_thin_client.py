@@ -1,16 +1,17 @@
-from fastapi import FastAPI, status
-from pydantic import AnyHttpUrl, parse_obj_as
+import json
+from typing import Any, Callable, Optional
+
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from fastapi import FastAPI, status
+from httpx import Response
+from pydantic import AnyHttpUrl, parse_obj_as
+from respx import MockRouter, Route
+from respx.types import SideEffectTypes
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin_client import (
     ThinDynamicSidecarClient,
 )
-from httpx import Response
-from respx import MockRouter, Route
-from typing import Optional, Callable, Any
-from respx.types import SideEffectTypes
-from _pytest.monkeypatch import MonkeyPatch
-from simcore_service_director_v2.core.settings import AppSettings
-import json
 
 pytestmark = pytest.mark.asyncio
 
