@@ -88,7 +88,7 @@ async def _push_directory_after_event_chain(directory_path: Path) -> None:
 def async_push_directory(
     event_loop: AbstractEventLoop,
     directory_path: Path,
-    tasks_collection: set[asyncio.Task],
+    tasks_collection: set[asyncio.Task[Any]],
 ) -> None:
     task = event_loop.create_task(
         _push_directory_after_event_chain(directory_path),
@@ -105,7 +105,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
         self.loop: AbstractEventLoop = loop
         self.directory_path: Path = directory_path
         self._is_enabled: bool = True
-        self._background_tasks: set[asyncio.Task] = set()
+        self._background_tasks: set[asyncio.Task[Any]] = set()
 
     def set_enabled(self, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
