@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict, Tuple
 
 import aiohttp
 import pytest
@@ -15,8 +14,8 @@ from .helpers.utils_docker import get_service_published_port
 
 @pytest.fixture(scope="module")
 def traefik_endpoints(
-    docker_stack: Dict, testing_environ_vars: Dict
-) -> Tuple[URL, URL, URL]:
+    docker_stack: dict, testing_environ_vars: dict
+) -> tuple[URL, URL, URL]:
     """get the endpoint for the given simcore_service.
     NOTE: simcore_service defined as a parametrization
     """
@@ -35,8 +34,8 @@ def traefik_endpoints(
 
 @pytest.fixture(scope="function")
 async def traefik_service(
-    loop, traefik_endpoints: Tuple[URL, URL, URL], docker_stack: Dict
-) -> Tuple[URL, URL, URL]:
+    loop, traefik_endpoints: tuple[URL, URL, URL], docker_stack: dict
+) -> tuple[URL, URL, URL]:
     traefik_api_endpoint, webserver_endpoint, apiserver_endpoint = traefik_endpoints
     await wait_till_traefik_responsive(traefik_api_endpoint)
     yield traefik_endpoints
