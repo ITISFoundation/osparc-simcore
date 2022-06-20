@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import urllib.parse
-from argparse import Namespace
 from time import sleep
 from typing import Any, AsyncIterator, Dict, Final, NamedTuple, Optional
 from uuid import UUID
@@ -137,13 +136,13 @@ async def mock_retrieve_features(
         else:
             dynamic_sidecar_scheduler = minimal_app.state.dynamic_sidecar_scheduler
             node_uuid = UUID(service["node_uuid"])
-            serice_name = "serice_name"
+            service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._inverse_search_mapping[node_uuid] = serice_name
-            dynamic_sidecar_scheduler._to_observe[serice_name] = Namespace(
-                scheduler_data=scheduler_data_from_http_request
-            )
+            dynamic_sidecar_scheduler._inverse_search_mapping[node_uuid] = service_name
+            dynamic_sidecar_scheduler._to_observe[
+                service_name
+            ] = scheduler_data_from_http_request
 
             respx_mock.post(
                 f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/ports/inputs:pull",
@@ -153,7 +152,7 @@ async def mock_retrieve_features(
             yield respx_mock
 
             dynamic_sidecar_scheduler._inverse_search_mapping.pop(node_uuid)
-            dynamic_sidecar_scheduler._to_observe.pop(serice_name)
+            dynamic_sidecar_scheduler._to_observe.pop(service_name)
 
 
 @pytest.fixture
