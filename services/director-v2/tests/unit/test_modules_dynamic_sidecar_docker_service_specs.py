@@ -318,7 +318,7 @@ def test_get_dynamic_proxy_spec(
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
-    for n in range(10):
+    for _ in range(10):
         dynamic_sidecar_spec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
