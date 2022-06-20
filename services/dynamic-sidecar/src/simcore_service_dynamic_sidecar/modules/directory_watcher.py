@@ -39,7 +39,7 @@ class AsyncLockedFloat:
             return self._value
 
 
-def async_run_once_after_event_chain(  # type:ignore
+def async_run_once_after_event_chain(
     detection_interval: float,
 ):
     """
@@ -51,11 +51,11 @@ def async_run_once_after_event_chain(  # type:ignore
     returns: decorator to be applied to async functions
     """
 
-    def internal(decorated_function: Callable[..., Awaitable[Any]]):  # type:ignore
+    def internal(decorated_function: Callable[..., Awaitable[Any]]):
         last = AsyncLockedFloat(initial_value=None)
 
         @wraps(decorated_function)
-        async def wrapper(*args: Any, **kwargs: Any):  # type:ignore
+        async def wrapper(*args: Any, **kwargs: Any):
             # skipping  the first time the event chain starts
             if await last.get_value() is None:
                 await last.set_value(time.time())
