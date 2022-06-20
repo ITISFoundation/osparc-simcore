@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from pprint import pprint
 from typing import Any, Dict, Iterator, cast
 from uuid import UUID
 
@@ -318,20 +317,28 @@ def test_get_dynamic_proxy_spec(
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
-    dynamic_sidecar_spec = get_dynamic_sidecar_spec(
-        scheduler_data=scheduler_data,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-        swarm_network_id=swarm_network_id,
-        settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
-        app_settings=minimal_app.state.settings,
-    )
-    assert dynamic_sidecar_spec
+    dynamic_sidecar_spec_accumulated = None
+    for n in range(10):
+        dynamic_sidecar_spec = get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
+            app_settings=minimal_app.state.settings,
+        )
+        assert dynamic_sidecar_spec
+        assert (
+            jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
+            == expected_dynamic_sidecar_spec
+        )
+        dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
     assert (
-        jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
+        jsonable_encoder(
+            dynamic_sidecar_spec_accumulated, by_alias=True, exclude_unset=True
+        )
         == expected_dynamic_sidecar_spec
     )
-    pprint(dynamic_sidecar_spec)
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 

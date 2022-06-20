@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -230,7 +231,9 @@ def get_dynamic_sidecar_spec(
                 "Mounts": mounts,
             },
             "Placement": {
-                "Constraints": app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                "Constraints": deepcopy(
+                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                )
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
