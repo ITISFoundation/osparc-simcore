@@ -489,9 +489,20 @@ class DynamicSidecarsScheduler:
 
         for task in self._service_observation_task.values():
             task.cancel()
-        await asyncio.gather(
-            *(self._service_observation_task.values()), return_exceptions=True
-        )
+        try:
+            MAX_WAIT_TIME_SECONDS = 5
+            _, pending_tasks = await asyncio.wait(
+                self._service_observation_task.values(),
+                timeout=MAX_WAIT_TIME_SECONDS,
+                return_when=asyncio.ALL_COMPLETED,
+            )
+            logger.warning(
+                "There are still %s that did not cancel properly in %ss",
+                f"{pending_tasks=}",
+                MAX_WAIT_TIME_SECONDS,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unhandled exception when cancelling observation tasks:")
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping

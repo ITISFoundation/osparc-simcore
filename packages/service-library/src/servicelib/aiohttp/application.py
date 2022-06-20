@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from typing import Dict, Optional
 
 from aiohttp import web
 
 from .application_keys import APP_CONFIG_KEY, APP_FIRE_AND_FORGET_TASKS_KEY
 from .client_session import persistent_client_session
+
+logger = logging.getLogger(__name__)
 
 
 async def startup_info(app: web.Application):
@@ -19,6 +22,20 @@ async def stop_background_tasks(app: web.Application):
     task: asyncio.Task
     for task in app[APP_FIRE_AND_FORGET_TASKS_KEY]:
         task.cancel()
+    try:
+        MAX_WAIT_TIME_SECONDS = 5
+        _, pending_tasks = await asyncio.wait(
+            app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            timeout=MAX_WAIT_TIME_SECONDS,
+            return_when=asyncio.ALL_COMPLETED,
+        )
+        logger.warning(
+            "There are still %s that did not cancel properly in %ss",
+            f"{pending_tasks=}",
+            MAX_WAIT_TIME_SECONDS,
+        )
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unhandled exception when cancelling background tasks:")
     await asyncio.gather(*(app[APP_FIRE_AND_FORGET_TASKS_KEY]), return_exceptions=True)
 
 
