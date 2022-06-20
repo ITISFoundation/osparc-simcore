@@ -1,10 +1,10 @@
 import asyncio
-import inspect
 import functools
+import inspect
 import logging
 from typing import Any, Awaitable, Callable, Optional
 
-from httpx import AsyncClient, ConnectError, TransportError, Response
+from httpx import AsyncClient, ConnectError, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -13,9 +13,9 @@ from tenacity.wait import wait_exponential
 
 from ._errors import (
     ClientTransportError,
+    UnexpectedStatusError,
     WrongReturnType,
     _RetryRequestError,
-    UnexpectedStatusError,
 )
 
 logger = logging.getLogger(__name__)

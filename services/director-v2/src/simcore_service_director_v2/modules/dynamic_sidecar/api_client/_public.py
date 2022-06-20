@@ -1,22 +1,24 @@
+import logging
 from bdb import set_trace
-from ._thin_client import ThinDynamicSidecarClient
-from pydantic import AnyHttpUrl
-from httpx import HTTPError
+from collections import deque
+from typing import Any, Optional
+
 from fastapi import status
-from ..errors import (
-    DynamicSidecarUnexpectedResponseStatus,
-    NodeportsDidNotFindNodeError,
-    EntrypointContainerNotFoundError,
-)
+from httpx import HTTPError
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
-from ....utils.logging_utils import log_decorator
-import logging
-from typing import Any, Optional
-from ._errors import UnexpectedStatusError
-from collections import deque
-from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
+from pydantic import AnyHttpUrl
 from servicelib.utils import logged_gather
+
+from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
+from ....utils.logging_utils import log_decorator
+from ..errors import (
+    DynamicSidecarUnexpectedResponseStatus,
+    EntrypointContainerNotFoundError,
+    NodeportsDidNotFindNodeError,
+)
+from ._errors import UnexpectedStatusError
+from ._thin_client import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
 
