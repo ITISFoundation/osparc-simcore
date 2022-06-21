@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __buildLayout: function(showMaximize) {
       const image = new osparc.ui.basic.Logo().set({
-        width: 200,
+        width: 260,
         height: 120
       });
 
