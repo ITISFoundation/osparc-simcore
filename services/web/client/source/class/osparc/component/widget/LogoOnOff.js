@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
   construct: function() {
     this.base(arguments);
 
-    this.getChildControl("off-logo-container");
+    this.getChildControl("off-logo");
     this.getChildControl("on-logo");
   },
 
@@ -60,15 +60,19 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
             alignX: "center"
           }));
           control.add(new qx.ui.core.Spacer(null, 8));
-          const offLogo = new qx.ui.basic.Image("osparc/offline.svg").set({
+          this.add(control);
+          break;
+        }
+        case "off-logo": {
+          control = new qx.ui.basic.Image("osparc/offline.svg").set({
             width: 92,
             height: 35,
             scale: true
           });
-          control.add(offLogo, {
+          const container = this.getChildControl("off-logo-container");
+          container.add(control, {
             flex: 1
           });
-          this.add(control);
           break;
         }
         case "on-logo": {

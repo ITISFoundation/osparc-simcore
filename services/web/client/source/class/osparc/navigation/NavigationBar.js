@@ -126,7 +126,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const h = document.documentElement.clientHeight;
       this.setHeight(h > 900 ? 60 : 50);
 
-      this.getChildControl("logo").getChildControl("on-logo").setSize({
+      const logo = this.getChildControl("logo");
+
+      logo.getChildControl("off-logo").set({
+        width: h > 900 ? 110 : 100,
+        height: h > 900 ? 45 : 35
+      });
+
+      logo.getChildControl("on-logo").setSize({
         width: h > 900 ? 110 : 100,
         height: h > 900 ? 60 : 50
       });
