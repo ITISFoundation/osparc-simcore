@@ -53,8 +53,6 @@ anyio==3.6.1
     #   starlette
 asgiref==3.5.2
     # via uvicorn
-async-generator==1.10
-    # via -r requirements/_base.in
 async-timeout==4.0.2
     # via
     #   -r requirements/_base.in
