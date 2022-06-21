@@ -719,7 +719,7 @@ jobs:
       - uses: actions/setup-node@v3.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'npm'
+          cache: "npm"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1603,12 +1603,8 @@ jobs:
       - uses: actions/setup-node@v3.3.0
         with:
           node-version: ${{ matrix.node }}
-<<<<<<< HEAD
-
-=======
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
->>>>>>> parent of 82f4cfce8... cache in setup-python failing (#3097)
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
