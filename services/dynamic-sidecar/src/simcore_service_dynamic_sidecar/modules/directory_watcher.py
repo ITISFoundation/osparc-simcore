@@ -85,10 +85,17 @@ async def _push_directory_after_event_chain(directory_path: Path) -> None:
     await _push_directory(directory_path)
 
 
-def async_push_directory(event_loop: AbstractEventLoop, directory_path: Path) -> None:
-    event_loop.create_task(
-        _push_directory_after_event_chain(directory_path), name=TASK_NAME_FOR_CLEANUP
+def async_push_directory(
+    event_loop: AbstractEventLoop,
+    directory_path: Path,
+    tasks_collection: set[asyncio.Task[Any]],
+) -> None:
+    task = event_loop.create_task(
+        _push_directory_after_event_chain(directory_path),
+        name=TASK_NAME_FOR_CLEANUP,
     )
+    tasks_collection.add(task)
+    task.add_done_callback(tasks_collection.discard)
 
 
 class UnifyingEventHandler(FileSystemEventHandler):
@@ -98,6 +105,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
         self.loop: AbstractEventLoop = loop
         self.directory_path: Path = directory_path
         self._is_enabled: bool = True
+        self._background_tasks: set[asyncio.Task[Any]] = set()
 
     def set_enabled(self, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
@@ -105,7 +113,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
     def _invoke_push_directory(self) -> None:
         # wrapping the function call in the object
         # helps with testing, it is simplet to mock
-        async_push_directory(self.loop, self.directory_path)
+        async_push_directory(self.loop, self.directory_path, self._background_tasks)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
