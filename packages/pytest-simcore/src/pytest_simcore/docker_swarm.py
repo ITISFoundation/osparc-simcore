@@ -254,7 +254,7 @@ def docker_stack(
 
         async def _check_all_services_are_running():
             async for attempt in AsyncRetrying(
-                wait=wait_fixed(1),
+                wait=wait_fixed(5),
                 stop=stop_after_delay(8 * MINUTE),
                 before_sleep=before_sleep_log(log, logging.INFO),
                 reraise=True,
