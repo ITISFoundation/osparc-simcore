@@ -20,6 +20,7 @@ from models_library.services import ServiceDockerData
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
+from sqlalchemy import null
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.dependencies.director import get_director_api
@@ -108,8 +109,12 @@ async def _create_services_in_db(
         )
 
         # Supply deprecation_date field (set to null, which corresponds to None in python)
-        service_metadata_dict = service_metadata.dict().update({"deprecated_at":None})
-
+        service_metadata_dict = service_metadata.dict()
+        logger.debug("SMDdebug1")
+        logger.debug(service_metadata_dict)
+        if "deprecated" not in service_metadata_dict:
+            service_metadata_dict["deprecated"] = null()
+        logger.warning(service_metadata_dict)
         # set the service in the DB
         await services_repo.create_service(
             ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
