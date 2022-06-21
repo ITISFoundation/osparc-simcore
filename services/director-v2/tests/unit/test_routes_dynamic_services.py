@@ -69,7 +69,7 @@ def dynamic_sidecar_headers() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
+def mock_env(monkeypatch: MonkeyPatch, session_docker_swarm: None) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -250,7 +250,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 def test_create_dynamic_services(
-    docker_swarm: None,
+    session_docker_swarm: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
@@ -385,7 +385,7 @@ def test_get_service_status(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
-    docker_swarm: None,
+    session_docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,

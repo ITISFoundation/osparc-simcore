@@ -154,12 +154,8 @@ def keep_docker_up(request) -> bool:
     return request.config.getoption("--keep-docker-up")
 
 
-@pytest.fixture(scope="module")
-def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
-) -> Iterator[None]:
+def _docker_swarm_initialized(docker_client: docker.client.DockerClient) -> Generator:
     """inits docker swarm"""
-
     for attempt in Retrying(
         wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
@@ -170,15 +166,42 @@ def docker_swarm(
                 print("--> docker swarm initialized.")
             # if still not in swarm, raise an error to try and initialize again
             _in_docker_swarm(docker_client, raise_error=True)
-
     assert _in_docker_swarm(docker_client) is True
+    yield
 
+    # cleanup
+    print("<-- leaving docker swarm...")
+    assert docker_client.swarm.leave(force=True)
+    print("<-- docker swarm left.")
+    assert _in_docker_swarm(docker_client) is False
+
+
+@pytest.fixture(scope="module")
+def docker_swarm(
+    docker_client: docker.client.DockerClient, keep_docker_up: bool
+) -> Iterator[None]:
+    g = _docker_swarm_initialized(docker_client)
+    next(g, None)
     yield
 
     if not keep_docker_up:
-        print("<-- leaving docker swarm...")
-        assert docker_client.swarm.leave(force=True)
-        print("<-- docker swarm left.")
+        # cleanup
+        next(g, None)
+
+    assert _in_docker_swarm(docker_client) is keep_docker_up
+
+
+@pytest.fixture(scope="session")
+def session_docker_swarm(
+    docker_client: docker.client.DockerClient, keep_docker_up: bool
+) -> Iterator[None]:
+    g = _docker_swarm_initialized(docker_client)
+    next(g, None)
+    yield
+
+    if not keep_docker_up:
+        # cleanup
+        next(g, None)
 
     assert _in_docker_swarm(docker_client) is keep_docker_up
 
