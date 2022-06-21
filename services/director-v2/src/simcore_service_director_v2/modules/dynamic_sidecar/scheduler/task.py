@@ -29,7 +29,9 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ..api_client import (
+    ClientTransportError,
     DynamicSidecarClient,
+    UnexpectedStatusError,
     get_dynamic_sidecar_client,
     update_dynamic_sidecar_health,
 )
@@ -232,7 +234,7 @@ class DynamicSidecarsScheduler:
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        except httpx.HTTPError:
+        except (httpx.HTTPError, UnexpectedStatusError, ClientTransportError):
             # error fetching docker_statues, probably someone should check
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,

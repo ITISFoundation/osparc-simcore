@@ -13,7 +13,7 @@ from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
-from ._errors import UnexpectedStatusError, ClientTransportError
+from ._errors import ClientTransportError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint, only_status=True
             )
             return response.json()
-        except (HTTPError, UnexpectedStatusError, ClientTransportError):
+        except UnexpectedStatusError:
             return {}
 
     @log_decorator(logger=logger)
