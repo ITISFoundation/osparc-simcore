@@ -6,7 +6,6 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Dict, List
 
 import aiohttp
 import pytest
@@ -105,10 +104,10 @@ class ServiceHealthcheckEndpoint:
 
 @pytest.fixture(scope="module")
 def services_endpoint(
-    core_services_selection: List[str],
-    docker_stack: Dict,
+    core_services_selection: list[str],
+    docker_stack: dict,
     testing_environ_vars: EnvVarsDict,
-) -> Dict[str, URL]:
+) -> dict[str, URL]:
     services_endpoint = {}
 
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
@@ -136,7 +135,7 @@ def services_endpoint(
 
 @pytest.fixture(scope="module")
 def simcore_services_ready(
-    services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
+    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
     """
     - Waits for services in `core_services_selection` to be healthy

@@ -1,12 +1,12 @@
 """
 Adds type hints to data structures in responses from docker daemon (typically included in docker sdk and aiodocker libraries)
+
 """
 
-from typing import Dict, List, TypedDict
+from typing import TypedDict
 
 UrlStr = str
 DateTimeStr = str
-
 
 #
 # Docker API JSON bodies
@@ -19,13 +19,13 @@ class ServiceSpecDict(TypedDict):
     docker service inspect $(id) | jq ".[0].Spec | keys"
     """
 
-    EndpointSpec: Dict
-    Labels: Dict[str, str]
-    Mode: Dict
+    EndpointSpec: dict
+    Labels: dict[str, str]
+    Mode: dict
     Name: str
-    RollbackConfig: Dict
-    TaskTemplate: Dict
-    UpdateConfig: Dict
+    RollbackConfig: dict
+    TaskTemplate: dict
+    UpdateConfig: dict
 
 
 class ServiceDict(TypedDict):
@@ -34,16 +34,16 @@ class ServiceDict(TypedDict):
     """
 
     ID: str
-    Version: Dict
+    Version: dict
     CreatedAt: DateTimeStr
     UpdatedAt: DateTimeStr
     Spec: ServiceSpecDict
-    Endpoint: Dict
+    Endpoint: dict
 
 
 class ContainerSpec(TypedDict):
     Image: str
-    Labels: Dict[str, str]
+    Labels: dict[str, str]
     Hostname: str
 
 
@@ -62,7 +62,7 @@ class StatusDict(TypedDict):
     # e.g. in StatusDict1 we add
     # ContainerStatus:
 
-    PortStatus: Dict
+    PortStatus: dict
 
 
 class VersionDict(TypedDict):
@@ -83,10 +83,7 @@ class TaskDict(TypedDict):
     ServiceID: str
     NodeID: str
     Slot: int
-    Status: Dict
+    Status: dict
     DesiredState: str
-    NetworkAttachments: List[Dict]
+    NetworkAttachments: list[dict]
     # ...
-
-
-UrlStr = str

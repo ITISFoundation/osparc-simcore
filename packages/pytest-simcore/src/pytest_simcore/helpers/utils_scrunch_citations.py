@@ -9,11 +9,10 @@
 """
 
 import re
-from typing import List, Tuple
 
 
-def split_citations(citations: List[str]) -> List[Tuple[str, str]]:
-    def _split(citation: str) -> Tuple[str, str]:
+def split_citations(citations: list[str]) -> list[tuple[str, str]]:
+    def _split(citation: str) -> tuple[str, str]:
         if "," not in citation:
             citation = citation.replace("(", "(,")
         name, rrid = re.match(r"^\((.*),\s*RRID:(.+)\)$", citation).groups()

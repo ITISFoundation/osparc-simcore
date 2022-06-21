@@ -2,7 +2,7 @@ import logging
 import os
 from functools import partial
 from pprint import pformat
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Optional
 
 import typer
 from pydantic import BaseModel, SecretStr, ValidationError
@@ -67,7 +67,7 @@ def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
     )
 
 
-def create_json_encoder_wo_secrets(model_cls: Type[BaseModel]):
+def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
     current_encoders = getattr(model_cls.Config, "json_encoders", {})
     encoder = partial(
         custom_pydantic_encoder,
@@ -80,7 +80,7 @@ def create_json_encoder_wo_secrets(model_cls: Type[BaseModel]):
 
 
 def create_settings_command(
-    settings_cls: Type[BaseCustomSettings], logger: Optional[logging.Logger] = None
+    settings_cls: type[BaseCustomSettings], logger: Optional[logging.Logger] = None
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -139,7 +139,7 @@ def create_settings_command(
             )
             raise
 
-        pydantic_export_options: Dict[str, Any] = {"exclude_unset": exclude_unset}
+        pydantic_export_options: dict[str, Any] = {"exclude_unset": exclude_unset}
         if show_secrets:
             # NOTE: this option is for json-only
             pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(

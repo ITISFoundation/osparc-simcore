@@ -2,23 +2,14 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 import os
 import shutil
 from pathlib import Path
 
 import pytest
-import yaml
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
-from utils import (
-    dump_specs,
-    is_json_schema,
-    is_openapi_schema,
-    list_files_in_api_specs,
-    load_specs,
-    specs_folder,
-)
+from utils import dump_specs, is_json_schema, is_openapi_schema, load_specs
 
 # Conventions
 _REQUIRED_FIELDS = ["error", "data"]
@@ -45,7 +36,7 @@ def add_namespace_for_converted_schemas(schema_specs: dict):
 
 
 def change_references_to_schemas(filepath: Path, specs: dict):
-    from os.path import relpath, isabs, join, abspath, exists
+    from os.path import abspath, exists, isabs, relpath
 
     filedir = filepath.parent
 
@@ -97,12 +88,12 @@ def change_references_to_schemas(filepath: Path, specs: dict):
 @pytest.fixture(scope="session")
 def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
     """
-        - All api_specs files are copied into tmpdir
-        - All openapi files under schemas/ folders are processed into valid openapi specs
-        - All references to these files are replaced from
-            $ref: ... /schemas/some_file.yaml#Reference
-        to
-            $ref: ... /schemas/some_file.yaml#/components/reference/Reference
+    - All api_specs files are copied into tmpdir
+    - All openapi files under schemas/ folders are processed into valid openapi specs
+    - All references to these files are replaced from
+        $ref: ... /schemas/some_file.yaml#Reference
+    to
+        $ref: ... /schemas/some_file.yaml#/components/reference/Reference
 
     """
     basedir = api_specs_dir
@@ -155,4 +146,4 @@ def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir)
         specs = load_specs(api_specs_path)
         validate_spec(specs, spec_url=api_specs_path.as_uri())
     except OpenAPIValidationError as err:
-        pytest.fail("Failed validating {}:\n{}".format(api_specs_path, err.message))
+        pytest.fail(f"Failed validating {api_specs_path}:\n{err.message}")
