@@ -5,7 +5,6 @@ import re
 import warnings
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
 
 import yaml
 
@@ -19,7 +18,7 @@ warnings.warn(
 )
 
 
-def _load_env(file_handler) -> Dict:
+def _load_env(file_handler) -> dict:
     """Deserializes an environment file like .env-devel and
     returns a key-value map of the environment
 
@@ -38,9 +37,9 @@ def _load_env(file_handler) -> Dict:
 
 
 def eval_environs_in_docker_compose(
-    docker_compose: Dict,
+    docker_compose: dict,
     docker_compose_dir: Path,
-    host_environ: Dict = None,
+    host_environ: dict = None,
     *,
     use_env_devel=True,
 ):
@@ -58,9 +57,9 @@ def eval_environs_in_docker_compose(
 
 
 def replace_environs_in_docker_compose_service(
-    service_section: Dict,
+    service_section: dict,
     docker_compose_dir: Path,
-    host_environ: Dict = None,
+    host_environ: dict = None,
     *,
     use_env_devel=True,
 ):
@@ -75,7 +74,7 @@ def replace_environs_in_docker_compose_service(
     service_environ = {}
 
     # environment defined in env_file
-    env_files: List[str] = service_section.pop("env_file", [])
+    env_files: list[str] = service_section.pop("env_file", [])
     for env_file in env_files:
         if env_file.endswith(".env") and use_env_devel:
             env_file += "-devel"
@@ -110,8 +109,8 @@ def replace_environs_in_docker_compose_service(
 def eval_service_environ(
     docker_compose_path: Path,
     service_name: str,
-    host_environ: Dict = None,
-    image_environ: Dict = None,
+    host_environ: dict = None,
+    image_environ: dict = None,
     *,
     use_env_devel=True,
 ) -> EnvVarsDict:

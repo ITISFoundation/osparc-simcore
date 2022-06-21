@@ -7,7 +7,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any, AsyncIterator, Optional
 
 import aio_pika
 import pytest
@@ -40,7 +40,7 @@ async def wait_till_rabbit_responsive(url: str) -> None:
 
 @pytest.fixture(scope="function")
 async def rabbit_settings(
-    docker_stack: Dict, testing_environ_vars: Dict  # stack is up
+    docker_stack: dict, testing_environ_vars: dict  # stack is up
 ) -> RabbitSettings:
     """Returns the settings of a rabbit service that is up and responsive"""
 

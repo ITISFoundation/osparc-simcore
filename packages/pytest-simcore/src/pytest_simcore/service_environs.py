@@ -16,6 +16,5 @@ def service_env_file(project_slug_dir: Path) -> Path:
 
 @pytest.fixture(scope="session", autouse=True)
 def service_test_environ(service_env_file: Path) -> None:
-    """this fixtures overload the environ with unit testing only variables
-    """
+    """this fixtures overload the environ with unit testing only variables"""
     load_dotenv(service_env_file, verbose=True)

@@ -8,8 +8,8 @@ assert any(repo_base_dir.glob(".git"))
 
 
 def test_root_dir_with_installed_plugin(testdir):
-    """ Make sure osparc_simcore_root_dir is correct
-        even when pytest-simcore installed
+    """Make sure osparc_simcore_root_dir is correct
+    even when pytest-simcore installed
     """
 
     # create a temporary pytest test module
@@ -27,7 +27,9 @@ def test_root_dir_with_installed_plugin(testdir):
     # fnmatch_lines does an assertion internally
     # WARNING: this does not work with pytest-sugar!
     result.stdout.fnmatch_lines(
-        ["*::test_sth PASSED*",]
+        [
+            "*::test_sth PASSED*",
+        ]
     )
 
     # make sure that that we get a '0' exit code for the testsuite

@@ -4,7 +4,6 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
 import docker
 import yaml
@@ -47,7 +46,7 @@ FAILED_STATES = [
 def get_tasks_summary(service_tasks):
     msg = ""
     for task in service_tasks:
-        status: Dict = task["Status"]
+        status: dict = task["Status"]
         msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
@@ -78,7 +77,7 @@ def core_docker_compose_file() -> Path:
     return stack_files[0]
 
 
-def core_services() -> List[str]:
+def core_services() -> list[str]:
     with core_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
@@ -88,7 +87,7 @@ def ops_docker_compose_file() -> Path:
     return osparc_simcore_root_dir() / ".stack-ops.yml"
 
 
-def ops_services() -> List[str]:
+def ops_services() -> list[str]:
     with ops_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
@@ -122,11 +121,11 @@ def wait_for_services() -> int:
         ):
             with attempt:
                 started_services = sorted(
-                    [
+                    (
                         s
                         for s in client.services.list()
                         if s.name.split("_")[-1] in expected_services
-                    ],
+                    ),
                     key=by_service_creation,
                 )
 
@@ -157,7 +156,7 @@ def wait_for_services() -> int:
                 wait=wait_fixed(WAIT_BEFORE_RETRY),
             ):
                 with attempt:
-                    service_tasks: List[Dict] = service.tasks()  #  freeze
+                    service_tasks: list[dict] = service.tasks()  #  freeze
                     print(get_tasks_summary(service_tasks))
 
                     #

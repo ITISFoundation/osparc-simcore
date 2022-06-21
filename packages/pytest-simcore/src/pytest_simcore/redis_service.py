@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterator, Dict, Union
+from typing import AsyncIterator, Union
 
 import pytest
 import tenacity
@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture
 async def redis_settings(
-    docker_stack: Dict,  # stack is up
-    testing_environ_vars: Dict,
+    docker_stack: dict,  # stack is up
+    testing_environ_vars: dict,
 ) -> RedisSettings:
     """Returns the settings of a redis service that is up and responsive"""
 

@@ -5,7 +5,6 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
 
 import dotenv
 import pytest
@@ -13,7 +12,7 @@ from _pytest.monkeypatch import MonkeyPatch
 
 
 @pytest.fixture(scope="session")
-def env_devel_dict(env_devel_file: Path) -> Dict[str, str]:
+def env_devel_dict(env_devel_file: Path) -> dict[str, str]:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -23,8 +22,8 @@ def env_devel_dict(env_devel_file: Path) -> Dict[str, str]:
 
 @pytest.fixture(scope="function")
 def mock_env_devel_environment(
-    env_devel_dict: Dict[str, str], monkeypatch: MonkeyPatch
-) -> Dict[str, str]:
+    env_devel_dict: dict[str, str], monkeypatch: MonkeyPatch
+) -> dict[str, str]:
     for key, value in env_devel_dict.items():
         monkeypatch.setenv(key, str(value))
     return deepcopy(env_devel_dict)

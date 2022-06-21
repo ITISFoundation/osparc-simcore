@@ -4,7 +4,7 @@
 
 import logging
 import subprocess
-from typing import Any, Dict, List, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 import pytest
 from docker import DockerClient
@@ -37,7 +37,7 @@ _MINUTE: int = 60  # secs
 
 
 ServiceNameStr = str
-ComposeSpec = Dict[str, Any]
+ComposeSpec = dict[str, Any]
 UrlStr = str
 
 
@@ -47,15 +47,15 @@ class StackInfo(TypedDict):
 
 
 class DockerStackInfo(TypedDict):
-    stacks: Dict[Literal["core", "ops"], StackInfo]
-    services: List[ServiceNameStr]
+    stacks: dict[Literal["core", "ops"], StackInfo]
+    services: list[ServiceNameStr]
 
 
 # CORE stack -----------------------------------
 
 
 @pytest.fixture(scope="module")
-def core_services_selection(simcore_docker_compose: Dict) -> List[ServiceNameStr]:
+def core_services_selection(simcore_docker_compose: dict) -> list[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
     # select ALL services for these tests
     return list(simcore_docker_compose["services"].keys())
@@ -71,7 +71,7 @@ def core_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
 
 @pytest.fixture(scope="module")
 def core_stack_compose_specs(
-    docker_stack: DockerStackInfo, simcore_docker_compose: Dict
+    docker_stack: DockerStackInfo, simcore_docker_compose: dict
 ) -> ComposeSpec:
     # verifies core_services_selection
     assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(
@@ -87,7 +87,7 @@ def simcore_stack_deployed_services(
     ops_stack_namespace: str,
     core_stack_compose_specs: ComposeSpec,
     docker_client: DockerClient,
-) -> List[Service]:
+) -> list[Service]:
 
     # NOTE: the goal here is NOT to test time-to-deploy but
     # rather guaranteing that the framework is fully deployed before starting
@@ -119,7 +119,7 @@ def simcore_stack_deployed_services(
         # ...
 
     # TODO: find a more reliable way to list services in a stack
-    core_stack_services: List[Service] = [
+    core_stack_services: list[Service] = [
         service
         for service in docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
@@ -139,7 +139,7 @@ def simcore_stack_deployed_services(
 
 
 @pytest.fixture(scope="module")
-def ops_services_selection(ops_docker_compose: ComposeSpec) -> List[ServiceNameStr]:
+def ops_services_selection(ops_docker_compose: ComposeSpec) -> list[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
     # select ALL services for these tests
     return list(ops_docker_compose["services"].keys())

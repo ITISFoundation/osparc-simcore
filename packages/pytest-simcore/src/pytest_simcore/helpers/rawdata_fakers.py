@@ -15,7 +15,7 @@ import itertools
 import json
 import random
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 from uuid import uuid4
 
 import faker
@@ -56,7 +56,7 @@ def _compute_hash(password: str) -> str:
 _DEFAULT_HASH = _compute_hash("secret")
 
 
-def random_user(**overrides) -> Dict[str, Any]:
+def random_user(**overrides) -> dict[str, Any]:
     data = dict(
         name=_faker.name(),
         email=_faker.email(),
@@ -64,7 +64,7 @@ def random_user(**overrides) -> Dict[str, Any]:
         status=UserStatus.ACTIVE,
         created_ip=_faker.ipv4(),
     )
-    assert set(data.keys()).issubset(set(c.name for c in users.columns))  # nosec
+    assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
 
     # transform password in hash
     password = overrides.pop("password", None)
@@ -75,7 +75,7 @@ def random_user(**overrides) -> Dict[str, Any]:
     return data
 
 
-def random_project(**overrides) -> Dict[str, Any]:
+def random_project(**overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
     data = dict(
         uuid=_faker.uuid4(),
@@ -87,13 +87,13 @@ def random_project(**overrides) -> Dict[str, Any]:
         workbench={},
         published=False,
     )
-    assert set(data.keys()).issubset(set(c.name for c in projects.columns))  # nosec
+    assert set(data.keys()).issubset({c.name for c in projects.columns})  # nosec
 
     data.update(overrides)
     return data
 
 
-def random_group(**overrides) -> Dict[str, Any]:
+def random_group(**overrides) -> dict[str, Any]:
     data = dict(
         name=_faker.company(), description=_faker.text(), type=ProjectType.STANDARD.name
     )
@@ -101,7 +101,7 @@ def random_group(**overrides) -> Dict[str, Any]:
     return data
 
 
-def fake_pipeline(**overrides) -> Dict[str, Any]:
+def fake_pipeline(**overrides) -> dict[str, Any]:
     data = dict(
         dag_adjacency_list=json.dumps({}),
         state=random.choice(STATES),
@@ -114,7 +114,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
     # Each new instance of fake_task will get a copy
     _index_in_sequence = itertools.count(start=first_internal_id)
 
-    def fake_task(**overrides) -> Dict[str, Any]:
+    def fake_task(**overrides) -> dict[str, Any]:
 
         t0 = datetime.utcnow()
         data = dict(
