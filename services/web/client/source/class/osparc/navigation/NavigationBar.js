@@ -58,9 +58,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       height: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
-
-    setTimeout(() => this.__checkScreenSize(), 100);
-    window.addEventListener("resize", () => this.__checkScreenSize());
   },
 
   events: {
@@ -100,11 +97,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   members: {
     __serverStatics: null,
-
-    __checkScreenSize: function() {
-      const h = document.documentElement.clientHeight;
-      this.setHeight(h > 900 ? 60 : 50);
-    },
 
     buildLayout: function() {
       this.getChildControl("left-items");

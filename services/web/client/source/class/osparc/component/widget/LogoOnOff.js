@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
 
     const onLogo = new osparc.ui.basic.LogoWPlatform();
     onLogo.setSize({
-      width: 120,
+      width: 110,
       height: 50
     });
     onLogo.setFont("text-9");

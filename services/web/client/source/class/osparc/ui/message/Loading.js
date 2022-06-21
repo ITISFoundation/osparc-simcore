@@ -57,13 +57,13 @@ qx.Class.define("osparc.ui.message.Loading", {
     header: {
       check: "String",
       nullable: true,
-      apply: "_applyHeader"
+      apply: "__applyHeader"
     },
 
     messages: {
       check: "Array",
       nullable: true,
-      apply: "_applyMessages"
+      apply: "__applyMessages"
     }
   },
 
@@ -84,7 +84,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __buildLayout: function(showMaximize) {
       const image = new osparc.ui.basic.Logo().set({
         width: 260,
-        height: 120
+        height: 110
       });
 
       const atom = this.__header = new qx.ui.basic.Atom().set({
@@ -102,7 +102,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         padding: 20
       });
 
-      const loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+      const loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "center",
         alignY: "middle"
       }));
@@ -139,14 +139,14 @@ qx.Class.define("osparc.ui.message.Loading", {
       }
     },
 
-    _applyHeader: function(value, old) {
+    __applyHeader: function(value, old) {
       this.__header.setLabel(value);
     },
 
-    _applyMessages: function(msgs, old) {
+    __applyMessages: function(msgs, old) {
       this.__messages.removeAll();
       msgs.forEach(msg => {
-        const text = new qx.ui.basic.Label("- " + msg.toString()).set({
+        const text = new qx.ui.basic.Label(msg.toString()).set({
           font: "text-18"
         });
         this.__messages.add(text);
