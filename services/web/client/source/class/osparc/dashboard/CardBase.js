@@ -427,6 +427,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         cursor: enabled ? "pointer" : "not-allowed"
       });
+      if (enabled) {
+        this.resetToolTipText();
+      }
 
       this._getChildren().forEach(item => {
         item.setOpacity(enabled ? 1.0 : 0.4);
