@@ -1,11 +1,13 @@
 #!/bin/bash
-# http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o errexit
 set -o nounset
 set -o pipefail
 IFS=$'\n\t'
-
-
+#
+# SEE https://github.com/asottile/pyupgrade
+#
+#
+# NOTE: check --py* flag in CLI when PYTHON_VERSION is modified
 PYTHON_VERSION=3.9.12
 IMAGE_NAME="local/pyupgrade-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
@@ -42,14 +44,6 @@ Run() {
     "$@"
 
 }
-
-# Examples:
-#  - SEE  https://pydeps.readthedocs.io/en/latest/#usage
-#
-# ./scripts/pydeps.bash services/web/server/src/simcore_service_webserver --cluster
-# ./scripts/pydeps.bash services/web/server/src/simcore_service_webserver --only "simcore_service_webserver.projects" --cluster
-#
-#
 
 Build
 Run "$@"
