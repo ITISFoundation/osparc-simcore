@@ -4,6 +4,7 @@
 
 import asyncio
 from pathlib import Path
+from random import randint
 from typing import Awaitable, Coroutine, Union
 
 import pytest
@@ -98,6 +99,7 @@ def print_tree(path: Path, level=0):
 @pytest.fixture()
 async def coroutine_that_cancels() -> Union[asyncio.Future, Awaitable]:
     async def _self_cancelling() -> None:
+        await asyncio.sleep(0)  # NOTE: this forces a context switch
         raise asyncio.CancelledError("manual cancellation")
 
     return _self_cancelling()
@@ -106,26 +108,52 @@ async def coroutine_that_cancels() -> Union[asyncio.Future, Awaitable]:
 async def test_fire_and_forget_cancellation_errors_raised_when_awaited(
     coroutine_that_cancels: Coroutine,
     faker: Faker,
-) -> None:
+):
     tasks_collection = set()
     task = fire_and_forget_task(
         coroutine_that_cancels,
         task_suffix_name=faker.pystr(),
         fire_and_forget_tasks_collection=tasks_collection,
     )
+    assert task in tasks_collection
     with pytest.raises(asyncio.CancelledError):
         await task
+    assert task not in tasks_collection
 
 
 async def test_fire_and_forget_cancellation_no_errors_raised(
     coroutine_that_cancels: Coroutine,
     faker: Faker,
-) -> None:
+):
     tasks_collection = set()
     task = fire_and_forget_task(
         coroutine_that_cancels,
         task_suffix_name=faker.pystr(),
         fire_and_forget_tasks_collection=tasks_collection,
     )
-    await asyncio.sleep(0.1)
+    assert task in tasks_collection
+    await asyncio.sleep(1)
     assert task.cancelled() is True
+    assert task not in tasks_collection
+
+
+async def test_fire_and_forget_1000s_tasks(faker: Faker):
+    tasks_collection = set()
+
+    async def _some_task(n: int):
+        await asyncio.sleep(randint(1, 3))
+        return f"I'm great since I slept a bit, and by the way I'm task {n}"
+
+    for n in range(1000):
+        fire_and_forget_task(
+            _some_task(n),
+            task_suffix_name=f"{faker.pystr()}_{n}",
+            fire_and_forget_tasks_collection=tasks_collection,
+        )
+    assert len(tasks_collection) == 1000
+    done, pending = await asyncio.wait(
+        tasks_collection, timeout=10, return_when=asyncio.ALL_COMPLETED
+    )
+    assert len(done) == 1000
+    assert len(pending) == 0
+    assert len(tasks_collection) == 0
