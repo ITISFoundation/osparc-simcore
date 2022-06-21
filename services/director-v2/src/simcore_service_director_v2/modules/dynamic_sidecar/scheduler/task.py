@@ -405,7 +405,10 @@ class DynamicSidecarsScheduler:
                     name=f"observe_{service_name}",
                 )
                 observation_task.add_done_callback(
-                    lambda task: self._service_observation_task.pop(service_name, None)
+                    # NOTE: lambdas are evaluated at execution time, so we assign it at definition time this way
+                    lambda task=observation_task: self._service_observation_task.pop(
+                        service_name, None
+                    )
                 )
                 logger.debug(
                     "created %s for %s", f"{observation_task=}", f"{service_name=}"
