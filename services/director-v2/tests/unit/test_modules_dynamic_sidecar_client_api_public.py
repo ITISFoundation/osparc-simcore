@@ -2,7 +2,7 @@
 # pylint:disable=redefined-outer-name
 
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Optional, Type
+from typing import Any, AsyncIterable, Callable, Iterator, Optional, Type
 from unittest.mock import AsyncMock
 
 import pytest
@@ -17,6 +17,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
+    setup_api_client,
+    get_dynamic_sidecar_client,
+    close_api_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarUnexpectedResponseStatus,
@@ -56,8 +59,12 @@ def mocked_app(monkeypatch: MonkeyPatch, mock_env: None) -> FastAPI:
 
 
 @pytest.fixture
-def dynamic_sidecar_client(mocked_app: FastAPI) -> DynamicSidecarClient:
-    return DynamicSidecarClient(mocked_app)
+async def dynamic_sidecar_client(
+    mocked_app: FastAPI,
+) -> AsyncIterable[DynamicSidecarClient]:
+    await setup_api_client(mocked_app)
+    yield get_dynamic_sidecar_client(mocked_app)
+    await close_api_client(mocked_app)
 
 
 @pytest.fixture
@@ -71,7 +78,7 @@ def get_patched_client(
         side_effect: Optional[Callable] = None,
     ) -> Iterator[DynamicSidecarClient]:
         mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.DynamicSidecarClient.{method}",
+            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin_client.ThinDynamicSidecarClient.{method}",
             return_value=return_value,
             side_effect=side_effect,
         )

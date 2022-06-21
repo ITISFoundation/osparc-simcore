@@ -23,12 +23,15 @@ from ._thin_client import ThinDynamicSidecarClient
 logger = logging.getLogger(__name__)
 
 
-class DynamicSidecarClient(ThinDynamicSidecarClient):
+class DynamicSidecarClient:
+    def __init__(self, app: FastAPI):
+        self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
+
     async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
         """returns True if service is UP and running else False"""
         try:
             # this request uses a very short timeout
-            response = await self.get_health(dynamic_sidecar_endpoint)
+            response = await self.thin_client.get_health(dynamic_sidecar_endpoint)
             return response.json()["is_healthy"]
         except (HTTPError, DynamicSidecarUnexpectedResponseStatus):
             return False
@@ -41,7 +44,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
-        response = await self.get_containers(
+        response = await self.thin_client.get_containers(
             dynamic_sidecar_endpoint, only_status=False
         )
         return response.json()
@@ -51,7 +54,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, dict[str, str]]:
         try:
-            response = await self.get_containers(
+            response = await self.thin_client.get_containers(
                 dynamic_sidecar_endpoint, only_status=True
             )
             return response.json()
@@ -62,7 +65,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
     async def start_service_creation(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, compose_spec: str
     ) -> None:
-        response = await self.post_containers(
+        response = await self.thin_client.post_containers(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
         logger.info("Spec submit result %s", response.text)
@@ -72,16 +75,16 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
         """runs docker compose down on the started spec"""
-        response = await self.post_containers_down(dynamic_sidecar_endpoint)
+        response = await self.thin_client.post_containers_down(dynamic_sidecar_endpoint)
         logger.info("Compose down result %s", response.text)
 
     @log_decorator(logger=logger)
     async def service_save_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        await self.post_containers_state_save(dynamic_sidecar_endpoint)
+        await self.thin_client.post_containers_state_save(dynamic_sidecar_endpoint)
 
     @log_decorator(logger=logger)
     async def service_restore_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        await self.post_containers_state_restore(dynamic_sidecar_endpoint)
+        await self.thin_client.post_containers_state_restore(dynamic_sidecar_endpoint)
 
     @log_decorator(logger=logger)
     async def service_pull_input_ports(
@@ -90,7 +93,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         port_keys: Optional[list[str]] = None,
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
-        response = await self.post_containers_ports_inputs_pull(
+        response = await self.thin_client.post_containers_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys=port_keys
         )
         return int(response.text)
@@ -99,7 +102,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
     async def service_disable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self.patch_containers_directory_watcher(
+        await self.thin_client.patch_containers_directory_watcher(
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
@@ -107,7 +110,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
     async def service_enable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self.patch_containers_directory_watcher(
+        await self.thin_client.patch_containers_directory_watcher(
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
@@ -115,7 +118,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
     async def service_outputs_create_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
     ) -> None:
-        await self.post_containers_ports_outputs_dirs(
+        await self.thin_client.post_containers_ports_outputs_dirs(
             dynamic_sidecar_endpoint, outputs_labels=outputs_labels
         )
 
@@ -125,7 +128,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
     ) -> int:
-        response = await self.post_containers_ports_outputs_pull(
+        response = await self.thin_client.post_containers_ports_outputs_pull(
             dynamic_sidecar_endpoint, port_keys=port_keys
         )
         return int(response.text)
@@ -138,7 +141,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
         try:
-            await self.post_containers_ports_outputs_push(
+            await self.thin_client.post_containers_ports_outputs_push(
                 dynamic_sidecar_endpoint, port_keys=port_keys
             )
         except UnexpectedStatusError as e:
@@ -162,7 +165,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         might still be starting.
         """
         try:
-            response = await self.get_containers_name(
+            response = await self.thin_client.get_containers_name(
                 dynamic_sidecar_endpoint,
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             )
@@ -177,7 +180,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         runs docker-compose stop and docker-compose start in succession
         resulting in a container restart without loosing state
         """
-        await self.post_containers_restart(dynamic_sidecar_endpoint)
+        await self.thin_client.post_containers_restart(dynamic_sidecar_endpoint)
 
     async def _attach_container_to_network(
         self,
@@ -187,7 +190,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         network_aliases: list[str],
     ) -> None:
         """attaches a container to a network if not already attached"""
-        await self.post_containers_networks_attach(
+        await self.thin_client.post_containers_networks_attach(
             dynamic_sidecar_endpoint,
             container_id=container_id,
             network_id=network_id,
@@ -198,7 +201,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, container_id: str, network_id: str
     ) -> None:
         """detaches a container from a network if not already detached"""
-        await self.post_containers_networks_detach(
+        await self.thin_client.post_containers_networks_detach(
             dynamic_sidecar_endpoint, container_id=container_id, network_id=network_id
         )
 
@@ -291,7 +294,7 @@ async def close_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
     client: Optional[DynamicSidecarClient]
     if client := app.state.dynamic_sidecar_api_client:
-        await client.close()
+        await client.thin_client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:

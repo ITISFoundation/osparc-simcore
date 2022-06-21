@@ -28,7 +28,7 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
+from ..api_client import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     are_all_services_present,
     constrain_service_to_node,

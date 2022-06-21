@@ -87,6 +87,8 @@ def expect_status(expected_code: int):
 
 
 class BaseHThinClient:
+    SKIP_METHODS: set[str] = {"close"}
+
     def __init__(
         self,
         *,
@@ -104,10 +106,11 @@ class BaseHThinClient:
         self._client: AsyncClient = AsyncClient(**client_args)
 
         # ensure all user defined public methods return `httpx.Response``
+
         pubic_methods = [
             x
             for x in inspect.getmembers(self, predicate=inspect.ismethod)
-            if not x[0].startswith("_")
+            if not (x[0].startswith("_") or x[0] in self.SKIP_METHODS)
         ]
 
         for _, method in pubic_methods:

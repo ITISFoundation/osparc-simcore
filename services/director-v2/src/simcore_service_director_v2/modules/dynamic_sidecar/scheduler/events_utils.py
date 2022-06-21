@@ -3,18 +3,19 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Type
 
 from fastapi import FastAPI
+from pydantic import AnyHttpUrl
 
 from ....api.dependencies.database import get_base_repository
 from ....models.schemas.dynamic_services import DockerContainerInspect
 from ....models.schemas.dynamic_services.scheduler import DockerStatus
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
-from ..client_api import DynamicSidecarClient
+from ..api_client import DynamicSidecarClient
 
 
 @asynccontextmanager
 async def disabled_directory_watcher(
-    dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: str
+    dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
 ) -> AsyncIterator[None]:
     try:
         # disable file system event watcher while writing

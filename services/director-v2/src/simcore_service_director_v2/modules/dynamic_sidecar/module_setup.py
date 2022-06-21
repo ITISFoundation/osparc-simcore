@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from .client_api import close_api_client, setup_api_client
+from .api_client import close_api_client, setup_api_client
 from .scheduler import setup_scheduler, shutdown_scheduler
 
 

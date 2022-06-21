@@ -28,7 +28,7 @@ from ....models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     SchedulerData,
 )
-from ..client_api import (
+from ..api_client import (
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
     update_dynamic_sidecar_health,
