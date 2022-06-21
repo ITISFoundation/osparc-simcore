@@ -624,7 +624,7 @@ async def post_trigger_connected_service_retrieve(
 ) -> None:
     await fire_and_forget_task(
         trigger_connected_service_retrieve(**kwargs),
-        task_name="trigger_connected_service_retrieve",
+        task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
@@ -775,7 +775,7 @@ async def try_close_project_for_user(
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
             remove_project_dynamic_services(user_id, project_uuid, app),
-            task_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+            task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
     else:

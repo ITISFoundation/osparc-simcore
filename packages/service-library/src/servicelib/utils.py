@@ -64,10 +64,10 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 def fire_and_forget_task(
     obj: Coroutine,
     *,
-    task_name: str,
+    task_suffix_name: str,
     fire_and_forget_tasks_collection: set[asyncio.Task],
 ) -> asyncio.Task:
-    task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_name}")
+    task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_suffix_name}")
     fire_and_forget_tasks_collection.add(task)
 
     def log_exception_callback(fut: asyncio.Future):

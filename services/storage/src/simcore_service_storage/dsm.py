@@ -582,7 +582,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 bucket_name=bucket_name,
                 object_name=object_name,
             ),
-            task_name=f"auto_update_{file_uuid=}_{user_id=}",
+            task_suffix_name=f"auto_update_{file_uuid=}_{user_id=}",
             fire_and_forget_tasks_collection=self.app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
 

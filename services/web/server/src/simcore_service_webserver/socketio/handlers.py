@@ -153,7 +153,7 @@ async def on_user_logout(
             # let's do it as a task so it does not block us here
             fire_and_forget_task(
                 disconnect_other_sockets(sio, sockets),
-                task_name=f"disconnect_other_sockets_{user_id=}",
+                task_suffix_name=f"disconnect_other_sockets_{user_id=}",
                 fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
 

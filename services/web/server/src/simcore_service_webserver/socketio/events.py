@@ -51,7 +51,7 @@ async def post_messages(
 ) -> None:
     fire_and_forget_task(
         send_messages(app, user_id, messages),
-        task_name=f"post_message_{user_id=}",
+        task_suffix_name=f"post_message_{user_id=}",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
@@ -61,7 +61,7 @@ async def post_group_messages(
 ) -> None:
     fire_and_forget_task(
         send_group_messages(app, room, messages),
-        task_name=f"post_group_messages_{room=}",
+        task_suffix_name=f"post_group_messages_{room=}",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 

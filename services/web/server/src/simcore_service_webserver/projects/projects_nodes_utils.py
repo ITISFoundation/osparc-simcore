@@ -130,6 +130,6 @@ async def update_frontend_outputs(
     for task_index, frontend_node_update_task in enumerate(frontend_nodes_update_tasks):
         fire_and_forget_task(
             frontend_node_update_task,
-            task_name=f"frontend_node_update_task_{task_index}",
+            task_suffix_name=f"frontend_node_update_task_{task_index}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )

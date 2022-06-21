@@ -110,7 +110,7 @@ async def test_fire_and_forget_cancellation_errors_raised_when_awaited(
     tasks_collection = set()
     task = fire_and_forget_task(
         coroutine_that_cancels,
-        task_name=faker.pystr(),
+        task_suffix_name=faker.pystr(),
         fire_and_forget_tasks_collection=tasks_collection,
     )
     with pytest.raises(asyncio.CancelledError):
@@ -124,7 +124,7 @@ async def test_fire_and_forget_cancellation_no_errors_raised(
     tasks_collection = set()
     task = fire_and_forget_task(
         coroutine_that_cancels,
-        task_name=faker.pystr(),
+        task_suffix_name=faker.pystr(),
         fire_and_forget_tasks_collection=tasks_collection,
     )
     await asyncio.sleep(0.1)
