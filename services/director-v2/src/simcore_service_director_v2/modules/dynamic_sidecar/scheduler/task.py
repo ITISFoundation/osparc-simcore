@@ -492,7 +492,7 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue = Queue()
 
         # let's properly cleanup remaining observation tasks
-        running_tasks = deepcopy(self._service_observation_task.values())
+        running_tasks = self._service_observation_task.values()
         for task in running_tasks:
             task.cancel()
         try:

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from copy import deepcopy
 from typing import Dict, Optional
 
 from aiohttp import web
@@ -20,7 +19,7 @@ async def shutdown_info(app: web.Application):
 
 
 async def stop_background_tasks(app: web.Application):
-    running_tasks = deepcopy(app[APP_FIRE_AND_FORGET_TASKS_KEY])
+    running_tasks = app[APP_FIRE_AND_FORGET_TASKS_KEY]
     task: asyncio.Task
     for task in running_tasks:
         task.cancel()
