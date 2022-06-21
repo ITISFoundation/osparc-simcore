@@ -8,7 +8,7 @@ import os
 import random
 import sys
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
+from typing import Any, AsyncGenerator, AsyncIterable, Iterator
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
@@ -71,12 +71,12 @@ def outputs_dir(io_temp_dir: Path) -> Path:
 
 
 @pytest.fixture
-def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
+def state_paths_dirs(io_temp_dir: Path) -> list[Path]:
     return [io_temp_dir / f"dir_{i}" for i in range(4)]
 
 
 @pytest.fixture
-def state_exclude_dirs(io_temp_dir: Path) -> List[Path]:
+def state_exclude_dirs(io_temp_dir: Path) -> list[Path]:
     return [io_temp_dir / f"dir_exclude_{i}" for i in range(4)]
 
 
@@ -87,8 +87,8 @@ def mock_environment(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
     faker: Faker,
 ) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -144,7 +144,7 @@ async def ensure_external_volumes(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
+    state_paths_dirs: list[Path],
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> AsyncGenerator[None, None]:
     """ensures inputs and outputs volumes for the service are present"""

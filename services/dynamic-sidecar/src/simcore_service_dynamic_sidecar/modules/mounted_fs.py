@@ -1,7 +1,7 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import AsyncGenerator, Generator, Iterator, List
+from typing import AsyncGenerator, Generator, Iterator
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -41,13 +41,13 @@ class MountedVolumes:
         self,
         inputs_path: Path,
         outputs_path: Path,
-        state_paths: List[Path],
-        state_exclude: List[str],
+        state_paths: list[Path],
+        state_exclude: list[str],
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
-        self.state_paths: List[Path] = state_paths
-        self.state_exclude: List[str] = state_exclude
+        self.state_paths: list[Path] = state_paths
+        self.state_exclude: list[str] = state_exclude
 
         self._ensure_directories()
 

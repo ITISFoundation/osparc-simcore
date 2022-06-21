@@ -5,7 +5,7 @@
 """
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional
 
 from ..models.domains.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
@@ -19,7 +19,7 @@ async def write_file_and_run_command(
     file_content: Optional[str],
     command: str,
     command_timeout: Optional[float],
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """The command which accepts {file_path} as an argument for string formatting"""
 
     # pylint: disable=not-async-context-manager
@@ -35,7 +35,7 @@ async def write_file_and_run_command(
 
 async def remove_the_compose_spec(
     shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Basically  'docker-compose down'"""
 
     stored_compose_content = shared_store.compose_spec

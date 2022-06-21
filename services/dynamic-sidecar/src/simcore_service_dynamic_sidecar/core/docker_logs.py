@@ -9,7 +9,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, Dict, Optional, cast
+from typing import Any, Callable, Coroutine, Optional, cast
 
 from fastapi import FastAPI
 
@@ -45,7 +45,7 @@ class BackgroundLogFetcher:
 
         self._app: FastAPI = app
 
-        self._log_processor_tasks: Dict[str, Task[None]] = {}
+        self._log_processor_tasks: dict[str, Task[None]] = {}
 
     @property
     def rabbitmq(self) -> RabbitMQ:

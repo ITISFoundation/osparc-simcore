@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, List
+from typing import AsyncIterator
 
 from servicelib.archiving_utils import archive_dir
 from servicelib.pools import async_on_threadpool
@@ -56,7 +56,7 @@ async def _isolated_temp_zip_path(path_to_compress: Path) -> AsyncIterator[Path]
         await async_on_threadpool(lambda: shutil.rmtree(base_dir, ignore_errors=True))
 
 
-async def upload_path_if_exists(path: Path, state_exclude: List[str]) -> None:
+async def upload_path_if_exists(path: Path, state_exclude: list[str]) -> None:
     """
     Zips the path in a temporary directory and uploads to storage
     """

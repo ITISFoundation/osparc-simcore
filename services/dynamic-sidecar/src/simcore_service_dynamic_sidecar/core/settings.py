@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import Optional, cast
 from uuid import UUID
 
 from models_library.basic_types import BootModeEnum, PortInt
@@ -73,10 +73,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_PATH_OUTPUTS: Path = Field(
         ..., description="path where to expect the outputs folder"
     )
-    DY_SIDECAR_STATE_PATHS: List[Path] = Field(
+    DY_SIDECAR_STATE_PATHS: list[Path] = Field(
         ..., description="list of additional paths to be synced"
     )
-    DY_SIDECAR_STATE_EXCLUDE: List[str] = Field(
+    DY_SIDECAR_STATE_EXCLUDE: list[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_USER_ID: UserID
