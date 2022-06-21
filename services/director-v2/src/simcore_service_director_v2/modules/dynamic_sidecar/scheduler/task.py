@@ -367,6 +367,7 @@ class DynamicSidecarsScheduler:
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
                 await _apply_observation_cycle(self.app, self, scheduler_data)
+                logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
             except Exception:  # pylint: disable=broad-except
@@ -386,12 +387,14 @@ class DynamicSidecarsScheduler:
                             "Skipped labels update, please check:\n %s", f"{e}"
                         )
 
-        service_name: Optional[str]
+        service_name: str
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
 
             if service_name not in self._to_observe:
-                # skip this cycle, the service is "gone"
+                logger.warning(
+                    "%s is missing from list of services to observe", f"{service_name=}"
+                )
                 continue
 
             if self._service_observation_task.get(service_name) is None:
@@ -402,9 +405,10 @@ class DynamicSidecarsScheduler:
                     name=f"observe_{service_name}",
                 )
                 observation_task.add_done_callback(
-                    lambda task: self._service_observation_task.pop(
-                        task.get_name(), None
-                    )
+                    lambda task: self._service_observation_task.pop(service_name, None)
+                )
+                logger.debug(
+                    "created %s for %s", f"{observation_task=}", f"{service_name=}"
                 )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
@@ -487,22 +491,27 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
+        # let's properly cleanup remaining observation tasks
         for task in self._service_observation_task.values():
             task.cancel()
         try:
             MAX_WAIT_TIME_SECONDS = 5
-            _, pending_tasks = await asyncio.wait(
-                self._service_observation_task.values(),
+            results = await asyncio.wait_for(
+                asyncio.gather(
+                    *self._service_observation_task.values(), return_exceptions=True
+                ),
                 timeout=MAX_WAIT_TIME_SECONDS,
-                return_when=asyncio.ALL_COMPLETED,
             )
-            logger.warning(
-                "There are still %s that did not cancel properly in %ss",
-                f"{pending_tasks=}",
-                MAX_WAIT_TIME_SECONDS,
+            if bad_results := filter(lambda r: isinstance(r, Exception), results):
+                logger.error(
+                    "Following observation tasks completed with an unexpected error:%s",
+                    f"{list(bad_results)}",
+                )
+        except asyncio.TimeoutError:
+            logger.error(
+                "Timed-out waiting for %s to complete: Check why this is blocking",
+                f"{self._service_observation_task.values()=}",
             )
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unhandled exception when cancelling observation tasks:")
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
