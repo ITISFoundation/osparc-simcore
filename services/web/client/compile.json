@@ -39,7 +39,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.zmt.ThemeDark",
       "name": "s4l",
-      "title": "Sim4Life",
+      "title": "Sim4Life - ZMT",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -54,7 +54,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.zmt.ThemeDark",
       "name": "tis",
-      "title": "TI Planning",
+      "title": "TI Planning - IT'IS",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
