@@ -15,6 +15,10 @@ push-outputs:  ## push the outputs for this service
 	@echo ">>>>> Expect a 204 reply if OK <<<<<"
 	curl -v -X POST ${BASE_ADDRESS}/containers/ports/outputs:push
 
+.PHONY: info
+info: ## displays app info
+	# app settings
+	@simcore-service-dynamic-sidecar settings --as-json
 
 .PHONY: help
 help:   ## this help
