@@ -21,13 +21,10 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
 )
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
-pytestmark = pytest.mark.asyncio
-
-
 # FIXTURES
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def app(
     monkeypatch_module: MonkeyPatch,
     mock_dy_volumes: Path,

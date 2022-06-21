@@ -6,14 +6,6 @@ from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.utils import _is_registry_reachable
 
-pytestmark = pytest.mark.asyncio
-
-pytest_plugins = [
-    "pytest_simcore.docker_registry",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.pytest_global_environs",
-]
-
 
 @pytest.fixture
 def registry_with_auth(
