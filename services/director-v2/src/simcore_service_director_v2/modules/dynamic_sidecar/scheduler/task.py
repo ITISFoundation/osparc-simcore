@@ -492,14 +492,13 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue = Queue()
 
         # let's properly cleanup remaining observation tasks
-        for task in self._service_observation_task.values():
+        running_tasks = deepcopy(self._service_observation_task.values())
+        for task in running_tasks:
             task.cancel()
         try:
             MAX_WAIT_TIME_SECONDS = 5
             results = await asyncio.wait_for(
-                asyncio.gather(
-                    *self._service_observation_task.values(), return_exceptions=True
-                ),
+                asyncio.gather(*running_tasks, return_exceptions=True),
                 timeout=MAX_WAIT_TIME_SECONDS,
             )
             if bad_results := filter(lambda r: isinstance(r, Exception), results):
@@ -509,8 +508,8 @@ class DynamicSidecarsScheduler:
                 )
         except asyncio.TimeoutError:
             logger.error(
-                "Timed-out waiting for %s to complete: Check why this is blocking",
-                f"{self._service_observation_task.values()=}",
+                "Timed-out waiting for %s to complete. Action: Check why this is blocking",
+                f"{running_tasks=}",
             )
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:

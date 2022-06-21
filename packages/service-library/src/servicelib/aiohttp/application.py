@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from copy import deepcopy
 from typing import Dict, Optional
 
 from aiohttp import web
@@ -19,24 +20,26 @@ async def shutdown_info(app: web.Application):
 
 
 async def stop_background_tasks(app: web.Application):
+    running_tasks = deepcopy(app[APP_FIRE_AND_FORGET_TASKS_KEY])
     task: asyncio.Task
-    for task in app[APP_FIRE_AND_FORGET_TASKS_KEY]:
+    for task in running_tasks:
         task.cancel()
     try:
         MAX_WAIT_TIME_SECONDS = 5
-        _, pending_tasks = await asyncio.wait(
-            app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        results = await asyncio.wait_for(
+            asyncio.gather(*running_tasks, return_exceptions=True),
             timeout=MAX_WAIT_TIME_SECONDS,
-            return_when=asyncio.ALL_COMPLETED,
         )
-        logger.warning(
-            "There are still %s that did not cancel properly in %ss",
-            f"{pending_tasks=}",
-            MAX_WAIT_TIME_SECONDS,
+        if bad_results := filter(lambda r: isinstance(r, Exception), results):
+            logger.error(
+                "Following observation tasks completed with an unexpected error:%s",
+                f"{list(bad_results)}",
+            )
+    except asyncio.TimeoutError:
+        logger.error(
+            "Timed-out waiting for %s to complete. Action: Check why this is blocking",
+            f"{running_tasks=}",
         )
-    except Exception:  # pylint: disable=broad-except
-        logger.exception("Unhandled exception when cancelling background tasks:")
-    await asyncio.gather(*(app[APP_FIRE_AND_FORGET_TASKS_KEY]), return_exceptions=True)
 
 
 def create_safe_application(config: Optional[Dict] = None) -> web.Application:
