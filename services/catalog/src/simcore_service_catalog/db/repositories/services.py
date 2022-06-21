@@ -89,7 +89,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                _make_list_services_query(
+                _make_list_services_query( ## Do we filter out deprecated services here?
                     gids,
                     execute_access,
                     write_access,
@@ -115,6 +115,8 @@ class ServicesRepository(BaseRepository):
         """
         if minor is not None and major is None:
             raise ValueError("Expected only major.*.* or major.minor.*")
+
+        ## TODO: Remove deprecated services from this query
 
         search_condition = services_meta_data.c.key == key
         if major is not None:
@@ -206,7 +208,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
-            result = await conn.execute(
+            result = await conn.execute( ## Here, maybe add default deprecation date?
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
                 .values(**new_service.dict(by_alias=True))

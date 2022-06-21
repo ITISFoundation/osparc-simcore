@@ -89,6 +89,7 @@ async def _create_services_in_db(
         service_metadata: ServiceDockerData = services_in_registry[
             (service_key, service_version)
         ]
+        ## Set deprecation date to null (is valid date value for postgres)
 
         # DEFAULT policies
         (
@@ -106,9 +107,12 @@ async def _create_services_in_db(
             service_access_rights
         )
 
+        # Supply deprecation_date field (set to null, which corresponds to None in python)
+        service_metadata_dict = service_metadata.dict().update({"deprecated_at":None})
+
         # set the service in the DB
         await services_repo.create_service(
-            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
+            ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
             service_access_rights,
         )
 

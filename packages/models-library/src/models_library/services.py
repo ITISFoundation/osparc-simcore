@@ -562,6 +562,7 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
+    deprecated_at: Optional[str]
 
     # user-defined metatada
     classifiers: Optional[list[str]]
