@@ -34,7 +34,3 @@ class UnexpectedStatusError(BaseClientError):
 
 class ClientTransportError(BaseClientError):
     pass
-
-
-class ClientHTTPStatusError(BaseClientError):
-    pass
