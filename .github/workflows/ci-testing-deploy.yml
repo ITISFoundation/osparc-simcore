@@ -102,7 +102,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -153,7 +154,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -202,7 +204,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -251,7 +254,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -287,7 +291,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/api-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -336,7 +341,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/catalog/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -391,7 +397,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -447,7 +454,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/director/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -496,7 +504,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -551,7 +560,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -602,7 +612,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/dask-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -651,7 +662,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -701,6 +713,7 @@ jobs:
       - uses: actions/setup-node@v3.3.0
         with:
           node-version: ${{ matrix.node }}
+          cache: 'npm'
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -740,7 +753,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/_test.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -776,7 +790,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/postgres-database/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -826,7 +841,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/service-integration/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -875,7 +891,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -924,7 +941,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/settings-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -973,7 +991,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1024,7 +1043,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1073,7 +1093,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/storage/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1129,7 +1150,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1194,7 +1216,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1259,7 +1282,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1327,7 +1351,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1394,7 +1419,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1459,7 +1485,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "tests/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1511,7 +1538,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1564,11 +1592,17 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "tests/e2e/requirements/requirements.txt"
       - uses: actions/setup-node@v3.3.0
         with:
           node-version: ${{ matrix.node }}
+<<<<<<< HEAD
 
+=======
+          cache: "npm"
+          cache-dependency-path: "tests/e2e/package-lock.json"
+>>>>>>> parent of 82f4cfce8... cache in setup-python failing (#3097)
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -1635,7 +1669,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+          cache: "pip"
+          cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
