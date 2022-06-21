@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from httpx import ConnectError, Response, codes
 from pydantic import AnyHttpUrl, parse_obj_as
 from respx import MockRouter
@@ -38,12 +39,34 @@ def thick_client() -> TestThickClient:
     return TestThickClient(request_max_retries=1)
 
 
+@pytest.fixture
+def test_url() -> AnyHttpUrl:
+    return parse_obj_as(AnyHttpUrl, "http://some-host:8008")
+
+
 # TESTS
 
 
-async def test_connection_error(thick_client: TestThickClient) -> None:
+async def test_connection_error(
+    thick_client: TestThickClient, test_url: AnyHttpUrl
+) -> None:
     with pytest.raises(ConnectError):
-        await thick_client.get_provided_url("http://i-do-not-exit-----:12342")
+        await thick_client.get_provided_url(test_url)
+
+
+@pytest.mark.parametrize("retry_count", [2, 1])
+async def test_connection_error_retry(
+    retry_count: int, test_url: AnyHttpUrl, caplog_warning_level: LogCaptureFixture
+) -> None:
+    client = TestThickClient(request_max_retries=retry_count)
+
+    with pytest.raises(ConnectError):
+        await client.get_provided_url(test_url)
+
+    for i, log_message in enumerate(caplog_warning_level.messages):
+        assert log_message.startswith(
+            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
+        )
 
 
 async def test_(thick_client: TestThickClient) -> None:
@@ -61,11 +84,6 @@ async def test_methods_do_not_return_response() -> None:
 
     with pytest.raises(WrongReturnType):
         ATestClient(request_max_retries=1)
-
-
-@pytest.fixture
-def test_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://some-host:8008")
 
 
 async def test_expect_state_decorator(

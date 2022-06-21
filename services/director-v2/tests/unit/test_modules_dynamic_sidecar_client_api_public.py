@@ -6,6 +6,7 @@ from typing import Any, AsyncIterable, Callable, Iterator, Optional, Type
 from unittest.mock import AsyncMock
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
@@ -17,9 +18,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
-    setup_api_client,
-    get_dynamic_sidecar_client,
     close_api_client,
+    get_dynamic_sidecar_client,
+    setup_api_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarUnexpectedResponseStatus,
@@ -38,8 +39,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mocked_app(monkeypatch: MonkeyPatch, mock_env: None) -> FastAPI:
-    monkeypatch.setenv("S3_ENDPOINT", "")
+def env_mocks(monkeypatch: MonkeyPatch, mock_env: None) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
     monkeypatch.setenv("S3_BUCKET_NAME", "")
@@ -52,19 +52,33 @@ def mocked_app(monkeypatch: MonkeyPatch, mock_env: None) -> FastAPI:
 
     # reduce number of retries to make more reliable
     monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
-
-    app = FastAPI()
-    app.state.settings = AppSettings.create_from_envs()
-    return app
+    monkeypatch.setenv("S3_ENDPOINT", "")
 
 
 @pytest.fixture
 async def dynamic_sidecar_client(
-    mocked_app: FastAPI,
+    env_mocks: None,
 ) -> AsyncIterable[DynamicSidecarClient]:
-    await setup_api_client(mocked_app)
-    yield get_dynamic_sidecar_client(mocked_app)
-    await close_api_client(mocked_app)
+    app = FastAPI()
+    app.state.settings = AppSettings.create_from_envs()
+
+    await setup_api_client(app)
+    yield get_dynamic_sidecar_client(app)
+    await close_api_client(app)
+
+
+@pytest.fixture
+def retry_count() -> int:
+    return 2
+
+
+@pytest.fixture
+def raise_retry_count(
+    monkeypatch: MonkeyPatch, retry_count: int, env_mocks: None
+) -> None:
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", f"{retry_count}"
+    )
 
 
 @pytest.fixture
@@ -100,6 +114,20 @@ async def test_is_healthy_api_ok(
         return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
     ) as client:
         assert await client.is_healthy(dynamic_sidecar_endpoint) == is_healthy
+
+
+async def test_is_healthy_times_out(
+    raise_retry_count: None,
+    dynamic_sidecar_client: DynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    caplog_warning_level: LogCaptureFixture,
+    retry_count: int,
+) -> None:
+    assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
+    for i, log_message in enumerate(caplog_warning_level.messages):
+        assert log_message.startswith(
+            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
+        )
 
 
 @pytest.mark.parametrize(
