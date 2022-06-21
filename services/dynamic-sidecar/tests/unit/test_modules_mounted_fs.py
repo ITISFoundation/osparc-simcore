@@ -5,8 +5,10 @@
 import os
 from pathlib import Path
 from typing import List
+from uuid import UUID
 
 import pytest
+from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 # UTILS
@@ -22,6 +24,11 @@ def _replace_slashes(path: Path) -> str:
 @pytest.fixture
 def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
+
+
+@pytest.fixture
+def run_id(app: FastAPI) -> UUID:
+    return app.state.settings.DY_SIDECAR_RUN_ID
 
 
 # TESTS
@@ -43,10 +50,18 @@ async def test_expected_paths_and_volumes(
     outputs_dir: Path,
     state_paths_dirs: List[Path],
     compose_namespace: str,
+    run_id: UUID,
 ) -> None:
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len({x async for x in mounted_volumes.iter_state_paths_to_docker_volumes()})
+        == len(
+            {
+                x
+                async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
+                    run_id
+                )
+            }
+        )
         == len(set(mounted_volumes.disk_state_paths()))
     )
 
@@ -83,15 +98,15 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        _get_container_mount(await mounted_volumes.get_inputs_docker_volume())
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume(run_id))
         == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        _get_container_mount(await mounted_volumes.get_outputs_docker_volume())
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume(run_id))
         == f"{mounted_volumes.outputs_path}"
     )
 
     assert {
         _get_container_mount(x)
-        async for x in mounted_volumes.iter_state_paths_to_docker_volumes()
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(run_id)
     } == {f"{state_path}" for state_path in state_paths_dirs}

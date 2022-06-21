@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Any, Dict
+from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -91,6 +92,7 @@ class DynamicSidecarVolumesPathsResolver:
         compose_namespace: str,
         path: Path,
         node_uuid: NodeID,
+        run_id: UUID,
     ) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
@@ -102,6 +104,7 @@ class DynamicSidecarVolumesPathsResolver:
             "VolumeOptions": {
                 "Labels": {
                     "source": cls.source(compose_namespace, path),
+                    "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 }
@@ -116,6 +119,7 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
+        run_id: UUID,
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
@@ -124,6 +128,7 @@ class DynamicSidecarVolumesPathsResolver:
             "VolumeOptions": {
                 "Labels": {
                     "source": cls.source(compose_namespace, path),
+                    "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 },

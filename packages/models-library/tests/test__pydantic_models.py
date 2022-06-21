@@ -138,9 +138,10 @@ def test_union_types_coercion():
     assert model.output == "some/path/or/string"
 
     # (undefined) json string vs SimCoreFileLink.dict() ------------
+    MINIMAL = 1
     assert SimCoreFileLink in get_args(OutputTypes)
     example = SimCoreFileLink.parse_obj(
-        SimCoreFileLink.Config.schema_extra["examples"][0]
+        SimCoreFileLink.Config.schema_extra["examples"][MINIMAL]
     )
     model = Func.parse_obj(
         {

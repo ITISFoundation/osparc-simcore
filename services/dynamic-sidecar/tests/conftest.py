@@ -91,6 +91,7 @@ def mock_environment(
     monkeypatch_module.setenv("DY_SIDECAR_USER_ID", "1")
     monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
     monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_RUN_ID", f"{uuid.uuid4()}")
     monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch_module.setenv(
@@ -129,11 +130,17 @@ def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
 
 
 @pytest.fixture
+def dynamic_sidecar_settings() -> DynamicSidecarSettings:
+    return DynamicSidecarSettings.create_from_envs()
+
+
+@pytest.fixture
 async def ensure_external_volumes(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
+    dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> AsyncGenerator[None, None]:
     """ensures inputs and outputs volumes for the service are present"""
 
@@ -145,7 +152,14 @@ async def ensure_external_volumes(
     async with docker_client() as client:
         volumes = await asyncio.gather(
             *[
-                client.volumes.create({"Labels": {"source": volume_name}})
+                client.volumes.create(
+                    {
+                        "Labels": {
+                            "source": volume_name,
+                            "run_id": f"{dynamic_sidecar_settings.DY_SIDECAR_RUN_ID}",
+                        }
+                    }
+                )
                 for volume_name in volume_names
             ]
         )

@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 
 class BaseDynamicSidecarError(Exception):
@@ -11,9 +12,12 @@ class BaseDynamicSidecarError(Exception):
 
 
 class VolumeNotFoundError(BaseDynamicSidecarError):
-    def __init__(self, source_label: str, volumes: List[str]) -> None:
+    def __init__(self, source_label: str, run_id: UUID, volumes: List[str]) -> None:
         super().__init__(
-            f"Expected 1 volume with {source_label=}, query returned {volumes}",
+            (
+                f"Expected 1 volume with {source_label=}, {run_id=}, "
+                f"found: {volumes=}"
+            ),
             status=404,
         )
 

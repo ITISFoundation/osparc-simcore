@@ -212,6 +212,11 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         side_effect=remove_service,
     )
 
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler._discover_running_services",
+        return_value=None,
+    )
+
 
 @pytest.mark.parametrize(
     "service, service_labels, exp_status_code, is_legacy",
@@ -246,9 +251,9 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 def test_create_dynamic_services(
+    docker_swarm: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
-    docker_swarm: None,
     mocked_director_v2_scheduler: None,
     client: TestClient,
     dynamic_sidecar_headers: Dict[str, str],
@@ -381,6 +386,7 @@ def test_get_service_status(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
+    docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
