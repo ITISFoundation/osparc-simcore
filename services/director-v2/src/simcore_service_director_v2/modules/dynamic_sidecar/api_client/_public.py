@@ -29,7 +29,7 @@ class DynamicSidecarClient:
             # this request uses a very short timeout
             response = await self.thin_client.get_health(dynamic_sidecar_endpoint)
             return response.json()["is_healthy"]
-        except (HTTPError, ClientTransportError, ClientTransportError):
+        except (HTTPError, UnexpectedStatusError, ClientTransportError):
             return False
 
     @log_decorator(logger=logger)
@@ -54,7 +54,7 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint, only_status=True
             )
             return response.json()
-        except (HTTPError, ClientTransportError, ClientTransportError):
+        except (HTTPError, UnexpectedStatusError, ClientTransportError):
             return {}
 
     @log_decorator(logger=logger)
