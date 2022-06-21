@@ -28,7 +28,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     NodeportsDidNotFindNodeError,
 )
 
-pytestmark = pytest.mark.asyncio
 
 # FIXTURES
 
@@ -134,14 +133,15 @@ async def test_is_healthy_times_out(
     "side_effect",
     [
         pytest.param(
-            DynamicSidecarUnexpectedResponseStatus(
+            UnexpectedStatusError(
                 Response(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content="some mocked error",
                     request=AsyncMock(),
-                )
+                ),
+                status.HTTP_200_OK,
             ),
-            id="DynamicSidecarUnexpectedResponseStatus",
+            id="UnexpectedStatusError",
         ),
         pytest.param(HTTPError("another mocked error"), id="HTTPError"),
     ],
@@ -368,8 +368,8 @@ async def test_service_push_output_ports_ok(
                 ),
                 status.HTTP_204_NO_CONTENT,
             ),
-            DynamicSidecarUnexpectedResponseStatus,
-            id="DynamicSidecarUnexpectedResponseStatus",
+            UnexpectedStatusError,
+            id="UnexpectedStatusError",
         ),
     ],
 )

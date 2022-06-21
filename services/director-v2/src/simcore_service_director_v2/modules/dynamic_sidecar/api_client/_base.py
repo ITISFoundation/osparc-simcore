@@ -26,9 +26,10 @@ logger = logging.getLogger(__name__)
 
 def _log_retry(log: Logger, max_retries: int) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
+        # pylint: disable=protected-access
+
         assert retry_state.outcome  # nosec
         e = retry_state.outcome.exception()
-        # pylint: disable=protected-access
         assert e.error  # nosec
         assert e.error._request  # nosec
 
@@ -56,7 +57,7 @@ def retry_on_errors(
 
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
-        # pylint:disable=protected-access
+        # pylint: disable=protected-access
         try:
             async for attempt in AsyncRetrying(
                 # waits 1, 4, 8 seconds between retries and gives up
@@ -147,7 +148,7 @@ class BaseThinClient:
 
     async def close(self) -> None:
         # pylint: disable=protected-access
-        logger.debug(
+        logger.warning(
             "REQUESTS WHILE CLOSING %s",
             [
                 (r.request.method, r.request.url, r.request.headers)

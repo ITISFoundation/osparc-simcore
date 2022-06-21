@@ -16,7 +16,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
     WrongReturnType,
 )
 
-pytestmark = pytest.mark.asyncio
 
 # UTILS
 

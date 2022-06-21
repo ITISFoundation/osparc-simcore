@@ -16,7 +16,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import
     ThinDynamicSidecarClient,
 )
 
-pytestmark = pytest.mark.asyncio
 
 # NOTE: typing and callables cannot
 MockRequestType = Callable[
