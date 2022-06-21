@@ -122,6 +122,7 @@ def cluster_id() -> NonNegativeInt:
 @pytest.fixture
 async def dask_spec_local_cluster(
     monkeypatch: MonkeyPatch,
+    unused_tcp_port_factory: Callable,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
@@ -166,7 +167,13 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {"cls": Scheduler}
+    scheduler = {
+        "cls": Scheduler,
+        "options": {
+            "port": unused_tcp_port_factory(),
+            "dashboard_address": f":{unused_tcp_port_factory()}",
+        },
+    }
 
     async with SpecCluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
