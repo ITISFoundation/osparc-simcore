@@ -501,10 +501,10 @@ class DynamicSidecarsScheduler:
                 asyncio.gather(*running_tasks, return_exceptions=True),
                 timeout=MAX_WAIT_TIME_SECONDS,
             )
-            if bad_results := filter(lambda r: isinstance(r, Exception), results):
+            if bad_results := list(filter(lambda r: isinstance(r, Exception), results)):
                 logger.error(
                     "Following observation tasks completed with an unexpected error:%s",
-                    f"{list(bad_results)}",
+                    f"{bad_results}",
                 )
         except asyncio.TimeoutError:
             logger.error(
