@@ -7,11 +7,9 @@ import uuid
 from asyncio import AbstractEventLoop
 from pathlib import Path
 from pprint import pformat
-from typing import Iterator
 
 import aio_pika
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
@@ -39,13 +37,6 @@ pytest_plugins = [
 pytest_simcore_core_services_selection = ["rabbit"]
 
 # FIXTURE
-
-
-@pytest.fixture(scope="module")
-def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="module")
