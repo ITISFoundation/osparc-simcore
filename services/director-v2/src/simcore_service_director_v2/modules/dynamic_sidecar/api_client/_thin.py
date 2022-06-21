@@ -7,7 +7,7 @@ from httpx import AsyncClient, Response, Timeout
 from pydantic import AnyHttpUrl
 
 from ....core.settings import DynamicSidecarSettings
-from ._base_client import BaseHThinClient, expect_status, retry_on_errors
+from ._base import BaseHThinClient, expect_status, retry_on_errors
 
 logger = logging.getLogger(__name__)
 

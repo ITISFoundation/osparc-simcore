@@ -18,7 +18,7 @@ from ..errors import (
     NodeportsDidNotFindNodeError,
 )
 from ._errors import UnexpectedStatusError
-from ._thin_client import ThinDynamicSidecarClient
+from ._thin import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
 

@@ -78,7 +78,7 @@ def get_patched_client(
         side_effect: Optional[Callable] = None,
     ) -> Iterator[DynamicSidecarClient]:
         mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin_client.ThinDynamicSidecarClient.{method}",
+            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinDynamicSidecarClient.{method}",
             return_value=return_value,
             side_effect=side_effect,
         )

@@ -4,7 +4,7 @@ import pytest
 from httpx import ConnectError, Response, codes
 from pydantic import AnyHttpUrl, parse_obj_as
 from respx import MockRouter
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base_client import (
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base import (
     BaseHThinClient,
     expect_status,
     retry_on_errors,

@@ -12,7 +12,7 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin_client import (
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
     ThinDynamicSidecarClient,
 )
 

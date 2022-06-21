@@ -7,9 +7,9 @@ from ._public import (
 )
 
 __all__: tuple[str, ...] = (
-    "DynamicSidecarClient",
-    "setup_api_client",
     "close_api_client",
+    "DynamicSidecarClient",
     "get_dynamic_sidecar_client",
+    "setup_api_client",
     "update_dynamic_sidecar_health",
 )
