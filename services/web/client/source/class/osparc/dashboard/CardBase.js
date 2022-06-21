@@ -406,7 +406,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _blockCard: function(lockImageSrc, toolTipText) {
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      lockImageSrc += this.classname.includes("Grid") ? "70" : "24";
+      lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
       lockImage.setSource(lockImageSrc);
       if (toolTipText) {
         this.set({
