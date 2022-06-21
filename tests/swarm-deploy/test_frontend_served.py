@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import List
 
 import pytest
 import requests
@@ -23,7 +22,7 @@ from yarl import URL
     ],
 )
 def test_product_frontend_app_served(
-    simcore_stack_deployed_services: List[Service],
+    simcore_stack_deployed_services: list[Service],
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,

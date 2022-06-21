@@ -8,7 +8,6 @@
 
 # installs base + tests requirements
 --requirement _test.txt
-../../packages/pytest-simcore/
 
 # installs current package
 .

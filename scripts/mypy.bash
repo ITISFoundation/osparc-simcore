@@ -31,7 +31,7 @@ echo using "$(docker run --rm "$image_name" --version)"
 docker run --rm \
   --volume /etc/passwd:/etc/passwd:ro \
   --volume /etc/group:/etc/group:ro \
-  --user $(id -u):$(id -g) \
+  --user "$(id -u):$(id -g)" \
   --volume "${mypy_config}":/config/mypy.ini \
   --volume "${target_path}":/src \
   --workdir=/src \

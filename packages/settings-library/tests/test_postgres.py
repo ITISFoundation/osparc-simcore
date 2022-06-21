@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Dict
 
 import pytest
 from settings_library.postgres import PostgresSettings
@@ -13,7 +12,7 @@ def env_file():
     return ".env-sample"
 
 
-def test_cached_property_dsn(mock_environment: Dict):
+def test_cached_property_dsn(mock_environment: dict):
 
     settings = PostgresSettings()
 
@@ -29,7 +28,7 @@ def test_cached_property_dsn(mock_environment: Dict):
     assert "dsn" in settings.dict().keys()
 
 
-def test_dsn_with_query(mock_environment: Dict, monkeypatch):
+def test_dsn_with_query(mock_environment: dict, monkeypatch):
 
     settings = PostgresSettings()
 

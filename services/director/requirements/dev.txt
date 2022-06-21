@@ -12,8 +12,5 @@
 --requirement _test.txt
 --requirement _tools.txt
 
-# installs this repo's packages
---editable ../../packages/pytest-simcore/
-
 # installs current package
 --editable .

@@ -7,7 +7,7 @@ import os
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional
+from typing import Any, Callable, Iterator, Optional
 
 import docker
 import jsonschema
@@ -27,7 +27,7 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     # try to login to private registry
     host = "127.0.0.1"
     port = 5000
-    url = "{host}:{port}".format(host=host, port=port)
+    url = f"{host}:{port}"
     container = None
     try:
         docker_client.login(registry=url, username="simcore")
@@ -112,9 +112,9 @@ def _pull_push_service(
     pull_key: str,
     tag: str,
     new_registry: str,
-    node_meta_schema: Dict,
+    node_meta_schema: dict,
     owner_email: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
     print(f"Pulling {pull_key}:{tag} ...")
@@ -122,7 +122,7 @@ def _pull_push_service(
     assert image, f"image {pull_key}:{tag} could NOT be pulled!"
 
     # get io.simcore.* labels
-    image_labels: Dict = dict(image.labels)
+    image_labels: dict = dict(image.labels)
 
     if owner_email:
         print("Overriding labels to take ownership as %s ...", owner_email)
@@ -186,8 +186,8 @@ def _pull_push_service(
 
 @pytest.fixture(scope="session")
 def docker_registry_image_injector(
-    docker_registry: str, node_meta_schema: Dict
-) -> Callable[..., Dict[str, Any]]:
+    docker_registry: str, node_meta_schema: dict
+) -> Callable[..., dict[str, Any]]:
     def inject_image(
         source_image_repo: str, source_image_tag: str, owner_email: Optional[str] = None
     ):
@@ -204,8 +204,8 @@ def docker_registry_image_injector(
 
 @pytest.fixture(scope="function")
 def osparc_service(
-    docker_registry: str, node_meta_schema: Dict, service_repo: str, service_tag: str
-) -> Dict[str, Any]:
+    docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
+) -> dict[str, Any]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
@@ -215,7 +215,7 @@ def osparc_service(
 
 
 @pytest.fixture(scope="session")
-def sleeper_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, Any]:
+def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
     return _pull_push_service(
         "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
@@ -223,7 +223,7 @@ def sleeper_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, A
 
 
 @pytest.fixture(scope="session")
-def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, Any]:
+def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
     return _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
@@ -240,8 +240,8 @@ def dy_static_file_server_version(request):
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_service(
-    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
-) -> Dict[str, Any]:
+    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server
@@ -256,8 +256,8 @@ def dy_static_file_server_service(
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_dynamic_sidecar_service(
-    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
-) -> Dict[str, Any]:
+    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar
@@ -272,8 +272,8 @@ def dy_static_file_server_dynamic_sidecar_service(
 
 @pytest.fixture(scope="session")
 def dy_static_file_server_dynamic_sidecar_compose_spec_service(
-    docker_registry: str, node_meta_schema: Dict, dy_static_file_server_version: str
-) -> Dict[str, Any]:
+    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec

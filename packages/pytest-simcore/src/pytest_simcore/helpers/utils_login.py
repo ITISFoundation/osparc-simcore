@@ -55,7 +55,7 @@ async def create_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     password = get_random_string(10)
     params = {
         "name": get_random_string(10),
-        "email": "{}@gmail.com".format(get_random_string(10)),
+        "email": f"{get_random_string(10)}@gmail.com",
         "password_hash": encrypt_password(password),
     }
     params.update(data)

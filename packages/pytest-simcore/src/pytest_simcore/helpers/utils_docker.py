@@ -5,7 +5,7 @@ import re
 import socket
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import docker
 import yaml
@@ -42,7 +42,7 @@ def get_localhost_ip(default="127.0.0.1") -> str:
     after=after_log(log, logging.WARNING),
 )
 def get_service_published_port(
-    service_name: str, target_ports: Optional[Union[List[int], int]] = None
+    service_name: str, target_ports: Optional[Union[list[int], int]] = None
 ) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
@@ -79,7 +79,7 @@ def get_service_published_port(
         published_port = service_ports[0]["PublishedPort"]
 
     else:
-        ports_to_look_for: List = (
+        ports_to_look_for: list = (
             [target_ports] if isinstance(target_ports, (int, str)) else target_ports
         )
 
@@ -97,11 +97,11 @@ def get_service_published_port(
 
 
 def run_docker_compose_config(
-    docker_compose_paths: Union[List[Path], Path],
+    docker_compose_paths: Union[list[Path], Path],
     project_dir: Path,
     env_file_path: Path,
     destination_path: Optional[Path] = None,
-) -> Dict:
+) -> dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
@@ -162,7 +162,7 @@ def run_docker_compose_config(
     )
 
     compose_file_str = process.stdout.decode("utf-8")
-    compose_file: Dict[str, Any] = yaml.safe_load(compose_file_str)
+    compose_file: dict[str, Any] = yaml.safe_load(compose_file_str)
 
     if destination_path:
         #

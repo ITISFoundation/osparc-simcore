@@ -5,7 +5,7 @@ import tarfile
 import time
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import osparc
 from EmFdtdSimulator import EmFdtdMultiportSimulation
@@ -29,7 +29,7 @@ class ISolveType(Enum):
     mpi = "mpi"
 
 
-def get_isolves(solvers_api: osparc.SolversApi, latest: bool) -> List[osparc.Solver]:
+def get_isolves(solvers_api: osparc.SolversApi, latest: bool) -> list[osparc.Solver]:
     solvers: osparc.Solver = (
         solvers_api.list_solvers() if latest else solvers_api.list_solvers_releases()
     )
@@ -84,7 +84,7 @@ def submit_simulation(
     sim: Simulation,
     solver_version: str,
     wait: Optional[bool] = True,
-) -> Tuple[osparc.Job, osparc.JobStatus]:
+) -> tuple[osparc.Job, osparc.JobStatus]:
     solver_type = get_solver_type(sim)
     solver: osparc.Solver = get_isolve(solvers_api, solver_type, version=solver_version)
 
