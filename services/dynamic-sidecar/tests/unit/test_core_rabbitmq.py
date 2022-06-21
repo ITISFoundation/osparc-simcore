@@ -11,12 +11,12 @@ from typing import List
 
 import aio_pika
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import assemble_application
@@ -63,7 +63,7 @@ def run_id() -> uuid.UUID:
 @pytest.fixture
 def mock_environment(
     event_loop: AbstractEventLoop,
-    monkeypatch_module: MonkeyPatch,
+    monkeypatch: MonkeyPatch,
     mock_dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
@@ -76,41 +76,41 @@ def mock_environment(
     run_id: uuid.UUID,
     rabbit_service: RabbitSettings,
 ) -> None:
-    monkeypatch_module.setenv("SC_BOOT_MODE", "production")
-    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
-    monkeypatch_module.setenv("REGISTRY_AUTH", "false")
-    monkeypatch_module.setenv("REGISTRY_USER", "test")
-    monkeypatch_module.setenv("REGISTRY_PW", "test")
-    monkeypatch_module.setenv("REGISTRY_SSL", "false")
-    monkeypatch_module.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
-    monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
-    monkeypatch_module.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
-    monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
-    monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
-    monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
-    monkeypatch_module.setenv(
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
+    monkeypatch.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
+    monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
+    monkeypatch.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
+    monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
+    monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
+    monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
+    monkeypatch.setenv(
         "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
     )
-    monkeypatch_module.setenv(
+    monkeypatch.setenv(
         "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
     )
     # TODO: PC->ANE: this is already guaranteed in the pytest_simcore.rabbit_service fixture
-    monkeypatch_module.setenv("RABBIT_HOST", rabbit_service.RABBIT_HOST)
-    monkeypatch_module.setenv("RABBIT_PORT", f"{rabbit_service.RABBIT_PORT}")
-    monkeypatch_module.setenv("RABBIT_USER", rabbit_service.RABBIT_USER)
-    monkeypatch_module.setenv(
+    monkeypatch.setenv("RABBIT_HOST", rabbit_service.RABBIT_HOST)
+    monkeypatch.setenv("RABBIT_PORT", f"{rabbit_service.RABBIT_PORT}")
+    monkeypatch.setenv("RABBIT_USER", rabbit_service.RABBIT_USER)
+    monkeypatch.setenv(
         "RABBIT_PASSWORD", rabbit_service.RABBIT_PASSWORD.get_secret_value()
     )
     # ---
 
-    monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
+    monkeypatch.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
-    monkeypatch_module.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch_module.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch_module.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch_module.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch_module.setenv("S3_SECURE", "false")
-    monkeypatch_module.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
 
 @pytest.fixture

@@ -13,10 +13,10 @@ from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core import utils
 from simcore_service_dynamic_sidecar.core.application import assemble_application
@@ -31,7 +31,6 @@ from simcore_service_dynamic_sidecar.modules import mounted_fs
 pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
 ]

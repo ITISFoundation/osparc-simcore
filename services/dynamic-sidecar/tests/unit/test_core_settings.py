@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
     get_settings,
@@ -14,7 +14,10 @@ from simcore_service_dynamic_sidecar.core.settings import (
 
 
 @pytest.fixture
-def mocked_non_request_settings(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+def mocked_non_request_settings(
+    tmp_path: Path, monkeypatch: MonkeyPatch, project_slug_dir: Path
+) -> None:
+
     inputs_dir = tmp_path / "inputs"
     outputs_dir = tmp_path / "outputs"
 
@@ -24,8 +27,8 @@ def mocked_non_request_settings(tmp_path: Path, monkeypatch: MonkeyPatch) -> Non
     monkeypatch.setenv("REGISTRY_USER", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")
     monkeypatch.setenv("REGISTRY_SSL", "false")
-    monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
-    monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
+    monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", f"{inputs_dir}")
+    monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", f"{outputs_dir}")
     monkeypatch.setenv("DY_SIDECAR_USER_ID", "1")
     monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
     monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
@@ -46,3 +49,7 @@ def test_non_request_dynamic_sidecar_settings(
 
 def test_cached_settings_is_same_object(mocked_non_request_settings: None) -> None:
     assert id(get_settings()) == id(get_settings())
+
+
+def test_settings_with_envdevel_file(mock_environment_with_envdevel):
+    assert DynamicSidecarSettings.create_from_envs()
