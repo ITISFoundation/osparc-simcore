@@ -623,7 +623,7 @@ async def post_trigger_connected_service_retrieve(
     app: web.Application, **kwargs
 ) -> None:
     await fire_and_forget_task(
-        trigger_connected_service_retrieve(**kwargs),
+        trigger_connected_service_retrieve(app, **kwargs),
         task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
