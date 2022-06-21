@@ -260,23 +260,22 @@ qx.Class.define("osparc.utils.Utils", {
       return window.location.hostname.includes("speag");
     },
 
-    getLogosPath: function() {
-      const logosPath = [];
+    getLogoPath: function() {
+      let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const lightLogo = this.getColorLuminance(textColor) > 0.4;
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logosPath.push("osparc/s4l_logo.png");
+          logosPath = lightLogo ? "osparc/s4l_zmt-white.png" : "osparc/s4l_zmt-black.png";
           break;
         case "tis": {
-          logosPath.push(lightLogo ? "osparc/itis-white.svg" : "osparc/itis-black.svg");
-          logosPath.push(lightLogo ? "osparc/tip-white.svg" : "osparc/tip-black.svg");
+          logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
           break;
         }
         default: {
-          logosPath.push(lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg");
+          logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
       }

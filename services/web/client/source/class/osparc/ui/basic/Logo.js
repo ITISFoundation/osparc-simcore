@@ -37,9 +37,9 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
   members: {
     __resetSourcePath: function() {
-      const sourcesPath = osparc.utils.Utils.getLogosPath();
+      const sourcePath = osparc.utils.Utils.getLogoPath();
       this.set({
-        source: sourcesPath[0]
+        source: sourcePath
       });
     }
   }
