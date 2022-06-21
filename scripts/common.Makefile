@@ -118,6 +118,11 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 		$(CURDIR)
 
 
+.PHONY: pyupgrade
+pyupgrade: ## Upgrade python syntax for newer versions of the language (SEE https://github.com/asottile/pyupgrade)
+	@$(REPO_BASE_DIR)/scripts/pyupgrade.bash $(shell find . -type f -name '*.py')
+
+
 .PHONY: mypy
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src

@@ -8,7 +8,7 @@ import subprocess
 import sys
 from itertools import chain
 from pathlib import Path
-from typing import Iterable, List, Set, Tuple
+from typing import Iterable
 
 import pytest
 import yaml
@@ -17,7 +17,7 @@ import yaml
 @pytest.fixture(scope="module")
 def docker_compose_in_requirement_files(
     osparc_simcore_root_dir: Path,
-) -> List[Tuple[Path, str]]:
+) -> list[tuple[Path, str]]:
 
     reqs_path_version_tuples = []
 
@@ -31,11 +31,11 @@ def docker_compose_in_requirement_files(
 
 
 @pytest.fixture(scope="module")
-def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> Tuple[Path, str]:
+def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> tuple[Path, str]:
     ci_workflows_path = osparc_simcore_root_dir / ".github/workflows"
-    versions_in_workflow_files: Set[str] = set()
+    versions_in_workflow_files: set[str] = set()
     for workflow_file in ci_workflows_path.rglob("ci-*.yml"):
-        versions_in_file: Set[str] = {
+        versions_in_file: set[str] = {
             found.group(1)
             for found in re.finditer(
                 r"docker_compose: \[([\d\.]+)\]", workflow_file.read_text()

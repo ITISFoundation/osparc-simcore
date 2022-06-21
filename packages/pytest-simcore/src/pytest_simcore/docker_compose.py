@@ -1,11 +1,12 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 """ Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
     - Basically runs `docker-compose config
     - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
+
 """
 
 import json
@@ -15,7 +16,7 @@ import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Iterator, List
+from typing import Any, Iterator
 
 import pytest
 import yaml
@@ -53,7 +54,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     env_devel["LOG_LEVEL"] = "DEBUG"
 
     env_devel["REGISTRY_SSL"] = "False"
-    env_devel["REGISTRY_URL"] = "{}:5000".format(get_localhost_ip())
+    env_devel["REGISTRY_URL"] = f"{get_localhost_ip()}:5000"
     env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
@@ -83,7 +84,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
-    testing_environ_vars: Dict[str, str],
+    testing_environ_vars: dict[str, str],
     temp_folder: Path,
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
@@ -126,7 +127,7 @@ def simcore_docker_compose(
     osparc_simcore_root_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Resolves docker-compose for simcore stack in local host
 
     Produces same as  `make .stack-simcore-version.yml` in a temporary folder
@@ -200,7 +201,7 @@ def ops_docker_compose(
     env_file_for_testing: Path,
     temp_folder: Path,
     inject_filestash_config_path: None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
     Produces same as  `make .stack-ops.yml` in a temporary folder
@@ -230,7 +231,7 @@ def ops_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def core_services_selection(request) -> List[str]:
+def core_services_selection(request) -> list[str]:
     """Selection of services from the simcore stack"""
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
@@ -242,7 +243,7 @@ def core_services_selection(request) -> List[str]:
 
 @pytest.fixture(scope="module")
 def core_docker_compose_file(
-    core_services_selection: List[str], temp_folder: Path, simcore_docker_compose: Dict
+    core_services_selection: list[str], temp_folder: Path, simcore_docker_compose: dict
 ) -> Path:
     """A compose with a selection of services from simcore_docker_compose
 
@@ -259,7 +260,7 @@ def core_docker_compose_file(
 
 
 @pytest.fixture(scope="module")
-def ops_services_selection(request) -> List[str]:
+def ops_services_selection(request) -> list[str]:
     """Selection of services from the ops stack"""
     ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
     return ops_services
@@ -267,7 +268,7 @@ def ops_services_selection(request) -> List[str]:
 
 @pytest.fixture(scope="module")
 def ops_docker_compose_file(
-    ops_services_selection: List[str], temp_folder: Path, ops_docker_compose: Dict
+    ops_services_selection: list[str], temp_folder: Path, ops_docker_compose: dict
 ) -> Path:
     """A compose with a selection of services from ops_docker_compose
 
@@ -314,7 +315,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
 # HELPERS ---------------------------------------------
 
 
-def _minio_fix(service_environs: Dict) -> Dict:
+def _minio_fix(service_environs: dict) -> dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
         service_environs["S3_ENDPOINT"] = f"{get_localhost_ip()}:9001"
@@ -322,7 +323,7 @@ def _minio_fix(service_environs: Dict) -> Dict:
 
 
 def _filter_services_and_dump(
-    include: List, services_compose: Dict, docker_compose_path: Path
+    include: list, services_compose: dict, docker_compose_path: Path
 ):
     content = deepcopy(services_compose)
 
@@ -344,7 +345,7 @@ def _filter_services_and_dump(
     with docker_compose_path.open("wt") as fh:
         if "TRAVIS" in os.environ:
             # in travis we do not have access to file
-            print("{:-^100}".format(str(docker_compose_path)))
+            print(f"{str(docker_compose_path):-^100}")
             yaml.dump(content, sys.stdout, default_flow_style=False)
             print("-" * 100)
         else:

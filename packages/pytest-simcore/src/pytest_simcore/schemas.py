@@ -4,7 +4,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable, Iterable
 
 import pytest
 
@@ -26,7 +26,7 @@ def node_meta_schema_file(common_schemas_specs_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def node_meta_schema(node_meta_schema_file: Path) -> Dict:
+def node_meta_schema(node_meta_schema_file: Path) -> dict:
     with node_meta_schema_file.open() as fp:
         node_schema = json.load(fp)
         return node_schema
@@ -34,7 +34,7 @@ def node_meta_schema(node_meta_schema_file: Path) -> Dict:
 
 @pytest.fixture(scope="session")
 def json_schema_dict(common_schemas_specs_dir: Path) -> Iterable[Callable]:
-    def schema_getter(schema_name: str) -> Dict:
+    def schema_getter(schema_name: str) -> dict:
         json_file = common_schemas_specs_dir / schema_name
         assert (
             json_file.exists()
@@ -55,10 +55,10 @@ def json_faker_script(osparc_simcore_scripts_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def random_json_from_schema(
     json_faker_script: Path, tmp_path_factory
-) -> Iterable[Callable[[str], Dict[str, Any]]]:
+) -> Iterable[Callable[[str], dict[str, Any]]]:
     # tmp_path_factory fixture: https://docs.pytest.org/en/stable/tmpdir.html
 
-    def _generator(json_schema: str) -> Dict[str, Any]:
+    def _generator(json_schema: str) -> dict[str, Any]:
         tmp_path = tmp_path_factory.mktemp(__name__)
         schema_path = tmp_path / "schema.json"
 
@@ -99,7 +99,7 @@ def json_diff_script(osparc_simcore_scripts_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def diff_json_schemas(json_diff_script: Path, tmp_path_factory) -> Callable:
-    def _run_diff(schema_lhs: Dict, schema_rhs: Dict) -> subprocess.CompletedProcess:
+    def _run_diff(schema_lhs: dict, schema_rhs: dict) -> subprocess.CompletedProcess:
         tmpdir = tmp_path_factory.mktemp(basename=__name__, numbered=True)
         schema_lhs_path = tmpdir / "schema_lhs.json"
         schema_lhs_path.write_text(json.dumps(schema_lhs, indent=1))

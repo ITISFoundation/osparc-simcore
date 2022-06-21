@@ -2,7 +2,7 @@
 
 """
 from pprint import pformat
-from typing import Dict, Optional, Tuple, Type
+from typing import Optional
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
@@ -11,12 +11,12 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 
 async def assert_status(
     response: ClientResponse,
-    expected_cls: Type[HTTPException],
+    expected_cls: type[HTTPException],
     expected_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
     include_meta: Optional[bool] = False,
     include_links: Optional[bool] = False,
-) -> Tuple[Dict, ...]:
+) -> tuple[dict, ...]:
     """
     Asserts for enveloped responses
     """
@@ -55,7 +55,7 @@ async def assert_status(
 
 async def assert_error(
     response: ClientResponse,
-    expected_cls: Type[HTTPException],
+    expected_cls: type[HTTPException],
     expected_msg: Optional[str] = None,
 ):
     data, error = unwrap_envelope(await response.json())
@@ -65,7 +65,7 @@ async def assert_error(
 def do_assert_error(
     data,
     error,
-    expected_cls: Type[HTTPException],
+    expected_cls: type[HTTPException],
     expected_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
 ):

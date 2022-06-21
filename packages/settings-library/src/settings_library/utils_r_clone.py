@@ -1,11 +1,10 @@
 import configparser
 from copy import deepcopy
 from io import StringIO
-from typing import Dict
 
 from .r_clone import RCloneSettings, S3Provider
 
-_COMMON_ENTRIES: Dict[str, str] = {
+_COMMON_ENTRIES: dict[str, str] = {
     "type": "s3",
     "access_key_id": "{access_key}",
     "secret_access_key": "{secret_key}",
@@ -13,7 +12,7 @@ _COMMON_ENTRIES: Dict[str, str] = {
     "acl": "private",
 }
 
-_PROVIDER_ENTRIES: Dict[S3Provider, Dict[str, str]] = {
+_PROVIDER_ENTRIES: dict[S3Provider, dict[str, str]] = {
     # NOTE: # AWS_SESSION_TOKEN should be required for STS
     S3Provider.AWS: {"provider": "AWS"},
     S3Provider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
@@ -21,7 +20,7 @@ _PROVIDER_ENTRIES: Dict[S3Provider, Dict[str, str]] = {
 }
 
 
-def _format_config(entries: Dict[str, str]) -> str:
+def _format_config(entries: dict[str, str]) -> str:
     config = configparser.ConfigParser()
     config["dst"] = entries
     with StringIO() as string_io:

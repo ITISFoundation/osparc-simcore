@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 @pytest.fixture
-def model_cls_examples(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
+def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     """
     Extracts examples from pydantic model class Config
     """

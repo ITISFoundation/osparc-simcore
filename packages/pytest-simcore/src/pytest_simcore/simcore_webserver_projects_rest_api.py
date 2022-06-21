@@ -6,7 +6,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Literal, Optional
 
 import pytest
 
@@ -22,8 +22,8 @@ class HttpApiCallCapture:
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH"]
     path: str
-    request_payload: Optional[Dict[str, Any]]
-    response_body: Optional[Dict[str, Any]]
+    request_payload: Optional[dict[str, Any]]
+    response_body: Optional[dict[str, Any]]
     status_code: HTTPStatus = HTTPStatus.OK
 
     def __str__(self) -> str:
@@ -711,5 +711,5 @@ SESSION_WORKFLOW = (
 
 
 @pytest.fixture
-def project_workflow_captures() -> Tuple[HttpApiCallCapture, ...]:
+def project_workflow_captures() -> tuple[HttpApiCallCapture, ...]:
     return tuple(deepcopy(c) for c in SESSION_WORKFLOW)
