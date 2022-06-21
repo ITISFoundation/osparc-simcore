@@ -1,3 +1,6 @@
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator, Optional, Type
 from unittest.mock import AsyncMock
@@ -8,7 +11,6 @@ from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from requests import request
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     UnexpectedStatusError,
@@ -409,6 +411,7 @@ async def test_attach_container_to_network(
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
+            # pylint:disable=protected-access
             await client._attach_container_to_network(
                 dynamic_sidecar_endpoint,
                 container_id="container_id",
@@ -428,6 +431,7 @@ async def test_detach_container_from_network(
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
+            # pylint:disable=protected-access
             await client._detach_container_from_network(
                 dynamic_sidecar_endpoint,
                 container_id="container_id",

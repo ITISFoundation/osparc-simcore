@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 import pytest
 from httpx import ConnectError, Response, codes
 from pydantic import AnyHttpUrl, parse_obj_as

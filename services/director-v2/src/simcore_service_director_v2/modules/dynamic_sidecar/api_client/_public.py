@@ -1,15 +1,15 @@
 import logging
-from bdb import set_trace
 from collections import deque
 from typing import Any, Optional
 
-from fastapi import status
+from fastapi import FastAPI, status
 from httpx import HTTPError
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from pydantic import AnyHttpUrl
 from servicelib.utils import logged_gather
 
+from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
 from ..errors import (
@@ -147,10 +147,10 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
                 if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
                     raise NodeportsDidNotFindNodeError(
                         node_uuid=json_error["node_uuid"]
-                    )
+                    ) from e
             raise DynamicSidecarUnexpectedResponseStatus(
                 e.response, "output ports push"
-            )
+            ) from e
 
     @log_decorator(logger=logger)
     async def get_entrypoint_container_name(
@@ -169,7 +169,7 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
             return response.json()
         except UnexpectedStatusError as e:
             if e.response.status_code == status.HTTP_404_NOT_FOUND:
-                raise EntrypointContainerNotFoundError()
+                raise EntrypointContainerNotFoundError() from e
 
     @log_decorator(logger=logger)
     async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
@@ -280,3 +280,31 @@ class DynamicSidecarClient(ThinDynamicSidecarClient):
                 for container_name in containers_status
             ]
         )
+
+
+async def setup_api_client(app: FastAPI) -> None:
+    logger.debug("dynamic-sidecar api client setup")
+    app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+
+
+async def close_api_client(app: FastAPI) -> None:
+    logger.debug("dynamic-sidecar api client closing...")
+    client: Optional[DynamicSidecarClient]
+    if client := app.state.dynamic_sidecar_api_client:
+        await client.close()
+
+
+def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
+    assert app.state.dynamic_sidecar_api_client  # nosec
+    return app.state.dynamic_sidecar_api_client
+
+
+async def update_dynamic_sidecar_health(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
+    api_client = get_dynamic_sidecar_client(app)
+    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+    # update service health
+    is_healthy = await api_client.is_healthy(service_endpoint)
+    scheduler_data.dynamic_sidecar.is_available = is_healthy

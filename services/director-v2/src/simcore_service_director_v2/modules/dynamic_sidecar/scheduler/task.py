@@ -410,9 +410,9 @@ class DynamicSidecarsScheduler:
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         logger.debug(
-             "dynamic-sidecars observation interval %s",
-             settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
-         )
+            "dynamic-sidecars observation interval %s",
+            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+        )
 
         while self._keep_running:
             logger.debug("Observing dynamic-sidecars %s", self._to_observe.keys())

@@ -45,6 +45,8 @@ class ThinDynamicSidecarClient(BaseHThinClient):
             connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
+        super().__init__(request_max_retries=self._request_max_retries)
+
     def _get_url(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,

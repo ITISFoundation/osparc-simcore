@@ -27,7 +27,8 @@ def retry_on_errors(
     assert asyncio.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: BaseHThinClient, *args, **kwargs) -> Response:
+    async def request_wrapper(zelf: "BaseHThinClient", *args, **kwargs) -> Response:
+        # pylint:disable=protected-access
         try:
             async for attempt in AsyncRetrying(
                 # waits 1, 4, 8 seconds between retries and gives up
@@ -71,7 +72,7 @@ def expect_status(expected_code: int):
         assert asyncio.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
-        async def request_wrapper(zelf: BaseHThinClient, *args, **kwargs) -> Response:
+        async def request_wrapper(zelf: "BaseHThinClient", *args, **kwargs) -> Response:
             logger.debug("Calling expect_status")
 
             response = await request_func(zelf, *args, **kwargs)
@@ -113,3 +114,14 @@ class BaseHThinClient:
             signature = inspect.signature(method)
             if signature.return_annotation != Response:
                 raise WrongReturnType(method, signature.return_annotation)
+
+    async def close(self) -> None:
+        # pylint: disable=protected-access
+        logger.debug(
+            "REQUESTS WHILE CLOSING %s",
+            [
+                (r.request.method, r.request.url, r.request.headers)
+                for r in self._client._transport._pool._requests
+            ],
+        )
+        await self._client.aclose()
