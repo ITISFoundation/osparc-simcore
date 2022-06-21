@@ -1,7 +1,7 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator, Iterator
 from uuid import UUID
 
 from fastapi import FastAPI

@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import sys
 from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
 
