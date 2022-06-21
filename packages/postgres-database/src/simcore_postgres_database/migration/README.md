@@ -10,6 +10,8 @@ Our database migration is based on [alembic] and emulates [flask-migrate] plugin
 
 ### Init
 
+NOTE: This does not need to be run if you want to use alembic with simcore, as the folder-init is already done. Instead navigate your shell to `osparc-simcore/packages/postgres-database/` and follow the instructions at the bottom of the file in "Use Cases"
+
 ```command
 alembic init migration
 ```
@@ -78,8 +80,8 @@ We create a revision script for the change by using the local db as follows:
 pip install -r packages/postgres-database/requirements/dev.txt # install sc-pg package
 docker-compose -f services/docker-compose.yml -f services/docker-compose-ops.yml up adminer # bring db and ui up
 docker ps # find the published port for the db
-sc-pg discover -u simcore -p simcore --port=32787 # discover the db
-sp-pg info # what revision are we at?
+sc-pg discover -u scu -p adminadmin --port=5432 # discover the db
+sc-pg info # what revision are we at?
 sc-pg upgrade head # to to latest if necessary
 sc-pg review -m "Altered_table_why" # create a revision, note: the string will be part of the script
 sc-pg upgrade head # apply the revision
