@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class ThinDynamicSidecarClient(BaseHThinClient):
+    """
+    NOTE: all calls can raise the following errors.
+    - `UnexpectedStatusError`
+    - `ClientTransportError`
+    - `httpx.HTTPError`
+    """
+
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):

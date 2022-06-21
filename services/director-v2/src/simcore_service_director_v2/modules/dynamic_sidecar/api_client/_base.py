@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 def retry_on_errors(
     request_func: Callable[..., Awaitable[Response]]
 ) -> Callable[..., Awaitable[Response]]:
+    """
+    raises:
+    - `ClientTransportError`
+    - `httpx.HTTPError`
+    """
     assert asyncio.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
@@ -64,7 +69,13 @@ def retry_on_errors(
 
 
 def expect_status(expected_code: int):
-    """NOTE: always apply after `retry_on_errors`"""
+    """
+    NOTE: always apply after `retry_on_errors`
+
+    raises:
+    - `UnexpectedStatusError`
+    - `httpx.HTTPError`
+    """
 
     def decorator(
         request_func: Callable[..., Awaitable[Response]]

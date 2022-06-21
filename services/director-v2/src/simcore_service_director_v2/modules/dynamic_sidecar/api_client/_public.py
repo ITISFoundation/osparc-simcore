@@ -12,11 +12,7 @@ from servicelib.utils import logged_gather
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
-from ..errors import (
-    DynamicSidecarUnexpectedResponseStatus,
-    EntrypointContainerNotFoundError,
-    NodeportsDidNotFindNodeError,
-)
+from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
 from ._errors import UnexpectedStatusError, ClientTransportError
 from ._thin import ThinDynamicSidecarClient
 
@@ -58,7 +54,7 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint, only_status=True
             )
             return response.json()
-        except UnexpectedStatusError:
+        except (HTTPError, ClientTransportError, ClientTransportError):
             return {}
 
     @log_decorator(logger=logger)
@@ -151,9 +147,7 @@ class DynamicSidecarClient:
                     raise NodeportsDidNotFindNodeError(
                         node_uuid=json_error["node_uuid"]
                     ) from e
-            raise DynamicSidecarUnexpectedResponseStatus(
-                e.response, "output ports push"
-            ) from e
+            raise e
 
     @log_decorator(logger=logger)
     async def get_entrypoint_container_name(
@@ -173,6 +167,7 @@ class DynamicSidecarClient:
         except UnexpectedStatusError as e:
             if e.response.status_code == status.HTTP_404_NOT_FOUND:
                 raise EntrypointContainerNotFoundError() from e
+            raise e
 
     @log_decorator(logger=logger)
     async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
