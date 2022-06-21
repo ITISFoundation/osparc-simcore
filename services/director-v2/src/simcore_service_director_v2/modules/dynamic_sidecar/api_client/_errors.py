@@ -1,3 +1,5 @@
+from typing import Optional
+
 from httpx import Response
 
 
@@ -10,6 +12,10 @@ class BaseClientError(Exception):
 
 class _RetryRequestError(BaseClientError):
     """used to retry request internally"""
+
+    def __init__(self, error: Optional[Exception], *args) -> None:
+        super().__init__(*args)
+        self.error = error
 
 
 class WrongReturnType(BaseClientError):

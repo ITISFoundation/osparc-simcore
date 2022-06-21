@@ -6,7 +6,7 @@ from httpx import ConnectError, Response, codes
 from pydantic import AnyHttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base import (
-    BaseHThinClient,
+    BaseThinClient,
     expect_status,
     retry_on_errors,
 )
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.asyncio
 # UTILS
 
 
-class TestThickClient(BaseHThinClient):
+class TestThickClient(BaseThinClient):
     @retry_on_errors
     async def get_provided_url(self, provided_url: str) -> Response:
         return await self._client.get(provided_url)
@@ -63,6 +63,8 @@ async def test_connection_error_retry(
     with pytest.raises(ConnectError):
         await client.get_provided_url(test_url)
 
+    # check if the right amount of messages was captured by the logs
+    assert len(caplog_info_level.messages) == retry_count
     for i, log_message in enumerate(caplog_info_level.messages):
         assert log_message.startswith(
             f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
@@ -75,7 +77,7 @@ async def test_(thick_client: TestThickClient) -> None:
 
 
 async def test_methods_do_not_return_response() -> None:
-    class ATestClient(BaseHThinClient):
+    class ATestClient(BaseThinClient):
         async def public_method_ok(self) -> Response:  # type: ignore
             """this method will be ok even if no code is used"""
 
@@ -94,7 +96,7 @@ async def test_expect_state_decorator(
     get_wrong_state = f"{test_url}/wrong-state"
     error_status = codes.NOT_FOUND
 
-    class ATestClient(BaseHThinClient):
+    class ATestClient(BaseThinClient):
         @expect_status(codes.OK)
         async def get_200_ok(self) -> Response:
             return await self._client.get(url_get_200_ok)
