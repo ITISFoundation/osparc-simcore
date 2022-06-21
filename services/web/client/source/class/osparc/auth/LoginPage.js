@@ -69,7 +69,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
         width: 250,
-        height: osparc.utils.Utils.isProduct("s4l") ? 100 : 150
+        height: 100
       });
       image.setFont("text-18");
       return image;
