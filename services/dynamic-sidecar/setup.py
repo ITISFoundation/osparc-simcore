@@ -53,6 +53,11 @@ SETUP = dict(
     PROD_REQUIREMENTS=PROD_REQUIREMENTS,
     TEST_REQUIREMENTS=TEST_REQUIREMENTS,
     setup_requires=["setuptools_scm"],
+    entry_points={
+        "console_scripts": [
+            "simcore-service-dynamic-sidecar=simcore_service_dynamic_sidecar.cli:main",
+        ],
+    },
 )
 
 
