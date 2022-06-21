@@ -17,7 +17,7 @@ from ..errors import (
     EntrypointContainerNotFoundError,
     NodeportsDidNotFindNodeError,
 )
-from ._errors import UnexpectedStatusError
+from ._errors import UnexpectedStatusError, ClientTransportError
 from ._thin import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class DynamicSidecarClient:
             # this request uses a very short timeout
             response = await self.thin_client.get_health(dynamic_sidecar_endpoint)
             return response.json()["is_healthy"]
-        except (HTTPError, DynamicSidecarUnexpectedResponseStatus):
+        except (HTTPError, ClientTransportError, ClientTransportError):
             return False
 
     @log_decorator(logger=logger)
@@ -218,7 +218,7 @@ class DynamicSidecarClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except HTTPError:
+        except (HTTPError, UnexpectedStatusError, ClientTransportError):
             return
 
         sorted_container_names = sorted(containers_status.keys())
@@ -265,7 +265,7 @@ class DynamicSidecarClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except HTTPError:
+        except (HTTPError, UnexpectedStatusError, ClientTransportError):
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
