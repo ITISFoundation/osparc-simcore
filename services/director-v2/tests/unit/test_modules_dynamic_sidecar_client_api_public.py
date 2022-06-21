@@ -120,11 +120,11 @@ async def test_is_healthy_times_out(
     raise_retry_count: None,
     dynamic_sidecar_client: DynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-    caplog_warning_level: LogCaptureFixture,
+    caplog_info_level: LogCaptureFixture,
     retry_count: int,
 ) -> None:
     assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
-    for i, log_message in enumerate(caplog_warning_level.messages):
+    for i, log_message in enumerate(caplog_info_level.messages):
         assert log_message.startswith(
             f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
         )

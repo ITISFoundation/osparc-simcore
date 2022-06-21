@@ -357,6 +357,6 @@ def mocked_catalog_service_api(
 
 
 @pytest.fixture()
-def caplog_warning_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
-    with caplog.at_level(logging.WARNING):
+def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(logging.INFO):
         yield caplog

@@ -44,7 +44,7 @@ def retry_on_errors(
                         return response
                     except ConnectError as e:
                         assert e._request
-                        logger.warning(
+                        logger.info(
                             "[%s/%s]Retry. Unexpected ConnectError while requesting '%s %s': %s",
                             attempt.retry_state.attempt_number,
                             zelf._request_max_retries,

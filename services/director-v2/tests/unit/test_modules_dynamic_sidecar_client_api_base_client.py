@@ -56,14 +56,14 @@ async def test_connection_error(
 
 @pytest.mark.parametrize("retry_count", [2, 1])
 async def test_connection_error_retry(
-    retry_count: int, test_url: AnyHttpUrl, caplog_warning_level: LogCaptureFixture
+    retry_count: int, test_url: AnyHttpUrl, caplog_info_level: LogCaptureFixture
 ) -> None:
     client = TestThickClient(request_max_retries=retry_count)
 
     with pytest.raises(ConnectError):
         await client.get_provided_url(test_url)
 
-    for i, log_message in enumerate(caplog_warning_level.messages):
+    for i, log_message in enumerate(caplog_info_level.messages):
         assert log_message.startswith(
             f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
         )
