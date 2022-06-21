@@ -14,9 +14,11 @@ from locust.contrib.fasthttp import FastHttpUser
 logging.basicConfig(level=logging.INFO)
 
 
-# 'import locust_plugins' is necessary to use --check-fail-ratio
+# NOTE: 'import locust_plugins' is necessary to use --check-fail-ratio
+# this assert is added to avoid that pycln pre-commit hook does not
+# remove the import (the tool assumes the import is not necessary)
 assert locust_plugins  # nosec
-# adds assert here to avoid pycln removing it
+
 
 load_dotenv()  # take environment variables from .env
 
