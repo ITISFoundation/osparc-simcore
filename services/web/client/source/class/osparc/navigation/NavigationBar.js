@@ -117,6 +117,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("user-menu");
 
       this.setPageContext("dashboard");
+
+      setTimeout(() => this.__checkScreenSize(), 100);
+      window.addEventListener("resize", () => this.__checkScreenSize());
+    },
+
+    __checkScreenSize: function() {
+      const h = document.documentElement.clientHeight;
+      this.setHeight(h > 900 ? 60 : 50);
+
+      this.getChildControl("logo").getChildControl("on-logo").setSize({
+        width: h > 900 ? 110 : 100,
+        height: h > 900 ? 60 : 50
+      });
     },
 
     _createChildControlImpl: function(id) {
