@@ -11,6 +11,7 @@ self._to_observe is protected by an asyncio Lock
 
 import asyncio
 import contextlib
+import functools
 import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
@@ -405,9 +406,9 @@ class DynamicSidecarsScheduler:
                     name=f"observe_{service_name}",
                 )
                 observation_task.add_done_callback(
-                    # NOTE: lambdas are evaluated at execution time, so we assign it at definition time this way
-                    lambda task=observation_task: self._service_observation_task.pop(
-                        service_name, None
+                    functools.partial(
+                        lambda s, _: self._service_observation_task.pop(s, None),
+                        service_name,
                     )
                 )
                 logger.debug(
