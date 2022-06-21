@@ -6,9 +6,8 @@ import json
 import logging
 import os
 import urllib.parse
-from argparse import Namespace
 from time import sleep
-from typing import Any, AsyncIterator, Dict, Final, NamedTuple, Optional
+from typing import Any, AsyncIterator, Dict, Final, Iterator, NamedTuple, Optional
 from uuid import UUID
 
 import pytest
@@ -36,6 +35,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from starlette import status
 from starlette.testclient import TestClient
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["adminer"]
+
+
 WAIT_FOR_HEALTH_CALLS: Final[float] = 1.0
 
 
@@ -50,12 +53,14 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def minimal_config(project_env_devel_environment, monkeypatch: MonkeyPatch) -> None:
+def minimal_config(
+    mock_env: None,
+    postgres_host_config: Dict[str, str],
+    monkeypatch: MonkeyPatch,
+) -> None:
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("SC_BOOT_MODE", "default")
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
@@ -70,7 +75,7 @@ def dynamic_sidecar_headers() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
+def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -114,7 +119,6 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
 @pytest.fixture
 async def mock_retrieve_features(
     minimal_app: FastAPI,
-    client: TestClient,
     service: Dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
@@ -137,13 +141,13 @@ async def mock_retrieve_features(
         else:
             dynamic_sidecar_scheduler = minimal_app.state.dynamic_sidecar_scheduler
             node_uuid = UUID(service["node_uuid"])
-            serice_name = "serice_name"
+            service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._inverse_search_mapping[node_uuid] = serice_name
-            dynamic_sidecar_scheduler._to_observe[serice_name] = Namespace(
-                scheduler_data=scheduler_data_from_http_request
-            )
+            dynamic_sidecar_scheduler._inverse_search_mapping[node_uuid] = service_name
+            dynamic_sidecar_scheduler._to_observe[
+                service_name
+            ] = scheduler_data_from_http_request
 
             respx_mock.post(
                 f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/ports/inputs:pull",
@@ -153,13 +157,13 @@ async def mock_retrieve_features(
             yield respx_mock
 
             dynamic_sidecar_scheduler._inverse_search_mapping.pop(node_uuid)
-            dynamic_sidecar_scheduler._to_observe.pop(serice_name)
+            dynamic_sidecar_scheduler._to_observe.pop(service_name)
 
 
 @pytest.fixture
 def mocked_director_v0_service_api(
     minimal_app: FastAPI, service: Dict[str, Any], service_labels: Dict[str, Any]
-) -> MockRouter:
+) -> Iterator[MockRouter]:
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
@@ -251,7 +255,6 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 def test_create_dynamic_services(
-    docker_swarm: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
@@ -386,7 +389,6 @@ def test_get_service_status(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
-    docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
@@ -449,6 +451,7 @@ def test_delete_service(
     ],
 )
 def test_retrieve(
+    minimal_config: None,
     mock_retrieve_features: Optional[MockRouter],
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
