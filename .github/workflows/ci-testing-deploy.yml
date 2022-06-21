@@ -6,22 +6,28 @@ on:
       - "*"
     tags-ignore:
       - "*"
-    paths-ignore:
-      - "*.md"
-      - "*.png"
-      - "*.svg"
-      - "docs/**"
-      - ".vscode/**"
+    paths:
+      - "!*.md"
+      - "!*.png"
+      - "!*.svg"
+      - "!docs/**"
+      - "!.vscode/**"
+      - "**.py"
+      - "**.js"
+      - ".github/workflows/ci-testing-deploy.yml"
   pull_request:
     branches:
       - "*"
-    paths-ignore:
-      - "*.md"
-      - "*.png"
-      - "*.svg"
-      - "docs/**"
-      - ".vscode/**"
-      - ".vscode-template/**"
+    paths:
+      - "!*.md"
+      - "!*.png"
+      - "!*.svg"
+      - "!docs/**"
+      - "!.vscode/**"
+      - "!.vscode-template/**"
+      - "**.py"
+      - "**.js"
+      - ".github/workflows/ci-testing-deploy.yml"
 
 env:
   # secrets can be set in settings/secrets on github
