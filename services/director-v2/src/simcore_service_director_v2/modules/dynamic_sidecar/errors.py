@@ -49,7 +49,7 @@ class DynamicSidecarUnexpectedResponseStatus(DirectorException):
         formatted_tag = f"[during {msg}]" if msg is not None else ""
         message = (
             f"Unexpected response {formatted_tag}: status={response.status_code}, "
-            f"body={response.text}"
+            f"url={response.url}, body={response.text}"
         )
         super().__init__(message)
         self.response = response

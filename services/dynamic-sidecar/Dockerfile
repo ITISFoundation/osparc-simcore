@@ -13,10 +13,9 @@ LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 RUN set -eux && \
   apt-get update && \
   apt-get install -y \
+  curl \
   gosu \
-  curl \
   libmagic1 \
-  curl \
   && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
