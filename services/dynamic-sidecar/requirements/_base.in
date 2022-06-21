@@ -19,7 +19,6 @@
 aio-pika
 aiodocker
 aiofiles
-async_generator
 async-timeout
 docker-compose
 fastapi
