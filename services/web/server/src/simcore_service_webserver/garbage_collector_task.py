@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 GC_TASK_NAME = f"background-task.{__name__}.collect_garbage_periodically"
 GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
+GC_TASK = f"{GC_TASK_NAME}.task"
 
 
 async def run_background_task(app: web.Application):
@@ -29,6 +30,8 @@ async def run_background_task(app: web.Application):
     gc_bg_task = asyncio.create_task(
         collect_garbage_periodically(app), name=GC_TASK_NAME
     )
+    # attaches variable to the app's lifetime
+    app[GC_TASK] = gc_bg_task
 
     # FIXME: added this config to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
