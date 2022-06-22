@@ -28,10 +28,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 )
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
-    close_api_client,
-    setup_api_client,
-)
+from simcore_service_director_v2.modules.dynamic_sidecar import api_client
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
@@ -229,14 +226,14 @@ async def mocked_app(
                 app,
                 client=httpx_client,
             )
-            await setup_api_client(app)
+            await api_client.setup(app)
             await setup_scheduler(app)
 
             yield app
 
     finally:
         await shutdown_scheduler(app)
-        await close_api_client(app)
+        await api_client.shutdown(app)
 
 
 @pytest.fixture

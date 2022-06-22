@@ -19,9 +19,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
-    close_api_client,
+    shutdown,
     get_dynamic_sidecar_client,
-    setup_api_client,
+    setup,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
@@ -60,9 +60,9 @@ async def dynamic_sidecar_client(
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
-    await setup_api_client(app)
+    await setup(app)
     yield get_dynamic_sidecar_client(app)
-    await close_api_client(app)
+    await shutdown(app)
 
 
 @pytest.fixture

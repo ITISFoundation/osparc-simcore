@@ -279,12 +279,12 @@ class DynamicSidecarClient:
         )
 
 
-async def setup_api_client(app: FastAPI) -> None:
+async def setup(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
 
 
-async def close_api_client(app: FastAPI) -> None:
+async def shutdown(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
     client: Optional[DynamicSidecarClient]
     if client := app.state.dynamic_sidecar_api_client:
