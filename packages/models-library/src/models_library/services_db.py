@@ -35,7 +35,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
                 "thumbnail": "http://thumbnailit.org/image",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
-                "deprecated": datetime.fromisoformat("2099-01-19 12:45:00"),
+                "deprecated": "2099-01-19 12:45:00",
                 "quality": {
                     "enabled": True,
                     "tsr_target": {
