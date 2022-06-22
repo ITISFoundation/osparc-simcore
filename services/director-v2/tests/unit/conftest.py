@@ -5,7 +5,15 @@ import json
 import logging
 import random
 import urllib.parse
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterable, Iterator, Mapping
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+)
 
 import pytest
 import respx

@@ -5,13 +5,7 @@ import logging
 from logging import Logger
 from typing import Any, Awaitable, Callable, Optional
 
-from httpx import (
-    AsyncClient,
-    ConnectError,
-    HTTPError,
-    PoolTimeout,
-    Response,
-)
+from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
@@ -23,8 +17,8 @@ from tenacity.wait import wait_exponential
 from ._errors import (
     ClientHttpError,
     UnexpectedStatusError,
-    _WrongReturnType,
     _RetryRequestError,
+    _WrongReturnType,
 )
 
 logger = logging.getLogger(__name__)

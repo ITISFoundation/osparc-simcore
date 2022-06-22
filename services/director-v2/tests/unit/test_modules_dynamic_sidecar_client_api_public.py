@@ -14,8 +14,8 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
-    UnexpectedStatusError,
     ClientHttpError,
+    UnexpectedStatusError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
