@@ -21,7 +21,6 @@ from typing import Optional
 from uuid import UUID
 
 import httpx
-from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
@@ -91,10 +90,10 @@ async def _apply_observation_cycle(
         )
 
     try:
-        async with timeout(
-            dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
-        ):
-            await update_dynamic_sidecar_health(app, scheduler_data)
+        await asyncio.wait_for(
+            update_dynamic_sidecar_health(app, scheduler_data),
+            timeout=dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION,
+        )
     except asyncio.TimeoutError:
         scheduler_data.dynamic_sidecar.is_available = False
 
