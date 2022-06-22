@@ -44,7 +44,7 @@ def setup_logger(settings: DynamicSidecarSettings) -> None:
     logging.root.setLevel(settings.log_level)
 
 
-def assemble_application() -> FastAPI:
+def create_app() -> FastAPI:
     """
     Creates the application from using the env vars as a context
     Also stores inside the state all instances of classes

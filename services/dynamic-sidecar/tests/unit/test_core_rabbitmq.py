@@ -18,7 +18,7 @@ from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_sidecar.core.application import assemble_application
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
@@ -114,7 +114,7 @@ def mock_environment(
 
 @pytest.fixture
 def app(mock_environment: None) -> FastAPI:
-    return assemble_application()
+    return create_app()
 
 
 # UTILS
