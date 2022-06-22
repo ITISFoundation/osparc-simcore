@@ -225,7 +225,6 @@ async def stop_dynamic_service(
         retry_error_callback=_log_error,
     ):
         with attempt:
-            attempt.retry_state
             if scheduler.is_service_tracked(node_uuid):
                 raise TryAgain
 
