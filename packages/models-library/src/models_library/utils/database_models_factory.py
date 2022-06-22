@@ -75,9 +75,7 @@ def _eval_defaults(
                 )
             elif issubclass(pydantic_type, datetime):
                 assert isinstance(  # nosec
-                    column.server_default.arg, sqlalchemy.sql.functions.now
-                ) or isinstance(  # nosec
-                    column.server_default.arg, null
+                    column.server_default.arg, (null, sqlalchemy.sql.functions.now)
                 )
                 default_factory = datetime.now
     return default, default_factory
