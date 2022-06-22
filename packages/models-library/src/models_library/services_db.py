@@ -3,7 +3,6 @@
 NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
-from datetime import datetime
 from typing import Optional
 
 from pydantic import Field
