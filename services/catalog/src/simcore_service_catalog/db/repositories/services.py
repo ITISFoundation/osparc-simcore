@@ -116,8 +116,6 @@ class ServicesRepository(BaseRepository):
         if minor is not None and major is None:
             raise ValueError("Expected only major.*.* or major.minor.*")
 
-        ## TODO: Remove deprecated services from this query
-
         search_condition = services_meta_data.c.key == key
         if major is not None:
             if minor is not None:
