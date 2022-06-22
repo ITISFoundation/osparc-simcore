@@ -245,7 +245,9 @@ class DynamicSidecar(BaseModel):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        return parse_obj_as(AnyHttpUrl, f"http://{self.hostname}:{self.port}")
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # Compliant
+        )
 
     @property
     def are_containers_ready(self) -> bool:
