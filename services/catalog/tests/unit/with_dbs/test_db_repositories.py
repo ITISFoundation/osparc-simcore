@@ -105,7 +105,6 @@ async def test_create_services(
         "1.0.0",
         team_access=None,
         everyone_access=None,
-        deprecated=None,
     )
 
     # validation
