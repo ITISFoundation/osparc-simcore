@@ -20,7 +20,6 @@ from dataclasses import dataclass, field
 from typing import Optional
 from uuid import UUID
 
-import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias

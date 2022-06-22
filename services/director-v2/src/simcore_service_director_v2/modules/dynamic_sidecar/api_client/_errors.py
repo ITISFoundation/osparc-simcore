@@ -50,9 +50,9 @@ class BaseClientHTTPError(BaseClientError):
 class ClientHttpError(BaseClientHTTPError):
     """used to captures all httpx.HttpError"""
 
-    def __init__(self, original: Exception) -> None:
+    def __init__(self, error: Exception) -> None:
         super().__init__()
-        self.original: Exception = original
+        self.error: Exception = error
 
 
 class UnexpectedStatusError(BaseClientHTTPError):

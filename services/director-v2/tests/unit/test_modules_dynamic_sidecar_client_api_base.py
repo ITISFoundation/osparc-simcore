@@ -61,11 +61,20 @@ def test_url() -> AnyHttpUrl:
 # TESTS
 
 
+async def test_base_with_async_context_manager(test_url: AnyHttpUrl) -> None:
+    async with TestThickClient(request_max_retries=1) as client:
+        with pytest.raises(ClientHttpError):
+            await client.get_provided_url(test_url)
+
+
 async def test_connection_error(
     thick_client: TestThickClient, test_url: AnyHttpUrl
 ) -> None:
-    with pytest.raises(ClientHttpError) as asd:
+    with pytest.raises(ClientHttpError) as exe_info:
         await thick_client.get_provided_url(test_url)
+
+    assert isinstance(exe_info.value, ClientHttpError)
+    assert isinstance(exe_info.value.error, ConnectError)
 
 
 @pytest.mark.parametrize("retry_count", [2, 1])
@@ -93,6 +102,7 @@ async def test_retry_on_errors_by_error_type(
     retry_count: int,
 ) -> None:
     class ATestClient(BaseThinClient):
+        # pylint: disable=no-self-use
         @retry_on_errors
         async def raises_request_error(self) -> Response:
             raise error_class(
@@ -126,6 +136,7 @@ async def test_retry_on_errors_by_error_type(
 
 async def test_retry_on_errors_raises_client_http_error() -> None:
     class ATestClient(BaseThinClient):
+        # pylint: disable=no-self-use
         @retry_on_errors
         async def raises_http_error(self) -> Response:
             raise HTTPError("mock_http_error")

@@ -24,7 +24,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public impo
     setup_api_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
-    DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
     NodeportsDidNotFindNodeError,
 )

@@ -61,6 +61,8 @@ def retry_on_errors(
     request_func: Callable[..., Awaitable[Response]]
 ) -> Callable[..., Awaitable[Response]]:
     """
+    Will retry the request on `ConnectError` and `PoolTimeout`.
+    Also wraps `httpx.HTTPError`
     raises:
     - `ClientHttpError`
     """
@@ -98,8 +100,8 @@ def retry_on_errors(
             assert e.__cause__  # nosec
 
             # wrap if httpx errors
-            if isinstance(e.__cause__, HTTPError):
-                raise ClientHttpError(e) from e.__cause__
+            if isinstance(e.error, HTTPError):
+                raise ClientHttpError(e.error) from e.error
 
             raise e.__cause__
 
@@ -108,6 +110,8 @@ def retry_on_errors(
 
 def expect_status(expected_code: int):
     """
+    raises an `UnexpectedStatusError` if the request's status is different
+    from `expected_code`
     NOTE: always apply after `retry_on_errors`
 
     raises:
@@ -169,3 +173,9 @@ class BaseThinClient:
     async def close(self) -> None:
         _log_requests_in_pool(self._client, "closing")
         await self._client.aclose()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_t, exc_v, exc_tb):
+        await self.close()
