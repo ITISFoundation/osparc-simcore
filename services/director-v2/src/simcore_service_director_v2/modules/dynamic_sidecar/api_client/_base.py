@@ -159,6 +159,7 @@ class BaseThinClient:
         self._client = AsyncClient(**client_args)
 
         # ensure all user defined public methods return `httpx.Response`
+        # NOTE: ideally these checks should be ran at import time!
         public_methods = [
             t[1]
             for t in inspect.getmembers(self, predicate=inspect.ismethod)
