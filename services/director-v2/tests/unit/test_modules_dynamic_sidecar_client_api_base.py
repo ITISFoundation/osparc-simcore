@@ -36,7 +36,7 @@ class TestThickClient(BaseThinClient):
 
     @retry_on_errors
     async def get_retry_for_status(self) -> Response:
-        return await self._client.get("http://some-test.url")
+        return await self._client.get("http://missing-host:1111")
 
 
 def chunks(lst: list[Any], n: int) -> Iterator[list[Any]]:
@@ -55,7 +55,7 @@ def thick_client() -> TestThickClient:
 
 @pytest.fixture
 def test_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://some-host:8008")
+    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
 
 
 # TESTS
@@ -100,6 +100,7 @@ async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
     caplog_info_level: LogCaptureFixture,
     retry_count: int,
+    test_url: AnyHttpUrl,
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
@@ -107,7 +108,7 @@ async def test_retry_on_errors_by_error_type(
         async def raises_request_error(self) -> Response:
             raise error_class(
                 "mock_connect_error",
-                request=Request(method="GET", url="http://mocked-test"),
+                request=Request(method="GET", url=test_url),
             )
 
     client = ATestClient(request_max_retries=retry_count)

@@ -63,7 +63,7 @@ def thin_client(mocked_app: FastAPI) -> ThinDynamicSidecarClient:
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://test-sidecar:8000")
+    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
 
 
 @pytest.fixture

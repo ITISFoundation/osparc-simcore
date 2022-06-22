@@ -33,7 +33,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://test-client:8282")
+    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
 
 
 @pytest.fixture
