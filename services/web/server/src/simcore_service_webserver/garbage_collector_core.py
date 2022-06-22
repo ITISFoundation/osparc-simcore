@@ -147,6 +147,7 @@ async def remove_disconnected_user_resources(
         )
 
         for resource_name, resource_value in dead_key_resources.items():
+            resource_value = f"{resource_value}"
 
             # Releasing a resource consists of two steps
             #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
