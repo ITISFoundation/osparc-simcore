@@ -46,7 +46,7 @@ async def test_global_rate_limit_route(requests_per_second, aiohttp_client):
     t0 = time.time()
     while len(futures) < num_requests:
         t1 = time.time()
-        futures.append(asyncio.ensure_future(client.get("/")))
+        futures.append(asyncio.create_task(client.get("/")))
         time.sleep(time_between_requests - (time.time() - t1))
 
     elapsed = time.time() - t0

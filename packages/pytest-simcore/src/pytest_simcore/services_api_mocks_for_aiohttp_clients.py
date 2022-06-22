@@ -6,7 +6,7 @@ import json
 import random
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from aiohttp import web
@@ -28,7 +28,7 @@ PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
 
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
-FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
+FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": [
         "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
         "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
@@ -40,7 +40,7 @@ FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
     "e83a359a-1efe-41d3-83aa-a285afbfaf12": [],
 }
 
-FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
+FULL_PROJECT_NODE_STATES: dict[str, dict[str, Any]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": {"modified": True, "dependencies": []},
     "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
         "modified": True,
@@ -76,7 +76,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         if "start_pipeline" in body and body["start_pipeline"]
         else RunningState.NOT_STARTED
     )
-    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     if body.get("subgraph"):
         # create some fake adjacency list
@@ -116,7 +116,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
 
 def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
-    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
 
     return CallbackResult(

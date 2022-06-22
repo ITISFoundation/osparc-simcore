@@ -32,7 +32,10 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
+from servicelib.aiohttp.application_keys import (
+    APP_FIRE_AND_FORGET_TASKS_KEY,
+    APP_JSONSCHEMA_SPECS_KEY,
+)
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
@@ -616,8 +619,14 @@ async def notify_project_node_update(
         await send_group_messages(app, room, messages)
 
 
-async def post_trigger_connected_service_retrieve(**kwargs) -> None:
-    await fire_and_forget_task(trigger_connected_service_retrieve(**kwargs))
+async def post_trigger_connected_service_retrieve(
+    app: web.Application, **kwargs
+) -> None:
+    await fire_and_forget_task(
+        trigger_connected_service_retrieve(app, **kwargs),
+        task_suffix_name="trigger_connected_service_retrieve",
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
 
 async def trigger_connected_service_retrieve(
@@ -765,7 +774,9 @@ async def try_close_project_for_user(
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
-            remove_project_dynamic_services(user_id, project_uuid, app)
+            remove_project_dynamic_services(user_id, project_uuid, app),
+            task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
     else:
         log.warning(

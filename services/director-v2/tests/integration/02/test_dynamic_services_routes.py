@@ -126,6 +126,7 @@ async def director_v2_client(
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
@@ -240,6 +241,8 @@ async def test_start_status_stop(
     mock_dynamic_sidecar_api_calls: None,
     mock_projects_networks_repository: None,
 ):
+    # NOTE: this test does not like it when the catalog is not fully ready!!!
+
     # starting the service
     headers = {
         "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, Callable, Iterator
 from uuid import uuid4
 
 import pytest
@@ -12,10 +12,10 @@ from simcore_postgres_database.models.users import UserRole, UserStatus, users
 @pytest.fixture()
 def registered_user(
     postgres_db: sa.engine.Engine, faker: Faker
-) -> Iterator[Callable[..., Dict]]:
+) -> Iterator[Callable[..., dict]]:
     created_user_ids = []
 
-    def creator(**user_kwargs) -> Dict[str, Any]:
+    def creator(**user_kwargs) -> dict[str, Any]:
         with postgres_db.connect() as con:
             # removes all users before continuing
             user_config = {
@@ -52,9 +52,9 @@ def registered_user(
 def project(
     postgres_db: sa.engine.Engine, faker: Faker
 ) -> Iterator[Callable[..., ProjectAtDB]]:
-    created_project_ids: List[str] = []
+    created_project_ids: list[str] = []
 
-    def creator(user: Dict[str, Any], **overrides) -> ProjectAtDB:
+    def creator(user: dict[str, Any], **overrides) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {

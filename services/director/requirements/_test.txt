@@ -164,6 +164,7 @@ pytest==6.1.2
     #   pytest-cov
     #   pytest-instafail
     #   pytest-mock
+    #   pytest-simcore
     #   pytest-sugar
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
@@ -174,6 +175,8 @@ pytest-instafail==0.4.2
 pytest-mock==3.3.1
     # via -r requirements/_test.in
 pytest-runner==5.2
+    # via -r requirements/_test.in
+pytest-simcore @ git+https://github.com/ITISFoundation/osparc-simcore.git@79f866219bf650c5eeb4fcdf8f017319087c92c7#subdirectory=packages/pytest-simcore
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in

@@ -7,7 +7,6 @@ import configparser
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 import pytest
 import yaml
@@ -21,7 +20,7 @@ FROZEN_SERVICES = ["director"]
 
 
 # TODO: enhance version comparison with from packaging.version from setuptools
-def to_version(version: str) -> Tuple[int, ...]:
+def to_version(version: str) -> tuple[int, ...]:
     return tuple(int(v) for v in version.split("."))
 
 
@@ -29,7 +28,7 @@ def to_str(version) -> str:
     return ".".join(map(str, version))
 
 
-def make_versions_comparable(*versions) -> List[Tuple[int]]:
+def make_versions_comparable(*versions) -> list[tuple[int]]:
     vers = []
     n = 10000
     for v in versions:
@@ -42,7 +41,7 @@ def make_versions_comparable(*versions) -> List[Tuple[int]]:
 
 
 @pytest.fixture(scope="session")
-def expected_python_version(osparc_simcore_root_dir: Path) -> Tuple[int, ...]:
+def expected_python_version(osparc_simcore_root_dir: Path) -> tuple[int, ...]:
     py_version: str = (
         (osparc_simcore_root_dir / "requirements" / "PYTHON_VERSION")
         .read_text()
@@ -72,7 +71,7 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> List[Tuple[Path, str]]:
+def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str]]:
     res = []
     for dockerfile_path in osparc_simcore_root_dir.rglob("Dockerfile"):
         found = PIP_INSTALL_UPGRADE_PATTERN.search(dockerfile_path.read_text())
@@ -91,7 +90,7 @@ def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> List[Tuple[Path, str]]:
 
 
 @pytest.fixture(scope="session")
-def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> List[Tuple[Path, str]]:
+def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str]]:
     res = []
     for dockerfile_path in osparc_simcore_root_dir.rglob("Dockerfile"):
         found = PYTHON_VERSION_DOCKER_PATTERN.search(dockerfile_path.read_text())

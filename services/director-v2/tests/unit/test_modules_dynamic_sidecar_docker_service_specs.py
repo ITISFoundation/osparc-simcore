@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from pprint import pprint
 from typing import Any, Dict, Iterator, cast
 from uuid import UUID
 
@@ -151,18 +150,11 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
             '"request_scheme": null, '
             '"proxy_service_name": '
             '"dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa"}',
-            "io.simcore.zone": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
             "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
             "swarm_stack_name": "test_swarm_name",
-            "traefik.docker.network": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            "traefik.enable": "true",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.entrypoints": "http",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.priority": "10",
-            "traefik.http.routers.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.rule": "PathPrefix(`/`)",
-            "traefik.http.services.dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa.loadbalancer.server.port": "8000",
             "type": "main-v2",
             "user_id": "234",
             "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -318,20 +310,28 @@ def test_get_dynamic_proxy_spec(
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
-    dynamic_sidecar_spec = get_dynamic_sidecar_spec(
-        scheduler_data=scheduler_data,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-        swarm_network_id=swarm_network_id,
-        settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
-        app_settings=minimal_app.state.settings,
-    )
-    assert dynamic_sidecar_spec
+    dynamic_sidecar_spec_accumulated = None
+    for _ in range(10):
+        dynamic_sidecar_spec = get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
+            app_settings=minimal_app.state.settings,
+        )
+        assert dynamic_sidecar_spec
+        assert (
+            jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
+            == expected_dynamic_sidecar_spec
+        )
+        dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
     assert (
-        jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
+        jsonable_encoder(
+            dynamic_sidecar_spec_accumulated, by_alias=True, exclude_unset=True
+        )
         == expected_dynamic_sidecar_spec
     )
-    pprint(dynamic_sidecar_spec)
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 

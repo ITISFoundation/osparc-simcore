@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -195,14 +196,6 @@ def get_dynamic_sidecar_spec(
     create_service_params = {
         "endpoint_spec": endpoint_spec,
         "labels": {
-            # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": scheduler_data.simcore_traefik_zone,
-            "traefik.docker.network": scheduler_data.dynamic_sidecar_network_name,  # also used for scheduling
-            "traefik.enable": "true",
-            f"traefik.http.routers.{scheduler_data.service_name}.entrypoints": "http",
-            f"traefik.http.routers.{scheduler_data.service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.service_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{scheduler_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",
             "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
@@ -230,7 +223,9 @@ def get_dynamic_sidecar_spec(
                 "Mounts": mounts,
             },
             "Placement": {
-                "Constraints": app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                "Constraints": deepcopy(
+                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                )
             },
             "RestartPolicy": {
                 "Condition": "on-failure",

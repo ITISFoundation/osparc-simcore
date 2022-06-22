@@ -5,7 +5,6 @@
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Set
 
 import pytest
 
@@ -19,8 +18,8 @@ import pytest
 )
 async def test_python_package_installation(
     package_name: str,
-    services: Set[str],
-    simcore_docker_compose: Dict,
+    services: set[str],
+    simcore_docker_compose: dict,
     osparc_simcore_root_dir: Path,
 ):
     def _extract_from_dockerfile(service_name: str) -> str:
