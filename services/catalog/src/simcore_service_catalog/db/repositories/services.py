@@ -205,8 +205,6 @@ class ServicesRepository(BaseRepository):
                 raise ValueError(
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
-        logger.debug("smd debug2")
-        logger.debug(new_service.dict(by_alias=True))
         # Set the deprecation datetime to None (will be converted top sql's null) if not given
         new_service_dict = new_service.dict(by_alias=True)
         if "deprecated" not in new_service_dict:
