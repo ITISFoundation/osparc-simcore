@@ -80,15 +80,14 @@ async def collect_garbage_periodically(app: web.Application):
 
         except asyncio.CancelledError:  # EXIT
             logger.info(
-                "Stopped:" "Garbage collection task was cancelled, it will not restart!"
+                "Stopped: Garbage collection task was cancelled, it will not restart!"
             )
             # do not catch Cancellation errors
             raise
 
         except Exception:  # RESILIENT restart # pylint: disable=broad-except
             logger.warning(
-                "Stopped:"
-                "There was an error during garbage collection, restarting...",
+                "Stopped: There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
 
