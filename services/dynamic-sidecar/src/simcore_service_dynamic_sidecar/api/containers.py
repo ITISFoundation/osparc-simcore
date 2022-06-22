@@ -76,7 +76,9 @@ async def _task_docker_compose_up(
 
     if finished_without_errors:
         await send_message(rabbitmq, "service containers started")
-        logger.info(message)
+        # always display the result of docker-compose up command
+        # makes it simpler to debug future issues
+        logger.warning(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
