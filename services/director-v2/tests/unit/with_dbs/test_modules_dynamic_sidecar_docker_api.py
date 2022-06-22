@@ -34,10 +34,15 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     GenericDockerError,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 MAX_INT64 = 9223372036854775807
 
 # FIXTURES
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["adminer"]
 
 
 @pytest.fixture
@@ -81,14 +86,20 @@ async def ensure_swarm_network(
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
 ) -> AsyncIterator[None]:
-    network_id = None
-    try:
-        network_id = await docker_api.create_network(network_config)
-        yield
-    finally:
-        if network_id is not None:
+    network_id = await docker_api.create_network(network_config)
+    yield
+
+    # docker containers must be gone before network removal is functional
+    async for attempt in AsyncRetrying(
+        reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
+    ):
+        with attempt:
+            print(
+                f"removing network with {network_id=}, attempt {attempt.retry_state.attempt_number}..."
+            )
             docker_network = await async_docker_client.networks.get(network_id)
             assert await docker_network.delete() is True
+            print(f"network with {network_id=} removed")
 
 
 @pytest.fixture
@@ -98,10 +109,19 @@ async def cleanup_swarm_network(
     docker_swarm: None,
 ) -> AsyncIterator[None]:
     yield
-    docker_network = await async_docker_client.networks.get(
-        simcore_services_network_name
-    )
-    assert await docker_network.delete() is True
+    # docker containers must be gone before network removal is functional
+    async for attempt in AsyncRetrying(
+        reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
+    ):
+        with attempt:
+            print(
+                f"removing network with {simcore_services_network_name=}, attempt {attempt.retry_state.attempt_number}..."
+            )
+            docker_network = await async_docker_client.networks.get(
+                simcore_services_network_name
+            )
+            assert await docker_network.delete() is True
+            print(f"network with {simcore_services_network_name=} removed")
 
 
 @pytest.fixture

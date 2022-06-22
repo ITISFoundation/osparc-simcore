@@ -21,7 +21,7 @@ def compose_namespace(faker: Faker) -> str:
     return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{faker.uuid4()}"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def swarm_stack_name() -> str:
     return "test_swarm_stack_name"
 

@@ -1,6 +1,5 @@
 import json
 import logging
-from asyncio import Lock
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 from uuid import UUID, uuid4
@@ -18,7 +17,6 @@ from pydantic import (
     Extra,
     Field,
     PositiveInt,
-    PrivateAttr,
     constr,
     parse_obj_as,
 )
@@ -413,52 +411,3 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True
-
-
-class AsyncResourceLock(BaseModel):
-    _lock: Lock = PrivateAttr()
-    _is_locked = PrivateAttr()
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        self._lock = Lock()
-
-    @classmethod
-    def from_is_locked(cls, is_locked: bool) -> "AsyncResourceLock":
-        instance = cls()
-        instance._is_locked = is_locked
-        return instance
-
-    async def mark_as_locked_if_unlocked(self) -> bool:
-        """
-        If the resource is currently not in used it will mark it as in use.
-
-        returns: True if it succeeds otherwise False
-        """
-        async with self._lock:
-            if not self._is_locked:
-                self._is_locked = True
-                return True
-
-        return False
-
-    async def unlock_resource(self) -> None:
-        """Marks the resource as unlocked"""
-        async with self._lock:
-            self._is_locked = False
-
-
-class LockWithSchedulerData(BaseModel):
-    # locking is required to guarantee the scheduling will not be triggered
-    # twice in a row for the service
-    resource_lock: AsyncResourceLock = Field(
-        ...,
-        description=(
-            "needed to exclude the service from a scheduling cycle while another "
-            "scheduling cycle is already running"
-        ),
-    )
-
-    scheduler_data: SchedulerData = Field(
-        ..., description="required data used to schedule the dynamic-sidecar"
-    )

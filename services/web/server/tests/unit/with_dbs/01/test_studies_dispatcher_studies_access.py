@@ -454,7 +454,7 @@ async def test_guest_user_is_not_garbage_collected(
 
     # N concurrent requests
     request_tasks = [
-        asyncio.ensure_future(_test_guest_user_workflow(n))
+        asyncio.create_task(_test_guest_user_workflow(n))
         for n in range(number_of_simultaneous_requests)
     ]
 

@@ -5,7 +5,7 @@ import json
 import logging
 import random
 import urllib.parse
-from typing import Any, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterable, Iterator, Mapping
 
 import pytest
 import respx
@@ -124,6 +124,7 @@ def cluster_id() -> NonNegativeInt:
 @pytest.fixture
 async def dask_spec_local_cluster(
     monkeypatch: MonkeyPatch,
+    unused_tcp_port_factory: Callable,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
@@ -168,7 +169,13 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {"cls": Scheduler}
+    scheduler = {
+        "cls": Scheduler,
+        "options": {
+            "port": unused_tcp_port_factory(),
+            "dashboard_address": f":{unused_tcp_port_factory()}",
+        },
+    }
 
     async with SpecCluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
@@ -182,11 +189,13 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
-def local_dask_gateway_server_config() -> traitlets.config.Config:
+def local_dask_gateway_server_config(
+    unused_tcp_port_factory: Callable,
+) -> traitlets.config.Config:
     c = traitlets.config.Config()
     c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
-    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
-    c.Proxy.address = "127.0.0.1:0"  # type: ignore
+    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
+    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
     c.ClusterConfig.worker_cmd = [  # type: ignore

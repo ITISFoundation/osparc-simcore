@@ -180,8 +180,6 @@ def docker_swarm(
         assert docker_client.swarm.leave(force=True)
         print("<-- docker swarm left.")
 
-    assert _in_docker_swarm(docker_client) is keep_docker_up
-
 
 @pytest.fixture(scope="module")
 def docker_stack(
