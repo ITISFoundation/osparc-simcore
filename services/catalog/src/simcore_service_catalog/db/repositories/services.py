@@ -89,7 +89,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                _make_list_services_query(  ## Do we filter out deprecated services here?
+                _make_list_services_query(
                     gids,
                     execute_access,
                     write_access,
