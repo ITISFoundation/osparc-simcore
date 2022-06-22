@@ -4,11 +4,11 @@
 
 import logging
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.logs import setup_logging
 
 # HELPERS
 
@@ -23,7 +23,7 @@ def user_role() -> UserRole:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> Dict[str, Any]:
+def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> dict[str, Any]:
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup

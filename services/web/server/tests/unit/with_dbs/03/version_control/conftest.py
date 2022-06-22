@@ -5,7 +5,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 from uuid import UUID
 
@@ -26,10 +26,11 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.log import setup_logging
-from tenacity import AsyncRetrying, stop_after_delay
+from simcore_service_webserver.logs import setup_logging
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
 
-ProjectDict = Dict[str, Any]
+ProjectDict = dict[str, Any]
 
 # HELPERS
 
@@ -77,7 +78,7 @@ async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
 @pytest.fixture
 def app_cfg(
     default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
