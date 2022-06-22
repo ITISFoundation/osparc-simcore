@@ -6,13 +6,14 @@ SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blo
 import json
 import warnings
 from datetime import datetime
-from typing import Any, Callable, Container, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Container, Optional
 from uuid import UUID
 
 import sqlalchemy as sa
 import sqlalchemy.sql.functions
 from pydantic import BaseConfig, BaseModel, Field, create_model
 from pydantic.types import NonNegativeInt
+from sqlalchemy import null
 from sqlalchemy.sql.schema import Column
 
 warnings.warn(
@@ -34,7 +35,7 @@ _RESERVED = {
 
 
 def _eval_defaults(
-    column: Column, pydantic_type: Type, *, include_server_defaults: bool = True
+    column: Column, pydantic_type: type, *, include_server_defaults: bool = True
 ):
     """
     Uses some heuristics to determine the default value/factory produced
@@ -75,15 +76,17 @@ def _eval_defaults(
             elif issubclass(pydantic_type, datetime):
                 assert isinstance(  # nosec
                     column.server_default.arg, sqlalchemy.sql.functions.now
+                ) or isinstance(  # nosec
+                    column.server_default.arg, null
                 )
                 default_factory = datetime.now
     return default, default_factory
 
 
-PolicyCallable = Callable[[Column, Any, Type], Tuple[Any, Type]]
+PolicyCallable = Callable[[Column, Any, type], tuple[Any, type]]
 
 
-def eval_name_policy(column: Column, default: Any, pydantic_type: Type):
+def eval_name_policy(column: Column, default: Any, pydantic_type: type):
     """All string columns including 'uuid' in their name are set as UUIDs"""
     new_default, new_pydantic_type = default, pydantic_type
     if "uuid" in str(column.name).split("_") and pydantic_type == str:
@@ -101,11 +104,11 @@ DEFAULT_EXTRA_POLICIES = [
 def create_pydantic_model_from_sa_table(
     table: sa.Table,
     *,
-    config: Type = OrmConfig,
+    config: type = OrmConfig,
     exclude: Optional[Container[str]] = None,
     include_server_defaults: bool = False,
-    extra_policies: Optional[List[PolicyCallable]] = None,
-) -> Type[BaseModel]:
+    extra_policies: Optional[list[PolicyCallable]] = None,
+) -> type[BaseModel]:
 
     fields = {}
     exclude = exclude or []
@@ -117,7 +120,7 @@ def create_pydantic_model_from_sa_table(
         if name in exclude:
             continue
 
-        field_args: Dict[str, Any] = {}
+        field_args: dict[str, Any] = {}
 
         if name in _RESERVED:
             field_args["alias"] = name
