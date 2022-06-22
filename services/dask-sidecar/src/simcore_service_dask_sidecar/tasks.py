@@ -38,6 +38,7 @@ class GracefulKiller:
 
     kill_now = False
     worker = None
+    task = None
 
     def __init__(self, worker: distributed.Worker):
         signal.signal(signal.SIGINT, self.exit_gracefully)
@@ -52,7 +53,9 @@ class GracefulKiller:
         )
         self.kill_now = True
         assert self.worker  # nosec
-        asyncio.ensure_future(self.worker.close(timeout=5))
+        self.task = asyncio.create_task(
+            self.worker.close(timeout=5), name="close_dask_worker_task"
+        )
 
 
 async def dask_setup(worker: distributed.Worker) -> None:
