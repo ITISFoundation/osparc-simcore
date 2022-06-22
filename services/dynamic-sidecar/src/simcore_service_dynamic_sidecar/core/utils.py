@@ -116,8 +116,6 @@ async def async_command(
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    # because the Processes returned by create_subprocess_shell it is not possible to
-    # have a timeout otherwise nor to stream the response from the process.
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
     except asyncio.TimeoutError:
