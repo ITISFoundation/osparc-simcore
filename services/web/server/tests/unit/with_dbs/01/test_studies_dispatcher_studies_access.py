@@ -12,7 +12,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import AsyncIterator, Callable
+from typing import AsyncIterator, Callable, Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -26,7 +26,7 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
-from simcore_service_webserver.logs import setup_logging
+from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
 
@@ -92,7 +92,7 @@ def app_cfg(
 @pytest.fixture
 async def published_project(
     client, fake_project, tests_data_dir: Path
-) -> AsyncIterator[dict]:
+) -> AsyncIterator[Dict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
@@ -143,18 +143,20 @@ async def _get_user_projects(client):
     return projects
 
 
-def _assert_same_projects(got: dict, expected: dict):
+def _assert_same_projects(got: Dict, expected: Dict):
     # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # TODO: validate workbench!
-    exclude = {
-        "creationDate",
-        "lastChangeDate",
-        "prjOwner",
-        "uuid",
-        "workbench",
-        "accessRights",
-        "ui",
-    }
+    exclude = set(
+        [
+            "creationDate",
+            "lastChangeDate",
+            "prjOwner",
+            "uuid",
+            "workbench",
+            "accessRights",
+            "ui",
+        ]
+    )
     for key in expected.keys():
         if key not in exclude:
             assert got[key] == expected[key], "Failed in %s" % key

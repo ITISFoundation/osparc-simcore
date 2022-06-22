@@ -7,7 +7,7 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Iterator
+from typing import Iterator, Tuple
 
 import pytest
 import sqlalchemy as sa
@@ -17,7 +17,7 @@ from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from simcore_service_webserver import catalog
-from simcore_service_webserver.logs import setup_logging
+from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from sqlalchemy.sql import text
 from yarl import URL
@@ -395,7 +395,7 @@ async def test_dispatch_viewer_anonymously(
     assert mock_client_director_v2_func.called
 
 
-def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
+def assert_error_in_fragment(resp: ClientResponse) -> Tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment)
