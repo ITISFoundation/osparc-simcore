@@ -62,40 +62,38 @@ async def run_background_task(app: web.Application):
 
 
 async def collect_garbage_periodically(app: web.Application):
-    LOG_PREFIX = "Garbage Collector cycle "
     settings: GarbageCollectorSettings = get_plugin_settings(app)
 
     while True:
         try:
             interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
             while True:
-                logger.info(LOG_PREFIX + "starting ...")
+                logger.info("Starting ...")
 
                 await collect_garbage(app)
 
                 if app[GC_TASK_CONFIG].get("force_stop", False):
                     raise RuntimeError("Forced to stop garbage collection")
 
-                logger.info(LOG_PREFIX + "completed: pausing for %ss", f"{interval=}")
+                logger.info("Completed: pausing for %ss", f"{interval=}")
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
             logger.info(
-                LOG_PREFIX + "stopped:"
-                "Garbage collection task was cancelled, it will not restart!"
+                "Stopped:" "Garbage collection task was cancelled, it will not restart!"
             )
             # do not catch Cancellation errors
             raise
 
         except Exception:  # pylint: disable=broad-except
             logger.warning(
-                LOG_PREFIX + "stopped:"
+                "Stopped:"
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
 
             if app[GC_TASK_CONFIG].get("force_stop", False):
-                logger.warning(LOG_PREFIX + ": Forced to stop garbage collection")
+                logger.warning("Forced to stop garbage collection")
                 break
 
             # will wait 5 seconds to recover before restarting to avoid restart loops

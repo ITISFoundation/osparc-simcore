@@ -43,15 +43,18 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def log_context(log: Callable, message: str):
+    """Logs entering/existing context as start/done and informs if error"""
+    # NOTE: could have been done with a LoggerAdapter but wonder if it would work
+    # with a global logger and asyncio context switches
     try:
         log("%s [STARTING]", message)
 
         yield
 
-        log("%s [DONE-SUCCEED]", message)
+        log("%s [DONE w/ SUCCESS]", message)
 
     except Exception as e:  # pylint: disable=broad-except
-        log("%s [DONE-FAILED with %s]", message, type(e))
+        log("%s [DONE w/ ERROR %s]", message, type(e))
         raise
 
 
