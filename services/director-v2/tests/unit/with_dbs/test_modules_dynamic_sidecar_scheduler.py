@@ -27,8 +27,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
 )
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
-from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
-from simcore_service_director_v2.modules.dynamic_sidecar import api_client
+from simcore_service_director_v2.modules.dynamic_sidecar import api_client, module_setup
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,

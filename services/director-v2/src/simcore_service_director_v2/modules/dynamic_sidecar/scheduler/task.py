@@ -41,7 +41,7 @@ from ..api_client import (
     ClientHttpError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    update_dynamic_sidecar_health,
+    get_dynamic_sidecar_service_health,
 )
 from ..docker_api import (
     are_all_services_present,
@@ -94,7 +94,7 @@ async def _apply_observation_cycle(
         async with timeout(
             dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
         ):
-            await update_dynamic_sidecar_health(app, scheduler_data)
+            await get_dynamic_sidecar_service_health(app, scheduler_data)
     except asyncio.TimeoutError:
         scheduler_data.dynamic_sidecar.is_available = False
 

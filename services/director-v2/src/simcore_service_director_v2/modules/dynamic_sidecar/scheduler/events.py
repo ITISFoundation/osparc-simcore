@@ -28,9 +28,9 @@ from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ..api_client import (
+    BaseClientHTTPError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    BaseClientHTTPError,
 )
 from ..docker_api import (
     are_all_services_present,
@@ -52,11 +52,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import (
-    DynamicSidecarUnexpectedResponseStatus,
-    EntrypointContainerNotFoundError,
-    NodeportsDidNotFindNodeError,
-)
+from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
 from .abc import DynamicSchedulerEvent
 from .events_utils import (
     all_containers_running,

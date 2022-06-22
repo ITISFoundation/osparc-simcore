@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
-from . import api_client
-from . import scheduler
+from . import api_client, scheduler
 
 
 def setup(app: FastAPI) -> None:

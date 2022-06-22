@@ -19,9 +19,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
-    shutdown,
     get_dynamic_sidecar_client,
     setup,
+    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,

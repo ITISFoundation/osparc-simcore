@@ -296,7 +296,7 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
     return app.state.dynamic_sidecar_api_client
 
 
-async def update_dynamic_sidecar_health(
+async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     api_client = get_dynamic_sidecar_client(app)
