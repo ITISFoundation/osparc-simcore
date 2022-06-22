@@ -45,65 +45,72 @@ def setup_logger(settings: DynamicSidecarSettings):
     logging.root.setLevel(settings.log_level)
 
 
-def assemble_application() -> FastAPI:
+def create_basic_app() -> FastAPI:
+    # settings
+    settings = DynamicSidecarSettings.create_from_envs()
+    setup_logger(settings)
+    logger.debug(settings.json(indent=2))
+
+    # minimal
+    app = FastAPI(
+        debug=settings.DEBUG,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
+        docs_url="/dev/doc",
+    )
+    override_fastapi_openapi_method(app)
+    app.state.settings = settings
+
+    app.include_router(main_router)
+    return app
+
+
+def create_app():
     """
     Creates the application from using the env vars as a context
     Also stores inside the state all instances of classes
     needed in other requests and used to share data.
     """
-    settings = DynamicSidecarSettings.create_from_envs()
-    setup_logger(settings)
-    logger.debug(settings.json(indent=2))
 
-    application = FastAPI(
-        debug=settings.DEBUG,
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
-    )
-    override_fastapi_openapi_method(application)
-
-    application.state.settings = settings
-    application.state.shared_store = SharedStore()
-    application.state.application_health = ApplicationHealth()
-
-    # ROUTES  --------------------
-    application.include_router(main_router)
-
-    # ERROR HANDLERS  ------------
-    application.add_exception_handler(NodeNotFound, node_not_found_error_handler)
-    application.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+    app = create_basic_app()
 
     # MODULES SETUP --------------
 
-    if settings.is_development_mode:
-        remote_debug_setup(application)
+    app.state.shared_store = SharedStore()
+    app.state.application_health = ApplicationHealth()
 
-    if settings.RABBIT_SETTINGS:
-        setup_rabbitmq(application)
-        setup_background_log_fetcher(application)
+    if app.state.settings.is_development_mode:
+        remote_debug_setup(app)
+
+    if app.state.settings.RABBIT_SETTINGS:
+        setup_rabbitmq(app)
+        setup_background_log_fetcher(app)
 
     # also sets up mounted_volumes
-    setup_mounted_fs(application)
-    setup_directory_watcher(application)
+    setup_mounted_fs(app)
+    setup_directory_watcher(app)
+
+    # ERROR HANDLERS  ------------
+    app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
+    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
     # EVENTS ---------------------
     async def _on_startup() -> None:
-        await login_registry(settings.REGISTRY_SETTINGS)
-        await volumes_fix_permissions(application.state.mounted_volumes)
+        await login_registry(app.state.settings.REGISTRY_SETTINGS)
+        await volumes_fix_permissions(app.state.mounted_volumes)
         print(WELCOME_MSG, flush=True)
 
     async def _on_shutdown() -> None:
         logger.info("Going to remove spawned containers")
         result = await remove_the_compose_spec(
-            shared_store=application.state.shared_store,
-            settings=settings,
-            command_timeout=settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
+            shared_store=app.state.shared_store,
+            settings=app.state.settings,
+            command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
         )
         logger.info("Container removal did_succeed=%s\n%s", result[0], result[1])
 
         logger.info("shutdown cleanup completed")
 
-    application.add_event_handler("startup", _on_startup)
-    application.add_event_handler("shutdown", _on_shutdown)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
 
-    return application
+    return app
