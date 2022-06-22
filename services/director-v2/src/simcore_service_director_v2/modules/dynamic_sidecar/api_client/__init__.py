@@ -1,4 +1,4 @@
-from ._errors import ClientTransportError, UnexpectedStatusError
+from ._errors import ClientHttpError, UnexpectedStatusError
 from ._public import (
     DynamicSidecarClient,
     close_api_client,
@@ -8,7 +8,7 @@ from ._public import (
 )
 
 __all__: tuple[str, ...] = (
-    "ClientTransportError",
+    "ClientHttpError",
     "close_api_client",
     "DynamicSidecarClient",
     "get_dynamic_sidecar_client",

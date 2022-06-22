@@ -1,3 +1,14 @@
+"""
+Exception hierarchy:
+
+* BaseClientError
+  x BaseRequestError
+    + ClientHttpError
+    + UnexpectedStatusError
+  x _RetryRequestError
+  x WrongReturnType
+"""
+
 from typing import Optional
 
 from httpx import Response
@@ -5,20 +16,24 @@ from httpx import Response
 
 class BaseClientError(Exception):
     """
-    NOTE: this is derived from exception on purpose
-    This module should be moved from the scope of this package
+    Used as based for all the raised errors
     """
 
 
 class _RetryRequestError(BaseClientError):
-    """used to retry request internally"""
+    """used internally to retry request"""
 
     def __init__(self, error: Optional[Exception], *args) -> None:
         super().__init__(*args)
         self.error = error
 
 
-class WrongReturnType(BaseClientError):
+class _WrongReturnType(BaseClientError):
+    """
+    used internally to signal the user that the defined method
+    has an invalid return time annotation
+    """
+
     def __init__(self, method, return_annotation) -> None:
         super().__init__(
             (
@@ -28,7 +43,21 @@ class WrongReturnType(BaseClientError):
         )
 
 
-class UnexpectedStatusError(BaseClientError):
+class BaseClientHTTPError(BaseClientError):
+    """Base class to wrap all http related client errors"""
+
+
+class ClientHttpError(BaseClientHTTPError):
+    """used to captures all httpx.HttpError"""
+
+    def __init__(self, original: Exception) -> None:
+        super().__init__()
+        self.original: Exception = original
+
+
+class UnexpectedStatusError(BaseClientHTTPError):
+    """raised when the status of the request is not the one it was expected"""
+
     def __init__(self, response: Response, expecting: int) -> None:
         message = (
             f"Expected status: {expecting}, got {response.status_code} for: {response.url}: "
@@ -36,7 +65,3 @@ class UnexpectedStatusError(BaseClientError):
         )
         super().__init__(message)
         self.response = response
-
-
-class ClientTransportError(BaseClientError):
-    pass

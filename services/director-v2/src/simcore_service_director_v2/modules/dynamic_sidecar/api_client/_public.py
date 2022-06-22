@@ -3,7 +3,6 @@ from collections import deque
 from typing import Any, Optional
 
 from fastapi import FastAPI, status
-from httpx import HTTPError
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from pydantic import AnyHttpUrl
@@ -13,7 +12,7 @@ from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
-from ._errors import ClientTransportError, UnexpectedStatusError
+from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class DynamicSidecarClient:
             # this request uses a very short timeout
             response = await self.thin_client.get_health(dynamic_sidecar_endpoint)
             return response.json()["is_healthy"]
-        except (HTTPError, UnexpectedStatusError, ClientTransportError):
+        except BaseClientHTTPError:
             return False
 
     @log_decorator(logger=logger)
@@ -213,7 +212,7 @@ class DynamicSidecarClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except (HTTPError, UnexpectedStatusError, ClientTransportError):
+        except BaseClientHTTPError:
             return
 
         sorted_container_names = sorted(containers_status.keys())
@@ -260,7 +259,7 @@ class DynamicSidecarClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except (HTTPError, UnexpectedStatusError, ClientTransportError):
+        except BaseClientHTTPError:
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(

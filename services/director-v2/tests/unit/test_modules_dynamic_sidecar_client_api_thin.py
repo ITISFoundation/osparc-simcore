@@ -16,7 +16,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import
     ThinDynamicSidecarClient,
 )
 
-
 # NOTE: typing and callables cannot
 MockRequestType = Callable[
     [str, str, Optional[Response], Optional[SideEffectTypes]], Route

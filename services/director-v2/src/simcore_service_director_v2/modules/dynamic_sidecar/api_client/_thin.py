@@ -16,8 +16,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
-    - `ClientTransportError`
-    - `httpx.HTTPError`
+    - `ClientHttpError`
     """
 
     API_VERSION = "v1"

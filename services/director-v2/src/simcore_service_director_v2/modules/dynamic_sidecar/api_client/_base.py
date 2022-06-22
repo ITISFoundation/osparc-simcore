@@ -5,7 +5,13 @@ import logging
 from logging import Logger
 from typing import Any, Awaitable, Callable, Optional
 
-from httpx import AsyncClient, ConnectError, Response, TransportError
+from httpx import (
+    AsyncClient,
+    ConnectError,
+    HTTPError,
+    PoolTimeout,
+    Response,
+)
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
@@ -15,13 +21,25 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
 from ._errors import (
-    ClientTransportError,
+    ClientHttpError,
     UnexpectedStatusError,
-    WrongReturnType,
+    _WrongReturnType,
     _RetryRequestError,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
+    # pylint: disable=protected-access
+    logger.warning(
+        "REQUESTS WHILE '%s' %s",
+        event_name.upper(),
+        [
+            (r.request.method, r.request.url, r.request.headers)
+            for r in client._transport._pool._requests
+        ],
+    )
 
 
 def _log_retry(log: Logger, max_retries: int) -> Callable[[RetryCallState], None]:
@@ -50,8 +68,7 @@ def retry_on_errors(
 ) -> Callable[..., Awaitable[Response]]:
     """
     raises:
-    - `ClientTransportError`
-    - `httpx.HTTPError`
+    - `ClientHttpError`
     """
     assert asyncio.iscoroutinefunction(request_func)
 
@@ -72,14 +89,24 @@ def retry_on_errors(
                     try:
                         response: Response = await request_func(zelf, *args, **kwargs)
                         return response
-                    except ConnectError as e:
-                        assert e._request
+                    except (ConnectError, PoolTimeout) as e:
+                        # when this happens it means the system is not correctly
+                        # using up resources, logging all connections in the pool
+                        # to help with debugging
+                        if isinstance(e, PoolTimeout):
+                            _log_requests_in_pool(zelf._client, "pool timeout")
+
                         raise _RetryRequestError(e) from e
-                    except TransportError as e:
-                        raise ClientTransportError from e
+                    except HTTPError as e:
+                        raise ClientHttpError(e) from e
         except _RetryRequestError as e:
             # raise original exception
             assert e.__cause__  # nosec
+
+            # wrap if httpx errors
+            if isinstance(e.__cause__, HTTPError):
+                raise ClientHttpError(e) from e.__cause__
+
             raise e.__cause__
 
     return request_wrapper
@@ -91,7 +118,7 @@ def expect_status(expected_code: int):
 
     raises:
     - `UnexpectedStatusError`
-    - `httpx.HTTPError`
+    - `ClientHttpError`
     """
 
     def decorator(
@@ -133,8 +160,7 @@ class BaseThinClient:
             client_args["timeout"] = timeout
         self._client = AsyncClient(**client_args)
 
-        # ensure all user defined public methods return `httpx.Response``
-
+        # ensure all user defined public methods return `httpx.Response`
         public_methods = [
             t[1]
             for t in inspect.getmembers(self, predicate=inspect.ismethod)
@@ -144,15 +170,8 @@ class BaseThinClient:
         for method in public_methods:
             signature = inspect.signature(method)
             if signature.return_annotation != Response:
-                raise WrongReturnType(method, signature.return_annotation)
+                raise _WrongReturnType(method, signature.return_annotation)
 
     async def close(self) -> None:
-        # pylint: disable=protected-access
-        logger.warning(
-            "REQUESTS WHILE CLOSING %s",
-            [
-                (r.request.method, r.request.url, r.request.headers)
-                for r in self._client._transport._pool._requests
-            ],
-        )
+        _log_requests_in_pool(self._client, "closing")
         await self._client.aclose()

@@ -15,6 +15,7 @@ from pytest_mock import MockerFixture
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     UnexpectedStatusError,
+    ClientHttpError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
@@ -27,7 +28,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
     NodeportsDidNotFindNodeError,
 )
-
 
 # FIXTURES
 
@@ -143,7 +143,9 @@ async def test_is_healthy_times_out(
             ),
             id="UnexpectedStatusError",
         ),
-        pytest.param(HTTPError("another mocked error"), id="HTTPError"),
+        pytest.param(
+            ClientHttpError(HTTPError("another mocked error")), id="HTTPError"
+        ),
     ],
 )
 async def test_is_healthy_api_error(
