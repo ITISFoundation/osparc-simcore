@@ -4,8 +4,9 @@
 
 import asyncio
 import logging
+from contextlib import contextmanager
 from itertools import chain
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -40,6 +41,18 @@ from .users_exceptions import UserNotFoundError
 logger = logging.getLogger(__name__)
 
 
+@contextmanager
+def log_context(log: Callable, message: str):
+    try:
+        log("%s [STARTING]", message)
+
+        yield
+
+        log("%s [DONE-SUCCEED]", message)
+    except Exception as e:  # pylint: disable=broad-except
+        log("%s [DONE-FAILED with %s]", message, type(e))
+
+
 async def collect_garbage(app: web.Application):
     """
     Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
@@ -63,25 +76,26 @@ async def collect_garbage(app: web.Application):
     """
     registry: RedisResourceRegistry = get_registry(app)
 
-    # Removes disconnected user resources
-    # Triggers signal to close possible pending opened projects
-    # Removes disconnected GUEST users after they finished their sessions
-    await remove_disconnected_user_resources(registry, app)
+    with log_context(logger.info, "Step 1: Removes disconnected user resources"):
+        # Triggers signal to close possible pending opened projects
+        # Removes disconnected GUEST users after they finished their sessions
+        await remove_disconnected_user_resources(registry, app)
 
-    # Users manually marked for removal:
-    # if a user was manually marked as GUEST it needs to be
-    # removed together with all the associated projects
-    await remove_users_manually_marked_as_guests(registry, app)
+    with log_context(logger.info, "Step 2: Removes users manually marked for removal"):
+        # if a user was manually marked as GUEST it needs to be
+        # removed together with all the associated projects
+        await remove_users_manually_marked_as_guests(registry, app)
 
-    # For various reasons, some services remain pending after
-    # the projects are closed or the user was disconencted.
-    # This will close and remove all these services from
-    # the cluster, thus freeing important resources.
+    with log_context(logger.info, "Step 3: Removes orphaned services"):
+        # For various reasons, some services remain pending after
+        # the projects are closed or the user was disconencted.
+        # This will close and remove all these services from
+        # the cluster, thus freeing important resources.
 
-    # Temporary disabling GC to until the dynamic service
-    # safe function is invoked by the GC. This will avoid
-    # data loss for current users.
-    await remove_orphaned_services(registry, app)
+        # Temporary disabling GC to until the dynamic service
+        # safe function is invoked by the GC. This will avoid
+        # data loss for current users.
+        await remove_orphaned_services(registry, app)
 
 
 async def remove_disconnected_user_resources(
@@ -123,9 +137,9 @@ async def remove_disconnected_user_resources(
         if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
         ).locked():
-            logger.debug(
-                "Skipping garbage-collecting user '%d' since it is still locked",
-                user_id,
+            logger.info(
+                "Skipping garbage-collecting %s since it is still locked",
+                f"{user_id=}",
             )
             continue
 
@@ -136,10 +150,9 @@ async def remove_disconnected_user_resources(
             continue
 
         # (1,2) CAREFULLY releasing every resource acquired by the expired key
-        logger.debug(
-            "Key '%s' expired. Cleaning the following resources: '%s'",
-            dead_key,
-            dead_key_resources,
+        logger.info(
+            "%s expired. Checking resources to cleanup",
+            f"{dead_key=}",
         )
 
         for resource_name, resource_value in dead_key_resources.items():
@@ -173,10 +186,10 @@ async def remove_disconnected_user_resources(
 
                 # (1) releasing acquired resources
                 logger.info(
-                    "(1) Releasing resource %s:%s acquired by expired key %s",
-                    resource_name,
-                    resource_value,
-                    dead_key,
+                    "(1) Releasing resource %s:%s acquired by expired %s",
+                    f"{resource_name=}",
+                    f"{resource_value=}",
+                    f"{dead_key!r}",
                 )
 
                 if resource_name == "project_id":
@@ -206,6 +219,7 @@ async def remove_disconnected_user_resources(
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
+                # FIXME: if a guest can share, it will become permanent user!
                 await remove_guest_user_with_all_its_resources(
                     app=app,
                     user_id=int(dead_key["user_id"]),
@@ -213,8 +227,9 @@ async def remove_disconnected_user_resources(
 
             # (2) remove resource field in collected keys since (1) is completed
             logger.info(
-                "(2) Removing resource %s field entry from registry keys: %s",
-                resource_name,
+                "(2) Removing field for released resource %s:%s from registry keys: %s",
+                f"{resource_name=}",
+                f"{resource_value=}",
                 keys_to_update,
             )
             on_released_tasks = [
@@ -298,11 +313,11 @@ async def _remove_single_orphaned_service(
     # if the node does not exist in any project in the db
     # they can be safely remove it without saving any state
     if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
-        message = (
+        logger.info(
             "Will remove orphaned service without saving state since "
-            f"this service is not part of any project {service_host}"
+            "this service is not part of any project %s",
+            f"{service_host=}",
         )
-        logger.info(message)
         try:
             await director_v2_api.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
@@ -329,8 +344,8 @@ async def _remove_single_orphaned_service(
             #
             # a service state might be one of [pending, pulling, starting, running, complete, failed]
             logger.warning(
-                "Skipping %s since image is in %s",
-                service_host,
+                "Skipping %s since service state is %s",
+                f"{service_host=}",
                 interactive_service.get("service_state", "unknown"),
             )
             return
