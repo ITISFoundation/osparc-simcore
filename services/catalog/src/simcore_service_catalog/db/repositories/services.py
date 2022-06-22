@@ -209,7 +209,7 @@ class ServicesRepository(BaseRepository):
             new_service_dict["deprecated"] = None
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
-            result = await conn.execute(  ## Here, maybe add default deprecation date?
+            result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
                 .values(**new_service_dict)
