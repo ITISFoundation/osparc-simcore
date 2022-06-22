@@ -9,7 +9,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +63,8 @@ class CustomFormatter(logging.Formatter):
         return super().format(record)
 
 
-DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)] %(message)s"
+# SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
+DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 
 def config_all_loggers():
@@ -78,25 +79,19 @@ def config_all_loggers():
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base=None,
-    formatting: Optional[str] = None,
+    formatter_base: Optional[type[logging.Formatter]] = None,
+    fmt: str = DEFAULT_FORMATTING,
 ) -> None:
-    if not formatting:
-        formatting = DEFAULT_FORMATTING
     if not formatter_base:
         formatter_base = CustomFormatter
 
     for handler in logger.handlers:
-        handler.setFormatter(
-            formatter_base(
-                "%(levelname)s: %(name)s:%(funcName)s(%(lineno)s) - %(message)s"
-            )
-        )
+        handler.setFormatter(formatter_base(fmt))
 
 
 def _log_arguments(
     logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
-) -> Dict[str, str]:
+) -> dict[str, str]:
     args_passed_in_function = [repr(a) for a in args]
     kwargs_passed_in_function = [f"{k}={v!r}" for k, v in kwargs.items()]
 
