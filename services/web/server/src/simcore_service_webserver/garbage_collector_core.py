@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -17,7 +17,11 @@ from simcore_postgres_database.models.users import UserRole
 from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
+from .garbage_collector_utils import (
+    get_new_project_owner_gid,
+    log_context,
+    replace_current_owner,
+)
 from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
@@ -61,29 +65,28 @@ async def collect_garbage(app: web.Application):
     The field `garbage_collection_interval_seconds` defines the interval at which this
     function will be called.
     """
-    logger.info("Collecting garbage...")
-
     registry: RedisResourceRegistry = get_registry(app)
 
-    # Removes disconnected user resources
-    # Triggers signal to close possible pending opened projects
-    # Removes disconnected GUEST users after they finished their sessions
-    await remove_disconnected_user_resources(registry, app)
+    with log_context(logger.info, "Step 1: Removes disconnected user resources"):
+        # Triggers signal to close possible pending opened projects
+        # Removes disconnected GUEST users after they finished their sessions
+        await remove_disconnected_user_resources(registry, app)
 
-    # Users manually marked for removal:
-    # if a user was manually marked as GUEST it needs to be
-    # removed together with all the associated projects
-    await remove_users_manually_marked_as_guests(registry, app)
+    with log_context(logger.info, "Step 2: Removes users manually marked for removal"):
+        # if a user was manually marked as GUEST it needs to be
+        # removed together with all the associated projects
+        await remove_users_manually_marked_as_guests(registry, app)
 
-    # For various reasons, some services remain pending after
-    # the projects are closed or the user was disconencted.
-    # This will close and remove all these services from
-    # the cluster, thus freeing important resources.
+    with log_context(logger.info, "Step 3: Removes orphaned services"):
+        # For various reasons, some services remain pending after
+        # the projects are closed or the user was disconencted.
+        # This will close and remove all these services from
+        # the cluster, thus freeing important resources.
 
-    # Temporary disabling GC to until the dynamic service
-    # safe function is invoked by the GC. This will avoid
-    # data loss for current users.
-    await remove_orphaned_services(registry, app)
+        # Temporary disabling GC to until the dynamic service
+        # safe function is invoked by the GC. This will avoid
+        # data loss for current users.
+        await remove_orphaned_services(registry, app)
 
 
 async def remove_disconnected_user_resources(
@@ -125,9 +128,9 @@ async def remove_disconnected_user_resources(
         if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
         ).locked():
-            logger.debug(
-                "Skipping garbage-collecting user '%d' since it is still locked",
-                user_id,
+            logger.info(
+                "Skipping garbage-collecting %s since it is still locked",
+                f"{user_id=}",
             )
             continue
 
@@ -138,13 +141,13 @@ async def remove_disconnected_user_resources(
             continue
 
         # (1,2) CAREFULLY releasing every resource acquired by the expired key
-        logger.debug(
-            "Key '%s' expired. Cleaning the following resources: '%s'",
-            dead_key,
-            dead_key_resources,
+        logger.info(
+            "%s expired. Checking resources to cleanup",
+            f"{dead_key=}",
         )
 
         for resource_name, resource_value in dead_key_resources.items():
+            resource_value = f"{resource_value}"
 
             # Releasing a resource consists of two steps
             #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
@@ -175,10 +178,10 @@ async def remove_disconnected_user_resources(
 
                 # (1) releasing acquired resources
                 logger.info(
-                    "(1) Releasing resource %s:%s acquired by expired key %s",
-                    resource_name,
-                    resource_value,
-                    dead_key,
+                    "(1) Releasing resource %s:%s acquired by expired %s",
+                    f"{resource_name=}",
+                    f"{resource_value=}",
+                    f"{dead_key!r}",
                 )
 
                 if resource_name == "project_id":
@@ -208,6 +211,7 @@ async def remove_disconnected_user_resources(
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
+                # FIXME: if a guest can share, it will become permanent user!
                 await remove_guest_user_with_all_its_resources(
                     app=app,
                     user_id=int(dead_key["user_id"]),
@@ -215,8 +219,9 @@ async def remove_disconnected_user_resources(
 
             # (2) remove resource field in collected keys since (1) is completed
             logger.info(
-                "(2) Removing resource %s field entry from registry keys: %s",
-                resource_name,
+                "(2) Removing field for released resource %s:%s from registry keys: %s",
+                f"{resource_name=}",
+                f"{resource_value=}",
                 keys_to_update,
             )
             on_released_tasks = [
@@ -248,7 +253,7 @@ async def remove_users_manually_marked_as_guests(
         skip_users.add(int(entry["user_id"]))
 
     # Prevent creating this list if a guest user
-    guest_users: List[Tuple[int, str]] = await get_guest_user_ids_and_names(app)
+    guest_users: list[tuple[int, str]] = await get_guest_user_ids_and_names(app)
 
     for guest_user_id, guest_user_name in guest_users:
         # Prevents removing GUEST users that were automatically (NOT manually) created
@@ -291,8 +296,8 @@ async def remove_users_manually_marked_as_guests(
 
 async def _remove_single_orphaned_service(
     app: web.Application,
-    interactive_service: Dict[str, Any],
-    currently_opened_projects_node_ids: Set[str],
+    interactive_service: dict[str, Any],
+    currently_opened_projects_node_ids: set[str],
 ) -> None:
     service_host = interactive_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
@@ -300,11 +305,11 @@ async def _remove_single_orphaned_service(
     # if the node does not exist in any project in the db
     # they can be safely remove it without saving any state
     if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
-        message = (
+        logger.info(
             "Will remove orphaned service without saving state since "
-            f"this service is not part of any project {service_host}"
+            "this service is not part of any project %s",
+            f"{service_host=}",
         )
-        logger.info(message)
         try:
             await director_v2_api.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
@@ -331,8 +336,8 @@ async def _remove_single_orphaned_service(
             #
             # a service state might be one of [pending, pulling, starting, running, complete, failed]
             logger.warning(
-                "Skipping %s since image is in %s",
-                service_host,
+                "Skipping %s since service state is %s",
+                f"{service_host=}",
                 interactive_service.get("service_state", "unknown"),
             )
             return
@@ -378,7 +383,7 @@ async def remove_orphaned_services(
     """
     logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids: Set[str] = set()
+    currently_opened_projects_node_ids: set[str] = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
@@ -389,11 +394,11 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services: List[Dict[str, Any]] = []
+    running_interactive_services: list[dict[str, Any]] = []
     try:
         running_interactive_services = await director_v2_api.get_services(app)
     except director_v2_api.DirectorServiceError:
-        logger.debug(("Could not fetch running_interactive_services"))
+        logger.debug("Could not fetch running_interactive_services")
 
     logger.info(
         "Currently running services %s",
@@ -434,7 +439,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     # recover user's primary_gid
     try:
-        project_owner: Dict = await get_user(app=app, user_id=user_id)
+        project_owner: dict = await get_user(app=app, user_id=user_id)
     except users_exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
@@ -456,11 +461,11 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         f"{user_project_uuids=}",
     )
 
-    delete_tasks: List[asyncio.Task] = []
+    delete_tasks: list[asyncio.Task] = []
 
     for project_uuid in user_project_uuids:
         try:
-            project: Dict = await get_project_for_user(
+            project: dict = await get_project_for_user(
                 app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
