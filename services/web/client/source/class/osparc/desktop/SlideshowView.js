@@ -218,12 +218,13 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
         view.set({
           backgroundColor: "background-main-4",
-          padding: 10
+          padding: 6
         });
       } else {
         view.getMainView().set({
           backgroundColor: "background-main-4",
-          padding: 10,
+          padding: 6,
+          paddingTop: 0,
           paddingBottom: 0
         });
       }

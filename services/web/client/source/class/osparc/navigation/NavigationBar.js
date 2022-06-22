@@ -56,7 +56,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      maxHeight: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
   },
@@ -118,6 +117,26 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("user-menu");
 
       this.setPageContext("dashboard");
+
+      setTimeout(() => this.__checkScreenSize(), 100);
+      window.addEventListener("resize", () => this.__checkScreenSize());
+    },
+
+    __checkScreenSize: function() {
+      const h = document.documentElement.clientHeight;
+      this.setHeight(h > 900 ? 60 : 50);
+
+      const logo = this.getChildControl("logo");
+
+      logo.getChildControl("off-logo").set({
+        width: h > 900 ? 110 : 100,
+        height: h > 900 ? 45 : 35
+      });
+
+      logo.getChildControl("on-logo").setSize({
+        width: h > 900 ? 110 : 100,
+        height: h > 900 ? 60 : 50
+      });
     },
 
     _createChildControlImpl: function(id) {
