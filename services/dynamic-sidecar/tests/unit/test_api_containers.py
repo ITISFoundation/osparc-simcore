@@ -7,7 +7,7 @@ import importlib
 import json
 from collections import namedtuple
 from inspect import signature
-from typing import Any, AsyncIterable, Iterable
+from typing import Any, AsyncIterable
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -101,9 +101,9 @@ async def _docker_ps_a_container_names() -> list[str]:
 
 async def _assert_compose_spec_pulled(
     compose_spec: str, settings: DynamicSidecarSettings
-) -> None:
+):
     """ensures all containers inside compose_spec are pulled"""
-
+    # TODO: to check whether they are pulled, why not simply find them in 'docker image ls' ??
     command = (
         "docker-compose --project-name {project} --file {file_path} "
         "up --no-build --detach"
@@ -169,7 +169,7 @@ def not_started_containers() -> list[str]:
 
 
 @pytest.fixture
-def mock_nodeports(mocker: MockerFixture) -> None:
+def mock_nodeports(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
         return_value=None,
@@ -186,8 +186,8 @@ def missing_node_uuid(faker: faker.Faker) -> str:
 
 
 @pytest.fixture
-def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
-    async def _mocked(*args, **kwargs) -> None:
+def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str):
+    async def _mocked(*args, **kwargs):
         raise NodeNotFound(missing_node_uuid)
 
     mocker.patch(
@@ -197,7 +197,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 
 
 @pytest.fixture
-def mock_data_manager(mocker: MockerFixture) -> None:
+def mock_data_manager(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.data_manager.upload_path_if_exists",
         return_value=None,
@@ -241,9 +241,9 @@ def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
 
 
 @pytest.fixture
-def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
+def rabbitmq_mock(mocker, app: FastAPI):
+    # TODO: PC->ANE: mocke instead rabbit service
     app.state.rabbitmq = mocker.AsyncMock()
-    yield
 
 
 @pytest.fixture
@@ -280,7 +280,7 @@ def _create_network_aliases(network_name: str) -> list[str]:
     return [f"alias_{i}_{network_name}" for i in range(10)]
 
 
-async def _assert_enable_directory_watcher(test_client: TestClient) -> None:
+async def _assert_enable_directory_watcher(test_client: TestClient):
     response = await test_client.patch(
         f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
     )
@@ -288,7 +288,7 @@ async def _assert_enable_directory_watcher(test_client: TestClient) -> None:
     assert response.text == ""
 
 
-async def _assert_disable_directory_watcher(test_client: TestClient) -> None:
+async def _assert_disable_directory_watcher(test_client: TestClient):
     response = await test_client.patch(
         f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
     )
@@ -296,16 +296,16 @@ async def _assert_disable_directory_watcher(test_client: TestClient) -> None:
     assert response.text == ""
 
 
-# TESTS
+# TESTS ----------------
 
 
-def test_ensure_api_vtag_is_v1() -> None:
+def test_ensure_api_vtag_is_v1():
     assert API_VTAG == "v1"
 
 
 async def test_start_containers_wrong_spec(
     test_client: TestClient, rabbitmq_mock: None
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers", data={"opsie": "shame on me"}
     )
@@ -315,7 +315,7 @@ async def test_start_containers_wrong_spec(
 
 async def test_start_same_space_twice(
     compose_spec: str, mutable_settings: DynamicSidecarSettings
-) -> None:
+):
     mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
     await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
@@ -323,9 +323,7 @@ async def test_start_same_space_twice(
     await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
 
-async def test_compose_up(
-    test_client: TestClient, compose_spec: dict[str, Any]
-) -> None:
+async def test_compose_up(test_client: TestClient, compose_spec: dict[str, Any]):
 
     response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
@@ -334,13 +332,13 @@ async def test_compose_up(
     assert response.json() == container_names
 
 
-async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
+async def test_compose_up_spec_not_provided(test_client: TestClient):
     response = await test_client.post(f"/{API_VTAG}/containers")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert response.json() == {"detail": "\nProvided yaml is not valid!"}
 
 
-async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
+async def test_compose_up_spec_invalid(test_client: TestClient):
     invalid_compose_spec = faker.Faker().text()  # pylint: disable=no-member
     response = await test_client.post(
         f"/{API_VTAG}/containers", data=invalid_compose_spec
@@ -353,7 +351,7 @@ async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
 
 async def test_containers_down_after_starting(
     test_client: TestClient, compose_spec: dict[str, Any]
-) -> None:
+):
     # store spec first
     response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
@@ -371,7 +369,7 @@ async def test_containers_down_after_starting(
 
 async def test_containers_down_missing_spec(
     test_client: TestClient, compose_spec: dict[str, Any]
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers:down",
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
@@ -391,7 +389,7 @@ async def test_containers_get(
     test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
-) -> None:
+):
     response = await test_client.get(f"/{API_VTAG}/containers")
     assert response.status_code == status.HTTP_200_OK, response.text
 
@@ -406,7 +404,7 @@ async def test_containers_get_status(
     test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
-) -> None:
+):
     response = await test_client.get(
         f"/{API_VTAG}/containers", query_string=dict(only_status=True)
     )
@@ -419,21 +417,21 @@ async def test_containers_get_status(
 
 async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: list[str], mock_containers_get: int
-) -> None:
+):
     response = await test_client.get(f"/{API_VTAG}/containers")
     assert response.status_code == mock_containers_get, response.text
 
 
 async def test_containers_docker_status_docker_error(
     test_client: TestClient, started_containers: list[str], mock_containers_get: int
-) -> None:
+):
     response = await test_client.get(f"/{API_VTAG}/containers")
     assert response.status_code == mock_containers_get, response.text
 
 
 async def test_container_inspect_logs_remove(
     test_client: TestClient, started_containers: list[str]
-) -> None:
+):
     for container in started_containers:
         # get container logs
         response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
@@ -448,7 +446,7 @@ async def test_container_inspect_logs_remove(
 
 async def test_container_logs_with_timestamps(
     test_client: TestClient, started_containers: list[str]
-) -> None:
+):
     for container in started_containers:
         # get container logs
         response = await test_client.get(
@@ -460,7 +458,7 @@ async def test_container_logs_with_timestamps(
 
 async def test_container_missing_container(
     test_client: TestClient, not_started_containers: list[str]
-) -> None:
+):
     def _expected_error_string(container: str) -> dict[str, str]:
         return dict(
             detail=f"No container '{container}' was started. Started containers '[]'"
@@ -482,7 +480,7 @@ async def test_container_docker_error(
     test_client: TestClient,
     started_containers: list[str],
     mock_containers_get: int,
-) -> None:
+):
     def _expected_error_string(status_code: int) -> dict[str, Any]:
         return {
             "errors": [
@@ -502,9 +500,7 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_containers_get)
 
 
-async def test_container_save_state(
-    test_client: TestClient, mock_data_manager: None
-) -> None:
+async def test_container_save_state(test_client: TestClient, mock_data_manager: None):
     response = await test_client.post(f"/{API_VTAG}/containers/state:save")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -512,7 +508,7 @@ async def test_container_save_state(
 
 async def test_container_restore_state(
     test_client: TestClient, mock_data_manager: None
-) -> None:
+):
     response = await test_client.post(f"/{API_VTAG}/containers/state:restore")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -520,7 +516,7 @@ async def test_container_restore_state(
 
 async def test_container_pull_input_ports(
     test_client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=mock_port_keys
     )
@@ -532,7 +528,7 @@ async def test_directory_watcher_disabling(
     test_client: TestClient,
     mock_dir_watcher_on_any_event: AsyncMock,
     mounted_volumes: MountedVolumes,
-) -> None:
+):
     def _create_random_dir_in_inputs() -> int:
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
@@ -575,7 +571,7 @@ async def test_container_create_outputs_dirs(
     mock_outputs_labels: dict[str, ServiceOutput],
     mock_dir_watcher_on_any_event: AsyncMock,
     mounted_volumes: MountedVolumes,
-) -> None:
+):
     # by default directory-watcher it is disabled
     await _assert_enable_directory_watcher(test_client)
 
@@ -600,7 +596,7 @@ async def test_container_create_outputs_dirs(
 
 async def test_container_pull_output_ports(
     test_client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs:pull", json=mock_port_keys
     )
@@ -610,7 +606,7 @@ async def test_container_pull_output_ports(
 
 async def test_container_push_output_ports(
     test_client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
     )
@@ -623,7 +619,7 @@ async def test_container_push_output_ports_missing_node(
     mock_port_keys: list[str],
     missing_node_uuid: str,
     mock_node_missing: None,
-) -> None:
+):
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
     )
@@ -653,7 +649,7 @@ async def test_containers_entrypoint_name_ok(
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
-) -> None:
+):
     filters = json.dumps({"network": dynamic_sidecar_network_name})
     response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -666,7 +662,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
-) -> None:
+):
     entrypoint_container = _get_entrypoint_container_name(
         test_client, dynamic_sidecar_network_name
     )
@@ -690,7 +686,7 @@ async def test_containers_entrypoint_name_containers_not_started(
 
 async def test_containers_restart(
     test_client: TestClient, compose_spec: dict[str, Any]
-) -> None:
+):
     # store spec first
     response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
@@ -723,7 +719,7 @@ async def test_attach_detach_container_to_network(
     test_client: TestClient,
     selected_spec: str,
     attachable_networks_and_ids: dict[str, str],
-) -> None:
+):
     response = await test_client.post(f"/{API_VTAG}/containers", data=selected_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = test_client.application.state.shared_store

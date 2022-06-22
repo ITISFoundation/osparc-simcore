@@ -32,7 +32,7 @@ def app(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
-    disable_registry_check: None,
+    mock_registry_service: None,
 ) -> FastAPI:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")

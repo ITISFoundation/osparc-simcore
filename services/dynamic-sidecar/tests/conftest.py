@@ -17,8 +17,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
 from pytest import MonkeyPatch
-from pytest_mock.plugin import MockerFixture
-from simcore_service_dynamic_sidecar.core import utils
+from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
@@ -46,7 +45,7 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture
-def mock_dy_volumes(tmp_path: Path) -> Iterator[Path]:
+def mock_dy_volumes(tmp_path: Path) -> Path:
     return tmp_path / "dy-volumes"
 
 
@@ -122,13 +121,16 @@ def mock_environment(
 
 
 @pytest.fixture
-def disable_registry_check(monkeypatch: MonkeyPatch) -> None:
-    mock = Mock(return_value=None)
-    monkeypatch.setattr(utils, "_is_registry_reachable", mock)
+def mock_registry_service(mocker: MockerFixture) -> None:
+    # TODO: PC->ANE: from respx import MockRouter registry instead.
+    # It can be reused to setup different scenarios like registry down etc
+    mock = mocker.patch(
+        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable"
+    )
 
 
 @pytest.fixture
-def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
+def app(mock_environment: None, mock_registry_service: None) -> FastAPI:
     app = create_app()
     app.state.rabbitmq = AsyncMock()
     return app
@@ -180,7 +182,7 @@ async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
         yield client
 
 
-@pytest.fixture(autouse=True)  # <----- TODO: PC->ANE!!
+@pytest.fixture
 async def cleanup_containers(
     app: FastAPI, ensure_external_volumes: None
 ) -> AsyncGenerator[None, None]:
