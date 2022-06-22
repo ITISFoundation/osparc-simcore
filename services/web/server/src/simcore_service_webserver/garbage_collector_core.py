@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -61,8 +61,6 @@ async def collect_garbage(app: web.Application):
     The field `garbage_collection_interval_seconds` defines the interval at which this
     function will be called.
     """
-    logger.info("Collecting garbage...")
-
     registry: RedisResourceRegistry = get_registry(app)
 
     # Removes disconnected user resources
@@ -248,7 +246,7 @@ async def remove_users_manually_marked_as_guests(
         skip_users.add(int(entry["user_id"]))
 
     # Prevent creating this list if a guest user
-    guest_users: List[Tuple[int, str]] = await get_guest_user_ids_and_names(app)
+    guest_users: list[tuple[int, str]] = await get_guest_user_ids_and_names(app)
 
     for guest_user_id, guest_user_name in guest_users:
         # Prevents removing GUEST users that were automatically (NOT manually) created
@@ -291,8 +289,8 @@ async def remove_users_manually_marked_as_guests(
 
 async def _remove_single_orphaned_service(
     app: web.Application,
-    interactive_service: Dict[str, Any],
-    currently_opened_projects_node_ids: Set[str],
+    interactive_service: dict[str, Any],
+    currently_opened_projects_node_ids: set[str],
 ) -> None:
     service_host = interactive_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
@@ -378,7 +376,7 @@ async def remove_orphaned_services(
     """
     logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids: Set[str] = set()
+    currently_opened_projects_node_ids: set[str] = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
@@ -389,11 +387,11 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services: List[Dict[str, Any]] = []
+    running_interactive_services: list[dict[str, Any]] = []
     try:
         running_interactive_services = await director_v2_api.get_services(app)
     except director_v2_api.DirectorServiceError:
-        logger.debug(("Could not fetch running_interactive_services"))
+        logger.debug("Could not fetch running_interactive_services")
 
     logger.info(
         "Currently running services %s",
@@ -434,7 +432,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     # recover user's primary_gid
     try:
-        project_owner: Dict = await get_user(app=app, user_id=user_id)
+        project_owner: dict = await get_user(app=app, user_id=user_id)
     except users_exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
@@ -456,11 +454,11 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         f"{user_project_uuids=}",
     )
 
-    delete_tasks: List[asyncio.Task] = []
+    delete_tasks: list[asyncio.Task] = []
 
     for project_uuid in user_project_uuids:
         try:
-            project: Dict = await get_project_for_user(
+            project: dict = await get_project_for_user(
                 app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
