@@ -4,9 +4,8 @@
 
 import asyncio
 import logging
-from contextlib import contextmanager
 from itertools import chain
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -18,7 +17,11 @@ from simcore_postgres_database.models.users import UserRole
 from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
+from .garbage_collector_utils import (
+    get_new_project_owner_gid,
+    log_context,
+    replace_current_owner,
+)
 from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
@@ -39,23 +42,6 @@ from .users_api import (
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
-
-
-@contextmanager
-def log_context(log: Callable, message: str):
-    """Logs entering/existing context as start/done and informs if error"""
-    # NOTE: could have been done with a LoggerAdapter but wonder if it would work
-    # with a global logger and asyncio context switches
-    try:
-        log("%s [STARTING]", message)
-
-        yield
-
-        log("%s [DONE w/ SUCCESS]", message)
-
-    except Exception as e:  # pylint: disable=broad-except
-        log("%s [DONE w/ ERROR %s]", message, type(e))
-        raise
 
 
 async def collect_garbage(app: web.Application):

@@ -11,6 +11,7 @@ from aiohttp import web
 
 from .garbage_collector_core import collect_garbage
 from .garbage_collector_settings import GarbageCollectorSettings, get_plugin_settings
+from .garbage_collector_utils import log_context
 
 logger = logging.getLogger(__name__)
 
@@ -63,29 +64,28 @@ async def run_background_task(app: web.Application):
 
 async def collect_garbage_periodically(app: web.Application):
     settings: GarbageCollectorSettings = get_plugin_settings(app)
+    interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
 
     while True:
         try:
-            interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
             while True:
-                logger.info("Starting ...")
+                with log_context(logger.info, "Garbage collect cycle"):
+                    await collect_garbage(app)
 
-                await collect_garbage(app)
+                    if app[GC_TASK_CONFIG].get("force_stop", False):
+                        raise RuntimeError("Forced to stop garbage collection")
 
-                if app[GC_TASK_CONFIG].get("force_stop", False):
-                    raise RuntimeError("Forced to stop garbage collection")
-
-                logger.info("Completed: pausing for %ss", f"{interval=}")
+                logger.info("Garbage collect cycle pauses %ss", interval)
                 await asyncio.sleep(interval)
 
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # EXIT
             logger.info(
                 "Stopped:" "Garbage collection task was cancelled, it will not restart!"
             )
             # do not catch Cancellation errors
             raise
 
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # RESILIENT restart # pylint: disable=broad-except
             logger.warning(
                 "Stopped:"
                 "There was an error during garbage collection, restarting...",
