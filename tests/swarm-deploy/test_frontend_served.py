@@ -18,7 +18,7 @@ from yarl import URL
     [
         ("http://127.0.0.1:9081/", "osparc/boot.js"),
         ("http://127.0.0.1:9081/s4l/index.html", "Sim4Life"),
-        ("http://127.0.0.1:9081/tis/index.html", "TI Planning"),
+        ("http://127.0.0.1:9081/tis/index.html", "TI Plan"),
     ],
 )
 def test_product_frontend_app_served(
