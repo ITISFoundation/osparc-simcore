@@ -246,7 +246,7 @@ class DynamicSidecar(BaseModel):
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
         return parse_obj_as(
-            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # Compliant
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
         )
 
     @property
