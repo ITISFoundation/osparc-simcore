@@ -89,13 +89,7 @@ async def _apply_observation_cycle(
             can_save=scheduler_data.dynamic_sidecar.can_save_state,
         )
 
-    try:
-        await asyncio.wait_for(
-            update_dynamic_sidecar_health(app, scheduler_data),
-            timeout=dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION,
-        )
-    except asyncio.TimeoutError:
-        scheduler_data.dynamic_sidecar.is_available = False
+        await update_dynamic_sidecar_health(app, scheduler_data)
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(
