@@ -10,11 +10,16 @@ from .utils import async_command, write_to_tmp_file
 logger = logging.getLogger(__name__)
 
 
+def _header(message: str) -> str:
+    return f"|||{message.capitalize()}|||\n"
+
+
 async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
     file_content: Optional[str],
     command: str,
     command_timeout: Optional[float],
+    log_result: bool = False,
 ) -> Tuple[bool, str]:
     """The command which accepts {file_path} as an argument for string formatting"""
 
@@ -26,7 +31,25 @@ async def write_file_and_run_command(
             stop_and_remove_timeout=settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT,
         )
         logger.debug("Will run command\n'%s':\n%s", formatted_command, file_content)
-        return await async_command(formatted_command, command_timeout)
+        finished_without_errors, stdout = await async_command(
+            formatted_command, command_timeout
+        )
+        if log_result:
+            logger.warning(
+                "\n".join(
+                    (
+                        "",
+                        _header("Ran command"),
+                        formatted_command,
+                        _header("With input file"),
+                        file_content or "",
+                        _header("Got result"),
+                        stdout,
+                        "=" * 10,
+                    )
+                )
+            )
+        return finished_without_errors, stdout
 
 
 async def remove_the_compose_spec(

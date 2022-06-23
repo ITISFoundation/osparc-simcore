@@ -71,18 +71,16 @@ async def _task_docker_compose_up(
             file_content=shared_store.compose_spec,
             command=command,
             command_timeout=None,
+            log_result=True
         )
-    message = f"Finished {command} with output\n{stdout}"
 
     if finished_without_errors:
         await send_message(rabbitmq, "service containers started")
-        # always display the result of docker-compose up command
-        # makes it simpler to debug future issues
-        logger.warning(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
         application_health.is_healthy = False
+        message = f"Finished {command} with output\n{stdout}"
         application_health.error_message = message
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
         await send_message(rabbitmq, "could not start service containers")
