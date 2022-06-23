@@ -37,7 +37,6 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     cd services/dynamic-sidecar/src/simcore_service_dynamic_sidecar && \
     uvicorn main:app \
       --host 0.0.0.0 \
-      --workers 2 \
       --reload \
       $reload_dir_packages
       --reload-dir . \
@@ -46,7 +45,6 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 else
   exec uvicorn simcore_service_dynamic_sidecar.main:app \
     --host 0.0.0.0 \
-    --workers 2 \
     --log-level "${SERVER_LOG_LEVEL}"
 
 fi
