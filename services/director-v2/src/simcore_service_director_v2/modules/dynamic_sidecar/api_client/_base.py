@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
     logger.warning(
-        "REQUESTS WHILE '%s' %s",
+        "Requests while event '%s': %s",
         event_name.upper(),
         [
             (r.request.method, r.request.url, r.request.headers)
@@ -126,8 +126,6 @@ def expect_status(expected_code: int):
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
-            logger.debug("Calling expect_status")
-
             response = await request_func(zelf, *args, **kwargs)
             if response.status_code != expected_code:
                 raise UnexpectedStatusError(response, expected_code)

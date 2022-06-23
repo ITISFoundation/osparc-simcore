@@ -124,7 +124,7 @@ async def test_retry_on_errors_by_error_type(
             connections_message = log_pair[0]
             retry_message = log_pair[1]
             # SINCE the client request is mocked the pool is empty
-            assert connections_message == "REQUESTS WHILE 'POOL TIMEOUT' []"
+            assert connections_message == "Requests while event 'POOL TIMEOUT': []"
             assert retry_message.startswith(
                 f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
             )
