@@ -89,6 +89,8 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
+    DYNAMIC_SIDECAR_DY_VOLUMES_COMMON_DIR: Path = Field("/dy-volumes")
+
     @validator("LOG_LEVEL")
     @classmethod
     def _check_log_level(cls, value: str):

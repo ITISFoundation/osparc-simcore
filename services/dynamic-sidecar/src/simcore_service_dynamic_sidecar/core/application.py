@@ -9,7 +9,7 @@ from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import setup_directory_watcher
-from ..modules.mounted_fs import setup_mounted_fs
+from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
@@ -39,15 +39,13 @@ P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
 )
 
 
-def setup_logger(settings: DynamicSidecarSettings) -> None:
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
-
-
 def create_basic_app() -> FastAPI:
     # settings
     settings = DynamicSidecarSettings.create_from_envs()
-    setup_logger(settings)
+
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
+
     logger.debug(settings.json(indent=2))
 
     # minimal
@@ -57,9 +55,11 @@ def create_basic_app() -> FastAPI:
         docs_url="/dev/doc",
     )
     override_fastapi_openapi_method(app)
+
     app.state.settings = settings
 
     app.include_router(main_router)
+
     return app
 
 
@@ -116,3 +116,20 @@ def create_app():
     app.add_event_handler("shutdown", _on_shutdown)
 
     return app
+
+
+class AppState:
+    def __init__(self, app: FastAPI):
+        self._app = app
+
+    @property
+    def settings(self) -> DynamicSidecarSettings:
+        return self._app.state.settings
+
+    @property
+    def mounted_volumes(self) -> MountedVolumes:
+        return self._app.state.mounted_volumes
+
+    @property
+    def shared_store(self) -> SharedStore:
+        return self._app.state.shared_store
