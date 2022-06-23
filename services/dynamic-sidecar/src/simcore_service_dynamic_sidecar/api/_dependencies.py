@@ -3,8 +3,8 @@ from fastapi.datastructures import State
 
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
-from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
 
 

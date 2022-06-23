@@ -6,8 +6,8 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
-from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .docker_logs import setup_background_log_fetcher
@@ -84,6 +84,7 @@ def create_app():
         remote_debug_setup(app)
 
     if app.state.settings.RABBIT_SETTINGS:
+        # TODO: PC->ANE: should not be allowed to disable. mock instead setup_* funcs
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
 

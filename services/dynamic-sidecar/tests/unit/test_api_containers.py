@@ -28,7 +28,7 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 )
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
-from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")

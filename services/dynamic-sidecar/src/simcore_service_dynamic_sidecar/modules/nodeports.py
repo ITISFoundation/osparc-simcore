@@ -25,7 +25,7 @@ from simcore_service_dynamic_sidecar.core.settings import (
     get_settings,
 )
 
-from ..models.schemas.ports import PortTypeName
+from ..models.ports import PortTypeName
 
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"

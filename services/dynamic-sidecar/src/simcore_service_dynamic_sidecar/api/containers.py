@@ -20,8 +20,8 @@ from ..core.validation import (
     parse_compose_spec,
     validate_compose_spec,
 )
-from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
