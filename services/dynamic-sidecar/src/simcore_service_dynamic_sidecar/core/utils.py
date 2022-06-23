@@ -7,13 +7,12 @@ import traceback
 from collections import namedtuple
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Optional
 
 import aiofiles
 import httpx
 import yaml
 from aiofiles import os as aiofiles_os
-from async_timeout import timeout
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -77,9 +76,9 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
         docker_config = {
             "auths": {
                 f"{registry_settings.resolved_registry_url}": {
-                    "auth": base64.b64encode(
-                        f"{user}:{password}".encode("utf-8")
-                    ).decode("utf-8")
+                    "auth": base64.b64encode(f"{user}:{password}".encode()).decode(
+                        "utf-8"
+                    )
                 }
             }
         }
@@ -117,11 +116,8 @@ async def async_command(
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    # because the Processes returned by create_subprocess_shell it is not possible to
-    # have a timeout otherwise nor to stream the response from the process.
     try:
-        async with timeout(command_timeout):
-            stdout, _ = await proc.communicate()
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
     except asyncio.TimeoutError:
         message = (
             f"{traceback.format_exc()}\nTimed out after {command_timeout} "
@@ -139,7 +135,7 @@ async def async_command(
     )
 
 
-def assemble_container_names(validated_compose_content: str) -> List[str]:
+def assemble_container_names(validated_compose_content: str) -> list[str]:
     """returns the list of container names from a validated compose_spec"""
     parsed_compose_spec = yaml.safe_load(validated_compose_content)
     return [
