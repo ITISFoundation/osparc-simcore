@@ -212,7 +212,9 @@ async def stop_dynamic_service(
 
     def _log_error(retry_state: RetryCallState):
         logger.error(
-            f"Service with {node_uuid=} could not be untracked after {json.dumps(retry_state.retry_object.statistics)}"
+            "Service with %s could not be untracked after %s",
+            f"{node_uuid=}",
+            f"{json.dumps(retry_state.retry_object.statistics)}",
         )
 
     async for attempt in AsyncRetrying(
