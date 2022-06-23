@@ -127,7 +127,27 @@ def mock_registry_service(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def app(mock_environment: None, mock_registry_service: None) -> FastAPI:
+def mock_rabbitmq(mocker) -> dict[str, AsyncMock]:
+    return {
+        "connect": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
+            return_value=None,
+        ),
+        "post_log_message": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.post_log_message",
+            return_value=None,
+        ),
+        "close": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.close",
+            return_value=None,
+        ),
+    }
+
+
+@pytest.fixture
+def app(
+    mock_environment: None, mock_registry_service: None, mock_rabbitmq: None
+) -> FastAPI:
     app = create_app()
     app.state.rabbitmq = AsyncMock()
     return app
