@@ -335,7 +335,7 @@ async def test_remove_missing_no_error(
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
         await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
-    assert f"not found" in str(execinfo.value)
+    assert "not found" in str(execinfo.value)
 
 
 async def test_get_stack_status(
