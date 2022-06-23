@@ -11,12 +11,14 @@ from aiohttp import web
 
 from .garbage_collector_core import collect_garbage
 from .garbage_collector_settings import GarbageCollectorSettings, get_plugin_settings
+from .garbage_collector_utils import log_context
 
 logger = logging.getLogger(__name__)
 
 
 GC_TASK_NAME = f"background-task.{__name__}.collect_garbage_periodically"
 GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
+GC_TASK = f"{GC_TASK_NAME}.task"
 
 
 async def run_background_task(app: web.Application):
@@ -29,6 +31,8 @@ async def run_background_task(app: web.Application):
     gc_bg_task = asyncio.create_task(
         collect_garbage_periodically(app), name=GC_TASK_NAME
     )
+    # attaches variable to the app's lifetime
+    app[GC_TASK] = gc_bg_task
 
     # FIXME: added this config to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
@@ -59,29 +63,31 @@ async def run_background_task(app: web.Application):
 
 
 async def collect_garbage_periodically(app: web.Application):
-
     settings: GarbageCollectorSettings = get_plugin_settings(app)
+    interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
 
     while True:
-        logger.info("Starting garbage collector...")
         try:
-            interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
             while True:
-                await collect_garbage(app)
+                with log_context(logger.info, "Garbage collect cycle"):
+                    await collect_garbage(app)
 
-                if app[GC_TASK_CONFIG].get("force_stop", False):
-                    raise Exception("Forced to stop garbage collection")
+                    if app[GC_TASK_CONFIG].get("force_stop", False):
+                        raise RuntimeError("Forced to stop garbage collection")
 
+                logger.info("Garbage collect cycle pauses %ss", interval)
                 await asyncio.sleep(interval)
 
-        except asyncio.CancelledError:
-            logger.info("Garbage collection task was cancelled, it will not restart!")
+        except asyncio.CancelledError:  # EXIT
+            logger.info(
+                "Stopped: Garbage collection task was cancelled, it will not restart!"
+            )
             # do not catch Cancellation errors
             raise
 
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # RESILIENT restart # pylint: disable=broad-except
             logger.warning(
-                "There was an error during garbage collection, restarting...",
+                "Stopped: There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
 
