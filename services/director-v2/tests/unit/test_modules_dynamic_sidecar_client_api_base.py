@@ -39,12 +39,6 @@ class TestThickClient(BaseThinClient):
         return await self._client.get("http://missing-host:1111")
 
 
-def chunks(lst: list[Any], n: int) -> Iterator[list[Any]]:
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i : i + n]
-
-
 # FIXTURES
 
 
@@ -116,18 +110,16 @@ async def test_retry_on_errors_by_error_type(
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
 
-    log_count = retry_count * 2 if error_class == PoolTimeout else retry_count
+    log_count = retry_count + 1 if error_class == PoolTimeout else retry_count
     assert len(caplog_info_level.messages) == log_count
 
     if error_class == PoolTimeout:
-        for i, log_pair in enumerate(chunks(caplog_info_level.messages, 2)):
-            connections_message = log_pair[0]
-            retry_message = log_pair[1]
-            # SINCE the client request is mocked the pool is empty
-            assert connections_message == "Requests while event 'POOL TIMEOUT': []"
+        for i, retry_message in enumerate(caplog_info_level.messages[:-1]):
             assert retry_message.startswith(
-                f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
+                f"[{i+1}/{retry_count}]Retry. Unexpected PoolTimeout"
             )
+        connections_message = caplog_info_level.messages[-1]
+        assert connections_message == "Requests while event 'POOL TIMEOUT': []"
     else:
         for i, log_message in enumerate(caplog_info_level.messages):
             assert log_message.startswith(

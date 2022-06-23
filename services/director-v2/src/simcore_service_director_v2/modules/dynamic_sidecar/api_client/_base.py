@@ -42,15 +42,16 @@ def _log_retry(log: Logger, max_retries: int) -> Callable[[RetryCallState], None
 
         assert retry_state.outcome  # nosec
         e = retry_state.outcome.exception()
-        assert e.error  # nosec
-        assert e.error._request  # nosec
+        assert isinstance(e, HTTPError)  # nosec
+        assert e._request  # nosec
 
         log.info(
-            "[%s/%s]Retry. Unexpected ConnectError while requesting '%s %s': %s",
+            "[%s/%s]Retry. Unexpected %s while requesting '%s %s': %s",
             retry_state.attempt_number,
             max_retries,
-            e.error._request.method,
-            e.error._request.url,
+            e.__class__.__name__,
+            e._request.method,
+            e._request.url,
             f"{e=}",
         )
 
@@ -68,42 +69,27 @@ def retry_on_errors(
     """
     assert asyncio.iscoroutinefunction(request_func)
 
+    RETRY_ERRORS = (ConnectError, PoolTimeout)
+
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
         # pylint: disable=protected-access
         try:
             async for attempt in AsyncRetrying(
-                # waits 1, 4, 8 seconds between retries and gives up
                 stop=stop_after_attempt(zelf._request_max_retries),
                 wait=wait_exponential(min=1),
-                retry=retry_if_exception_type(_RetryRequestError),
+                retry=retry_if_exception_type(RETRY_ERRORS),
                 before=before_log(logger, logging.DEBUG),
                 after=_log_retry(logger, zelf._request_max_retries),
                 reraise=True,
             ):
                 with attempt:
-                    try:
-                        response: Response = await request_func(zelf, *args, **kwargs)
-                        return response
-                    except (ConnectError, PoolTimeout) as e:
-                        # when this happens it means the system is not correctly
-                        # using up resources, logging all connections in the pool
-                        # to help with debugging
-                        if isinstance(e, PoolTimeout):
-                            _log_requests_in_pool(zelf._client, "pool timeout")
-
-                        raise _RetryRequestError(e) from e
-                    except HTTPError as e:
-                        raise ClientHttpError(e) from e
-        except _RetryRequestError as e:
-            # raise original exception
-            assert e.__cause__  # nosec
-
-            # wrap if httpx errors
-            if isinstance(e.error, HTTPError):
-                raise ClientHttpError(e.error) from e.error
-
-            raise e.__cause__
+                    r: Response = await request_func(zelf, *args, **kwargs)
+                    return r
+        except HTTPError as e:
+            if isinstance(e, PoolTimeout):
+                _log_requests_in_pool(zelf._client, "pool timeout")
+            raise ClientHttpError(e) from e
 
     return request_wrapper
 
