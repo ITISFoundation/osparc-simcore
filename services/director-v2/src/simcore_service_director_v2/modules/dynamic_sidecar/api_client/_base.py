@@ -14,12 +14,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ._errors import (
-    ClientHttpError,
-    UnexpectedStatusError,
-    _RetryRequestError,
-    _WrongReturnType,
-)
+from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
 
 logger = logging.getLogger(__name__)
 

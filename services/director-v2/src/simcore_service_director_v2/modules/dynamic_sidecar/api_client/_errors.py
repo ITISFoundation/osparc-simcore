@@ -5,11 +5,8 @@ Exception hierarchy:
   x BaseRequestError
     + ClientHttpError
     + UnexpectedStatusError
-  x _RetryRequestError
   x WrongReturnType
 """
-
-from typing import Optional
 
 from httpx import Response
 
@@ -18,14 +15,6 @@ class BaseClientError(Exception):
     """
     Used as based for all the raised errors
     """
-
-
-class _RetryRequestError(BaseClientError):
-    """used internally to retry request"""
-
-    def __init__(self, error: Optional[Exception], *args) -> None:
-        super().__init__(*args)
-        self.error = error
 
 
 class _WrongReturnType(BaseClientError):
