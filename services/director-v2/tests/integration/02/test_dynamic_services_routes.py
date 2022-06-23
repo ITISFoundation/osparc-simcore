@@ -2,16 +2,17 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import json
 import logging
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
+from typing import Any, AsyncIterable, AsyncIterator, Callable
 from unittest.mock import Mock
 
 import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
-from async_timeout import timeout
 from faker import Faker
+from fastapi import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
@@ -25,6 +26,10 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
@@ -47,7 +52,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 def minimal_configuration(
     postgres_db,
     postgres_host_config: dict[str, str],
-    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
     simcore_services_ready: None,
     rabbit_service: RabbitSettings,
 ):
@@ -81,10 +86,10 @@ def start_request_data(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
     service_resources: ServiceResourcesDict,
     ensure_swarm_and_networks: None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return dict(
         user_id=user_id,
         project_id=project_id,
@@ -153,7 +158,7 @@ async def director_v2_client(
 
 @pytest.fixture
 async def ensure_services_stopped(
-    start_request_data: Dict[str, Any], director_v2_client: TestClient
+    start_request_data: dict[str, Any], director_v2_client: TestClient
 ) -> AsyncIterator[None]:
     yield
     # ensure service cleanup when done testing
@@ -205,12 +210,12 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 async def key_version_expected(
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_service: Dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_service: dict,
     docker_registry_image_injector: Callable,
-) -> List[Tuple[ServiceKeyVersion, bool]]:
+) -> list[tuple[ServiceKeyVersion, bool]]:
 
-    results: List[Tuple[ServiceKeyVersion, bool]] = []
+    results: list[tuple[ServiceKeyVersion, bool]] = []
 
     sleeper_service = docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", "user@e.mail"
@@ -235,7 +240,7 @@ async def key_version_expected(
 async def test_start_status_stop(
     director_v2_client: TestClient,
     node_uuid: str,
-    start_request_data: Dict[str, Any],
+    start_request_data: dict[str, Any],
     ensure_services_stopped: None,
     mock_project_repository: None,
     mock_dynamic_sidecar_api_calls: None,
@@ -252,28 +257,36 @@ async def test_start_status_stop(
         "/v2/dynamic_services", json=start_request_data, headers=headers
     )
     assert response.status_code == 201, response.text
-
+    assert isinstance(director_v2_client.application, FastAPI)
     await patch_dynamic_service_url(
         app=director_v2_client.application, node_uuid=node_uuid
     )
 
     # awaiting for service to be running
     data = {}
-    async with timeout(SERVICE_IS_READY_TIMEOUT):
-        status_is_not_running = True
-        while status_is_not_running:
-
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+        stop=stop_after_delay(SERVICE_IS_READY_TIMEOUT),
+        wait=wait_fixed(5),
+    ):
+        with attempt:
+            print(
+                f"--> getting service {node_uuid=} status... attempt {attempt.retry_state.attempt_number}"
+            )
             response: Response = await director_v2_client.get(
                 f"/v2/dynamic_services/{node_uuid}", json=start_request_data
             )
-            logger.warning("sidecar status result %s", response.text)
+            print("-- sidecar status result %s", response.text)
             assert response.status_code == 200, response.text
             data = response.json()
 
-            status_is_not_running = data.get("service_state", "") != "running"
+            assert data.get("service_state", "") == "running"
+            print(
+                "<-- sidecar is running %s",
+                f"{json.dumps(attempt.retry_state.retry_object.statistics)}",
+            )
 
-            # give the service some time to keep up
-            await asyncio.sleep(5)
     assert "service_state" in data
     assert data["service_state"] == "running"
 

@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI
@@ -73,7 +73,9 @@ class DynamicSidecarClient:
         )
 
         # timeouts
-        self._health_request_timeout = httpx.Timeout(1.0, connect=1.0)
+        self._health_request_timeout = httpx.Timeout(
+            settings.DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S
+        )
         self._save_restore_timeout = httpx.Timeout(
             settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
@@ -105,7 +107,7 @@ class DynamicSidecarClient:
         await self._client.aclose()
 
     @log_decorator(logger=logger)
-    async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> Dict[str, Any]:
+    async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> dict[str, Any]:
         """
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
@@ -121,7 +123,7 @@ class DynamicSidecarClient:
     @log_decorator(logger=logger)
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> dict[str, dict[str, str]]:
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
 
         response = await self._client.get(url=url, params=dict(only_status=True))
@@ -178,7 +180,7 @@ class DynamicSidecarClient:
 
     @log_decorator(logger=logger)
     async def service_pull_input_ports(
-        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[list[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:pull")
@@ -210,7 +212,7 @@ class DynamicSidecarClient:
 
     @log_decorator(logger=logger)
     async def service_outputs_create_dirs(
-        self, dynamic_sidecar_endpoint: str, outputs_labels: Dict[str, Any]
+        self, dynamic_sidecar_endpoint: str, outputs_labels: dict[str, Any]
     ) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs/dirs")
 
@@ -224,7 +226,7 @@ class DynamicSidecarClient:
 
     @log_decorator(logger=logger)
     async def service_pull_output_ports(
-        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[list[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:pull")
@@ -238,7 +240,7 @@ class DynamicSidecarClient:
 
     @log_decorator(logger=logger)
     async def service_push_output_ports(
-        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[list[str]] = None
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:push")
@@ -297,7 +299,7 @@ class DynamicSidecarClient:
         dynamic_sidecar_endpoint: str,
         container_id: str,
         network_id: str,
-        network_aliases: List[str],
+        network_aliases: list[str],
     ) -> None:
         """attaches a container to a network if not already attached"""
         url = get_url(
@@ -355,7 +357,7 @@ class DynamicSidecarClient:
             dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         )
 
-        network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
             [project_network], project_id
         )
         network_id = network_names_to_ids[project_network]
@@ -392,7 +394,7 @@ class DynamicSidecarClient:
         except httpx.HTTPError:
             return
 
-        network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
             [project_network], project_id
         )
         network_id = network_names_to_ids[project_network]
