@@ -1,11 +1,11 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.mounted_fs import MountedVolumes
-from .rabbitmq import RabbitMQ
-from .settings import DynamicSidecarSettings
 
 
 def get_application(request: Request) -> FastAPI:
