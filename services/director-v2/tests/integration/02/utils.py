@@ -278,7 +278,7 @@ async def assert_all_services_running(
             for service_state in service_states:
                 assert service_state != "failed"
 
-            assert all([x == "running" for x in service_states])
+            assert all(x == "running" for x in service_states)
 
 
 async def assert_retrieve_service(
