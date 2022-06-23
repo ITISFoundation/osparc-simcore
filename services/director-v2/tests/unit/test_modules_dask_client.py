@@ -117,7 +117,6 @@ def minimal_dask_config(
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
@@ -881,6 +880,7 @@ async def test_changed_scheduler_raises_exception(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
+    unused_tcp_port_factory: Callable,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -888,7 +888,10 @@ async def test_changed_scheduler_raises_exception(
 
     scheduler = {
         "cls": Scheduler,
-        "options": {"dashboard_address": ":8787", "port": scheduler_address.port},
+        "options": {
+            "dashboard_address": f":{unused_tcp_port_factory()}",
+            "port": scheduler_address.port,
+        },
     }
     async with SpecCluster(
         scheduler=scheduler, asynchronous=True, name="pytest_cluster"

@@ -108,7 +108,7 @@ qx.Class.define("osparc.Error", {
           control = new osparc.ui.basic.Logo();
           break;
         }
-        case "logo-lying": {
+        case "lying-panda": {
           control = new qx.ui.basic.Image().set({
             source: "osparc/lyingpanda.png",
             scale: true,
@@ -148,7 +148,7 @@ qx.Class.define("osparc.Error", {
 
     __buildLayout: function() {
       const logo = this.getChildControl("logo");
-      const image = this.getChildControl("logo-lying");
+      const image = this.getChildControl("lying-panda");
       const status = this.__status = this.getChildControl("code");
       const message = this.__messages = this.getChildControl("messages-layout");
 

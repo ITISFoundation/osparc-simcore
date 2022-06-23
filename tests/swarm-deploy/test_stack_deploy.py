@@ -8,7 +8,6 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 import aiodocker
 import docker
@@ -30,7 +29,7 @@ log = logging.getLogger(__name__)
 
 async def assert_service_is_running(
     service_id: str, docker, *, max_running_delay=1 * MINUTE
-) -> Tuple[List[TaskDict], TenacityStatsDict]:
+) -> tuple[list[TaskDict], TenacityStatsDict]:
     MAX_WAIT = 5
     assert max_running_delay > 3 * MAX_WAIT
 
@@ -61,7 +60,7 @@ async def assert_service_is_running(
             )
 
             # tasks in a service
-            tasks: List[TaskDict] = await docker.tasks.list(
+            tasks: list[TaskDict] = await docker.tasks.list(
                 filters={"service": service_name}
             )
 
@@ -132,7 +131,7 @@ async def docker_async_client():
 @pytest.fixture(scope="module")
 def core_stack_services_names(
     core_docker_compose_file: Path, core_stack_namespace: str
-) -> List[str]:
+) -> list[str]:
     """Expected names of service in core stack at runtime"""
     spec_service_names = yaml.safe_load(core_docker_compose_file.read_text())[
         "services"
@@ -180,12 +179,12 @@ async def test_core_services_running(
     docker_stack_core_and_ops: None,
     core_stack_namespace: str,
     docker_async_client: aiodocker.Docker,
-    core_stack_services_names: List[str],
+    core_stack_services_names: list[str],
 ):
     docker = docker_async_client
 
     # check expected services deployed
-    core_services: List[ServiceDict] = await docker.services.list(
+    core_services: list[ServiceDict] = await docker.services.list(
         filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
     )
     assert core_services

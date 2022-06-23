@@ -5,7 +5,6 @@ import asyncio
 import json
 import logging
 import time
-import traceback
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Mapping, Optional
 
@@ -54,8 +53,6 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
         yield client
     except aiodocker.exceptions.DockerError as e:
         message = "Unexpected error from docker client"
-        log_message = f"{message} {e.message}\n{traceback.format_exc()}"
-        log.info(log_message)
         raise GenericDockerError(message, e) from e
     finally:
         if client is not None:
@@ -75,10 +72,8 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     ]
     if not networks or len(networks) > 1:
         raise DynamicSidecarError(
-            (
-                f"Swarm network name (searching for '*{network_name}*') is not configured."
-                f"Found following networks: {networks}"
-            )
+            f"Swarm network name (searching for '*{network_name}*') is not configured."
+            f"Found following networks: {networks}"
         )
     return networks[0]
 
@@ -119,7 +114,7 @@ async def create_service_and_get_id(create_service_data: AioDockerServiceSpec) -
 
     if "ID" not in service_start_result:
         raise DynamicSidecarError(
-            "Error while starting service: {}".format(str(service_start_result))
+            f"Error while starting service: {str(service_start_result)}"
         )
     return service_start_result["ID"]
 
@@ -165,10 +160,8 @@ async def _extract_task_data_from_service_for_state(
             > dynamic_sidecar_settings.DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID
         ):
             raise DynamicSidecarError(
-                msg=(
-                    "Timed out while searching for an assigned NodeID for "
-                    f"service_id={service_id}. Last task inspect result: {task}"
-                )
+                "Timed out while searching for an assigned NodeID for "
+                f"service_id={service_id}. Last task inspect result: {task}"
             )
 
     async with docker_client() as client:
@@ -222,10 +215,8 @@ async def get_service_placement(
 
     if "NodeID" not in task:
         raise DynamicSidecarError(
-            msg=(
-                f"Could not find an assigned NodeID for service_id={service_id}. "
-                f"Last task inspect result: {task}"
-            )
+            f"Could not find an assigned NodeID for service_id={service_id}. "
+            f"Last task inspect result: {task}"
         )
 
     return task["NodeID"]
@@ -245,19 +236,18 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
         service_container_count = len(running_services)
 
         if service_container_count == 0:
-            # if the service is nor present, return pending
+            # if the service is not present, return pending
             return _make_pending()
 
         last_task = running_services[0]
 
     # GenericDockerError
     except GenericDockerError as e:
-        if e.original_exception.message != f"service {service_id} not found":
-            raise e
-
-        # because the service is not there yet return a pending state
-        # it is looking for a service or something with no error message
-        return _make_pending()
+        if e.original_exception.status == 404:
+            # because the service is not there yet return a pending state
+            # it is looking for a service or something with no error message
+            return _make_pending()
+        raise e
 
     service_state, message = extract_task_state(task_status=last_task["Status"])
 
@@ -320,10 +310,13 @@ async def remove_dynamic_sidecar_stack(
                 ]
             }
         )
-        to_remove_tasks = [
-            client.services.delete(service["ID"]) for service in services_to_remove
-        ]
-        await asyncio.gather(*to_remove_tasks)
+        if services_to_remove:
+            await logged_gather(
+                *(
+                    client.services.delete(service["ID"])
+                    for service in services_to_remove
+                )
+            )
 
 
 async def remove_dynamic_sidecar_network(network_name: str) -> bool:
@@ -334,9 +327,9 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
             return True
     except GenericDockerError as e:
         message = (
-            f"{str(e)}\nThe above error may occur when trying tor remove the network.\n"
+            f"{e}\nTIP: The above error may occur when trying tor remove the network.\n"
             "Docker takes some time to establish that the network has no more "
-            "containers attaced to it."
+            "containers attached to it."
         )
         log.warning(message)
         return False

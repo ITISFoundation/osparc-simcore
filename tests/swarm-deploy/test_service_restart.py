@@ -5,7 +5,6 @@
 import logging
 import time
 from pprint import pformat
-from typing import List
 
 import pytest
 from docker.models.services import Service
@@ -39,7 +38,7 @@ MAX_TIME_TO_RESTART_SERVICE = 10
     ids=[f"service={x[0]},exit_code={x[1]}" for x in SERVICES_AND_EXIT_CODES],
 )
 def test_graceful_restart_services(
-    simcore_stack_deployed_services: List[Service],
+    simcore_stack_deployed_services: list[Service],
     docker_compose_service_key: str,
     exit_code: int,
 ):

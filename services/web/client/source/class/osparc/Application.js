@@ -327,7 +327,7 @@ qx.Class.define("osparc.Application", {
         default:
           view = new osparc.auth.LoginPage();
           this.__loadView(view, {
-            top: "10%"
+            top: "15%"
           });
           break;
       }

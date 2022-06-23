@@ -24,10 +24,12 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.Canvas());
+    this._setLayout(new qx.ui.layout.VBox(-5));
 
     this.set({
-      alignX: "center"
+      alignX: "center",
+      alignY: "middle",
+      padding: 3
     });
 
     this.getChildControl("logo");
@@ -46,13 +48,12 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
           }));
           logoContainer.add(control);
 
-          this._add(logoContainer, {
-            height: "100%"
-          });
+          this._add(logoContainer);
           break;
         }
         case "platform": {
           control = new qx.ui.basic.Label().set({
+            alignX: "right",
             font: "text-9"
           });
 
@@ -65,10 +66,7 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
               control.setValue(platformName);
             });
 
-          this._add(control, {
-            bottom: 3,
-            right: 0
-          });
+          this._add(control);
           break;
         }
       }
@@ -82,7 +80,7 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
       });
       this.getChildControl("logo").set({
         width: size.width,
-        height: size.height
+        height: parseInt(size.height*0.8)
       });
     },
 

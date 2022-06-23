@@ -42,14 +42,20 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           control = new osparc.ui.basic.Thumbnail().set({
             minWidth: 40
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LOCK_STATUS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
+          });
           break;
         case "permission-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50
           });
           control.exclude();
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.PERMISSION);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.PERMISSION
+          });
           break;
         }
         case "tags":
@@ -59,14 +65,20 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             anonymous: true,
             maxWidth: 100
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.TAGS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TAGS
+          });
           break;
         case "shared-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SHARED);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.SHARED
+          });
           break;
         }
         case "last-change": {
@@ -77,7 +89,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 120,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
+          });
           break;
         }
         case "tsr-rating": {
@@ -91,7 +106,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._addAt(tsrLayout, osparc.dashboard.ListButtonBase.POS.TSR);
+          this._add(tsrLayout, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TSR
+          });
           break;
         }
         case "ui-mode":
@@ -99,7 +117,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 20,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UI_MODE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.UI_MODE
+          });
           break;
         case "update-study":
           control = new qx.ui.basic.Image().set({
@@ -109,7 +130,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             toolTipText: this.tr("Update available"),
             visibility: "excluded"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY
+          });
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
@@ -117,7 +141,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minHeight: this.self().MENU_BTN_WIDTH,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.OPTIONS
+          });
           break;
         case "tick-unselected": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");

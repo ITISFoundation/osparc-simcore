@@ -261,25 +261,25 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLogoPath: function() {
-      let logoPath = null;
+      let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const lightLogo = this.getColorLuminance(textColor) > 0.4;
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logoPath = "osparc/s4l_logo.png";
+          logosPath = lightLogo ? "osparc/s4l_zmt-white.png" : "osparc/s4l_zmt-black.png";
           break;
         case "tis": {
-          logoPath = lightLogo ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
+          logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
           break;
         }
         default: {
-          logoPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
       }
-      return logoPath;
+      return logosPath;
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {

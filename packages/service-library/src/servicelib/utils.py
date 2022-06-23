@@ -62,20 +62,25 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 
 # FUTURES
 def fire_and_forget_task(
-    obj: Union[Coroutine, asyncio.Future, Awaitable]
-) -> asyncio.Future:
-    future = asyncio.ensure_future(obj)
+    obj: Coroutine,
+    *,
+    task_suffix_name: str,
+    fire_and_forget_tasks_collection: set[asyncio.Task],
+) -> asyncio.Task:
+    task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_suffix_name}")
+    fire_and_forget_tasks_collection.add(task)
 
     def log_exception_callback(fut: asyncio.Future):
         try:
             fut.result()
         except asyncio.CancelledError:
-            logger.exception("%s spawned as fire&forget was cancelled", fut)
+            logger.warning("%s spawned as fire&forget was cancelled", fut)
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error occurred while running task!")
 
-    future.add_done_callback(log_exception_callback)
-    return future
+    task.add_done_callback(log_exception_callback)
+    task.add_done_callback(fire_and_forget_tasks_collection.discard)
+    return task
 
 
 # // tasks

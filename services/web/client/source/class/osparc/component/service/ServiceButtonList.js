@@ -64,7 +64,10 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
             minWidth: 120,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.HITS
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -89,7 +92,10 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       const latestVLabel = new qx.ui.basic.Label("v" + serviceModel.getVersion()).set({
         alignY: "middle"
       });
-      this._addAt(latestVLabel, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
+      this._add(latestVLabel, {
+        row: 0,
+        column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
+      });
     },
 
     __applyHits: function(serviceModel) {
@@ -97,7 +103,10 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
         alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
       });
-      this._addAt(hitsLabel, osparc.dashboard.ListButtonBase.POS.TSR);
+      this._add(hitsLabel, {
+        row: 0,
+        column: osparc.dashboard.ListButtonBase.POS.HITS_LABEL
+      });
     },
 
     _filterText: function(text) {
