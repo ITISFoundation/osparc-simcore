@@ -4,28 +4,25 @@
 
 import asyncio
 import json
-import os
 import random
 import sys
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Iterator
+from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
+from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
-from simcore_service_dynamic_sidecar.core.application import create_app
+from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
-from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytest_plugins = [
     "pytest_simcore.docker_registry",
@@ -46,12 +43,12 @@ def project_slug_dir() -> Path:
 
 @pytest.fixture
 def mock_dy_volumes(tmp_path: Path) -> Path:
-    return tmp_path / "dy-volumes"
+    return tmp_path / "host-common-dy-volumes"
 
 
 @pytest.fixture
-def io_temp_dir(tmp_path: Path) -> Path:
-    return tmp_path / "io"
+def container_base_dir() -> Path:
+    return Path("/data")
 
 
 @pytest.fixture
@@ -60,23 +57,23 @@ def compose_namespace(faker: Faker) -> str:
 
 
 @pytest.fixture
-def inputs_dir(io_temp_dir: Path) -> Path:
-    return io_temp_dir / "inputs"
+def inputs_dir(container_base_dir: Path) -> Path:
+    return container_base_dir / "inputs"
 
 
 @pytest.fixture
-def outputs_dir(io_temp_dir: Path) -> Path:
-    return io_temp_dir / "outputs"
+def outputs_dir(container_base_dir: Path) -> Path:
+    return container_base_dir / "outputs"
 
 
 @pytest.fixture
-def state_paths_dirs(io_temp_dir: Path) -> list[Path]:
-    return [io_temp_dir / f"dir_{i}" for i in range(4)]
+def state_paths_dirs(container_base_dir: Path) -> list[Path]:
+    return [container_base_dir / f"state_dir{i}" for i in range(4)]
 
 
 @pytest.fixture
-def state_exclude_dirs(io_temp_dir: Path) -> list[Path]:
-    return [io_temp_dir / f"dir_exclude_{i}" for i in range(4)]
+def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
+    return [container_base_dir / f"exclude_{i}" for i in range(4)]
 
 
 @pytest.fixture
@@ -117,7 +114,7 @@ def mock_environment(
     monkeypatch.setenv("S3_SECURE", "false")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
-    monkeypatch.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DY_VOLUMES_COMMON_DIR", f"{mock_dy_volumes}")
 
 
 @pytest.fixture
@@ -137,33 +134,32 @@ def app(mock_environment: None, mock_registry_service: None) -> FastAPI:
 
 
 @pytest.fixture
-def dynamic_sidecar_settings() -> DynamicSidecarSettings:
-    return DynamicSidecarSettings.create_from_envs()
+async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
+    async with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture
 async def ensure_external_volumes(
-    compose_namespace: str,
-    inputs_dir: Path,
-    outputs_dir: Path,
-    state_paths_dirs: list[Path],
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> AsyncGenerator[None, None]:
+    app: FastAPI,
+) -> AsyncIterator[tuple[DockerVolume]]:
     """ensures inputs and outputs volumes for the service are present"""
-
-    volume_names = []
-    for state_paths_dir in [inputs_dir, outputs_dir] + state_paths_dirs:
-        name_from_path = str(state_paths_dir).replace(os.sep, "_")
-        volume_names.append(f"{compose_namespace}{name_from_path}")
+    app_state = AppState(app)
+    volume_names = [
+        app_state.mounted_volumes.volume_name_inputs,
+        app_state.mounted_volumes.volume_name_outputs,
+    ] + app_state.mounted_volumes.volume_names_for_states
 
     async with docker_client() as client:
+
+        # TODO: rm old volumes?
         volumes = await asyncio.gather(
             *[
                 client.volumes.create(
                     {
                         "Labels": {
                             "source": volume_name,
-                            "run_id": f"{dynamic_sidecar_settings.DY_SIDECAR_RUN_ID}",
+                            "run_id": f"{app_state.settings.DY_SIDECAR_RUN_ID}",
                         }
                     }
                 )
@@ -171,40 +167,50 @@ async def ensure_external_volumes(
             ]
         )
 
-        yield
+        # Example
+        # {
+        #   "CreatedAt": "2022-06-23T03:22:08+02:00",
+        #   "Driver": "local",
+        #   "Labels": {
+        #       "run_id": "f7c1bd87-4da5-4709-9471-3d60c8a70639",
+        #       "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
+        #   },
+        #   "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",
+        #   "Name": "22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034",
+        #   "Options": null,
+        #   "Scope": "local",
+        #   "CreatedTime": 1655947328000,
+        #   "Containers": {}
+        # }
 
-        await asyncio.gather(*[volume.delete() for volume in volumes])
+        # docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
+        yield volumes
+
+        deleted = await asyncio.gather(
+            *[volume.delete() for volume in volumes], return_exceptions=True
+        )
+        assert not [d for d in deleted if isinstance(d, Exception)]
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
+async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
 
-
-@pytest.fixture
-async def cleanup_containers(
-    app: FastAPI, ensure_external_volumes: None
-) -> AsyncGenerator[None, None]:
+    app_state = AppState(app)
 
     yield
     # run docker compose down here
 
-    shared_store: SharedStore = app.state.shared_store
-    stored_compose_content = shared_store.compose_spec
-
-    if stored_compose_content is None:
+    if app_state.shared_store.compose_spec is None:
         # if no compose-spec is stored skip this operation
         return
 
-    settings: DynamicSidecarSettings = app.state.settings
     command = (
         "docker-compose -p {project} -f {file_path} "
         "down --remove-orphans -t {stop_and_remove_timeout}"
     )
     await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
+        settings=app_state.settings,
+        file_content=app_state.shared_store.compose_spec,
         command=command,
         command_timeout=5.0,
     )
