@@ -1,7 +1,5 @@
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Iterator
-
 import pytest
 from _pytest.logging import LogCaptureFixture
 from httpx import (
