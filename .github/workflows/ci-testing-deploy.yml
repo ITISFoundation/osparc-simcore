@@ -14,6 +14,8 @@ on:
       - "!.vscode/**"
       - "**.py"
       - "**.js"
+      - "**/requirements/*.txt"
+      - "**.json"
       - ".github/workflows/ci-testing-deploy.yml"
   pull_request:
     branches:
@@ -27,6 +29,8 @@ on:
       - "!.vscode-template/**"
       - "**.py"
       - "**.js"
+      - "**/requirements/*.txt"
+      - "**.json"
       - ".github/workflows/ci-testing-deploy.yml"
 
 env:
