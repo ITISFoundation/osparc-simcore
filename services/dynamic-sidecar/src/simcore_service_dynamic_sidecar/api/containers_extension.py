@@ -80,7 +80,7 @@ async def restore_state(
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
-    for state_path in mounted_volumes.disk_state_paths():
+    for state_path in mounted_volumes.disk_state_paths:
         await send_message(rabbitmq, f"Downloading state for {state_path}")
 
         awaitables.append(pull_path_if_exists(state_path))
@@ -102,7 +102,7 @@ async def save_state(
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
-    for state_path in mounted_volumes.disk_state_paths():
+    for state_path in mounted_volumes.disk_state_paths:
         await send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(
             upload_path_if_exists(state_path, mounted_volumes.state_exclude)

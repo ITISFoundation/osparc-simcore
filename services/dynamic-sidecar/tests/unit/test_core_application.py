@@ -12,9 +12,17 @@ def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
     app = create_app()
     assert isinstance(app.state.settings, DynamicSidecarSettings)
 
-    # ensure exposed properties are init after creation
-    app_state = AppState(app)
-    properties = inspect.getmembers(AppState, lambda o: isinstance(o, property))
 
-    for prop_name, _ in properties:
-        assert getattr(app_state, prop_name) == getattr(app.state, prop_name)
+def test_AppState_decorator_class(mock_environment_with_envdevel: EnvVarsDict):
+    app = create_app()
+    app_state = AppState(app)
+
+    # ensure exposed properties are init after creation
+    properties = inspect.getmembers(AppState, lambda o: isinstance(o, property))
+    for prop_name, prop in properties:
+        # app.state.prop_name -> ReturnType annotation?
+        value = getattr(app_state, prop_name)
+        assert isinstance(value, inspect.signature(prop.fget).return_annotation)
+
+        # app.state.prop_name == app_state.prop_name
+        assert getattr(app.state, prop_name) == value

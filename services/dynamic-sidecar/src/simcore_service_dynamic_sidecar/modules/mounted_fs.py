@@ -22,19 +22,22 @@ class VolumeMountInfo:
     target: Path  # path seen by target container (car!)
 
     @classmethod
-    def create_from(cls, target_dir: Path, compose_namespace: str, base_dir: Path):
+    def create_from(
+        cls, target_dir: Path, compose_namespace: str, base_dir: Path
+    ) -> "VolumeMountInfo":
         # normalizes into /path/to/a/file -> _path_to_a_file
         # TODO: why this important!?
         name_suffix = f"{target_dir}".replace(os.sep, "_")
-        mount = cls(
+        info = cls(
             source=base_dir / target_dir.relative_to("/"),
             target=target_dir,
             name=f"{compose_namespace}{name_suffix}",
         )
 
-        mount.source.mkdir(parents=True, exist_ok=True)
-        assert mount.source.is_dir()  # nosec
-        return mount
+        # TODO: move away this. Just to "check" that it works?
+        info.source.mkdir(parents=True, exist_ok=True)
+        assert info.source.is_dir()  # nosec
+        return info
 
 
 class MountedVolumes:
