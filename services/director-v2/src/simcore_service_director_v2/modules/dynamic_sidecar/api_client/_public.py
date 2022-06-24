@@ -213,6 +213,8 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
         except BaseClientHTTPError:
+            # if no containers are found it is ok to skip the operations,
+            # there are no containers to attach the network to
             return
 
         sorted_container_names = sorted(containers_status.keys())
@@ -260,6 +262,8 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
         except BaseClientHTTPError:
+            # if no containers are found it is ok to skip the operations,
+            # there are no containers to detach the network from
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(

@@ -37,7 +37,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def env_mocks(monkeypatch: MonkeyPatch, mock_env: None) -> None:
+def mock_end(monkeypatch: MonkeyPatch, mock_env: None) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
     monkeypatch.setenv("S3_BUCKET_NAME", "")
@@ -54,9 +54,7 @@ def env_mocks(monkeypatch: MonkeyPatch, mock_env: None) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(
-    env_mocks: None,
-) -> AsyncIterable[DynamicSidecarClient]:
+async def dynamic_sidecar_client(mock_end: None) -> AsyncIterable[DynamicSidecarClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
