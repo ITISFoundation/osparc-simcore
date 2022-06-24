@@ -11,7 +11,15 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import BaseModel, Extra, Field, PositiveInt, constr
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    PositiveInt,
+    constr,
+    parse_obj_as,
+)
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -235,9 +243,11 @@ class DynamicSidecar(BaseModel):
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        return f"http://{self.hostname}:{self.port}"
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
 
     @property
     def are_containers_ready(self) -> bool:
