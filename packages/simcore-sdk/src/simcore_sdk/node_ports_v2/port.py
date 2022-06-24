@@ -331,6 +331,7 @@ class Port(BaseServiceIOModel):
         """
         await self._set(new_concrete_value=new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
+        
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
         """set the value on the port using an item-value
