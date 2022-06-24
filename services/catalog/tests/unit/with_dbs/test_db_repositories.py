@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 from dataclasses import dataclass, field
-from typing import Callable, List
+from typing import Callable
 
 import pytest
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -30,13 +30,13 @@ class FakeCatalogInfo:
     jupyter_service_key: str = "simcore/services/dynamic/jupyterlab"
     expected_services_count: int = 5
     expected_latest: str = "1.1.3"
-    expected_1_1_x: List[str] = field(default_factory=list)
-    expected_0_x_x: List[str] = field(default_factory=list)
+    expected_1_1_x: list[str] = field(default_factory=list)
+    expected_0_x_x: list[str] = field(default_factory=list)
 
 
 @pytest.fixture()
 async def fake_catalog_with_jupyterlab(
-    products_names: List[str],
+    products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
@@ -120,8 +120,8 @@ async def test_create_services(
 
 async def test_read_services(
     services_repo: ServicesRepository,
-    user_groups_ids: List[int],
-    products_names: List[str],
+    user_groups_ids: list[int],
+    products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ):
@@ -197,7 +197,7 @@ async def test_list_service_releases(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
     services_repo: ServicesRepository,
 ):
-    services: List[ServiceMetaDataAtDB] = await services_repo.list_service_releases(
+    services: list[ServiceMetaDataAtDB] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab"
     )
     assert len(services) == fake_catalog_with_jupyterlab.expected_services_count
@@ -235,7 +235,7 @@ async def test_list_service_releases_version_filtered(
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
-    releases_1_1_x: List[
+    releases_1_1_x: list[
         ServiceMetaDataAtDB
     ] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab", major=1, minor=1
@@ -244,7 +244,7 @@ async def test_list_service_releases_version_filtered(
         s.version for s in releases_1_1_x
     ] == fake_catalog_with_jupyterlab.expected_1_1_x
 
-    expected_0_x_x: List[
+    expected_0_x_x: list[
         ServiceMetaDataAtDB
     ] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab", major=0

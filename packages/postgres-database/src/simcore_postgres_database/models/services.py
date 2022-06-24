@@ -5,6 +5,7 @@
 """
 
 import sqlalchemy as sa
+from sqlalchemy import null
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression, func
 
@@ -68,6 +69,13 @@ services_meta_data = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),
         doc="Timestamp with last update",
+    ),
+    sa.Column(
+        "deprecated",
+        sa.DateTime(),
+        nullable=True,
+        server_default=null(),
+        doc="Timestamp with deprecation date",
     ),
     sa.Column(
         "quality",

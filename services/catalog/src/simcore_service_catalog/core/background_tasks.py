@@ -13,7 +13,6 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Dict, Set, Tuple
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
@@ -34,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 ServiceKey = str
 ServiceVersion = str
-ServiceDockerDataMap = Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]
+ServiceDockerDataMap = dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData]
 
 
 async def _list_registry_services(
@@ -64,7 +63,7 @@ async def _list_registry_services(
 
 async def _list_db_services(
     db_engine: AsyncEngine,
-) -> Set[Tuple[ServiceKey, ServiceVersion]]:
+) -> set[tuple[ServiceKey, ServiceVersion]]:
     services_repo = ServicesRepository(db_engine=db_engine)
     return {
         (service.key, service.version)
@@ -74,8 +73,8 @@ async def _list_db_services(
 
 async def _create_services_in_db(
     app: FastAPI,
-    service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
-    services_in_registry: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
+    service_keys: set[tuple[ServiceKey, ServiceVersion]],
+    services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
     """Adds a new service in the database
 
@@ -89,6 +88,7 @@ async def _create_services_in_db(
         service_metadata: ServiceDockerData = services_in_registry[
             (service_key, service_version)
         ]
+        ## Set deprecation date to null (is valid date value for postgres)
 
         # DEFAULT policies
         (
@@ -106,9 +106,10 @@ async def _create_services_in_db(
             service_access_rights
         )
 
+        service_metadata_dict = service_metadata.dict()
         # set the service in the DB
         await services_repo.create_service(
-            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
+            ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
             service_access_rights,
         )
 
@@ -118,10 +119,10 @@ async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    services_in_registry: Dict[
-        Tuple[ServiceKey, ServiceVersion], ServiceDockerData
+    services_in_registry: dict[
+        tuple[ServiceKey, ServiceVersion], ServiceDockerData
     ] = await _list_registry_services(app)
-    services_in_db: Set[Tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
         app.state.engine
     )
 
@@ -143,7 +144,7 @@ async def _ensure_published_templates_accessible(
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(db_engine)
-    published_services: Set[Tuple[str, str]] = {
+    published_services: set[tuple[str, str]] = {
         (service.key, service.version)
         for service in await projects_repo.list_services_from_published_templates()
     }
@@ -152,7 +153,7 @@ async def _ensure_published_templates_accessible(
     everyone_gid = (await groups_repo.get_everyone_group()).gid
 
     services_repo = ServicesRepository(db_engine)
-    available_services: Set[Tuple[str, str]] = {
+    available_services: set[tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
             gids=[everyone_gid], execute_access=True
