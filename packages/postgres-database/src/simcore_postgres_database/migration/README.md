@@ -2,6 +2,10 @@
 
 Generic single-database configuration.
 
+### NOTE: THIS IS DEPRECATED!
+
+This does not need to be run if you want to use alembic with simcore, as the folder-init is already done. Instead navigate your shell to `osparc-simcore/packages/postgres-database/` and follow the instructions at the Makefile there. Only use this Makefile to learn about the tool alembic, dont actually execute the commands listed here!
+
 
 ## Basic workflow
 
@@ -9,8 +13,6 @@ Our database migration is based on [alembic] and emulates [flask-migrate] plugin
 
 
 ### Init
-
-NOTE: This does not need to be run if you want to use alembic with simcore, as the folder-init is already done. Instead navigate your shell to `osparc-simcore/packages/postgres-database/` and follow the instructions at the bottom of the file in "Use Cases"
 
 ```command
 alembic init migration
