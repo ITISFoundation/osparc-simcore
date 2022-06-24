@@ -192,7 +192,7 @@ def mock_project_repository(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
     class_path = (
-        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.client_api.DynamicSidecarClient"
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.DynamicSidecarClient"
     )
     for function_name, return_value in [
         ("service_save_state", None),

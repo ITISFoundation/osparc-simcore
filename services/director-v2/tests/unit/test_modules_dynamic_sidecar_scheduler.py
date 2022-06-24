@@ -25,7 +25,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.client_api import get_url
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
@@ -50,6 +49,10 @@ log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
+
+
+def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
+    return f"{dynamic_sidecar_endpoint}{postfix}"
 
 
 # UTILS
@@ -129,6 +132,8 @@ def mock_env(
     monkeypatch.setenv("POSTGRES_USER", "test")
     monkeypatch.setenv("POSTGRES_PASSWORD", "test")
     monkeypatch.setenv("POSTGRES_DB", "test")
+    # NOTE: makes retries go faster
+    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
 
 
 @pytest.fixture
@@ -184,7 +189,7 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 
 
 @pytest.fixture
-def mocked_client_api(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
+def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
     service_endpoint = scheduler_data.dynamic_sidecar.endpoint
     with respx.mock as mock:
         mock.get(get_url(service_endpoint, "/health"), name="is_healthy").respond(
@@ -270,7 +275,8 @@ async def test_scheduler_add_remove(
     manually_trigger_scheduler: Callable[[], Awaitable[None]],
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    mocked_client_api: MockRouter,
+    mocked_api_client: MockRouter,
+    docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
     mock_update_label: None,
 ) -> None:

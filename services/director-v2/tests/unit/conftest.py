@@ -2,14 +2,24 @@
 # pylint: disable=unused-argument
 
 import json
+import logging
 import random
 import urllib.parse
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterator, Mapping
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+)
 
 import pytest
 import respx
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
+from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
@@ -361,3 +371,9 @@ def mocked_catalog_service_api(
         ).respond(json=fake_service_specifications)
 
         yield respx_mock
+
+
+@pytest.fixture()
+def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(logging.INFO):
+        yield caplog
