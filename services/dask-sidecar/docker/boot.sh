@@ -112,7 +112,7 @@ else
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --no-nanny \
-      --nprocs ${DASK_NPROCS} \
+      --nworkers ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \
@@ -123,7 +123,7 @@ else
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --no-nanny \
-      --nprocs ${DASK_NPROCS} \
+      --nworkers ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \
