@@ -158,6 +158,12 @@ qx.Class.define("osparc.data.model.Node", {
       apply: "__applyErrors"
     },
 
+    bootOptions: {
+      check: "Object",
+      init: null,
+      nullable: true
+    },
+
     // GUI elements //
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
@@ -424,6 +430,9 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateStates(nodeData);
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
+        }
+        if (nodeData.bootOptions) {
+          this.setBootOptions(nodeData.bootOptions);
         }
       }
 
@@ -1327,7 +1336,8 @@ qx.Class.define("osparc.data.model.Node", {
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         parent: this.getParentNodeId(),
-        thumbnail: this.getThumbnail()
+        thumbnail: this.getThumbnail(),
+        bootOptions: this.getBootOptions()
       };
       if (!clean) {
         nodeEntry.progress = this.getStatus().getProgress();
