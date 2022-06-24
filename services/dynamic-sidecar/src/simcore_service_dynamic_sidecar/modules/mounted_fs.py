@@ -12,19 +12,23 @@ from ..core.docker_utils import get_volume_by_label
 
 
 @dataclass
-class VolumeMountData:
-    # Using same naming as in https://docs.docker.com/compose/compose-file/#volumes
-    source: Path  # path in host
-    target: Path  # path in container
+class VolumeMountInfo:
     name: str  # name used for external volume
+    # TODO: consider renaming. Create a narrative around.
+    # Here the source is not in the host but as seen by the sidecar
+    # at the same time this is not
+    # Using same naming as in https://docs.docker.com/compose/compose-file/#volumes
+    source: Path  # path seen by sidecar
+    target: Path  # path seen by target container (car!)
 
     @classmethod
-    def create_from(cls, container_dir: Path, compose_namespace: str, base_dir: Path):
+    def create_from(cls, target_dir: Path, compose_namespace: str, base_dir: Path):
         # normalizes into /path/to/a/file -> _path_to_a_file
-        name_suffix = f"{container_dir}".replace(os.sep, "_")
+        # TODO: why this important!?
+        name_suffix = f"{target_dir}".replace(os.sep, "_")
         mount = cls(
-            source=base_dir / container_dir.relative_to("/"),
-            target=container_dir,
+            source=base_dir / target_dir.relative_to("/"),
+            target=target_dir,
             name=f"{compose_namespace}{name_suffix}",
         )
 
@@ -62,19 +66,20 @@ class MountedVolumes:
             if dir1 != dir2 and dir1 in dir2.parents:
                 raise ValueError("'{dir1}' folder not allowed inside '{dir2}' folder")
 
-        self._inputs_volume = VolumeMountData.create_from(
+        self._inputs_volume = VolumeMountInfo.create_from(
             inputs_dir, compose_namespace, common_basedir
         )
-        self._outputs_volume = VolumeMountData.create_from(
+        self._outputs_volume = VolumeMountInfo.create_from(
             outputs_dir, compose_namespace, common_basedir
         )
         self._state_volumes = [
-            VolumeMountData.create_from(state_path, compose_namespace, common_basedir)
+            VolumeMountInfo.create_from(state_path, compose_namespace, common_basedir)
             for state_path in state_dirs
         ]
 
         self.state_exclude = state_exclude
 
+    # TODO: all these properties can be replaced by self.inputs_volume ...
     @property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
@@ -107,7 +112,7 @@ class MountedVolumes:
     # VOLUME BINDS: mountpoint:target
 
     @staticmethod
-    async def _get_bind_path_from_label(label: str, run_id: UUID) -> Path:
+    async def _get_volume_mountpoint(label: str, run_id: UUID) -> Path:
         """
         Returns disk's path to mount point
 
@@ -117,13 +122,13 @@ class MountedVolumes:
         return volume.mountpoint
 
     async def get_inputs_docker_volume(self, run_id: UUID) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(
+        bind_path: Path = await self._get_volume_mountpoint(
             self._inputs_volume.name, run_id
         )
         return f"{bind_path}:{self._inputs_volume.target}"
 
     async def get_outputs_docker_volume(self, run_id: UUID) -> str:
-        bind_path: Path = await self._get_bind_path_from_label(
+        bind_path: Path = await self._get_volume_mountpoint(
             self._outputs_volume.name, run_id
         )
         return f"{bind_path}:{self._outputs_volume.target}"
@@ -132,7 +137,7 @@ class MountedVolumes:
         self, run_id: UUID
     ) -> AsyncIterator[str]:
         for state_volume in self._state_volumes:
-            bind_path: Path = await self._get_bind_path_from_label(
+            bind_path: Path = await self._get_volume_mountpoint(
                 state_volume.name, run_id
             )
             yield f"{bind_path}:{state_volume.target}"

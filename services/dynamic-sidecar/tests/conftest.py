@@ -164,6 +164,8 @@ async def ensure_external_volumes(
     app: FastAPI,
 ) -> AsyncIterator[tuple[DockerVolume]]:
     """ensures inputs and outputs volumes for the service are present"""
+    # Emulates from directorv2
+
     app_state = AppState(app)
     volume_names = [
         app_state.mounted_volumes.volume_name_inputs,
@@ -175,6 +177,7 @@ async def ensure_external_volumes(
         # TODO: rm old volumes?
         volumes = await asyncio.gather(
             *[
+                # NOTE: This is responsibility of the director
                 client.volumes.create(
                     {
                         "Labels": {
@@ -206,6 +209,7 @@ async def ensure_external_volumes(
         # docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
         yield volumes
 
+        # TODO: SAN retry if this is link to some container because will fail to delete until container is down
         deleted = await asyncio.gather(
             *[volume.delete() for volume in volumes], return_exceptions=True
         )

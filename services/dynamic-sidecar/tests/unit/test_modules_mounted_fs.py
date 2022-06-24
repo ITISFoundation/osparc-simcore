@@ -18,7 +18,7 @@ def settings(app: FastAPI) -> DynamicSidecarSettings:
     return AppState(app).settings
 
 
-def test_location_on_disk(
+def test_folders_for_volumes_exists(
     mounted_volumes: MountedVolumes, settings: DynamicSidecarSettings
 ):
     # check location on disk
@@ -44,10 +44,13 @@ def test_volume_name_mount_point(
     assert all(
         volume_name.startswith(compose_namespace) for volume_name in volume_names
     )
+
+    # WARNING: this name is used in target mount volume and it has
+    # nasty side-effects if it "looks like a path"
     assert all(os.sep not in volume_name for volume_name in volume_names)
 
 
-async def test_get_docker_volume(
+async def test_get_docker_compose_volume_bind_mounts(
     mounted_volumes: MountedVolumes,
     settings: DynamicSidecarSettings,
     inputs_dir: Path,
