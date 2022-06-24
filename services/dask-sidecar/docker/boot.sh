@@ -111,7 +111,6 @@ else
       dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
-      --reconnect \
       --no-nanny \
       --nprocs ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
@@ -123,7 +122,6 @@ else
     exec dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
-      --reconnect \
       --no-nanny \
       --nprocs ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
