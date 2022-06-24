@@ -4,6 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 
+from datetime import datetime
 from enum import Enum
 from typing import Any, Optional, Union
 
@@ -562,6 +563,7 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
+    deprecated: Optional[datetime]
 
     # user-defined metatada
     classifiers: Optional[list[str]]
