@@ -5,7 +5,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -52,13 +52,13 @@ SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
-ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
+ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
     "org.label-schema.build-date": "build_date",
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
 
-SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
 PlacementConstraintStr = constr(
     strip_whitespace=True, regex=r"^[a-zA-Z0-9. ]*(!=|==){1}[a-zA-Z0-9. ]*$"
@@ -92,10 +92,8 @@ class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
             raise ValueError(
-                (
-                    f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
-                    f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-                )
+                f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
+                f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             )
         return v
 
@@ -252,6 +250,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "time to wait before giving up on removing dynamic-sidecar's volumes"
         ),
     )
+    DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S: PositiveFloat = Field(
+        1.0,
+        description=(
+            "when requesting the status of a service this is the "
+            "maximum amount of time the request can last"
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
@@ -292,14 +297,6 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
         5.0, description="interval at which the scheduler cycle is repeated"
-    )
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION: PositiveFloat = Field(
-        1.0,
-        description=(
-            "when requesting the status of a service this is the "
-            "maximum amount of time the request can last"
-        ),
     )
 
 
@@ -443,7 +440,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: List[PlacementConstraintStr] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
         default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )

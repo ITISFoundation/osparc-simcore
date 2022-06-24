@@ -5,11 +5,10 @@ import json
 import logging
 import os
 import urllib.parse
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 import aiodocker
 import httpx
-from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
 from models_library.services_resources import (
@@ -27,7 +26,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
 from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_attempt
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
@@ -51,9 +51,9 @@ def is_legacy(node_data: Node) -> bool:
 async def ensure_volume_cleanup(
     docker_client: aiodocker.Docker, node_uuid: str
 ) -> None:
-    async def _get_volume_names() -> Set[str]:
+    async def _get_volume_names() -> set[str]:
         volumes_list = await docker_client.volumes.list()
-        volume_names: Set[str] = {x["Name"] for x in volumes_list["Volumes"]}
+        volume_names: set[str] = {x["Name"] for x in volumes_list["Volumes"]}
         return volume_names
 
     for volume_name in await _get_volume_names():
@@ -90,6 +90,41 @@ async def ensure_network_cleanup(
                     assert delete_result is True
 
 
+async def _get_service_published_port(service_name: str) -> int:
+    # it takes a bit of time for the port to be auto generated
+    # keep trying until it is there
+    async with aiodocker.Docker() as docker_client:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(SERVICE_WAS_CREATED_BY_DIRECTOR_V2),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                print(
+                    f"--> getting {service_name=} published port... (attempt {attempt.retry_state.attempt_number}) "
+                )
+                services = await docker_client.services.list()
+                services = list(
+                    filter(lambda s: s["Spec"]["Name"] == service_name, services)
+                )
+                assert len(services) == 1, f"{service_name=} is not running!"
+                service = services[0]
+                assert service["Spec"]["Name"] == service_name
+                assert "Endpoint" in service
+                ports = service["Endpoint"].get("Ports", [])
+                assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
+                published_port = ports[0]["PublishedPort"]
+                assert (
+                    published_port is not None
+                ), f"published port of {service_name=} is not set!"
+                print(
+                    f"--> found {service_name=} {published_port=}, statistics: {json.dumps(attempt.retry_state.retry_object.statistics)}"
+                )
+                return published_port
+    assert False, f"no published port found for {service_name=}"
+
+
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     """
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
@@ -100,23 +135,8 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     returns: the local endpoint
     """
     service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
-    port = None
-
-    async with aiodocker.Docker() as docker_client:
-        async with timeout(SERVICE_WAS_CREATED_BY_DIRECTOR_V2):
-            # it takes a bit of time for the port to be auto generated
-            # keep trying until it is there
-            while port is None:
-                services = await docker_client.services.list()
-                for service in services:
-                    if service["Spec"]["Name"] == service_name:
-                        ports = service["Endpoint"].get("Ports", [])
-                        if len(ports) == 1:
-                            port = ports[0]["PublishedPort"]
-                            break
-
-                await asyncio.sleep(1)
-
+    published_port = await _get_service_published_port(service_name)
+    assert published_port is not None
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     endpoint: Optional[str] = None
@@ -126,10 +146,10 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
         ) in scheduler._to_observe.values():  # pylint: disable=protected-access
             if scheduler_data.service_name == service_name:
                 scheduler_data.dynamic_sidecar.hostname = f"{get_localhost_ip()}"
-                scheduler_data.dynamic_sidecar.port = port
+                scheduler_data.dynamic_sidecar.port = published_port
 
                 endpoint = scheduler_data.dynamic_sidecar.endpoint
-                assert endpoint == f"http://{get_localhost_ip()}:{port}"
+                assert endpoint == f"http://{get_localhost_ip()}:{published_port}"
                 break
 
     assert endpoint is not None
@@ -146,23 +166,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     returns: the local endpoint
     """
     service_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_uuid}"
-    port = None
-
-    async with aiodocker.Docker() as docker_client:
-        async with timeout(SERVICE_WAS_CREATED_BY_DIRECTOR_V2):
-            # it takes a bit of time for the port to be auto generated
-            # keep trying until it is there
-            while port is None:
-                services = await docker_client.services.list()
-                for service in services:
-                    if service["Spec"]["Name"] == service_name:
-                        ports = service["Endpoint"].get("Ports", [])
-                        if len(ports) == 1:
-                            port = ports[0]["PublishedPort"]
-                            break
-
-                await asyncio.sleep(1)
-
+    port = await _get_service_published_port(service_name)
     assert port is not None
     return port
 
@@ -219,7 +223,7 @@ async def get_service_data(
     director_v2_client: httpx.AsyncClient,
     service_uuid: str,
     node_data: Node,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
 
     # result =
     response = await director_v2_client.get(
@@ -250,12 +254,15 @@ async def _get_service_state(
 
 async def assert_all_services_running(
     director_v2_client: httpx.AsyncClient,
-    workbench: Dict[str, Node],
+    workbench: dict[str, Node],
 ) -> None:
-    async with timeout(SERVICES_ARE_READY_TIMEOUT):
-        not_all_services_running = True
-
-        while not_all_services_running:
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+        stop=stop_after_delay(SERVICES_ARE_READY_TIMEOUT),
+        wait=wait_fixed(0.1),
+    ):
+        with attempt:
             service_states = await asyncio.gather(
                 *(
                     _get_service_state(
@@ -271,10 +278,7 @@ async def assert_all_services_running(
             for service_state in service_states:
                 assert service_state != "failed"
 
-            are_services_running = [x == "running" for x in service_states]
-            not_all_services_running = not all(are_services_running)
-            # let the services boot
-            await asyncio.sleep(1.0)
+            assert all(x == "running" for x in service_states)
 
 
 async def assert_retrieve_service(
@@ -409,7 +413,7 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
 
 async def assert_services_reply_200(
     director_v2_client: httpx.AsyncClient,
-    workbench: Dict[str, Node],
+    workbench: dict[str, Node],
 ) -> None:
     for service_uuid, node_data in workbench.items():
         service_data = await get_service_data(
