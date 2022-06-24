@@ -10,6 +10,7 @@ SEE https://sparc.science/datasets/4?type=dataset
 """
 import os
 import sys
+import time
 from pathlib import Path
 from time import sleep
 from typing import Optional
@@ -72,15 +73,18 @@ with osparc.ApiClient(cfg) as api_client:
     print("Job created", job)
 
     # Start our simulation.
-
     status = solvers_api.start_job(solver.id, solver.version, job.id)
+    start_t = time.perf_counter()
 
     # Check the status of our simulation until it has completed.
-
     while True:
         status = solvers_api.inspect_job(solver.id, solver.version, job.id)
 
-        print(f">>> Progress: {status.progress}%...", flush=True)
+        print(
+            f">>> Progress: {status.progress}% ",
+            f"[elapsed:{time.perf_counter() - start_t:4.2f}s]...",
+            flush=True,
+        )
 
         if status.progress == 100:
             break
@@ -102,10 +106,10 @@ with osparc.ApiClient(cfg) as api_client:
     # Retrieve our simulation results.
 
     print("---------------------------------------")
-    results: Optional[File]
+    result: Optional[File]
 
-    for output_name, results in outputs.results:
-        if results is None:
+    for output_name, result in outputs.results.items():
+        if result is None:
             print(
                 "Can't retrieve our simulation results {output_name}...?!",
                 "Failed ?",
@@ -118,13 +122,16 @@ with osparc.ApiClient(cfg) as api_client:
             # Print out the id of our simulation results file (?).
 
             print("---------------------------------------")
-            print(">>> ", results.id)
+            print(">>> ", result.id)
 
             # Download our simulation results file (?).
 
-            download_path: str = files_api.download_file(results.id)
+            download_path: str = files_api.download_file(result.id)
             print("Downloaded to", download_path)
-            print("Results:", Path(download_path).read_text()[:100])
+            print("Content-Type: ", result.content_type)
+            if result.content_type == "text/plain":
+                print("Result:", Path(download_path).read_text()[:100])
+            print("Status: ", Path(download_path).stat())
 
     # List all the files that are available.
     print("---------------------------------------")
