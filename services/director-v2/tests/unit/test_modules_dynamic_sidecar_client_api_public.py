@@ -37,7 +37,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_end(monkeypatch: MonkeyPatch, mock_env: None) -> None:
+def mock_env(monkeypatch: MonkeyPatch, mock_env: None) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
     monkeypatch.setenv("S3_BUCKET_NAME", "")
@@ -54,7 +54,7 @@ def mock_end(monkeypatch: MonkeyPatch, mock_env: None) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(mock_end: None) -> AsyncIterable[DynamicSidecarClient]:
+async def dynamic_sidecar_client(mock_env: None) -> AsyncIterable[DynamicSidecarClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
@@ -70,7 +70,7 @@ def retry_count() -> int:
 
 @pytest.fixture
 def raise_retry_count(
-    monkeypatch: MonkeyPatch, retry_count: int, env_mocks: None
+    monkeypatch: MonkeyPatch, retry_count: int, mock_env: None
 ) -> None:
     monkeypatch.setenv(
         "DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", f"{retry_count}"
