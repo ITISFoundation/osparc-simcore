@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, Optional
 
 import packaging.version
 import sqlalchemy as sa
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
-    gids: Optional[List[int]] = None,
+    gids: Optional[list[int]] = None,
     execute_access: Optional[bool] = None,
     write_access: Optional[bool] = None,
     combine_access_with_and: Optional[bool] = True,
@@ -79,12 +79,12 @@ class ServicesRepository(BaseRepository):
     async def list_services(
         self,
         *,
-        gids: Optional[List[int]] = None,
+        gids: Optional[list[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
         combine_access_with_and: Optional[bool] = True,
         product_name: Optional[str] = None,
-    ) -> List[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataAtDB]:
         services_in_db = []
 
         async with self.db_engine.connect() as conn:
@@ -107,7 +107,7 @@ class ServicesRepository(BaseRepository):
         major: Optional[int] = None,
         minor: Optional[int] = None,
         limit_count: Optional[int] = None,
-    ) -> List[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataAtDB]:
         """Lists LAST n releases of a given service, sorted from latest first
 
         major, minor is used to filter as major.minor.* or major.*
@@ -153,7 +153,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         *,
-        gids: Optional[List[int]] = None,
+        gids: Optional[list[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
         product_name: Optional[str] = None,
@@ -192,7 +192,7 @@ class ServicesRepository(BaseRepository):
     async def create_service(
         self,
         new_service: ServiceMetaDataAtDB,
-        new_service_access_rights: List[ServiceAccessRightsAtDB],
+        new_service_access_rights: list[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
 
         for access_rights in new_service_access_rights:
@@ -203,13 +203,16 @@ class ServicesRepository(BaseRepository):
                 raise ValueError(
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
-
+        # Set the deprecation datetime to None (will be converted top sql's null) if not given
+        new_service_dict = new_service.dict(by_alias=True)
+        if "deprecated" not in new_service_dict:
+            new_service_dict["deprecated"] = None
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service.dict(by_alias=True))
+                .values(**new_service_dict)
                 .returning(literal_column("*"))
             )
             row = result.first()
@@ -248,7 +251,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: Optional[str] = None,
-    ) -> List[ServiceAccessRightsAtDB]:
+    ) -> list[ServiceAccessRightsAtDB]:
         """
         - If product_name is not specificed, then all are considered in the query
         """
@@ -268,9 +271,9 @@ class ServicesRepository(BaseRepository):
 
     async def list_services_access_rights(
         self,
-        key_versions: Iterable[Tuple[str, str]],
+        key_versions: Iterable[tuple[str, str]],
         product_name: Optional[str] = None,
-    ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
+    ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
@@ -296,7 +299,7 @@ class ServicesRepository(BaseRepository):
         return service_to_access_rights
 
     async def upsert_service_access_rights(
-        self, new_access_rights: List[ServiceAccessRightsAtDB]
+        self, new_access_rights: list[ServiceAccessRightsAtDB]
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
@@ -328,7 +331,7 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def delete_service_access_rights(
-        self, delete_access_rights: List[ServiceAccessRightsAtDB]
+        self, delete_access_rights: list[ServiceAccessRightsAtDB]
     ) -> None:
         async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:
@@ -375,11 +378,7 @@ class ServicesRepository(BaseRepository):
                         if not allow_use_latest_service_version
                         else True
                     )
-                    & (
-                        services_specifications.c.gid.in_(
-                            (group.gid for group in groups)
-                        )
-                    )
+                    & (services_specifications.c.gid.in_(group.gid for group in groups))
                 ),
             ):
                 try:
