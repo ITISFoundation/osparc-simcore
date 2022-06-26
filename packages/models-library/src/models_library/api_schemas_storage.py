@@ -8,11 +8,26 @@
 
 import re
 from datetime import datetime
-from typing import Optional, Pattern, Union
+from enum import Enum
+from typing import Any, Optional, Pattern, Union
 from uuid import UUID
 
-from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Extra, Field, validator
+from models_library.projects_nodes_io import (
+    LocationID,
+    LocationName,
+    NodeID,
+    SimcoreS3FileID,
+    StorageFileID,
+)
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConstrainedStr,
+    Extra,
+    Field,
+    root_validator,
+    validator,
+)
 from pydantic.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
@@ -204,8 +219,40 @@ class FileMetaDataArray(BaseModel):
 # /locations/{location_id}/files/{file_id}
 
 
+class LinkType(str, Enum):
+    PRESIGNED = "PRESIGNED"
+    S3 = "S3"
+
+
 class PresignedLink(BaseModel):
     link: AnyUrl
 
 
 # /simcore-s3/
+
+
+class FoldersBody(BaseModel):
+    source: dict[str, Any] = Field(default_factory=dict)
+    destination: dict[str, Any] = Field(default_factory=dict)
+    nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
+
+    @root_validator()
+    @classmethod
+    def ensure_consistent_entries(cls, values):
+        source_node_keys = (
+            NodeID(n) for n in values["source"].get("workbench", {}).keys()
+        )
+        if set(source_node_keys) != set(values["nodes_map"].keys()):
+            raise ValueError("source project nodes do not fit with nodes_map entries")
+        destination_node_keys = (
+            NodeID(n) for n in values["destination"].get("workbench", {}).keys()
+        )
+        if set(destination_node_keys) != set(values["nodes_map"].values()):
+            raise ValueError(
+                "destination project nodes do not fit with nodes_map values"
+            )
+        return values
+
+
+class SoftCopyBody(BaseModel):
+    link_id: SimcoreS3FileID
