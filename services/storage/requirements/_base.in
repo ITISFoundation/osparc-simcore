@@ -18,8 +18,8 @@ aiohttp
 aiohttp-swagger[performance]
 
 # s3 storage
-aiobotocore
-minio
+aioboto3
+types-aiobotocore[s3]
 
 # i/o + db
 aiofiles

@@ -5,11 +5,13 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
+
 codecov
 coverage
 coveralls
 docker
 faker
+moto[server]
 pandas
 pylint
 pytest
