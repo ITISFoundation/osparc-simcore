@@ -61,7 +61,7 @@ async def wait_till_storage_responsive(storage_endpoint: URL):
 
 
 @pytest.fixture
-def create_file_uuid() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
+def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
     def _creator(
         project_id: ProjectID, node_id: NodeID, file_name: str
     ) -> SimcoreS3FileID:

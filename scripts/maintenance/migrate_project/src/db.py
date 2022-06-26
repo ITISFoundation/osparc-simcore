@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import contextmanager
-from typing import Any, Deque, Dict, Iterator, Optional, Tuple
+from typing import Any, Deque, Iterator, Optional
 from uuid import UUID
 
 import typer
@@ -31,9 +31,9 @@ def _project_uuid_exists_in_destination(
     return exists
 
 
-def _meta_data_exists_in_destination(connection: Connection, file_uuid: str) -> bool:
-    query = select([file_meta_data.c.file_uuid]).where(
-        file_meta_data.c.file_uuid == f"{file_uuid}"
+def _meta_data_exists_in_destination(connection: Connection, file_id: str) -> bool:
+    query = select([file_meta_data.c.file_id]).where(
+        file_meta_data.c.file_id == f"{file_id}"
     )
     exists = len(list(connection.execute(query))) > 0
     return exists
@@ -80,11 +80,11 @@ def _green_message(message: str) -> None:
     _format_message(message, typer.colors.GREEN)
 
 
-def _project_summary(project: Dict) -> str:
+def _project_summary(project: dict) -> str:
     return f"PROJECT: {project['uuid']} {project['name']}"
 
 
-def _file_summary(file_meta_data: Dict) -> str:
+def _file_summary(file_meta_data: dict) -> str:
     return f"FILE: {file_meta_data['file_uuid']}"
 
 
@@ -93,7 +93,7 @@ def get_project_and_files_to_migrate(
     hidden_projects_for_user: Optional[int],
     src_conn: Connection,
     dst_conn: Connection,
-) -> Tuple[Deque, Deque]:
+) -> tuple[Deque, Deque]:
     skipped_projects = deque()
     skipped_files_meta_data = deque()
 
@@ -170,9 +170,9 @@ def get_project_and_files_to_migrate(
     return projects_to_migrate, files_meta_data_to_migrate
 
 
-def insert_file_meta_data(connection: Connection, data: Dict[str, Any]) -> None:
+def insert_file_meta_data(connection: Connection, data: dict[str, Any]) -> None:
     connection.execute(insert(file_meta_data).values(**data))
 
 
-def insert_projects(connection: Connection, data: Dict[str, Any]) -> None:
+def insert_projects(connection: Connection, data: dict[str, Any]) -> None:
     connection.execute(insert(projects).values(**data))
