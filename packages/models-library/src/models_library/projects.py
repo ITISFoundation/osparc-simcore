@@ -4,7 +4,7 @@
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
@@ -22,7 +22,7 @@ ProjectIDStr = constr(regex=UUID_RE_BASE)
 ClassifierID = str
 
 # TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
-Workbench = Dict[NodeIDStr, Node]
+Workbench = dict[NodeIDStr, Node]
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
@@ -97,6 +97,7 @@ class ProjectAtDB(BaseProjectModel):
     class Config:
         orm_mode = True
         use_enum_values = True
+        allow_population_by_field_name = True
 
 
 class Project(BaseProjectModel):
@@ -121,15 +122,15 @@ class Project(BaseProjectModel):
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",
     )
-    access_rights: Dict[GroupIDStr, AccessRights] = Field(
+    access_rights: dict[GroupIDStr, AccessRights] = Field(
         ...,
         description="object containing the GroupID as key and read/write/execution permissions as value",
         alias="accessRights",
     )
 
     # Classification
-    tags: Optional[List[int]] = []
-    classifiers: Optional[List[ClassifierID]] = Field(
+    tags: Optional[list[int]] = []
+    classifiers: Optional[list[ClassifierID]] = Field(
         default_factory=list,
         description="Contains the reference to the project classifiers",
         examples=["some:id:to:a:classifier"],
@@ -142,12 +143,12 @@ class Project(BaseProjectModel):
     ui: Optional[StudyUI] = None
 
     # Quality
-    quality: Dict[str, Any] = Field(
+    quality: dict[str, Any] = Field(
         {}, description="stores the study quality assessment"
     )
 
     # Dev only
-    dev: Optional[Dict] = Field(description="object used for development purposes only")
+    dev: Optional[dict] = Field(description="object used for development purposes only")
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
@@ -155,7 +156,7 @@ class Project(BaseProjectModel):
         extra = Extra.forbid
 
         @staticmethod
-        def schema_extra(schema: Dict, _model: "Project"):
+        def schema_extra(schema: dict, _model: "Project"):
             # pylint: disable=unsubscriptable-object
 
             # Patch to allow jsonschema nullable

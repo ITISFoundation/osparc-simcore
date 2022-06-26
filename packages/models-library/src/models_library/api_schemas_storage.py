@@ -8,7 +8,7 @@
 
 import re
 from datetime import datetime
-from typing import List, Optional, Pattern, Union
+from typing import Optional, Pattern, Union
 from uuid import UUID
 
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
@@ -127,8 +127,8 @@ class FileMetaDataGet(BaseModel):
 
     @validator("location_id", pre=True)
     @classmethod
-    def convert_from_str(cls, v):
-        if isinstance(v, str):
+    def ensure_location_is_integer(cls, v):
+        if v is not None:
             return int(v)
         return v
 
@@ -198,7 +198,7 @@ class FileMetaDataGet(BaseModel):
 
 
 class FileMetaDataArray(BaseModel):
-    __root__: List[FileMetaDataGet] = []
+    __root__: list[FileMetaDataGet] = []
 
 
 # /locations/{location_id}/files/{file_id}
