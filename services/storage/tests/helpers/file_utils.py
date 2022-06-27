@@ -7,7 +7,7 @@ import aiofiles
 import pytest
 from aiohttp import ClientSession, web
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from simcore_service_storage.s3_client import ETag, UploadedPart
+from simcore_service_storage.s3_client import ETag
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 
@@ -38,7 +38,7 @@ async def upload_file_part(
     num_parts: int,
     upload_url: AnyUrl,
     raise_while_uploading: bool = False,
-) -> tuple[int, ETag]:
+) -> ETag:
     print(
         f"--> uploading {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}]..."
     )
@@ -63,33 +63,29 @@ async def upload_file_part(
     print(
         f"--> completed upload {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}], {received_e_tag=}"
     )
-    return (part_index, received_e_tag)
+    return received_e_tag
 
 
-async def upload_file_to_presigned_link(
-    file: Path, file_upload_link: AnyUrl
-) -> list[UploadedPart]:
+async def upload_file_to_presigned_link(file: Path, file_upload_link: AnyUrl) -> ETag:
 
     file_size = file.stat().st_size
 
     start = perf_counter()
     print(f"--> uploading {file=}")
     async with ClientSession() as session:
-        file_chunk_size = int(file_upload_link.chunk_size)
-        index, e_tag = await upload_file_part(
+        e_tag = await upload_file_part(
             session,
             file,
             0,
             0,
-            file_chunk_size,
+            file.stat().st_size,
             1,
             file_upload_link,
         )
-    part_to_etag = [UploadedPart(number=index + 1, e_tag=e_tag)]
     print(
         f"--> upload of {file=} of {file_size=} completed in {perf_counter() - start}"
     )
-    return part_to_etag
+    return e_tag
 
 
 def parametrized_file_size(size_str: str):

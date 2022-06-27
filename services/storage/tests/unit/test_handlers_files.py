@@ -16,20 +16,12 @@ from aiohttp import ClientSession, web
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
 from faker import Faker
-from models_library.api_schemas_storage import (
-    FileMetaDataGet,
-    FileUploadCompleteFutureResponse,
-    FileUploadCompleteResponse,
-    FileUploadCompleteState,
-    FileUploadSchema,
-    LinkType,
-    SoftCopyBody,
-)
+from models_library.api_schemas_storage import FileMetaDataGet, LinkType, SoftCopyBody
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_storage.exceptions import S3KeyNotFoundError
 from simcore_service_storage.models import S3BucketName
@@ -91,7 +83,7 @@ async def test_create_upload_file_default_returns_single_link(
     expected_link_query_keys: list[str],
     expected_chunk_size: int,
     aiopg_engine: Engine,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
     cleanup_user_projects_file_metadata: None,
 ):
     # create upload file link
@@ -141,7 +133,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
 ):
     assert client.app
     # create upload file link
@@ -190,7 +182,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
 ):
     assert client.app
     # create upload file link
@@ -254,7 +246,7 @@ async def test_upload_real_file_with_s3_client(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     project_id: ProjectID,
@@ -354,7 +346,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
 ):
     # 1. upload a valid file
     file_name = faker.file_name()

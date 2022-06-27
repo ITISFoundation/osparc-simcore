@@ -11,7 +11,6 @@ import sys
 import urllib.parse
 import uuid
 from pathlib import Path
-from time import perf_counter
 from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional
 
 import dotenv
@@ -22,21 +21,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, unused_port
 from aiopg.sa import Engine
 from faker import Faker
-from models_library.api_schemas_storage import (
-    FileUploadCompleteFutureResponse,
-    FileUploadCompleteResponse,
-    FileUploadCompleteState,
-    FileUploadCompletionBody,
-    FileUploadSchema,
-    UploadedPart,
-)
+from models_library.api_schemas_storage import ETag, FileMetaDataGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_storage.application import create
@@ -46,13 +37,8 @@ from simcore_service_storage.models import S3BucketName, file_meta_data, project
 from simcore_service_storage.s3 import get_s3_client
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
-from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 from tests.helpers.file_utils import upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
-from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
@@ -290,20 +276,44 @@ def simcore_file_id(
 
 
 @pytest.fixture
-def location_id() -> int:
+def location_id() -> LocationID:
     return 0
 
 
 @pytest.fixture
+async def get_file_meta_data(
+    client: TestClient, user_id: UserID, location_id: LocationID
+) -> Callable[..., Awaitable[FileMetaDataGet]]:
+    async def _getter(file_id: SimcoreS3FileID) -> FileMetaDataGet:
+        assert client.app
+        url = (
+            client.app.router["get_file_metadata"]
+            .url_for(
+                location_id=f"{location_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(user_id=user_id)
+        )
+        response = await client.get(f"{url}")
+        data, error = await assert_status(response, web.HTTPOk)
+        assert not error
+        assert data
+        received_fmd = parse_obj_as(FileMetaDataGet, data)
+        assert received_fmd
+        print(f"<-- {received_fmd.json(indent=2)=}")
+        return received_fmd
+
+    return _getter
+
+
+@pytest.fixture
 async def create_upload_file_link(
-    client: TestClient, user_id: UserID, location_id: int
-) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
+    client: TestClient, user_id: UserID, location_id: LocationID
+) -> AsyncIterator[Callable[..., Awaitable[AnyUrl]]]:
 
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
 
-    async def _link_creator(
-        file_id: SimcoreS3FileID, **query_kwargs
-    ) -> FileUploadSchema:
+    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> AnyUrl:
         assert client.app
         url = (
             client.app.router["upload_file"]
@@ -317,7 +327,7 @@ async def create_upload_file_link(
         data, error = await assert_status(response, web.HTTPOk)
         assert not error
         assert data
-        received_file_upload = FileUploadSchema.parse_obj(data)
+        received_file_upload = parse_obj_as(AnyUrl, data)
         assert received_file_upload
         print(f"--> created link for {file_id=}")
         file_params.append((user_id, location_id, file_id))
@@ -349,9 +359,10 @@ def upload_file(
     client: TestClient,
     project_id: ProjectID,
     node_id: NodeID,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
 ) -> Callable[
     [ByteSize, str, Optional[SimcoreS3FileID]], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -369,51 +380,11 @@ def upload_file(
         )
 
         # upload the file
-        part_to_etag: list[UploadedPart] = await upload_file_to_presigned_link(
-            file, file_upload_link
-        )
-        # complete the upload
-        complete_url = URL(file_upload_link.links.complete_upload).relative()
-        start = perf_counter()
-        print(f"--> completing upload of {file=}")
-        response = await client.post(
-            f"{complete_url}",
-            json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
-        )
-        response.raise_for_status()
-        data, error = await assert_status(response, web.HTTPAccepted)
-        assert not error
-        assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        e_tag: ETag = await upload_file_to_presigned_link(file, file_upload_link)
 
-        completion_etag = None
-        async for attempt in AsyncRetrying(
-            reraise=True,
-            wait=wait_fixed(1),
-            stop=stop_after_delay(60),
-            retry=retry_if_exception_type(ValueError),
-        ):
-            with attempt:
-                print(
-                    f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-                )
-                response = await client.post(f"{state_url}")
-                response.raise_for_status()
-                data, error = await assert_status(response, web.HTTPOk)
-                assert not error
-                assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
-                if future.state == FileUploadCompleteState.NOK:
-                    raise ValueError(f"{data=}")
-                assert future.state == FileUploadCompleteState.OK
-                assert future.e_tag is not None
-                completion_etag = future.e_tag
-                print(
-                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
-                )
-
-        print(f"--> completed upload in {perf_counter() - start}")
+        # trigger a lazy upload of the tables by getting the file
+        received_fmd = await get_file_meta_data(file_id)
+        assert received_fmd.entity_tag == e_tag
 
         # check the entry in db now has the correct file size, and the upload id is gone
         await assert_file_meta_data_in_db(
@@ -429,7 +400,7 @@ def upload_file(
         )
         assert s3_metadata.size == file_size
         assert s3_metadata.last_modified
-        assert s3_metadata.e_tag == completion_etag
+        assert s3_metadata.e_tag == e_tag
         return file, file_id
 
     return _uploader

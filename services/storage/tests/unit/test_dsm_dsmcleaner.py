@@ -50,9 +50,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
-    await storage_dsm.create_upload_links(
-        user_id, simcore_file_id, link_type, file_size
-    )
+    await storage_dsm.create_upload_link(user_id, simcore_file_id, link_type)
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
         fmd = await db_file_meta_data.get(conn, simcore_file_id)
@@ -110,7 +108,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         original_fmd = await db_file_meta_data.get(conn, file_id)
 
     # now create a new link to the VERY SAME FILE UUID
-    await storage_dsm.create_upload_links(user_id, file_id, link_type, file_size)
+    await storage_dsm.create_upload_link(user_id, file_id, link_type)
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
         fmd = await db_file_meta_data.get(conn, file_id)

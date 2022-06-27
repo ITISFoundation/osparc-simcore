@@ -46,7 +46,7 @@ from .db_access_layer import (
     get_readable_project_ids,
 )
 from .exceptions import FileMetaDataNotFoundError, S3KeyNotFoundError
-from .models import DatasetMetaData, DatCoreApiToken, FileMetaData, file_meta_data
+from .models import DatasetMetaData, DatCoreApiToken, FileMetaData
 from .settings import Settings
 from .utils import download_to_file_or_raise, is_file_entry_valid
 
@@ -281,13 +281,15 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 )
                 if can.read:
                     try:
-                        file_metadata = await db_file_meta_data.get(conn, file_id)
+                        file_metadata: FileMetaData = await db_file_meta_data.get(
+                            conn, file_id
+                        )
                         if not is_file_entry_valid(file_metadata):
                             file_metadata = await self.update_database_from_storage(
                                 conn,
                                 file_id,
-                                file_meta_data.bucket_name,
-                                file_meta_data.object_name,
+                                file_metadata.bucket_name,
+                                file_metadata.object_name,
                             )
                         return file_metadata
                     except FileMetaDataNotFoundError:
@@ -654,6 +656,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     await get_s3_client(self.app).delete_file(
                         file.bucket_name, file.file_id
                     )
+                # now that we are done, remove it from the db
+                await db_file_meta_data.delete(conn, [file_id])
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
@@ -715,7 +719,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         # validate link_uuid
         async with self.engine.acquire() as conn:
-            if db_file_meta_data.fmd_exists(conn, link_file_id):
+            if await db_file_meta_data.fmd_exists(conn, link_file_id):
                 raise web.HTTPUnprocessableEntity(
                     reason=f"Invalid link {link_file_id}. Link already exists"
                 )
