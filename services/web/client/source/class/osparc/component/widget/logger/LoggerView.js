@@ -149,7 +149,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           break;
         }
         case "lock-logs-button": {
-          control = new qx.ui.form.ToggleButton();
+          control = new qx.ui.form.ToggleButton().set({
+            toolTipText: this.tr("Toggle auto-scroll"),
+            appearance: "toolbar-button"
+          });
           control.bind("value", this, "lockLogs");
           control.bind("value", control, "icon", {
             converter: val => val ? "@FontAwesome5Solid/lock/14" : "@FontAwesome5Solid/lock-open/14"
@@ -163,6 +166,17 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/copy/14",
             toolTipText: this.tr("Copy logs to clipboard"),
+            appearance: "toolbar-button"
+          });
+          osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
+          toolbar.add(control);
+          break;
+        }
+        case "download-logs-button": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/download/14",
+            toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
           osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
@@ -196,6 +210,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
       toolbar.add(copyToClipboardButton);
+
+      const downloadButton = this.getChildControl("download-logs-button");
+      downloadButton.addListener("execute", () => this.__downloadLogs(), this);
+      toolbar.add(downloadButton);
 
       return toolbar;
     },
@@ -252,12 +270,21 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       this.__textFilterField.setValue(node ? node.getLabel() : "");
     },
 
-    __copyLogsToClipboard: function() {
+    __getLogsString: function() {
       let logs = "";
       this.__loggerModel.getRows().forEach(row => {
         logs += `(${row.nodeId}) - [${row.timeStamp}] ${row.label}: ${row.msg} \n`;
       });
-      osparc.utils.Utils.copyTextToClipboard(logs);
+      return logs;
+    },
+
+    __copyLogsToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
+    },
+
+    __downloadLogs: function() {
+      const logs = this.__getLogsString();
+      osparc.utils.Utils.downloadContent("data:text/json;charset=utf-8," + logs, "logs.json");
     },
 
     debug: function(nodeId, msg = "") {
