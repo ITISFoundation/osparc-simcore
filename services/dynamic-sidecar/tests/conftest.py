@@ -229,7 +229,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
         return
 
     command = (
-        "docker-compose -p {project} -f {file_path} "
+        'docker-compose -p {project} -f "{file_path}" '
         "down --remove-orphans -t {stop_and_remove_timeout}"
     )
     await write_file_and_run_command(

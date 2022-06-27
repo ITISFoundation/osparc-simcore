@@ -43,6 +43,7 @@ WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 @pytest.fixture
 def client(test_client: TestClient, ensure_external_volumes, cleanup_containers):
+    """creates external volumes and provides a client to dy-sidecar service"""
     return test_client
 
 
@@ -111,7 +112,7 @@ async def _assert_compose_spec_pulled(
     """ensures all containers inside compose_spec are pulled"""
     # TODO: to check whether they are pulled, why not simply find them in 'docker image ls' ??
     command = (
-        "docker-compose --project-name {project} --file {file_path} "
+        'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
     finished_without_errors, stdout = await write_file_and_run_command(

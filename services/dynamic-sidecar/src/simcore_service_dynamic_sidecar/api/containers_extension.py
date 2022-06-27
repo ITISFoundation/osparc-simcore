@@ -246,7 +246,7 @@ async def restarts_containers(
         await stop_log_fetching(app, container_name)
 
     command = (
-        "docker-compose --project-name {project} --file {file_path} "
+        'docker-compose --project-name {project} --file "{file_path}" '
         "restart --timeout {stop_and_remove_timeout}"
     )
 

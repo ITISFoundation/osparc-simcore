@@ -37,7 +37,7 @@ async def test_it():
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     async def _delete(name):
         dv = DockerVolume(docker, name)
-        print("Deleting", await dv.show())
+        print("Deleting", await dv.show())  # show is like inspect!?
         await dv.delete()
 
     to_delete = []

@@ -261,7 +261,7 @@ async def validate_compose_spec(
 
     # validate against docker-compose config
 
-    command = "docker-compose --file {file_path} config"
+    command = 'docker-compose --file "{file_path}" config'
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
         file_content=compose_spec,
@@ -270,7 +270,10 @@ async def validate_compose_spec(
     )
     if not finished_without_errors:
         message = (
-            f"'docker-compose config' failed for:\n{compose_spec}\nSTDOUT\n{stdout}"
+            "'docker-compose config' failed for:\n"
+            f"{compose_spec}\n"
+            "STDOUT --\n"
+            f"{stdout}"
         )
         logger.warning(message)
         raise InvalidComposeSpec(f"filed to run {command}")
