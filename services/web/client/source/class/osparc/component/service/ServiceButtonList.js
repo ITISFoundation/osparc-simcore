@@ -53,7 +53,6 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
   },
 
   members: {
-
     __applyServiceModel: function(serviceModel) {
       // BASE
       if (serviceModel.getThumbnail()) {
@@ -66,7 +65,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
 
       // ITEM
       this.__applyLatestVersion(serviceModel);
-      this.__applyHits(serviceModel);
+      this.__applyHitsOnItem(serviceModel);
     },
 
     __applyLatestVersion: function(serviceModel) {
@@ -79,7 +78,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       });
     },
 
-    __applyHits: function(serviceModel) {
+    __applyHitsOnItem: function(serviceModel) {
       const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.hits)).set({
         alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
