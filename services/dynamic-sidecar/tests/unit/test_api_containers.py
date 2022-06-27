@@ -509,10 +509,11 @@ async def test_container_restore_state(client: TestClient, mock_data_manager: No
     assert response.text == ""
 
 
-async def test_container_pull_input_ports(
-    client: TestClient, mock_port_keys: list[str], mock_nodeports: None
+# async def test_container_pull_input_ports(
+async def test_it(
+    test_client: TestClient, mock_port_keys: list[str], mock_nodeports: None
 ):
-    response = await client.post(
+    response = await test_client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=mock_port_keys
     )
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -713,13 +714,13 @@ async def test_attach_detach_container_to_network(
     container_names = shared_store.container_names
     assert response.json() == container_names
 
-    async with aiodocker.Docker() as client:
+    async with aiodocker.Docker() as docker:
         for container_name in container_names:
             for network_name, network_id in attachable_networks_and_ids.items():
                 network_aliases = _create_network_aliases(network_name)
 
                 # attach network to containers
-                for _ in range(2):  # callin 2 times in a row
+                for _ in range(2):  # calling 2 times in a row
                     response = await client.post(
                         f"/{API_VTAG}/containers/{container_name}/networks:attach",
                         json={
@@ -731,7 +732,7 @@ async def test_attach_detach_container_to_network(
                         response.status_code == status.HTTP_204_NO_CONTENT
                     ), response.text
 
-                container = await client.containers.get(container_name)
+                container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
                 assert network_id in networks
@@ -747,7 +748,7 @@ async def test_attach_detach_container_to_network(
                         response.status_code == status.HTTP_204_NO_CONTENT
                     ), response.text
 
-                container = await client.containers.get(container_name)
+                container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
                 assert network_id in networks
