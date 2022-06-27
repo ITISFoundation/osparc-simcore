@@ -142,7 +142,7 @@ async def upload_file(request: web.Request):
         link_type=query_params.link_type,
     )
 
-    return {"data": jsonable_encoder(link, by_alias=True)}
+    return {"data": {"link": jsonable_encoder(link, by_alias=True)}}
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort", name="abort_upload_file")  # type: ignore

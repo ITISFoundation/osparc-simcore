@@ -21,7 +21,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, unused_port
 from aiopg.sa import Engine
 from faker import Faker
-from models_library.api_schemas_storage import ETag, FileMetaDataGet
+from models_library.api_schemas_storage import ETag, FileMetaDataGet, PresignedLink
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
@@ -327,11 +327,11 @@ async def create_upload_file_link(
         data, error = await assert_status(response, web.HTTPOk)
         assert not error
         assert data
-        received_file_upload = parse_obj_as(AnyUrl, data)
+        received_file_upload = parse_obj_as(PresignedLink, data)
         assert received_file_upload
         print(f"--> created link for {file_id=}")
         file_params.append((user_id, location_id, file_id))
-        return received_file_upload
+        return received_file_upload.link
 
     yield _link_creator
 
