@@ -110,6 +110,14 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
+    addHits: function(servicesArray) {
+      const favServices = osparc.utils.Utils.localCache.getFavServices();
+      servicesArray.forEach(service => {
+        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
+        service.hits = found ? favServices[found]["hits"] : 0;
+      });
+    },
+
     sortBasedOnFav: function(servicesArray) {
       const favServices = osparc.utils.Utils.localCache.getFavServices();
       servicesArray.forEach(service => {
