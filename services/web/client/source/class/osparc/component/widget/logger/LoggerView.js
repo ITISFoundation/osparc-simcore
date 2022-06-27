@@ -237,7 +237,9 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
-        showCellFocusIndicator: false
+        showCellFocusIndicator: false,
+        rowHeight: 15,
+        forceLineHeight: false
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
@@ -249,9 +251,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(this.self().POS.ORIGIN, "15%");
-      resizeBehavior.setWidth(this.self().POS.TIMESTAMP, "10%");
-      resizeBehavior.setWidth(this.self().POS.MESSAGE, "75%");
+      resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
+      resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
 
       this.__applyFilters();
 
@@ -340,6 +341,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           label,
           timeStamp: new Date(),
           msg,
+          tooltip: msg,
           logLevel
         };
         msgLogs.push(msgLog);

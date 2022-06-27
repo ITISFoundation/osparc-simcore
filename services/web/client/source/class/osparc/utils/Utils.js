@@ -332,7 +332,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     prettifyJson: function(json) {
-      return JSON.stringify(json, null, "&emsp;").replace(/\n/ig, "<br>");
+      return JSON.stringify(json, undefined, 2);
     },
 
     getRandomColor: function() {

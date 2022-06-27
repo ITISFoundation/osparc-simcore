@@ -149,6 +149,9 @@ qx.Class.define("osparc.servicecard.Large", {
       this._add(more, {
         flex: 1
       });
+      const copy2Clip = osparc.utils.Utils.getCopyButton();
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
+      more.getChildControl("header").add(copy2Clip);
     },
 
     __createViewWithEdit: function(view, cb) {
