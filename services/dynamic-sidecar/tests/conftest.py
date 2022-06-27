@@ -105,7 +105,6 @@ def mock_environment(
     monkeypatch.setenv(
         "DY_SIDECAR_STATE_EXCLUDE", json.dumps([f"{x}" for x in state_exclude_dirs])
     )
-    monkeypatch.setenv("RABBIT_SETTINGS", "null")
 
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -127,29 +126,32 @@ def mock_registry_service(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker) -> dict[str, AsyncMock]:
+def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
+    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ member functions"""
     return {
         "connect": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
             return_value=None,
+            autospec=True,
         ),
         "post_log_message": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.post_log_message",
             return_value=None,
+            autospec=True,
         ),
         "close": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.close",
             return_value=None,
+            autospec=True,
         ),
     }
 
 
 @pytest.fixture
 def app(
-    mock_environment: None, mock_registry_service: None, mock_rabbitmq: None
+    mock_environment: None, mock_registry_service: None, mock_core_rabbitmq: None
 ) -> FastAPI:
     app = create_app()
-    app.state.rabbitmq = AsyncMock()
     return app
 
 

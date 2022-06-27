@@ -76,19 +76,14 @@ def create_app():
     #  TODO: PC->ANE WARNING: note that setup functions receive app so they can also
     #   .add_event_hander or .include_router or .add_exception_handler  ... which might
     #   cause items override or incorrect execution order!
+    if app.state.settings.is_development_mode:
+        remote_debug_setup(app)
 
     app.state.shared_store = SharedStore()
     app.state.application_health = ApplicationHealth()
 
-    if app.state.settings.is_development_mode:
-        remote_debug_setup(app)
-
-    if app.state.settings.RABBIT_SETTINGS:
-        # TODO: PC->ANE: should not be allowed to disable. mock instead setup_* funcs
-        setup_rabbitmq(app)
-        setup_background_log_fetcher(app)
-
-    # also sets up mounted_volumes
+    setup_rabbitmq(app)
+    setup_background_log_fetcher(app)
     setup_mounted_fs(app)
     setup_directory_watcher(app)
 
