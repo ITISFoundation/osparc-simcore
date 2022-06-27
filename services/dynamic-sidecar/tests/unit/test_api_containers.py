@@ -510,10 +510,8 @@ async def test_container_restore_state(client: TestClient, mock_data_manager: No
 
 
 # async def test_container_pull_input_ports(
-async def test_it(
-    test_client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-):
-    response = await test_client.post(
+async def test_it(client: TestClient, mock_port_keys: list[str], mock_nodeports: None):
+    response = await client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=mock_port_keys
     )
     assert response.status_code == status.HTTP_200_OK, response.text
