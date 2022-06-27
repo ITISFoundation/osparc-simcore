@@ -66,6 +66,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       init: 0
     },
 
+    lockLogs: {
+      apply : "__updateTable",
+      nullable: false,
+      check : "Boolean",
+      init: true
+    },
+
     currentNodeId: {
       check: "String",
       nullable: true,
@@ -141,6 +148,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           toolbar.add(control);
           break;
         }
+        case "lock-logs-button": {
+          control = new qx.ui.form.ToggleButton();
+          control.bind("value", this, "lockLogs");
+          control.bind("value", control, "icon", {
+            converter: val => val ? "@FontAwesome5Solid/lock/14" : "@FontAwesome5Solid/lock-open/14"
+          });
+          const toolbar = this.getChildControl("toolbar");
+          toolbar.add(control);
+          break;
+        }
         case "copy-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
@@ -172,6 +189,9 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         this.setLogLevel(e.getData().logLevel);
       }, this);
       toolbar.add(logLevelSelectBox);
+
+      const lockLogsButton = this.getChildControl("lock-logs-button");
+      toolbar.add(lockLogsButton);
 
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
@@ -297,9 +317,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __updateTable: function() {
-      this.__loggerModel.reloadData();
-      const nFilteredRows = this.__loggerModel.getFilteredRowCount();
-      this.__logView.scrollCellVisible(0, nFilteredRows);
+      if (this.__loggerModel) {
+        this.__loggerModel.reloadData();
+        if (!this.isLockLogs()) {
+          const nFilteredRows = this.__loggerModel.getFilteredRowCount();
+          this.__logView.scrollCellVisible(0, nFilteredRows);
+        }
+      }
     },
 
     __applyFilters: function() {
