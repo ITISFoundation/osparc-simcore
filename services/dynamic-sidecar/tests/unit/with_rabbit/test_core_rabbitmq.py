@@ -1,15 +1,13 @@
-# pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
-import json
-import uuid
-from asyncio import AbstractEventLoop
-from pathlib import Path
 from pprint import pformat
 
 import aio_pika
 import pytest
+from async_asgi_testclient import TestClient
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -20,79 +18,21 @@ from pytest_mock.plugin import MockerFixture
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
-from simcore_service_dynamic_sidecar.modules import mounted_fs
 
-pytestmark = pytest.mark.asyncio
-
-
-pytest_plugins = [
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.rabbit_service",
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.pytest_global_environs",
+pytest_simcore_core_services_selection = [
+    "rabbit",
 ]
-
-pytest_simcore_core_services_selection = ["rabbit"]
 
 # FIXTURE
 
 
-@pytest.fixture(scope="module")
-def user_id() -> UserID:
-    return 1
-
-
-@pytest.fixture(scope="module")
-def project_id() -> ProjectID:
-    return uuid.uuid4()
-
-
-@pytest.fixture(scope="module")
-def node_id() -> NodeID:
-    return uuid.uuid4()
-
-
-@pytest.fixture(scope="module")
-def run_id() -> uuid.UUID:
-    return uuid.uuid4()
-
-
 @pytest.fixture
 def mock_environment(
-    event_loop: AbstractEventLoop,
+    mock_environment: None,
     monkeypatch: MonkeyPatch,
-    mock_dy_volumes: Path,
-    compose_namespace: str,
-    inputs_dir: Path,
-    outputs_dir: Path,
-    state_paths_dirs: list[Path],
-    state_exclude_dirs: list[Path],
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    run_id: uuid.UUID,
     rabbit_service: RabbitSettings,
 ) -> None:
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_USER", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
-    monkeypatch.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
-    monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
-    monkeypatch.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
-    monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
-    monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
-    monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
-    monkeypatch.setenv(
-        "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
-    )
-    monkeypatch.setenv(
-        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
-    )
+
     # TODO: PC->ANE: this is already guaranteed in the pytest_simcore.rabbit_service fixture
     monkeypatch.setenv("RABBIT_HOST", rabbit_service.RABBIT_HOST)
     monkeypatch.setenv("RABBIT_PORT", f"{rabbit_service.RABBIT_PORT}")
@@ -102,38 +42,26 @@ def mock_environment(
     )
     # ---
 
-    monkeypatch.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
-
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-
 
 @pytest.fixture
 def app(mock_environment: None) -> FastAPI:
+    """app w/o mocking registry or rabbit"""
     return create_app()
 
 
-# UTILS
-
-
-# TESTS
-
-
 async def test_rabbitmq(
-    rabbit_service: RabbitSettings,
     rabbit_queue: aio_pika.Queue,
     mocker: MockerFixture,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    app: FastAPI,
+    test_client: TestClient,
 ):
-    rabbit = RabbitMQ(app)
-    assert rabbit
+    app = test_client.application
+    assert isinstance(app, FastAPI)
+
+    rabbit = app.state.rabbitmq
+    assert isinstance(rabbit, RabbitMQ)
 
     mock_close_connection_cb = mocker.patch(
         "simcore_service_dynamic_sidecar.core.rabbitmq._close_callback"

@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock, Mock
+from uuid import UUID
 
 import aiodocker
 import pytest
@@ -16,6 +17,9 @@ from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
@@ -25,10 +29,14 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 )
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -77,6 +85,26 @@ def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
 
 
 @pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def run_id(faker: Faker) -> UUID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
 def mock_environment(
     monkeypatch: MonkeyPatch,
     mock_dy_volumes: Path,
@@ -85,18 +113,23 @@ def mock_environment(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
-    faker: Faker,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    run_id: UUID,
 ) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
+
     monkeypatch.setenv("REGISTRY_AUTH", "false")
     monkeypatch.setenv("REGISTRY_USER", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")
     monkeypatch.setenv("REGISTRY_SSL", "false")
-    monkeypatch.setenv("DY_SIDECAR_USER_ID", "1")
-    monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{faker.uuid4()}")
-    monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{faker.uuid4()}")
-    monkeypatch.setenv("DY_SIDECAR_RUN_ID", f"{faker.uuid4()}")
+
+    monkeypatch.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
+    monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
+    monkeypatch.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
+    monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
     monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", f"{inputs_dir}")
     monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", f"{outputs_dir}")
     monkeypatch.setenv(
