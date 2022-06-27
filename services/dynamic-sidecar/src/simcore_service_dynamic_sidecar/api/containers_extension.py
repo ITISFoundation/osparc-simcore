@@ -12,7 +12,7 @@ from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
+from ..core.docker_utils import create_docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import write_file_and_run_command
@@ -277,7 +277,7 @@ async def attach_container_to_network(
     id_: str = PathParam(..., alias="id"),
     item: AttachContainerToNetworkItem = Body(...),
 ) -> None:
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container_instance = await docker.containers.get(id_)
         container_inspect = await container_instance.show()
 
@@ -312,7 +312,7 @@ async def detach_container_from_network(
     id_: str = PathParam(..., alias="id"),
     item: DetachContainerFromNetworkItem = Body(...),
 ) -> None:
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container_instance = await docker.containers.get(id_)
         container_inspect = await container_instance.show()
 

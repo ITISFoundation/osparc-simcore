@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
+async def create_docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     docker = aiodocker.Docker()
     try:
         yield docker
@@ -43,7 +43,7 @@ class VolumeInspect(BaseModel):
 
 
 async def get_volume_by_label(label: str, run_id: UUID) -> VolumeInspect:
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         filters = clean_filters({"label": [f"source={label}", f"run_id={run_id}"]})
         data = await docker._query_json(  # pylint: disable=protected-access
             "volumes", method="GET", params={"filters": filters}

@@ -10,7 +10,7 @@ from fastapi import Query, Request, status
 from fastapi.responses import PlainTextResponse
 
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
+from ..core.docker_utils import create_docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
@@ -53,7 +53,7 @@ async def docker_compose_up_and_log(
     command = (
         "docker-compose",
         "--project-name {project}",
-        "--file \"{file_path}'",
+        '--file "{file_path}"',
         "up",
         "--no-build",
         "--detach",
@@ -219,7 +219,7 @@ async def containers_docker_inspect(
 
         return container_inspect
 
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container_names = shared_store.container_names
 
         results = {}
@@ -263,7 +263,7 @@ async def get_container_logs(
     """Returns the logs of a given container if found"""
     _raise_if_container_is_missing(id_, shared_store.container_names)
 
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container_instance = await docker.containers.get(id_)
 
         args = dict(stdout=True, stderr=True, since=since, until=until)
@@ -351,7 +351,7 @@ async def inspect_container(
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id_, shared_store.container_names)
 
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container_instance = await docker.containers.get(id_)
         inspect_result: dict[str, Any] = await container_instance.show()
         return inspect_result

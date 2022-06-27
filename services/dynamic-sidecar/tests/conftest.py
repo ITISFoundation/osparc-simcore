@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
-from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
+from simcore_service_dynamic_sidecar.core.docker_utils import create_docker_client
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
@@ -172,7 +172,7 @@ async def ensure_external_volumes(
         app_state.mounted_volumes.volume_name_outputs,
     ] + app_state.mounted_volumes.volume_names_for_states
 
-    async with docker_client() as client:
+    async with create_docker_client() as client:
 
         # TODO: rm old volumes?
         volumes = await asyncio.gather(

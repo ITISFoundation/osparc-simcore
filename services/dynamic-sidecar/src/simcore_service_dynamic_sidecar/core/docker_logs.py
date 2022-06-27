@@ -13,7 +13,7 @@ from typing import Any, Callable, Coroutine, Optional, cast
 
 from fastapi import FastAPI
 
-from .docker_utils import docker_client
+from .docker_utils import create_docker_client
 from .rabbitmq import RabbitMQ
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ async def _logs_fetcher_worker(
 ) -> None:
     logger.info("Started log fetching for container %s", container_name)
 
-    async with docker_client() as docker:
+    async with create_docker_client() as docker:
         container = await docker.containers.get(container_name)
 
         # extact image to display in logs, Eg: from
