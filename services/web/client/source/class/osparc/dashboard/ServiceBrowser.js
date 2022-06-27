@@ -87,6 +87,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._createResourcesLayout("service");
 
       this.__addNewServiceButtons();
+      this.__addSortingButtons();
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
@@ -199,9 +200,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
-      addServiceButton.addListener("execute", () => {
-        this.__displayServiceSubmissionForm();
-      });
+      addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._secondaryBar.add(addServiceButton);
     },
 
@@ -256,6 +255,40 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           .finally(() => form.setFetching(false));
       });
       scroll.add(form);
+    },
+
+    __addSortingButtons: function() {
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
+        marginRight: 8
+      });
+      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
+      byNameBtn.sortBy = "name";
+      const byUseBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
+      byUseBtn.sortBy = "use";
+      const group = new qx.ui.form.RadioGroup().set({
+        allowEmptySelection: false
+      });
+      [
+        byNameBtn,
+        byUseBtn
+      ].forEach(btn => {
+        containterSortBtns.add(btn);
+        group.add(btn);
+        btn.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+      });
+      this._secondaryBar.add(containterSortBtns);
+
+      group.addListener("changeSelection", e => this.__sortServicesBy(e.getData()[0].sortBy));
+    },
+
+    __sortServicesBy: function(sortBy = "name") {
+      console.log("__sortServicesBy", sortBy);
     }
   }
 });
