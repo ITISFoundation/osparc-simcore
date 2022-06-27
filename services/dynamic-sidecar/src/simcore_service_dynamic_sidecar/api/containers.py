@@ -84,7 +84,7 @@ async def docker_compose_up_and_log(
 def _raise_if_container_is_missing(
     container_id: str, container_names: list[str]
 ) -> None:
-    if id not in container_names:
+    if container_id not in container_names:
         message = f"No container '{container_id}' was started. Started containers '{container_names}'"
         logger.warning(message)
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)

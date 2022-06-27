@@ -241,7 +241,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture
-def mock_containers_get(mocker: MockerFixture) -> int:
+def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
     """raises a DockerError with a random HTTP status which is also returned"""
     mock_status_code = random.randint(1, 999)
 

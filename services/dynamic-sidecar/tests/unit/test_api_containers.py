@@ -18,6 +18,7 @@ import pytest
 import yaml
 from aiodocker.containers import DockerContainer
 from async_asgi_testclient import TestClient
+from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from pytest_mock.plugin import MockerFixture
@@ -60,7 +61,9 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
             "services": {
                 "first-box": {
                     "image": "busybox",
-                    "networks": [dynamic_sidecar_network_name],
+                    "networks": [
+                        dynamic_sidecar_network_name,
+                    ],
                 },
                 "second-box": {"image": "busybox"},
             },
@@ -155,6 +158,7 @@ async def _get_container_timestamps(
 
 @pytest.fixture
 async def started_containers(client: TestClient, compose_spec: str) -> list[str]:
+
     settings: DynamicSidecarSettings = client.application.state.settings
     await _assert_compose_spec_pulled(compose_spec, settings)
 
@@ -254,10 +258,9 @@ def rabbitmq_mock(mocker, app: FastAPI):
 
 
 @pytest.fixture
-async def attachable_networks_and_ids() -> AsyncIterable[dict[str, str]]:
+async def attachable_networks_and_ids(faker: Faker) -> AsyncIterable[dict[str, str]]:
     # generate some network names
-    unique_id = uuid4()
-    network_names = {f"test_network_{i}_{unique_id}": "" for i in range(10)}
+    network_names = {f"test_network_{i}_{faker.uuid4()}": "" for i in range(10)}
 
     # create networks
     async with aiodocker.Docker() as client:
@@ -278,9 +281,6 @@ async def attachable_networks_and_ids() -> AsyncIterable[dict[str, str]]:
         for network_id in network_names.values():
             network = await client.networks.get(network_id)
             assert await network.delete() is True
-
-
-# UTILS
 
 
 def _create_network_aliases(network_name: str) -> list[str]:
@@ -380,13 +380,6 @@ async def test_containers_down_missing_spec(
     assert response.json() == {"detail": "No spec for docker-compose down was found"}
 
 
-def assert_keys_exist(result: dict[str, Any]) -> bool:
-    for entry in result.values():
-        assert "Status" in entry
-        assert "Error" in entry
-    return True
-
-
 async def test_containers_get(
     client: TestClient,
     started_containers: list[str],
@@ -414,21 +407,23 @@ async def test_containers_get_status(
 
     decoded_response = response.json()
     assert set(decoded_response) == set(started_containers)
+
+    def assert_keys_exist(result: dict[str, Any]) -> bool:
+        for entry in result.values():
+            assert "Status" in entry
+            assert "Error" in entry
+        return True
+
     assert assert_keys_exist(decoded_response) is True
 
 
-async def test_containers_inspect_docker_error(
-    client: TestClient, started_containers: list[str], mock_containers_get: int
-):
-    response = await client.get(f"/{API_VTAG}/containers")
-    assert response.status_code == mock_containers_get, response.text
-
-
 async def test_containers_docker_status_docker_error(
-    client: TestClient, started_containers: list[str], mock_containers_get: int
+    client: TestClient,
+    started_containers: list[str],
+    mock_aiodocker_containers_get: int,
 ):
     response = await client.get(f"/{API_VTAG}/containers")
-    assert response.status_code == mock_containers_get, response.text
+    assert response.status_code == mock_aiodocker_containers_get, response.text
 
 
 async def test_container_inspect_logs_remove(
@@ -481,7 +476,7 @@ async def test_container_missing_container(
 async def test_container_docker_error(
     client: TestClient,
     started_containers: list[str],
-    mock_containers_get: int,
+    mock_aiodocker_containers_get: int,
 ):
     def _expected_error_string(status_code: int) -> dict[str, Any]:
         return {
@@ -493,13 +488,13 @@ async def test_container_docker_error(
     for container in started_containers:
         # get container logs
         response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
-        assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string(mock_containers_get)
+        assert response.status_code == mock_aiodocker_containers_get, response.text
+        assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
         # inspect container
         response = await client.get(f"/{API_VTAG}/containers/{container}")
-        assert response.status_code == mock_containers_get, response.text
-        assert response.json() == _expected_error_string(mock_containers_get)
+        assert response.status_code == mock_aiodocker_containers_get, response.text
+        assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
 async def test_container_save_state(client: TestClient, mock_data_manager: None):
