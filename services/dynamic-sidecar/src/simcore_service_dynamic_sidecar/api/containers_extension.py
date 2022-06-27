@@ -6,6 +6,7 @@ from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Response, status
+from fastapi.responses import JSONResponse
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
@@ -116,6 +117,7 @@ async def save_state(
 @containers_router.post(
     "/containers/ports/inputs:pull",
     summary="Pull input ports data",
+    response_class=JSONResponse,
     status_code=status.HTTP_200_OK,
 )
 async def pull_input_ports(
@@ -172,6 +174,7 @@ async def create_output_dirs(
 @containers_router.post(
     "/containers/ports/outputs:pull",
     summary="Pull output ports data",
+    response_class=JSONResponse,
     status_code=status.HTTP_200_OK,
 )
 async def pull_output_ports(
