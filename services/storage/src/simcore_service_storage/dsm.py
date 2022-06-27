@@ -438,7 +438,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     reason=f"User {user_id} does not have enough rights to download file {file_id}"
                 )
 
-        fmd = await db_file_meta_data.get(conn, file_id)
+            fmd = await db_file_meta_data.get(conn, file_id)
 
         link = parse_obj_as(
             AnyUrl,

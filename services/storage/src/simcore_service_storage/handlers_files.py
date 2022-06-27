@@ -1,5 +1,4 @@
 import logging
-import urllib.parse
 from typing import Optional
 
 from aiohttp import web
@@ -143,18 +142,7 @@ async def upload_file(request: web.Request):
         link_type=query_params.link_type,
     )
 
-    abort_url = request.url.join(
-        request.app.router["abort_upload_file"]
-        .url_for(
-            location_id=f"{path_params.location_id}",
-            file_id=urllib.parse.quote(path_params.file_id, safe=""),
-        )
-        .with_query(user_id=query_params.user_id)
-    )
-
-    response = link
-
-    return {"data": jsonable_encoder(response, by_alias=True)}
+    return {"data": jsonable_encoder(link, by_alias=True)}
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort", name="abort_upload_file")  # type: ignore

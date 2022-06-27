@@ -66,12 +66,6 @@ async def test_download_files(tmpdir):
         (
             random.randint(1, 1000000),
             "some_valid_entity_tag",
-            None,
-            False,
-        ),
-        (
-            random.randint(1, 1000000),
-            "some_valid_entity_tag",
             datetime.datetime.utcnow(),
             False,
         ),

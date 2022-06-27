@@ -3,11 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 import filecmp
 import json
 import urllib.parse
 from pathlib import Path
-from time import perf_counter
 from typing import Awaitable, Callable, Optional
 from uuid import uuid4
 
@@ -18,7 +18,7 @@ from aiopg.sa import Engine
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, LinkType, SoftCopyBody
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
@@ -26,13 +26,8 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_storage.exceptions import S3KeyNotFoundError
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
-from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 from tests.helpers.file_utils import upload_file_part
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
-from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -89,24 +84,12 @@ async def test_create_upload_file_default_returns_single_link(
     # create upload file link
     received_file_upload = await create_upload_file_link(simcore_file_id, **url_query)
     # check links, there should be only 1
-    assert len(received_file_upload.urls) == 1
-    assert received_file_upload.urls[0].scheme == expected_link_scheme
-    assert received_file_upload.urls[0].path
-    assert received_file_upload.urls[0].path.endswith(
+    assert received_file_upload
+    assert received_file_upload.scheme == expected_link_scheme
+    assert received_file_upload.path
+    assert received_file_upload.path.endswith(
         f"{urllib.parse.quote(simcore_file_id, safe='/')}"
     )
-    # the chunk_size
-    assert received_file_upload.chunk_size == expected_chunk_size
-    if expected_link_query_keys:
-        assert received_file_upload.urls[0].query
-        query = {
-            query_str.split("=")[0]: query_str.split("=")[1]
-            for query_str in received_file_upload.urls[0].query.split("&")
-        }
-        for key in expected_link_query_keys:
-            assert key in query
-    else:
-        assert not received_file_upload.urls[0].query
 
     # now check the entry in the database is correct, there should be only one
     await assert_file_meta_data_in_db(
@@ -134,6 +117,8 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     link_type: LinkType,
     file_size: ByteSize,
     create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
+    user_id: UserID,
+    location_id: LocationID,
 ):
     assert client.app
     # create upload file link
@@ -150,8 +135,15 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         expected_upload_expiration_date=True,
     )
 
-    # delete/abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    # abort file upload
+    abort_url = (
+        client.app.router["abort_upload_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(simcore_file_id, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
     response = await client.post(f"{abort_url}")
     await assert_status(response, web.HTTPNoContent)
 
@@ -198,11 +190,13 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         expected_upload_expiration_date=True,
     )
 
+    await asyncio.sleep(1)
     # now we create a new upload
     # we should abort the previous upload to prevent unwanted costs
     new_file_upload_link = await create_upload_file_link(
         simcore_file_id, link_type=link_type.value.lower(), file_size=file_size
     )
+
     if link_type == LinkType.PRESIGNED:
         assert file_upload_link != new_file_upload_link
     else:
@@ -252,6 +246,7 @@ async def test_upload_real_file_with_s3_client(
     project_id: ProjectID,
     node_id: NodeID,
     faker: Faker,
+    get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
 ):
     assert client.app
     file_size = parse_obj_as(ByteSize, "500Mib")
@@ -278,44 +273,9 @@ async def test_upload_real_file_with_s3_client(
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == upload_e_tag
 
-    # complete the upload
-    complete_url = URL(file_upload_link.links.complete_upload).relative()
-    start = perf_counter()
-    print(f"--> completing upload of {file=}")
-    response = await client.post(f"{complete_url}", json={"parts": []})
-    response.raise_for_status()
-    data, error = await assert_status(response, web.HTTPAccepted)
-    assert not error
-    assert data
-    file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-    state_url = URL(file_upload_complete_response.links.state).relative()
-    completion_etag = None
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(ValueError),
-    ):
-        with attempt:
-            print(
-                f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-            )
-            response = await client.post(f"{state_url}")
-            response.raise_for_status()
-            data, error = await assert_status(response, web.HTTPOk)
-            assert not error
-            assert data
-            future = FileUploadCompleteFutureResponse.parse_obj(data)
-            if future.state != FileUploadCompleteState.OK:
-                raise ValueError(f"{data=}")
-            assert future.state == FileUploadCompleteState.OK
-            assert future.e_tag is not None
-            completion_etag = future.e_tag
-            print(
-                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
-            )
-
-    print(f"--> completed upload in {perf_counter() - start}")
+    # check getting the file actually lazily updates the table and returns the expected values
+    received_fmd: FileMetaDataGet = await get_file_meta_data(simcore_file_id)
+    assert received_fmd.entity_tag == upload_e_tag
 
     # check the entry in db now has the correct file size, and the upload id is gone
     await assert_file_meta_data_in_db(
@@ -331,7 +291,7 @@ async def test_upload_real_file_with_s3_client(
     )
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
-    assert s3_metadata.e_tag == completion_etag
+    assert s3_metadata.e_tag == upload_e_tag
 
 
 @pytest.mark.parametrize(
@@ -347,19 +307,22 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     faker: Faker,
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
     create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
+    user_id: UserID,
+    location_id: LocationID,
 ):
+    assert client.app
     # 1. upload a valid file
     file_name = faker.file_name()
-    _, uploaded_file_uuid = await upload_file(file_size, file_name)
+    _, uploaded_file_id = await upload_file(file_size, file_name)
 
     # 2. create an upload link for the second file
     upload_link = await create_upload_file_link(
-        uploaded_file_uuid, link_type="presigned", file_size=file_size
+        uploaded_file_id, link_type="presigned", file_size=file_size
     )
     # we shall have an entry in the db, waiting for upload
     await assert_file_meta_data_in_db(
         aiopg_engine,
-        file_id=uploaded_file_uuid,
+        file_id=uploaded_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
         expected_upload_expiration_date=True,
@@ -376,26 +339,33 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
                 file_offset=0,
                 this_file_chunk_size=file_size,
                 num_parts=1,
-                upload_url=upload_link.urls[0],
+                upload_url=upload_link,
                 raise_while_uploading=True,
             )
 
     # 4. abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    abort_url = (
+        client.app.router["abort_upload_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(uploaded_file_id, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
     response = await client.post(f"{abort_url}")
     await assert_status(response, web.HTTPNoContent)
 
     # we should have the original file still in now...
     await assert_file_meta_data_in_db(
         aiopg_engine,
-        file_id=uploaded_file_uuid,
+        file_id=uploaded_file_id,
         expected_entry_exists=True,
         expected_file_size=file_size,
         expected_upload_expiration_date=False,
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(
-        storage_s3_bucket, uploaded_file_uuid
+        storage_s3_bucket, uploaded_file_id
     )
     assert s3_metadata.size == file_size
 
