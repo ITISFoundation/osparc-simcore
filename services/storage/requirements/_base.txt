@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aiobotocore==2.2.0
+aiobotocore==2.3.3
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via

@@ -8,7 +8,7 @@ blosc==1.10.6
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
-bokeh==2.4.2
+bokeh==2.4.3
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -21,16 +21,16 @@ cloudpickle==2.0.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2022.4.0
+dask==2022.6.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
     #   distributed
-distributed==2022.4.0
+distributed==2022.6.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-fsspec==2022.3.0
+fsspec==2022.5.0
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -44,9 +44,10 @@ jinja2==2.11.3
     #   bokeh
     #   dask
     #   distributed
-locket==0.2.1
+locket==1.0.0
     # via
     #   -c requirements/./_base.txt
+    #   distributed
     #   partd
 lz4==4.0.0
     # via
