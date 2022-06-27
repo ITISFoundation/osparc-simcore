@@ -331,6 +331,10 @@ qx.Class.define("osparc.utils.Utils", {
       return JSON.parse(JSON.stringify(src));
     },
 
+    prettifyJson: function(json) {
+      return JSON.stringify(json, null, "&emsp;").replace(/\n/ig, "<br>");
+    },
+
     getRandomColor: function() {
       let letters = "0123456789ABCDEF";
       let color = "#";
