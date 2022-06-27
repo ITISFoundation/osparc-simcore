@@ -22,6 +22,7 @@ from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
+from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
@@ -372,9 +373,12 @@ async def test_create_and_delete_folders_from_project(
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
 ):
-    project_as_dict = jsonable_encoder(
-        project, exclude={"tags", "state", "prj_owner"}, by_alias=False
-    )
+    project_as_dict = jsonable_encoder(project, exclude={"tags", "state", "prj_owner"})
+    # HACK: some key names must be changed but not all
+    KEYS = {"creationDate", "lastChangeDate", "accessRights"}
+    for k in KEYS:
+        project_as_dict[camel_to_snake(k)] = project_as_dict.pop(k, None)
+
     await create_project(**project_as_dict)
     await _create_and_delete_folders_from_project(
         user_id, project_as_dict, client, create_project, check_list_files=True

@@ -5,7 +5,7 @@
 
 import simcore_service_storage._meta
 from aiohttp.test_utils import TestClient
-from simcore_service_storage.app_handlers import HealthCheck
+from simcore_service_storage.handlers_health import HealthCheck
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
