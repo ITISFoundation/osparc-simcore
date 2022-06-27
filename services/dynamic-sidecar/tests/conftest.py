@@ -134,6 +134,11 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
+        "send_event_reload_iframe": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.send_event_reload_iframe",
+            return_value=None,
+            autospec=True,
+        ),
         "post_log_message": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.post_log_message",
             return_value=None,
