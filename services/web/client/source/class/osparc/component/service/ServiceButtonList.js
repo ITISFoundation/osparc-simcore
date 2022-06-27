@@ -53,25 +53,6 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "hits":
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-13",
-            allowGrowY: false,
-            minWidth: 120,
-            alignY: "middle"
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.HITS
-          });
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
 
     __applyServiceModel: function(serviceModel) {
       // BASE
@@ -99,13 +80,13 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
     },
 
     __applyHits: function(serviceModel) {
-      const hitsLabel = new qx.ui.basic.Label(this.tr("Latest: ") + String(serviceModel.hits)).set({
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Used: ") + String(serviceModel.hits)).set({
         alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
       });
       this._add(hitsLabel, {
         row: 0,
-        column: osparc.dashboard.ListButtonBase.POS.HITS_LABEL
+        column: osparc.dashboard.ListButtonBase.POS.HITS
       });
     },
 
