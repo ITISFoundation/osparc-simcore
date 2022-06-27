@@ -329,19 +329,6 @@ qx.Class.define("osparc.Application", {
           this.__loadView(view);
           break;
         default: {
-          const now = new Date().getTime();
-          const afterKZ = new Date("2022-07-01").getTime();
-          if (now < afterKZ) {
-            osparc.utils.LibVersions.getPlatformName()
-              .then(platformName => {
-                if (platformName === "master") {
-                  view = new osparc.auth.LoginPageKZ();
-                  this.__loadView(view, {
-                    top: "15%"
-                  });
-                }
-              });
-          }
           view = new osparc.auth.LoginPage();
           this.__loadView(view, {
             top: "15%"
