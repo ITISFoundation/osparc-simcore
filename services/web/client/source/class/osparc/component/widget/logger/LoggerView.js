@@ -81,6 +81,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   },
 
   statics: {
+    POS: {
+      ORIGIN: 0,
+      TIMESTAMP: 1,
+      MESSAGE: 2
+    },
+
     LOG_LEVELS: {
       debug: -1,
       info: 0,
@@ -235,17 +241,17 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
+      colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
-      colModel.setDataCellRenderer(2, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(0, "15%");
-      resizeBehavior.setWidth(1, "10%");
-      resizeBehavior.setWidth(2, "75%");
+      resizeBehavior.setWidth(this.self().POS.ORIGIN, "15%");
+      resizeBehavior.setWidth(this.self().POS.TIMESTAMP, "10%");
+      resizeBehavior.setWidth(this.self().POS.MESSAGE, "75%");
 
       this.__applyFilters();
 
