@@ -71,7 +71,7 @@ async def _task_docker_compose_up(
             file_content=shared_store.compose_spec,
             command=command,
             command_timeout=None,
-            log_result=True
+            log_result=True,
         )
 
     if finished_without_errors:
