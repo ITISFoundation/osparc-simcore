@@ -421,7 +421,6 @@ def upload_file(
             file_id=file_id,
             expected_entry_exists=True,
             expected_file_size=file_size,
-            expected_upload_id=False,
             expected_upload_expiration_date=False,
         )
         # check the file is in S3 for real

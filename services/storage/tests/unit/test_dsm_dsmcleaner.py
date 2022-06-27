@@ -80,8 +80,6 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     async with aiopg_engine.acquire() as conn:
         with pytest.raises(FileMetaDataNotFoundError):
             await db_file_meta_data.get(conn, simcore_file_id)
-    # since there is no entry in the db, this upload shall be cleaned up
-    assert not await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)
 
 
 @pytest.mark.parametrize(
@@ -145,5 +143,3 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # check the S3 content is the old file
     s3_meta_data = await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
     assert s3_meta_data.size == file_size
-    # since there is no entry in the db, this upload shall be cleaned up
-    assert not await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)

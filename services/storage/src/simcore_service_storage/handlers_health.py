@@ -32,35 +32,8 @@ async def get_health(request: Request):
     ).dict(exclude_unset=True)
 
 
-@routes.post(f"/{api_version_prefix}/check/{{action}}", name="check_action")  # type: ignore
-async def check_action(request: Request):
-    """
-    Test checkpoint to ask server to fail or echo back the transmitted data
-    TODO: deprecate
-    """
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert body, "body %s" % body  # nosec
-
-    if params["action"] == "fail":
-        raise ValueError("some randome failure")
-
-    # echo's input FIXME: convert to dic
-    # FIXME: output = fake_schema.dump(body)
-    return {
-        "path_value": params.get("action"),
-        "query_value": query.get("data"),
-        "body_value": {
-            "key1": 1,  # body.body_value.key1,
-            "key2": 0,  # body.body_value.key2,
-        },
-    }
-
-
 @routes.get(f"/{api_version_prefix}/status", name="get_status")  # type: ignore
-async def get_app_status(request: Request):
+async def get_status(request: Request):
     # NOTE: all calls here must NOT raise
 
     status = AppStatusCheck.parse_obj(

@@ -206,7 +206,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         expected_upload_expiration_date=True,
     )
 
-    # now we create a new upload, in case it was a multipart,
+    # now we create a new upload
     # we should abort the previous upload to prevent unwanted costs
     new_file_upload_link = await create_upload_file_link(
         simcore_file_id, link_type=link_type.value.lower(), file_size=file_size

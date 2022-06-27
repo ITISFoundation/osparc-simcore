@@ -14,9 +14,11 @@ from servicelib.aiohttp.tracing import setup_tracing
 from ._meta import WELCOME_MSG, app_name, version
 from .db import setup_db
 from .dsm import setup_dsm
+from .dsm_cleaner import setup_dsm_cleaner
 from .rest import setup_rest
 from .s3 import setup_s3
 from .settings import Settings
+from .utils_handlers import dsm_exception_handler
 
 log = logging.getLogger(__name__)
 
@@ -41,9 +43,16 @@ def create(settings: Settings) -> web.Application:
             skip_routes=None,
         )
 
-    setup_db(app)  # -> postgres service
-    setup_s3(app)  # -> minio service
-    setup_dsm(app)  # core subsystem. Needs s3 and db setups done
+    if settings.STORAGE_POSTGRES:
+        setup_db(app)  # -> postgres service
+    if settings.STORAGE_S3:
+        setup_s3(app)  # -> minio service
+    if settings.STORAGE_POSTGRES and settings.STORAGE_S3:
+        setup_dsm(app)  # core subsystem. Needs s3 and db setups done
+        if settings.STORAGE_CLEANER_INTERVAL_S:
+            setup_dsm_cleaner(app)
+        app.middlewares.append(dsm_exception_handler)
+
     setup_rest(app)  # lastly, we expose API to the world
 
     if settings.LOG_LEVEL == "DEBUG":

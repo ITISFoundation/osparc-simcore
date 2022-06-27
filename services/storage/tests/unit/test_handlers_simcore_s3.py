@@ -261,7 +261,6 @@ async def test_copy_folders_from_valid_project(
                 ),
                 expected_entry_exists=True,
                 expected_file_size=src_file.stat().st_size,
-                expected_upload_id=None,
                 expected_upload_expiration_date=None,
             )
 

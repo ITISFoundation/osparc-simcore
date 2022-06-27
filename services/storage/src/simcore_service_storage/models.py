@@ -1,12 +1,33 @@
-""" Database models
-
-"""
 import datetime
+import urllib.parse
 from dataclasses import dataclass
-from pathlib import Path
+from typing import Literal, Optional
 from uuid import UUID
 
-import attr
+from models_library.api_schemas_storage import (
+    DatasetMetaDataGet,
+    ETag,
+    FileMetaDataGet,
+    LinkType,
+    S3BucketName,
+)
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import (
+    LocationName,
+    SimcoreS3FileID,
+    StorageFileID,
+)
+from models_library.users import UserID
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    Extra,
+    parse_obj_as,
+    validate_arguments,
+    validator,
+)
 from simcore_postgres_database.storage_models import (
     file_meta_data,
     groups,
@@ -17,19 +38,13 @@ from simcore_postgres_database.storage_models import (
     users,
 )
 
-from .constants import SIMCORE_S3_ID, SIMCORE_S3_STR
+from .constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
-# FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
-# from sqlalchemy.dialects.postgresql import UUID
-
-# FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
-# pylint: disable=R0902
+UploadID = str
 
 
-@dataclass
-class DatasetMetaData:
-    dataset_id: str = ""
-    display_name: str = ""
+class DatasetMetaData(DatasetMetaDataGet):
+    ...
 
 
 def is_uuid(value: str) -> bool:
@@ -41,119 +56,192 @@ def is_uuid(value: str) -> bool:
         return True
 
 
-class FileMetaData:
-    """This is a proposal, probably no everything is needed.
-    It is actually an overkill
+class FileMetaDataAtDB(BaseModel):
+    location_id: int
+    location: LocationName
+    bucket_name: S3BucketName
+    object_name: SimcoreS3FileID
+    project_id: Optional[ProjectID] = None
+    node_id: Optional[NodeID] = None
+    user_id: UserID
+    created_at: datetime.datetime
+    file_id: StorageFileID
+    file_size: ByteSize
+    last_modified: datetime.datetime
+    entity_tag: Optional[ETag] = None
+    is_soft_link: bool
+    upload_expires_at: Optional[datetime.datetime] = None
 
-    file_name       : display name for a file
-    location_id     : storage location
-    location_name   : storage location display name
-    project_id      : project_id
-    projec_name     : project display name
-    node_id         : node id
-    node_name       : display_name
-    bucket_name     : name of the bucket
-    object_name     : s3 object name = folder/folder/filename.ending
-    user_id         : user_id
-    user_name       : user_name
-
-    file_uuid       : unique identifier for a file:
-
-        bucket_name/project_id/node_id/file_name = /bucket_name/object_name
-
-    file_id         : unique uuid for the file
-
-        simcore.s3: uuid created upon insertion
-        datcore: datcore uuid
-
-    raw_file_path   : raw path to file
-
-        simcore.s3: proj_id/node_id/filename.ending
-        emailaddress/...
-        datcore: dataset/collection/filename.ending
-
-    display_file_path: human readlable  path to file
-
-        simcore.s3: proj_name/node_name/filename.ending
-        my_documents/...
-        datcore: dataset/collection/filename.ending
-
-    created_at          : time stamp
-    last_modified       : time stamp
-    file_size           : size in bytes
-
-    TODO:
-    state:  on of OK, UPLOADING, DELETED
-
-    """
-
-    # pylint: disable=attribute-defined-outside-init
-    def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
-        parts = file_uuid.split("/")
-        if len(parts) == 3:
-            self.location = SIMCORE_S3_STR
-            self.location_id = SIMCORE_S3_ID
-            self.bucket_name = bucket_name
-            self.object_name = "/".join(parts[:])
-            self.file_name = parts[2]
-            self.project_id = parts[0] if is_uuid(parts[0]) else None
-            self.node_id = parts[1] if is_uuid(parts[1]) else None
-            self.file_uuid = file_uuid
-            self.file_id = file_uuid
-            self.raw_file_path = self.file_uuid
-            self.display_file_path = str(
-                Path("not") / Path("yet") / Path("implemented")
-            )
-            self.created_at = str(datetime.datetime.now())
-            self.last_modified = self.created_at
-            self.file_size = -1
-            self.entity_tag = None
-            self.is_soft_link = False
-
-    def __str__(self):
-        d = attr.asdict(self)
-        _str = ""
-        for _d in d:
-            _str += "  {0: <25}: {1}\n".format(_d, str(d[_d]))
-        return _str
+    class Config:
+        orm_mode = True
+        extra = Extra.forbid
 
 
-def get_default(column):
-    # NOTE: this is temporary. it translates bool text-clauses into python
-    # The only defaults in file_meta_data are actually of these type
-    if column.server_default:
-        return {"false": False, "true": True}.get(str(column.server_default.arg))
-    return None
+class FileMetaData(FileMetaDataGet):
+    upload_expires_at: Optional[datetime.datetime] = None
 
+    location: Literal[SIMCORE_S3_STR, DATCORE_STR]  # type: ignore
+    bucket_name: str
+    object_name: str
+    project_id: Optional[ProjectID]
+    node_id: Optional[NodeID]
+    user_id: Optional[UserID]
 
-attr.s(
-    these={c.name: attr.ib(default=get_default(c)) for c in file_meta_data.c},
-    init=True,
-    kw_only=True,
-)(FileMetaData)
+    @classmethod
+    @validate_arguments
+    def from_simcore_node(
+        cls,
+        user_id: UserID,
+        file_id: SimcoreS3FileID,
+        bucket: S3BucketName,
+        **file_meta_data_kwargs,
+    ):
+
+        parts = file_id.split("/")
+        now = datetime.datetime.utcnow()
+        fmd_kwargs = {
+            "file_uuid": file_id,
+            "location_id": SIMCORE_S3_ID,
+            "location": SIMCORE_S3_STR,
+            "bucket_name": bucket,
+            "object_name": file_id,
+            "file_name": parts[2],
+            "user_id": user_id,
+            "project_id": parse_obj_as(ProjectID, parts[0])
+            if is_uuid(parts[0])
+            else None,
+            "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
+            "file_id": file_id,
+            "created_at": now,
+            "last_modified": now,
+            "file_size": ByteSize(-1),
+            "entity_tag": None,
+            "is_soft_link": False,
+            "upload_expires_at": None,
+        }
+        fmd_kwargs.update(**file_meta_data_kwargs)
+        return cls.parse_obj(fmd_kwargs)
 
 
 @dataclass
-class FileMetaDataEx:
-    """Extend the base type by some additional attributes that shall not end up in the db"""
-
-    fmd: FileMetaData
-    parent_id: str = ""
-
-    def __str__(self):
-        _str = str(self.fmd)
-        _str += "  {0: <25}: {1}\n".format("parent_id", str(self.parent_id))
-        return _str
+class DatCoreApiToken:
+    api_token: Optional[str] = None
+    api_secret: Optional[str] = None
 
 
-__all__ = [
+@dataclass
+class UploadLinks:
+    urls: list[AnyUrl]
+    chunk_size: ByteSize
+
+
+# API parameters ---------------------------------------------------------------------
+
+
+class StorageQueryParamsBase(BaseModel):
+    user_id: UserID
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
+class FilesMetadataQueryParams(StorageQueryParamsBase):
+    uuid_filter: str = ""
+
+
+class SyncMetadataQueryParams(BaseModel):
+    dry_run: bool = False
+    fire_and_forget: bool = False
+
+
+class FileDownloadQueryParams(StorageQueryParamsBase):
+    link_type: LinkType = LinkType.PRESIGNED
+
+    @validator("link_type", pre=True)
+    @classmethod
+    def convert_from_lower_case(cls, v):
+        if v is not None:
+            return f"{v}".upper()
+        return v
+
+
+class FileUploadQueryParams(StorageQueryParamsBase):
+    link_type: LinkType = LinkType.PRESIGNED
+    file_size: ByteSize = ByteSize(0)
+
+    @validator("link_type", pre=True)
+    @classmethod
+    def convert_from_lower_case(cls, v):
+        if v is not None:
+            return f"{v}".upper()
+        return v
+
+
+class DeleteFolderQueryParams(StorageQueryParamsBase):
+    node_id: Optional[NodeID] = None
+
+
+class SearchFilesQueryParams(StorageQueryParamsBase):
+    startswith: str = ""
+
+
+class LocationPathParams(BaseModel):
+    location_id: int
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
+class FilesMetadataDatasetPathParams(LocationPathParams):
+    dataset_id: str
+
+
+class FilePathParams(LocationPathParams):
+    file_id: StorageFileID
+
+    @validator("file_id", pre=True)
+    @classmethod
+    def unquote(cls, v):
+        if v is not None:
+            return urllib.parse.unquote(f"{v}")
+        return v
+
+
+class FilePathIsUploadCompletedParams(FilePathParams):
+    future_id: str
+
+
+class SimcoreS3FoldersParams(BaseModel):
+    folder_id: str
+
+
+class CopyAsSoftLinkParams(BaseModel):
+    file_id: StorageFileID
+
+    @validator("file_id", pre=True)
+    @classmethod
+    def unquote(cls, v):
+        if v is not None:
+            return urllib.parse.unquote(f"{v}")
+        return v
+
+
+__all__ = (
+    "DatCoreApiToken",
+    "ETag",
     "file_meta_data",
-    "tokens",
-    "metadata",
+    "StorageFileID",
+    "SimcoreS3FileID",
     "FileMetaData",
-    "FileMetaDataEx",
-    "projects",
-    "users",
     "groups",
+    "metadata",
+    "projects",
+    "S3BucketName",
+    "tokens",
+    "UploadID",
+    "UploadLinks",
     "user_to_groups",
-]
+    "users",
+)
