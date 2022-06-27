@@ -26,6 +26,17 @@ def _convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
     )
 
 
+async def fmd_exists(conn: SAConnection, file_id: StorageFileID) -> bool:
+    return (
+        await conn.scalar(
+            sa.select([file_meta_data.c.file_id]).where(
+                file_meta_data.c.file_id == file_id
+            )
+        )
+        == 1
+    )
+
+
 async def upsert_file_metadata_for_upload(
     conn: SAConnection, fmd: FileMetaData
 ) -> FileMetaData:

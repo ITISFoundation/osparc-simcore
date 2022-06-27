@@ -6,8 +6,6 @@ from models_library.projects import ProjectAtDB, ProjectID
 from simcore_postgres_database.models.projects import projects
 
 
-# TODO: this still needs some love. ProjectAtDB is not happy there is something fishy here
-# the generated projects in the failing tests have far too many fields???
 async def list_projects(
     conn: SAConnection, project_uuids: list[ProjectID]
 ) -> AsyncGenerator[ProjectAtDB, None]:
@@ -17,3 +15,14 @@ async def list_projects(
         )
     ):
         yield ProjectAtDB.from_orm(row)
+
+
+async def project_exists(conn: SAConnection, project_uuid: ProjectID) -> bool:
+    return (
+        await conn.scalar(
+            sa.select([sa.func.count()])
+            .select_from(projects)
+            .where(projects.c.uuid == f"{project_uuid}")
+        )
+        == 1
+    )

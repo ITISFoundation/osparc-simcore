@@ -8,7 +8,7 @@ from .exceptions import S3BucketInvalidError, S3KeyNotFoundError
 
 
 def compute_num_file_chunks(file_size: ByteSize) -> tuple[int, ByteSize]:
-    return 1
+    return 1, file_size
 
 
 def s3_exception_handler(log: logging.Logger):

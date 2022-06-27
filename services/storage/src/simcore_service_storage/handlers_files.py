@@ -4,15 +4,9 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.api_schemas_storage import (
-    FileMetaDataGet,
-    FileUploadLinks,
-    FileUploadSchema,
-    LinkType,
-    SoftCopyBody,
-)
+from models_library.api_schemas_storage import FileMetaDataGet, LinkType, SoftCopyBody
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -23,7 +17,6 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
 from .constants import SIMCORE_S3_ID, SIMCORE_S3_STR
-from .dsm import UploadLinks
 from .models import (
     CopyAsSoftLinkParams,
     FileDownloadQueryParams,
@@ -144,11 +137,10 @@ async def upload_file(request: web.Request):
         jsonable_encoder(path_params), jsonable_encoder(query_params), request
     )
 
-    links: UploadLinks = await dsm.create_upload_links(
+    link: AnyUrl = await dsm.create_upload_link(
         user_id=query_params.user_id,
         file_id=path_params.file_id,
         link_type=query_params.link_type,
-        file_size_bytes=query_params.file_size,
     )
 
     abort_url = request.url.join(
@@ -159,25 +151,8 @@ async def upload_file(request: web.Request):
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_url = request.url.join(
-        request.app.router["complete_upload_file"]
-        .url_for(
-            location_id=f"{path_params.location_id}",
-            file_id=urllib.parse.quote(path_params.file_id, safe=""),
-        )
-        .with_query(user_id=query_params.user_id)
-    )
-    response = FileUploadSchema(
-        chunk_size=links.chunk_size,
-        urls=links.urls,
-        links=FileUploadLinks(
-            abort_upload=parse_obj_as(AnyUrl, f"{abort_url}"),
-            complete_upload=parse_obj_as(
-                AnyUrl,
-                f"{complete_url}",
-            ),
-        ),
-    )
+
+    response = link
 
     return {"data": jsonable_encoder(response, by_alias=True)}
 
