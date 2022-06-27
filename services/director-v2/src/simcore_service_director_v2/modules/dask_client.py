@@ -15,7 +15,7 @@ import traceback
 from collections import deque
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Callable, Deque, Dict, Final, List, Optional, Tuple
+from typing import Any, Callable, Deque, Final, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -88,7 +88,7 @@ DASK_DEFAULT_TIMEOUT_S = 1
 ServiceKey = str
 ServiceVersion = str
 LogFileUploadURL = AnyUrl
-Commands = List[str]
+Commands = list[str]
 RemoteFct = Callable[
     [
         DockerBasicAuth,
@@ -112,7 +112,7 @@ class DaskClient:
     settings: ComputationalBackendSettings
     tasks_file_link_type: Final[FileLinkType]
 
-    _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
+    _subscribed_tasks: list[asyncio.Task] = field(default_factory=list)
 
     @classmethod
     async def create(
@@ -190,10 +190,10 @@ class DaskClient:
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        tasks: Dict[NodeID, Image],
+        tasks: dict[NodeID, Image],
         callback: UserCallbackInSepThread,
         remote_fct: Optional[RemoteFct] = None,
-    ) -> List[Tuple[NodeID, str]]:
+    ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
@@ -204,7 +204,7 @@ class DaskClient:
             input_data: TaskInputData,
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
-            command: List[str],
+            command: list[str],
             s3_settings: Optional[S3Settings],
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
@@ -224,7 +224,7 @@ class DaskClient:
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
-        list_of_node_id_to_job_id: List[Tuple[NodeID, str]] = []
+        list_of_node_id_to_job_id: list[tuple[NodeID, str]] = []
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
                 service_key=node_image.name,
@@ -340,7 +340,7 @@ class DaskClient:
     async def get_task_status(self, job_id: str) -> RunningState:
         return (await self.get_tasks_status(job_ids=[job_id]))[0]
 
-    async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
+    async def get_tasks_status(self, job_ids: list[str]) -> list[RunningState]:
         check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
@@ -426,10 +426,21 @@ class DaskClient:
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link
-        used_resources = await self.backend.client.run_on_scheduler(
-            lambda dask_scheduler: dict(dask_scheduler.used_resources)
-        )  # type: ignore
-        for k, v in used_resources.items():
+
+        def _get_worker_used_resources(
+            dask_scheduler: distributed.Scheduler,
+        ) -> dict[str, dict]:
+            used_resources = {}
+            for worker_name in dask_scheduler.workers:
+                worker = dask_scheduler.workers[worker_name]
+                used_resources[worker_name] = worker.used_resources
+            return used_resources
+
+        used_resources_per_worker: dict[
+            str, dict[str, Any]
+        ] = await self.backend.client.run_on_scheduler(_get_worker_used_resources)
+
+        for k, v in used_resources_per_worker.items():
             scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
 
         assert dashboard_link  # nosec
