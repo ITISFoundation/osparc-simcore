@@ -50,7 +50,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           let image = null;
           const now = new Date().getTime();
           const afterKZ = new Date("2022-07-01").getTime();
-          if (now < afterKZ && platformName === "master") {
+          if ((now < afterKZ) && platformName === "master") {
             image = this._getLogoWPlatform2();
           } else {
             image = this._getLogoWPlatform();
