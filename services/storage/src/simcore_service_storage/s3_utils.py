@@ -4,7 +4,7 @@ import logging
 from botocore import exceptions as botocore_exc
 from pydantic import ByteSize
 
-from .exceptions import S3BucketInvalidError, S3KeyNotFoundError
+from .exceptions import S3AccessError, S3BucketInvalidError, S3KeyNotFoundError
 
 
 def compute_num_file_chunks(file_size: ByteSize) -> tuple[int, ByteSize]:
@@ -32,7 +32,10 @@ def s3_exception_handler(log: logging.Logger):
                         raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
                     if exc.operation_name == "HeadBucket":
                         raise S3BucketInvalidError(bucket=args[0]) from exc
-                raise
+                if exc.response.get("Error", {}).get("Code") == "403":
+                    if exc.operation_name == "HeadBucket":
+                        raise S3BucketInvalidError(bucket=args[0]) from exc
+                raise S3AccessError from exc
 
             except Exception:
                 log.exception("Unexpected error in s3 client: ")

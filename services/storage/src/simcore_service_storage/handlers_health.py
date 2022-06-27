@@ -45,7 +45,7 @@ async def get_status(request: Request):
                     "healthy": await is_pg_responsive(request.app),
                     "pool": get_engine_state(request.app),
                 },
-                # TODO: s3-minio
+                "s3": {"healthy": True},
             },
         }
     )

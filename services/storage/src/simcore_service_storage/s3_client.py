@@ -69,6 +69,18 @@ class StorageS3Client:
             )
 
     @s3_exception_handler(log)
+    async def test_bucket_connection(self, bucket: S3BucketName) -> bool:
+        """
+        :raises: S3BucketInvalidError if not existing, not enough rights
+        :raises: S3AccessError for any other error
+        """
+        log.debug("Head bucket: %s", bucket)
+        try:
+            await self.client.head_bucket(Bucket=bucket)
+        except self.client.exceptions.NoSuchBucket as exc:
+            return False
+
+    @s3_exception_handler(log)
     async def create_single_presigned_download_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
