@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   members: {
     __servicesAll: null,
     __servicesLatestList: null,
+    __sortByGroup: null,
 
     __reloadService: function(key, version, reload) {
       osparc.store.Store.getInstance().getService(key, version, reload)
@@ -149,6 +150,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
       this.__servicesLatestList = servicesList;
       this._resourcesContainer.removeAll();
+      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortByGroup.getSelection()[0].sortBy);
       servicesList.forEach(service => {
         service["resourceType"] = "service";
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
@@ -270,28 +272,24 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
       const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
       byNameBtn.sortBy = "name";
-      const byUseBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
-      byUseBtn.sortBy = "use";
-      const group = new qx.ui.form.RadioGroup().set({
+      const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
+      byHitsBtn.sortBy = "hits";
+      const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: false
       });
       [
         byNameBtn,
-        byUseBtn
+        byHitsBtn
       ].forEach(btn => {
         containterSortBtns.add(btn);
-        group.add(btn);
+        sortByGroup.add(btn);
         btn.getContentElement().setStyles({
           "border-radius": "8px"
         });
       });
       this._secondaryBar.add(containterSortBtns);
 
-      group.addListener("changeSelection", e => this.__sortServicesBy(e.getData()[0].sortBy));
-    },
-
-    __sortServicesBy: function(sortBy = "name") {
-      console.log("__sortServicesBy", sortBy);
+      sortByGroup.addListener("changeSelection", () => this._resetResourcesList());
     }
   }
 });

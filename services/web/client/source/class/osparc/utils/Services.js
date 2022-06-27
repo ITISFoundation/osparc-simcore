@@ -101,6 +101,15 @@ qx.Class.define("osparc.utils.Services", {
       return 0;
     },
 
+    sortObjectsBasedOn: function(servicesArray, basedOn = "name") {
+      servicesArray.sort((a, b) => {
+        if (basedOn === "hits" && a[basedOn] !== b[basedOn]) {
+          return b[basedOn] - a[basedOn];
+        }
+        return a["name"].localeCompare(b["name"]);
+      });
+    },
+
     sortBasedOnFav: function(servicesArray) {
       const favServices = osparc.utils.Utils.localCache.getFavServices();
       servicesArray.forEach(service => {
