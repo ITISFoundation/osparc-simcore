@@ -3,7 +3,7 @@
 # pylint: disable=protected-access
 
 import asyncio
-from typing import Any, AsyncIterable, AsyncIterator, Dict, List
+from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
 
 import aiodocker
@@ -46,17 +46,13 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 
 @pytest.fixture
-async def async_docker_client(
-    docker_swarm: None,
-) -> AsyncIterator[aiodocker.docker.Docker]:
+async def async_docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
         yield client
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(
-    monkeypatch: MonkeyPatch, docker_swarm: None
-) -> DynamicSidecarSettings:
+def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
@@ -72,7 +68,7 @@ def dynamic_sidecar_settings(
 
 
 @pytest.fixture
-def network_config(simcore_services_network_name: str) -> Dict[str, Any]:
+def network_config(simcore_services_network_name: str) -> dict[str, Any]:
     return {
         "Name": simcore_services_network_name,
         "Driver": "overlay",
@@ -82,9 +78,8 @@ def network_config(simcore_services_network_name: str) -> Dict[str, Any]:
 
 @pytest.fixture
 async def ensure_swarm_network(
-    network_config: Dict[str, Any],
+    network_config: dict[str, Any],
     async_docker_client: aiodocker.docker.Docker,
-    docker_swarm: None,
 ) -> AsyncIterator[None]:
     network_id = await docker_api.create_network(network_config)
     yield
@@ -106,7 +101,6 @@ async def ensure_swarm_network(
 async def cleanup_swarm_network(
     simcore_services_network_name: str,
     async_docker_client: aiodocker.docker.Docker,
-    docker_swarm: None,
 ) -> AsyncIterator[None]:
     yield
     # docker containers must be gone before network removal is functional
@@ -135,7 +129,7 @@ def test_service_name() -> str:
 
 
 @pytest.fixture
-def service_spec(test_service_name: str) -> Dict[str, Any]:
+def service_spec(test_service_name: str) -> dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
     return {
         "name": test_service_name,
@@ -165,7 +159,7 @@ def dynamic_sidecar_service_spec(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     scheduler_data_from_http_request: SchedulerData,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
     scheduler_data_from_http_request.service_name = dynamic_sidecar_service_name
 
@@ -219,7 +213,7 @@ def dynamic_sidecar_stack_specs(
     user_id: UserID,
     project_id: ProjectID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     return [
         {
             "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy",
@@ -252,7 +246,7 @@ def dynamic_sidecar_stack_specs(
 
 @pytest.fixture
 async def cleanup_dynamic_sidecar_stack(
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     async_docker_client: aiodocker.docker.Docker,
 ) -> AsyncIterator[None]:
     yield
@@ -283,7 +277,7 @@ async def project_id_labeled_network(
 @pytest.fixture
 async def test_networks(
     async_docker_client: aiodocker.docker.Docker, docker_swarm: None
-) -> AsyncIterator[List[str]]:
+) -> AsyncIterator[list[str]]:
     network_names = [f"test_network_name__{k}" for k in range(5)]
 
     yield network_names
@@ -372,7 +366,7 @@ async def mock_service(
 
 
 def _assert_service(
-    service_spec: Dict[str, Any], service_inspect: Dict[str, Any]
+    service_spec: dict[str, Any], service_inspect: dict[str, Any]
 ) -> None:
     assert service_inspect["Spec"]["Labels"] == service_spec["labels"]
     assert service_inspect["Spec"]["Name"] == service_spec["name"]
@@ -398,17 +392,13 @@ async def _count_services_in_stack(
     return len(services)
 
 
-def _inject_impossible_resources(dynamic_sidecar_service_spec: Dict[str, Any]) -> None:
+def _inject_impossible_resources(dynamic_sidecar_service_spec: dict[str, Any]) -> None:
     dynamic_sidecar_service_spec["task_template"]["Resources"] = {
         "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64}
     }
 
 
 # TESTS
-
-
-def test_new_docker_swarm(docker_swarm: None) -> None:
-    pass
 
 
 @pytest.mark.parametrize(
@@ -466,7 +456,7 @@ async def test_get_swarm_network_missing_network(
 
 
 async def test_recreate_network_multiple_times(
-    network_config: Dict[str, Any],
+    network_config: dict[str, Any],
     cleanup_swarm_network: None,
     docker_swarm: None,
 ) -> None:
@@ -478,7 +468,7 @@ async def test_recreate_network_multiple_times(
 
 
 async def test_create_service(
-    service_spec: Dict[str, Any],
+    service_spec: dict[str, Any],
     cleanup_test_service_name: None,
     docker_swarm: None,
 ) -> None:
@@ -487,7 +477,7 @@ async def test_create_service(
 
 
 async def test_inspect_service(
-    service_spec: Dict[str, Any],
+    service_spec: dict[str, Any],
     cleanup_test_service_name: None,
     docker_swarm: None,
 ) -> None:
@@ -501,7 +491,7 @@ async def test_inspect_service(
 
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
-    dynamic_sidecar_service_spec: Dict[str, Any],
+    dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
@@ -521,7 +511,7 @@ async def test_services_to_observe_exist(
 
 
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
-    dynamic_sidecar_service_spec: Dict[str, Any],
+    dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
@@ -543,7 +533,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
 
 
 async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
-    dynamic_sidecar_service_spec: Dict[str, Any],
+    dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
@@ -567,7 +557,7 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
 async def test_is_dynamic_sidecar_missing(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ) -> None:
@@ -591,7 +581,7 @@ async def test_is_dynamic_sidecar_missing(
 async def test_are_all_services_present(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
@@ -614,7 +604,7 @@ async def test_are_all_services_present(
 async def test_remove_dynamic_sidecar_stack(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     docker_swarm: None,
     async_docker_client: aiodocker.docker.Docker,
 ):
@@ -648,7 +638,7 @@ async def test_remove_dynamic_sidecar_stack(
 
 
 async def test_remove_dynamic_sidecar_network(
-    network_config: Dict[str, Any],
+    network_config: dict[str, Any],
     simcore_services_network_name: str,
     docker_swarm: None,
 ) -> None:
@@ -675,7 +665,7 @@ async def test_list_dynamic_sidecar_services(
     user_id: UserID,
     project_id: ProjectID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
@@ -693,7 +683,7 @@ async def test_list_dynamic_sidecar_services(
 async def test_is_dynamic_service_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: List[Dict[str, Any]],
+    dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ) -> None:
@@ -732,7 +722,7 @@ async def test_get_projects_networks_containers(
 
 
 async def test_get_or_create_networks_ids(
-    test_networks: List[str], existing_network: str, project_id: ProjectID
+    test_networks: list[str], existing_network: str, project_id: ProjectID
 ):
     # test with duplicate networks and existing networks
     networks_to_test = test_networks + test_networks + [existing_network]

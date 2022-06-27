@@ -20,8 +20,6 @@ from dataclasses import dataclass, field
 from typing import Optional
 from uuid import UUID
 
-import httpx
-from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
@@ -38,10 +36,11 @@ from ....models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     SchedulerData,
 )
-from ..client_api import (
+from ..api_client import (
+    ClientHttpError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    update_dynamic_sidecar_health,
+    get_dynamic_sidecar_service_health,
 )
 from ..docker_api import (
     are_all_services_present,
@@ -89,14 +88,7 @@ async def _apply_observation_cycle(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.can_save_state,
         )
-
-    try:
-        async with timeout(
-            dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
-        ):
-            await update_dynamic_sidecar_health(app, scheduler_data)
-    except asyncio.TimeoutError:
-        scheduler_data.dynamic_sidecar.is_available = False
+    await get_dynamic_sidecar_service_health(app, scheduler_data)
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(
@@ -139,12 +131,6 @@ class DynamicSidecarsScheduler:
         keep track of the service for faster searches.
         """
         async with self._lock:
-
-            if not scheduler_data.service_name:
-                raise DynamicSidecarError(
-                    "a service with no name is not valid. Invalid usage."
-                )
-
             if scheduler_data.service_name in self._to_observe:
                 logger.warning(
                     "Service %s is already being observed", scheduler_data.service_name
@@ -243,7 +229,7 @@ class DynamicSidecarsScheduler:
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        except httpx.HTTPError:
+        except ClientHttpError:
             # error fetching docker_statues, probably someone should check
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,

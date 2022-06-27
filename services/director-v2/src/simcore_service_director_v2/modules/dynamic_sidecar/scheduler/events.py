@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any, Coroutine, Final, Optional, Type, cast
 
-import httpx
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -28,7 +27,11 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
+from ..api_client import (
+    BaseClientHTTPError,
+    DynamicSidecarClient,
+    get_dynamic_sidecar_client,
+)
 from ..docker_api import (
     are_all_services_present,
     constrain_service_to_node,
@@ -49,11 +52,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import (
-    DynamicSidecarUnexpectedResponseStatus,
-    EntrypointContainerNotFoundError,
-    NodeportsDidNotFindNodeError,
-)
+from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
 from .abc import DynamicSchedulerEvent
 from .events_utils import (
     all_containers_running,
@@ -232,7 +231,7 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except (httpx.HTTPError, DynamicSidecarUnexpectedResponseStatus):
+        except BaseClientHTTPError:
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.
@@ -508,10 +507,12 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             await dynamic_sidecar_client.begin_service_destruction(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        # NOTE: ANE: need to use more specific exception here
-        except Exception as e:  # pylint: disable=broad-except
+        except BaseClientHTTPError as e:
             logger.warning(
-                "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
+                (
+                    "Could not contact dynamic-sidecar to begin destruction of "
+                    "%s\n%s. Will continue service removal!"
+                ),
                 scheduler_data.service_name,
                 f"{e}",
             )
@@ -557,8 +558,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     logger.warning("%s", f"{err}")
 
                 logger.info("Ports data pushed by dynamic-sidecar")
-            # NOTE: ANE: need to use more specific exception here
-            except Exception as e:  # pylint: disable=broad-except
+            except BaseClientHTTPError as e:
                 logger.warning(
                     (
                         "Could not contact dynamic-sidecar to save service "
@@ -570,6 +570,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 # ensure dynamic-sidecar does not get removed
                 # user data can be manually saved and manual
                 # cleanup of the dynamic-sidecar is required
+                # TODO: ANE: maybe have a mechanism stop the dynamic sidecar
+                # and make the director warn about hanging sidecars?
                 raise e
 
         # remove the 2 services

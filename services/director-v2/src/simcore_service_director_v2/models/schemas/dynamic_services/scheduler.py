@@ -1,7 +1,7 @@
 import json
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
 from models_library.projects_nodes_io import NodeID
@@ -11,7 +11,15 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import BaseModel, Extra, Field, PositiveInt, constr
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    PositiveInt,
+    constr,
+    parse_obj_as,
+)
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -92,7 +100,7 @@ class DockerContainerInspect(BaseModel):
     id: str = Field(..., description="docker id of the container")
 
     @classmethod
-    def from_container(cls, container: Dict[str, Any]) -> "DockerContainerInspect":
+    def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
         return cls(
             status=DockerStatus(container["State"]["Status"]),
             name=container["Name"],
@@ -168,7 +176,7 @@ class DynamicSidecar(BaseModel):
         description="if the docker-compose spec was already submitted this fields is True",
     )
 
-    containers_inspect: List[DockerContainerInspect] = Field(
+    containers_inspect: list[DockerContainerInspect] = Field(
         [],
         scription="docker inspect results from all the container ran at regular intervals",
     )
@@ -235,9 +243,11 @@ class DynamicSidecar(BaseModel):
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        return f"http://{self.hostname}:{self.port}"
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
 
     @property
     def are_containers_ready(self) -> bool:
@@ -300,8 +310,9 @@ class DynamicSidecarNames(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    service_name: str = Field(
-        ..., description="Name of the current dynamic-sidecar being observed"
+    service_name: constr(strip_whitespace=True, min_length=2) = Field(
+        ...,
+        description="Name of the current dynamic-sidecar being observed",
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
@@ -354,8 +365,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
         port: Optional[int],
-        request_dns: str = None,
-        request_scheme: str = None,
+        request_dns: Optional[str] = None,
+        request_scheme: Optional[str] = None,
     ) -> "SchedulerData":
         dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
 

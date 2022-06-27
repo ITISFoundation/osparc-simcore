@@ -324,6 +324,10 @@ qx.Class.define("osparc.Application", {
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
+        case "tis":
+          view = new osparc.auth.LoginPageTI();
+          this.__loadView(view);
+          break;
         default:
           view = new osparc.auth.LoginPage();
           this.__loadView(view, {
