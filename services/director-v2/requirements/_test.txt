@@ -98,7 +98,7 @@ cryptography==37.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
     #   paramiko
-dask-gateway-server==2022.4.0
+dask-gateway-server==2022.6.1
     # via -r requirements/_test.in
 dill==0.3.4
     # via pylint
@@ -331,7 +331,7 @@ tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
-traitlets==5.1.1
+traitlets==5.3.0
     # via dask-gateway-server
 typing-extensions==4.2.0
     # via
