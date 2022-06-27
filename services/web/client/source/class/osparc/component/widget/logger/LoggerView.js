@@ -235,7 +235,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __copyLogsToClipboard: function() {
       let logs = "";
       this.__loggerModel.getRows().forEach(row => {
-        logs += `(${row.nodeId}) ${row.label}: ${row.msg} \n`;
+        logs += `(${row.nodeId}) - [${row.timeStamp}] ${row.label}: ${row.msg} \n`;
       });
       osparc.utils.Utils.copyTextToClipboard(logs);
     },
