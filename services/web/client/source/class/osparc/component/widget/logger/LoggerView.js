@@ -66,6 +66,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       init: 0
     },
 
+    lockLogs: {
+      apply : "__updateTable",
+      nullable: false,
+      check : "Boolean",
+      init: true
+    },
+
     currentNodeId: {
       check: "String",
       nullable: true,
@@ -74,6 +81,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   },
 
   statics: {
+    POS: {
+      ORIGIN: 0,
+      TIMESTAMP: 1,
+      MESSAGE: 2
+    },
+
     LOG_LEVELS: {
       debug: -1,
       info: 0,
@@ -141,11 +154,35 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           toolbar.add(control);
           break;
         }
+        case "lock-logs-button": {
+          control = new qx.ui.form.ToggleButton().set({
+            toolTipText: this.tr("Toggle auto-scroll"),
+            appearance: "toolbar-button"
+          });
+          control.bind("value", this, "lockLogs");
+          control.bind("value", control, "icon", {
+            converter: val => val ? "@FontAwesome5Solid/lock/14" : "@FontAwesome5Solid/lock-open/14"
+          });
+          const toolbar = this.getChildControl("toolbar");
+          toolbar.add(control);
+          break;
+        }
         case "copy-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/copy/14",
             toolTipText: this.tr("Copy logs to clipboard"),
+            appearance: "toolbar-button"
+          });
+          osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
+          toolbar.add(control);
+          break;
+        }
+        case "download-logs-button": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/download/14",
+            toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
           osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
@@ -173,9 +210,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       }, this);
       toolbar.add(logLevelSelectBox);
 
+      const lockLogsButton = this.getChildControl("lock-logs-button");
+      toolbar.add(lockLogsButton);
+
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
       toolbar.add(copyToClipboardButton);
+
+      const downloadButton = this.getChildControl("download-logs-button");
+      downloadButton.addListener("execute", () => this.__downloadLogs(), this);
+      toolbar.add(downloadButton);
 
       return toolbar;
     },
@@ -193,21 +237,22 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
-        showCellFocusIndicator: false
+        showCellFocusIndicator: false,
+        rowHeight: 15,
+        forceLineHeight: false
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
+      colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
-      colModel.setDataCellRenderer(2, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(0, "15%");
-      resizeBehavior.setWidth(1, "10%");
-      resizeBehavior.setWidth(2, "75%");
+      resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
+      resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
 
       this.__applyFilters();
 
@@ -232,12 +277,21 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       this.__textFilterField.setValue(node ? node.getLabel() : "");
     },
 
-    __copyLogsToClipboard: function() {
+    __getLogsString: function() {
       let logs = "";
       this.__loggerModel.getRows().forEach(row => {
-        logs += `(${row.nodeId}) ${row.label}: ${row.msg} \n`;
+        logs += `(${row.nodeId}) - [${row.timeStamp}] ${row.label}: ${row.msg} \n`;
       });
-      osparc.utils.Utils.copyTextToClipboard(logs);
+      return logs;
+    },
+
+    __copyLogsToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
+    },
+
+    __downloadLogs: function() {
+      const logs = this.__getLogsString();
+      osparc.utils.Utils.downloadContent("data:text/json;charset=utf-8," + logs, "logs.json");
     },
 
     debug: function(nodeId, msg = "") {
@@ -287,6 +341,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           label,
           timeStamp: new Date(),
           msg,
+          tooltip: msg,
           logLevel
         };
         msgLogs.push(msgLog);
@@ -297,9 +352,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __updateTable: function() {
-      this.__loggerModel.reloadData();
-      const nFilteredRows = this.__loggerModel.getFilteredRowCount();
-      this.__logView.scrollCellVisible(0, nFilteredRows);
+      if (this.__loggerModel) {
+        this.__loggerModel.reloadData();
+        if (!this.isLockLogs()) {
+          const nFilteredRows = this.__loggerModel.getFilteredRowCount();
+          this.__logView.scrollCellVisible(0, nFilteredRows);
+        }
+      }
     },
 
     __applyFilters: function() {
