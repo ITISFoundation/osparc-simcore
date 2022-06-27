@@ -46,10 +46,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly()
         .then(services => {
+          const favServices = osparc.utils.Utils.localCache.getFavServices();
           this.__servicesAll = services;
           const servicesList = [];
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
+            const found = Object.keys(favServices).find(favSrv => favSrv === key);
+            latestService.hits = found ? favServices[found]["hits"] : 0;
             servicesList.push(latestService);
           }
           this._resetResourcesList(servicesList);

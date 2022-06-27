@@ -80,7 +80,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
     },
 
     __applyHits: function(serviceModel) {
-      const hitsLabel = new qx.ui.basic.Label(this.tr("Used: ") + String(serviceModel.hits)).set({
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.hits)).set({
         alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
       });
