@@ -16,7 +16,7 @@ from .exceptions import FileMetaDataNotFoundError
 from .models import FileMetaData, FileMetaDataAtDB
 
 
-async def fmd_exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
+async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
     return (
         await conn.scalar(
             sa.select([sa.func.count()])
@@ -27,9 +27,7 @@ async def fmd_exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
     )
 
 
-async def upsert_file_metadata_for_upload(
-    conn: SAConnection, fmd: FileMetaData
-) -> FileMetaDataAtDB:
+async def upsert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
     fmd_db = FileMetaDataAtDB.from_orm(fmd)
@@ -43,9 +41,7 @@ async def upsert_file_metadata_for_upload(
     return FileMetaDataAtDB.from_orm(row)
 
 
-async def insert_file_metadata(
-    conn: SAConnection, fmd: FileMetaData
-) -> FileMetaDataAtDB:
+async def insert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
     fmd_db = FileMetaDataAtDB.from_orm(fmd)
     result = await conn.execute(
         file_meta_data.insert()
@@ -66,7 +62,7 @@ async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
     raise FileMetaDataNotFoundError(file_id=file_id)
 
 
-async def list_fmds_with_partial_file_id(
+async def list_filter_with_partial_file_id(
     conn: SAConnection,
     *,
     user_id: UserID,
@@ -118,14 +114,14 @@ async def list_fmds(
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
 
-async def number_of_uploaded_fmds(conn: SAConnection) -> int:
+async def total(conn: SAConnection) -> int:
     """returns the number of uploaded file entries"""
     return (
         await conn.scalar(sa.select([sa.func.count()]).select_from(file_meta_data)) or 0
     )
 
 
-async def list_all_uploaded_fmds(
+async def list_valid_uploads(
     conn: SAConnection,
 ) -> AsyncGenerator[FileMetaDataAtDB, None]:
     """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""

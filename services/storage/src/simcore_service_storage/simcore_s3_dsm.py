@@ -106,7 +106,7 @@ class SimcoreS3DataManager(BaseDataManager):
             accesible_projects_ids = await get_readable_project_ids(conn, user_id)
             file_metadatas: list[
                 FileMetaDataAtDB
-            ] = await db_file_meta_data.list_fmds_with_partial_file_id(
+            ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
                 project_ids=accesible_projects_ids,
@@ -207,7 +207,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 location_name=self.location_name,
                 upload_expires_at=upload_expiration_date,
             )
-            fmd = await db_file_meta_data.upsert_file_metadata_for_upload(conn, fmd)
+            fmd = await db_file_meta_data.upsert(conn, fmd)
 
             # return the appropriate links
             if link_type == LinkType.PRESIGNED:
@@ -435,7 +435,7 @@ class SimcoreS3DataManager(BaseDataManager):
             can_read_projects_ids = await get_readable_project_ids(conn, user_id)
             files_meta: list[
                 FileMetaDataAtDB
-            ] = await db_file_meta_data.list_fmds_with_partial_file_id(
+            ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
                 project_ids=can_read_projects_ids,
@@ -449,7 +449,7 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         # validate link_uuid
         async with self.engine.acquire() as conn:
-            if await db_file_meta_data.fmd_exists(
+            if await db_file_meta_data.exists(
                 conn, parse_obj_as(SimcoreS3FileID, link_file_id)
             ):
                 raise LinkAlreadyExistsError(file_id=link_file_id)
@@ -463,9 +463,7 @@ class SimcoreS3DataManager(BaseDataManager):
         target.is_soft_link = True
 
         async with self.engine.acquire() as conn:
-            return convert_db_to_model(
-                await db_file_meta_data.insert_file_metadata(conn, target)
-            )
+            return convert_db_to_model(await db_file_meta_data.insert(conn, target))
 
     async def synchronise_meta_data_table(self, dry_run: bool) -> list[StorageFileID]:
         logger.warning(
@@ -473,13 +471,13 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         file_ids_to_remove = []
         async with self.engine.acquire() as conn:
-            number_of_rows_in_db = await db_file_meta_data.number_of_uploaded_fmds(conn)
+            number_of_rows_in_db = await db_file_meta_data.total(conn)
             logger.warning(
                 "Total number of entries to check %d",
                 number_of_rows_in_db,
             )
             # iterate over all entries to check if there is a file in the S3 backend
-            async for fmd in db_file_meta_data.list_all_uploaded_fmds(conn):
+            async for fmd in db_file_meta_data.list_valid_uploads(conn):
                 # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
                 if not await get_s3_client(self.app).list_files(
                     self.simcore_bucket_name, prefix=fmd.object_name
@@ -571,9 +569,7 @@ class SimcoreS3DataManager(BaseDataManager):
         fmd.last_modified = s3_metadata.last_modified
         fmd.entity_tag = s3_metadata.e_tag
         fmd.upload_expires_at = None
-        updated_fmd = await db_file_meta_data.upsert_file_metadata_for_upload(
-            conn, convert_db_to_model(fmd)
-        )
+        updated_fmd = await db_file_meta_data.upsert(conn, convert_db_to_model(fmd))
         return updated_fmd
 
     async def _update_database_from_storage_no_connection(
@@ -629,9 +625,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 upload_expires_at=upload_expiration_date,
             )
             async with self.engine.acquire() as conn, conn.begin():
-                new_fmd = await db_file_meta_data.upsert_file_metadata_for_upload(
-                    conn, new_fmd
-                )
+                new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
                 # Uploads local -> S3
                 await get_s3_client(self.app).upload_file(
                     self.simcore_bucket_name, local_file_path, dst_file_id
@@ -667,9 +661,7 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         async with self.engine.acquire() as conn, conn.begin():
-            new_fmd = await db_file_meta_data.upsert_file_metadata_for_upload(
-                conn, new_fmd
-            )
+            new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
             await get_s3_client(self.app).copy_file(
                 self.simcore_bucket_name,
                 src_fmd.object_name,
