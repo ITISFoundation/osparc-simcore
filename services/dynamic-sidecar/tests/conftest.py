@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import logging
 import os
 import random
 import sys
@@ -15,7 +16,6 @@ from unittest.mock import AsyncMock, Mock
 import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -29,8 +29,11 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 from tenacity import retry
+from tenacity.after import after_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+logger = logging.getLogger(__name__)
 
 pytest_plugins = [
     "pytest_simcore.docker_registry",
@@ -149,26 +152,27 @@ async def ensure_external_volumes(
 ) -> AsyncIterator[None]:
     """ensures inputs and outputs volumes for the service are present"""
 
-    volume_names = []
+    volume_labels_source = []
     for state_paths_dir in [inputs_dir, outputs_dir] + state_paths_dirs:
         name_from_path = str(state_paths_dir).replace(os.sep, "_")
-        volume_names.append(f"{compose_namespace}{name_from_path}")
+        volume_labels_source.append(f"{compose_namespace}{name_from_path}")
 
     async with docker_client() as docker:
 
-        await asyncio.gather(
+        volumes = await asyncio.gather(
             *[
                 docker.volumes.create(
                     {
                         "Labels": {
-                            "source": volume_name,
+                            "source": source,
                             "run_id": f"{dynamic_sidecar_settings.DY_SIDECAR_RUN_ID}",
                         }
                     }
                 )
-                for volume_name in volume_names
+                for source in volume_labels_source
             ]
         )
+
         #
         # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
         #
@@ -191,13 +195,17 @@ async def ensure_external_volumes(
 
         yield
 
-        @retry(wait=wait_fixed(1), stop=stop_after_delay(20), reraise=True)
-        async def _delete_volume(volume_name):
+        @retry(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(3),
+            reraise=True,
+            after=after_log(logger, logging.WARNING),
+        )
+        async def _delete(volume):
             # Ocasionally might raise because volumes are mount to closing containers
-            volume = DockerVolume(docker, volume_name)
             await volume.delete()
 
-        await asyncio.gather(*[_delete_volume(name) for name in volume_names])
+        await asyncio.gather(*[_delete(volume) for volume in volumes])
 
 
 @pytest.fixture
