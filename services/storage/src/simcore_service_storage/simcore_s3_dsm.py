@@ -283,24 +283,15 @@ class SimcoreS3DataManager(BaseDataManager):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
                 )
-                # deleting a non existing file simply works
                 await get_s3_client(self.app).delete_file(
                     file.bucket_name, file.file_id
                 )
-                # now that we are done, remove it from the db
                 await db_file_meta_data.delete(conn, [file.file_id])
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: Optional[NodeID] = None
     ) -> None:
-
-        """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
-        If node_id is not given, then all the project files db entries are deleted.
-        """
-
-        # FIXME: operation MUST be atomic. Mark for deletion and remove from db when deletion fully confirmed
         async with self.engine.acquire() as conn, conn.begin():
-            # access layer
             can: Optional[AccessRights] = await get_project_access_rights(
                 conn, user_id, project_id
             )
@@ -308,15 +299,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 raise web.HTTPForbidden(
                     reason=f"User {user_id} does not have delete access for {project_id}"
                 )
-
+            # we can do it this way, since we are in a transaction, it will rollback in case of error
             if not node_id:
                 await db_file_meta_data.delete_all_from_project(conn, project_id)
             else:
                 await db_file_meta_data.delete_all_from_node(conn, node_id)
-
-        await get_s3_client(self.app).delete_files_in_project_node(
-            self.simcore_bucket_name, project_id, node_id
-        )
+            await get_s3_client(self.app).delete_files_in_project_node(
+                self.simcore_bucket_name, project_id, node_id
+            )
 
     async def deep_copy_project_simcore_s3(
         self,
@@ -332,8 +322,6 @@ class SimcoreS3DataManager(BaseDataManager):
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
                 if not await db_projects.project_exists(conn, prj_uuid):
                     raise web.HTTPNotFound(reason=f"Project '{prj_uuid}' not found")
-
-            # access layer
             source_access_rights = await get_project_access_rights(
                 conn, user_id, project_id=src_project_uuid
             )
@@ -573,7 +561,6 @@ class SimcoreS3DataManager(BaseDataManager):
         logger.debug("copying %s to %s", f"{source_uuid=}", f"{dst_file_id=}")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # FIXME: connect download and upload streams
             local_file_path = Path(tmpdir) / filename
             # Downloads DATCore -> local
             await download_to_file_or_raise(session, dc_link, local_file_path)
