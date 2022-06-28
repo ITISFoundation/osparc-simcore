@@ -16,6 +16,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_as_envfile
 
 logger = logging.getLogger(__name__)
 
@@ -154,3 +155,16 @@ def mock_environment(
     monkeypatch.setenv("S3_SECURE", "false")
 
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+
+
+@pytest.fixture
+def mock_environment_with_envdevel(
+    monkeypatch: MonkeyPatch, project_slug_dir: Path
+) -> EnvVarsDict:
+    """Alternative environment loaded fron .env-devel.
+
+    .env-devel is used mainly to run CLI
+    """
+    env_file = project_slug_dir / ".env-devel"
+    envs = setenvs_as_envfile(monkeypatch, env_file.read_text())
+    return envs
