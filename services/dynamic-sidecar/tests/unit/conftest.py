@@ -20,7 +20,6 @@ from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
-from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_delay
@@ -97,11 +96,6 @@ def app(
 async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
     async with TestClient(app) as client:
         yield client
-
-
-@pytest.fixture
-def mounted_volumes(app: FastAPI) -> MountedVolumes:
-    return AppState(app).mounted_volumes
 
 
 #

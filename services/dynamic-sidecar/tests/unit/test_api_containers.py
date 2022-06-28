@@ -26,6 +26,7 @@ from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
@@ -33,7 +34,6 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
@@ -556,8 +556,10 @@ def mock_dir_watcher_on_any_event(
 async def test_directory_watcher_disabling(
     client: TestClient,
     mock_dir_watcher_on_any_event: AsyncMock,
-    mounted_volumes: MountedVolumes,
 ):
+    assert isinstance(client.application, FastAPI)
+    mounted_volumes = AppState(client.application).mounted_volumes
+
     def _create_random_dir_in_inputs() -> int:
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
@@ -599,8 +601,10 @@ async def test_container_create_outputs_dirs(
     client: TestClient,
     mock_outputs_labels: dict[str, ServiceOutput],
     mock_dir_watcher_on_any_event: AsyncMock,
-    mounted_volumes: MountedVolumes,
 ):
+    assert isinstance(client.application, FastAPI)
+    mounted_volumes = AppState(client.application).mounted_volumes
+
     # by default directory-watcher it is disabled
     await _assert_enable_directory_watcher(client)
 
