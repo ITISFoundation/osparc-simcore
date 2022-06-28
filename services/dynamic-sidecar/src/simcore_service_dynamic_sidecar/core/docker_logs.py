@@ -61,7 +61,7 @@ class BackgroundLogFetcher:
             _logs_fetcher_worker(
                 container_name=container_name, dispatch_log=self._dispatch_logs
             ),
-            name="rabbitmq_log_processor_tasks",  # TODO: PC->ANE: should not have container_name in the task name as well?
+            name=f"rabbitmq_log_processor_tasks/{container_name}",
         )
 
         logger.info("Subscribed to fetch logs from '%s'", container_name)
