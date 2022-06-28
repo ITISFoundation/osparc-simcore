@@ -219,7 +219,7 @@ async def ensure_external_volumes(
     volume_labels_source = [
         app_state.mounted_volumes.volume_name_inputs,
         app_state.mounted_volumes.volume_name_outputs,
-    ] + app_state.mounted_volumes.volume_names_for_states
+    ] + list(app_state.mounted_volumes.volume_name_state_paths())
 
     async with docker_client() as docker:
 
