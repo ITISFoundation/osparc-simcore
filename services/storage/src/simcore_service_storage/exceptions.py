@@ -8,7 +8,12 @@ class FileMetaDataNotFoundError(PydanticErrorMixin, RuntimeError):
 
 class FileAccessRightError(PydanticErrorMixin, RuntimeError):
     code = "file.access_right_error"
-    msg_template: str = "Insufficient access rights to access {file_id}"
+    msg_template: str = "Insufficient access rights to {access_right} {file_id}"
+
+
+class ProjectAccessRightError(PydanticErrorMixin, RuntimeError):
+    code = "file.access_right_error"
+    msg_template: str = "Insufficient access rights to {access_right} {project_id}"
 
 
 class LinkAlreadyExistsError(PydanticErrorMixin, RuntimeError):

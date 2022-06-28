@@ -46,6 +46,7 @@ from .exceptions import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
+    ProjectAccessRightError,
     S3KeyNotFoundError,
 )
 from .models import DatasetMetaData, FileMetaData, FileMetaDataAtDB
@@ -168,7 +169,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 return convert_db_to_model(fmd)
 
             logger.debug("User %s cannot read file %s", user_id, file_id)
-            raise FileAccessRightError(file_id=file_id)
+            raise FileAccessRightError(access_right="read", file_id=file_id)
 
     async def create_file_upload_link(
         self,
@@ -176,7 +177,6 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
         link_type: LinkType,
     ) -> AnyUrl:
-        """returns: a presigned upload link"""
         async with self.engine.acquire() as conn, conn.begin():
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, user_id, file_id
@@ -212,9 +212,6 @@ class SimcoreS3DataManager(BaseDataManager):
         user_id: UserID,
         file_id: StorageFileID,
     ) -> None:
-        """aborts a current upload and reverts to the last version if any.
-        In case there are no previous version, removes the entry in the database
-        """
         async with self.engine.acquire() as conn, conn.begin():
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, int(user_id), file_id
@@ -238,8 +235,6 @@ class SimcoreS3DataManager(BaseDataManager):
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> str:
-
-        # access layer
         async with self.engine.acquire() as conn:
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, user_id, file_id
@@ -249,9 +244,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 # If write permission would be required, then shared projects as views cannot
                 # recover data in nodes (e.g. jupyter cannot pull work data)
                 #
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} does not have enough rights to download file {file_id}"
-                )
+                raise FileAccessRightError(access_right="read", file_id=file_id)
 
             fmd = await db_file_meta_data.get(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
@@ -276,9 +269,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, user_id, file_id
             )
             if not can.delete:
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} does not have enough access rights to delete file {file_id}"
-                )
+                raise FileAccessRightError(access_right="delete", file_id=file_id)
+
             with suppress(FileMetaDataNotFoundError):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
@@ -296,9 +288,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, user_id, project_id
             )
             if not can.delete:
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} does not have delete access for {project_id}"
+                raise ProjectAccessRightError(
+                    access_right="delete", project_id=project_id
                 )
+
             # we can do it this way, since we are in a transaction, it will rollback in case of error
             if not node_id:
                 await db_file_meta_data.delete_all_from_project(conn, project_id)
