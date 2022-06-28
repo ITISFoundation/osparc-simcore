@@ -295,7 +295,7 @@ async def get_container_logs(
         },
     },
 )
-async def get_entrypoint_container_name(
+async def get_containers_name(
     filters: str = Query(
         ...,
         description=(
@@ -363,6 +363,3 @@ async def inspect_container(
         container_instance = await docker.containers.get(id)
         inspect_result: dict[str, Any] = await container_instance.show()
         return inspect_result
-
-
-__all__ = ["containers_router"]

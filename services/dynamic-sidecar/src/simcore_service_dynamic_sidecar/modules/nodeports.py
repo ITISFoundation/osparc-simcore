@@ -288,4 +288,7 @@ async def download_target_ports(
     return transferred_bytes
 
 
-__all__ = ["dispatch_update_for_directory", "download_target_ports"]
+__all__: tuple[str, ...] = (
+    "dispatch_update_for_directory",
+    "download_target_ports",
+)

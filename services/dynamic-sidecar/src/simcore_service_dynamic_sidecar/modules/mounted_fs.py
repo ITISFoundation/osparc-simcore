@@ -134,4 +134,4 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
     return app.state.mounted_volumes
 
 
-__all__ = ["MountedVolumes"]
+__all__: tuple[str, ...] = ("MountedVolumes",)

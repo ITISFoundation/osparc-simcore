@@ -234,9 +234,9 @@ def directory_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
         enable_directory_watcher(app)
 
 
-__all__ = [
+__all__: tuple[str, ...] = (
+    "directory_watcher_disabled",
     "disable_directory_watcher",
     "enable_directory_watcher",
-    "directory_watcher_disabled",
     "setup_directory_watcher",
-]
+)
