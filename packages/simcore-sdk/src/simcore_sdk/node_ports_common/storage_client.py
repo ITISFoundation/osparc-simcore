@@ -7,7 +7,6 @@ from urllib.parse import quote
 from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
-    ETag,
     FileLocationArray,
     FileMetaDataGet,
     LocationID,
@@ -173,18 +172,3 @@ async def delete_file(
         params={"user_id": f"{user_id}"},
     ) as response:
         response.raise_for_status()
-
-
-@handle_client_exception
-async def update_file_meta_data(
-    session: ClientSession, s3_object: StorageFileID, user_id: UserID
-) -> ETag:
-    url = f"{_base_url()}/locations/0/files/{quote(s3_object, safe='')}/metadata"
-    result = await session.patch(url, params=dict(user_id=user_id))
-    if result.status != web.HTTPOk.status_code:
-        raise exceptions.StorageInvalidCall(
-            f"Could not fetch metadata: status={result.status} {await result.text()}"
-        )
-
-    response = await result.json()
-    return response["data"]["entity_tag"]
