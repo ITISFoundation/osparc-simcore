@@ -143,17 +143,22 @@ async def get_file_metadata(
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
         )
-    async with session.get(
-        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
-        params={"user_id": f"{user_id}"},
-    ) as response:
-        response.raise_for_status()
-        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
-            await response.json()
-        )
-        if file_metadata_enveloped.data is None:
-            raise exceptions.S3InvalidPathError(file_id)
-        return file_metadata_enveloped.data
+    try:
+        async with session.get(
+            f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
+            params={"user_id": f"{user_id}"},
+        ) as response:
+            response.raise_for_status()
+            file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
+                await response.json()
+            )
+            if file_metadata_enveloped.data is None:
+                raise exceptions.S3InvalidPathError(file_id)
+            return file_metadata_enveloped.data
+    except ClientResponseError as err:
+        if err.status == web.HTTPNotFound.status_code:
+            raise exceptions.S3InvalidPathError(file_id) from err
+        raise
 
 
 @handle_client_exception
