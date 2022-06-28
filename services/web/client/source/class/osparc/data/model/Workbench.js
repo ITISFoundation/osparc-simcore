@@ -226,7 +226,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return null;
     },
 
-    createEdge: function(edgeId, nodeLeftId, nodeRightId) {
+    createEdge: function(edgeId, nodeLeftId, nodeRightId, autoConnect = true) {
       const existingEdge = this.getEdge(edgeId, nodeLeftId, nodeRightId);
       if (existingEdge) {
         return existingEdge;
@@ -240,8 +240,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         const edge = new osparc.data.model.Edge(edgeId, nodeLeft, nodeRight);
         this.addEdge(edge);
 
-        // post edge creation
-        this.getNode(nodeRightId).edgeAdded(edge);
+        if (autoConnect) {
+          nodeRight.createAutoPortConnection(nodeLeft, nodeRight);
+        }
 
         nodeRight.addInputNode(nodeLeftId);
 
@@ -558,7 +559,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    addServiceBetween: function(service, leftNodeId, rightNodeId) {
+    addServiceBetween: function(service, leftNodeId, rightNodeId, autoConnect = true) {
       // create node
       const node = this.createNode(service.getKey(), service.getVersion());
       if (!node) {
@@ -587,10 +588,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create connections
       if (leftNodeId) {
-        this.createEdge(null, leftNodeId, node.getNodeId());
+        this.createEdge(null, leftNodeId, node.getNodeId(), true);
       }
       if (rightNodeId) {
-        this.createEdge(null, node.getNodeId(), rightNodeId);
+        this.createEdge(null, node.getNodeId(), rightNodeId, true);
       }
       this.fireEvent("reloadModel");
 

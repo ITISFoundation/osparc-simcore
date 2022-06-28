@@ -69,11 +69,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           const inputNodeIDs = node.getInputNodes();
           inputNodeIDs.forEach(inputNodeId => {
             if (inputNodeId in nodes) {
-              this._createEdgeBetweenNodes({
-                nodeId: inputNodeId
-              }, {
-                nodeId: nodeId
-              });
+              this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
             }
           });
         }
