@@ -1,7 +1,5 @@
 import logging
-from typing import Optional, Tuple
-
-from fastapi import FastAPI
+from typing import Optional
 
 from ..models.domains.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
@@ -30,10 +28,10 @@ async def cleanup_containers_and_volumes(
 
 async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
-    file_content: Optional[str],
+    file_content: str,
     command: str,
     command_timeout: Optional[float],
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """The command which accepts {file_path} as an argument for string formatting"""
 
     # pylint: disable=not-async-context-manager
@@ -49,7 +47,7 @@ async def write_file_and_run_command(
 
 async def remove_the_compose_spec(
     shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
@@ -58,8 +56,8 @@ async def remove_the_compose_spec(
     await cleanup_containers_and_volumes(shared_store, settings)
 
     command = (
-        "docker-compose -p {project} -f {file_path} "
-        "down --volumes --remove-orphans -t {stop_and_remove_timeout}"
+        'docker-compose --project-name {project} --file "{file_path}" '
+        "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
         settings=settings,
@@ -72,16 +70,3 @@ async def remove_the_compose_spec(
     shared_store.container_names = []
 
     return result
-
-
-async def on_shutdown_handler(app: FastAPI) -> None:
-    logging.info("Going to remove spawned containers")
-    shared_store: SharedStore = app.state.shared_store
-    settings: DynamicSidecarSettings = app.state.settings
-
-    result = await remove_the_compose_spec(
-        shared_store=shared_store,
-        settings=settings,
-        command_timeout=settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
-    )
-    logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])

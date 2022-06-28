@@ -7,11 +7,9 @@ import uuid
 from asyncio import AbstractEventLoop
 from pathlib import Path
 from pprint import pformat
-from typing import Iterator, List
 
 import aio_pika
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
@@ -42,13 +40,6 @@ pytest_simcore_core_services_selection = ["rabbit"]
 
 
 @pytest.fixture(scope="module")
-def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="module")
 def user_id() -> UserID:
     return 1
 
@@ -76,8 +67,8 @@ def mock_environment(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -151,7 +142,7 @@ async def test_rabbitmq(
         "simcore_service_dynamic_sidecar.core.rabbitmq._channel_close_callback"
     )
 
-    incoming_data: List[LoggerRabbitMessage] = []
+    incoming_data: list[LoggerRabbitMessage] = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
         incoming_data.append(LoggerRabbitMessage.parse_raw(message.body))
@@ -162,8 +153,8 @@ async def test_rabbitmq(
     assert rabbit._connection.ready  # pylint: disable=protected-access
 
     log_msg: str = "I am logging"
-    log_messages: List[str] = ["I", "am a logger", "man..."]
-    log_more_messages: List[str] = [f"msg{1}" for i in range(10)]
+    log_messages: list[str] = ["I", "am a logger", "man..."]
+    log_more_messages: list[str] = [f"msg{1}" for i in range(10)]
 
     await rabbit.post_log_message(log_msg)
     await rabbit.post_log_message(log_messages)

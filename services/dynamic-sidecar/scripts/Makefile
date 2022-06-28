@@ -20,5 +20,3 @@ push-outputs:  ## push the outputs for this service
 help:   ## this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	| sed -n 's/^\(.*\): \(.*\)##\(.*\)/\1\t\3/p'
-
-

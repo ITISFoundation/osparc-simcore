@@ -5,8 +5,4 @@
 
 --requirement ../../../requirements/devenv.txt
 
-# basic dev tools
-mypy
 pylint
-black
-isort
