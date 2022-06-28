@@ -9,12 +9,13 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Iterator
+from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -27,6 +28,9 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 )
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
+from tenacity import retry
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_plugins = [
     "pytest_simcore.docker_registry",
@@ -142,7 +146,7 @@ async def ensure_external_volumes(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> AsyncGenerator[None, None]:
+) -> AsyncIterator[None]:
     """ensures inputs and outputs volumes for the service are present"""
 
     volume_names = []
@@ -150,10 +154,11 @@ async def ensure_external_volumes(
         name_from_path = str(state_paths_dir).replace(os.sep, "_")
         volume_names.append(f"{compose_namespace}{name_from_path}")
 
-    async with docker_client() as client:
+    async with docker_client() as docker:
+
         volumes = await asyncio.gather(
             *[
-                client.volumes.create(
+                docker.volumes.create(
                     {
                         "Labels": {
                             "source": volume_name,
@@ -164,10 +169,35 @@ async def ensure_external_volumes(
                 for volume_name in volume_names
             ]
         )
+        #
+        # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
+        #
+        #
+        # Example
+        #   {
+        #     "CreatedAt": "2022-06-23T03:22:08+02:00",
+        #     "Driver": "local",
+        #     "Labels": {
+        #         "run_id": "f7c1bd87-4da5-4709-9471-3d60c8a70639",
+        #         "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
+        #     },
+        #     "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",
+        #     "Name": "22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034",
+        #     "Options": null,
+        #     "Scope": "local",
+        #     "CreatedTime": 1655947328000,
+        #     "Containers": {}
+        #   }
 
         yield
 
-        await asyncio.gather(*[volume.delete() for volume in volumes])
+        @retry(wait=wait_fixed(1), stop=stop_after_delay(20), reraise=True)
+        async def _delete_volume(volume_name):
+            # Ocasionally might raise because volumes are mount to closing containers
+            volume = DockerVolume(docker, volume_name)
+            await volume.delete()
+
+        await asyncio.gather(*[_delete_volume(name) for name in volume_names])
 
 
 @pytest.fixture
