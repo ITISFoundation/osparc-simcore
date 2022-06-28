@@ -1,3 +1,4 @@
+import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, cast
@@ -115,5 +116,8 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
-    # TODO: PC->ANE: this is a global!! should use instead app.state.settings!!!
+    warnings.warn(
+        "Use instead app.state.settings",
+        DeprecationWarning,
+    )
     return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())

@@ -69,6 +69,7 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
 async def restore_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
     """
     When restoring the state:
@@ -81,7 +82,7 @@ async def restore_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Downloading state for {state_path}")
 
-        awaitables.append(pull_path_if_exists(state_path))
+        awaitables.append(pull_path_if_exists(state_path, settings))
 
     await logged_gather(*awaitables)
 
@@ -97,6 +98,7 @@ async def restore_state(
 async def save_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
@@ -104,7 +106,7 @@ async def save_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(
-            upload_path_if_exists(state_path, mounted_volumes.state_exclude)
+            upload_path_if_exists(state_path, mounted_volumes.state_exclude, settings)
         )
 
     await logged_gather(*awaitables)

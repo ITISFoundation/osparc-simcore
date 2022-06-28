@@ -5,10 +5,7 @@ from typing import AsyncGenerator, Generator, Iterator
 from uuid import UUID
 
 from fastapi import FastAPI
-from simcore_service_dynamic_sidecar.core.settings import (
-    DynamicSidecarSettings,
-    get_settings,
-)
+from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 
 from ..core.docker_utils import get_volume_by_label
 
@@ -43,29 +40,28 @@ class MountedVolumes:
         outputs_path: Path,
         state_paths: list[Path],
         state_exclude: list[str],
+        compose_namespace: str,
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: list[Path] = state_paths
         self.state_exclude: list[str] = state_exclude
+        self.compose_namespace = compose_namespace
 
         self._ensure_directories()
 
     @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
-        compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
-        return f"{compose_namespace}{_name_from_full_path(self.inputs_path)}"
+        return f"{self.compose_namespace}{_name_from_full_path(self.inputs_path)}"
 
     @cached_property
     def volume_name_outputs(self) -> str:
-        compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
-        return f"{compose_namespace}{_name_from_full_path(self.outputs_path)}"
+        return f"{self.compose_namespace}{_name_from_full_path(self.outputs_path)}"
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
-        compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
         for state_path in self.state_paths:
-            yield f"{compose_namespace}{_name_from_full_path(state_path)}"
+            yield f"{self.compose_namespace}{_name_from_full_path(state_path)}"
 
     @cached_property
     def disk_inputs_path(self) -> Path:
@@ -76,7 +72,6 @@ class MountedVolumes:
         return _ensure_path(DY_VOLUMES / self.outputs_path.relative_to("/"))
 
     def disk_state_paths(self) -> Iterator[Path]:
-        # TODO: PC->ANE: len(state_paths)~1 - 2 ?? really need an iterator?
         for state_path in self.state_paths:
             yield _ensure_path(DY_VOLUMES / state_path.relative_to("/"))
 
@@ -126,14 +121,14 @@ class MountedVolumes:
 
 
 def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    # TODO: replace this with app version
-    settings: DynamicSidecarSettings = get_settings()
+    settings: DynamicSidecarSettings = app.state.settings
 
     app.state.mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
         state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+        compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
     )
 
     return app.state.mounted_volumes
