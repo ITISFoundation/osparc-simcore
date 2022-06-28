@@ -55,7 +55,7 @@ async def _wait_till_rabbit_responsive(url: str) -> None:
         **RabbitMQRetryPolicyUponInitialization().kwargs
     ):
         with attempt:
-            connection = await aio_pika.connect(url, timeout=1.0)
+            connection: aio_pika.Connection = await aio_pika.connect(url, timeout=1.0)
             await connection.close()
 
 

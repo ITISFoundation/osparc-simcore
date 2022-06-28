@@ -156,7 +156,7 @@ async def ensure_external_volumes(
 
     async with docker_client() as docker:
 
-        volumes = await asyncio.gather(
+        await asyncio.gather(
             *[
                 docker.volumes.create(
                     {
