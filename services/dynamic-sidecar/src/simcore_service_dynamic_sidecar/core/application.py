@@ -32,7 +32,7 @@ S     b    S    Y      S S     b S       S       S   `b S    P
 S     S    S      ss.  S S     S S sSSs  S       S sSSO S sS'
 S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
-P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {0}
+P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
 
 """.format(
     f"v{__version__}"

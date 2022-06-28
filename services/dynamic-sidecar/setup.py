@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(

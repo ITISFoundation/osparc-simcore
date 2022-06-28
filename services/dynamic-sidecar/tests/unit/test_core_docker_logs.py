@@ -4,7 +4,7 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import AsyncIterable, Dict, Iterable, List
+from typing import AsyncIterable, Iterable
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -33,8 +33,8 @@ def app(
     mock_dy_volumes: Path,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
     disable_registry_check: None,
 ) -> Iterable[FastAPI]:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
@@ -69,7 +69,7 @@ def app(
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker) -> Iterable[Dict[str, AsyncMock]]:
+def mock_rabbitmq(mocker) -> Iterable[dict[str, AsyncMock]]:
     yield {
         "connect": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
@@ -107,7 +107,7 @@ async def container_name() -> AsyncIterable[str]:
 
 
 async def test_background_log_fetcher(
-    mock_rabbitmq: Dict[str, AsyncMock], test_client: TestClient, container_name: str
+    mock_rabbitmq: dict[str, AsyncMock], test_client: TestClient, container_name: str
 ) -> None:
     app: FastAPI = test_client.application
     assert _get_background_log_fetcher(app=app) is not None

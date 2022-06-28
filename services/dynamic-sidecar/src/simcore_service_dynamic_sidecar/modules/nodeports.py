@@ -127,7 +127,7 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
         await PORTS.set_multiple(ports_values)
 
         elapsed_time = time.perf_counter() - start_time
-        total_bytes = sum([_get_size_of_value(x) for x in ports_values.values()])
+        total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
         logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
     finally:
         # clean up possible compressed files
