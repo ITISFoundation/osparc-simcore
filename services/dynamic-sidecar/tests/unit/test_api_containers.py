@@ -311,12 +311,12 @@ async def test_start_same_space_twice(
     settings = test_client.application.state.settings
 
     settings_1 = settings.copy(
-        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deepcopy=True
+        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deep=True
     )
     await _assert_compose_spec_pulled(compose_spec, settings_1)
 
     settings_2 = settings.copy(
-        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deepcopy=True
+        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deep=True
     )
     await _assert_compose_spec_pulled(compose_spec, settings_2)
 
