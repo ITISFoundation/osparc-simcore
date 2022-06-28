@@ -559,7 +559,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    addServiceBetween: function(service, leftNodeId, rightNodeId, autoConnect = true) {
+    addServiceBetween: function(service, leftNodeId, rightNodeId) {
       // create node
       const node = this.createNode(service.getKey(), service.getVersion());
       if (!node) {
