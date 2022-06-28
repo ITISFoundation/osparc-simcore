@@ -1,9 +1,3 @@
-"""
-    TODO: PC->ANE shared handlers? the most important function here is remove_the_compose_spec.
-    rename this file?
-
-"""
-
 import logging
 from typing import Optional
 
@@ -34,7 +28,7 @@ async def cleanup_containers_and_volumes(
 
 async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
-    file_content: Optional[str],
+    file_content: str,
     command: str,
     command_timeout: Optional[float],
 ) -> tuple[bool, str]:

@@ -88,8 +88,6 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
         conf_file.write_text(json.dumps(docker_config))
 
     if registry_settings.REGISTRY_AUTH:
-        # TODO: PC-> ANE: WHY this has to be async?
-        # And if you really want to, why not using aiofile?
         await asyncio.get_event_loop().run_in_executor(
             None, create_docker_config_file, registry_settings
         )
