@@ -13,4 +13,4 @@ main_router.include_router(health_router)
 main_router.include_router(containers_router, prefix=f"/{API_VTAG}")
 main_router.include_router(containers_router_extension, prefix=f"/{API_VTAG}")
 
-__main__: tuple[str, ...] = ("main_router",)
+__all__: tuple[str, ...] = ("main_router",)
