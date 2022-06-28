@@ -47,6 +47,7 @@ from .exceptions import (
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
+    ProjectNotFoundError,
     S3KeyNotFoundError,
 )
 from .models import DatasetMetaData, FileMetaData, FileMetaDataAtDB
@@ -72,13 +73,11 @@ class SimcoreS3DataManager(BaseDataManager):
         return SIMCORE_S3_STR
 
     async def authorized(self, _user_id: UserID) -> bool:
-        # always true for now
-        return True
+        return True  # always true for now
 
     async def list_datasets(self, user_id: UserID) -> list[DatasetMetaData]:
         async with self.engine.acquire() as conn:
             readable_projects_ids = await get_readable_project_ids(conn, user_id)
-            # FIXME: this DOES NOT read from file-metadata table!!!
             return [
                 DatasetMetaData(
                     dataset_id=prj_data.uuid,
@@ -95,7 +94,6 @@ class SimcoreS3DataManager(BaseDataManager):
         data: list[FileMetaData] = await self.list_files(
             user_id, uuid_filter=dataset_id + "/"
         )
-
         return data
 
     async def list_files(
@@ -314,7 +312,7 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.acquire() as conn:
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
                 if not await db_projects.project_exists(conn, prj_uuid):
-                    raise web.HTTPNotFound(reason=f"Project '{prj_uuid}' not found")
+                    raise ProjectNotFoundError(project_id=prj_uuid)
             source_access_rights = await get_project_access_rights(
                 conn, user_id, project_id=src_project_uuid
             )
@@ -322,12 +320,12 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, user_id, project_id=dst_project_uuid
             )
         if not source_access_rights.read:
-            raise web.HTTPForbidden(
-                reason=f"User {user_id} does not have enough access rights to read from project '{src_project_uuid}'"
+            raise ProjectAccessRightError(
+                access_right="read", project_id=src_project_uuid
             )
         if not dest_access_rights.write:
-            raise web.HTTPForbidden(
-                reason=f"User {user_id} does not have enough access rights to write to project '{dst_project_uuid}'"
+            raise ProjectAccessRightError(
+                access_right="write", project_id=dst_project_uuid
             )
 
         # Step 2: start copying by listing what to copy
@@ -380,15 +378,10 @@ class SimcoreS3DataManager(BaseDataManager):
         # NOTE: running this in parallel tends to block while testing. not sure why?
         # await asyncio.gather(*copy_tasks)
 
-    # SEARCH -------------------------------------
-
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
     ) -> list[FileMetaData]:
-        # Avoids using list_files since it accounts for projects/nodes
-        # Storage should know NOTHING about those concepts
-        async with self.engine.acquire() as conn, conn.begin():
-            # access layer
+        async with self.engine.acquire() as conn:
             can_read_projects_ids = await get_readable_project_ids(conn, user_id)
             files_meta: list[
                 FileMetaDataAtDB
@@ -404,16 +397,13 @@ class SimcoreS3DataManager(BaseDataManager):
     async def create_soft_link(
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
     ) -> FileMetaData:
-        # validate link_uuid
         async with self.engine.acquire() as conn:
             if await db_file_meta_data.exists(
                 conn, parse_obj_as(SimcoreS3FileID, link_file_id)
             ):
                 raise LinkAlreadyExistsError(file_id=link_file_id)
-
         # validate target_uuid
         target = await self.get_file(user_id, target_file_id)
-
         # duplicate target and change the following columns:
         target.file_uuid = link_file_id
         target.file_id = link_file_id  # NOTE: api-server relies on this id
@@ -423,15 +413,11 @@ class SimcoreS3DataManager(BaseDataManager):
             return convert_db_to_model(await db_file_meta_data.insert(conn, target))
 
     async def synchronise_meta_data_table(self, dry_run: bool) -> list[StorageFileID]:
-        logger.warning(
-            "synchronisation of database/s3 storage started, this will take some time..."
-        )
         file_ids_to_remove = []
         async with self.engine.acquire() as conn:
-            number_of_rows_in_db = await db_file_meta_data.total(conn)
             logger.warning(
                 "Total number of entries to check %d",
-                number_of_rows_in_db,
+                await db_file_meta_data.total(conn),
             )
             # iterate over all entries to check if there is a file in the S3 backend
             async for fmd in db_file_meta_data.list_valid_uploads(conn):
@@ -472,7 +458,6 @@ class SimcoreS3DataManager(BaseDataManager):
             return
 
         # try first to upload these from S3 (conservative)
-
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)

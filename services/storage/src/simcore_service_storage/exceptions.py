@@ -16,6 +16,11 @@ class ProjectAccessRightError(PydanticErrorMixin, RuntimeError):
     msg_template: str = "Insufficient access rights to {access_right} {project_id}"
 
 
+class ProjectNotFoundError(PydanticErrorMixin, RuntimeError):
+    code = "project.not_found_error"
+    msg_template: str = "Project {project_id} was not found"
+
+
 class LinkAlreadyExistsError(PydanticErrorMixin, RuntimeError):
     code = "link.already_exists_error"
     msg_template: str = "The link {file_id} already exists"

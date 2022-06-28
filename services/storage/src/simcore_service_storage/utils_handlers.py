@@ -10,6 +10,7 @@ from .exceptions import (
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
+    ProjectNotFoundError,
     S3KeyNotFoundError,
 )
 
@@ -24,7 +25,7 @@ async def dsm_exception_handler(
         raise web.HTTPUnprocessableEntity(
             reason=f"{err} is an invalid file identifier"
         ) from err
-    except (FileMetaDataNotFoundError, S3KeyNotFoundError) as err:
+    except (FileMetaDataNotFoundError, S3KeyNotFoundError, ProjectNotFoundError) as err:
         raise web.HTTPNotFound(reason=f"{err}") from err
     except (FileAccessRightError, ProjectAccessRightError) as err:
         raise web.HTTPForbidden(reason=f"{err}") from err
