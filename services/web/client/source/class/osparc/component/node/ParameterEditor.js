@@ -30,7 +30,11 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
   statics: {
     getParameterOutputTypeFromMD: function(metaData) {
-      return metaData["outputs"]["out_1"]["type"];
+      let type = metaData["outputs"]["out_1"]["type"];
+      if (type === "ref_contentSchema") {
+        type = metaData["outputs"]["out_1"]["contentSchema"]["type"];
+      }
+      return type;
     },
 
     getParameterOutputType: function(node) {
@@ -76,6 +80,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           break;
         }
         case "number":
+        case "array":
           control = new qx.ui.form.TextField();
           break;
         case "integer":
