@@ -205,7 +205,10 @@ async def ensure_external_volumes(
             # Ocasionally might raise because volumes are mount to closing containers
             await volume.delete()
 
-        await asyncio.gather(*[_delete(volume) for volume in volumes])
+        deleted = await asyncio.gather(
+            *(_delete(volume) for volume in volumes), return_exceptions=True
+        )
+        assert not [r for r in deleted if isinstance(r, Exception)]
 
 
 @pytest.fixture
