@@ -40,6 +40,7 @@ P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
 
 
 def setup_logger(settings: DynamicSidecarSettings):
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
 
