@@ -48,31 +48,11 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
 
   statics: {
     ITEM_WIDTH: 550,
-    ITEM_HEIGHT: 40,
+    ITEM_HEIGHT: 35,
     SERVICE_ICON: "@FontAwesome5Solid/paw/24"
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "hits":
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-13",
-            allowGrowY: false,
-            minWidth: 120,
-            alignY: "middle"
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.HITS
-          });
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
-
     __applyServiceModel: function(serviceModel) {
       // BASE
       if (serviceModel.getThumbnail()) {
@@ -85,7 +65,7 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
 
       // ITEM
       this.__applyLatestVersion(serviceModel);
-      this.__applyHits(serviceModel);
+      this.__applyHitsOnItem(serviceModel);
     },
 
     __applyLatestVersion: function(serviceModel) {
@@ -98,14 +78,14 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
       });
     },
 
-    __applyHits: function(serviceModel) {
-      const hitsLabel = new qx.ui.basic.Label(this.tr("Latest: ") + String(serviceModel.hits)).set({
+    __applyHitsOnItem: function(serviceModel) {
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.getHits())).set({
         alignY: "middle",
         toolTipText: this.tr("Number of times it was instantiated")
       });
       this._add(hitsLabel, {
         row: 0,
-        column: osparc.dashboard.ListButtonBase.POS.HITS_LABEL
+        column: osparc.dashboard.ListButtonBase.POS.HITS
       });
     },
 

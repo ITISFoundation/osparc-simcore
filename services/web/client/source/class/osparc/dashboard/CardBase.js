@@ -163,6 +163,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    hits: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyHits"
+    },
+
     state: {
       check: "Object",
       nullable: false,
@@ -216,6 +222,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let defaultHits = null;
       let workbench = null;
       switch (studyData["resourceType"]) {
         case "study":
@@ -243,6 +250,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           if (osparc.data.model.Node.isDynamic(studyData)) {
             defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
           }
+          defaultHits = 0;
           break;
       }
 
@@ -259,6 +267,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
         quality: studyData.quality ? studyData.quality : null,
         uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
+        hits: studyData.hits ? studyData.hits : defaultHits,
         workbench
       });
     },
@@ -328,6 +337,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
           source,
           toolTipText
         });
+      }
+    },
+
+    __applyHits: function(hits) {
+      if (hits !== null) {
+        const hitsLabel = this.getChildControl("hits-service");
+        hitsLabel.setValue(this.tr("Hits: ") + String(hits));
       }
     },
 

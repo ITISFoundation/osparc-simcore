@@ -93,6 +93,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __infoBtn: null,
     __serviceBrowser: null,
     __addBtn: null,
+    __sortByGroup: null,
 
     __createFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -109,9 +110,34 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         flex: 1
       });
 
-      const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
-      reloadBtn.addListener("execute", () => this.__populateList(true), this);
-      layout.add(reloadBtn);
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
+        reloadBtn.addListener("execute", () => this.__populateList(true), this);
+        layout.add(reloadBtn);
+      }
+
+      const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
+      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/12");
+      byNameBtn.sortBy = "name";
+      const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/12");
+      byHitsBtn.sortBy = "hits";
+      const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
+        allowEmptySelection: false
+      });
+      [
+        byNameBtn,
+        byHitsBtn
+      ].forEach(btn => {
+        containterSortBtns.add(btn);
+        sortByGroup.add(btn);
+        btn.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+      });
+      layout.add(containterSortBtns);
+
+      sortByGroup.addListener("changeSelection", () => this.__populateList());
+
       return layout;
     },
 
@@ -215,11 +241,14 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         }
       });
 
+      osparc.utils.Services.addHits(filteredServices);
+      osparc.utils.Services.sortObjectsBasedOn(filteredServices, this.__sortByGroup.getSelection()[0].sortBy);
       const filteredServicesObj = this.__filteredServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
         let service = osparc.utils.Services.getLatest(filteredServicesObj, key);
+        osparc.utils.Services.addHits([service]);
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.utils.Services.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));

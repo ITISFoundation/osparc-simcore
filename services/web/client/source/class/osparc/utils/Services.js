@@ -101,25 +101,20 @@ qx.Class.define("osparc.utils.Services", {
       return 0;
     },
 
-    sortBasedOnFav: function(servicesArray) {
+    sortObjectsBasedOn: function(servicesArray, basedOn = "name") {
+      servicesArray.sort((a, b) => {
+        if (basedOn === "hits" && a[basedOn] !== b[basedOn]) {
+          return b[basedOn] - a[basedOn];
+        }
+        return a["name"].localeCompare(b["name"]);
+      });
+    },
+
+    addHits: function(servicesArray) {
       const favServices = osparc.utils.Utils.localCache.getFavServices();
       servicesArray.forEach(service => {
-        const found = Object.keys(favServices).find(favSrv => favSrv === service.getKey());
+        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
         service.hits = found ? favServices[found]["hits"] : 0;
-      });
-      servicesArray.sort((a, b) => {
-        let aIdx = Object.keys(favServices).indexOf(a.getKey());
-        if (aIdx !== -1) {
-          aIdx = favServices[a.getKey()]["hits"];
-        }
-        let bIdx = Object.keys(favServices).indexOf(b.getKey());
-        if (bIdx !== -1) {
-          bIdx = favServices[b.getKey()]["hits"];
-        }
-        if (aIdx !== bIdx) {
-          return bIdx - aIdx;
-        }
-        return a.getName().localeCompare(b.getName());
       });
     },
 
