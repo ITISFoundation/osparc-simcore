@@ -80,7 +80,6 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           break;
         }
         case "number":
-        case "array":
           control = new qx.ui.form.TextField();
           break;
         case "integer":
@@ -94,6 +93,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           control = new qx.ui.form.CheckBox();
           break;
         case "ref_contentSchema":
+        case "array":
           control = new osparc.ui.form.ContentSchemaArray();
           break;
       }
