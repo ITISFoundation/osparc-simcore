@@ -10,7 +10,7 @@ import logging
 import random
 import sys
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, Iterator
+from typing import Any, AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
@@ -56,6 +56,12 @@ def project_slug_dir() -> Path:
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_dynamic_sidecar"))
     return folder
+
+
+#
+# Fixtures associated to the configuration of a dynamic-sidecar service
+#  - Can be used both to create new fixture or as references
+#
 
 
 @pytest.fixture
@@ -128,6 +134,10 @@ def mock_environment(
     node_id: NodeID,
     run_id: UUID,
 ) -> None:
+    """Main test environment used to build the application
+
+    Override if new configuration for the app is needed.
+    """
     # envs in Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("SC_BUILD_TARGET", "production")
@@ -159,15 +169,15 @@ def mock_environment(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
+
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
 
 @pytest.fixture
-def mock_registry_service(mocker: MockerFixture) -> None:
-    # TODO: PC->ANE: from respx import MockRouter registry instead.
-    # It can be reused to setup different scenarios like registry down etc
-    mock = mocker.patch(
-        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable"
+def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable",
+        autospec=True,
     )
 
 
@@ -200,8 +210,11 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def app(
-    mock_environment: None, mock_registry_service: None, mock_core_rabbitmq: None
+    mock_environment: None,
+    mock_registry_service: AsyncMock,
+    mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
+    """creates app with registry and rabbitMQ services mocked"""
     app = create_app()
     return app
 
@@ -216,9 +229,10 @@ async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
 async def ensure_external_volumes(
     app: FastAPI,
 ) -> AsyncIterator[tuple[DockerVolume]]:
-    """ensures inputs and outputs volumes for the service are present"""
-    # Emulates from directorv2
+    """ensures inputs and outputs volumes for the service are present
 
+    Emulates creation of volumes by the directorv2 when it spawns the dynamic-sidecar service
+    """
     app_state = AppState(app)
     volume_labels_source = [
         app_state.mounted_volumes.volume_name_inputs,
@@ -280,7 +294,7 @@ async def ensure_external_volumes(
 
 
 @pytest.fixture
-async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
+async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
 
     app_state = AppState(app)
 

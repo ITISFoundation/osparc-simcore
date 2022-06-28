@@ -7,6 +7,7 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+from aiodocker.volumes import DockerVolume
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 # UTILS
@@ -27,24 +28,25 @@ def path_to_transform() -> Path:
 # TESTS
 
 
-def test_name_from_full_path(path_to_transform: Path) -> None:
+def test_name_from_full_path(path_to_transform: Path):
     assert mounted_fs._name_from_full_path(  # pylint: disable=protected-access
         path_to_transform
     ) == _replace_slashes(path_to_transform)
 
 
-def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
+def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes):
     assert mounted_volumes
 
 
 async def test_expected_paths_and_volumes(
+    ensure_external_volumes: tuple[DockerVolume],
     mounted_volumes: mounted_fs.MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     compose_namespace: str,
     run_id: UUID,
-) -> None:
+):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
         == len(

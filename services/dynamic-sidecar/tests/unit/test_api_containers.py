@@ -16,6 +16,7 @@ import faker
 import pytest
 import yaml
 from aiodocker.containers import DockerContainer
+from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
@@ -42,7 +43,11 @@ WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 
 @pytest.fixture
-def client(test_client: TestClient, ensure_external_volumes, cleanup_containers):
+def client(
+    test_client: TestClient,
+    ensure_external_volumes: tuple[DockerVolume],
+    cleanup_containers,
+):
     """creates external volumes and provides a client to dy-sidecar service"""
     return test_client
 
