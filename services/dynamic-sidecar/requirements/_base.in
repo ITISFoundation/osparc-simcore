@@ -27,12 +27,11 @@
 aio-pika
 aiodocker
 aiofiles
-async-timeout
 docker-compose
 fastapi
 httpx
 pydantic
-python-magic
+python-magic # file type identification library. See 'magic.from_file(...)'
 PyYAML
 uvicorn
 watchdog
