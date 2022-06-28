@@ -1025,6 +1025,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__clearAllAnnotations();
     },
 
+    __reloadCurrentModel: function() {
+      if (this._currentModel) {
+        this.loadModel(this._currentModel);
+      }
+    },
+
     loadModel: function(model) {
       if (this.__svgLayer.getReady()) {
         this._loadModel(model);
@@ -1032,12 +1038,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__svgLayer.addListenerOnce("SvgWidgetReady", () => {
           this._loadModel(model);
         }, this);
-      }
-    },
-
-    __reloadCurrentModel: function() {
-      if (this._currentModel) {
-        this.loadModel(this._currentModel);
       }
     },
 
