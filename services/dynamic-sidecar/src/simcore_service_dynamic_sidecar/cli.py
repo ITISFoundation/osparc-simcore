@@ -24,5 +24,5 @@ def openapi():
 
 #
 # NOTE: We intentionally did NOT create a command to run the application
-# Use instead $ uvicorn simcore_service_dynamic_sidecar.main:app
+# Use instead $ uvicorn simcore_service_dynamic_sidecar.main:the_app
 #
