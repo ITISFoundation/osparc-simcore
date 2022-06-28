@@ -1,6 +1,5 @@
 import datetime
 import urllib.parse
-from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
@@ -21,7 +20,6 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import (
-    AnyUrl,
     BaseModel,
     ByteSize,
     Extra,
@@ -29,17 +27,6 @@ from pydantic import (
     validate_arguments,
     validator,
 )
-from simcore_postgres_database.storage_models import (
-    file_meta_data,
-    groups,
-    metadata,
-    projects,
-    tokens,
-    user_to_groups,
-    users,
-)
-
-UploadID = str
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -122,21 +109,6 @@ class FileMetaData(FileMetaDataGet):
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
         return cls.parse_obj(fmd_kwargs)
-
-
-@dataclass
-class DatCoreApiToken:
-    api_token: Optional[str] = None
-    api_secret: Optional[str] = None
-
-
-@dataclass
-class UploadLinks:
-    urls: list[AnyUrl]
-    chunk_size: ByteSize
-
-
-# API parameters ---------------------------------------------------------------------
 
 
 class StorageQueryParamsBase(BaseModel):
@@ -230,19 +202,10 @@ class CopyAsSoftLinkParams(BaseModel):
 
 
 __all__ = (
-    "DatCoreApiToken",
     "ETag",
-    "file_meta_data",
-    "StorageFileID",
-    "SimcoreS3FileID",
     "FileMetaData",
-    "groups",
-    "metadata",
-    "projects",
+    "FileMetaDataAtDB",
     "S3BucketName",
-    "tokens",
-    "UploadID",
-    "UploadLinks",
-    "user_to_groups",
-    "users",
+    "SimcoreS3FileID",
+    "StorageFileID",
 )

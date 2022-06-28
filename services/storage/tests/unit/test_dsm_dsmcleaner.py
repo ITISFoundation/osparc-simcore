@@ -18,9 +18,10 @@ from models_library.api_schemas_storage import LinkType
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
+from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.exceptions import FileMetaDataNotFoundError
-from simcore_service_storage.models import S3BucketName, file_meta_data
+from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 

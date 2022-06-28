@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from models_library.projects import ProjectAtDB, ProjectID
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.storage_models import projects
 
 
 async def list_projects(

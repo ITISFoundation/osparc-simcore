@@ -123,13 +123,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     # a background task checking the S3 backend unreliably, the file eventually
                     # will be uploaded and this will lazily update the database
                     # 2. this is still in upload and the file is missing and it will raise
-                    updated_fmd = await self._update_database_from_storage(
-                        conn, fmd.file_id, fmd.bucket_name, fmd.object_name
-                    )
+                    updated_fmd = await self._update_database_from_storage(conn, fmd)
                     data.append(convert_db_to_model(updated_fmd))
 
             # now parse the project to search for node/project names
-            # FIXME: this should be done in the client!
             prj_names_mapping: dict[Union[ProjectID, NodeID], str] = {}
             async for proj_data in db_projects.list_projects(
                 conn, accesible_projects_ids
@@ -139,10 +136,9 @@ class SimcoreS3DataManager(BaseDataManager):
                     for node_id, node_data in proj_data.workbench.items()
                 }
 
-        # FIXME: why is this done only here????
         # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
         #        with information from the projects table!
-        # TODO: FIX THIS!!!
+        # also all this stuff with projects should be done in the client code not here
         # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
         clean_data = deque()
         for d in data:
@@ -163,18 +159,13 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, int(user_id), file_id
             )
             if can.read:
-                file_metadata: FileMetaDataAtDB = await db_file_meta_data.get(
+                fmd: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
                 )
-                if is_file_entry_valid(file_metadata):
-                    return convert_db_to_model(file_metadata)
-                file_metadata = await self._update_database_from_storage(
-                    conn,
-                    file_metadata.file_id,
-                    file_metadata.bucket_name,
-                    file_metadata.object_name,
-                )
-                return convert_db_to_model(file_metadata)
+                if is_file_entry_valid(fmd):
+                    return convert_db_to_model(fmd)
+                fmd = await self._update_database_from_storage(conn, fmd)
+                return convert_db_to_model(fmd)
 
             logger.debug("User %s cannot read file %s", user_id, file_id)
             raise FileAccessRightError(file_id=file_id)
@@ -196,17 +187,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
 
             # initiate the file meta data table
-            upload_expiration_date = datetime.datetime.utcnow() + datetime.timedelta(
-                seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
-            )
-            fmd = FileMetaData.from_simcore_node(
-                user_id=user_id,
-                file_id=parse_obj_as(SimcoreS3FileID, file_id),
-                bucket=self.simcore_bucket_name,
-                location_id=self.location_id,
-                location_name=self.location_name,
-                upload_expires_at=upload_expiration_date,
-            )
+            fmd = self._create_fmd_for_upload(user_id, file_id)
             fmd = await db_file_meta_data.upsert(conn, fmd)
 
             # return the appropriate links
@@ -242,22 +223,17 @@ class SimcoreS3DataManager(BaseDataManager):
                 raise web.HTTPForbidden(
                     reason=f"User {user_id} does not have enough access rights to delete file {file_id}"
                 )
-            file: FileMetaDataAtDB = await db_file_meta_data.get(
+            fmd: FileMetaDataAtDB = await db_file_meta_data.get(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
 
             try:
                 # try to revert to what we had in storage if any
-                await self._update_database_from_storage(
-                    conn,
-                    file.file_id,
-                    file.bucket_name,
-                    file.object_name,
-                )
+                await self._update_database_from_storage(conn, fmd)
             except S3KeyNotFoundError:
                 # the file does not exist, so we delete the entry in the db
                 async with self.engine.acquire() as conn:
-                    await db_file_meta_data.delete(conn, [file.file_id])
+                    await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
@@ -387,7 +363,7 @@ class SimcoreS3DataManager(BaseDataManager):
         # Step 3.1: copy: files referenced from file_metadata
         copy_tasks: deque[Awaitable] = deque()
         for src_fmd in src_project_files:
-            if not src_fmd.node_id or (src_fmd.location_id != SIMCORE_S3_ID):
+            if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
                 raise NotImplementedError(
                     "This is not foreseen, stem from old decisions"
                     f", and needs to be implemented if needed. Faulty metadata: {src_fmd=}"
@@ -415,7 +391,7 @@ class SimcoreS3DataManager(BaseDataManager):
                         file_storage_link=output,
                     )
                     for output in node.get("outputs", {}).values()
-                    if int(output.get("store", SIMCORE_S3_ID)) == DATCORE_ID
+                    if int(output.get("store", self.location_id)) == DATCORE_ID
                 ]
             )
         for task in copy_tasks:
@@ -515,13 +491,10 @@ class SimcoreS3DataManager(BaseDataManager):
             return
 
         # try first to upload these from S3 (conservative)
+
         updated_fmds = await logged_gather(
             *(
-                self._update_database_from_storage_no_connection(
-                    fmd.file_id,
-                    fmd.bucket_name,
-                    fmd.object_name,
-                )
+                self._update_database_from_storage_no_connection(fmd)
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
@@ -557,14 +530,12 @@ class SimcoreS3DataManager(BaseDataManager):
         await self._clean_expired_uploads()
 
     async def _update_database_from_storage(
-        self,
-        conn: SAConnection,
-        file_id: SimcoreS3FileID,
-        bucket: S3BucketName,
-        key: SimcoreS3FileID,
+        self, conn: SAConnection, fmd: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
-        s3_metadata = await get_s3_client(self.app).get_file_metadata(bucket, key)
-        fmd = await db_file_meta_data.get(conn, file_id)
+        s3_metadata = await get_s3_client(self.app).get_file_metadata(
+            fmd.bucket_name, fmd.object_name
+        )
+        fmd = await db_file_meta_data.get(conn, fmd.file_id)
         fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
         fmd.last_modified = s3_metadata.last_modified
         fmd.entity_tag = s3_metadata.e_tag
@@ -573,15 +544,10 @@ class SimcoreS3DataManager(BaseDataManager):
         return updated_fmd
 
     async def _update_database_from_storage_no_connection(
-        self,
-        file_id: SimcoreS3FileID,
-        bucket: S3BucketName,
-        key: SimcoreS3FileID,
+        self, fmd: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
         async with self.engine.acquire() as conn:
-            updated_fmd = await self._update_database_from_storage(
-                conn, file_id, bucket, key
-            )
+            updated_fmd = await self._update_database_from_storage(conn, fmd)
         return updated_fmd
 
     async def _copy_file_datcore_s3(
@@ -612,31 +578,16 @@ class SimcoreS3DataManager(BaseDataManager):
             # Downloads DATCore -> local
             await download_to_file_or_raise(session, dc_link, local_file_path)
 
-            upload_expiration_date = datetime.datetime.utcnow() + datetime.timedelta(
-                seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
-            )
             # copying will happen using aioboto3, therefore multipart might happen
-            new_fmd = FileMetaData.from_simcore_node(
-                user_id,
-                dst_file_id,
-                self.simcore_bucket_name,
-                self.location_id,
-                self.location_name,
-                upload_expires_at=upload_expiration_date,
-            )
+            new_fmd = self._create_fmd_for_upload(user_id, dst_file_id)
             async with self.engine.acquire() as conn, conn.begin():
                 new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
                 # Uploads local -> S3
                 await get_s3_client(self.app).upload_file(
                     self.simcore_bucket_name, local_file_path, dst_file_id
                 )
-                updated_fmd = await self._update_database_from_storage(
-                    conn,
-                    new_fmd.file_id,
-                    new_fmd.bucket_name,
-                    new_fmd.object_name,
-                )
-                file_storage_link["store"] = SIMCORE_S3_ID
+                updated_fmd = await self._update_database_from_storage(conn, new_fmd)
+                file_storage_link["store"] = self.location_id
                 file_storage_link["path"] = new_fmd.file_id
 
                 logger.info("copied %s to %s", f"{source_uuid=}", f"{updated_fmd=}")
@@ -647,19 +598,8 @@ class SimcoreS3DataManager(BaseDataManager):
         self, user_id: UserID, src_fmd: FileMetaDataAtDB, dst_file_id: SimcoreS3FileID
     ) -> FileMetaData:
         logger.debug("copying %s to %s", f"{src_fmd=}", f"{dst_file_id=}")
-        upload_expiration_date = datetime.datetime.utcnow() + datetime.timedelta(
-            seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
-        )
         # copying will happen using aioboto3, therefore multipart might happen
-        new_fmd = FileMetaData.from_simcore_node(
-            user_id,
-            dst_file_id,
-            self.simcore_bucket_name,
-            self.location_id,
-            self.location_name,
-            upload_expires_at=upload_expiration_date,
-        )
-
+        new_fmd = self._create_fmd_for_upload(user_id, dst_file_id)
         async with self.engine.acquire() as conn, conn.begin():
             new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
             await get_s3_client(self.app).copy_file(
@@ -667,14 +607,25 @@ class SimcoreS3DataManager(BaseDataManager):
                 src_fmd.object_name,
                 new_fmd.object_name,
             )
-            updated_fmd = await self._update_database_from_storage(
-                conn,
-                new_fmd.file_id,
-                new_fmd.bucket_name,
-                new_fmd.object_name,
-            )
+            updated_fmd = await self._update_database_from_storage(conn, new_fmd)
         logger.info("copied %s to %s", f"{src_fmd=}", f"{updated_fmd=}")
         return convert_db_to_model(updated_fmd)
+
+    def _create_fmd_for_upload(
+        self, user_id: UserID, file_id: StorageFileID
+    ) -> FileMetaData:
+        now = datetime.datetime.utcnow()
+        upload_expiration_date = now + datetime.timedelta(
+            seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
+        )
+        return FileMetaData.from_simcore_node(
+            user_id=user_id,
+            file_id=parse_obj_as(SimcoreS3FileID, file_id),
+            bucket=self.simcore_bucket_name,
+            location_id=self.location_id,
+            location_name=self.location_name,
+            upload_expires_at=upload_expiration_date,
+        )
 
 
 def create_simcore_s3_data_manager(app: web.Application) -> SimcoreS3DataManager:

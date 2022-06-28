@@ -8,7 +8,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from simcore_postgres_database.models.file_meta_data import file_meta_data
+from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 

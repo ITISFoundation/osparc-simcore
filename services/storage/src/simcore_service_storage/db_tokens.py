@@ -5,9 +5,9 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
+from simcore_postgres_database.storage_models import tokens
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from .models import tokens
 
 log = logging.getLogger(__name__)
 
