@@ -13,9 +13,6 @@ SIMCORE_S3_STR = "simcore.s3"
 DATCORE_ID = 1
 DATCORE_STR = "datcore"
 
-LOCATION_ID_TO_TAG_MAP = {SIMCORE_S3_ID: SIMCORE_S3_STR, DATCORE_ID: DATCORE_STR}
-UNDEFINED_LOCATION_TAG: str = "undefined"
-
 # NOTE: SAFE S3 characters are found here [https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html]
 # the % character was added since we need to url encode some of them
 _SAFE_S3_FILE_NAME_RE = r"[\w!\-_\.\*\'\(\)\%]"

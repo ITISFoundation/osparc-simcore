@@ -99,12 +99,7 @@ async def test_get_file_metadata(
     )
     # this should return an empty list
     response = await client.get(f"{url}")
-    # NOTE: this is weird, do we still need this Ok when nothing found??
-    assert response.status == web.HTTPOk.status_code
-    assert await response.json() == {"data": {}, "error": "No result found"}
-    # data, error = await assert_status(response, web.HTTPOk)
-    # assert error == "No result found"
-    # assert data == {}
+    await assert_status(response, web.HTTPNotFound)
     # now add some stuff there
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")

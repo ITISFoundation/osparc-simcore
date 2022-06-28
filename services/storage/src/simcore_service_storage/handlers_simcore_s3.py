@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -13,11 +14,12 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.s3 import S3Settings
+from simcore_service_storage.dsm import get_dsm_provider
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 # Exclusive for simcore-s3 storage -----------------------
 from . import sts
 from ._meta import api_vtag
-from .constants import SIMCORE_S3_ID
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -25,7 +27,6 @@ from .models import (
     SimcoreS3FoldersParams,
     StorageQueryParamsBase,
 )
-from .utils_handlers import prepare_storage_manager
 
 log = logging.getLogger(__name__)
 
@@ -55,12 +56,9 @@ async def copy_folders_from_project(request: web.Request):
         f"{body=}, {query_params=}",
     )
 
-    # TODO: validate project with jsonschema instead??
-
-    dsm = await prepare_storage_manager(
-        params={"location_id": SIMCORE_S3_ID},
-        query=jsonable_encoder(query_params),
-        request=request,
+    dsm = cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
     await dsm.deep_copy_project_simcore_s3(
         query_params.user_id, body.source, body.destination, body.nodes_map
@@ -80,10 +78,9 @@ async def delete_folders_of_project(request: web.Request):
         f"{path_params=}, {query_params=}",
     )
 
-    dsm = await prepare_storage_manager(
-        params={"location_id": SIMCORE_S3_ID},
-        query=jsonable_encoder(query_params),
-        request=request,
+    dsm = cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
     await dsm.delete_project_simcore_s3(
         query_params.user_id,
@@ -102,12 +99,10 @@ async def search_files_starting_with(request: web.Request):
         f"{query_params=}",
     )
 
-    dsm = await prepare_storage_manager(
-        params={"location_id": SIMCORE_S3_ID},
-        query=jsonable_encoder(query_params),
-        request=request,
+    dsm = cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
-
     data: list[FileMetaData] = await dsm.search_files_starting_with(
         query_params.user_id, prefix=query_params.startswith
     )

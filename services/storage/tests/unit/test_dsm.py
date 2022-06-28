@@ -11,10 +11,9 @@ from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
-from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -22,7 +21,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture
 async def dsm_mockup_complete_db(
-    storage_dsm: DataStorageManager,
+    simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     upload_file: Callable[
         [ByteSize, str, Optional[SimcoreS3FileID]],
@@ -36,10 +35,7 @@ async def dsm_mockup_complete_db(
         *(upload_file(file_size, faker.file_name(), None) for _ in range(2))
     )
     fmds = await asyncio.gather(
-        *(
-            storage_dsm.list_file(user_id, SIMCORE_S3_STR, file_id)
-            for _, file_id in uploaded_files
-        )
+        *(simcore_s3_dsm.get_file(user_id, file_id) for _, file_id in uploaded_files)
     )
     assert len(fmds) == 2
 
@@ -47,16 +43,14 @@ async def dsm_mockup_complete_db(
 
 
 async def test_sync_table_meta_data(
-    storage_dsm: DataStorageManager,
+    simcore_s3_dsm: SimcoreS3DataManager,
     dsm_mockup_complete_db: tuple[FileMetaData, FileMetaData],
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
 ):
     expected_removed_files = []
     # the list should be empty on start
-    list_changes = await storage_dsm.synchronise_meta_data_table(
-        location=SIMCORE_S3_STR, dry_run=True
-    )
+    list_changes = await simcore_s3_dsm.synchronise_meta_data_table(dry_run=True)
     assert list_changes == expected_removed_files
 
     # now remove the files
@@ -68,17 +62,11 @@ async def test_sync_table_meta_data(
         expected_removed_files.append(s3_key)
 
         # the list should now contain the removed entries
-        list_changes = await storage_dsm.synchronise_meta_data_table(
-            location=SIMCORE_S3_STR, dry_run=True
-        )
+        list_changes = await simcore_s3_dsm.synchronise_meta_data_table(dry_run=True)
         assert set(list_changes) == set(expected_removed_files)
 
     # now effectively call the function should really remove the files
-    list_changes = await storage_dsm.synchronise_meta_data_table(
-        location=SIMCORE_S3_STR, dry_run=False
-    )
+    list_changes = await simcore_s3_dsm.synchronise_meta_data_table(dry_run=False)
     # listing again will show an empty list again
-    list_changes = await storage_dsm.synchronise_meta_data_table(
-        location=SIMCORE_S3_STR, dry_run=True
-    )
+    list_changes = await simcore_s3_dsm.synchronise_meta_data_table(dry_run=True)
     assert list_changes == []

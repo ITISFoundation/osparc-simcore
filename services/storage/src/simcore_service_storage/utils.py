@@ -1,6 +1,7 @@
 import logging
 import urllib.parse
 from pathlib import Path
+from typing import Union
 
 import aiofiles
 from aiohttp import ClientSession
@@ -8,17 +9,20 @@ from aiohttp.typedefs import StrOrURL
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 
-from .constants import LOCATION_ID_TO_TAG_MAP, MAX_CHUNK_SIZE, UNDEFINED_LOCATION_TAG
-from .models import FileMetaData
+from .constants import MAX_CHUNK_SIZE
+from .models import FileMetaData, FileMetaDataAtDB
 
 logger = logging.getLogger(__name__)
 
 
-def get_location_from_id(location_id: int) -> str:
-    try:
-        return LOCATION_ID_TO_TAG_MAP[location_id]
-    except (ValueError, KeyError):
-        return UNDEFINED_LOCATION_TAG
+def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
+    return FileMetaData.parse_obj(
+        x.dict()
+        | {
+            "file_uuid": x.file_id,
+            "file_name": x.file_id.split("/")[-1],
+        }
+    )
 
 
 async def download_to_file_or_raise(
@@ -52,7 +56,7 @@ async def download_to_file_or_raise(
     return total_size
 
 
-def is_file_entry_valid(file_metadata: FileMetaData) -> bool:
+def is_file_entry_valid(file_metadata: Union[FileMetaData, FileMetaDataAtDB]) -> bool:
     return (
         file_metadata.entity_tag is not None
         and file_metadata.file_size > 0

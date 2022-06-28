@@ -14,14 +14,15 @@ from typing import Awaitable, Callable, Optional
 import pytest
 from aiopg.sa.engine import Engine
 from faker import Faker
+from models_library.api_schemas_storage import LinkType
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from simcore_service_storage import db_file_meta_data
-from simcore_service_storage.dsm import DataStorageManager, LinkType
 from simcore_service_storage.exceptions import FileMetaDataNotFoundError
 from simcore_service_storage.models import S3BucketName, file_meta_data
 from simcore_service_storage.s3_client import StorageS3Client
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -40,7 +41,7 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
-    storage_dsm: DataStorageManager,
+    simcore_s3_dsm: SimcoreS3DataManager,
     simcore_file_id: SimcoreS3FileID,
     user_id: UserID,
     link_type: LinkType,
@@ -50,7 +51,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
-    await storage_dsm.create_upload_link(user_id, simcore_file_id, link_type)
+    await simcore_s3_dsm.create_file_upload_link(user_id, simcore_file_id, link_type)
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
         fmd = await db_file_meta_data.get(conn, simcore_file_id)
@@ -58,7 +59,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     assert fmd.upload_expires_at
 
     # now run the cleaner, nothing should happen since the expiration was set to the default of 3600
-    await storage_dsm.clean_expired_uploads()
+    await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
     async with aiopg_engine.acquire() as conn:
         fmd_after_clean = await db_file_meta_data.get(conn, simcore_file_id)
@@ -72,7 +73,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
     await asyncio.sleep(1)
-    await storage_dsm.clean_expired_uploads()
+    await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were removed
     async with aiopg_engine.acquire() as conn:
@@ -92,7 +93,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     aiopg_engine: Engine,
-    storage_dsm: DataStorageManager,
+    simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     link_type: LinkType,
     file_size: ByteSize,
@@ -108,7 +109,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         original_fmd = await db_file_meta_data.get(conn, file_id)
 
     # now create a new link to the VERY SAME FILE UUID
-    await storage_dsm.create_upload_link(user_id, file_id, link_type)
+    await simcore_s3_dsm.create_file_upload_link(user_id, file_id, link_type)
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
         fmd = await db_file_meta_data.get(conn, file_id)
@@ -116,7 +117,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     assert fmd.upload_expires_at
 
     # now run the cleaner, nothing should happen since the expiration was set to the default of 3600
-    await storage_dsm.clean_expired_uploads()
+    await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
     async with aiopg_engine.acquire() as conn:
         fmd_after_clean = await db_file_meta_data.get(conn, file_id)
@@ -130,7 +131,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
     await asyncio.sleep(1)
-    await storage_dsm.clean_expired_uploads()
+    await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were reverted
     async with aiopg_engine.acquire() as conn:

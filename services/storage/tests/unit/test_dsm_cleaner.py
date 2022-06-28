@@ -21,7 +21,7 @@ def disable_dsm_cleaner(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def mocked_dsm_clean(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_storage.dsm_cleaner.DataStorageManager.clean_expired_uploads",
+        "simcore_service_storage.dsm_cleaner.SimcoreS3DataManager.clean_expired_uploads",
         autospec=True,
         side_effect=RuntimeError,
     )

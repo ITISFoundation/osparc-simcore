@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Optional
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -14,6 +14,7 @@ from models_library.api_schemas_storage import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import (
+    LocationID,
     LocationName,
     SimcoreS3FileID,
     StorageFileID,
@@ -38,8 +39,6 @@ from simcore_postgres_database.storage_models import (
     users,
 )
 
-from .constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
-
 UploadID = str
 
 
@@ -57,7 +56,7 @@ def is_uuid(value: str) -> bool:
 
 
 class FileMetaDataAtDB(BaseModel):
-    location_id: int
+    location_id: LocationID
     location: LocationName
     bucket_name: S3BucketName
     object_name: SimcoreS3FileID
@@ -65,7 +64,7 @@ class FileMetaDataAtDB(BaseModel):
     node_id: Optional[NodeID] = None
     user_id: UserID
     created_at: datetime.datetime
-    file_id: StorageFileID
+    file_id: SimcoreS3FileID
     file_size: ByteSize
     last_modified: datetime.datetime
     entity_tag: Optional[ETag] = None
@@ -80,7 +79,7 @@ class FileMetaDataAtDB(BaseModel):
 class FileMetaData(FileMetaDataGet):
     upload_expires_at: Optional[datetime.datetime] = None
 
-    location: Literal[SIMCORE_S3_STR, DATCORE_STR]  # type: ignore
+    location: LocationName
     bucket_name: str
     object_name: str
     project_id: Optional[ProjectID]
@@ -94,6 +93,8 @@ class FileMetaData(FileMetaDataGet):
         user_id: UserID,
         file_id: SimcoreS3FileID,
         bucket: S3BucketName,
+        location_id: LocationID,
+        location_name: LocationName,
         **file_meta_data_kwargs,
     ):
 
@@ -101,8 +102,8 @@ class FileMetaData(FileMetaDataGet):
         now = datetime.datetime.utcnow()
         fmd_kwargs = {
             "file_uuid": file_id,
-            "location_id": SIMCORE_S3_ID,
-            "location": SIMCORE_S3_STR,
+            "location_id": location_id,
+            "location": location_name,
             "bucket_name": bucket,
             "object_name": file_id,
             "file_name": parts[2],
@@ -187,7 +188,7 @@ class SearchFilesQueryParams(StorageQueryParamsBase):
 
 
 class LocationPathParams(BaseModel):
-    location_id: int
+    location_id: LocationID
 
     class Config:
         allow_population_by_field_name = True

@@ -11,7 +11,7 @@ import sys
 import urllib.parse
 import uuid
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional
+from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, cast
 
 import dotenv
 import pytest
@@ -31,12 +31,12 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_storage.application import create
-from simcore_service_storage.constants import APP_DSM_KEY
-from simcore_service_storage.dsm import DataStorageManager
+from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName, file_meta_data, projects, users
 from simcore_service_storage.s3 import get_s3_client
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.file_utils import upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 
@@ -137,9 +137,12 @@ async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
         await conn.execute(users.delete())
 
 
-@pytest.fixture(scope="function")
-def storage_dsm(client) -> DataStorageManager:
-    return client.app[APP_DSM_KEY]
+@pytest.fixture
+def simcore_s3_dsm(client) -> SimcoreS3DataManager:
+    return cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),
+    )
 
 
 @pytest.fixture(scope="module")

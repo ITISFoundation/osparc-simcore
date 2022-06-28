@@ -13,13 +13,12 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
-from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import (
     FileMetaData,
     FileMetaDataAtDB,
     file_meta_data,
 )
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.sql.expression import literal_column
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -39,6 +38,8 @@ async def output_file(
         user_id=user_id,
         file_id=SimcoreS3FileID(f"{project_id}/{node_id}/filename.txt"),
         bucket=S3BucketName("master-simcore"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
     file.file_size = ByteSize(12)
@@ -76,7 +77,7 @@ def create_resource_uuid(*resource_name_parts) -> uuid.UUID:
 
 
 async def test_create_soft_link(
-    storage_dsm: DataStorageManager, user_id: int, output_file: FileMetaData
+    simcore_s3_dsm: SimcoreS3DataManager, user_id: int, output_file: FileMetaData
 ):
 
     api_file_id = create_resource_uuid(
@@ -84,7 +85,7 @@ async def test_create_soft_link(
     )
     file_name = output_file.file_name
 
-    link_file: FileMetaData = await storage_dsm.create_soft_link(
+    link_file: FileMetaData = await simcore_s3_dsm.create_soft_link(
         user_id,
         output_file.file_id,
         SimcoreS3FileID(f"api/{api_file_id}/{file_name}"),
@@ -126,15 +127,15 @@ async def test_create_soft_link(
     # assert output_file.last_modified < link_file.fmd.last_modified
 
     # can find
-    files_list = await storage_dsm.search_files_starting_with(
+    files_list = await simcore_s3_dsm.search_files_starting_with(
         user_id, f"api/{api_file_id}/{file_name}"
     )
     assert len(files_list) == 1
     assert files_list[0] == link_file
 
     # can get
-    got_file = await storage_dsm.list_file(
-        user_id, SIMCORE_S3_STR, SimcoreS3FileID(f"api/{api_file_id}/{file_name}")
+    got_file = await simcore_s3_dsm.get_file(
+        user_id, SimcoreS3FileID(f"api/{api_file_id}/{file_name}")
     )
 
     assert got_file == link_file

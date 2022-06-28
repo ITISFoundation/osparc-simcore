@@ -1,8 +1,10 @@
 import asyncio
 import logging
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from models_library.api_schemas_storage import FileLocation
 from models_library.projects_nodes_io import StorageFileID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp.application_keys import (
@@ -17,10 +19,10 @@ from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
+from .dsm import get_dsm_provider
 from .models import LocationPathParams, StorageQueryParamsBase, SyncMetadataQueryParams
 from .settings import Settings
-from .utils import get_location_from_id
-from .utils_handlers import prepare_storage_manager
+from .simcore_s3_dsm import SimcoreS3DataManager
 
 log = logging.getLogger(__name__)
 
@@ -35,11 +37,15 @@ async def get_storage_locations(request: web.Request):
         "received call to get_storage_locations with %s",
         f"{query_params=}",
     )
+    dsm_provider = get_dsm_provider(request.app)
+    location_ids = dsm_provider.locations()
+    locs: list[FileLocation] = []
+    for loc_id in location_ids:
+        dsm = dsm_provider.get(loc_id)
+        if await dsm.authorized(query_params.user_id):
+            locs.append(FileLocation(name=dsm.location_name, id=dsm.location_id))
 
-    dsm = await prepare_storage_manager({}, jsonable_encoder(query_params), request)
-    locs = await dsm.locations(query_params.user_id)
-
-    return {"error": None, "data": locs}
+    return {"error": None, "data": jsonable_encoder(locs)}
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}:sync", name="synchronise_meta_data_table")  # type: ignore
@@ -51,13 +57,12 @@ async def synchronise_meta_data_table(request: web.Request):
         f"{path_params=}, {query_params=}",
     )
 
-    dsm = await prepare_storage_manager(
-        jsonable_encoder(path_params), jsonable_encoder(query_params), request
+    dsm = cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
     sync_results: list[StorageFileID] = []
-    sync_coro = dsm.synchronise_meta_data_table(
-        get_location_from_id(path_params.location_id), query_params.dry_run
-    )
+    sync_coro = dsm.synchronise_meta_data_table(query_params.dry_run)
 
     if query_params.fire_and_forget:
         settings: Settings = request.app[APP_CONFIG_KEY]

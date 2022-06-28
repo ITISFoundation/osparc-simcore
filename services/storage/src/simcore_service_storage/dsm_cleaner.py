@@ -21,11 +21,13 @@ import logging
 import os
 import socket
 from contextlib import suppress
+from typing import cast
 
 from aiohttp import web
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
-from .dsm import DataStorageManager
+from .dsm_factory import DataManagerProvider
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -34,11 +36,14 @@ logger = logging.getLogger(__name__)
 async def dsm_cleaner_task(app: web.Application) -> None:
     logger.info("starting dsm cleaner task...")
     cfg: Settings = app[APP_CONFIG_KEY]
-    dsm: DataStorageManager = app[APP_DSM_KEY]
+    dsm: DataManagerProvider = app[APP_DSM_KEY]
+    simcore_s3_dsm = cast(
+        SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
+    )
     assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
     while await asyncio.sleep(cfg.STORAGE_CLEANER_INTERVAL_S, result=True):
         try:
-            await dsm.clean_expired_uploads()
+            await simcore_s3_dsm.clean_expired_uploads()
 
         except asyncio.CancelledError:
             logger.info("cancelled dsm cleaner task")

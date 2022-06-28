@@ -29,8 +29,8 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
-from simcore_service_storage.constants import SIMCORE_S3_ID
 from simcore_service_storage.s3_client import StorageS3Client
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
@@ -47,13 +47,13 @@ def mock_datcore_download(mocker, client):
         Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
 
     mocker.patch(
-        "simcore_service_storage.dsm.download_to_file_or_raise",
+        "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
         side_effect=_fake_download_to_file_or_raise,
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_storage.dsm.DataStorageManager.download_link_datcore",
+        "simcore_service_storage.simcore_s3_dsm.datcore_adapter.get_file_download_presigned_link",
         autospec=True,
         return_value=URL("https://httpbin.org/image"),
     )
@@ -315,14 +315,14 @@ async def _create_and_delete_folders_from_project(
                 if "outputs" in node:
                     for _o_id, o in node["outputs"].items():
                         if "store" in o:
-                            assert o["store"] == SIMCORE_S3_ID
+                            assert o["store"] == SimcoreS3DataManager.get_location_id()
     project_id = data["uuid"]
 
     # list data to check all is here
     if check_list_files:
         url = (
             client.app.router["get_files_metadata"]
-            .url_for(location_id=f"{SIMCORE_S3_ID}")
+            .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
         resp = await client.get(f"{url}")
@@ -342,7 +342,7 @@ async def _create_and_delete_folders_from_project(
     if check_list_files:
         url = (
             client.app.router["get_files_metadata"]
-            .url_for(location_id=f"{SIMCORE_S3_ID}")
+            .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
         resp = await client.get(f"{url}")

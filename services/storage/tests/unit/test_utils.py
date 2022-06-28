@@ -10,35 +10,13 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
-from simcore_service_storage.constants import (
-    DATCORE_ID,
-    DATCORE_STR,
-    SIMCORE_S3_ID,
-    SIMCORE_S3_STR,
-    UNDEFINED_LOCATION_TAG,
-)
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from simcore_service_storage.utils import (
     MAX_CHUNK_SIZE,
     download_to_file_or_raise,
-    get_location_from_id,
     is_file_entry_valid,
 )
-
-
-@pytest.mark.parametrize(
-    "location_id, expected_location",
-    [
-        (SIMCORE_S3_ID, SIMCORE_S3_STR),
-        (DATCORE_ID, DATCORE_STR),
-        (
-            random.randint(max(SIMCORE_S3_ID, DATCORE_ID) + 1, 100000),
-            UNDEFINED_LOCATION_TAG,
-        ),
-    ],
-)
-def test_get_location_from_id(location_id: int, expected_location: str):
-    assert get_location_from_id(location_id) == expected_location
 
 
 async def test_download_files(tmpdir):
@@ -85,6 +63,8 @@ def test_file_entry_valid(
         user_id=faker.pyint(min_value=1),
         file_id=file_id,
         bucket=S3BucketName("pytest-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
     )
     fmd.file_size = parse_obj_as(ByteSize, file_size)
     fmd.entity_tag = entity_tag

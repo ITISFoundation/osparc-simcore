@@ -8,6 +8,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from simcore_service_storage.dsm import get_dsm_provider
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
@@ -18,8 +19,6 @@ from .models import (
     LocationPathParams,
     StorageQueryParamsBase,
 )
-from .utils import get_location_from_id
-from .utils_handlers import prepare_storage_manager
 
 log = logging.getLogger(__name__)
 
@@ -37,12 +36,8 @@ async def get_datasets_metadata(request: web.Request):
         f"{path_params=}, {query_params=}",
     )
 
-    dsm = await prepare_storage_manager(
-        jsonable_encoder(path_params), jsonable_encoder(query_params), request
-    )
-    data: list[DatasetMetaData] = await dsm.list_datasets(
-        query_params.user_id, get_location_from_id(path_params.location_id)
-    )
+    dsm = get_dsm_provider(request.app).get(path_params.location_id)
+    data: list[DatasetMetaData] = await dsm.list_datasets(query_params.user_id)
     return {"data": data}
 
 
@@ -56,13 +51,9 @@ async def get_files_metadata_dataset(request: web.Request):
         "received call to get_files_metadata_dataset with %s",
         f"{path_params=}, {query_params=}",
     )
-
-    dsm = await prepare_storage_manager(
-        jsonable_encoder(path_params), jsonable_encoder(query_params), request
-    )
-    data: list[FileMetaData] = await dsm.list_files_dataset(
+    dsm = get_dsm_provider(request.app).get(path_params.location_id)
+    data: list[FileMetaData] = await dsm.list_files_in_dataset(
         user_id=query_params.user_id,
-        location=get_location_from_id(path_params.location_id),
         dataset_id=path_params.dataset_id,
     )
     py_data = [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]

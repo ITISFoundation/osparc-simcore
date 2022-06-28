@@ -6,6 +6,16 @@ class FileMetaDataNotFoundError(PydanticErrorMixin, RuntimeError):
     msg_template: str = "The file meta data for {file_id} was not found"
 
 
+class FileAccessRightError(PydanticErrorMixin, RuntimeError):
+    code = "file.access_right_error"
+    msg_template: str = "Insufficient access rights to access {file_id}"
+
+
+class LinkAlreadyExistsError(PydanticErrorMixin, RuntimeError):
+    code = "link.already_exists_error"
+    msg_template: str = "The link {file_id} already exists"
+
+
 class S3AccessError(PydanticErrorMixin, RuntimeError):
     code = "s3_access.error"
     msg_template: str = "Unexpected error while accessing S3 backend"

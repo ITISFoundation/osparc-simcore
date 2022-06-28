@@ -5,8 +5,8 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
 from pydantic import ValidationError, parse_obj_as
-from simcore_service_storage.constants import SIMCORE_S3_ID, SIMCORE_S3_STR
 from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,11 @@ def test_file_id(file_id: str):
 def test_fmd_build():
     file_id = parse_obj_as(SimcoreS3FileID, f"api/{uuid.uuid4()}/xx.dat")
     fmd = FileMetaData.from_simcore_node(
-        user_id=12, file_id=file_id, bucket=S3BucketName("test-bucket")
+        user_id=12,
+        file_id=file_id,
+        bucket=S3BucketName("test-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
     )
 
     assert fmd.node_id
@@ -45,13 +49,17 @@ def test_fmd_build():
     assert fmd.object_name == file_id
     assert fmd.file_uuid == file_id
     assert fmd.file_id == file_id
-    assert fmd.location == SIMCORE_S3_STR
-    assert fmd.location_id == SIMCORE_S3_ID
+    assert fmd.location == SimcoreS3DataManager.get_location_name()
+    assert fmd.location_id == SimcoreS3DataManager.get_location_id()
     assert fmd.bucket_name == "test-bucket"
 
     file_id = parse_obj_as(SimcoreS3FileID, f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat")
     fmd = FileMetaData.from_simcore_node(
-        user_id=12, file_id=file_id, bucket=S3BucketName("test-bucket")
+        user_id=12,
+        file_id=file_id,
+        bucket=S3BucketName("test-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
     )
 
     assert fmd.node_id == NodeID(file_id.split("/")[1])
@@ -60,20 +68,6 @@ def test_fmd_build():
     assert fmd.object_name == file_id
     assert fmd.file_uuid == file_id
     assert fmd.file_id == file_id
-    assert fmd.location == SIMCORE_S3_STR
-    assert fmd.location_id == SIMCORE_S3_ID
+    assert fmd.location == SimcoreS3DataManager.get_location_name()
+    assert fmd.location_id == SimcoreS3DataManager.get_location_id()
     assert fmd.bucket_name == "test-bucket"
-
-
-def test_fmd_raises_if_invalid_location():
-    file_id = parse_obj_as(SimcoreS3FileID, f"api/{uuid.uuid4()}/xx.dat")
-    fmd = FileMetaData.from_simcore_node(
-        user_id=12, file_id=file_id, bucket=S3BucketName("test-bucket")
-    )
-    with pytest.raises(ValidationError):
-        FileMetaData.parse_obj(fmd.copy(update={"location_id": 456}).dict())
-
-    with pytest.raises(ValidationError):
-        FileMetaData.parse_obj(
-            fmd.copy(update={"location": "some place deep in space"}).dict()
-        )

@@ -7,9 +7,9 @@ import aiohttp
 from aiohttp import web
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
+from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
-from yarl import URL
 
 from ..constants import DATCORE_ID, DATCORE_STR
 from ..models import DatasetMetaData, FileMetaData
@@ -200,15 +200,15 @@ async def list_datasets(
 
 async def get_file_download_presigned_link(
     app: web.Application, api_key: str, api_secret: str, file_id: str
-) -> URL:
+) -> AnyUrl:
     file_download_data = cast(
         dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    return file_download_data["link"]
+    return parse_obj_as(AnyUrl, file_download_data["link"])
 
 
 async def delete_file(
     app: web.Application, api_key: str, api_secret: str, file_id: str
-):
+) -> None:
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")
