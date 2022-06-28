@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, cast
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -17,6 +17,7 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
 from .dsm import get_dsm_provider
+from .exceptions import FileMetaDataNotFoundError
 from .models import (
     CopyAsSoftLinkParams,
     FileDownloadQueryParams,
@@ -65,14 +66,15 @@ async def get_file_metadata(request: web.Request):
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
-    data: Optional[FileMetaData] = await dsm.get_file(
-        user_id=query_params.user_id,
-        file_id=path_params.file_id,
-    )
-    # when no metadata is found
-    if data is None:
+    try:
+        data = await dsm.get_file(
+            user_id=query_params.user_id,
+            file_id=path_params.file_id,
+        )
+    except FileMetaDataNotFoundError:
         # NOTE: This is what happens Larry... data must be an empty {} or else some old
         # dynamic services will FAIL (sic)
+        # TODO: once all legacy services are gone, remove the try except, it will default to 404
         return {"error": "No result found", "data": {}}
 
     return {
