@@ -7,7 +7,7 @@ import importlib
 import json
 from collections import namedtuple
 from inspect import signature
-from typing import Any, AsyncIterable, Iterable
+from typing import Any, AsyncIterable
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -241,9 +241,8 @@ def mock_outputs_labels() -> dict[str, ServiceOutput]:
 
 
 @pytest.fixture
-def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
+def rabbitmq_mock(mocker, app: FastAPI) -> None:
     app.state.rabbitmq = mocker.AsyncMock()
-    yield
 
 
 @pytest.fixture
@@ -329,7 +328,6 @@ async def test_start_same_space_twice(
 
 
 async def test_compose_up(client: TestClient, compose_spec: dict[str, Any]):
-
     response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
