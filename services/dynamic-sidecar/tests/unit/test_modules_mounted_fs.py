@@ -7,7 +7,6 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
-from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 # UTILS
@@ -23,11 +22,6 @@ def _replace_slashes(path: Path) -> str:
 @pytest.fixture
 def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
-
-
-@pytest.fixture
-def run_id(app: FastAPI) -> UUID:
-    return app.state.settings.DY_SIDECAR_RUN_ID
 
 
 # TESTS
