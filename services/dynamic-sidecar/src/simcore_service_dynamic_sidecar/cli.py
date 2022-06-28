@@ -17,15 +17,12 @@ main.command()(create_settings_command(settings_cls=DynamicSidecarSettings, logg
 
 @main.command()
 def openapi():
+    """Prints OpenAPI specifications in json format"""
     app = create_basic_app()
     typer.secho(json.dumps(app.openapi(), indent=2))
 
 
-@main.command()
-def run():
-    """Runs application"""
-    typer.secho("Sorry, this entrypoint is intentionally disabled." "Use instead")
-    typer.secho(
-        "$ uvicorn simcore_service_dynamic_sidecar.main:app",
-        fg=typer.colors.BLUE,
-    )
+#
+# NOTE: We intentionally did NOT create a command to run the application
+# Use instead $ uvicorn simcore_service_dynamic_sidecar.main:app
+#
