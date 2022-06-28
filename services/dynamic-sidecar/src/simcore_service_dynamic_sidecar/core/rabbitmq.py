@@ -5,7 +5,7 @@ import logging
 import os
 import socket
 from asyncio import CancelledError, Queue, Task
-from typing import Any
+from typing import Any, Optional, Union
 
 import aio_pika
 from fastapi import FastAPI
@@ -30,8 +30,7 @@ logging.getLogger("aio_pika").setLevel(logging.WARNING)
 
 SLEEP_BETWEEN_SENDS: float = 1.0
 
-
-def _close_callback(sender: Any, exc: BaseException | None) -> None:
+def _close_callback(sender: Any, exc: Optional[BaseException]) -> None:
     if exc:
         if isinstance(exc, CancelledError):
             log.info("Rabbit connection was cancelled", exc_info=True)
@@ -43,7 +42,7 @@ def _close_callback(sender: Any, exc: BaseException | None) -> None:
             )
 
 
-def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
+def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
     if exc:
         log.error(
             "Rabbit channel closed with exception from %s:", sender, exc_info=True
@@ -71,16 +70,16 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         self._project_id: ProjectID = settings.DY_SIDECAR_PROJECT_ID
         self._node_id: NodeID = settings.DY_SIDECAR_NODE_ID
 
-        self._connection: aio_pika.Connection | None = None
-        self._channel: aio_pika.Channel | None = None
-        self._logs_exchange: aio_pika.Exchange | None = None
-        self._events_exchange: aio_pika.Exchange | None = None
+        self._connection: Optional[aio_pika.Connection] = None
+        self._channel: Optional[aio_pika.Channel] = None
+        self._logs_exchange: Optional[aio_pika.Exchange] = None
+        self._events_exchange: Optional[aio_pika.Exchange] = None
 
         self.max_messages_to_send: int = max_messages_to_send
         # pylint: disable=unsubscriptable-object
         self._channel_queues: dict[str, Queue[str]] = {}
         self._keep_running: bool = True
-        self._queues_worker: Task[Any] | None = None
+        self._queues_worker: Optional[Task[Any]] = None
 
     async def connect(self) -> None:
         url = self._rabbit_settings.dsn
@@ -164,7 +163,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
     async def send_event_reload_iframe(self) -> None:
         await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME)
 
-    async def post_log_message(self, log_msg: str | list[str]) -> None:
+    async def post_log_message(self, log_msg: Union[str, list[str]]) -> None:
         if isinstance(log_msg, str):
             log_msg = [log_msg]
 
