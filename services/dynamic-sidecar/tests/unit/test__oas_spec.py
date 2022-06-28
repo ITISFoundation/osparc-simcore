@@ -4,9 +4,9 @@ from pathlib import Path
 from fastapi import FastAPI
 
 
-def test_openapi_spec(app: FastAPI, tests_dir: Path) -> None:
+def test_openapi_spec(app: FastAPI, project_slug_dir: Path) -> None:
     spec_from_app = app.openapi()
-    open_api_json_file = tests_dir / ".." / "openapi.json"
+    open_api_json_file = project_slug_dir / "openapi.json"
     stored_openapi_json_file = json.loads(open_api_json_file.read_text())
     assert (
         spec_from_app == stored_openapi_json_file
