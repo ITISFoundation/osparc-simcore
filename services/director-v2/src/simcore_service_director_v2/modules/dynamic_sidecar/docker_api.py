@@ -100,10 +100,9 @@ async def create_network(network_config: dict[str, Any]) -> str:
                     return network_details["Id"]
 
             # finally raise an error if a network cannot be spawned
-            # pylint: disable=raise-missing-from
             raise DynamicSidecarError(
                 f"Could not create or recover a network ID for {network_config}"
-            )
+            ) from e
 
 
 async def create_service_and_get_id(create_service_data: AioDockerServiceSpec) -> str:

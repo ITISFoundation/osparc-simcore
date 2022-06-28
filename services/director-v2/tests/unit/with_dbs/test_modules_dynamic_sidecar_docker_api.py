@@ -86,14 +86,24 @@ async def ensure_swarm_network(
     network_id = None
     try:
         network_id = await docker_api.create_network(network_config)
+        # raises DynamicSidecarError
 
         yield
 
     finally:
         if network_id is not None:
-            docker_network = await async_docker_client.networks.get(network_id)
-            assert await docker_network.delete() is True
-            print(f"network with {network_id=} removed")
+            # docker containers must be gone before network removal is functional
+            async for attempt in AsyncRetrying(
+                reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
+            ):
+                with attempt:
+                    print(
+                        f"removing network with {network_id=},"
+                        " attempt {attempt.retry_state.attempt_number}..."
+                    )
+                    docker_network = await async_docker_client.networks.get(network_id)
+                    assert await docker_network.delete() is True
+                    print(f"network with {network_id=} removed")
 
 
 @pytest.fixture
