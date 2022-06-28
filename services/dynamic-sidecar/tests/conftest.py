@@ -59,8 +59,9 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture
-def mock_dy_volumes(tmp_path: Path) -> Path:
-    return tmp_path / "host-common-dy-volumes"
+def dy_volumes(tmp_path: Path) -> Path:
+    """mount folder on the sidecar (path withn the sidecar)"""
+    return tmp_path / "dy-volumes"
 
 
 @pytest.fixture
@@ -116,7 +117,7 @@ def run_id(faker: Faker) -> UUID:
 @pytest.fixture
 def mock_environment(
     monkeypatch: MonkeyPatch,
-    mock_dy_volumes: Path,
+    dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
@@ -127,7 +128,12 @@ def mock_environment(
     node_id: NodeID,
     run_id: UUID,
 ) -> None:
+    # envs in Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "production")
+    monkeypatch.setenv("SC_BUILD_TARGET", "production")
+    monkeypatch.setenv("DY_VOLUMES", f"{dy_volumes}")
+
+    # envs on container
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
 
     monkeypatch.setenv("REGISTRY_AUTH", "false")
@@ -154,8 +160,6 @@ def mock_environment(
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-
-    monkeypatch.setenv("DYNAMIC_SIDECAR_DY_VOLUMES_COMMON_DIR", f"{mock_dy_volumes}")
 
 
 @pytest.fixture

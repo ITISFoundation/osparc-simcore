@@ -23,6 +23,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="boot mode helps determine if in development mode or normal operation",
     )
 
+    DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
+        ..., env=["DY_VOLUMES", "DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR"]
+    )
+
     # LOGGING
     LOG_LEVEL: str = Field("WARNING")
 
