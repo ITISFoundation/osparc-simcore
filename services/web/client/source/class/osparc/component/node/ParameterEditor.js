@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
     setParameterOutputValue: function(node, val) {
       node.setOutputData({
-        "out_1": val
+        "out_1": this.self().getParameterOutputType(node) === "array" ? osparc.ui.form.ContentSchemaArray.addArrayBrackets(val) : val
       });
     }
   },

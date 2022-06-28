@@ -974,8 +974,10 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "number":
           case "integer":
-          case "array":
             val = 1;
+            break;
+          case "array":
+            val = "[1]";
             break;
         }
         if (val !== null) {
