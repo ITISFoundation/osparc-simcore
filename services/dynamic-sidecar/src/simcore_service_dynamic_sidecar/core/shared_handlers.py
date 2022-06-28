@@ -56,7 +56,7 @@ async def remove_the_compose_spec(
     await cleanup_containers_and_volumes(shared_store, settings)
 
     command = (
-        "docker-compose --project-name {project} --file \"{file_path}\" "
+        'docker-compose --project-name {project} --file "{file_path}" '
         "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
