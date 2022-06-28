@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-
+# pylint: disable=unused-variable
 
 import asyncio
 import importlib
@@ -232,15 +232,6 @@ def mock_outputs_labels() -> dict[str, ServiceOutput]:
 
 
 @pytest.fixture
-def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
-    settings: DynamicSidecarSettings = test_client.application.state.settings
-    # disable mutability for this test
-    settings.__config__.allow_mutation = True
-    settings.__config__.frozen = False
-    return settings
-
-
-@pytest.fixture
 def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
     app.state.rabbitmq = mocker.AsyncMock()
     yield
@@ -314,13 +305,20 @@ async def test_start_containers_wrong_spec(
 
 
 async def test_start_same_space_twice(
-    compose_spec: str, mutable_settings: DynamicSidecarSettings
+    compose_spec: str,
+    test_client: TestClient,
 ) -> None:
-    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
-    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
+    settings = test_client.application.state.settings
 
-    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
-    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
+    settings_1 = settings.copy(
+        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deepcopy=True
+    )
+    await _assert_compose_spec_pulled(compose_spec, settings_1)
+
+    settings_2 = settings.copy(
+        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deepcopy=True
+    )
+    await _assert_compose_spec_pulled(compose_spec, settings_2)
 
 
 async def test_compose_up(
