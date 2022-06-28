@@ -5,10 +5,11 @@
 import asyncio
 import importlib
 import json
+import random
 from collections import namedtuple
 from inspect import signature
-from typing import Any, AsyncIterable
-from unittest.mock import AsyncMock
+from typing import Any, AsyncIterable, Iterator
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import aiodocker
@@ -21,6 +22,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -421,6 +423,21 @@ async def test_containers_get_status(
     assert assert_keys_exist(decoded_response) is True
 
 
+@pytest.fixture
+def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
+    """raises a DockerError with a random HTTP status which is also returned"""
+    mock_status_code = random.randint(1, 999)
+
+    async def mock_get(*args: str, **kwargs: Any) -> None:
+        raise aiodocker.exceptions.DockerError(
+            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
+        )
+
+    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
+
+    return mock_status_code
+
+
 async def test_containers_docker_status_docker_error(
     client: TestClient,
     started_containers: list[str],
@@ -521,6 +538,19 @@ async def test_container_pull_input_ports(
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.text == "42"
+
+
+@pytest.fixture
+def mock_dir_watcher_on_any_event(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[Mock]:
+
+    mock = Mock(return_value=None)
+
+    monkeypatch.setattr(
+        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
+    )
+    yield mock
 
 
 async def test_directory_watcher_disabling(
