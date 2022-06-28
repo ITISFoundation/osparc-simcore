@@ -33,8 +33,11 @@ qx.Class.define("osparc.component.permissions.Study", {
   construct: function(studyData) {
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const initCollabs = this.self().getEveryoneObj();
-    this.base(arguments, this.__studyData, [initCollabs]);
+    const initCollabs = [];
+    if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
+      initCollabs.push(this.self().getEveryoneObj());
+    }
+    this.base(arguments, this.__studyData, initCollabs);
   },
 
   events: {
