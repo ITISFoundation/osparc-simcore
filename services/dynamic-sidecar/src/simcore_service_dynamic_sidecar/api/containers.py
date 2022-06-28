@@ -30,7 +30,11 @@ from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
+from ..core.shared_handlers import (
+    cleanup_containers_and_volumes,
+    remove_the_compose_spec,
+    write_file_and_run_command,
+)
 from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
@@ -61,11 +65,14 @@ async def _task_docker_compose_up(
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
-    command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "up --no-build --detach"
-    )
+
     with directory_watcher_disabled(app):
+        await cleanup_containers_and_volumes(shared_store, settings)
+
+        command = (
+            "docker-compose --project-name {project} --file {file_path} "
+            "up --no-build --detach"
+        )
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
             file_content=shared_store.compose_spec,

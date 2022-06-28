@@ -10,6 +10,24 @@ from .utils import async_command, write_to_tmp_file
 logger = logging.getLogger(__name__)
 
 
+async def cleanup_containers_and_volumes(
+    shared_store: SharedStore, settings: DynamicSidecarSettings
+) -> None:
+    cleanup_command = (
+        "docker-compose --project-name {project} --file {file_path} rm --force -v"
+    )
+    finished_without_errors, stdout = await write_file_and_run_command(
+        settings=settings,
+        file_content=shared_store.compose_spec,
+        command=cleanup_command,
+        command_timeout=None,
+    )
+    if not finished_without_errors:
+        logger.warning(
+            "Unexpected error while running command\n%s:\n%s", cleanup_command, stdout
+        )
+
+
 async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
     file_content: Optional[str],
@@ -36,6 +54,8 @@ async def remove_the_compose_spec(
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         return True, "No started spec to remove was found"
+
+    await cleanup_containers_and_volumes(shared_store, settings)
 
     command = (
         "docker-compose -p {project} -f {file_path} "
