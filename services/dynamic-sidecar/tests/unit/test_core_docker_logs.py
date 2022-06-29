@@ -13,7 +13,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from simcore_service_dynamic_sidecar.core.application import assemble_application
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_logs import (
     _get_background_log_fetcher,
     start_log_fetching,
@@ -62,7 +62,7 @@ def app(
     monkeypatch_module.setenv("S3_SECURE", "false")
     monkeypatch_module.setenv("R_CLONE_PROVIDER", "MINIO")
 
-    yield assemble_application()
+    yield create_app()
 
 
 @pytest.fixture
