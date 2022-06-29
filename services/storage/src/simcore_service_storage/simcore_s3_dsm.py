@@ -383,7 +383,7 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> list[FileMetaData]:
         async with self.engine.acquire() as conn:
             can_read_projects_ids = await get_readable_project_ids(conn, user_id)
-            files_meta: list[
+            file_metadatas: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
@@ -392,7 +392,15 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id_prefix=prefix,
                 partial_file_id=None,
             )
-            return [convert_db_to_model(fmd) for fmd in files_meta]
+            resolved_fmds = []
+            for fmd in file_metadatas:
+                if is_file_entry_valid(fmd):
+                    resolved_fmds.append(convert_db_to_model(fmd))
+                    continue
+                with suppress(S3KeyNotFoundError):
+                    updated_fmd = await self._update_database_from_storage(conn, fmd)
+                    resolved_fmds.append(convert_db_to_model(updated_fmd))
+            return resolved_fmds
 
     async def create_soft_link(
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
