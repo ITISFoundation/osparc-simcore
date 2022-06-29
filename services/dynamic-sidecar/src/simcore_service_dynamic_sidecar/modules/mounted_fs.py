@@ -9,8 +9,6 @@ from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 
 from ..core.docker_utils import get_volume_by_label
 
-DY_VOLUMES = Path("/dy-volumes")
-
 
 def _ensure_path(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
@@ -41,12 +39,14 @@ class MountedVolumes:
         state_paths: list[Path],
         state_exclude: list[str],
         compose_namespace: str,
+        dy_volumes: Path,
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: list[Path] = state_paths
         self.state_exclude: list[str] = state_exclude
         self.compose_namespace = compose_namespace
+        self._dy_volumes = dy_volumes
 
         self._ensure_directories()
 
@@ -65,15 +65,15 @@ class MountedVolumes:
 
     @cached_property
     def disk_inputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / self.inputs_path.relative_to("/"))
+        return _ensure_path(self._dy_volumes / self.inputs_path.relative_to("/"))
 
     @cached_property
     def disk_outputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / self.outputs_path.relative_to("/"))
+        return _ensure_path(self._dy_volumes / self.outputs_path.relative_to("/"))
 
     def disk_state_paths(self) -> Iterator[Path]:
         for state_path in self.state_paths:
-            yield _ensure_path(DY_VOLUMES / state_path.relative_to("/"))
+            yield _ensure_path(self._dy_volumes / state_path.relative_to("/"))
 
     def all_disk_paths(self) -> Iterator[Path]:
         # PC: keeps iterator to follow same style as disk_state_paths but IMO it is overreaching
@@ -86,7 +86,7 @@ class MountedVolumes:
         Creates the directories on its file system,
         these will be mounted elsewere.
         """
-        _ensure_path(DY_VOLUMES)
+        _ensure_path(self._dy_volumes)
         self.disk_inputs_path  # pylint:disable= pointless-statement
         self.disk_outputs_path  # pylint:disable= pointless-statement
         set(self.disk_state_paths())
@@ -129,6 +129,7 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
         state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
         compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+        dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
     )
 
     return app.state.mounted_volumes

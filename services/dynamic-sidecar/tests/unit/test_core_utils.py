@@ -2,7 +2,7 @@
 # pylint: disable=expression-not-assigned
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.utils import _is_registry_reachable
 

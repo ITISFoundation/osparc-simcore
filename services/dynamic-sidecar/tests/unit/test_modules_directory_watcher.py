@@ -8,7 +8,7 @@ from typing import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from simcore_service_dynamic_sidecar.modules import directory_watcher
 from simcore_service_dynamic_sidecar.modules.directory_watcher import (
     DirectoryWatcherObservers,
