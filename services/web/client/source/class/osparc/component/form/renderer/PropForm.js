@@ -184,6 +184,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
+    __connectToInputNode: function(targetPortId, inputNodeId, outputKey) {
+      this.getNode().addInputNode(inputNodeId);
+      this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
+        .then(connected => {
+          if (connected) {
+            this.getNode().fireEvent("reloadModel");
+          }
+        });
+    },
+
     __addInputsMenuButtons: function(targetPortId, menu) {
       const study = this.getStudy();
       const thisNode = this.getNode();
@@ -197,15 +207,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               inputNode.bind("label", paramButton, "label", {
                 converter: val => val + " : " + inputNode.getOutput(outputKey).label
               });
-              paramButton.addListener("execute", () => {
-                this.getNode().addInputNode(inputNodeId);
-                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
-                  .then(connected => {
-                    if (connected) {
-                      this.getNode().fireEvent("reloadModel");
-                    }
-                  });
-              }, this);
+              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
               menu.add(paramButton);
               osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
                 .then(compatible => {
@@ -272,15 +274,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             .then(compatible => {
               if (compatible) {
                 const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
-                paramButton.addListener("execute", () => {
-                  this.getNode().addInputNode(inputNodeId);
-                  this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
-                    .then(connected => {
-                      if (connected) {
-                        this.getNode().fireEvent("reloadModel");
-                      }
-                    });
-                }, this);
+                paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
                 menu.add(paramButton);
                 menuBtn.show();
               }
@@ -303,15 +297,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               const paramButton = new qx.ui.menu.Button();
               paramButton.nodeId = inputNodeId;
               paramNode.bind("label", paramButton, "label");
-              paramButton.addListener("execute", () => {
-                this.getNode().addInputNode(inputNodeId);
-                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
-                  .then(connected => {
-                    if (connected) {
-                      this.getNode().fireEvent("reloadModel");
-                    }
-                  });
-              }, this);
+              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
               if (!menu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
                 menu.add(paramButton);
                 menuBtn.show();

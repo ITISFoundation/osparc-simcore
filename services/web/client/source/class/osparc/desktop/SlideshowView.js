@@ -439,7 +439,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
       // bypass connection
       const workbench = this.getStudy().getWorkbench();
-      workbench.createEdge(null, leftNodeId, rightNodeId);
+      workbench.createEdge(null, leftNodeId, rightNodeId, true);
 
       // remove node
       workbench.removeNode(nodeId);
