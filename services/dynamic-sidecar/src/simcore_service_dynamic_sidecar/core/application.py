@@ -9,7 +9,7 @@ from ..api import main_router
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import setup_directory_watcher
-from ..modules.mounted_fs import setup_mounted_fs
+from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
@@ -45,7 +45,7 @@ def setup_logger(settings: DynamicSidecarSettings):
     logging.root.setLevel(settings.log_level)
 
 
-def create_basic_app() -> FastAPI:
+def create_base_app() -> FastAPI:
     # settings
     settings = DynamicSidecarSettings.create_from_envs()
     setup_logger(settings)
@@ -71,7 +71,7 @@ def create_app():
     needed in other requests and used to share data.
     """
 
-    app = create_basic_app()
+    app = create_base_app()
 
     # MODULES SETUP --------------
 
@@ -114,3 +114,23 @@ def create_app():
     app.add_event_handler("shutdown", _on_shutdown)
 
     return app
+
+
+class AppState:
+    def __init__(self, app: FastAPI):
+        self._app = app
+
+    @property
+    def settings(self) -> DynamicSidecarSettings:
+        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
+        return self._app.state.settings
+
+    @property
+    def mounted_volumes(self) -> MountedVolumes:
+        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
+        return self._app.state.mounted_volumes
+
+    @property
+    def shared_store(self) -> SharedStore:
+        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
+        return self._app.state.shared_store

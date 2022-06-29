@@ -23,16 +23,24 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="boot mode helps determine if in development mode or normal operation",
     )
 
+    DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
+        ...,
+        description="Base directory where dynamic-sidecar stores creates "
+        "and shares volumes between itself and the spawned containers. "
+        "It is used as a mount directory for the director-v2."
+        "Sidecar must have r/w permissions in this folder.",
+    )
+
     # LOGGING
-    LOG_LEVEL: str = Field("WARNING")
+    LOG_LEVEL: str = Field(default="WARNING")
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     DYNAMIC_SIDECAR_HOST: str = Field(
-        "0.0.0.0",  # nosec
+        default="0.0.0.0",  # nosec
         description="host where to bind the application on which to serve",
     )
     DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        8000, description="port where the server will be currently serving"
+        default=8000, description="port where the server will be currently serving"
     )
 
     DYNAMIC_SIDECAR_COMPOSE_NAMESPACE: str = Field(
@@ -44,11 +52,11 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_MAX_COMBINED_CONTAINER_NAME_LENGTH: PositiveInt = Field(
-        63, description="the container name which will be used as hostname"
+        default=63, description="the container name which will be used as hostname"
     )
 
     DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT: PositiveInt = Field(
-        5,
+        default=5,
         description=(
             "When receiving SIGTERM the process has 10 seconds to cleanup its children "
             "forcing our children to stop in 5 seconds in all cases"
@@ -56,16 +64,17 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DEBUG: bool = Field(
-        False,
+        default=False,
         description="If set to True the application will boot into debug mode",
     )
 
     DYNAMIC_SIDECAR_REMOTE_DEBUG_PORT: PortInt = Field(
-        3000, description="ptsvd remote debugger starting port"
+        default=3000, description="ptsvd remote debugger starting port"
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT: PositiveInt = Field(
-        15, description="used during shutdown when containers swapend will be removed"
+        default=15,
+        description="used during shutdown when containers swapend will be removed",
     )
 
     DY_SIDECAR_PATH_INPUTS: Path = Field(
