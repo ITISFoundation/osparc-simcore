@@ -5,9 +5,10 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import aioboto3
+from aiobotocore.session import ClientCreatorContext
 from botocore.client import Config
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -41,7 +42,7 @@ class StorageS3Client:
         # upon creation the client does not try to connect, one need to make an operation
         session = aioboto3.Session()
         # NOTE: session.client returns an aiobotocore client enhanced with aioboto3 fcts (e.g. download_file, upload_file, copy_file...)
-        client = session.client(
+        session_client = session.client(
             "s3",
             endpoint_url=settings.S3_ENDPOINT,
             aws_access_key_id=settings.S3_ACCESS_KEY,
@@ -50,8 +51,8 @@ class StorageS3Client:
             region_name=settings.S3_REGION,
             config=Config(signature_version="s3v4"),
         )
-        assert isinstance(client, S3Client)  # nosec
-        client = await exit_stack.enter_async_context(client)
+        assert isinstance(session_client, ClientCreatorContext)  # nosec
+        client = cast(S3Client, await exit_stack.enter_async_context(session_client))
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
