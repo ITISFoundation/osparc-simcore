@@ -8,6 +8,7 @@ from pathlib import Path
 from random import choice
 from typing import Awaitable, Callable
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -78,6 +79,30 @@ async def test_get_files_metadata(
     assert len(list_fmds) == (NUM_FILES)
 
 
+@pytest.mark.xfail(
+    reason="storage get_file_metadata must return a 200 with no payload as long as legacy services are around!!"
+)
+async def test_get_file_metadata_is_legacy_services_compatible(
+    client: TestClient,
+    user_id: UserID,
+    location_id: int,
+    simcore_file_id: SimcoreS3FileID,
+):
+    assert client.app
+
+    url = (
+        client.app.router["get_file_metadata"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=f"{urllib.parse.quote(simcore_file_id, safe='')}",
+        )
+        .with_query(user_id=f"{user_id}")
+    )
+    # this should return an empty list
+    response = await client.get(f"{url}")
+    await assert_status(response, web.HTTPNotFound)
+
+
 async def test_get_file_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     client: TestClient,
@@ -99,7 +124,12 @@ async def test_get_file_metadata(
     )
     # this should return an empty list
     response = await client.get(f"{url}")
-    await assert_status(response, web.HTTPNotFound)
+    # await assert_status(response, web.HTTPNotFound)
+
+    # NOTE: This needs to be a Ok response with empty data until ALL legacy services are gone, then it should be changed to 404! see test above
+    assert response.status == web.HTTPOk.status_code
+    assert await response.json() == {"data": {}, "error": "No result found"}
+
     # now add some stuff there
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")
