@@ -45,7 +45,7 @@ def setup_logger(settings: DynamicSidecarSettings):
     logging.root.setLevel(settings.log_level)
 
 
-def create_basic_app() -> FastAPI:
+def create_base_app() -> FastAPI:
     # settings
     settings = DynamicSidecarSettings.create_from_envs()
     setup_logger(settings)
@@ -71,7 +71,7 @@ def create_app():
     needed in other requests and used to share data.
     """
 
-    app = create_basic_app()
+    app = create_base_app()
 
     # MODULES SETUP --------------
 

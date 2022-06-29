@@ -3,7 +3,7 @@ import logging
 
 import typer
 from settings_library.utils_cli import create_settings_command
-from simcore_service_dynamic_sidecar.core.application import create_basic_app
+from simcore_service_dynamic_sidecar.core.application import create_base_app
 
 from ._meta import PROJECT_NAME
 from .core.settings import DynamicSidecarSettings
@@ -18,7 +18,7 @@ main.command()(create_settings_command(settings_cls=DynamicSidecarSettings, logg
 @main.command()
 def openapi():
     """Prints OpenAPI specifications in json format"""
-    app = create_basic_app()
+    app = create_base_app()
     typer.secho(json.dumps(app.openapi(), indent=2))
 
 
