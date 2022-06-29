@@ -8,10 +8,9 @@ from contextlib import AsyncExitStack
 from aiohttp import web
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .constants import APP_CONFIG_KEY, APP_S3_KEY, MINUTE, RETRY_WAIT_SECS
+from .constants import APP_CONFIG_KEY, APP_S3_KEY, RETRY_WAIT_SECS
 from .s3_client import StorageS3Client
 
 log = logging.getLogger(__name__)
@@ -26,7 +25,6 @@ async def setup_s3_client(app):
         client = None
         async for attempt in AsyncRetrying(
             wait=wait_fixed(RETRY_WAIT_SECS),
-            stop=stop_after_delay(2 * MINUTE),
             before_sleep=before_sleep_log(log, logging.WARNING),
             reraise=True,
         ):
