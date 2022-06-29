@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from asyncio import CancelledError
 from contextlib import suppress
@@ -9,12 +10,15 @@ from fastapi import Request, Response
 
 logger = logging.getLogger(__name__)
 
+
 _DEFAULT_CHECK_INTERVAL_S: float = 0.5
 
 HTTP_499_CLIENT_CLOSED_REQUEST = 499
 # A non-standard status code introduced by nginx for the case when a client
 # closes the connection while nginx is processing the request.
 # SEE https://www.webfx.com/web-development/glossary/http-status-codes/what-is-a-499-status-code/
+
+TASK_NAME_PREFIX = "cancellable_request"
 
 _FastAPIHandlerCallable = Callable[..., Coroutine[Any, Any, Optional[Any]]]
 
@@ -51,7 +55,18 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
             ...
         )
     """
+    # CHECK: Early check that will raise upon import
+    # IMPROVEMENT: inject this parameter to handler_fun here before it returned in the wrapper and consumed by fastapi.router?
+    found_required_arg = any(
+        parameter.name == "_request" and parameter.annotation == Request
+        for parameter in inspect.signature(handler_fun).parameters.values()
+    )
+    if not found_required_arg:
+        raise ValueError(
+            f"Invalid handler {handler_fun.__name__} signature: missing required parameter _request: Request"
+        )
 
+    # WRAPPER ----
     @wraps(handler_fun)
     async def wrapper(*args, **kwargs) -> Optional[Any]:
         request: Request = kwargs["_request"]
@@ -59,13 +74,13 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
         # Intercepts handler call and creates a task out of it
         handler_task = asyncio.create_task(
             handler_fun(*args, **kwargs),
-            name=f"cancellable_request/handler/{handler_fun.__name__}",
+            name=f"{TASK_NAME_PREFIX}/handler/{handler_fun.__name__}",
         )
         # An extra task to monitor when the client disconnects so it can
         # cancel 'handler_task'
         auto_cancel_task = asyncio.create_task(
             _cancel_task_if_client_disconnected(request, handler_task),
-            name=f"cancellable_request/auto_cancel/{handler_fun.__name__}",
+            name=f"{TASK_NAME_PREFIX}/auto_cancel/{handler_fun.__name__}",
         )
 
         try:
@@ -81,7 +96,7 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
                 status_code=HTTP_499_CLIENT_CLOSED_REQUEST,
             )
         finally:
-            # TODO: is this called when return ??? Should it stop when responded?
+            # NOTE: This is ALSO called 'await handler_task' returns
             auto_cancel_task.cancel()
             with suppress(CancelledError):
                 await auto_cancel_task
