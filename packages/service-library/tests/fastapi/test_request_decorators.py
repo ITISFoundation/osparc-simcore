@@ -37,6 +37,7 @@ def app() -> FastAPI:
     # TODO: handler spawns subprocesses
     # TODO: handler spawns threads
     # TODO: handler spawns aio-tasks
+    # TODO: handler with backgroundtask
 
     _app = FastAPI()
     _app.include_router(api_router)
@@ -117,7 +118,6 @@ async def test_it(app: FastAPI, inspect_app_tasks: Callable[[], list[Task]]):
             r = test_client.get(
                 "/sleep/100", headers={"Connection": "close"}, timeout=0.001
             )
-            r.reason
 
     app_tasks = inspect_app_tasks()
     assert app_tasks
