@@ -119,7 +119,7 @@ async def test_get_file_metada(
     )
 
 
-@pytest.fixture(params=["old", "new"])
+@pytest.fixture(params=["old_not_found_returns_empty_payload", "new_returns_404"])
 def storage_v0_service_mock_get_file_meta_data_not_found(
     request,
     aioresponses_mocker: AioResponsesMock,
