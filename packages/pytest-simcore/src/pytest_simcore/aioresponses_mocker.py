@@ -1,7 +1,13 @@
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 
-PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+from .helpers.utils_docker import get_localhost_ip
+
+PASSTHROUGH_REQUESTS_PREFIXES = [
+    "http://127.0.0.1",
+    "ws://",
+    f"http://{get_localhost_ip()}",
+]
 
 
 @pytest.fixture
