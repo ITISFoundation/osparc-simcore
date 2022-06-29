@@ -322,8 +322,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       const newNodeUI = this._createNodeUI(node.getNodeId());
-      this.__createDragDropMechanism(newNodeUI);
       this._addNodeUIToWorkbench(newNodeUI, pos);
+      qx.ui.core.queue.Layout.flush();
+      this.__createDragDropMechanism(newNodeUI);
       return newNodeUI;
     },
 
@@ -355,7 +356,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let onNodeUI = null;
       this.__nodesUI.forEach(nodeUI => {
         const nBounds = nodeUI.getBounds();
-        console.log();
         if (onNodeUI === null &&
           pos.x > nBounds.left &&
           pos.x < nBounds.left + nBounds.width &&
@@ -382,9 +382,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.open();
       this.__nodesUI.push(nodeUI);
 
-      nodeUI.addListener("appear", () => {
-        this.__updateNodeUIPos(nodeUI);
-      }, this);
+      nodeUI.addListener("appear", () => this.__updateNodeUIPos(nodeUI), this);
 
       const isStudyReadOnly = this.getStudy().isReadOnly();
       nodeUI.set({
@@ -399,8 +397,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         this.__addNodeListeners(nodeUI);
       }
-
-      qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
     },
@@ -1027,7 +1023,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __reloadCurrentModel: function() {
       if (this._currentModel) {
-        this.loadModel(this._currentModel);
+        this.loadModel(this.getStudy().getWorkbench());
       }
     },
 
@@ -1035,9 +1031,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__svgLayer.getReady()) {
         this._loadModel(model);
       } else {
-        this.__svgLayer.addListenerOnce("SvgWidgetReady", () => {
-          this._loadModel(model);
-        }, this);
+        this.__svgLayer.addListenerOnce("SvgWidgetReady", () => this._loadModel(model), this);
       }
     },
 
@@ -1045,18 +1039,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this._clearAll();
       this._currentModel = model;
       if (model) {
-        qx.ui.core.queue.Visibility.flush();
-
         // create nodes
         const nodes = model.getNodes();
         const nodeUIs = [];
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
-          this.__createDragDropMechanism(nodeUI);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
           nodeUIs.push(nodeUI);
         }
+        qx.ui.core.queue.Layout.flush();
 
         let tries = 0;
         const maxTries = 40;
@@ -1067,6 +1059,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           tries++;
         }
         console.log("nodes visible", nodeUIs.length, tries*sleepFor);
+
+        nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
 
         // create edges
         for (const nodeId in nodes) {

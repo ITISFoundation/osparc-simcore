@@ -62,6 +62,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           const nodeUI = this._createNodeUI(nodeId);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
+        qx.ui.core.queue.Layout.flush();
 
         // create edges
         for (const nodeId in nodes) {
