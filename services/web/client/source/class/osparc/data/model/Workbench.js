@@ -321,13 +321,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
         node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
         node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
-        node.addListener("parameterRequested", e => {
-          const {
-            portId,
-            nodeId
-          } = e.getData();
-          this.__parameterNodeRequested(nodeId, portId);
-        }, this);
         node.addListener("filePickerRequested", e => {
           const {
             portId,
@@ -335,6 +328,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             file
           } = e.getData();
           this.__filePickerNodeRequested(nodeId, portId, file);
+        }, this);
+        node.addListener("parameterRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
+          this.__parameterNodeRequested(nodeId, portId);
         }, this);
         node.addListener("probeRequested", e => {
           const {
@@ -452,19 +452,13 @@ qx.Class.define("osparc.data.model.Workbench", {
         // create connection
         const pmId = pm.getNodeId();
         requesterNode.addInputNode(pmId);
-        // reload also before port connection happens
+        // bypass the compatibility check
+        if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
+          this.removeNode(pmId);
+          const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        }
         this.fireEvent("reloadModel");
-        requesterNode.addPortLink(portId, pmId, "out_1")
-          .then(success => {
-            if (success) {
-              this.fireDataEvent("openNode", pmId);
-              this.fireEvent("reloadModel");
-            } else {
-              this.removeNode(pmId);
-              const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }
-          });
       }
     },
 
@@ -486,18 +480,13 @@ qx.Class.define("osparc.data.model.Workbench", {
         // create connection
         const probeId = probeNode.getNodeId();
         probeNode.addInputNode(nodeId);
-        // reload also before port connection happens
+        // bypass the compatibility check
+        if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
+          this.removeNode(probeId);
+          const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        }
         this.fireEvent("reloadModel");
-        probeNode.addPortLink("in_1", nodeId, portId)
-          .then(success => {
-            if (success) {
-              this.fireEvent("reloadModel");
-            } else {
-              this.removeNode(probeId);
-              const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }
-          });
       }
     },
 
