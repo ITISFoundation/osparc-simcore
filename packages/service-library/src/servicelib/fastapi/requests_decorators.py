@@ -32,15 +32,19 @@ async def _cancel_task_if_client_disconnected(
                 logger.debug("task %s is done", task)
                 break
             if await request.is_disconnected():
-                logger.warning("client %s disconnected!", request.client)
+                logger.warning(
+                    "client %s disconnected! Cancelling handler for %s",
+                    request.client,
+                    f"{request.url=}",
+                )
                 task.cancel()
                 break
             await asyncio.sleep(interval)
     except CancelledError:
-        logger.debug("task was cancelled")
+        logger.debug("task monitoring %s handler was cancelled", f"{request.url=}")
         raise
     finally:
-        logger.debug("task completed")
+        logger.debug("task monitoring %s handler completed", f"{request.url}")
 
 
 def cancellable_request(handler_fun: _FastAPIHandlerCallable):
