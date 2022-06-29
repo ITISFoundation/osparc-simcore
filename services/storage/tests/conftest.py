@@ -32,6 +32,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
+from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
@@ -45,6 +46,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
+    "tests.fixtures.datcore_adapter",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.docker_swarm",
@@ -52,6 +54,7 @@ pytest_plugins = [
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.file_extra",
+    "pytest_simcore.aioresponses_mocker",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -249,6 +252,7 @@ def app_settings(mock_config) -> Settings:
 
 @pytest.fixture
 def client(
+    datcore_adapter_service_mock,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable[..., int],
@@ -279,9 +283,18 @@ def simcore_file_id(
     )
 
 
-@pytest.fixture
-def location_id() -> LocationID:
-    return 0
+@pytest.fixture(
+    params=[
+        SimcoreS3DataManager.get_location_id(),
+        DatCoreDataManager.get_location_id(),
+    ],
+    ids=[
+        SimcoreS3DataManager.get_location_name(),
+        DatCoreDataManager.get_location_name(),
+    ],
+)
+def location_id(request: pytest.FixtureRequest) -> LocationID:
+    return request.param  # type: ignore
 
 
 @pytest.fixture
