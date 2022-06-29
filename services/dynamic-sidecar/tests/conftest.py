@@ -125,7 +125,7 @@ def mock_environment(
     # envs in Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("SC_BUILD_TARGET", "production")
-    monkeypatch.setenv("DY_VOLUMES", f"{dy_volumes}")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR", f"{dy_volumes}")
 
     # envs on container
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
