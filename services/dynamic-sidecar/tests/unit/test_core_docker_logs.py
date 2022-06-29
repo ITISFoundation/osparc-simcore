@@ -4,7 +4,7 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import AsyncIterable, Dict, Iterable, List
+from typing import AsyncIterable, Iterable
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -13,7 +13,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from simcore_service_dynamic_sidecar.core.application import assemble_application
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_logs import (
     _get_background_log_fetcher,
     start_log_fetching,
@@ -21,20 +21,17 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
 )
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
-pytestmark = pytest.mark.asyncio
-
-
 # FIXTURES
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def app(
     monkeypatch_module: MonkeyPatch,
     mock_dy_volumes: Path,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
     disable_registry_check: None,
 ) -> Iterable[FastAPI]:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
@@ -65,11 +62,11 @@ def app(
     monkeypatch_module.setenv("S3_SECURE", "false")
     monkeypatch_module.setenv("R_CLONE_PROVIDER", "MINIO")
 
-    yield assemble_application()
+    yield create_app()
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker) -> Iterable[Dict[str, AsyncMock]]:
+def mock_rabbitmq(mocker) -> Iterable[dict[str, AsyncMock]]:
     yield {
         "connect": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
@@ -107,7 +104,7 @@ async def container_name() -> AsyncIterable[str]:
 
 
 async def test_background_log_fetcher(
-    mock_rabbitmq: Dict[str, AsyncMock], test_client: TestClient, container_name: str
+    mock_rabbitmq: dict[str, AsyncMock], test_client: TestClient, container_name: str
 ) -> None:
     app: FastAPI = test_client.application
     assert _get_background_log_fetcher(app=app) is not None

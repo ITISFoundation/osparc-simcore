@@ -85,8 +85,8 @@ COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 # copy utility devops scripts
-COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
-COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
+COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)

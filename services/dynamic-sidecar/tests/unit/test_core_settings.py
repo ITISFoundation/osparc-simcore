@@ -3,7 +3,7 @@
 
 
 import uuid
-from pathlib import Path, PosixPath
+from pathlib import Path
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -14,14 +14,9 @@ from simcore_service_dynamic_sidecar.core.settings import (
 
 
 @pytest.fixture
-def tmp_dir(tmp_path: PosixPath) -> Path:
-    return Path(tmp_path)
-
-
-@pytest.fixture
-def mocked_non_request_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None:
-    inputs_dir = tmp_dir / "inputs"
-    outputs_dir = tmp_dir / "outputs"
+def mocked_non_request_settings(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    inputs_dir = tmp_path / "inputs"
+    outputs_dir = tmp_path / "outputs"
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")

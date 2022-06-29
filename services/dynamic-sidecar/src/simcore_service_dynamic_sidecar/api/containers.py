@@ -4,7 +4,7 @@ import functools
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from fastapi import (
     APIRouter,
@@ -30,7 +30,11 @@ from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
+from ..core.shared_handlers import (
+    cleanup_containers_and_volumes,
+    remove_the_compose_spec,
+    write_file_and_run_command,
+)
 from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
@@ -61,11 +65,14 @@ async def _task_docker_compose_up(
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
-    command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "up --no-build --detach"
-    )
+
     with directory_watcher_disabled(app):
+        await cleanup_containers_and_volumes(shared_store, settings)
+
+        command = (
+            "docker-compose --project-name {project} --file {file_path} "
+            "up --no-build --detach"
+        )
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
             file_content=shared_store.compose_spec,
@@ -88,7 +95,7 @@ async def _task_docker_compose_up(
     return None
 
 
-def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
+def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
     if id not in container_names:
         message = (
             f"No container '{id}' was started. Started containers '{container_names}'"
@@ -115,7 +122,7 @@ async def runs_docker_compose_up(
     application_health: ApplicationHealth = Depends(get_application_health),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-) -> Union[List[str], Dict[str, Any]]:
+) -> Union[list[str], dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
     # stores the compose spec after validation
@@ -166,7 +173,7 @@ async def runs_docker_compose_down(
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
-) -> Union[str, Dict[str, Any]]:
+) -> Union[str, dict[str, Any]]:
     """Removes the previously started service
     and returns the docker-compose output"""
 
@@ -204,13 +211,13 @@ async def containers_docker_inspect(
         False, description="if True only show the status of the container"
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns entire docker inspect data, if only_state is True,
     the status of the containers is returned
     """
 
-    def _format_result(container_inspect: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_result(container_inspect: dict[str, Any]) -> dict[str, Any]:
         if only_status:
             container_state = container_inspect.get("State", {})
 
@@ -262,7 +269,7 @@ async def get_container_logs(
         description="Enabling this parameter will include timestamps in logs",
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> List[str]:
+) -> list[str]:
     """Returns the logs of a given container if found"""
     _raise_if_container_is_missing(id, shared_store.container_names)
 
@@ -273,7 +280,7 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
-        container_logs: List[str] = await container_instance.log(**args)
+        container_logs: list[str] = await container_instance.log(**args)
         return container_logs
 
 
@@ -288,7 +295,7 @@ async def get_container_logs(
         },
     },
 )
-async def get_entrypoint_container_name(
+async def get_containers_name(
     filters: str = Query(
         ...,
         description=(
@@ -297,14 +304,14 @@ async def get_entrypoint_container_name(
         ),
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Union[str, Dict[str, Any]]:
+) -> Union[str, dict[str, Any]]:
     """
     Searches for the container's name given the network
     on which the proxy communicates with it.
     Supported filters:
         network: name of the network
     """
-    filters_dict: Dict[str, str] = json.loads(filters)
+    filters_dict: dict[str, str] = json.loads(filters)
     if not isinstance(filters_dict, dict):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -348,14 +355,11 @@ async def get_entrypoint_container_name(
 )
 async def inspect_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
-        inspect_result: Dict[str, Any] = await container_instance.show()
+        inspect_result: dict[str, Any] = await container_instance.show()
         return inspect_result
-
-
-__all__ = ["containers_router"]

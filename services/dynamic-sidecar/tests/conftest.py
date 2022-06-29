@@ -3,13 +3,14 @@
 
 import asyncio
 import json
+import logging
 import os
 import random
 import sys
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
+from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock, Mock
 
 import aiodocker
@@ -19,7 +20,7 @@ from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core import utils
-from simcore_service_dynamic_sidecar.core.application import assemble_application
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
@@ -27,8 +28,15 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 )
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
+from tenacity import retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+logger = logging.getLogger(__name__)
 
 pytest_plugins = [
+    "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
@@ -63,12 +71,12 @@ def outputs_dir(io_temp_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
+def state_paths_dirs(io_temp_dir: Path) -> list[Path]:
     return [io_temp_dir / f"dir_{x}" for x in range(4)]
 
 
 @pytest.fixture(scope="session")
-def state_exclude_dirs(io_temp_dir: Path) -> List[Path]:
+def state_exclude_dirs(io_temp_dir: Path) -> list[Path]:
     return [io_temp_dir / f"dir_exclude_{x}" for x in range(4)]
 
 
@@ -79,8 +87,8 @@ def mock_environment(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
     monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
@@ -124,7 +132,7 @@ def disable_registry_check(monkeypatch_module: MockerFixture) -> None:
 
 @pytest.fixture(scope="module")
 def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
-    app = assemble_application()
+    app = create_app()
     app.state.rabbitmq = AsyncMock()
     return app
 
@@ -139,34 +147,68 @@ async def ensure_external_volumes(
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
+    state_paths_dirs: list[Path],
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> AsyncGenerator[None, None]:
+) -> AsyncIterator[None]:
     """ensures inputs and outputs volumes for the service are present"""
 
-    volume_names = []
+    volume_labels_source = []
     for state_paths_dir in [inputs_dir, outputs_dir] + state_paths_dirs:
         name_from_path = str(state_paths_dir).replace(os.sep, "_")
-        volume_names.append(f"{compose_namespace}{name_from_path}")
+        volume_labels_source.append(f"{compose_namespace}{name_from_path}")
 
-    async with docker_client() as client:
+    async with docker_client() as docker:
+
         volumes = await asyncio.gather(
             *[
-                client.volumes.create(
+                docker.volumes.create(
                     {
                         "Labels": {
-                            "source": volume_name,
+                            "source": source,
                             "run_id": f"{dynamic_sidecar_settings.DY_SIDECAR_RUN_ID}",
                         }
                     }
                 )
-                for volume_name in volume_names
+                for source in volume_labels_source
             ]
         )
 
+        #
+        # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
+        #
+        #
+        # Example
+        #   {
+        #     "CreatedAt": "2022-06-23T03:22:08+02:00",
+        #     "Driver": "local",
+        #     "Labels": {
+        #         "run_id": "f7c1bd87-4da5-4709-9471-3d60c8a70639",
+        #         "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
+        #     },
+        #     "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",
+        #     "Name": "22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034",
+        #     "Options": null,
+        #     "Scope": "local",
+        #     "CreatedTime": 1655947328000,
+        #     "Containers": {}
+        #   }
+
         yield
 
-        await asyncio.gather(*[volume.delete() for volume in volumes])
+        @retry(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(3),
+            reraise=True,
+            after=after_log(logger, logging.WARNING),
+        )
+        async def _delete(volume):
+            # Ocasionally might raise because volumes are mount to closing containers
+            await volume.delete()
+
+        deleted = await asyncio.gather(
+            *(_delete(volume) for volume in volumes), return_exceptions=True
+        )
+        assert not [r for r in deleted if isinstance(r, Exception)]
 
 
 @pytest.fixture

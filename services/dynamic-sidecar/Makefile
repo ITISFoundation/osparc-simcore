@@ -1,8 +1,6 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
-APP_NAME := $(notdir $(CURDIR))
-
 .DEFAULT_GOAL := help
 
 
@@ -12,10 +10,17 @@ APP_NAME := $(notdir $(CURDIR))
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.PHONY: openapi.json
+
+
+.PHONY: openapi-specs openapi.json
+openapi-specs: openapi.json
 openapi.json: .env ## Creates OAS document openapi.json
-	# generating openapi specs (OAS) file
-	export $(shell grep -v '^#' $< | xargs -0) && python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app.openapi(), indent=2) )" > $@
+	# generating openapi specs file under $<
+	@set -o allexport; \
+	source .env; \
+	set +o allexport; \
+	simcore-service-dynamic-sidecar openapi > $@
+
 	# validates OAS file: $@
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@

@@ -1,7 +1,7 @@
-import logging
+import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import Optional, cast
 from uuid import UUID
 
 from models_library.basic_types import BootModeEnum, PortInt
@@ -13,9 +13,10 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 
-class DynamicSidecarSettings(BaseCustomSettings):
+class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     SC_BOOT_MODE: Optional[BootModeEnum] = Field(
         ...,
@@ -24,15 +25,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     # LOGGING
     LOG_LEVEL: str = Field("WARNING")
-
-    @validator("LOG_LEVEL")
-    @classmethod
-    def match_logging_level(cls, v: str) -> str:
-        try:
-            getattr(logging, v.upper())
-        except AttributeError as err:
-            raise ValueError(f"{v.upper()} is not a valid level") from err
-        return v.upper()
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     DYNAMIC_SIDECAR_HOST: str = Field(
@@ -82,10 +74,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DY_SIDECAR_PATH_OUTPUTS: Path = Field(
         ..., description="path where to expect the outputs folder"
     )
-    DY_SIDECAR_STATE_PATHS: List[Path] = Field(
+    DY_SIDECAR_STATE_PATHS: list[Path] = Field(
         ..., description="list of additional paths to be synced"
     )
-    DY_SIDECAR_STATE_EXCLUDE: List[str] = Field(
+    DY_SIDECAR_STATE_EXCLUDE: list[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_USER_ID: UserID
@@ -98,14 +90,15 @@ class DynamicSidecarSettings(BaseCustomSettings):
     RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
+    @validator("LOG_LEVEL")
+    @classmethod
+    def _check_log_level(cls, value):
+        return cls.validate_log_level(value)
+
     @property
     def is_development_mode(self) -> bool:
         """If in development mode this will be True"""
         return self.SC_BOOT_MODE is BootModeEnum.DEVELOPMENT
-
-    @property
-    def loglevel(self) -> int:
-        return int(getattr(logging, self.LOG_LEVEL))
 
     @property
     def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:
@@ -123,4 +116,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
+    warnings.warn(
+        "Use instead app.state.settings",
+        DeprecationWarning,
+    )
     return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())

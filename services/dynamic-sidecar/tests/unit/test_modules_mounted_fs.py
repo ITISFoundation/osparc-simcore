@@ -4,7 +4,6 @@
 
 import os
 from pathlib import Path
-from typing import List
 from uuid import UUID
 
 import pytest
@@ -48,7 +47,7 @@ async def test_expected_paths_and_volumes(
     mounted_volumes: mounted_fs.MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
+    state_paths_dirs: list[Path],
     compose_namespace: str,
     run_id: UUID,
 ) -> None:

@@ -3,7 +3,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Awaitable, Deque, Dict, List, Optional, Set
+from typing import Any, Awaitable, Deque, Optional
 
 from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class CreateDirsRequestItem(BaseModel):
-    outputs_labels: Dict[str, ServiceOutput]
+    outputs_labels: dict[str, ServiceOutput]
 
 
 class PatchDirectoryWatcherItem(BaseModel):
@@ -53,7 +53,7 @@ class _BaseNetworkItem(BaseModel):
 
 
 class AttachContainerToNetworkItem(_BaseNetworkItem):
-    network_aliases: List[str]
+    network_aliases: list[str]
 
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
@@ -69,6 +69,7 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
 async def restore_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
     """
     When restoring the state:
@@ -81,7 +82,7 @@ async def restore_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Downloading state for {state_path}")
 
-        awaitables.append(pull_path_if_exists(state_path))
+        awaitables.append(pull_path_if_exists(state_path, settings))
 
     await logged_gather(*awaitables)
 
@@ -97,6 +98,7 @@ async def restore_state(
 async def save_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
@@ -104,7 +106,7 @@ async def save_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(
-            upload_path_if_exists(state_path, mounted_volumes.state_exclude)
+            upload_path_if_exists(state_path, mounted_volumes.state_exclude, settings)
         )
 
     await logged_gather(*awaitables)
@@ -118,7 +120,7 @@ async def save_state(
     status_code=status.HTTP_200_OK,
 )
 async def pull_input_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
@@ -176,7 +178,7 @@ async def create_output_dirs(
     status_code=status.HTTP_200_OK,
 )
 async def pull_output_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
@@ -202,7 +204,7 @@ async def pull_output_ports(
     },
 )
 async def push_output_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> None:
@@ -284,7 +286,7 @@ async def attach_container_to_network(
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: Set[str] = {
+        attached_network_ids: set[str] = {
             x["NetworkID"]
             for x in container_inspect["NetworkSettings"]["Networks"].values()
         }
@@ -319,7 +321,7 @@ async def detach_container_from_network(
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: Set[str] = {
+        attached_network_ids: set[str] = {
             x["NetworkID"]
             for x in container_inspect["NetworkSettings"]["Networks"].values()
         }
