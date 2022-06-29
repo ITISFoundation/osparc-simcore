@@ -8,7 +8,10 @@ aiohttp==3.8.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   aioresponses
     #   pytest-aiohttp
+aioresponses==0.7.3
+    # via -r requirements/_test.in
 aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
