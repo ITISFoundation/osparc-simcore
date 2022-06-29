@@ -24,4 +24,4 @@ async def health_endpoint(
     return application_health
 
 
-__all__ = ["health_router"]
+__all__: tuple[str, ...] = ("health_router",)
