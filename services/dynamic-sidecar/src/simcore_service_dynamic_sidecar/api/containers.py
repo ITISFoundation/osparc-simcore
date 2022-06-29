@@ -17,6 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from servicelib.fastapi.requests_decorators import cancellable_request
 
 from ..core.dependencies import (
     get_application,
@@ -48,8 +49,6 @@ from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
 
-containers_router = APIRouter(tags=["containers"])
-
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
     logger.info(message)
@@ -68,6 +67,8 @@ async def _task_docker_compose_up(
 
     with directory_watcher_disabled(app):
         await cleanup_containers_and_volumes(shared_store, settings)
+
+        assert shared_store.compose_spec is not None  # nosec
 
         command = (
             "docker-compose --project-name {project} --file {file_path} "
@@ -104,6 +105,12 @@ def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
+#
+# HANDLERS ------------------
+#
+containers_router = APIRouter(tags=["containers"])
+
+
 @containers_router.post(
     "/containers",
     status_code=status.HTTP_202_ACCEPTED,
@@ -113,8 +120,9 @@ def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
         }
     },
 )
+@cancellable_request
 async def runs_docker_compose_up(
-    request: Request,
+    _request: Request,
     background_tasks: BackgroundTasks,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -126,7 +134,7 @@ async def runs_docker_compose_up(
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
     # stores the compose spec after validation
-    body_as_text = (await request.body()).decode("utf-8")
+    body_as_text = (await _request.body()).decode("utf-8")
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
@@ -139,9 +147,10 @@ async def runs_docker_compose_up(
         )
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
 
     # run docker-compose in a background queue and return early
+    assert shared_store.compose_spec is not None  # nosec
     background_tasks.add_task(
         functools.partial(
             _task_docker_compose_up,
@@ -166,7 +175,9 @@ async def runs_docker_compose_up(
         },
     },
 )
+@cancellable_request
 async def runs_docker_compose_down(
+    _request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose down command timeout default"
     ),
@@ -206,7 +217,9 @@ async def runs_docker_compose_down(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
+@cancellable_request
 async def containers_docker_inspect(
+    _request: Request,
     only_status: bool = Query(
         False, description="if True only show the status of the container"
     ),
@@ -251,7 +264,9 @@ async def containers_docker_inspect(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancellable_request
 async def get_container_logs(
+    _request: Request,
     id: str,
     since: int = Query(
         0,
@@ -295,7 +310,9 @@ async def get_container_logs(
         },
     },
 )
+@cancellable_request
 async def get_containers_name(
+    _request: Request,
     filters: str = Query(
         ...,
         description=(
@@ -353,8 +370,9 @@ async def get_containers_name(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancellable_request
 async def inspect_container(
-    id: str, shared_store: SharedStore = Depends(get_shared_store)
+    _request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
