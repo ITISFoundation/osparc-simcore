@@ -20,6 +20,7 @@ from aiobotocore.session import get_session
 from aiohttp import web
 from aiohttp.test_utils import TestClient, unused_port
 from aiopg.sa import Engine
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import ETag, FileMetaDataGet, PresignedLink
 from models_library.projects import ProjectID
@@ -32,7 +33,6 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
-from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
@@ -168,7 +168,8 @@ def mocked_s3_server() -> Iterator[ThreadedMotoServer]:
 
 @pytest.fixture
 async def mocked_s3_server_envs(
-    mocked_s3_server: ThreadedMotoServer, monkeypatch: pytest.MonkeyPatch
+    mocked_s3_server: ThreadedMotoServer,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[None]:
     monkeypatch.setenv("S3_SECURE", "false")
     monkeypatch.setenv(
@@ -238,6 +239,7 @@ def mock_config(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs,
+    datcore_adapter_service_mock: AioResponsesMock,
 ):
     # NOTE: this can be overriden in tests that do not need all dependencies up
     ...
@@ -252,7 +254,6 @@ def app_settings(mock_config) -> Settings:
 
 @pytest.fixture
 def client(
-    datcore_adapter_service_mock,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable[..., int],
@@ -283,14 +284,15 @@ def simcore_file_id(
     )
 
 
+# NOTE: this will be enabled at a later timepoint
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
-        DatCoreDataManager.get_location_id(),
+        # DatCoreDataManager.get_location_id(),
     ],
     ids=[
         SimcoreS3DataManager.get_location_name(),
-        DatCoreDataManager.get_location_name(),
+        # DatCoreDataManager.get_location_name(),
     ],
 )
 def location_id(request: pytest.FixtureRequest) -> LocationID:
