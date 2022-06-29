@@ -140,8 +140,8 @@ async def list_projects_access_rights(
     projects_access_rights = {}
 
     async for row in conn.execute(smt):
-        assert isinstance(row.access_rights, dict)
-        assert isinstance(row.uuid, str)
+        assert isinstance(row.access_rights, dict)  # nosec
+        assert isinstance(row.uuid, str)  # nosec
 
         if row.access_rights:
             # TODO: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
@@ -188,8 +188,8 @@ async def get_project_access_rights(
         # Either project does not exists OR user_id has NO access
         return AccessRights.none()
 
-    assert row.prj_owner is None or isinstance(row.prj_owner, int)
-    assert isinstance(row.access_rights, dict)
+    assert row.prj_owner is None or isinstance(row.prj_owner, int)  # nosec
+    assert isinstance(row.access_rights, dict)  # nosec
 
     if row.prj_owner == user_id:
         return AccessRights.all()
