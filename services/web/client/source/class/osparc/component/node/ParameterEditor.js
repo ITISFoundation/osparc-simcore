@@ -62,6 +62,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       let control;
       switch (id) {
         case "label":
+        case "string":
+        case "number":
           control = new qx.ui.form.TextField();
           break;
         case "data-type": {
@@ -79,9 +81,6 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           });
           break;
         }
-        case "number":
-          control = new qx.ui.form.TextField();
-          break;
         case "integer":
           control = new qx.ui.form.Spinner();
           control.set({
