@@ -38,21 +38,22 @@ class StorageS3Client:
     async def create(
         cls, exit_stack: AsyncExitStack, settings: S3Settings
     ) -> "StorageS3Client":
-        # upon creation the client automatically tries to connect to the S3 server
-        # it raises an exception if it fails
+        # upon creation the client does not try to connect, one need to make an operation
         session = aioboto3.Session()
         # NOTE: session.client returns an aiobotocore client enhanced with aioboto3 fcts (e.g. download_file, upload_file, copy_file...)
-        client = await exit_stack.enter_async_context(
-            session.client(
-                "s3",
-                endpoint_url=settings.S3_ENDPOINT,
-                aws_access_key_id=settings.S3_ACCESS_KEY,
-                aws_secret_access_key=settings.S3_SECRET_KEY,
-                aws_session_token=settings.S3_ACCESS_TOKEN,
-                region_name=settings.S3_REGION,
-                config=Config(signature_version="s3v4"),
-            )
+        client = session.client(
+            "s3",
+            endpoint_url=settings.S3_ENDPOINT,
+            aws_access_key_id=settings.S3_ACCESS_KEY,
+            aws_secret_access_key=settings.S3_SECRET_KEY,
+            aws_session_token=settings.S3_ACCESS_TOKEN,
+            region_name=settings.S3_REGION,
+            config=Config(signature_version="s3v4"),
         )
+        assert isinstance(client, S3Client)  # nosec
+        client = await exit_stack.enter_async_context(client)
+        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
+        await client.list_buckets()
 
         return cls(session, client)
 
