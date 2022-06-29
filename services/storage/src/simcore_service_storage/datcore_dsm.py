@@ -49,28 +49,26 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def list_files(
-        self, user_id: UserID, _uuid_filter: str = ""
+        self, user_id: UserID, uuid_filter: str = ""
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_datasets_files_metadatas(
             self.app, user_id, api_token, api_secret
         )
 
-    async def get_file(self, _user_id: UserID, _file_id: StorageFileID) -> FileMetaData:
+    async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         raise NotImplementedError
 
     async def create_file_upload_link(
-        self, _user_id: UserID, _file_id: StorageFileID, _link_type: LinkType
+        self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
         raise NotImplementedError
 
-    async def abort_file_upload(
-        self, _user_id: UserID, _file_id: StorageFileID
-    ) -> None:
+    async def abort_file_upload(self, user_id: UserID, file_id: StorageFileID) -> None:
         raise NotImplementedError
 
     async def create_file_download_link(
-        self, user_id: UserID, file_id: StorageFileID, _link_type: LinkType
+        self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.get_file_download_presigned_link(
