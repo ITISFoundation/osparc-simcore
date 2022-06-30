@@ -4,9 +4,9 @@
     "name": "ISAN2019: 3D Paraview",
     "description": "3D Paraview viewer with two inputs",
     "thumbnail": "https://user-images.githubusercontent.com/33152403/60168939-073a5580-9806-11e9-8dad-8a7caa3eb5ab.png",
-    "prjOwner": "",
-    "creationDate": "2019-06-06 14:33:43.065",
-    "lastChangeDate": "2019-06-06 14:33:44.747",
+    "prjOwner": "pytest@itis.swiss",
+    "creationDate": "2019-06-06T14:33:43.065Z",
+    "lastChangeDate": "2019-06-06T14:33:44.747Z",
     "accessRights": {},
     "workbench": {
       "de2578c5-431e-5753-af37-e6aec8120bf2": {
@@ -45,7 +45,7 @@
           "y": 250
         }
       },
-      "de2578c5-431e-9b0f-67677a20996c": {
+      "de2578c5-431e-9b0f-a456-67677a20996c": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "2.10.0",
         "label": "3D ParaViewer",
@@ -77,9 +77,9 @@
     "name": "ISAN: UCDavis use case: 0D",
     "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
     "thumbnail": "https://user-images.githubusercontent.com/33152403/60168940-073a5580-9806-11e9-9a44-ae5266eeb020.png",
-    "prjOwner": "",
-    "creationDate": "2019-06-06 14:33:51.94",
-    "lastChangeDate": "2019-06-06 14:33:54.329",
+    "prjOwner": "pytest@itis.swiss",
+    "creationDate": "2019-06-06T14:33:51.940Z",
+    "lastChangeDate": "2019-06-06T14:33:54.329Z",
     "accessRights": {},
     "workbench": {
       "de2578c5-431e-59d6-b1a5-6e7b2773636b": {

@@ -41,7 +41,7 @@ async def _get_node_from_db(
     )
     if result.rowcount > 1:
         log.error("the node id %s is not unique", node_uuid)
-    node: RowProxy = await result.fetchone()
+    node: Optional[RowProxy] = await result.first()
     if not node:
         log.error("the node id %s was not found", node_uuid)
         raise NodeNotFound(node_uuid)

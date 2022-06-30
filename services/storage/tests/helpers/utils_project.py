@@ -1,17 +1,23 @@
 import uuid as uuidlib
 from copy import deepcopy
+from typing import Any
+
+from models_library.projects_nodes_io import NodeIDStr
 
 
-def clone_project_data(project: dict) -> tuple[dict, dict]:
+def clone_project_data(
+    project: dict,
+) -> tuple[dict[str, Any], dict[NodeIDStr, NodeIDStr]]:
     project_copy = deepcopy(project)
 
     # Update project id
     # NOTE: this can be re-assigned by dbapi if not unique
     project_copy_uuid = uuidlib.uuid4()  # random project id
     project_copy["uuid"] = str(project_copy_uuid)
+    project_copy.pop("id", None)
 
     # Workbench nodes shall be unique within the project context
-    def _create_new_node_uuid(old_uuid):
+    def _create_new_node_uuid(old_uuid: NodeIDStr) -> NodeIDStr:
         return str(uuidlib.uuid5(project_copy_uuid, str(old_uuid)))
 
     nodes_map = {}

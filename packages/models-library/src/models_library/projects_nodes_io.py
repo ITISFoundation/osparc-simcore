@@ -7,9 +7,8 @@
 """
 
 import re
-from enum import IntEnum
 from pathlib import Path
-from typing import Literal, Optional, Pattern, Union
+from typing import Optional, Pattern, Union
 from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, ConstrainedStr, Extra, Field, validator
@@ -24,14 +23,8 @@ class NodeIDStr(ConstrainedStr):
     regex: Optional[Pattern[str]] = re.compile(UUID_RE)
 
 
-# NOTE: this trick is used to keep backward compatility simcore.s3 is not a valid python variable name
-Location = IntEnum(
-    value="Location",
-    names=[("simcore.s3", 0), ("SIMCORE_S3", 0), ("datcore", 1), ("DATCORE", 1)],
-)
-
-LocationID = Union[Literal[0], Literal[1]]
-LocationName = Union[Literal["simcore.s3"], Literal["datcore"]]
+LocationID = int
+LocationName = str
 
 
 class SimcoreS3FileID(ConstrainedStr):

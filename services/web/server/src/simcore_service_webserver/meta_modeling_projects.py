@@ -8,11 +8,10 @@
 
 import logging
 import re
-from typing import List, Tuple
 
 from aiohttp import web
 from aiohttp.typedefs import Handler
-from models_library.basic_regex import UUID_RE_BASE
+from models_library.basic_regex import UUID_RE
 from models_library.projects import ProjectID
 
 from ._meta import api_version_prefix as VTAG
@@ -28,7 +27,7 @@ log = logging.getLogger(__name__)
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/blob/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml#L8563
-URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE_BASE})[\/]{{0,1}}")
+URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/]{{0,1}}")
 
 
 def _match_project_id(request: web.Request):
@@ -91,14 +90,14 @@ class MetaProjectRunPolicy(AbstractProjectRunPolicy):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> List[ProjectID]:
+    ) -> list[ProjectID]:
         return await get_runnable_projects_ids(request, project_uuid)
 
     async def get_or_create_runnable_projects(
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> Tuple[List[ProjectID], List[CommitID]]:
+    ) -> tuple[list[ProjectID], list[CommitID]]:
         return await get_or_create_runnable_projects(request, project_uuid)
 
 

@@ -6,13 +6,17 @@
 import logging
 
 from aiohttp.web import Request, RouteTableDef
-from models_library.api_schemas_storage import HealthCheck
+from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from simcore_service_storage.constants import APP_CONFIG_KEY
 
 from ._meta import api_version, api_version_prefix, app_name
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
+from .exceptions import S3AccessError, S3BucketInvalidError
+from .s3 import get_s3_client
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -32,36 +36,28 @@ async def get_health(request: Request):
     ).dict(exclude_unset=True)
 
 
-@routes.post(f"/{api_version_prefix}/check/{{action}}", name="check_action")  # type: ignore
-async def check_action(request: Request):
-    """
-    Test checkpoint to ask server to fail or echo back the transmitted data
-    TODO: deprecate
-    """
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert body, "body %s" % body  # nosec
-
-    if params["action"] == "fail":
-        raise ValueError("some randome failure")
-
-    # echo's input FIXME: convert to dic
-    # FIXME: output = fake_schema.dump(body)
-    return {
-        "path_value": params.get("action"),
-        "query_value": query.get("data"),
-        "body_value": {
-            "key1": 1,  # body.body_value.key1,
-            "key2": 0,  # body.body_value.key2,
-        },
-    }
-
-
 @routes.get(f"/{api_version_prefix}/status", name="get_status")  # type: ignore
-async def get_app_status(request: Request):
+async def get_status(request: Request):
     # NOTE: all calls here must NOT raise
+    assert request.app  # nosec
+    app_settings: Settings = request.app[APP_CONFIG_KEY]
+    s3_state = "disabled"
+    if app_settings.STORAGE_S3:
+        try:
+            await get_s3_client(request.app).check_bucket_connection(
+                S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+            )
+            s3_state = "connected"
+        except S3BucketInvalidError:
+            s3_state = "no access to S3 bucket"
+        except S3AccessError:
+            s3_state = "failed"
+
+    postgres_state = "disabled"
+    if app_settings.STORAGE_POSTGRES:
+        postgres_state = (
+            "connected" if await is_pg_responsive(request.app) else "failed"
+        )
 
     status = AppStatusCheck.parse_obj(
         {
@@ -69,10 +65,10 @@ async def get_app_status(request: Request):
             "version": api_version,
             "services": {
                 "postgres": {
-                    "healthy": await is_pg_responsive(request.app),
+                    "healthy": postgres_state,
                     "pool": get_engine_state(request.app),
                 },
-                # TODO: s3-minio
+                "s3": {"healthy": s3_state},
             },
         }
     )

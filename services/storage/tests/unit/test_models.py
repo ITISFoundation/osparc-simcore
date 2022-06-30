@@ -1,0 +1,73 @@
+import uuid
+
+import pytest
+from models_library.api_schemas_storage import S3BucketName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
+from pydantic import ValidationError, parse_obj_as
+from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+
+
+@pytest.mark.parametrize(
+    "file_id",
+    ["test", "test/hop", "gogo", "//file.name"],
+)
+def test_file_id_raises_error(file_id: str):
+    with pytest.raises(ValidationError):
+        parse_obj_as(StorageFileID, file_id)
+
+
+@pytest.mark.parametrize(
+    "file_id",
+    [
+        "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+        "api/7b6b4e3d-39ae-3559-8765-4f815a49984e/tmpf_qatpzx_!...***",
+        "api/6f788ad9-0ad8-3d0d-9722-72f08c24a212/output_data.json",
+        "N:package:ce145b61-7e4f-470b-a113-033653e86d3d",
+    ],
+)
+def test_file_id(file_id: str):
+    parsed_file_id = parse_obj_as(StorageFileID, file_id)
+    assert parsed_file_id
+    assert parsed_file_id == file_id
+
+
+def test_fmd_build():
+    file_id = parse_obj_as(SimcoreS3FileID, f"api/{uuid.uuid4()}/xx.dat")
+    fmd = FileMetaData.from_simcore_node(
+        user_id=12,
+        file_id=file_id,
+        bucket=S3BucketName("test-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+    )
+
+    assert fmd.node_id
+    assert not fmd.project_id
+    assert fmd.file_name == "xx.dat"
+    assert fmd.object_name == file_id
+    assert fmd.file_uuid == file_id
+    assert fmd.file_id == file_id
+    assert fmd.location == SimcoreS3DataManager.get_location_name()
+    assert fmd.location_id == SimcoreS3DataManager.get_location_id()
+    assert fmd.bucket_name == "test-bucket"
+
+    file_id = parse_obj_as(SimcoreS3FileID, f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat")
+    fmd = FileMetaData.from_simcore_node(
+        user_id=12,
+        file_id=file_id,
+        bucket=S3BucketName("test-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+    )
+
+    assert fmd.node_id == NodeID(file_id.split("/")[1])
+    assert fmd.project_id == ProjectID(file_id.split("/")[0])
+    assert fmd.file_name == "xx.dat"
+    assert fmd.object_name == file_id
+    assert fmd.file_uuid == file_id
+    assert fmd.file_id == file_id
+    assert fmd.location == SimcoreS3DataManager.get_location_name()
+    assert fmd.location_id == SimcoreS3DataManager.get_location_id()
+    assert fmd.bucket_name == "test-bucket"

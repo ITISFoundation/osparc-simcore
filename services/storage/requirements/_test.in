@@ -5,11 +5,14 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
+
+aioresponses
 codecov
 coverage
 coveralls
 docker
 faker
+moto[server]
 pandas
 pylint
 pytest

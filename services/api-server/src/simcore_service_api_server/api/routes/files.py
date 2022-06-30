@@ -51,7 +51,6 @@ async def list_files(
     files_meta = deque()
     for stored_file_meta in stored_files:
         try:
-            assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
             file_meta: File = to_file_api_model(stored_file_meta)
@@ -151,7 +150,6 @@ async def get_file(
             raise ValueError("Not found in storage")
 
         stored_file_meta = stored_files[0]
-        assert stored_file_meta.user_id == user_id  # nosec
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
