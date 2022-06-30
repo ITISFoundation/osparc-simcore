@@ -27,8 +27,8 @@ from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import write_file_and_run_command
-from ..models.domains.shared_store import SharedStore
-from ..models.schemas.ports import PortTypeName
+from ..models.ports import PortTypeName
+from ..models.shared_store import SharedStore
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes

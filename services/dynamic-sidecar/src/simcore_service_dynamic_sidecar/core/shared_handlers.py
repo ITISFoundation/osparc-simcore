@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from ..models.domains.shared_store import SharedStore
+from ..models.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
 from .utils import async_command, write_to_tmp_file
 
