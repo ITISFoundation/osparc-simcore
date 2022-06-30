@@ -3,7 +3,6 @@ import base64
 import json
 import logging
 import tempfile
-import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, NamedTuple, Optional
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class CommandResult(NamedTuple):
-    finished_without_errors: bool
+    success: bool
     decoded_stdout: str
 
 
@@ -109,33 +108,28 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
 
 
 async def async_command(
-    command: str, command_timeout: Optional[float]
+    command: str, command_timeout: Optional[float] = None
 ) -> CommandResult:
-    """Returns if the command exited correctly and the stdout of the command"""
-    proc = await asyncio.create_subprocess_shell(
-        command,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-
     try:
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
-    except asyncio.TimeoutError:
-        message = (
-            f"{traceback.format_exc()}\nTimed out after {command_timeout} "
-            f"seconds while running {command}"
+        proc = await asyncio.create_subprocess_shell(
+            command,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
         )
-        logger.warning(message)
-        return CommandResult(finished_without_errors=False, decoded_stdout=message)
 
-    decoded_stdout = stdout.decode()
-    logger.info("'%s' result:\n%s", command, decoded_stdout)
-    finished_without_errors = proc.returncode == 0
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
 
-    return CommandResult(
-        finished_without_errors=finished_without_errors, decoded_stdout=decoded_stdout
-    )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "%s timed out after %ss",
+            f"{command=!r}",
+            f"{command_timeout=}",
+            stack_info=True,
+        )
+        raise
+
+    return CommandResult(success=proc.returncode == 0, decoded_stdout=stdout.decode())
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:
