@@ -128,7 +128,7 @@ async def test_cancellable_handler_with_successful_request(
 
 
 @pytest.mark.skip(reason="DEV: cannot emulate disconnect")
-async def test_it(
+async def test_it0(
     app: FastAPI,
     event_loop: asyncio.AbstractEventLoop,
     inspect_app_tasks: Callable[[], list[Task]],
@@ -198,23 +198,39 @@ async def test_it(
 
 @pytest.mark.skip(reason="DEV: cannot emulate disconnect")
 async def test_it1(app: FastAPI, inspect_app_tasks: Callable[[], list[Task]]):
-
     # Emulating disconnect by producing a timemout with syncronous
     # test client
-    with SyncTestClient(app) as test_client:
+
+    async with TestClient(app, timeout=0.001) as client:
         with pytest.raises(asyncio.TimeoutError):
-            r = test_client.get(
-                "/sleep/100", headers={"Connection": "close"}, timeout=0.001
-            )
+            r = await client.get("/sleep/100")
 
-    app_tasks = inspect_app_tasks()
-    assert app_tasks
+        await asyncio.sleep(1)
+        app_tasks = inspect_app_tasks()
+        assert app_tasks
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.5), stop=stop_after_attempt(4)
-    ):
-        with attempt:
-            assert all(t.done() for t in app_tasks)
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.5), stop=stop_after_attempt(4)
+        ):
+            with attempt:
+                assert all(t.done() for t in app_tasks)
+
+
+@pytest.mark.skip(reason="DEV: cannot emulate disconnect")
+async def test_it1a(app: FastAPI, inspect_app_tasks: Callable[[], list[Task]]):
+    with SyncTestClient(app) as client:
+        with pytest.raises(asyncio.TimeoutError):
+            r = client.get("/sleep/100", timeout=0.001)
+
+            await asyncio.sleep(1)
+            app_tasks = inspect_app_tasks()
+            assert app_tasks
+
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.5), stop=stop_after_attempt(4)
+            ):
+                with attempt:
+                    assert all(t.done() for t in app_tasks)
 
 
 @pytest.mark.skip(reason="DEV: cannot emulate disconnect")
