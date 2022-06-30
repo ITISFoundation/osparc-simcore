@@ -4,10 +4,9 @@ import json
 import logging
 import tempfile
 import traceback
-from collections import namedtuple
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, NamedTuple, Optional
 
 import aiofiles
 import httpx
@@ -22,13 +21,16 @@ from tenacity.wait import wait_fixed
 
 from ..modules.mounted_fs import MountedVolumes
 
-CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_stdout")
-
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 HIDDEN_FILE_NAME = ".hidden_do_not_remove"
 
 logger = logging.getLogger(__name__)
+
+
+class CommandResult(NamedTuple):
+    finished_without_errors: bool
+    decoded_stdout: str
 
 
 class _RegistryNotReachableException(Exception):

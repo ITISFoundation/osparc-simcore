@@ -64,9 +64,10 @@ async def _task_docker_compose_up(
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
+    assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        await cleanup_containers_and_volumes(shared_store, settings)
+        await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
 
         assert shared_store.compose_spec is not None  # nosec
 

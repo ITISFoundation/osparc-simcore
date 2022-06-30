@@ -3,20 +3,20 @@ from typing import Optional
 
 from ..models.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
-from .utils import async_command, write_to_tmp_file
+from .utils import CommandResult, async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)
 
 
 async def cleanup_containers_and_volumes(
-    shared_store: SharedStore, settings: DynamicSidecarSettings
+    compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
     cleanup_command = (
         "docker-compose --project-name {project} --file {file_path} rm --force -v"
     )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=shared_store.compose_spec,
+        file_content=compose_spec,
         command=cleanup_command,
         command_timeout=None,
     )
@@ -31,7 +31,7 @@ async def write_file_and_run_command(
     file_content: str,
     command: str,
     command_timeout: Optional[float],
-) -> tuple[bool, str]:
+) -> CommandResult:
     """The command which accepts {file_path} as an argument for string formatting"""
 
     # pylint: disable=not-async-context-manager
@@ -47,13 +47,12 @@ async def write_file_and_run_command(
 
 async def remove_the_compose_spec(
     shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
-) -> tuple[bool, str]:
+) -> CommandResult:
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
-        return True, "No started spec to remove was found"
+    if not shared_store.compose_spec:
+        return CommandResult(True, "No started spec to remove was found")
 
-    await cleanup_containers_and_volumes(shared_store, settings)
+    await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
 
     command = (
         'docker-compose --project-name {project} --file "{file_path}" '
@@ -61,10 +60,11 @@ async def remove_the_compose_spec(
     )
     result = await write_file_and_run_command(
         settings=settings,
-        file_content=stored_compose_content,
+        file_content=shared_store.compose_spec,
         command=command,
         command_timeout=command_timeout,
     )
+
     # removing compose-file spec
     shared_store.compose_spec = None
     shared_store.container_names = []
