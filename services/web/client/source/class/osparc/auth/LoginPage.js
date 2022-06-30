@@ -45,21 +45,12 @@ qx.Class.define("osparc.auth.LoginPage", {
       layout.setRowFlex(1, 1);
       layout.setColumnFlex(0, 1);
       this._setLayout(layout);
-      osparc.utils.LibVersions.getPlatformName()
-        .then(platformName => {
-          let image = null;
-          const now = new Date().getTime();
-          const afterKZ = new Date("2022-07-01").getTime();
-          if ((now < afterKZ) && platformName === "master") {
-            image = this._getLogoWPlatform2();
-          } else {
-            image = this._getLogoWPlatform();
-          }
-          this._add(image, {
-            row: 0,
-            column: 0
-          });
-        });
+
+      const image = this._getLogoWPlatform();
+      this._add(image, {
+        row: 0,
+        column: 0
+      });
 
       const pages = this._getLoginStack();
       this._add(pages, {
