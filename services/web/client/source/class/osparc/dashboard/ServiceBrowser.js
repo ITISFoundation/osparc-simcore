@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   members: {
     __servicesAll: null,
     __servicesLatestList: null,
+    __sortByGroup: null,
 
     __reloadService: function(key, version, reload) {
       osparc.store.Store.getInstance().getService(key, version, reload)
@@ -46,10 +47,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly()
         .then(services => {
+          const favServices = osparc.utils.Utils.localCache.getFavServices();
           this.__servicesAll = services;
           const servicesList = [];
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
+            const found = Object.keys(favServices).find(favSrv => favSrv === key);
+            latestService.hits = found ? favServices[found]["hits"] : 0;
             servicesList.push(latestService);
           }
           this._resetResourcesList(servicesList);
@@ -87,6 +91,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._createResourcesLayout("service");
 
       this.__addNewServiceButtons();
+      this.__addSortingButtons();
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
@@ -145,6 +150,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
       this.__servicesLatestList = servicesList;
       this._resourcesContainer.removeAll();
+      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortByGroup.getSelection()[0].sortBy);
       servicesList.forEach(service => {
         service["resourceType"] = "service";
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
@@ -199,9 +205,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
-      addServiceButton.addListener("execute", () => {
-        this.__displayServiceSubmissionForm();
-      });
+      addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._secondaryBar.add(addServiceButton);
     },
 
@@ -256,6 +260,36 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           .finally(() => form.setFetching(false));
       });
       scroll.add(form);
+    },
+
+    __addSortingButtons: function() {
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
+        marginRight: 8
+      });
+      const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
+      byHitsBtn.sortBy = "hits";
+      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
+      byNameBtn.sortBy = "name";
+      const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
+        allowEmptySelection: false
+      });
+      [
+        byHitsBtn,
+        byNameBtn
+      ].forEach(btn => {
+        containterSortBtns.add(btn);
+        sortByGroup.add(btn);
+        btn.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+      });
+      this._secondaryBar.add(containterSortBtns);
+
+      sortByGroup.addListener("changeSelection", () => this._resetResourcesList());
     }
   }
 });

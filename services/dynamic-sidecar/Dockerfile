@@ -45,7 +45,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # directory where dynamic-sidecar stores creates and shares
 # volumes between itself and the spawned containers
-ENV DY_VOLUMES="/dy-volumes"
+ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
 # rclone installation
 ARG R_CLONE_VERSION="1.58.0"
@@ -70,7 +70,7 @@ RUN apt-get update &&\
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
-RUN mkdir -p ${DY_VOLUMES}
+RUN mkdir -p ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
 
 RUN pip install --upgrade --no-cache-dir \
   pip~=22.0  \
@@ -85,8 +85,8 @@ COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 # copy utility devops scripts
-COPY --chown=scu:scu services/dynamic-sidecar/extra/Makefile /home/scu
-COPY --chown=root:root services/dynamic-sidecar/extra/Makefile /root
+COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -124,7 +124,7 @@ WORKDIR /home/scu
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
+COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR} ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
@@ -157,7 +157,7 @@ ENV SC_BUILD_TARGET=development
 WORKDIR /devel
 
 RUN chown -R scu:scu ${VIRTUAL_ENV}
-RUN chown -R scu:scu ${DY_VOLUMES}
+RUN chown -R scu:scu ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
 
 EXPOSE 8000
 EXPOSE 3000

@@ -8,8 +8,7 @@ from typing import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
-from py._path.local import LocalPath
+from pytest import MonkeyPatch
 from simcore_service_dynamic_sidecar.modules import directory_watcher
 from simcore_service_dynamic_sidecar.modules.directory_watcher import (
     DirectoryWatcherObservers,
@@ -23,7 +22,6 @@ from simcore_service_dynamic_sidecar.modules.directory_watcher import (
 # - todo make it run on a separate thread, already there
 # - todo use absolute patterns for monitoring
 
-pytestmark = pytest.mark.asyncio
 
 TICK_INTERVAL = 0.001
 
@@ -40,16 +38,11 @@ def patch_directory_watcher(monkeypatch: MonkeyPatch) -> Iterator[AsyncMock]:
     yield mocked_upload_data
 
 
-@pytest.fixture
-def temp_dir(tmpdir: LocalPath) -> Path:
-    return Path(tmpdir)
-
-
 # UTILS
 
 
-async def _generate_event_burst(temp_dir: Path, subfolder: str = None) -> None:
-    full_dir_path = temp_dir if subfolder is None else temp_dir / subfolder
+async def _generate_event_burst(tmp_path: Path, subfolder: str = None) -> None:
+    full_dir_path = tmp_path if subfolder is None else tmp_path / subfolder
     full_dir_path.mkdir(parents=True, exist_ok=True)
     file_path_1 = full_dir_path / "file1.txt"
     file_path_2 = full_dir_path / "file2.txt"
@@ -70,11 +63,11 @@ async def _generate_event_burst(temp_dir: Path, subfolder: str = None) -> None:
 
 async def test_run_observer(
     patch_directory_watcher: AsyncMock,
-    temp_dir: Path,
+    tmp_path: Path,
 ) -> None:
 
     directory_watcher_observers = DirectoryWatcherObservers()
-    directory_watcher_observers.observe_directory(temp_dir)
+    directory_watcher_observers.observe_directory(tmp_path)
 
     directory_watcher_observers.start()
     directory_watcher_observers.start()
@@ -82,12 +75,12 @@ async def test_run_observer(
     await asyncio.sleep(TICK_INTERVAL)
 
     # generates the first event chain
-    await _generate_event_burst(temp_dir)
+    await _generate_event_burst(tmp_path)
 
     await asyncio.sleep(2)
 
     # generates the second event chain
-    await _generate_event_burst(temp_dir, "ciao")
+    await _generate_event_burst(tmp_path, "ciao")
 
     await directory_watcher_observers.stop()
     await directory_watcher_observers.stop()

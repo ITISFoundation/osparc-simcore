@@ -30,7 +30,11 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
   statics: {
     getParameterOutputTypeFromMD: function(metaData) {
-      return metaData["outputs"]["out_1"]["type"];
+      let type = metaData["outputs"]["out_1"]["type"];
+      if (type === "ref_contentSchema") {
+        type = metaData["outputs"]["out_1"]["contentSchema"]["type"];
+      }
+      return type;
     },
 
     getParameterOutputType: function(node) {
@@ -40,7 +44,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
 
     setParameterOutputValue: function(node, val) {
       node.setOutputData({
-        "out_1": val
+        "out_1": this.self().getParameterOutputType(node) === "array" ? osparc.ui.form.ContentSchemaArray.addArrayBrackets(val) : val
       });
     }
   },
@@ -58,6 +62,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
       let control;
       switch (id) {
         case "label":
+        case "string":
+        case "number":
           control = new qx.ui.form.TextField();
           break;
         case "data-type": {
@@ -75,9 +81,6 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           });
           break;
         }
-        case "number":
-          control = new qx.ui.form.TextField();
-          break;
         case "integer":
           control = new qx.ui.form.Spinner();
           control.set({
@@ -89,6 +92,7 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           control = new qx.ui.form.CheckBox();
           break;
         case "ref_contentSchema":
+        case "array":
           control = new osparc.ui.form.ContentSchemaArray();
           break;
       }

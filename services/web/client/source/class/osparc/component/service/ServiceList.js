@@ -62,7 +62,6 @@ qx.Class.define("osparc.component.service.ServiceList", {
         allowEmptySelection: true
       });
 
-      osparc.utils.Services.sortBasedOnFav(model);
       model.toArray().forEach(service => {
         const button = new osparc.component.service.ServiceButtonList(service);
         if (this.__filterGroup !== null) {

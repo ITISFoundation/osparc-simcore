@@ -4,12 +4,16 @@
 
 import os
 from pathlib import Path
-from typing import List
 from uuid import UUID
 
 import pytest
+from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
-from simcore_service_dynamic_sidecar.modules import mounted_fs
+from simcore_service_dynamic_sidecar.core.application import AppState
+from simcore_service_dynamic_sidecar.modules.mounted_fs import (
+    MountedVolumes,
+    _name_from_full_path,
+)
 
 # UTILS
 
@@ -27,31 +31,32 @@ def path_to_transform() -> Path:
 
 
 @pytest.fixture
-def run_id(app: FastAPI) -> UUID:
-    return app.state.settings.DY_SIDECAR_RUN_ID
+def mounted_volumes(app: FastAPI) -> MountedVolumes:
+    return AppState(app).mounted_volumes
 
 
 # TESTS
 
 
-def test_name_from_full_path(path_to_transform: Path) -> None:
-    assert mounted_fs._name_from_full_path(  # pylint: disable=protected-access
+def test_name_from_full_path(path_to_transform: Path):
+    assert _name_from_full_path(  # pylint: disable=protected-access
         path_to_transform
     ) == _replace_slashes(path_to_transform)
 
 
-def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
+def test_setup_ok(mounted_volumes: MountedVolumes):
     assert mounted_volumes
 
 
 async def test_expected_paths_and_volumes(
-    mounted_volumes: mounted_fs.MountedVolumes,
+    ensure_external_volumes: tuple[DockerVolume],
+    mounted_volumes: MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
+    state_paths_dirs: list[Path],
     compose_namespace: str,
     run_id: UUID,
-) -> None:
+):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
         == len(
@@ -68,15 +73,15 @@ async def test_expected_paths_and_volumes(
     # check location on disk
     assert (
         mounted_volumes.disk_outputs_path
-        == mounted_fs.DY_VOLUMES / outputs_dir.relative_to("/")
+        == mounted_volumes._dy_volumes / outputs_dir.relative_to("/")
     )
     assert (
         mounted_volumes.disk_inputs_path
-        == mounted_fs.DY_VOLUMES / inputs_dir.relative_to("/")
+        == mounted_volumes._dy_volumes / inputs_dir.relative_to("/")
     )
 
     assert set(mounted_volumes.disk_state_paths()) == {
-        mounted_fs.DY_VOLUMES / x.relative_to("/") for x in state_paths_dirs
+        mounted_volumes._dy_volumes / x.relative_to("/") for x in state_paths_dirs
     }
 
     # check volume mount point

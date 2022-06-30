@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Generator
 
 import yaml
 
@@ -39,7 +39,7 @@ def _assemble_container_name(
     return container_name
 
 
-def _get_forwarded_env_vars(container_key: str) -> List[str]:
+def _get_forwarded_env_vars(container_key: str) -> list[str]:
     """returns env vars targeted to each container in the compose spec"""
     results = [
         # some services expect it, using it as empty
@@ -60,14 +60,14 @@ def _get_forwarded_env_vars(container_key: str) -> List[str]:
     return results
 
 
-def _extract_templated_entries(text: str) -> List[str]:
+def _extract_templated_entries(text: str) -> list[str]:
     return re.findall(TEMPLATE_SEARCH_PATTERN, text)
 
 
 def _apply_templating_directives(
     stringified_compose_spec: str,
-    services: Dict[str, Any],
-    spec_services_to_container_name: Dict[str, str],
+    services: dict[str, Any],
+    spec_services_to_container_name: dict[str, str],
 ) -> str:
     """
     Some custom rules are supported for replacing `container_name`
@@ -104,11 +104,11 @@ def _apply_templating_directives(
 
 
 def _merge_env_vars(
-    compose_spec_env_vars: List[str], settings_env_vars: List[str]
-) -> List[str]:
+    compose_spec_env_vars: list[str], settings_env_vars: list[str]
+) -> list[str]:
     def _gen_parts_env_vars(
-        env_vars: List[str],
-    ) -> Generator[Tuple[str, str], None, None]:
+        env_vars: list[str],
+    ) -> Generator[tuple[str, str], None, None]:
         for env_var in env_vars:
             key, value = env_var.split("=")
             yield key, value
@@ -126,7 +126,7 @@ def _merge_env_vars(
 
 
 def _inject_backend_networking(
-    parsed_compose_spec: Dict[str, Any], network_name: str = "__backend__"
+    parsed_compose_spec: dict[str, Any], network_name: str = "__backend__"
 ) -> None:
     """
     Put all containers in the compose spec in the same network.
@@ -185,7 +185,7 @@ async def validate_compose_spec(
     if version.startswith("1"):
         raise InvalidComposeSpec(f"Provided spec version '{version}' is not supported")
 
-    spec_services_to_container_name: Dict[str, str] = {}
+    spec_services_to_container_name: dict[str, str] = {}
 
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):

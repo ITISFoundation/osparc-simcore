@@ -331,6 +331,10 @@ qx.Class.define("osparc.utils.Utils", {
       return JSON.parse(JSON.stringify(src));
     },
 
+    prettifyJson: function(json) {
+      return JSON.stringify(json, undefined, 2);
+    },
+
     getRandomColor: function() {
       let letters = "0123456789ABCDEF";
       let color = "#";
@@ -417,14 +421,10 @@ qx.Class.define("osparc.utils.Utils", {
           if (xhr.status == 200) {
             let blob = new Blob([xhr.response]);
             let urlBlob = window.URL.createObjectURL(blob);
-            let downloadAnchorNode = document.createElement("a");
-            downloadAnchorNode.setAttribute("href", urlBlob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
-            downloadAnchorNode.setAttribute("download", fileName);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            this.self().downloadContent(urlBlob, fileName);
             resolve();
           } else {
             reject(xhr);
@@ -434,6 +434,14 @@ qx.Class.define("osparc.utils.Utils", {
         xhr.addEventListener("abort", () => reject(xhr));
         xhr.send();
       });
+    },
+
+    downloadContent: function(content, filename = "file") {
+      let downloadAnchorNode = document.createElement("a");
+      downloadAnchorNode.setAttribute("href", content);
+      downloadAnchorNode.setAttribute("download", filename);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
     },
 
     filenameFromContentDisposition: function(xhr) {

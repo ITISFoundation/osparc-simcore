@@ -69,7 +69,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
         // eslint-disable-next-line no-underscore-dangle
         const width = captionTitle.__contentSize.width;
         if (width > maxWidth) {
-          captionTitle.setToolTipText(this.getNode().getLabel());
+          this.getNode().bind("label", captionTitle, "toolTipText");
         }
       }, this, 50);
     });

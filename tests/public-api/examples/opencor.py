@@ -4,6 +4,8 @@
  $ make install-ci
  $ make .env
 
+
+Based on example https://github.com/nih-sparc/sparc-api/blob/v1.5.0/app/osparc.py
 """
 import json
 import os

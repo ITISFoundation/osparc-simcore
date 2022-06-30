@@ -1,0 +1,128 @@
+{
+  "inputs": {
+    "Na": {
+      "displayOrder": 1,
+      "label": "Na blocker",
+      "description": "Na blocker drug concentration",
+      "type": "integer",
+      "defaultValue": "0"
+    },
+    "GKr": {
+      "displayOrder": 2,
+      "label": "GKr ratio",
+      "description": "GKr ratio",
+      "type": "integer",
+      "defaultValue": 1
+    },
+    "TotalSimulationTime": {
+      "displayOrder": 3,
+      "label": "Total simulation time",
+      "description": "Total simulation time",
+      "type": "integer",
+      "defaultValue": 300
+    },
+    "TargetHeartRatePhase1": {
+      "displayOrder": 4,
+      "label": "Target heart rate for phase 1",
+      "description": "Target heart rate for phase 1",
+      "type": "integer",
+      "defaultValue": 60
+    },
+    "TargetHeartRatePhase2": {
+      "displayOrder": 5,
+      "label": "Target heart rate for phase 2",
+      "description": "Target heart rate for phase 2",
+      "type": "integer",
+      "defaultValue": 150
+    },
+    "TargetHeartRatePhase3": {
+      "displayOrder": 6,
+      "label": "Target heart rate for phase 3",
+      "description": "Target heart rate for phase 3",
+      "type": "integer",
+      "defaultValue": 60
+    },
+    "cAMKII": {
+      "displayOrder": 7,
+      "label": "cAMKII activity levels",
+      "description": "cAMKII activity levels (expression = 'WT', 'OE', or 'KO'",
+      "type": "string",
+      "defaultValue": "WT"
+    },
+    "tissue_size_tw": {
+      "displayOrder": 8,
+      "label": "Tissue width (# of cells)",
+      "description": "Tissue width (# of cells)",
+      "type": "integer",
+      "defaultValue": "165"
+    },
+    "tissue_size_tl": {
+      "displayOrder": 9,
+      "label": "Tissue length (# of cells)",
+      "description": "Tissue length (# of cells)",
+      "type": "integer",
+      "defaultValue": "165"
+    },
+    "Homogeneity": {
+      "displayOrder": 10,
+      "label": "Homogeneity",
+      "description": "Homogeneity (expression = 'homogeneous', or 'heterogeneous'",
+      "type": "string",
+      "defaultValue": "homogeneous"
+    },
+    "initialWTStates": {
+      "displayOrder": 11,
+      "label": "Initial WT states",
+      "description": "Initial WT states",
+      "type": "data:text/plain",
+      "fileToKeyMap": {
+        "initial_WTstates.txt": "initialWTStates"
+      }
+    },
+    "num_threads": {
+      "displayOrder": 12,
+      "label": "# threads",
+      "description": "Desired number of threads",
+      "type": "integer",
+      "defaultValue": 2
+    }
+  },
+  "outputs": {
+    "output_1": {
+      "displayOrder": 1,
+      "label": "ECGs",
+      "description": "ECGs",
+      "type": "data:text/plain",
+      "fileToKeyMap": {
+        "ECGs.txt": "output_1"
+      }
+    },
+    "output_2": {
+      "displayOrder": 3,
+      "label": "APs",
+      "description": "APs",
+      "type": "data:text/plain",
+      "fileToKeyMap": {
+        "ap_1D.txt": "output_2"
+      }
+    },
+    "output_3": {
+      "displayOrder": 4,
+      "label": "CAIs",
+      "description": "CAIs",
+      "type": "data:text/plain",
+      "fileToKeyMap": {
+        "cai_1D.txt": "output_3"
+      }
+    },
+    "output_4": {
+      "displayOrder": 5,
+      "label": "Input from 1D",
+      "description": "Model input from 1D to 2D solver",
+      "type": "data:*/*",
+      "fileToKeyMap": {
+        "model_INPUT.from1D": "output_4"
+      }
+    }
+  }
+}

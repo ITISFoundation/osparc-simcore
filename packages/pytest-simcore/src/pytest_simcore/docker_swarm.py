@@ -31,24 +31,16 @@ log = logging.getLogger(__name__)
 # HELPERS --------------------------------------------------------------------------------
 
 
-class _NotInSwarmException(Exception):
-    pass
-
-
 class _ResourceStillNotRemoved(Exception):
     pass
 
 
-def _in_docker_swarm(
-    docker_client: docker.client.DockerClient, raise_error: bool = False
-) -> bool:
+def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
     try:
         docker_client.swarm.reload()
         inspect_result = docker_client.swarm.attrs
         assert type(inspect_result) == dict
     except APIError as error:
-        if raise_error:
-            raise _NotInSwarmException() from error
         return False
     return True
 
@@ -147,6 +139,7 @@ def _fetch_and_print_services(
 def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
     yield client
+    client.close()
 
 
 @pytest.fixture(scope="session")
@@ -164,14 +157,13 @@ def docker_swarm(
         wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
         with attempt:
-            if not _in_docker_swarm(docker_client):
+            if not _is_docker_swarm_init(docker_client):
                 print("--> initializing docker swarm...")
                 docker_client.swarm.init(advertise_addr=get_localhost_ip())
                 print("--> docker swarm initialized.")
-            # if still not in swarm, raise an error to try and initialize again
-            _in_docker_swarm(docker_client, raise_error=True)
 
-    assert _in_docker_swarm(docker_client) is True
+            # if still not in swarm, raise an error to try and initialize again
+            assert _is_docker_swarm_init(docker_client)
 
     yield
 
@@ -179,6 +171,8 @@ def docker_swarm(
         print("<-- leaving docker swarm...")
         assert docker_client.swarm.leave(force=True)
         print("<-- docker swarm left.")
+
+    assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
 @pytest.fixture(scope="module")

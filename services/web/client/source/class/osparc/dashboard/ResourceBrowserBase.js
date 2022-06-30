@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         flex: 1
       });
 
-      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
+      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
       const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
       const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
       const group = new qx.ui.form.RadioGroup();

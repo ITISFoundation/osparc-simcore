@@ -76,6 +76,17 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           layout.add(control);
           break;
         }
+        case "hits-service": {
+          const layout = this.getChildControl("tsr-mode-update-layout");
+          control = new qx.ui.basic.Label().set({
+            toolTipText: this.tr("Number of times it was instantiated")
+          });
+          layout.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          layout.add(control);
+          break;
+        }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true
