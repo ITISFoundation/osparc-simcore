@@ -19,14 +19,6 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 from servicelib.fastapi.requests_decorators import cancellable_request
 
-from ..core.dependencies import (
-    get_application,
-    get_application_health,
-    get_mounted_volumes,
-    get_rabbitmq,
-    get_settings,
-    get_shared_store,
-)
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -46,6 +38,14 @@ from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
+    get_application,
+    get_application_health,
+    get_mounted_volumes,
+    get_rabbitmq,
+    get_settings,
+    get_shared_store,
+)
 
 logger = logging.getLogger(__name__)
 

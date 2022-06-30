@@ -22,13 +22,6 @@ from servicelib.fastapi.requests_decorators import cancellable_request
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
-from ..core.dependencies import (
-    get_application,
-    get_mounted_volumes,
-    get_rabbitmq,
-    get_settings,
-    get_shared_store,
-)
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -39,6 +32,13 @@ from ..models.schemas.ports import PortTypeName
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
+    get_application,
+    get_mounted_volumes,
+    get_rabbitmq,
+    get_settings,
+    get_shared_store,
+)
 from .containers import send_message
 
 logger = logging.getLogger(__name__)
