@@ -21,7 +21,7 @@ from servicelib.fastapi.requests_decorators import cancellable_request
 
 from ..core.docker_compose_utils import (
     cleanup_containers_and_volumes,
-    remove_the_compose_spec,
+    docker_compose_down,
     write_file_and_run_command,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
@@ -142,6 +142,7 @@ async def runs_docker_compose_up(
             settings=settings,
             compose_file_content=body_as_text,
             mounted_volumes=mounted_volumes,
+            docker_compose_config_timeout=2,
         )
         shared_store.container_names = assemble_container_names(
             shared_store.compose_spec
@@ -195,7 +196,7 @@ async def runs_docker_compose_down(
             detail="No spec for docker-compose down was found",
         )
 
-    finished_without_errors, stdout = await remove_the_compose_spec(
+    finished_without_errors, stdout = await docker_compose_down(
         shared_store=shared_store,
         settings=settings,
         command_timeout=command_timeout,

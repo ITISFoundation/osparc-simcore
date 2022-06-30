@@ -10,7 +10,7 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from .docker_compose_utils import remove_the_compose_spec
+from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
@@ -101,7 +101,7 @@ def create_app():
 
     async def _on_shutdown() -> None:
         logger.info("Going to remove spawned containers")
-        result = await remove_the_compose_spec(
+        result = await docker_compose_down(
             shared_store=app.state.shared_store,
             settings=app.state.settings,
             command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
