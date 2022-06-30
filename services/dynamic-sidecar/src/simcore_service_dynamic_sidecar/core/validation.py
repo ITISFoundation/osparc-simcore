@@ -268,12 +268,12 @@ async def validate_compose_spec(
         command_timeout=docker_compose_config_timeout,
     )
 
-    if result.success:
+    if not result.success:
         logger.warning(
-            "'docker-compose config' failed for:\n%s\nSTDOUT\n%s",
-            compose_spec,
+            "'docker-compose config' failed for:\n%s\n%s",
+            f"{compose_spec}",
             result.decoded_stdout,
         )
-        raise InvalidComposeSpec(f"Invalid compose-specs {result.decoded_stdout}")
+        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.decoded_stdout}")
 
     return compose_spec
