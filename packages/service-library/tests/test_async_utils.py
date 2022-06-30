@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import copy
@@ -7,9 +8,10 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any, AsyncIterable, Dict, List, Optional
+from typing import Any, AsyncIterable, Optional
 
 import pytest
+from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
     run_sequentially_in_context,
@@ -30,8 +32,8 @@ async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
 
 
 @pytest.fixture
-def payload() -> str:
-    return "some string payload"
+def payload(faker: Faker) -> str:
+    return faker.text()
 
 
 @pytest.fixture
@@ -55,7 +57,7 @@ class LockedStore:
         async with self._lock:
             self._queue.append(item)
 
-    async def get_all(self) -> List[Any]:
+    async def get_all(self) -> list[Any]:
         async with self._lock:
             return list(self._queue)
 
@@ -78,7 +80,7 @@ async def test_context_aware_dispatch(
         context = dict(c1=c1, c2=c2, c3=c3)
         await locked_stores[make_key_from_context(context)].push(control)
 
-    def make_key_from_context(context: Dict) -> str:
+    def make_key_from_context(context: dict) -> str:
         return ".".join([f"{k}:{v}" for k, v in context.items()])
 
     def make_context():
