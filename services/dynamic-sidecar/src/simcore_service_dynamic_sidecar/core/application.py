@@ -10,13 +10,13 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from .docker_compose_utils import remove_the_compose_spec
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
-from .shared_handlers import remove_the_compose_spec
 from .utils import login_registry, volumes_fix_permissions
 
 logger = logging.getLogger(__name__)

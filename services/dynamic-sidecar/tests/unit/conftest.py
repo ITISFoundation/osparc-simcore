@@ -13,10 +13,10 @@ from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
-from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
-from simcore_service_dynamic_sidecar.core.shared_handlers import (
+from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     write_file_and_run_command,
 )
+from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_delay

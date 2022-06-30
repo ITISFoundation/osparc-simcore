@@ -27,10 +27,10 @@ from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
-from simcore_service_dynamic_sidecar.core.shared_handlers import (
+from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     write_file_and_run_command,
 )
+from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore

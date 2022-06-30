@@ -19,15 +19,15 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 from servicelib.fastapi.requests_decorators import cancellable_request
 
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import (
+from ..core.docker_compose_utils import (
     cleanup_containers_and_volumes,
     remove_the_compose_spec,
     write_file_and_run_command,
 )
+from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
 from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,

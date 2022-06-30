@@ -7,8 +7,8 @@ from typing import Any, Generator
 import yaml
 
 from ..modules.mounted_fs import MountedVolumes
+from .docker_compose_utils import write_file_and_run_command
 from .settings import DynamicSidecarSettings
-from .shared_handlers import write_file_and_run_command
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
