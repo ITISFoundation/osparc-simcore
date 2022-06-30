@@ -119,10 +119,10 @@ async def runs_docker_compose_up(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     command_timeout: float = Query(
-        60.0, description="docker-compose up command timeout run as a background"
+        3600.0, description="docker-compose up command timeout run as a background"
     ),
     validation_timeout: float = Query(
-        10.0, description="docker-compose config timeout (EXPERIMENTAL)"
+        60.0, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
 ) -> Union[list[str], dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
