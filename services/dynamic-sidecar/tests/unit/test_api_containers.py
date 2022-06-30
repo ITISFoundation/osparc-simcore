@@ -28,7 +28,7 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
-    write_file_and_run_command,
+    _write_file_and_run_command,
 )
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
@@ -122,7 +122,7 @@ async def _assert_compose_spec_pulled(
         'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
-    success, stdout = await write_file_and_run_command(
+    success, stdout = await _write_file_and_run_command(
         settings=settings,
         file_content=compose_spec,
         command=command,

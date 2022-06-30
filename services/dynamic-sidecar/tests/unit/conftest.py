@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
-    write_file_and_run_command,
+    _write_file_and_run_command,
 )
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from tenacity import retry
@@ -176,7 +176,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         'docker-compose --project-name {project} --file "{file_path}" '
         "down --remove-orphans --timeout {stop_and_remove_timeout}"
     )
-    await write_file_and_run_command(
+    await _write_file_and_run_command(
         settings=app_state.settings,
         file_content=app_state.shared_store.compose_spec,
         command=command,

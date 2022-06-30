@@ -22,7 +22,7 @@ from servicelib.fastapi.requests_decorators import cancellable_request
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
-from ..core.docker_compose_utils import write_file_and_run_command
+from ..core.docker_compose_utils import docker_compose_restart
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -258,10 +258,10 @@ async def restarts_containers(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> None:
     """Removes the previously started service
-    and returns the docker-compose output"""
+    and returns the docker-compose output
+    """
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
+    if shared_store.compose_spec is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose command was found",
@@ -270,21 +270,17 @@ async def restarts_containers(
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "restart --timeout {stop_and_remove_timeout}"
+    result = await docker_compose_restart(
+        shared_store.compose_spec, settings, command_timeout=command_timeout
     )
 
-    finished_without_errors, stdout = await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
-        command=command,
-        command_timeout=command_timeout,
-    )
-    if not finished_without_errors:
-        error_message = (f"'{command}' finished with errors\n{stdout}",)
-        logger.warning(error_message)
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+    if not result.success:
+        logger.warning(
+            "docker-compose restart finished with errors\n%s", result.decoded_stdout
+        )
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
+        )
 
     for container_name in shared_store.container_names:
         await start_log_fetching(app, container_name)
