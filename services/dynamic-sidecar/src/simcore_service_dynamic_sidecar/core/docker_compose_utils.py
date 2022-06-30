@@ -32,18 +32,18 @@ async def _write_file_and_run_command(
 async def cleanup_containers_and_volumes(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
-    cleanup_command = 'docker-compose --project-name {project} --file "{file_path}" rm --force --volumes'
-    finished_without_errors, stdout = await _write_file_and_run_command(
+    command = 'docker-compose --project-name {project} --file "{file_path}" rm --force --volumes'
+    result = await _write_file_and_run_command(
         settings=settings,
         file_content=compose_spec,
-        command=cleanup_command,
+        command=command,
         command_timeout=None,
     )
-    if not finished_without_errors:
+    if result.success:
         logger.warning(
             "Unexpected error while running command\n%s:\n%s",
-            f"{cleanup_command=}",
-            f"{stdout=}",
+            f"{command=}",
+            f"{result.decoded_stdout}",
         )
 
 
@@ -56,10 +56,8 @@ async def docker_compose_up(
 
     await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
 
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "up --no-build --detach"
-    )
+    command = 'docker-compose --project-name {project} --file "{file_path}" up --no-build --detach'
+
     result = await _write_file_and_run_command(
         settings=settings,
         file_content=shared_store.compose_spec,
