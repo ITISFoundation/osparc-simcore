@@ -70,3 +70,15 @@ async def remove_the_compose_spec(
     shared_store.container_names = []
 
     return result
+
+
+async def docker_compose_config(
+    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+) -> CommandResult:
+    command = "docker-compose --file {file_path} config"
+    return await write_file_and_run_command(
+        settings=settings,
+        file_content=compose_spec,
+        command=command,
+        command_timeout=command_timeout,
+    )
