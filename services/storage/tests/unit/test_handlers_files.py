@@ -23,6 +23,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.exceptions import S3KeyNotFoundError
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
@@ -165,6 +166,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         (LinkType.S3, parse_obj_as(ByteSize, "10Mib")),
         (LinkType.S3, parse_obj_as(ByteSize, "1000Mib")),
     ],
+    ids=byte_size_ids,
 )
 async def test_upload_same_file_uuid_aborts_previous_upload(
     aiopg_engine: Engine,
@@ -221,11 +223,12 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
 @pytest.mark.parametrize(
     "file_size",
     [
-        pytest.param(parse_obj_as(ByteSize, "1Mib"), id="7Mib"),
-        pytest.param(parse_obj_as(ByteSize, "500Mib"), id="500Mib"),
-        # pytest.param(parse_obj_as(ByteSize, "5Gib"), id="5Gib"),
-        # pytest.param(parse_obj_as(ByteSize, "7Gib"), id="7Gib"),
+        (parse_obj_as(ByteSize, "1Mib")),
+        (parse_obj_as(ByteSize, "500Mib")),
+        # (parse_obj_as(ByteSize, "5Gib")),
+        # (parse_obj_as(ByteSize, "7Gib")),
     ],
+    ids=byte_size_ids,
 )
 async def test_upload_real_file(
     file_name: str,
@@ -295,7 +298,9 @@ async def test_upload_real_file_with_s3_client(
 
 
 @pytest.mark.parametrize(
-    "file_size", [parse_obj_as(ByteSize, "160Mib"), parse_obj_as(ByteSize, "1Mib")]
+    "file_size",
+    [parse_obj_as(ByteSize, "160Mib"), parse_obj_as(ByteSize, "1Mib")],
+    ids=lambda obj: obj.human_readable(),
 )
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     aiopg_engine: Engine,
@@ -373,8 +378,9 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
 @pytest.mark.parametrize(
     "file_size",
     [
-        pytest.param(parse_obj_as(ByteSize, "1Mib"), id="7Mib"),
+        pytest.param(parse_obj_as(ByteSize, "1Mib")),
     ],
+    ids=byte_size_ids,
 )
 async def test_download_file(
     client: TestClient,
@@ -416,8 +422,9 @@ async def test_download_file(
 @pytest.mark.parametrize(
     "file_size",
     [
-        pytest.param(parse_obj_as(ByteSize, "1Mib"), id="7Mib"),
+        pytest.param(parse_obj_as(ByteSize, "1Mib")),
     ],
+    ids=byte_size_ids,
 )
 async def test_delete_file(
     aiopg_engine: Engine,

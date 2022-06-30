@@ -11,6 +11,7 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from tests.helpers.file_utils import parametrized_file_size
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -35,7 +36,11 @@ async def test_get_files_metadata_dataset_with_no_files_returns_empty_array(
     assert not error
 
 
-@pytest.mark.parametrize("file_size", [parametrized_file_size("100Mib")])
+@pytest.mark.parametrize(
+    "file_size",
+    [parametrized_file_size("100Mib")],
+    ids=byte_size_ids,
+)
 async def test_get_files_metadata_dataset(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     client: TestClient,

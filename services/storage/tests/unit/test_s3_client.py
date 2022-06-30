@@ -18,6 +18,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.exceptions import S3BucketInvalidError, S3KeyNotFoundError
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
@@ -431,7 +432,11 @@ async def upload_file_with_aioboto3_managed_transfer(
     return _uploader
 
 
-@pytest.mark.parametrize("file_size", [parametrized_file_size("500Mib")])
+@pytest.mark.parametrize(
+    "file_size",
+    [parametrized_file_size("500Mib")],
+    ids=byte_size_ids,
+)
 async def test_upload_file(
     file_size: ByteSize,
     upload_file_with_aioboto3_managed_transfer: Callable[
@@ -455,7 +460,11 @@ async def test_upload_file_invalid_raises(
         )
 
 
-@pytest.mark.parametrize("file_size", [parametrized_file_size("500Mib")])
+@pytest.mark.parametrize(
+    "file_size",
+    [parametrized_file_size("500Mib")],
+    ids=byte_size_ids,
+)
 async def test_copy_file(
     file_size: ByteSize,
     upload_file_with_aioboto3_managed_transfer: Callable[

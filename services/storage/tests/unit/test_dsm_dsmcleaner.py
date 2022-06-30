@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import LinkType
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.exceptions import FileMetaDataNotFoundError
@@ -37,6 +38,7 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.parametrize(
     "file_size",
     [ByteSize(0), parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
@@ -85,6 +87,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 @pytest.mark.parametrize(
     "file_size",
     [parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(

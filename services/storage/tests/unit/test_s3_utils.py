@@ -6,6 +6,7 @@
 
 import pytest
 from pydantic import ByteSize, parse_obj_as
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.s3_utils import compute_num_file_chunks
 
 
@@ -23,6 +24,7 @@ from simcore_service_storage.s3_utils import compute_num_file_chunks
         (parse_obj_as(ByteSize, "5Tib"), 8739, parse_obj_as(ByteSize, "600Mib")),
         (parse_obj_as(ByteSize, "15Tib"), 7680, parse_obj_as(ByteSize, "2Gib")),
     ],
+    ids=byte_size_ids,
 )
 def test_compute_num_file_chunks(
     file_size: ByteSize, expected_num_chunks: int, expected_chunk_size: ByteSize
