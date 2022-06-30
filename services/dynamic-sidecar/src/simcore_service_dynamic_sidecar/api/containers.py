@@ -19,11 +19,7 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 from servicelib.fastapi.requests_decorators import cancellable_request
 
-from ..core.docker_compose_utils import (
-    cleanup_containers_and_volumes,
-    docker_compose_down,
-    write_file_and_run_command,
-)
+from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -55,35 +51,26 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
     await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
-async def _task_docker_compose_up(
+async def _task_docker_compose_up_and_send_message(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
+    command_timeout: float,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
-
-        assert shared_store.compose_spec is not None  # nosec
-
-        command = (
-            "docker-compose --project-name {project} --file {file_path} "
-            "up --no-build --detach"
+        r = await docker_compose_up(
+            shared_store, settings, command_timeout=command_timeout
         )
-        finished_without_errors, stdout = await write_file_and_run_command(
-            settings=settings,
-            file_content=shared_store.compose_spec,
-            command=command,
-            command_timeout=None,
-        )
-    message = f"Finished {command} with output\n{stdout}"
 
-    if finished_without_errors:
+    message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
+
+    if r.success:
         await send_message(rabbitmq, "service containers started")
         logger.info(message)
         for container_name in shared_store.container_names:
@@ -131,6 +118,9 @@ async def runs_docker_compose_up(
     application_health: ApplicationHealth = Depends(get_application_health),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    command_timeout: float = Query(
+        60.0, description="docker-compose up command timeout default"
+    ),
 ) -> Union[list[str], dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
@@ -155,12 +145,13 @@ async def runs_docker_compose_up(
     assert shared_store.compose_spec is not None  # nosec
     background_tasks.add_task(
         functools.partial(
-            _task_docker_compose_up,
+            _task_docker_compose_up_and_send_message,
             settings=settings,
             shared_store=shared_store,
             app=app,
             application_health=application_health,
             rabbitmq=rabbitmq,
+            command_timeout=command_timeout,
         )
     )
 
