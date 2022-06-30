@@ -262,18 +262,18 @@ async def validate_compose_spec(
     )
 
     # validate against docker-compose config
-    if not (
-        res := await docker_compose_config(
-            compose_spec,
-            settings=settings,
-            command_timeout=docker_compose_config_timeout,
-        )
-    ):
+    result = await docker_compose_config(
+        compose_spec,
+        settings=settings,
+        command_timeout=docker_compose_config_timeout,
+    )
+
+    if result.success:
         logger.warning(
             "'docker-compose config' failed for:\n%s\nSTDOUT\n%s",
             compose_spec,
-            res.decoded_stdout,
+            result.decoded_stdout,
         )
-        raise InvalidComposeSpec(f"Invalid compose-specs {res.decoded_stdout}")
+        raise InvalidComposeSpec(f"Invalid compose-specs {result.decoded_stdout}")
 
     return compose_spec
