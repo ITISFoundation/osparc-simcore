@@ -7,7 +7,7 @@ import json
 import logging
 from asyncio import sleep
 from collections import namedtuple
-from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Awaitable, Callable, NamedTuple
 
 import aio_pika
 import pytest
@@ -60,10 +60,10 @@ pytest_simcore_ops_services_selection = []
 
 logger = logging.getLogger(__name__)
 
-RabbitMessage = Dict[str, Any]
-LogMessages = List[LoggerRabbitMessage]
-InstrumMessages = List[InstrumentationRabbitMessage]
-ProgressMessages = List[ProgressRabbitMessage]
+RabbitMessage = dict[str, Any]
+LogMessages = list[LoggerRabbitMessage]
+InstrumMessages = list[InstrumentationRabbitMessage]
+ProgressMessages = list[ProgressRabbitMessage]
 
 
 async def _publish_in_rabbit(
@@ -72,7 +72,7 @@ async def _publish_in_rabbit(
     node_uuid: UUIDStr,
     num_messages: int,
     rabbit_exchanges: RabbitExchanges,
-) -> Tuple[LogMessages, ProgressMessages, InstrumMessages]:
+) -> tuple[LogMessages, ProgressMessages, InstrumMessages]:
 
     log_messages = [
         LoggerRabbitMessage(
@@ -154,7 +154,7 @@ async def _publish_in_rabbit(
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
+    app_config: dict[str, Any],  ## waits until swarm with *_services are up
     rabbit_service: RabbitSettings,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
     mocker: MockerFixture,
@@ -208,21 +208,21 @@ def client_session_id(faker: Faker) -> UUIDStr:
 
 
 @pytest.fixture
-def other_user_id(user_id: int, logged_user: Dict[str, Any]) -> int:
+def other_user_id(user_id: int, logged_user: dict[str, Any]) -> int:
     other = user_id
     assert logged_user["id"] != other
     return other
 
 
 @pytest.fixture
-def other_project_id(faker: Faker, user_project: Dict[str, Any]) -> UUIDStr:
+def other_project_id(faker: Faker, user_project: dict[str, Any]) -> UUIDStr:
     other_id = faker.uuid4()
     assert user_project["uuid"] != other_id
     return other_id
 
 
 @pytest.fixture
-def other_node_uuid(node_uuid: UUIDStr, user_project: Dict[str, Any]) -> UUIDStr:
+def other_node_uuid(node_uuid: UUIDStr, user_project: dict[str, Any]) -> UUIDStr:
     other = node_uuid
     node_uuid = list(user_project["workbench"])[0]
     assert node_uuid != other
@@ -268,7 +268,7 @@ def publish_some_messages_in_rabbit(
     rabbit_exchanges: RabbitExchanges,
 ) -> Callable[
     [UserID, UUIDStr, UUIDStr, int],
-    Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages]],
 ]:
     """rabbitMQ PUBLISHER"""
 
@@ -326,7 +326,7 @@ async def test_publish_to_other_user(
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
         [UserID, UUIDStr, UUIDStr, int],
-        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+        Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
@@ -346,14 +346,14 @@ async def test_publish_to_other_user(
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_user(
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     other_project_id: UUIDStr,
     other_node_uuid: str,
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
         [UserID, UUIDStr, UUIDStr, int],
-        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+        Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
@@ -376,21 +376,21 @@ async def test_publish_to_user(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "messages"})
+            expected_message.json(include={"node_id", "project_id", "messages"})
         )
     mock_node_update_handler.assert_not_called()
 
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_about_users_project(
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
     other_node_uuid: str,
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
         [UserID, UUIDStr, UUIDStr, int],
-        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+        Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
@@ -413,20 +413,20 @@ async def test_publish_about_users_project(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "messages"})
+            expected_message.json(include={"node_id", "project_id", "messages"})
         )
     mock_node_update_handler.assert_not_called()
 
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_about_users_projects_node(
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
         [UserID, UUIDStr, UUIDStr, int],
-        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+        Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
@@ -451,7 +451,7 @@ async def test_publish_about_users_projects_node(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "messages"})
+            expected_message.json(include={"node_id", "project_id", "messages"})
         )
 
     # mock_log_handler.assert_has_calls(log_calls, any_order=True)
