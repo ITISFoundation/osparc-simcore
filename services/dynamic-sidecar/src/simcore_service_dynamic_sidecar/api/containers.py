@@ -175,9 +175,7 @@ async def runs_docker_compose_up(
         },
     },
 )
-@cancellable_request
 async def runs_docker_compose_down(
-    _request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose down command timeout default"
     ),
@@ -187,6 +185,7 @@ async def runs_docker_compose_down(
 ) -> Union[str, dict[str, Any]]:
     """Removes the previously started service
     and returns the docker-compose output"""
+    # TODO: convert into long running operation
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
