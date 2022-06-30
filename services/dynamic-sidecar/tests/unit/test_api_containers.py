@@ -107,11 +107,9 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 async def _docker_ps_a_container_names() -> list[str]:
     command = 'docker ps -a --format "{{.Names}}"'
-    finished_without_errors, stdout = await async_command(
-        command=command, command_timeout=None
-    )
+    success, stdout = await async_command(command=command, command_timeout=None)
 
-    assert finished_without_errors is True, stdout
+    assert success is True, stdout
     return stdout.split("\n")
 
 
@@ -124,14 +122,14 @@ async def _assert_compose_spec_pulled(
         'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
-    finished_without_errors, stdout = await write_file_and_run_command(
+    success, stdout = await write_file_and_run_command(
         settings=settings,
         file_content=compose_spec,
         command=command,
         command_timeout=None,
     )
 
-    assert finished_without_errors is True, stdout
+    assert success is True, stdout
 
     dict_compose_spec = json.loads(compose_spec)
     expected_services_count = len(dict_compose_spec["services"])
