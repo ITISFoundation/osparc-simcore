@@ -79,6 +79,32 @@
         "summary": "Runs Docker Compose Up",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text",
         "operationId": "runs_docker_compose_up_v1_containers_post",
+        "parameters": [
+          {
+            "description": "docker-compose up command timeout run as a background",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "description": "docker-compose up command timeout run as a background",
+              "default": 60.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          },
+          {
+            "description": "docker-compose config timeout (EXPERIMENTAL)",
+            "required": false,
+            "schema": {
+              "title": "Validation Timeout",
+              "type": "number",
+              "description": "docker-compose config timeout (EXPERIMENTAL)",
+              "default": 10.0
+            },
+            "name": "validation_timeout",
+            "in": "query"
+          }
+        ],
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -104,12 +130,12 @@
         "operationId": "runs_docker_compose_down_v1_containers_down_post",
         "parameters": [
           {
-            "description": "docker-compose down command timeout default",
+            "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
             "required": false,
             "schema": {
               "title": "Command Timeout",
               "type": "number",
-              "description": "docker-compose down command timeout default",
+              "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
               "default": 10.0
             },
             "name": "command_timeout",
