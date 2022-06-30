@@ -87,7 +87,7 @@
               "title": "Command Timeout",
               "type": "number",
               "description": "docker-compose up command timeout run as a background",
-              "default": 60.0
+              "default": 3600.0
             },
             "name": "command_timeout",
             "in": "query"
@@ -99,7 +99,7 @@
               "title": "Validation Timeout",
               "type": "number",
               "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 10.0
+              "default": 60.0
             },
             "name": "validation_timeout",
             "in": "query"
