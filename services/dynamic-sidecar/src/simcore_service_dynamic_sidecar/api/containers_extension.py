@@ -27,7 +27,6 @@ from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
-from ..models.ports import PortTypeName
 from ..models.shared_store import SharedStore
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
@@ -143,7 +142,9 @@ async def pull_input_ports(
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
+        nodeports.PortTypeName.INPUTS,
+        mounted_volumes.disk_inputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling inputs")
     return int(transferred_bytes)
@@ -201,7 +202,9 @@ async def pull_output_ports(
 
     await send_message(rabbitmq, f"Pulling output for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
+        nodeports.PortTypeName.OUTPUTS,
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling output")
     return int(transferred_bytes)
