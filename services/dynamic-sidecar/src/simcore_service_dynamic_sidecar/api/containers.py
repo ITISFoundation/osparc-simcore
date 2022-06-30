@@ -139,8 +139,10 @@ async def runs_docker_compose_up(
         shared_store.container_names = assemble_container_names(
             shared_store.compose_spec
         )
+
+        logger.debug("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+
     except InvalidComposeSpec as e:
-        logger.warning("Cannot validate compose", exc_info=True, stack_info=True)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
 
     # run docker-compose in a background queue and return early
