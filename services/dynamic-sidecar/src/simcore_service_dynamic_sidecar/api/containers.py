@@ -122,7 +122,7 @@ async def runs_docker_compose_up(
         60.0, description="docker-compose up command timeout run as a background"
     ),
     validation_timeout: float = Query(
-        10.0, description="docker-compose config timeout"
+        10.0, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
 ) -> Union[list[str], dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
@@ -173,7 +173,7 @@ async def runs_docker_compose_up(
 )
 async def runs_docker_compose_down(
     command_timeout: float = Query(
-        10.0, description="docker-compose down command timeout default"
+        10.0, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
