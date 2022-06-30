@@ -3,7 +3,6 @@
 import functools
 import json
 import logging
-import traceback
 from typing import Any, Union
 
 from fastapi import (
@@ -141,7 +140,7 @@ async def runs_docker_compose_up(
             shared_store.compose_spec
         )
     except InvalidComposeSpec as e:
-        logger.warning("Error detected %s", traceback.format_exc())
+        logger.warning("Cannot validate compose", exc_info=True, stack_info=True)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
 
     # run docker-compose in a background queue and return early
@@ -183,14 +182,13 @@ async def runs_docker_compose_down(
     and returns the docker-compose output"""
     # TODO: convert into long running operation
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
+    if shared_store.compose_spec is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail="No spec for docker-compose down was found",
+            detail="No compose-specs were found",
         )
 
-    finished_without_errors, stdout = await docker_compose_down(
+    result = await docker_compose_down(
         shared_store=shared_store,
         settings=settings,
         command_timeout=command_timeout,
@@ -199,11 +197,16 @@ async def runs_docker_compose_down(
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    if not finished_without_errors:
-        logger.warning("docker-compose down command finished with errors\n%s", stdout)
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+    if not result.success:
+        logger.warning(
+            "docker-compose down command finished with errors\n%s",
+            result.decoded_stdout,
+        )
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
+        )
 
-    return stdout
+    return result.decoded_stdout
 
 
 @containers_router.get(
