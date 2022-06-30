@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import pytest
 from aiohttp import web
 from aiohttp.typedefs import Handler
