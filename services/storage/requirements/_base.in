@@ -13,19 +13,12 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_aiohttp.in
 
-# server
-aiohttp
-aiohttp-swagger[performance]
-
-# s3 storage
-aiobotocore
-minio
-
-# i/o + db
-aiofiles
-aiopg[sa]
-
-# misc
+aioboto3 # s3 storage
+aiofiles # i/o
+aiohttp # server
+aiohttp-swagger[performance] # server
+aiopg[sa] # db
 semantic_version
 tenacity
 typer
+types-aiobotocore[s3]# s3 storage

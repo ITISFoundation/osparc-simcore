@@ -6,40 +6,55 @@
 # pylint: disable=unused-variable
 
 
-import datetime
-import os
+import asyncio
 import sys
+import urllib.parse
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from random import randrange
-from typing import Any, Callable, Iterable, Iterator
+from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, cast
 
 import dotenv
 import pytest
 import simcore_service_storage
+from aiobotocore.session import get_session
 from aiohttp import web
+from aiohttp.test_utils import TestClient, unused_port
 from aiopg.sa import Engine
-from servicelib.aiohttp.application import create_safe_application
-from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
-from simcore_service_storage.models import FileMetaData, file_meta_data, projects, users
-from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
-from tests.utils import BUCKET_NAME, DATA_DIR, USER_ID
-
-import tests
+from aioresponses import aioresponses as AioResponsesMock
+from faker import Faker
+from models_library.api_schemas_storage import ETag, FileMetaDataGet, PresignedLink
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.users import UserID
+from moto.server import ThreadedMotoServer
+from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from simcore_postgres_database.storage_models import file_meta_data, projects, users
+from simcore_service_storage.application import create
+from simcore_service_storage.dsm import get_dsm_provider
+from simcore_service_storage.models import S3BucketName
+from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.s3_client import StorageS3Client
+from simcore_service_storage.settings import Settings
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from tests.helpers.file_utils import upload_file_to_presigned_link
+from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
+    "tests.fixtures.datcore_adapter",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_compose",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.monkeypatch_extra",
-    "pytest_simcore.minio_service",
+    "pytest_simcore.file_extra",
+    "pytest_simcore.aioresponses_mocker",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -99,17 +114,6 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
         monkeypatch.setenv(key, value)
 
 
-@pytest.fixture(scope="module")
-def s3_client(minio_config: dict[str, Any]) -> MinioClientWrapper:
-
-    s3_client = MinioClientWrapper(
-        endpoint=minio_config["client"]["endpoint"],
-        access_key=minio_config["client"]["access_key"],
-        secret_key=minio_config["client"]["secret_key"],
-    )
-    return s3_client
-
-
 ## FAKE DATA FIXTURES ----------------------------------------------
 
 
@@ -138,226 +142,294 @@ async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
 
 
 @pytest.fixture
-def dsm_mockup_complete_db(
-    postgres_dsn, s3_client, cleanup_user_projects_file_metadata
-) -> Iterator[tuple[dict[str, str], dict[str, str]]]:
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn
+def simcore_s3_dsm(client) -> SimcoreS3DataManager:
+    return cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),
     )
-    tests.utils.fill_tables_from_csv_files(url=dsn)
 
-    bucket_name = BUCKET_NAME
-    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
-    file_1 = {
-        "project_id": "161b8782-b13e-5840-9ae2-e2250c231001",
-        "node_id": "ad9bda7f-1dc5-5480-ab22-5fef4fc53eac",
-        "filename": "outputController.dat",
-    }
-    f = DATA_DIR / "outputController.dat"
-    object_name = "{project_id}/{node_id}/{filename}".format(**file_1)
-    s3_client.upload_file(bucket_name, object_name, f)
 
-    file_2 = {
-        "project_id": "161b8782-b13e-5840-9ae2-e2250c231001",
-        "node_id": "a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8",
-        "filename": "notebooks.zip",
-    }
-    f = DATA_DIR / "notebooks.zip"
-    object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
-    s3_client.upload_file(bucket_name, object_name, f)
-    yield (file_1, file_2)
-
-    # cleanup
-    s3_client.remove_bucket(bucket_name, delete_contents=True)
+@pytest.fixture(scope="module")
+def mocked_s3_server() -> Iterator[ThreadedMotoServer]:
+    """creates a moto-server that emulates AWS services in place
+    NOTE: Never use a bucket with underscores it fails!!
+    """
+    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=unused_port())
+    # pylint: disable=protected-access
+    print(f"--> started mock S3 server on {server._ip_address}:{server._port}")
+    print(
+        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"
+    )
+    server.start()
+    yield server
+    server.stop()
+    print(f"<-- stopped mock S3 server on {server._ip_address}:{server._port}")
 
 
 @pytest.fixture
-def dsm_mockup_db(
-    postgres_dsn_url,
-    s3_client: MinioClientWrapper,
-    mock_files_factory: Callable[[int], list[Path]],
-    cleanup_user_projects_file_metadata,
-) -> Iterator[dict[str, FileMetaData]]:
+async def mocked_s3_server_envs(
+    mocked_s3_server: ThreadedMotoServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[None]:
+    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv(
+        "S3_ENDPOINT",
+        f"{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
+    )
+    monkeypatch.setenv("S3_ACCESS_KEY", "xxx")
+    monkeypatch.setenv("S3_SECRET_KEY", "xxx")
+    monkeypatch.setenv("S3_BUCKET_NAME", "pytestbucket")
 
-    # s3 client
-    bucket_name = BUCKET_NAME
-    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+    yield
 
-    # TODO: use pip install Faker
-    users = ["alice", "bob", "chuck", "dennis"]
+    # cleanup the buckets
+    session = get_session()
+    async with session.create_client(
+        "s3",
+        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
+        aws_secret_access_key="xxx",
+        aws_access_key_id="xxx",
+    ) as client:
+        await _remove_all_buckets(client)
 
-    projects = [
-        "astronomy",
-        "biology",
-        "chemistry",
-        "dermatology",
-        "economics",
-        "futurology",
-        "geology",
+
+async def _clean_bucket_content(aiobotore_s3_client, bucket: S3BucketName):
+    response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
+    while response["KeyCount"] > 0:
+        await aiobotore_s3_client.delete_objects(
+            Bucket=bucket,
+            Delete={
+                "Objects": [
+                    {"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj
+                ]
+            },
+        )
+        response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
+
+
+async def _remove_all_buckets(aiobotore_s3_client):
+    response = await aiobotore_s3_client.list_buckets()
+    bucket_names = [
+        bucket["Name"] for bucket in response["Buckets"] if "Name" in bucket
     ]
-    location = SIMCORE_S3_STR
-
-    nodes = ["alpha", "beta", "gamma", "delta"]
-
-    N = 100
-    files = mock_files_factory(N)
-    counter = 0
-    data = {}
-
-    for _file in files:
-        idx = randrange(len(users))
-        user_name = users[idx]
-        user_id = idx + 10
-        idx = randrange(len(projects))
-        project_name = projects[idx]
-        project_id = uuid.uuid4()
-        idx = randrange(len(nodes))
-        node = nodes[idx]
-        node_id = uuid.uuid4()
-        file_name = str(counter)
-        object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
-        file_uuid = Path(object_name).as_posix()
-        raw_file_path = file_uuid
-        display_file_path = str(Path(project_name) / Path(node) / Path(file_name))
-        created_at = str(datetime.datetime.utcnow())
-        file_size = _file.stat().st_size
-
-        assert s3_client.upload_file(bucket_name, object_name, _file)
-        s3_meta_data = s3_client.get_metadata(bucket_name, object_name)
-        assert "ETag" in s3_meta_data
-        entity_tag = s3_meta_data["ETag"].strip('"')
-
-        d = {
-            "file_uuid": file_uuid,
-            "location_id": 0,
-            "location": location,
-            "bucket_name": bucket_name,
-            "object_name": object_name,
-            "project_id": str(project_id),
-            "project_name": project_name,
-            "node_id": str(node_id),
-            "node_name": node,
-            "file_name": file_name,
-            "user_id": str(user_id),
-            "user_name": user_name,
-            "file_id": object_name,
-            "raw_file_path": file_uuid,
-            "display_file_path": display_file_path,
-            "created_at": created_at,
-            "last_modified": created_at,
-            "file_size": file_size,
-            "entity_tag": entity_tag,
-        }
-
-        counter = counter + 1
-
-        data[object_name] = FileMetaData(**d)
-
-        # pylint: disable=no-member
-
-        tests.utils.insert_metadata(postgres_dsn_url, data[object_name])
-
-    total_count = 0
-    for _obj in s3_client.list_objects(bucket_name, recursive=True):
-        total_count = total_count + 1
-
-    assert total_count == N
-
-    yield data
-
-    # s3 client
-    s3_client.remove_bucket(bucket_name, delete_contents=True)
+    await asyncio.gather(
+        *(_clean_bucket_content(aiobotore_s3_client, bucket) for bucket in bucket_names)
+    )
+    await asyncio.gather(
+        *(aiobotore_s3_client.delete_bucket(Bucket=bucket) for bucket in bucket_names)
+    )
 
 
-@pytest.fixture(scope="function")
-def moduleless_app(event_loop, aiohttp_server) -> web.Application:
-    app: web.Application = create_safe_application()
-    # creates a dummy server
-    server = event_loop.run_until_complete(aiohttp_server(app))
-    # server is destroyed on exit https://docs.aiohttp.org/en/stable/testing.html#pytest_aiohttp.aiohttp_server
-    return app
+@pytest.fixture
+async def storage_s3_client(
+    client: TestClient,
+) -> StorageS3Client:
+    assert client.app
+    return get_s3_client(client.app)
 
 
-@pytest.fixture(scope="function")
-def dsm_fixture(
-    s3_client, aiopg_engine, event_loop, moduleless_app
-) -> Iterable[DataStorageManager]:
+@pytest.fixture
+async def storage_s3_bucket(app_settings: Settings) -> str:
+    assert app_settings.STORAGE_S3
+    return app_settings.STORAGE_S3.S3_BUCKET_NAME
 
-    with ThreadPoolExecutor(3) as pool:
-        dsm_fixture = DataStorageManager(
-            s3_client=s3_client,
-            engine=aiopg_engine,
-            loop=event_loop,
-            pool=pool,
-            simcore_bucket_name=BUCKET_NAME,
-            has_project_db=False,
-            app=moduleless_app,
+
+@pytest.fixture
+def mock_config(
+    aiopg_engine: Engine,
+    postgres_host_config: dict[str, str],
+    mocked_s3_server_envs,
+    datcore_adapter_service_mock: AioResponsesMock,
+):
+    # NOTE: this can be overriden in tests that do not need all dependencies up
+    ...
+
+
+@pytest.fixture
+def app_settings(mock_config) -> Settings:
+    test_app_settings = Settings.create_from_envs()
+    print(f"{test_app_settings.json(indent=2)=}")
+    return test_app_settings
+
+
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable[..., int],
+    app_settings: Settings,
+) -> TestClient:
+    app = create(app_settings)
+    return event_loop.run_until_complete(
+        aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
+    )
+
+
+@pytest.fixture
+async def node_id(
+    project_id: ProjectID, create_project_node: Callable[[ProjectID], Awaitable[NodeID]]
+) -> NodeID:
+    return await create_project_node(project_id)
+
+
+@pytest.fixture
+def simcore_file_id(
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
+) -> SimcoreS3FileID:
+    return create_simcore_file_id(
+        project_id, node_id, f"öä$äö2-34 name in to add complexity {faker.file_name()}"
+    )
+
+
+# NOTE: this will be enabled at a later timepoint
+@pytest.fixture(
+    params=[
+        SimcoreS3DataManager.get_location_id(),
+        # DatCoreDataManager.get_location_id(),
+    ],
+    ids=[
+        SimcoreS3DataManager.get_location_name(),
+        # DatCoreDataManager.get_location_name(),
+    ],
+)
+def location_id(request: pytest.FixtureRequest) -> LocationID:
+    return request.param  # type: ignore
+
+
+@pytest.fixture
+async def get_file_meta_data(
+    client: TestClient, user_id: UserID, location_id: LocationID
+) -> Callable[..., Awaitable[FileMetaDataGet]]:
+    async def _getter(file_id: SimcoreS3FileID) -> FileMetaDataGet:
+        assert client.app
+        url = (
+            client.app.router["get_file_metadata"]
+            .url_for(
+                location_id=f"{location_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(user_id=user_id)
+        )
+        response = await client.get(f"{url}")
+        data, error = await assert_status(response, web.HTTPOk)
+        assert not error
+        assert data
+        received_fmd = parse_obj_as(FileMetaDataGet, data)
+        assert received_fmd
+        print(f"<-- {received_fmd.json(indent=2)=}")
+        return received_fmd
+
+    return _getter
+
+
+@pytest.fixture
+async def create_upload_file_link(
+    client: TestClient, user_id: UserID, location_id: LocationID
+) -> AsyncIterator[Callable[..., Awaitable[AnyUrl]]]:
+
+    file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
+
+    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> AnyUrl:
+        assert client.app
+        url = (
+            client.app.router["upload_file"]
+            .url_for(
+                location_id=f"{location_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(**query_kwargs, user_id=user_id)
+        )
+        response = await client.put(f"{url}")
+        data, error = await assert_status(response, web.HTTPOk)
+        assert not error
+        assert data
+        received_file_upload = parse_obj_as(PresignedLink, data)
+        assert received_file_upload
+        print(f"--> created link for {file_id=}")
+        file_params.append((user_id, location_id, file_id))
+        return received_file_upload.link
+
+    yield _link_creator
+
+    # cleanup
+    assert client.app
+    clean_tasks = []
+    for u_id, loc_id, file_id in file_params:
+        url = (
+            client.app.router["delete_file"]
+            .url_for(
+                location_id=f"{loc_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(user_id=u_id)
+        )
+        clean_tasks.append(client.delete(f"{url}"))
+    await asyncio.gather(*clean_tasks)
+
+
+@pytest.fixture
+def upload_file(
+    aiopg_engine: Engine,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    client: TestClient,
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_upload_file_link: Callable[..., Awaitable[AnyUrl]],
+    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
+) -> Callable[
+    [ByteSize, str, Optional[SimcoreS3FileID]], Awaitable[tuple[Path, SimcoreS3FileID]]
+]:
+    async def _uploader(
+        file_size: ByteSize, file_name: str, file_id: Optional[SimcoreS3FileID] = None
+    ) -> tuple[Path, SimcoreS3FileID]:
+        assert client.app
+        # create a file
+        file = create_file_of_size(file_size, file_name)
+        if not file_id:
+            file_id = create_simcore_file_id(project_id, node_id, file_name)
+        # get an upload link
+        file_upload_link = await create_upload_file_link(
+            file_id, link_type="presigned", file_size=file_size
         )
 
-        api_token = os.environ.get("BF_API_KEY", "none")
-        api_secret = os.environ.get("BF_API_SECRET", "none")
-        dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
+        # upload the file
+        e_tag: ETag = await upload_file_to_presigned_link(file, file_upload_link)
 
-        yield dsm_fixture
+        # trigger a lazy upload of the tables by getting the file
+        received_fmd = await get_file_meta_data(file_id)
+        assert received_fmd.entity_tag == e_tag
+
+        # check the entry in db now has the correct file size, and the upload id is gone
+        await assert_file_meta_data_in_db(
+            aiopg_engine,
+            file_id=file_id,
+            expected_entry_exists=True,
+            expected_file_size=file_size,
+            expected_upload_expiration_date=False,
+        )
+        # check the file is in S3 for real
+        s3_metadata = await storage_s3_client.get_file_metadata(
+            storage_s3_bucket, file_id
+        )
+        assert s3_metadata.size == file_size
+        assert s3_metadata.last_modified
+        assert s3_metadata.e_tag == e_tag
+        return file, file_id
+
+    return _uploader
 
 
-@pytest.fixture(scope="function")
-async def datcore_structured_testbucket(
-    mock_files_factory: Callable[[int], list[Path]],
-    moduleless_app,
-):
-    api_token = os.environ.get("BF_API_KEY")
-    api_secret = os.environ.get("BF_API_SECRET")
+@pytest.fixture
+def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
+    def _creator(
+        project_id: ProjectID, node_id: NodeID, file_name: str
+    ) -> SimcoreS3FileID:
+        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
 
-    if api_token is None or api_secret is None:
-        yield "no_bucket"
-        return
-    import warnings
-
-    warnings.warn("DISABLED!!!")
-    raise Exception
-    # TODO: there are some missing commands in datcore-adapter before this can run
-    # this shall be used when the time comes and this code should be enabled again
-
-    # dataset: DatasetMetaData = await datcore_adapter.create_dataset(
-    #     moduleless_app, api_token, api_secret, BUCKET_NAME
-    # )
-    # dataset_id = dataset.dataset_id
-    # assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
-
-    # tmp_files = mock_files_factory(3)
-
-    # # first file to the root
-    # filename1 = os.path.normpath(tmp_files[0])
-    # await datcore_adapter.upload_file(moduleless_app, api_token, api_secret, filename1)
-    # file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
-    # assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
-
-    # # create first level folder
-    # collection_id1 = await dcw.create_collection(dataset_id, "level1")
-
-    # # upload second file
-    # filename2 = os.path.normpath(tmp_files[1])
-    # file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
-    # assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
-
-    # # create 3rd level folder
-    # filename3 = os.path.normpath(tmp_files[2])
-    # collection_id2 = await dcw.create_collection(collection_id1, "level2")
-    # file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-    # assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
-
-    # yield {
-    #     "dataset_id": dataset_id,
-    #     "coll1_id": collection_id1,
-    #     "coll2_id": collection_id2,
-    #     "file_id1": file_id1,
-    #     "filename1": tmp_files[0],
-    #     "file_id2": file_id2,
-    #     "filename2": tmp_files[1],
-    #     "file_id3": file_id3,
-    #     "filename3": tmp_files[2],
-    #     "dcw": dcw,
-    # }
-
-    # await dcw.delete_test_dataset(BUCKET_NAME)
+    return _creator

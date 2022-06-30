@@ -3,11 +3,13 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
+import re
 from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 import aiohttp
 import pytest
+from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from models_library.api_schemas_storage import (
     FileLocationArray,
@@ -115,6 +117,44 @@ async def test_get_file_metada(
     assert file_metadata == FileMetaDataGet.parse_obj(
         FileMetaDataGet.Config.schema_extra["examples"][0]
     )
+
+
+@pytest.fixture(params=["old_not_found_returns_empty_payload", "new_returns_404"])
+def storage_v0_service_mock_get_file_meta_data_not_found(
+    request,
+    aioresponses_mocker: AioResponsesMock,
+) -> AioResponsesMock:
+    get_file_metadata_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
+    )
+    if request.param == "old":
+        # NOTE: the old storage service did not consider using a 404 for when file is not found
+        aioresponses_mocker.get(
+            get_file_metadata_pattern,
+            status=web.HTTPOk.status_code,
+            payload={"error": "No result found", "data": {}},
+            repeat=True,
+        )
+    else:
+        # NOTE: the new storage service shall do it right one day and we shall be prepared
+        aioresponses_mocker.get(
+            get_file_metadata_pattern,
+            status=web.HTTPNotFound.status_code,
+            repeat=True,
+        )
+    return aioresponses_mocker
+
+
+async def test_get_file_metada_invalid_s3_path(
+    mock_environment: None,
+    storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
+    user_id: UserID,
+    file_id: SimcoreS3FileID,
+    location_id: LocationID,
+):
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(exceptions.S3InvalidPathError):
+            await get_file_metadata(session, file_id, location_id, user_id)
 
 
 @pytest.mark.parametrize(

@@ -359,6 +359,7 @@ async def storage_v0_service_mock(
         get_file_metadata_pattern,
         status=web.HTTPOk.status_code,
         payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
+        repeat=True,
     )
     aioresponses_mocker.get(
         get_download_link_pattern, callback=get_download_link_cb, repeat=True
@@ -370,6 +371,7 @@ async def storage_v0_service_mock(
         get_locations_link_pattern,
         status=web.HTTPOk.status_code,
         payload={"data": [{"name": "simcore.s3", "id": 0}]},
+        repeat=True,
     )
 
     return aioresponses_mocker

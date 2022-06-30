@@ -1,18 +1,18 @@
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Union
+from typing import Callable, Union
 
 import aiofiles
 from models_library.projects import Project
-from models_library.projects_nodes_io import Location, StorageFileID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.projects_state import ProjectStatus
 from pydantic import BaseModel, DirectoryPath, Field, parse_obj_as, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
 
-ShuffledData = Dict[str, str]
+ShuffledData = dict[str, str]
 
 
 class LinkAndPath2(BaseModel):
@@ -22,7 +22,7 @@ class LinkAndPath2(BaseModel):
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
-    storage_type: Location = Field(
+    storage_type: LocationID = Field(
         ...,
         description="usually 0 for S3 or 1 for Pennsieve",
     )
@@ -91,7 +91,7 @@ class ManifestFile(BaseLoadingModel):
         default_factory=datetime.utcnow,
     )
 
-    attachments: List[str] = Field(
+    attachments: list[str] = Field(
         ..., description="list of paths for attachments found in the project directory"
     )
 

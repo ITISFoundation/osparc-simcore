@@ -11,7 +11,13 @@ from aiohttp_swagger import setup_swagger
 from servicelib.aiohttp.openapi import get_base_path
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 
-from . import app_handlers, handlers
+from . import (
+    handlers_datasets,
+    handlers_files,
+    handlers_health,
+    handlers_locations,
+    handlers_simcore_s3,
+)
 from .constants import APP_OPENAPI_SPECS_KEY
 from .resources import resources
 
@@ -46,9 +52,16 @@ def setup_rest(app: web.Application):
     app[APP_OPENAPI_SPECS_KEY] = api_specs
 
     # Connects handlers
-    set_default_names(handlers.routes)
-    app.router.add_routes(handlers.routes)
-    app.router.add_routes(app_handlers.routes)
+
+    for routes in [
+        handlers_health.routes,
+        handlers_locations.routes,
+        handlers_datasets.routes,
+        handlers_files.routes,
+        handlers_simcore_s3.routes,
+    ]:
+        set_default_names(routes)
+        app.router.add_routes(routes)
 
     log.debug(
         "routes:\n %s",

@@ -235,7 +235,7 @@ async def test_invalid_file_path(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.InvalidDownloadLinkError):
+    with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store,

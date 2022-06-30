@@ -1,7 +1,10 @@
+from typing import Optional
+
+
 class DatcoreAdapterException(Exception):
     """basic exception for errors raised in datcore-adapter"""
 
-    def __init__(self, msg: str = None) -> None:
+    def __init__(self, msg: Optional[str] = None) -> None:
         super().__init__(
             msg or "Unexpected error occured in datcore-adapter subpackage"
         )

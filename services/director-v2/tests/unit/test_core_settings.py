@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -18,7 +18,7 @@ from simcore_service_director_v2.core.settings import (
 )
 
 
-def _get_backend_type_options() -> Set[str]:
+def _get_backend_type_options() -> set[str]:
     return {x for x in dir(S3Provider) if not x.startswith("_")}
 
 
@@ -64,7 +64,7 @@ def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
         RCloneSettings()
 
 
-def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str, Any]):
+def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
@@ -75,7 +75,7 @@ def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
+def test_settings_with_env_devel(mock_env_devel_environment: dict[str, str]):
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
@@ -87,6 +87,12 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
         "local/dynamic-sidecar:production",
         "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
         "itisfoundation/dynamic-sidecar:1.0.0",
+        "itisfoundation/dynamic-sidecar:staging-github-staging_diolkos1-2022-06-15--15-04.75ddf7e3fb86944ef95fcf77e4075464848121f1",
+        "itisfoundation/dynamic-sidecar:hotfix-github-2022-06-24--12-34.162bfe899d6b62d808e70a07da280fd390bc4434",
+        "itisfoundation/dynamic-sidecar:hotfix-v1-28-1-github-testbuild-latest",
+        "itisfoundation/dynamic-sidecar:staging-github-latest",
+        "itisfoundation/dynamic-sidecar:release-github-v1.28.0-2022-05-30--14-52.62c4c48b1846ecaa8280773f48a2f14bf0f3047b",
+        "itisfoundation/dynamic-sidecar:master-github-2022-06-24--14-35.38add6817bc8cafabc14ec7dacd9b249daa3a11e",
         "local/dynamic-sidecar:sadasd",
         "itisfoundation/dynamic-sidecar:sadasd",
         "10.10.10.10.no.ip:8080/dynamic-sidecar:10.0.1",
@@ -118,8 +124,8 @@ def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None
 
 @pytest.fixture(
     params=[
-        "10.10.10.10.no_ip:8080/dynamic-sidecar:sadasd",
-        "10.10.10.10.no.ip:8080/dynamic-sidecar:the_tag",
+        "10.10.10.10.no/ip:8080/dynamic-sidecar:sadasd",
+        "10.10.10.10.no$ip:8080/dynamic-sidecar:the_tag",
     ],
 )
 def testing_environ_expected_failure(
@@ -150,7 +156,7 @@ def test_expected_failure_dynamic_sidecar_settings(
 )
 def test_services_custom_constraints(
     custom_constraints: str,
-    expected: List[str],
+    expected: list[str],
     project_env_devel_environment,
     monkeypatch: MonkeyPatch,
 ) -> None:

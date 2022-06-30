@@ -3,7 +3,7 @@ import json
 # pylint: disable=too-many-arguments
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import aiofiles
 from aiohttp import ClientError, ClientPayloadError, ClientSession
@@ -16,7 +16,6 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from ..node_ports_common.storage_client import update_file_meta_data
 from . import exceptions, storage_client
 from .constants import SIMCORE_LOCATION
 from .r_clone import RCloneFailedError, is_r_clone_available, sync_local_to_s3
@@ -132,12 +131,12 @@ async def _upload_file_to_link(
             if resp.status > 299:
                 response_text = await resp.text()
                 raise exceptions.S3TransferError(
-                    "Could not upload file {}:{}".format(file_path, response_text)
+                    f"Could not upload file {file_path}:{response_text}"
                 )
             if resp.status != 200:
                 response_text = await resp.text()
                 raise exceptions.S3TransferError(
-                    "Issue when uploading file {}:{}".format(file_path, response_text)
+                    f"Issue when uploading file {file_path}:{response_text}"
                 )
 
             # get the S3 etag from the headers
@@ -185,7 +184,7 @@ async def get_upload_link_from_s3(
     s3_object: StorageFileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
-) -> Tuple[LocationID, URL]:
+) -> tuple[LocationID, URL]:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
@@ -277,7 +276,7 @@ async def upload_file(
     local_file_path: Path,
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-) -> Tuple[LocationID, ETag]:
+) -> tuple[LocationID, ETag]:
     """Uploads a file to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -324,7 +323,9 @@ async def upload_file(
                 )
             else:
                 try:
-                    await _upload_file_to_link(session, upload_link, local_file_path)
+                    e_tag = await _upload_file_to_link(
+                        session, upload_link, local_file_path
+                    )
                 except exceptions.S3TransferError as err:
                     await delete_file(
                         user_id=user_id,
@@ -334,8 +335,9 @@ async def upload_file(
                     )
                     raise err
 
-            e_tag = await update_file_meta_data(
-                session=session, s3_object=s3_object, user_id=user_id
+            # NOTE: this is not strictly necessary, only for RClone that does not retrieve the ETag
+            store_id, e_tag = await get_file_metadata(
+                user_id, store_id, s3_object, session
             )
         except (RCloneFailedError, exceptions.S3TransferError) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
@@ -377,7 +379,7 @@ async def get_file_metadata(
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: Optional[ClientSession] = None,
-) -> Tuple[LocationID, ETag]:
+) -> tuple[LocationID, ETag]:
     """
     :raises S3InvalidPathError
     """
