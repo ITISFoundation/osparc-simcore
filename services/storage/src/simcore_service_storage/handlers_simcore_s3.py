@@ -108,5 +108,4 @@ async def search_files_starting_with(request: web.Request):
     )
     log.debug("Found %d files starting with '%s'", len(data), query_params.startswith)
 
-    py_data = [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
-    return py_data
+    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]

@@ -49,8 +49,7 @@ async def get_files_metadata(request: web.Request):
         user_id=query_params.user_id,
         uuid_filter=query_params.uuid_filter,
     )
-    py_data = [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
-    return {"data": py_data}
+    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
 
 
 @routes.get(
@@ -77,9 +76,7 @@ async def get_file_metadata(request: web.Request):
         # TODO: once all legacy services are gone, remove the try except, it will default to 404
         return {"error": "No result found", "data": {}}
 
-    return {
-        "data": jsonable_encoder(FileMetaDataGet.from_orm(data)),
-    }
+    return jsonable_encoder(FileMetaDataGet.from_orm(data))
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="download_file")  # type: ignore
@@ -94,7 +91,7 @@ async def download_file(request: web.Request):
     link = await dsm.create_file_download_link(
         query_params.user_id, path_params.file_id, query_params.link_type
     )
-    return {"error": None, "data": {"link": link}}
+    return {"link": link}
 
 
 @routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="upload_file")  # type: ignore
@@ -114,7 +111,7 @@ async def upload_file(request: web.Request):
         link_type=query_params.link_type,
     )
 
-    return {"data": {"link": jsonable_encoder(link, by_alias=True)}}
+    return {"link": jsonable_encoder(link, by_alias=True)}
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort", name="abort_upload_file")  # type: ignore

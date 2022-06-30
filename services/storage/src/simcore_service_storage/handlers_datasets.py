@@ -13,7 +13,6 @@ from simcore_service_storage.dsm import get_dsm_provider
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
 from .models import (
-    DatasetMetaData,
     FileMetaData,
     FilesMetadataDatasetPathParams,
     LocationPathParams,
@@ -37,8 +36,7 @@ async def get_datasets_metadata(request: web.Request):
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
-    data: list[DatasetMetaData] = await dsm.list_datasets(query_params.user_id)
-    return {"data": data}
+    return await dsm.list_datasets(query_params.user_id)
 
 
 @routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata", name="get_files_metadata_dataset")  # type: ignore
@@ -56,5 +54,4 @@ async def get_files_metadata_dataset(request: web.Request):
         user_id=query_params.user_id,
         dataset_id=path_params.dataset_id,
     )
-    py_data = [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
-    return {"data": py_data}
+    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
