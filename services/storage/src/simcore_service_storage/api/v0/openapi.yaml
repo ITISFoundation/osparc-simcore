@@ -275,6 +275,7 @@ paths:
         - name: file_size
           in: query
           required: false
+          description: 'will be required once all legacy services are gone or updated. if null returns the PresignedLinkEnveloped, else returns FileUploadEnveloped'
           schema:
             type: integer
             format: int64
