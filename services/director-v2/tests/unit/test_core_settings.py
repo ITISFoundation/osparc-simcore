@@ -171,3 +171,41 @@ def test_services_custom_constraints_default_empty_list(
 ) -> None:
     settings = AppSettings()
     assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
+
+
+def test_DynamicSidecarSettings_in_development(
+    monkeypatch: MonkeyPatch, project_env_devel_environment
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If development ...
+    monkeypatch.setenv("SC_BOOT_MODE", "development")
+    devel_settings = DynamicSidecarSettings()
+
+    assert devel_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert devel_settings.DYNAMIC_SIDECAR_EXPOSE_PORT, "Should auto-enable"
+    assert devel_settings.DYNAMIC_SIDECAR_PORT
+
+
+def test_DynamicSidecarSettings_in_production(
+    monkeypatch: MonkeyPatch, project_env_devel_environment
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If production ...
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    prod_settings = DynamicSidecarSettings()
+
+    assert not prod_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert not prod_settings.DYNAMIC_SIDECAR_EXPOSE_PORT
+    assert prod_settings.DYNAMIC_SIDECAR_PORT

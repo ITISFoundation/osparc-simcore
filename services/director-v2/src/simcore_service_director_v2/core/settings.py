@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 
 
+import logging
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -39,11 +40,15 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+
+logger = logging.getLogger(__name__)
+
 
 MINS = 60
 API_ROOT: str = "api"
@@ -140,35 +145,20 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
+    SC_BOOT_MODE: BootModeEnum = Field(
+        ...,
+        description="Captures SC_BOOT_MODE from THIS service (i.e. the directorv2)"
+        "and uses it to determine the mode to create the dynamic-sidecar service",
+    )
+
     DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
         "WARNING", description="log level of the dynamic sidecar"
     )
-    SC_BOOT_MODE: BootModeEnum = Field(
-        BootModeEnum.PRODUCTION,
-        description="Used to compute where or not should start sidecar in development mode",
-    )
+
     DYNAMIC_SIDECAR_IMAGE: str = Field(
         ...,
         regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
-    )
-
-    DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        8000,
-        description="port on which the webserver for the dynamic-sidecar is exposed",
-    )
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
-        None,
-        description="optional, only used for development, mounts the source of the dynamic-sidecar",
-    )
-
-    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        False,
-        description="exposes the service on localhost for debuging and testing",
-    )
-    PROXY_EXPOSE_PORT: bool = Field(
-        False,
-        description="exposes the proxy on localhost for debuging and testing",
     )
 
     SIMCORE_SERVICES_NETWORK_NAME: str = Field(
@@ -176,6 +166,31 @@ class DynamicSidecarSettings(BaseCustomSettings):
         regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
+
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose version used in the compose-specs"
+    )
+
+    SWARM_STACK_NAME: str = Field(
+        ...,
+        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    )
+
+    TRAEFIK_SIMCORE_ZONE: str = Field(
+        ...,
+        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    )
+
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
+
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    #
+    # TIMEOUTS AND RETRY dark worlds
+    #
+
     DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES: int = Field(
         4, description="maximum attempts to retry a request before giving up"
     )
@@ -254,25 +269,51 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    TRAEFIK_SIMCORE_ZONE: str = Field(
-        ...,
-        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    #
+    # DEVELOPMENT ONLY config
+    #
+
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
+        None,
+        description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
+        example="osparc-simcore/services/dynamic-sidecar",
     )
 
-    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
-
-    SWARM_STACK_NAME: str = Field(
-        ...,
-        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(
+        DEFAULT_FASTAPI_PORT,
+        description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]",
     )
 
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
-        auto_default_from_env=True
+    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
+        False,
+        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
+        "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
+        "where 30023 is the host published port",
     )
 
-    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose version used in the compose-specs"
+    PROXY_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the proxy on localhost for debuging and testing",
     )
+
+    @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
+    @classmethod
+    def auto_disable_if_production(cls, v, values):
+        if v and values.get("SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+            logger.warning(
+                "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
+                v,
+            )
+            return None
+        return v
+
+    @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
+    @classmethod
+    def auto_enable_if_development(cls, v, values):
+        if values.get("SC_BOOT_MODE") != BootModeEnum.PRODUCTION:
+            # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
+            return True
+        return v
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod

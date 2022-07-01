@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.basic_types import BootModeEnum
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -154,34 +155,30 @@ def get_dynamic_sidecar_spec(
 
     endpoint_spec = {}
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV is not None:
-        dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-        if dynamic_sidecar_path is None:
-            log.warning(
-                "Could not mount the sources for the dynamic-sidecar, please "
-                "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
-            )
-        else:
-            mounts.append(
-                {
-                    "Source": str(dynamic_sidecar_path),
-                    "Target": "/devel/services/dynamic-sidecar",
-                    "Type": "bind",
-                }
-            )
-            packages_path = (
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-                / ".."
-                / ".."
-                / "packages"
-            )
-            mounts.append(
-                {
-                    "Source": str(packages_path),
-                    "Target": "/devel/packages",
-                    "Type": "bind",
-                }
-            )
+    if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
+        # Settings validators guarantees that this never happens in production mode
+        assert dynamic_sidecar_settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION
+
+        mounts.append(
+            {
+                "Source": str(dynamic_sidecar_path),
+                "Target": "/devel/services/dynamic-sidecar",
+                "Type": "bind",
+            }
+        )
+        packages_path = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+            / ".."
+            / ".."
+            / "packages"
+        )
+        mounts.append(
+            {
+                "Source": str(packages_path),
+                "Target": "/devel/packages",
+                "Type": "bind",
+            }
+        )
     # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         endpoint_spec["Ports"] = [
