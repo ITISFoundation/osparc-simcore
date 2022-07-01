@@ -216,7 +216,7 @@ async def complete_upload_file(request: web.Request):
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     task = asyncio.create_task(
-        dsm.complete_upload(path_params.file_id, query_params.user_id, body.parts),
+        dsm.complete_file_upload(path_params.file_id, query_params.user_id, body.parts),
         name=create_upload_completion_task_name(
             query_params.user_id, path_params.file_id
         ),

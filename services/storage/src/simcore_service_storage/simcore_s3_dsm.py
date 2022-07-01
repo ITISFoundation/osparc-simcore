@@ -289,9 +289,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 async with self.engine.acquire() as conn:
                     await db_file_meta_data.delete(conn, [fmd.file_id])
 
-    async def complete_upload(
+    async def complete_file_upload(
         self,
-        file_id: SimcoreS3FileID,
+        file_id: StorageFileID,
         user_id: UserID,
         uploaded_parts: list[UploadedPart],
     ) -> FileMetaData:
@@ -301,7 +301,9 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
-            fmd = await db_file_meta_data.get(conn, file_id)
+            fmd = await db_file_meta_data.get(
+                conn, parse_obj_as(SimcoreS3FileID, file_id)
+            )
 
         if is_valid_managed_multipart_upload(fmd.upload_id):
             # NOTE: Processing of a Complete Multipart Upload request

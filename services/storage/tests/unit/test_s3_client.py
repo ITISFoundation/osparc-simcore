@@ -4,6 +4,7 @@
 
 
 import asyncio
+import json
 from contextlib import AsyncExitStack
 from pathlib import Path
 from random import choice
@@ -20,7 +21,11 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
-from simcore_service_storage.exceptions import S3BucketInvalidError, S3KeyNotFoundError
+from simcore_service_storage.exceptions import (
+    S3AccessError,
+    S3BucketInvalidError,
+    S3KeyNotFoundError,
+)
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
@@ -275,7 +280,7 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
         storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
     )
     # call it again triggers
-    with pytest.raises(botocore.exceptions.ClientError):
+    with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
             storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
         )
@@ -336,7 +341,7 @@ async def test_multiple_completion_of_multipart_upload(
         storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
     )
 
-    with pytest.raises(botocore.exceptions.ClientError):
+    with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
             storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
         )
