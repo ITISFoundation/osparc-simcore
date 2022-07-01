@@ -13,6 +13,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from redis.asyncio.lock import Lock
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.utils.dict_utils import nested_update
@@ -27,6 +28,7 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
+from ...redis import RedisLockManager, auto_release
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -182,11 +184,12 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        dynamic_sidecar_node_id = await get_service_placement(
+        scheduler_data.dynamic_sidecar_node_id = await get_service_placement(
             dynamic_sidecar_id, dynamic_sidecar_settings
         )
         await constrain_service_to_node(
-            service_name=scheduler_data.service_name, node_id=dynamic_sidecar_node_id
+            service_name=scheduler_data.service_name,
+            node_id=scheduler_data.dynamic_sidecar_node_id,
         )
 
         # update service_port and assing it to the status
@@ -503,114 +506,133 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         # invoke container cleanup at this point
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
 
-        try:
-            await dynamic_sidecar_client.begin_service_destruction(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-            )
-        except BaseClientHTTPError as e:
-            logger.warning(
-                (
-                    "Could not contact dynamic-sidecar to begin destruction of "
-                    "%s\n%s. Will continue service removal!"
-                ),
-                scheduler_data.service_name,
-                f"{e}",
-            )
-        app_settings: AppSettings = app.state.settings
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        # A node can end up with all the services from a single study.
+        # When the study is closed, all the services will try to save their
+        # data. This causes a lot of disk and network stress.
+        # Some nodes collapse under load or behave unexpectedly.
+        lock_manager = RedisLockManager.instance(app)
+        assert scheduler_data.dynamic_sidecar_node_id  # nosec
+        lock: Optional[Lock] = await lock_manager.acquire_lock(
+            scheduler_data.dynamic_sidecar_node_id
         )
-
-        # only try to save the status if :
-        # - the dynamic-sidecar has finished booting correctly
-        # - it is requested to save the state
-        if (
-            scheduler_data.dynamic_sidecar.service_removal_state.can_save
-            and await are_all_services_present(
-                node_uuid=scheduler_data.node_uuid,
-                dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+        if lock is None:
+            node_slots = await lock_manager.get_node_slots(
+                scheduler_data.dynamic_sidecar_node_id
             )
-        ):
-            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-            dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+            logger.debug("All %s are currently being used. Skipping", f"{node_slots=}")
+            # Next observation cycle, the service will try again to save the state
+            # if it is able to acquire a lock
+            return
 
-            logger.info(
-                "Calling into dynamic-sidecar to save state and pushing data to nodeports"
-            )
+        async with auto_release(lock_manager, lock):
             try:
-                tasks = [
-                    dynamic_sidecar_client.service_push_output_ports(
-                        dynamic_sidecar_endpoint,
-                    )
-                ]
-                # When enabled no longer uploads state via nodeports
-                # S3 is used to store state paths
-                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-                    tasks.append(
-                        dynamic_sidecar_client.service_save_state(
-                            dynamic_sidecar_endpoint,
-                        )
-                    )
-
-                try:
-                    await logged_gather(*tasks)
-                except NodeportsDidNotFindNodeError as err:
-                    logger.warning("%s", f"{err}")
-
-                logger.info("Ports data pushed by dynamic-sidecar")
+                await dynamic_sidecar_client.begin_service_destruction(
+                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+                )
             except BaseClientHTTPError as e:
                 logger.warning(
                     (
-                        "Could not contact dynamic-sidecar to save service "
-                        "state and upload outputs %s\n%s"
+                        "Could not contact dynamic-sidecar to begin destruction of "
+                        "%s\n%s. Will continue service removal!"
                     ),
                     scheduler_data.service_name,
                     f"{e}",
                 )
-                # ensure dynamic-sidecar does not get removed
-                # user data can be manually saved and manual
-                # cleanup of the dynamic-sidecar is required
-                # TODO: ANE: maybe have a mechanism stop the dynamic sidecar
-                # and make the director warn about hanging sidecars?
-                raise e
+            app_settings: AppSettings = app.state.settings
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            )
 
-        # remove the 2 services
-        await remove_dynamic_sidecar_stack(
-            node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-        )
-        # remove network
-        await remove_dynamic_sidecar_network(
-            scheduler_data.dynamic_sidecar_network_name
-        )
+            # only try to save the status if :
+            # - the dynamic-sidecar has finished booting correctly
+            # - it is requested to save the state
+            if (
+                scheduler_data.dynamic_sidecar.service_removal_state.can_save
+                and await are_all_services_present(
+                    node_uuid=scheduler_data.node_uuid,
+                    dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+                )
+            ):
+                dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+                dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        # NOTE: for future attempts, volumes cannot be cleaned up
-        # since they are local to the node.
-        # That's why anonymous volumes are used!
+                logger.info(
+                    "Calling into dynamic-sidecar to save state and pushing data to nodeports"
+                )
+                try:
+                    tasks = [
+                        dynamic_sidecar_client.service_push_output_ports(
+                            dynamic_sidecar_endpoint,
+                        )
+                    ]
+                    # When enabled no longer uploads state via nodeports
+                    # S3 is used to store state paths
+                    if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                        tasks.append(
+                            dynamic_sidecar_client.service_save_state(
+                                dynamic_sidecar_endpoint,
+                            )
+                        )
 
-        logger.debug(
-            "Removed dynamic-sidecar created services for '%s'",
-            scheduler_data.service_name,
-        )
+                    try:
+                        await logged_gather(*tasks)
+                    except NodeportsDidNotFindNodeError as err:
+                        logger.warning("%s", f"{err}")
 
-        # if a project network for the current project has no more
-        # containers attached to it (because the last service which
-        # was using it was removed), also removed the network
-        used_projects_networks = await get_projects_networks_containers(
-            project_id=scheduler_data.project_id
-        )
-        await logged_gather(
-            *[
-                try_to_remove_network(network_name)
-                for network_name, container_count in used_projects_networks.items()
-                if container_count == 0
-            ]
-        )
+                    logger.info("Ports data pushed by dynamic-sidecar")
+                except BaseClientHTTPError as e:
+                    logger.warning(
+                        (
+                            "Could not contact dynamic-sidecar to save service "
+                            "state and upload outputs %s\n%s"
+                        ),
+                        scheduler_data.service_name,
+                        f"{e}",
+                    )
+                    # ensure dynamic-sidecar does not get removed
+                    # user data can be manually saved and manual
+                    # cleanup of the dynamic-sidecar is required
+                    # TODO: ANE: maybe have a mechanism stop the dynamic sidecar
+                    # and make the director warn about hanging sidecars?
+                    raise e
 
-        await app.state.dynamic_sidecar_scheduler.finish_service_removal(
-            scheduler_data.node_uuid
-        )
-        scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
+            # remove the 2 services
+            await remove_dynamic_sidecar_stack(
+                node_uuid=scheduler_data.node_uuid,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+            )
+            # remove network
+            await remove_dynamic_sidecar_network(
+                scheduler_data.dynamic_sidecar_network_name
+            )
+
+            # NOTE: for future attempts, volumes cannot be cleaned up
+            # since they are local to the node.
+            # That's why anonymous volumes are used!
+
+            logger.debug(
+                "Removed dynamic-sidecar created services for '%s'",
+                scheduler_data.service_name,
+            )
+
+            # if a project network for the current project has no more
+            # containers attached to it (because the last service which
+            # was using it was removed), also removed the network
+            used_projects_networks = await get_projects_networks_containers(
+                project_id=scheduler_data.project_id
+            )
+            await logged_gather(
+                *[
+                    try_to_remove_network(network_name)
+                    for network_name, container_count in used_projects_networks.items()
+                    if container_count == 0
+                ]
+            )
+
+            await app.state.dynamic_sidecar_scheduler.finish_service_removal(
+                scheduler_data.node_uuid
+            )
+            scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 
 # register all handlers defined in this module here
