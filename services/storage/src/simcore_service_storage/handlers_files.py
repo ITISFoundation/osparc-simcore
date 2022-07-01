@@ -155,6 +155,7 @@ async def upload_file(request: web.Request):
         assert len(links.urls) == 1  # nosec
         return {"link": jsonable_encoder(links.urls[0], by_alias=True)}
 
+    # v2 response
     abort_url = request.url.join(
         request.app.router["abort_upload_file"]
         .url_for(
