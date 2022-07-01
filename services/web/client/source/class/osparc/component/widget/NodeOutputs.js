@@ -144,8 +144,8 @@ qx.Class.define("osparc.component.widget.NodeOutputs", {
             valueLink.setValue(filename);
             osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
               .then(presignedLinkData => {
-                if ("presignedLink" in presignedLinkData && presignedLinkData.presignedLink) {
-                  valueLink.setUrl(presignedLinkData.presignedLink.link);
+                if ("resp" in presignedLinkData && presignedLinkData.resp) {
+                  valueLink.setUrl(presignedLinkData.resp.link);
                 }
               });
           } else if ("downloadLink" in value) {

@@ -625,7 +625,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
           }
         }
       },
