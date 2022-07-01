@@ -87,7 +87,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
-    await simcore_s3_dsm.create_upload_links(
+    await simcore_s3_dsm.create_file_upload_links(
         user_id, simcore_file_id, link_type, file_size
     )
     # ensure the database is correctly set up
@@ -225,7 +225,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
 ):
-    """This test reproduces what create_upload_links in dsm does, but running
+    """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
     later_than_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
@@ -283,7 +283,7 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
 ):
-    """This test reproduces what create_upload_links in dsm does, but running
+    """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
     later_than_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(

@@ -535,14 +535,15 @@ class SimcoreS3DataManager(BaseDataManager):
         return file_ids_to_remove
 
     async def _clean_pending_upload(self, conn: SAConnection, file_id: SimcoreS3FileID):
-        fmd = await db_file_meta_data.get(conn, file_id)
-        if is_valid_managed_multipart_upload(fmd.upload_id):
-            assert fmd.upload_id  # nosec
-            await get_s3_client(self.app).abort_multipart_upload(
-                bucket=self.simcore_bucket_name,
-                file_id=file_id,
-                upload_id=fmd.upload_id,
-            )
+        with suppress(FileMetaDataNotFoundError):
+            fmd = await db_file_meta_data.get(conn, file_id)
+            if is_valid_managed_multipart_upload(fmd.upload_id):
+                assert fmd.upload_id  # nosec
+                await get_s3_client(self.app).abort_multipart_upload(
+                    bucket=self.simcore_bucket_name,
+                    file_id=file_id,
+                    upload_id=fmd.upload_id,
+                )
 
     async def _clean_expired_uploads(self):
         """this method will check for all incomplete updates by checking
@@ -684,6 +685,7 @@ class SimcoreS3DataManager(BaseDataManager):
         fmd.last_modified = s3_metadata.last_modified
         fmd.entity_tag = s3_metadata.e_tag
         fmd.upload_expires_at = None
+        fmd.upload_id = None
         updated_fmd = await db_file_meta_data.upsert(conn, convert_db_to_model(fmd))
         return updated_fmd
 

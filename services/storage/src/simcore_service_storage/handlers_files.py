@@ -131,7 +131,7 @@ async def upload_file(request: web.Request):
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
-    links: UploadLinks = await dsm.create_upload_links(
+    links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
         file_id=path_params.file_id,
         link_type=query_params.link_type,

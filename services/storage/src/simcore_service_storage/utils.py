@@ -9,7 +9,7 @@ from aiohttp.typedefs import StrOrURL
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 
-from .constants import MAX_CHUNK_SIZE
+from .constants import MAX_CHUNK_SIZE, S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from .models import FileMetaData, FileMetaDataAtDB, UploadID
 
 logger = logging.getLogger(__name__)
