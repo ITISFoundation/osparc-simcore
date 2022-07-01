@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -6,14 +5,16 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final, Optional, cast
 
 import aioboto3
+from aiobotocore.session import ClientCreatorContext
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 
@@ -130,7 +131,7 @@ class StorageS3Client:
         # now create the links
         upload_links = parse_obj_as(
             list[AnyUrl],
-            await asyncio.gather(
+            await logged_gather(
                 *[
                     self.client.generate_presigned_url(
                         "upload_part",
@@ -143,7 +144,9 @@ class StorageS3Client:
                         ExpiresIn=expiration_secs,
                     )
                     for i in range(num_upload_links)
-                ]
+                ],
+                log=log,
+                max_concurrency=20,
             ),
         )
         return MultiPartUploadLinks(
