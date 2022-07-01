@@ -13,7 +13,6 @@ import asyncio
 import contextlib
 import functools
 import logging
-import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -357,14 +356,23 @@ class DynamicSidecarsScheduler:
                 logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
-            except Exception:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
+                # TODO: should handle each case separately
+                # FIXME: this message gets to the front-end. Use service display name instead!
                 service_name = scheduler_data.service_name
 
-                message = (
-                    f"Observation of {service_name} failed:\n{traceback.format_exc()}"
+                # With unhandled errors, let's generate and ID and send it to the end-user
+                # so that we can trace the logs and debug the issue.
+                error_id = id(e)
+                logger.exception(
+                    "[%s] Observation of %s unexpectedly failed",
+                    f"{error_id=}",
+                    f"{service_name=}",
                 )
-                logger.error(message)
-                scheduler_data.dynamic_sidecar.status.update_failing_status(message)
+                message_for_user = f"Upss! this service ({service_name}) failed unexpectedly [{error_id=}]]"
+                scheduler_data.dynamic_sidecar.status.update_failing_status(
+                    message_for_user
+                )
             finally:
                 if scheduler_data_copy != scheduler_data:
                     try:
