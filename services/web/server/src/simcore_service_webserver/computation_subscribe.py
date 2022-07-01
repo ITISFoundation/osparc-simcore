@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import socket
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aio_pika
 from aiohttp import web
@@ -49,7 +49,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
             progress=rabbit_message.progress,
         )
         if project:
-            messages: List[SocketMessageDict] = [
+            messages: list[SocketMessageDict] = [
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
                     "data": {
@@ -74,13 +74,11 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
 
 async def log_message_parser(app: web.Application, data: bytes) -> None:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
-    socket_messages: List[SocketMessageDict] = [
+
+    socket_messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_LOG_EVENT,
-            "data": {
-                "messages": rabbit_message.messages,
-                "node_id": f"{rabbit_message.node_id}",
-            },
+            "data": rabbit_message.dict(exclude={"user_id"}),
         }
     ]
     await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
@@ -101,7 +99,7 @@ async def instrumentation_message_parser(app: web.Application, data: bytes) -> N
 async def events_message_parser(app: web.Application, data: bytes) -> None:
     rabbit_message = EventRabbitMessage.parse_raw(data)
 
-    socket_messages: List[SocketMessageDict] = [
+    socket_messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_EVENT,
             "data": {
@@ -163,7 +161,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     async def _exchange_consumer(
         exchange_name: str,
         parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
-        consumer_kwargs: Dict[str, Any],
+        consumer_kwargs: dict[str, Any],
     ):
         while consumer_running:
             try:
