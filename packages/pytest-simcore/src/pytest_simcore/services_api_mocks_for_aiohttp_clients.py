@@ -12,19 +12,21 @@ import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
-from models_library.api_schemas_storage import FileMetaDataGet
+from models_library.api_schemas_storage import (
+    FileMetaDataGet,
+    FileUploadLinks,
+    FileUploadSchema,
+    PresignedLink,
+)
 from models_library.clusters import Cluster
 from models_library.projects_state import RunningState
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
-
-# WARNING: any request done through the client will go through aioresponses. It is
-# unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
-# Other than that it seems to behave nicely
-PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
 
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
@@ -326,22 +328,54 @@ async def director_v2_service_mock(
     return aioresponses_mocker
 
 
+def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
+    file_id = url.path.rsplit("/files/")[1]
+    assert "params" in kwargs
+    assert "link_type" in kwargs["params"]
+    link_type = kwargs["params"]["link_type"]
+    scheme = {"presigned": "http", "s3": "s3"}
+    return CallbackResult(
+        status=web.HTTPOk.status_code,
+        payload={"data": {"link": f"{scheme[link_type]}://{file_id}"}},
+    )
+
+
+def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
+    file_id = url.path.rsplit("/files/")[1]
+    assert "params" in kwargs
+    assert "link_type" in kwargs["params"]
+    link_type = kwargs["params"]["link_type"]
+    scheme = {"presigned": "http", "s3": "s3"}
+
+    if file_size := kwargs["params"].get("file_size"):
+        # version2
+        upload_schema = FileUploadSchema(
+            chunk_size=parse_obj_as(ByteSize, "5GiB"),
+            urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],
+            links=FileUploadLinks(
+                abort_upload=parse_obj_as(AnyUrl, f"{url}:abort"),
+                complete_upload=parse_obj_as(AnyUrl, f"{url}:complete"),
+            ),
+        )
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload={"data": jsonable_encoder(upload_schema)},
+        )
+    # version 1 returns a presigned link
+    presigned_link = PresignedLink(
+        link=parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")
+    )
+    return CallbackResult(
+        status=web.HTTPOk.status_code,
+        payload={"data": jsonable_encoder(presigned_link)},
+    )
+
+
 @pytest.fixture
 async def storage_v0_service_mock(
     aioresponses_mocker: AioResponsesMock,
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
-
-    def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
-        file_id = url.path.rsplit("/files/")[1]
-        assert "params" in kwargs
-        assert "link_type" in kwargs["params"]
-        link_type = kwargs["params"]["link_type"]
-        scheme = {"presigned": "http", "s3": "s3"}
-        return CallbackResult(
-            status=web.HTTPOk.status_code,
-            payload={"data": {"link": f"{scheme[link_type]}://{file_id}"}},
-        )
 
     get_file_metadata_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
@@ -365,7 +399,7 @@ async def storage_v0_service_mock(
         get_download_link_pattern, callback=get_download_link_cb, repeat=True
     )
     aioresponses_mocker.put(
-        get_upload_link_pattern, callback=get_download_link_cb, repeat=True
+        get_upload_link_pattern, callback=get_upload_link_cb, repeat=True
     )
     aioresponses_mocker.get(
         get_locations_link_pattern,
