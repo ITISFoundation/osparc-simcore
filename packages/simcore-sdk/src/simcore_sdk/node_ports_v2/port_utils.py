@@ -5,7 +5,7 @@ from typing import Any, Callable, Coroutine, Optional
 
 from models_library.api_schemas_storage import FileUploadSchema
 from models_library.users import UserID
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
 from settings_library.r_clone import RCloneSettings
 from yarl import URL
@@ -115,7 +115,12 @@ async def get_download_link_from_storage_overload(
 
 
 async def get_upload_links_from_storage(
-    user_id: UserID, project_id: str, node_id: str, file_name: str, link_type: LinkType
+    user_id: UserID,
+    project_id: str,
+    node_id: str,
+    file_name: str,
+    link_type: LinkType,
+    file_size: ByteSize,
 ) -> FileUploadSchema:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.create_simcore_file_id(
@@ -127,6 +132,7 @@ async def get_upload_links_from_storage(
         store_name=None,
         s3_object=s3_object,
         link_type=link_type,
+        file_size=file_size,
     )
     return links
 

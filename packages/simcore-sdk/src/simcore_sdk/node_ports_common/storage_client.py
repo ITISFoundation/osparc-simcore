@@ -1,7 +1,7 @@
 from enum import Enum
 from functools import wraps
 from json import JSONDecodeError
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import quote
 
 from aiohttp import ClientSession, web
@@ -115,26 +115,23 @@ async def get_upload_file_links(
     location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
-    file_size: Optional[ByteSize],
+    file_size: ByteSize,
 ) -> FileUploadSchema:
     """
-    :raises exceptions.StorageInvalidCall: _description_
     :raises exceptions.StorageServerIssue: _description_
     :raises ClientResponseError
     """
-    if file_id is None or location_id is None or user_id is None:
-        raise exceptions.StorageInvalidCall(
-            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
-        )
-    query_params = {"user_id": f"{user_id}", "link_type": link_type.value}
-    if file_size:
-        query_params["file_size"] = file_size
+
+    query_params = {
+        "user_id": f"{user_id}",
+        "link_type": link_type.value,
+        "file_size": file_size,
+    }
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         params=query_params,
     ) as response:
         response.raise_for_status()
-
         file_upload_links_enveloped = Envelope[FileUploadSchema].parse_obj(
             await response.json()
         )

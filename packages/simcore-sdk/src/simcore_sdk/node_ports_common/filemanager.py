@@ -85,7 +85,7 @@ async def _get_upload_links(
     file_id: StorageFileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
-    file_size: Optional[ByteSize],
+    file_size: ByteSize,
 ) -> FileUploadSchema:
     """
     :raises exceptions.S3InvalidPathError: _description_
@@ -330,7 +330,7 @@ async def get_upload_links_from_s3(
     s3_object: StorageFileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
-    file_size: Optional[ByteSize] = None,
+    file_size: ByteSize,
 ) -> tuple[LocationID, FileUploadSchema]:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")

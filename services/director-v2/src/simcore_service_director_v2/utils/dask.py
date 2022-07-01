@@ -19,7 +19,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl, ValidationError
+from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -259,6 +259,7 @@ async def compute_output_data_schema(
                 if port.file_to_key_map
                 else port.key,
                 link_type=file_link_type,
+                file_size=ByteSize(0),  # will create a single presigned link
             )
             assert value_links.urls  # nosec
             assert len(value_links.urls) == 1  # nosec
@@ -290,6 +291,7 @@ async def compute_service_log_file_upload_link(
         node_id=f"{node_id}",
         file_name=_LOGS_FILE_NAME,
         link_type=file_link_type,
+        file_size=ByteSize(0),  # will create a single presigned link
     )
     return value_links.urls[0]
 

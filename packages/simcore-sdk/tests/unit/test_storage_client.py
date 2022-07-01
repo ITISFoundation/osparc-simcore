@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 
 import re
-from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 import aiohttp
@@ -19,6 +18,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common import exceptions
@@ -98,12 +98,11 @@ async def test_get_upload_file_links(
     expected_scheme: tuple[str],
 ):
     async with aiohttp.ClientSession() as session:
-        links = await get_upload_file_links(
-            session, file_id, location_id, user_id, link_type, file_size=None
+        file_upload_links = await get_upload_file_links(
+            session, file_id, location_id, user_id, link_type, file_size=ByteSize(0)
         )
-    assert isinstance(links, FileUploadSchema)
-    assert len(links.urls) == 1
-    assert links.urls[0].scheme in expected_scheme
+    assert isinstance(file_upload_links, FileUploadSchema)
+    assert file_upload_links.urls[0].scheme in expected_scheme
 
 
 async def test_get_file_metada(
@@ -157,40 +156,3 @@ async def test_get_file_metada_invalid_s3_path(
     async with aiohttp.ClientSession() as session:
         with pytest.raises(exceptions.S3InvalidPathError):
             await get_file_metadata(session, file_id, location_id, user_id)
-
-
-@pytest.mark.parametrize(
-    "fct_call, additional_kwargs",
-    [
-        (get_file_metadata, {}),
-        (get_download_file_link, {"link_type": LinkType.PRESIGNED}),
-        (get_upload_file_links, {"link_type": LinkType.PRESIGNED}),
-    ],
-)
-async def test_invalid_calls(
-    mock_environment: None,
-    storage_v0_service_mock: AioResponsesMock,
-    user_id: UserID,
-    file_id: SimcoreS3FileID,
-    location_id: LocationID,
-    fct_call: Callable[..., Awaitable],
-    additional_kwargs: dict[str, Any],
-):
-    async with aiohttp.ClientSession() as session:
-        for invalid_keyword in ["file_id", "location_id", "user_id"]:
-            with pytest.raises(exceptions.StorageInvalidCall):
-                kwargs = {
-                    **{
-                        "file_id": file_id,
-                        "location_id": location_id,
-                        "user_id": user_id,
-                    },
-                    **{invalid_keyword: None},
-                    **additional_kwargs,
-                }
-                if (  # pylint: disable=comparison-with-callable
-                    fct_call == get_upload_file_links
-                ):
-                    kwargs["link_type"] = LinkType.S3
-                    kwargs["file_size"] = None
-                await fct_call(session=session, **kwargs)

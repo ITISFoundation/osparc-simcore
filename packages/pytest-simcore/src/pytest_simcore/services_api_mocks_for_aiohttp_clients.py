@@ -347,8 +347,8 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     link_type = kwargs["params"]["link_type"]
     scheme = {"presigned": "http", "s3": "s3"}
 
-    if file_size := kwargs["params"].get("file_size"):
-        # version2
+    if file_size := kwargs["params"].get("file_size") is not None:
+
         upload_schema = FileUploadSchema(
             chunk_size=parse_obj_as(ByteSize, "5GiB"),
             urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],
