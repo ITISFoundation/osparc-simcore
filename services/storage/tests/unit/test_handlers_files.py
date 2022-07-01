@@ -23,10 +23,12 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
+    FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
     PresignedLink,
     SoftCopyBody,
+    UploadedPart,
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -40,13 +42,14 @@ from simcore_service_storage.constants import (
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
 )
 from simcore_service_storage.exceptions import S3KeyNotFoundError
+from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName, UploadID
 from simcore_service_storage.s3_client import StorageS3Client
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.file_utils import upload_file_part
+from tests.helpers.file_utils import upload_file_part, upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from yarl import URL
 
@@ -486,29 +489,118 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     )
 
 
-@pytest.mark.parametrize(
-    "file_name",
-    [
-        "some file name with spaces and extension.txt",
-        "some name with special characters -_ü!öäàé++3245",
-    ],
-)
+@pytest.fixture
+def complex_file_name(faker: Faker) -> str:
+    return f"some file name with spaces and special characters  -_ü!öäàé+|}} {{3245_{faker.file_name()}"
+
+
 @pytest.mark.parametrize(
     "file_size",
     [
         (parse_obj_as(ByteSize, "1Mib")),
         (parse_obj_as(ByteSize, "500Mib")),
-        # (parse_obj_as(ByteSize, "5Gib")),
-        # (parse_obj_as(ByteSize, "7Gib")),
+        (parse_obj_as(ByteSize, "7Gib")),
     ],
     ids=byte_size_ids,
 )
 async def test_upload_real_file(
-    file_name: str,
+    complex_file_name: str,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[Path]],
 ):
-    await upload_file(file_size, file_name)
+    await upload_file(file_size, complex_file_name)
+
+
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        (parse_obj_as(ByteSize, "1Mib")),
+        (parse_obj_as(ByteSize, "117Mib")),
+    ],
+    ids=byte_size_ids,
+)
+async def test_upload_real_file_with_emulated_storage_restart_after_completion_was_called(
+    complex_file_name: str,
+    file_size: ByteSize,
+    client: TestClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    location_id: LocationID,
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    aiopg_engine: Engine,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+):
+    """what does that mean?
+    storage runs the completion tasks in the background,
+    if after running the completion task, storage restarts then the task is lost.
+    Nevertheless the client still has a reference to the completion future and shall be able
+    to ask for its status"""
+    assert client.app
+    file = create_file_of_size(file_size, complex_file_name)
+    file_id = create_simcore_file_id(project_id, node_id, complex_file_name)
+    file_upload_link = await create_upload_file_link_v2(
+        file_id, link_type="presigned", file_size=file_size
+    )
+    # upload the file
+    part_to_etag: list[UploadedPart] = await upload_file_to_presigned_link(
+        file, file_upload_link
+    )
+    # complete the upload
+    complete_url = URL(file_upload_link.links.complete_upload).relative()
+    response = await client.post(
+        f"{complete_url}",
+        json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
+    )
+    response.raise_for_status()
+    data, error = await assert_status(response, web.HTTPAccepted)
+    assert not error
+    assert data
+    file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+    state_url = URL(file_upload_complete_response.links.state).relative()
+
+    # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
+    client.app[UPLOAD_TASKS_KEY].clear()
+    # now check for the completion
+    completion_etag = None
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_fixed(1),
+        stop=stop_after_delay(60),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            print(
+                f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
+            )
+            response = await client.post(f"{state_url}")
+            data, error = await assert_status(response, web.HTTPOk)
+            assert not error
+            assert data
+            future = FileUploadCompleteFutureResponse.parse_obj(data)
+            assert future.state == FileUploadCompleteState.OK
+            assert future.e_tag is not None
+            completion_etag = future.e_tag
+            print(
+                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
+            )
+    # check the entry in db now has the correct file size, and the upload id is gone
+    await assert_file_meta_data_in_db(
+        aiopg_engine,
+        file_id=file_id,
+        expected_entry_exists=True,
+        expected_file_size=file_size,
+        expected_upload_id=False,
+        expected_upload_expiration_date=False,
+    )
+    # check the file is in S3 for real
+    s3_metadata = await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
+    assert s3_metadata.size == file_size
+    assert s3_metadata.last_modified
+    assert s3_metadata.e_tag == completion_etag
 
 
 async def test_upload_real_file_with_s3_client(
