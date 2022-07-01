@@ -10,6 +10,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
+from servicelib.utils import logged_gather
 
 from ..constants import DATCORE_ID, DATCORE_STR
 from ..models import DatasetMetaData, FileMetaData
@@ -131,13 +132,20 @@ async def list_all_datasets_files_metadatas(
     app: web.Application, user_id: UserID, api_key: str, api_secret: str
 ) -> list[FileMetaData]:
     all_datasets: list[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
-    get_dataset_files_tasks = [
-        list_all_files_metadatas_in_dataset(
-            app, user_id, api_key, api_secret, cast(DatCoreDatasetName, d.dataset_id)
-        )
-        for d in all_datasets
-    ]
-    results = await asyncio.gather(*get_dataset_files_tasks)
+    results = await logged_gather(
+        *(
+            list_all_files_metadatas_in_dataset(
+                app,
+                user_id,
+                api_key,
+                api_secret,
+                cast(DatCoreDatasetName, d.dataset_id),
+            )
+            for d in all_datasets
+        ),
+        log=log,
+        max_concurrency=20,
+    )
     all_files_of_all_datasets: list[FileMetaData] = []
     for data in results:
         all_files_of_all_datasets += data
