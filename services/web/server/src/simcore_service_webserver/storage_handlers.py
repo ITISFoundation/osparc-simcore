@@ -16,6 +16,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import create_data_response, unwrap_envelope
