@@ -6,17 +6,17 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
-from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
-from .shared_handlers import remove_the_compose_spec
 from .utils import login_registry, volumes_fix_permissions
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ def create_app():
 
     async def _on_shutdown() -> None:
         logger.info("Going to remove spawned containers")
-        result = await remove_the_compose_spec(
+        result = await docker_compose_down(
             shared_store=app.state.shared_store,
             settings=app.state.settings,
             command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,

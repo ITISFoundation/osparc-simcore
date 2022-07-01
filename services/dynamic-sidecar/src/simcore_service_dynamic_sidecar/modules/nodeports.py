@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 from collections import deque
+from enum import Enum
 from pathlib import Path
 from typing import Any, Coroutine, Optional, cast
 
@@ -25,7 +26,11 @@ from simcore_service_dynamic_sidecar.core.settings import (
     get_settings,
 )
 
-from ..models.schemas.ports import PortTypeName
+
+class PortTypeName(str, Enum):
+    INPUTS = "inputs"
+    OUTPUTS = "outputs"
+
 
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
