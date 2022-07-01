@@ -6,9 +6,19 @@ from collections import deque
 from typing import Any, Awaitable, Deque, Optional
 
 from aiodocker.networks import DockerNetwork
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
+from servicelib.fastapi.requests_decorators import cancellable_request
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
@@ -31,12 +41,6 @@ from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes
 from .containers import send_message
 
-# NOTE: importing the `containers_router` router from .containers
-# and generating the openapi spec, will not add the below entrypoints
-# we need to create a new one in order for all the APIs to be
-# detected as before
-containers_router = APIRouter(tags=["containers"])
-
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +62,17 @@ class AttachContainerToNetworkItem(_BaseNetworkItem):
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
+
+
+#
+# HANDLERS ------------------
+#
+# - ANE: importing the `containers_router` router from .containers
+# and generating the openapi spec, will not add the below entrypoints
+# we need to create a new one in order for all the APIs to be
+# detected as before
+#
+containers_router = APIRouter(tags=["containers"])
 
 
 @containers_router.post(
@@ -228,7 +243,9 @@ async def push_output_ports(
         },
     },
 )
+@cancellable_request
 async def restarts_containers(
+    _request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -279,8 +296,11 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@cancellable_request
 async def attach_container_to_network(
-    id: str, item: AttachContainerToNetworkItem
+    _request: Request,
+    id: str,
+    item: AttachContainerToNetworkItem,
 ) -> None:
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
