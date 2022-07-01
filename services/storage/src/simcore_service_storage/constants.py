@@ -1,3 +1,7 @@
+from typing import Final
+
+from models_library.api_schemas_storage import LinkType
+from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp import application_keys
 
 RETRY_WAIT_SECS = 2
@@ -19,6 +23,15 @@ _SAFE_S3_FILE_NAME_RE = r"[\w!\-_\.\*\'\(\)\%]"
 S3_FILE_ID_RE = rf"^({_SAFE_S3_FILE_NAME_RE}+?)\/({_SAFE_S3_FILE_NAME_RE}+?)\/({_SAFE_S3_FILE_NAME_RE}+?)$"
 
 S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID = "UNDEFINED/EXTERNALID"
+
+PRESIGNED_LINK_MAX_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "5GiB")
+S3_MAX_FILE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "5TiB")
+
+MAX_LINK_CHUNK_BYTE_SIZE: Final[dict[LinkType, ByteSize]] = {
+    LinkType.PRESIGNED: PRESIGNED_LINK_MAX_SIZE,
+    LinkType.S3: S3_MAX_FILE_SIZE,
+}
+
 
 # REST API ----------------------------
 APP_OPENAPI_SPECS_KEY = (

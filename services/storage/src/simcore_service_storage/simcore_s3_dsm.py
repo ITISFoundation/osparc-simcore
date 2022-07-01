@@ -11,7 +11,7 @@ from typing import Any, Awaitable, Optional, Union
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from models_library.api_schemas_storage import LinkType, S3BucketName
+from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -31,6 +31,8 @@ from .constants import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     DATCORE_ID,
+    MAX_LINK_CHUNK_BYTE_SIZE,
+    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
@@ -50,9 +52,20 @@ from .exceptions import (
     ProjectNotFoundError,
     S3KeyNotFoundError,
 )
-from .models import DatasetMetaData, FileMetaData, FileMetaDataAtDB
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    FileMetaDataAtDB,
+    UploadID,
+    UploadLinks,
+)
 from .settings import Settings
-from .utils import convert_db_to_model, download_to_file_or_raise, is_file_entry_valid
+from .utils import (
+    convert_db_to_model,
+    download_to_file_or_raise,
+    is_file_entry_valid,
+    is_valid_managed_multipart_upload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -169,27 +182,54 @@ class SimcoreS3DataManager(BaseDataManager):
             logger.debug("User %s cannot read file %s", user_id, file_id)
             raise FileAccessRightError(access_right="read", file_id=file_id)
 
-    async def create_file_upload_link(
+    async def create_file_upload_links(
         self,
         user_id: UserID,
         file_id: StorageFileID,
         link_type: LinkType,
-    ) -> AnyUrl:
+        file_size_bytes: ByteSize,
+    ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin():
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, user_id, file_id
             )
             if not can.write:
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} does not have enough access rights to upload file {file_id}"
-                )
+                raise FileAccessRightError(access_right="write", file_id=file_id)
+
+            # NOTE: if this gets called successively with the same file_id, and
+            # there was a multipart upload in progress beforehand, it MUST be
+            # cancelled to prevent unwanted costs in AWS
+            await self._clean_pending_upload(
+                conn, parse_obj_as(SimcoreS3FileID, file_id)
+            )
 
             # initiate the file meta data table
-            fmd = self._create_fmd_for_upload(user_id, file_id)
-            fmd = await db_file_meta_data.upsert(conn, fmd)
+            fmd = await self._create_fmd_for_upload(
+                conn, user_id, file_id, upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+            )
 
-            # return the appropriate links
+            if link_type == LinkType.PRESIGNED and get_s3_client(self.app).is_multipart(
+                file_size_bytes
+            ):
+                # create multipart links
+                assert file_size_bytes  # nosec
+                multipart_presigned_links = await get_s3_client(
+                    self.app
+                ).create_multipart_upload_links(
+                    fmd.bucket_name,
+                    fmd.file_id,
+                    file_size_bytes,
+                    expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+                )
+                # update the database so we keep the upload id
+                fmd.upload_id = multipart_presigned_links.upload_id
+                await db_file_meta_data.upsert(conn, fmd)
+                return UploadLinks(
+                    multipart_presigned_links.urls,
+                    multipart_presigned_links.chunk_size,
+                )
             if link_type == LinkType.PRESIGNED:
+                # create single presigned link
                 single_presigned_link = await get_s3_client(
                     self.app
                 ).create_single_presigned_upload_link(
@@ -197,13 +237,18 @@ class SimcoreS3DataManager(BaseDataManager):
                     fmd.file_id,
                     expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
                 )
-                return parse_obj_as(AnyUrl, f"{single_presigned_link}")
+                return UploadLinks(
+                    [single_presigned_link],
+                    file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type],
+                )
 
         # user wants just the s3 link
         s3_link = get_s3_client(self.app).compute_s3_url(
             self.simcore_bucket_name, parse_obj_as(SimcoreS3FileID, file_id)
         )
-        return s3_link
+        return UploadLinks(
+            [s3_link], file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type]
+        )
 
     async def abort_file_upload(
         self,
@@ -215,12 +260,18 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, int(user_id), file_id
             )
             if not can.delete or not can.write:
-                raise web.HTTPForbidden(
-                    reason=f"User {user_id} does not have enough access rights to delete file {file_id}"
-                )
+                raise FileAccessRightError(access_right="write/delete", file_id=file_id)
+
             fmd: FileMetaDataAtDB = await db_file_meta_data.get(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
+            if is_valid_managed_multipart_upload(fmd.upload_id):
+                assert fmd.upload_id  # nosec
+                await get_s3_client(self.app).abort_multipart_upload(
+                    bucket=fmd.bucket_name,
+                    file_id=fmd.file_id,
+                    upload_id=fmd.upload_id,
+                )
 
             try:
                 # try to revert to what we had in storage if any
@@ -229,6 +280,42 @@ class SimcoreS3DataManager(BaseDataManager):
                 # the file does not exist, so we delete the entry in the db
                 async with self.engine.acquire() as conn:
                     await db_file_meta_data.delete(conn, [fmd.file_id])
+
+    async def complete_upload(
+        self,
+        file_id: SimcoreS3FileID,
+        user_id: UserID,
+        uploaded_parts: list[UploadedPart],
+    ) -> FileMetaData:
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_id
+            )
+            if not can.write:
+                raise FileAccessRightError(access_right="write", file_id=file_id)
+            fmd = await db_file_meta_data.get(conn, file_id)
+
+        if is_valid_managed_multipart_upload(fmd.upload_id):
+            # NOTE: Processing of a Complete Multipart Upload request
+            # could take several minutes to complete. After Amazon S3
+            # begins processing the request, it sends an HTTP response
+            # header that specifies a 200 OK response. While processing
+            # is in progress, Amazon S3 periodically sends white space
+            # characters to keep the connection from timing out. Because
+            # a request could fail after the initial 200 OK response
+            # has been sent, it is important that you check the response
+            # body to determine whether the request succeeded.
+            assert fmd.upload_id  # nosec
+            await get_s3_client(self.app).complete_multipart_upload(
+                bucket=self.simcore_bucket_name,
+                file_id=fmd.file_id,
+                upload_id=fmd.upload_id,
+                uploaded_parts=uploaded_parts,
+            )
+        async with self.engine.acquire() as conn:
+            fmd = await self._update_database_from_storage(conn, fmd)
+            assert fmd  # nosec
+            return convert_db_to_model(fmd)
 
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
@@ -447,6 +534,16 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return file_ids_to_remove
 
+    async def _clean_pending_upload(self, conn: SAConnection, file_id: SimcoreS3FileID):
+        fmd = await db_file_meta_data.get(conn, file_id)
+        if is_valid_managed_multipart_upload(fmd.upload_id):
+            assert fmd.upload_id  # nosec
+            await get_s3_client(self.app).abort_multipart_upload(
+                bucket=self.simcore_bucket_name,
+                file_id=file_id,
+                upload_id=fmd.upload_id,
+            )
+
     async def _clean_expired_uploads(self):
         """this method will check for all incomplete updates by checking
         the upload_expires_at entry in file_meta_data table.
@@ -500,8 +597,81 @@ class SimcoreS3DataManager(BaseDataManager):
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
 
+    async def _clean_dangling_multipart_uploads(self):
+        """this method removes any dangling multipart upload that
+        was initiated on S3 backend if it does not exist in file_meta_data
+        table.
+        Use-cases:
+            - presigned multipart upload: a multipart upload is created after the entry in the table (
+                if the expiry date is still in the future we do not remove the upload
+            )
+            - S3 external or internal potentially multipart upload (using S3 direct access we do not know
+            if they create multipart uploads and have no control over it, the only thing we know is the upload
+            expiry date)
+            --> we only remove dangling upload IDs which expiry date is in the past or that have no upload in process
+            or no entry at all in the database
+
+        """
+        current_multipart_uploads: list[
+            tuple[UploadID, SimcoreS3FileID]
+        ] = await get_s3_client(self.app).list_ongoing_multipart_uploads(
+            self.simcore_bucket_name
+        )
+        if not current_multipart_uploads:
+            return
+
+        # we do have some multipart uploads, let's check if they are all known to
+        # us (counterpart in file_meta_data)
+        # NOTE: S3 url encode file uuid with specific characters
+        async with self.engine.acquire() as conn:
+            list_of_known_files = await db_file_meta_data.list_fmds(
+                conn,
+                file_ids=[
+                    SimcoreS3FileID(urllib.parse.unquote(f))
+                    for _, f in current_multipart_uploads
+                ],
+            )
+        # known uploads do have an expiry date (regardless of upload ID that we do not always know)
+        list_of_known_uploads = [
+            fmd for fmd in list_of_known_files if fmd.upload_expires_at
+        ]
+        if len(current_multipart_uploads) == len(list_of_known_uploads):
+            # all good, nothing to do
+            return
+
+        # we have some "dangling" uploads here.
+        list_of_valid_upload_ids = [fmd.upload_id for fmd in list_of_known_uploads]
+        list_of_invalid_uploads = [
+            (
+                upload_id,
+                file_id,
+            )
+            for upload_id, file_id in current_multipart_uploads
+            if upload_id not in list_of_valid_upload_ids
+        ]
+        logger.debug(
+            "the following %s was found and will now be aborted",
+            f"{list_of_invalid_uploads=}",
+        )
+        await logged_gather(
+            *(
+                get_s3_client(self.app).abort_multipart_upload(
+                    self.simcore_bucket_name, file_id, upload_id
+                )
+                for upload_id, file_id in list_of_invalid_uploads
+            ),
+            max_concurrency=2,
+        )
+        logger.warning(
+            "Dangling multipart uploads %s, were aborted. "
+            "TIP: If storage was NOT improperly restarted, this might indicate that something went"
+            " wrong in how storage handles multipart uploads!!",
+            f"{list_of_invalid_uploads}",
+        )
+
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()
+        await self._clean_dangling_multipart_uploads()
 
     async def _update_database_from_storage(
         self, conn: SAConnection, fmd: FileMetaDataAtDB
@@ -552,9 +722,13 @@ class SimcoreS3DataManager(BaseDataManager):
             await download_to_file_or_raise(session, dc_link, local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
-            new_fmd = self._create_fmd_for_upload(user_id, dst_file_id)
             async with self.engine.acquire() as conn, conn.begin():
-                new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
+                new_fmd = await self._create_fmd_for_upload(
+                    conn,
+                    user_id,
+                    dst_file_id,
+                    upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+                )
                 # Uploads local -> S3
                 await get_s3_client(self.app).upload_file(
                     self.simcore_bucket_name, local_file_path, dst_file_id
@@ -572,9 +746,13 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         logger.debug("copying %s to %s", f"{src_fmd=}", f"{dst_file_id=}")
         # copying will happen using aioboto3, therefore multipart might happen
-        new_fmd = self._create_fmd_for_upload(user_id, dst_file_id)
         async with self.engine.acquire() as conn, conn.begin():
-            new_fmd = await db_file_meta_data.upsert(conn, new_fmd)
+            new_fmd = await self._create_fmd_for_upload(
+                conn,
+                user_id,
+                dst_file_id,
+                upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+            )
             await get_s3_client(self.app).copy_file(
                 self.simcore_bucket_name,
                 src_fmd.object_name,
@@ -584,21 +762,27 @@ class SimcoreS3DataManager(BaseDataManager):
         logger.info("copied %s to %s", f"{src_fmd=}", f"{updated_fmd=}")
         return convert_db_to_model(updated_fmd)
 
-    def _create_fmd_for_upload(
-        self, user_id: UserID, file_id: StorageFileID
-    ) -> FileMetaData:
+    async def _create_fmd_for_upload(
+        self,
+        conn: SAConnection,
+        user_id: UserID,
+        file_id: StorageFileID,
+        upload_id: Optional[UploadID],
+    ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
             seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )
-        return FileMetaData.from_simcore_node(
+        fmd = FileMetaData.from_simcore_node(
             user_id=user_id,
             file_id=parse_obj_as(SimcoreS3FileID, file_id),
             bucket=self.simcore_bucket_name,
             location_id=self.location_id,
             location_name=self.location_name,
             upload_expires_at=upload_expiration_date,
+            upload_id=upload_id,
         )
+        return await db_file_meta_data.upsert(conn, fmd)
 
 
 def create_simcore_s3_data_manager(app: web.Application) -> SimcoreS3DataManager:
