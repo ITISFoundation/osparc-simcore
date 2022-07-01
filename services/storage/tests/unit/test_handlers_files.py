@@ -499,7 +499,7 @@ def complex_file_name(faker: Faker) -> str:
     [
         (parse_obj_as(ByteSize, "1Mib")),
         (parse_obj_as(ByteSize, "500Mib")),
-        (parse_obj_as(ByteSize, "7Gib")),
+        pytest.param(parse_obj_as(ByteSize, "7Gib"), marks=pytest.mark.heavy_load),
     ],
     ids=byte_size_ids,
 )
