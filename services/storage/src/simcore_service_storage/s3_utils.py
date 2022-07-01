@@ -64,10 +64,12 @@ def s3_exception_handler(log: logging.Logger):
                     if exc.operation_name == "HeadBucket":
                         raise S3BucketInvalidError(bucket=args[0]) from exc
                 raise S3AccessError from exc
+            except botocore_exc.EndpointConnectionError as exc:
+                raise S3AccessError from exc
 
-            except Exception:
+            except Exception as exc:
                 log.exception("Unexpected error in s3 client: ")
-                raise
+                raise S3AccessError from exc
 
             return response
 

@@ -453,7 +453,10 @@ def upload_file(
     [ByteSize, str, Optional[SimcoreS3FileID]], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
     async def _uploader(
-        file_size: ByteSize, file_name: str, file_id: Optional[SimcoreS3FileID] = None
+        file_size: ByteSize,
+        file_name: str,
+        file_id: Optional[SimcoreS3FileID] = None,
+        wait_for_completion: bool = True,
     ) -> tuple[Path, SimcoreS3FileID]:
         assert client.app
         # create a file
@@ -483,6 +486,10 @@ def upload_file(
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
         state_url = URL(file_upload_complete_response.links.state).relative()
+
+        if not wait_for_completion:
+            # we do not want to wait for completion to finish
+            return file, file_id, state_url
 
         completion_etag = None
         async for attempt in AsyncRetrying(
