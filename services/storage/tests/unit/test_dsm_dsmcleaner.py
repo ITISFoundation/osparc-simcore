@@ -162,7 +162,9 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         original_fmd = await db_file_meta_data.get(conn, file_id)
 
     # now create a new link to the VERY SAME FILE UUID
-    await simcore_s3_dsm.create_file_upload_link(user_id, file_id, link_type)
+    await simcore_s3_dsm.create_file_upload_links(
+        user_id, file_id, link_type, file_size
+    )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
         fmd = await db_file_meta_data.get(conn, file_id)
@@ -214,6 +216,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 @pytest.mark.parametrize(
     "file_size",
     [parse_obj_as(ByteSize, "100Mib")],
+    ids=byte_size_ids,
 )
 async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation(
     disabled_dsm_cleaner_task,
@@ -272,6 +275,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
 @pytest.mark.parametrize(
     "file_size",
     [parse_obj_as(ByteSize, "100Mib")],
+    ids=byte_size_ids,
 )
 async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_corresponding_upload_found(
     disabled_dsm_cleaner_task,

@@ -14,11 +14,10 @@ from models_library.api_schemas_storage import (
     FileUploadCompletionBody,
     FileUploadLinks,
     FileUploadSchema,
-    LinkType,
     SoftCopyBody,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -113,14 +112,28 @@ async def download_file(request: web.Request):
 @routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="upload_file")  # type: ignore
 async def upload_file(request: web.Request):
     """creates upload file links:
-    Use-case 1: if query.file_size is 0 or not defined and query.link_type=presigned, returns 1 single presigned link (backward compatibility) (version 0.1)
-    Use-case 2: if query.file_size > 0 and query.link_type=presigned, returns 1 or more presigned links, expect client to call "complete_upload" to finish the upload (version 0.2)
-    Use-case 3: if query.link_type=s3, returns a s3 link to be used directly with a S3 SDK
 
-    :param request: _description_
-    :type request: web.Request
-    :return: _description_
-    :rtype: _type_
+    This function covers v1 and v2 versions of the handler.
+
+    v1 rationale:
+        - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
+        - client uploads the file
+        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
+
+    v2 rationale:
+        - client calls this handler, which returns a FileUploadSchema object containing 1 or more links (either S3/presigned links)
+        - client uploads the file (by chunking it if there are more than 1 presigned link)
+        - client calls complete_upload handle which will reconstruct the file on S3 backend
+        - client waits for completion to finish and then the file is accessible on S3 backend
+
+    Use-case v1: if query.file_size is not defined, returns a PresignedLink model (backward compatibility)
+    Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
+    Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
+
+    User-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call "complete_upload" when the file is finished uploading
+    Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
+    Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
+    Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
     query_params = parse_request_query_parameters_as(FileUploadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
@@ -135,9 +148,10 @@ async def upload_file(request: web.Request):
         user_id=query_params.user_id,
         file_id=path_params.file_id,
         link_type=query_params.link_type,
-        file_size_bytes=query_params.file_size,
+        file_size_bytes=query_params.file_size or ByteSize(0),
     )
-    if not query_params.file_size and query_params.link_type == LinkType.PRESIGNED:
+    if query_params.file_size is None:
+        # return v1 response
         assert len(links.urls) == 1  # nosec
         return {"link": jsonable_encoder(links.urls[0], by_alias=True)}
 

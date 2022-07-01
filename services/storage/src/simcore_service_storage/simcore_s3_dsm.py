@@ -205,7 +205,15 @@ class SimcoreS3DataManager(BaseDataManager):
 
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
-                conn, user_id, file_id, upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+                conn,
+                user_id,
+                file_id,
+                upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+                if (
+                    get_s3_client(self.app).is_multipart(file_size_bytes)
+                    or link_type == LinkType.S3
+                )
+                else None,
             )
 
             if link_type == LinkType.PRESIGNED and get_s3_client(self.app).is_multipart(

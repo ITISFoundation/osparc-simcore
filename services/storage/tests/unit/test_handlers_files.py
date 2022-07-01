@@ -3,13 +3,14 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 import filecmp
 import json
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Literal, Optional, Union
 from uuid import uuid4
 
 import pytest
@@ -19,9 +20,12 @@ from aiopg.sa import Engine
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
+    FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
+    FileUploadCompleteState,
     FileUploadSchema,
     LinkType,
+    PresignedLink,
     SoftCopyBody,
 )
 from models_library.projects import ProjectID
@@ -31,6 +35,10 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from simcore_service_storage.constants import (
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+)
 from simcore_service_storage.exceptions import S3KeyNotFoundError
 from simcore_service_storage.models import S3BucketName, UploadID
 from simcore_service_storage.s3_client import StorageS3Client
@@ -78,62 +86,72 @@ async def assert_multipart_uploads_in_progress(
             ), f"{upload_id=} is in progress but was not expected!"
 
 
+@dataclass
+class SingleLinkParam:
+    url_query: dict[str, str]
+    expected_link_scheme: Union[Literal["s3"], Literal["http"]]
+    expected_link_query_keys: list[str]
+    expected_chunk_size: ByteSize
+
+
 @pytest.mark.parametrize(
-    "url_query, expected_link_scheme, expected_link_query_keys, expected_chunk_size",
+    "single_link_param",
     [
         pytest.param(
-            {},
-            "http",
-            _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-            int(parse_obj_as(ByteSize, "5GiB").to("b")),
+            SingleLinkParam(
+                {},
+                "http",
+                _HTTP_PRESIGNED_LINK_QUERY_KEYS,
+                parse_obj_as(ByteSize, "5GiB"),
+            ),
             id="default_returns_single_presigned",
         ),
         pytest.param(
-            {"link_type": "presigned"},
-            "http",
-            _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-            int(parse_obj_as(ByteSize, "5GiB").to("b")),
+            SingleLinkParam(
+                {"link_type": "presigned"},
+                "http",
+                _HTTP_PRESIGNED_LINK_QUERY_KEYS,
+                parse_obj_as(ByteSize, "5GiB"),
+            ),
             id="presigned_returns_single_presigned",
         ),
         pytest.param(
-            {"link_type": "s3"},
-            "s3",
-            [],
-            int(parse_obj_as(ByteSize, "5TiB").to("b")),
+            SingleLinkParam(
+                {"link_type": "s3"}, "s3", [], parse_obj_as(ByteSize, "5TiB")
+            ),
             id="s3_returns_single_s3_link",
         ),
     ],
 )
-async def test_create_upload_file_default_returns_single_link(
+async def test_create_upload_file_with_file_size_0_returns_single_link(
     storage_s3_client,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
-    url_query: dict[str, str],
-    expected_link_scheme: str,
-    expected_link_query_keys: list[str],
-    expected_chunk_size: int,
+    single_link_param: SingleLinkParam,
     aiopg_engine: Engine,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     cleanup_user_projects_file_metadata: None,
 ):
     # create upload file link
-    received_file_upload = await create_upload_file_link(simcore_file_id, **url_query)
+    received_file_upload = await create_upload_file_link_v2(
+        simcore_file_id, **(single_link_param.url_query | {"file_size": 0})
+    )
     # check links, there should be only 1
     assert len(received_file_upload.urls) == 1
-    assert received_file_upload.urls[0].scheme == expected_link_scheme
+    assert received_file_upload.urls[0].scheme == single_link_param.expected_link_scheme
     assert received_file_upload.urls[0].path
     assert received_file_upload.urls[0].path.endswith(
         f"{urllib.parse.quote(simcore_file_id, safe='/')}"
     )
     # the chunk_size
-    assert received_file_upload.chunk_size == expected_chunk_size
-    if expected_link_query_keys:
+    assert received_file_upload.chunk_size == single_link_param.expected_chunk_size
+    if single_link_param.expected_link_query_keys:
         assert received_file_upload.urls[0].query
         query = {
             query_str.split("=")[0]: query_str.split("=")[1]
             for query_str in received_file_upload.urls[0].query.split("&")
         }
-        for key in expected_link_query_keys:
+        for key in single_link_param.expected_link_query_keys:
             assert key in query
     else:
         assert not received_file_upload.urls[0].query
@@ -144,7 +162,76 @@ async def test_create_upload_file_default_returns_single_link(
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
-        expected_upload_id=False,
+        expected_upload_id=bool(single_link_param.expected_link_scheme == "s3"),
+        expected_upload_expiration_date=True,
+    )
+    # check that no s3 multipart upload was initiated
+    await assert_multipart_uploads_in_progress(
+        storage_s3_client,
+        storage_s3_bucket,
+        simcore_file_id,
+        expected_upload_ids=None,
+    )
+
+
+@pytest.mark.parametrize(
+    "single_link_param",
+    [
+        pytest.param(
+            SingleLinkParam(
+                {},
+                "http",
+                _HTTP_PRESIGNED_LINK_QUERY_KEYS,
+                parse_obj_as(ByteSize, "5GiB"),
+            ),
+            id="default_returns_single_presigned",
+        ),
+        pytest.param(
+            SingleLinkParam(
+                {"link_type": "presigned"},
+                "http",
+                _HTTP_PRESIGNED_LINK_QUERY_KEYS,
+                parse_obj_as(ByteSize, "5GiB"),
+            ),
+            id="presigned_returns_single_presigned",
+        ),
+        pytest.param(
+            SingleLinkParam(
+                {"link_type": "s3"}, "s3", [], parse_obj_as(ByteSize, "5TiB")
+            ),
+            id="s3_returns_single_s3_link",
+        ),
+    ],
+)
+async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
+    storage_s3_client,
+    storage_s3_bucket: S3BucketName,
+    simcore_file_id: SimcoreS3FileID,
+    single_link_param: SingleLinkParam,
+    aiopg_engine: Engine,
+    create_upload_file_link_v1: Callable[..., Awaitable[PresignedLink]],
+    cleanup_user_projects_file_metadata: None,
+):
+    # create upload file link
+    received_file_upload_link = await create_upload_file_link_v1(
+        simcore_file_id, **(single_link_param.url_query)
+    )
+    # check links, there should be only 1
+    assert received_file_upload_link.link
+    assert (
+        received_file_upload_link.link.scheme == single_link_param.expected_link_scheme
+    )
+    assert received_file_upload_link.link.path
+    assert received_file_upload_link.link.path.endswith(
+        f"{urllib.parse.quote(simcore_file_id, safe='/')}"
+    )
+    # now check the entry in the database is correct, there should be only one
+    await assert_file_meta_data_in_db(
+        aiopg_engine,
+        file_id=simcore_file_id,
+        expected_entry_exists=True,
+        expected_file_size=-1,
+        expected_upload_id=bool(single_link_param.expected_link_scheme == "s3"),
         expected_upload_expiration_date=True,
     )
     # check that no s3 multipart upload was initiated
@@ -216,11 +303,11 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     simcore_file_id: SimcoreS3FileID,
     test_param: MultiPartParam,
     aiopg_engine: Engine,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     cleanup_user_projects_file_metadata: None,
 ):
     # create upload file link
-    received_file_upload = await create_upload_file_link(
+    received_file_upload = await create_upload_file_link_v2(
         simcore_file_id,
         link_type=test_param.link_type.value.lower(),
         file_size=f"{test_param.file_size}",
@@ -232,7 +319,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     assert received_file_upload.chunk_size == test_param.expected_chunk_size
 
     # now check the entry in the database is correct, there should be only one
-    expect_upload_id = bool(test_param.file_size >= _MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
+    expect_upload_id = bool(test_param.file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
     upload_id: Optional[UploadID] = await assert_file_meta_data_in_db(
         aiopg_engine,
         file_id=simcore_file_id,
@@ -257,6 +344,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
         (LinkType.PRESIGNED, parse_obj_as(ByteSize, "1000Mib")),
         (LinkType.S3, parse_obj_as(ByteSize, "1000Mib")),
     ],
+    ids=byte_size_ids,
 )
 async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     aiopg_engine: Engine,
@@ -266,16 +354,16 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     user_id: UserID,
     location_id: LocationID,
 ):
     assert client.app
     # create upload file link
-    upload_link = await create_upload_file_link(
+    upload_link = await create_upload_file_link_v2(
         simcore_file_id, link_type=link_type.value.lower(), file_size=file_size
     )
-    expect_upload_id = bool(file_size >= _MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
+    expect_upload_id = bool(file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
     # we shall have an entry in the db, waiting for upload
     upload_id = await assert_file_meta_data_in_db(
         aiopg_engine,
@@ -334,14 +422,16 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
 ):
     assert client.app
     # create upload file link
-    file_upload_link = await create_upload_file_link(
+    file_upload_link = await create_upload_file_link_v2(
         simcore_file_id, link_type=link_type.value.lower(), file_size=file_size
     )
-    expect_upload_id = bool(file_size >= _MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
+    expect_upload_id = bool(
+        file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE or link_type == LinkType.S3
+    )
     # we shall have an entry in the db, waiting for upload
     upload_id = await assert_file_meta_data_in_db(
         aiopg_engine,
@@ -362,7 +452,8 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
 
     # now we create a new upload, in case it was a multipart,
     # we should abort the previous upload to prevent unwanted costs
-    new_file_upload_link = await create_upload_file_link(
+    await asyncio.sleep(1)
+    new_file_upload_link = await create_upload_file_link_v2(
         simcore_file_id, link_type=link_type.value.lower(), file_size=file_size
     )
     if link_type == LinkType.PRESIGNED:
@@ -425,7 +516,7 @@ async def test_upload_real_file_with_s3_client(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     project_id: ProjectID,
@@ -440,7 +531,7 @@ async def test_upload_real_file_with_s3_client(
     file = create_file_of_size(file_size, file_name)
     simcore_file_id = create_simcore_file_id(project_id, node_id, file_name)
     # get an S3 upload link
-    file_upload_link = await create_upload_file_link(
+    file_upload_link = await create_upload_file_link_v2(
         simcore_file_id, link_type="s3", file_size=file_size
     )
     # let's use the storage s3 internal client to upload
@@ -532,7 +623,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     user_id: UserID,
     location_id: LocationID,
 ):
@@ -542,7 +633,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     _, uploaded_file_id = await upload_file(file_size, file_name)
 
     # 2. create an upload link for the second file
-    upload_link = await create_upload_file_link(
+    upload_link = await create_upload_file_link_v2(
         uploaded_file_id, link_type="presigned", file_size=file_size
     )
     # we shall have an entry in the db, waiting for upload
@@ -551,7 +642,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
         file_id=uploaded_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
-        expected_upload_id=bool(file_size >= _MULTIPART_UPLOADS_MIN_TOTAL_SIZE),
+        expected_upload_id=bool(file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE),
         expected_upload_expiration_date=True,
     )
 

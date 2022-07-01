@@ -30,6 +30,7 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteState,
     FileUploadCompletionBody,
     FileUploadSchema,
+    PresignedLink,
     UploadedPart,
 )
 from models_library.projects import ProjectID
@@ -340,7 +341,55 @@ async def get_file_meta_data(
 
 
 @pytest.fixture
-async def create_upload_file_link(
+async def create_upload_file_link_v1(
+    client: TestClient, user_id: UserID, location_id: LocationID
+) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
+
+    file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
+
+    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> PresignedLink:
+        assert client.app
+        url = (
+            client.app.router["upload_file"]
+            .url_for(
+                location_id=f"{location_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(**query_kwargs, user_id=user_id)
+        )
+        assert (
+            "file_size" not in url.query
+        ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
+        response = await client.put(f"{url}")
+        data, error = await assert_status(response, web.HTTPOk)
+        assert not error
+        assert data
+        received_file_upload_link = parse_obj_as(PresignedLink, data)
+        assert received_file_upload_link
+        print(f"--> created link for {file_id=}")
+        file_params.append((user_id, location_id, file_id))
+        return received_file_upload_link
+
+    yield _link_creator
+
+    # cleanup
+    assert client.app
+    clean_tasks = []
+    for u_id, loc_id, file_id in file_params:
+        url = (
+            client.app.router["delete_file"]
+            .url_for(
+                location_id=f"{loc_id}",
+                file_id=urllib.parse.quote(file_id, safe=""),
+            )
+            .with_query(user_id=u_id)
+        )
+        clean_tasks.append(client.delete(f"{url}"))
+    await asyncio.gather(*clean_tasks)
+
+
+@pytest.fixture
+async def create_upload_file_link_v2(
     client: TestClient, user_id: UserID, location_id: LocationID
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
 
@@ -358,6 +407,9 @@ async def create_upload_file_link(
             )
             .with_query(**query_kwargs, user_id=user_id)
         )
+        assert (
+            "file_size" in url.query
+        ), "V2 call to upload file must contain file_size field!"
         response = await client.put(f"{url}")
         data, error = await assert_status(response, web.HTTPOk)
         assert not error
@@ -394,7 +446,7 @@ def upload_file(
     client: TestClient,
     project_id: ProjectID,
     node_id: NodeID,
-    create_upload_file_link: Callable[..., Awaitable[FileUploadSchema]],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
 ) -> Callable[
@@ -409,7 +461,7 @@ def upload_file(
         if not file_id:
             file_id = create_simcore_file_id(project_id, node_id, file_name)
         # get an upload link
-        file_upload_link = await create_upload_file_link(
+        file_upload_link = await create_upload_file_link_v2(
             file_id, link_type="presigned", file_size=file_size
         )
 

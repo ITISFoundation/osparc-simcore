@@ -5,7 +5,7 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Optional, cast
+from typing import Optional, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -16,17 +16,13 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
+from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
 
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 log = logging.getLogger(__name__)
-
-
-# AWS S3 upload limits https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
-_MULTIPART_UPLOADS_MIN_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "100MiB")
-# _MULTIPART_UPLOADS_MIN_PART_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "10MiB")
 
 
 @dataclass(frozen=True)
@@ -293,4 +289,4 @@ class StorageS3Client:
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
-        return file_size >= _MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+        return file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE

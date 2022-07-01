@@ -160,7 +160,7 @@ class FileDownloadQueryParams(StorageQueryParamsBase):
 
 class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
-    file_size: ByteSize = ByteSize(0)
+    file_size: Optional[ByteSize]
 
     @validator("link_type", pre=True)
     @classmethod
