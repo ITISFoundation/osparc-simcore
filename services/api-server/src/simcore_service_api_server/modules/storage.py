@@ -104,9 +104,7 @@ class StorageApi(BaseServiceClientApi):
 
         resp = await self.client.put(
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
-            params={
-                "user_id": str(user_id),
-            },
+            params={"user_id": user_id, "file_size": 0},
         )
 
         presigned_link = FileUploadSchema.parse_obj(resp.json()["data"])
