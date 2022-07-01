@@ -21,22 +21,21 @@ qx.Class.define("osparc.servicecard.Utils", {
 
   statics: {
     /**
-      * @param serviceData {Object} Serialized Service Object
+      * @param label {String} label
       */
-    createTitle: function(serviceData) {
-      const title = new qx.ui.basic.Label().set({
+    createTitle: function(label) {
+      const title = new qx.ui.basic.Label(label).set({
         font: "title-14",
         allowStretchX: true,
         rich: true
       });
-      title.setValue(serviceData["name"]);
       return title;
     },
 
     /**
       * @param serviceData {Object} Serialized Service Object
       */
-    createInstaceUuid: function(instaceUuid) {
+    createNodeId: function(instaceUuid) {
       const label = new qx.ui.basic.Label().set({
         maxWidth: 220
       });

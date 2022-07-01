@@ -45,7 +45,7 @@ qx.Class.define("osparc.auth.LoginPageTI", {
       this.getContentElement().setStyles({
         "background-image": "url(resource/osparc/ti_splitimage.png)",
         "background-repeat": "no-repeat",
-        "background-size": "auto 100%"
+        "background-size": "contain"
       });
 
       this._add(new qx.ui.core.Spacer(), {
