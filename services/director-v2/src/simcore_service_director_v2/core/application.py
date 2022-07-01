@@ -22,6 +22,7 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     rabbitmq,
+    redis,
     remote_debug,
     storage,
 )
@@ -136,6 +137,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
+
+    if settings.REDIS:
+        redis.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING)

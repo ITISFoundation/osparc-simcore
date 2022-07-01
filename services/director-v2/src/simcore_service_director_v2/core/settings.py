@@ -37,6 +37,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
@@ -428,6 +429,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
     POSTGRES: PGSettings = Field(auto_default_from_env=True)
+
+    REDIS: RedisSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
