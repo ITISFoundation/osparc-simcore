@@ -7,7 +7,7 @@ import aiofiles
 from models_library.projects import Project
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.projects_state import ProjectStatus
-from pydantic import BaseModel, DirectoryPath, Field, parse_obj_as, validator
+from pydantic import AnyUrl, BaseModel, DirectoryPath, Field, parse_obj_as, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
@@ -31,7 +31,9 @@ class LinkAndPath2(BaseModel):
         description="full path to where the file is going to be stored",
     )
 
-    download_link: str = Field(..., description="Link from where to download the file")
+    download_link: AnyUrl = Field(
+        ..., description="Link from where to download the file"
+    )
 
     @validator("relative_path_to_file")
     @classmethod

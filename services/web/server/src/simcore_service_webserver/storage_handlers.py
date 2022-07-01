@@ -5,15 +5,19 @@
 import logging
 import urllib
 import urllib.parse
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 from aiohttp import ClientResponse, web
 from models_library.api_schemas_storage import (
+    FileLocationArray,
+    FileMetaDataGet,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,
+    PresignedLink,
     UploadedPart,
 )
+from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -122,49 +126,49 @@ def extract_link(data: Optional[dict]) -> str:
 
 @login_required
 @permission_required("storage.files.*")
-async def get_storage_locations(request: web.Request):
+async def get_storage_locations(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def get_datasets_metadata(request: web.Request):
+async def get_datasets_metadata(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def get_files_metadata(request: web.Request):
+async def get_files_metadata(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def get_files_metadata_dataset(request: web.Request):
+async def get_files_metadata_dataset(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def get_file_metadata(request: web.Request):
+async def get_file_metadata(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def download_file(request: web.Request):
+async def download_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def upload_file(request: web.Request):
+async def upload_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "PUT")
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.parse_obj(data)
@@ -179,7 +183,7 @@ async def upload_file(request: web.Request):
 
 @login_required
 @permission_required("storage.files.*")
-async def complete_upload_file(request: web.Request):
+async def complete_upload_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "POST")
     data, _ = unwrap_envelope(payload)
     file_upload_complete = FileUploadCompleteResponse.parse_obj(data)
@@ -191,47 +195,49 @@ async def complete_upload_file(request: web.Request):
 
 @login_required
 @permission_required("storages.files.*")
-async def abort_upload_file(request: web.Request):
+async def abort_upload_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "POST")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def is_completed_upload_file(request: web.Request):
+async def is_completed_upload_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "POST")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
-async def delete_file(request: web.Request):
+async def delete_file(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "DELETE")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.sync")
-async def synchronise_meta_data_table(request: web.Request):
+async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "POST")
     return create_data_response(payload, status=status)
 
 
 async def get_storage_locations_for_user(
     app: web.Application, user_id: UserID
-) -> list[dict[str, Any]]:
+) -> FileLocationArray:
     session = get_client_session(app)
 
     url: URL = _get_base_storage_url(app) / "locations"
     params = dict(user_id=user_id)
     async with session.get(url, ssl=False, params=params) as resp:
-        data, _ = cast(list[dict[str, Any]], await safe_unwrap(resp))
-        return data
+        resp.raise_for_status()
+        envelope = Envelope[FileLocationArray].parse_obj(await resp.json())
+        assert envelope.data  # nosec
+        return envelope.data
 
 
 async def get_project_files_metadata(
     app: web.Application, location_id: LocationID, uuid_filter: str, user_id: UserID
-) -> list[dict[str, Any]]:
+) -> list[FileMetaDataGet]:
     session = get_client_session(app)
 
     url: URL = (
@@ -243,16 +249,10 @@ async def get_project_files_metadata(
     )
     params = dict(user_id=user_id, uuid_filter=uuid_filter)
     async with session.get(url, ssl=False, params=params) as resp:
-        data, _ = await safe_unwrap(resp)
-
-        if data is None:
-            raise web.HTTPException(reason=f"No url found in response: '{data}'")
-        if not isinstance(data, list):
-            raise web.HTTPException(
-                reason=f"No list payload received as data: '{data}'"
-            )
-
-        return data
+        resp.raise_for_status()
+        envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
+        assert envelope.data  # nosec
+        return envelope.data
 
 
 async def get_file_download_url(
@@ -260,7 +260,7 @@ async def get_file_download_url(
     location_id: LocationID,
     file_id: StorageFileID,
     user_id: UserID,
-) -> str:
+) -> AnyUrl:
     session = get_client_session(app)
 
     url: URL = (
@@ -272,8 +272,10 @@ async def get_file_download_url(
     )
     params = dict(user_id=user_id)
     async with session.get(url, ssl=False, params=params) as resp:
-        data, _ = await safe_unwrap(resp)
-        return extract_link(data)
+        resp.raise_for_status()
+        envelope = Envelope[PresignedLink].parse_obj(await resp.json())
+        assert envelope.data  # nosec
+        return envelope.data.link
 
 
 async def get_file_upload_url(
@@ -291,12 +293,13 @@ async def get_file_upload_url(
         / "files"
         / urllib.parse.quote(file_id, safe="")
     )
-    params = dict(user_id=user_id)
+    params = dict(user_id=user_id, file_size=0)
     async with session.put(url, ssl=False, params=params) as resp:
-        data, _ = await safe_unwrap(resp)
-        file_upload_schema = FileUploadSchema.parse_obj(data)
-    assert file_upload_schema.urls  # nosec
-    return file_upload_schema.urls[0]
+        resp.raise_for_status()
+        envelope = Envelope[FileUploadSchema].parse_obj(await resp.json())
+        assert envelope.data  # nosec
+        assert len(envelope.data.urls) == 1  # nosec
+        return envelope.data.urls[0]
 
 
 async def complete_file_upload(
@@ -322,6 +325,7 @@ async def complete_file_upload(
         params=params,
         json=FileUploadCompletionBody.construct(parts=parts),
     ) as resp:
-        data, _ = await safe_unwrap(resp)
-    state_url = parse_obj_as(AnyUrl, data.get("links", {}).get("state", None))
-    return state_url
+        resp.raise_for_status()
+        envelope = Envelope[FileUploadCompleteResponse].parse_obj(await resp.json())
+        assert envelope.data  # nosec
+        return envelope.data.links.state

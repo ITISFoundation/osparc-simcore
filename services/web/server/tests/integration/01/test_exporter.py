@@ -28,6 +28,7 @@ import redis.asyncio as aioredis
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
 from models_library.projects_nodes_io import LocationID, StorageFileID
+from pydantic import AnyUrl
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
@@ -397,7 +398,7 @@ async def extract_download_links_from_storage(
 ) -> dict[str, str]:
     async def _get_mapped_link(
         seq_key: str, location_id: LocationID, file_id: StorageFileID
-    ) -> tuple[str, str]:
+    ) -> tuple[str, AnyUrl]:
         link = await get_file_download_url(
             app=app,
             location_id=location_id,

@@ -7,12 +7,12 @@ from collections import deque
 from itertools import chain
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Deque, Optional
+from typing import Deque, Optional
 from uuid import UUID
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
-from models_library.api_schemas_storage import UploadedPart
+from models_library.api_schemas_storage import FileLocationArray, UploadedPart
 from models_library.projects import AccessRights, Project
 from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
@@ -79,9 +79,9 @@ async def extract_download_links(
 ) -> Deque[LinkAndPath2]:
     download_links: Deque[LinkAndPath2] = deque()
     try:
-        available_locations: list[
-            dict[str, Any]
-        ] = await get_storage_locations_for_user(app=app, user_id=user_id)
+        available_locations: FileLocationArray = await get_storage_locations_for_user(
+            app=app, user_id=user_id
+        )
         log.debug(
             "will create download links for following locations: %s",
             pformat(available_locations),
@@ -91,7 +91,7 @@ async def extract_download_links(
             *[
                 get_project_files_metadata(
                     app=app,
-                    location_id=loc["id"],
+                    location_id=loc.id,
                     uuid_filter=project_id,
                     user_id=user_id,
                 )
@@ -109,19 +109,19 @@ async def extract_download_links(
         try:
             download_link = await get_file_download_url(
                 app=app,
-                location_id=file_metadata["location_id"],
-                file_id=file_metadata["file_id"],
+                location_id=file_metadata.location_id,
+                file_id=file_metadata.file_id,
                 user_id=user_id,
             )
         except Exception as e:
             raise ExporterException(
-                f'Error while requesting download url for file {file_metadata["file_id"]}'
+                f"Error while requesting download url for file {file_metadata.file_id}"
             ) from e
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
-                storage_type=file_metadata["location_id"],
-                relative_path_to_file=file_metadata["file_id"],
+                storage_type=file_metadata.location_id,
+                relative_path_to_file=file_metadata.file_id,
                 download_link=download_link,
             )
         )
