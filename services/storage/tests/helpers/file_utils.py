@@ -1,4 +1,3 @@
-import asyncio
 import json
 from pathlib import Path
 from time import perf_counter
@@ -9,6 +8,7 @@ import pytest
 from aiohttp import ClientSession, web
 from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.utils import logged_gather
 from simcore_service_storage.s3_client import ETag, MultiPartUploadLinks, UploadedPart
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
@@ -96,7 +96,7 @@ async def upload_file_to_presigned_link(
                     upload_url,
                 )
             )
-        results = await asyncio.gather(*upload_tasks)
+        results = await logged_gather(*upload_tasks, max_concurrency=2)
     part_to_etag = [
         UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
     ]
