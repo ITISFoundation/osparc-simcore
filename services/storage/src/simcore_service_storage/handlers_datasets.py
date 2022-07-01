@@ -8,10 +8,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from simcore_service_storage.dsm import get_dsm_provider
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
+from .dsm import get_dsm_provider
 from .models import (
     FileMetaData,
     FilesMetadataDatasetPathParams,

@@ -1,17 +1,18 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Optional
+from typing import Any, Callable, Coroutine, Optional
 
+from models_library.api_schemas_storage import FileUploadSchema
 from models_library.users import UserID
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
 from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common.storage_client import LinkType
 from yarl import URL
 
 from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
+from ..node_ports_common.storage_client import LinkType
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ async def get_value_link_from_port_link(
 async def get_value_from_link(
     key: str,
     value: PortLink,
-    fileToKeyMap: Optional[Dict[str, str]],
+    fileToKeyMap: Optional[dict[str, str]],
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
 ) -> Optional[ItemConcreteValue]:
     log.debug("Getting value %s", value)
@@ -113,21 +114,21 @@ async def get_download_link_from_storage_overload(
     return parse_obj_as(AnyUrl, f"{link}")
 
 
-async def get_upload_link_from_storage(
+async def get_upload_links_from_storage(
     user_id: UserID, project_id: str, node_id: str, file_name: str, link_type: LinkType
-) -> AnyUrl:
+) -> FileUploadSchema:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.create_simcore_file_id(
         Path(file_name), project_id, node_id
     )
-    _, link = await filemanager.get_upload_link_from_s3(
+    _, links = await filemanager.get_upload_links_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
         link_type=link_type,
     )
-    return parse_obj_as(AnyUrl, f"{link}")
+    return links
 
 
 async def target_link_exists(
@@ -159,7 +160,7 @@ async def delete_target_link(
 async def pull_file_from_store(
     user_id: UserID,
     key: str,
-    fileToKeyMap: Optional[Dict[str, str]],
+    fileToKeyMap: Optional[dict[str, str]],
     value: FileLink,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
@@ -207,7 +208,7 @@ async def push_file_to_store(
 
 async def pull_file_from_download_link(
     key: str,
-    fileToKeyMap: Optional[Dict[str, str]],
+    fileToKeyMap: Optional[dict[str, str]],
     value: DownloadLink,
 ) -> Path:
     log.debug(

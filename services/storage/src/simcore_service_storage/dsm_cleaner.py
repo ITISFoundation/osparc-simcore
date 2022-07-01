@@ -7,6 +7,7 @@
  - upon completion the corresponding entry in file_meta_data is updated:
    - the file_size of the uploaded file is set
    - the upload_expiration_date is set to null
+   - if the uploadId exists (for multipart uploads) it is set to null
 
 # DSM cleaner:
  - runs at an interval
@@ -14,6 +15,7 @@
  - tries to update from S3 the database first, if that fails:
    - removes the entries in the database that are expired:
       - removes the entry
+      - aborts the multipart upload if any
 """
 
 import asyncio
@@ -24,11 +26,11 @@ from contextlib import suppress
 from typing import cast
 
 from aiohttp import web
-from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
 from .dsm_factory import DataManagerProvider
 from .settings import Settings
+from .simcore_s3_dsm import SimcoreS3DataManager
 
 logger = logging.getLogger(__name__)
 

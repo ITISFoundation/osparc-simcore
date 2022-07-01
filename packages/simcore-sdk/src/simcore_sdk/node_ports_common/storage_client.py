@@ -1,7 +1,7 @@
 from enum import Enum
 from functools import wraps
 from json import JSONDecodeError
-from typing import Callable
+from typing import Callable, Optional
 from urllib.parse import quote
 
 from aiohttp import ClientSession, web
@@ -9,12 +9,14 @@ from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
     FileMetaDataGet,
+    FileUploadSchema,
     LocationID,
     PresignedLink,
     StorageFileID,
 )
 from models_library.generics import Envelope
 from models_library.users import UserID
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 
 from . import config, exceptions
@@ -107,29 +109,38 @@ async def get_download_file_link(
 
 
 @handle_client_exception
-async def get_upload_file_link(
+async def get_upload_file_links(
     session: ClientSession,
     file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
     link_type: LinkType,
-) -> AnyUrl:
+    file_size: Optional[ByteSize],
+) -> FileUploadSchema:
+    """
+    :raises exceptions.StorageInvalidCall: _description_
+    :raises exceptions.StorageServerIssue: _description_
+    :raises ClientResponseError
+    """
     if file_id is None or location_id is None or user_id is None:
         raise exceptions.StorageInvalidCall(
             f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
         )
+    query_params = {"user_id": f"{user_id}", "link_type": link_type.value}
+    if file_size:
+        query_params["file_size"] = file_size
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        params={"user_id": f"{user_id}", "link_type": link_type.value},
+        params=query_params,
     ) as response:
         response.raise_for_status()
 
-        presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
+        file_upload_links_enveloped = Envelope[FileUploadSchema].parse_obj(
             await response.json()
         )
-        if presigned_link_enveloped.data is None:
-            raise exceptions.StorageServerIssue("Storage server is not reponding")
-        return presigned_link_enveloped.data.link
+    if file_upload_links_enveloped.data is None:
+        raise exceptions.StorageServerIssue("Storage server is not reponding")
+    return file_upload_links_enveloped.data
 
 
 @handle_client_exception

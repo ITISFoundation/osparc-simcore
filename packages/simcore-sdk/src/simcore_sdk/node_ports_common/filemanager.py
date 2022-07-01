@@ -6,23 +6,43 @@ from pathlib import Path
 from typing import Optional
 
 import aiofiles
-from aiohttp import ClientError, ClientPayloadError, ClientSession
-from models_library.api_schemas_storage import ETag, FileMetaDataGet, StorageFileID
-from models_library.projects_nodes_io import LocationID, LocationName
+from aiohttp import ClientError, ClientPayloadError, ClientSession, web
+from models_library.api_schemas_storage import (
+    ETag,
+    FileMetaDataGet,
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
+    FileUploadCompleteState,
+    FileUploadCompletionBody,
+    FileUploadSchema,
+    LocationID,
+    LocationName,
+    UploadedPart,
+)
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ByteSize, parse_obj_as
 from pydantic.networks import AnyUrl
+from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from . import exceptions, storage_client
+from . import config, exceptions, storage_client
 from .constants import SIMCORE_LOCATION
 from .r_clone import RCloneFailedError, is_r_clone_available, sync_local_to_s3
 
 log = logging.getLogger(__name__)
 
-CHUNK_SIZE = 1 * 1024 * 1024
+CHUNK_SIZE = 16 * 1024 * 1024
 
 
 async def _get_location_id_from_location_name(
@@ -59,20 +79,24 @@ async def _get_download_link(
     return URL(link)
 
 
-async def _get_upload_link(
+async def _get_upload_links(
     user_id: UserID,
     store_id: LocationID,
     file_id: StorageFileID,
     session: ClientSession,
     link_type: storage_client.LinkType,
-) -> URL:
-    link: AnyUrl = await storage_client.get_upload_file_link(
-        session, file_id, store_id, user_id, link_type
+    file_size: Optional[ByteSize],
+) -> FileUploadSchema:
+    """
+    :raises exceptions.S3InvalidPathError: _description_
+    """
+    links: FileUploadSchema = await storage_client.get_upload_file_links(
+        session, file_id, store_id, user_id, link_type, file_size
     )
-    if not link:
+    if not links:
         raise exceptions.S3InvalidPathError(file_id)
 
-    return URL(link)
+    return links
 
 
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
@@ -118,33 +142,155 @@ async def _file_sender(file_path: Path, file_size: int):
                 chunk = await f.read(CHUNK_SIZE)
 
 
-async def _upload_file_to_link(
-    session: ClientSession, url: URL, file_path: Path
-) -> ETag:
-    log.debug("Uploading from %s to %s", file_path, url)
-    file_size = file_path.stat().st_size
+async def _file_part_sender(file: Path, *, offset: int, bytes_to_send: int):
+    chunk_size = CHUNK_SIZE
+    async with aiofiles.open(file, "rb") as f:
+        await f.seek(offset)
+        num_read_bytes = 0
+        while chunk := await f.read(min(chunk_size, bytes_to_send - num_read_bytes)):
+            num_read_bytes += len(chunk)
+            yield chunk
 
-    data_provider = _file_sender(file_path, file_size)
-    headers = {"Content-Length": f"{file_size}"}
+
+async def _upload_file_part(
+    session: ClientSession,
+    file: Path,
+    part_index: int,
+    file_offset: int,
+    this_file_chunk_size: int,
+    num_parts: int,
+    upload_url: AnyUrl,
+) -> tuple[int, ETag]:
+    log.debug(
+        "--> uploading %s of %s, [%s]...",
+        f"{this_file_chunk_size=}",
+        f"{file=}",
+        f"{part_index+1}/{num_parts}",
+    )
+    response = await session.put(
+        upload_url,
+        data=_file_part_sender(
+            file,
+            offset=file_offset,
+            bytes_to_send=this_file_chunk_size,
+        ),
+        headers={
+            "Content-Length": f"{this_file_chunk_size}",
+        },
+    )
+    response.raise_for_status()
+    # NOTE: the response from minio does not contain a json body
+    assert response.status == web.HTTPOk.status_code
+    assert response.headers
+    assert "Etag" in response.headers
+    received_e_tag = json.loads(response.headers["Etag"])
+    log.info(
+        "--> completed upload %s of %s, [%s], %s",
+        f"{this_file_chunk_size=}",
+        f"{file=}",
+        f"{part_index+1}/{num_parts}",
+        f"{received_e_tag=}",
+    )
+    return (part_index, received_e_tag)
+
+
+async def _upload_file_to_presigned_links(
+    session: ClientSession, file_upload_links: FileUploadSchema, file: Path
+) -> list[UploadedPart]:
+    log.debug("Uploading from %s to %s", f"{file=}", f"{file_upload_links=}")
+    file_size = file.stat().st_size
+
+    file_chunk_size = int(file_upload_links.chunk_size)
+    num_urls = len(file_upload_links.urls)
+    last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
+    upload_tasks = []
+    for index, upload_url in enumerate(file_upload_links.urls):
+        this_file_chunk_size = (
+            file_chunk_size if (index + 1) < num_urls else last_chunk_size
+        )
+        upload_tasks.append(
+            _upload_file_part(
+                session,
+                file,
+                index,
+                index * file_chunk_size,
+                this_file_chunk_size,
+                num_urls,
+                upload_url,
+            )
+        )
     try:
-        async with session.put(url, data=data_provider, headers=headers) as resp:
-            if resp.status > 299:
-                response_text = await resp.text()
-                raise exceptions.S3TransferError(
-                    f"Could not upload file {file_path}:{response_text}"
-                )
-            if resp.status != 200:
-                response_text = await resp.text()
-                raise exceptions.S3TransferError(
-                    f"Issue when uploading file {file_path}:{response_text}"
-                )
+        results = await logged_gather(*upload_tasks, log=log, max_concurrency=12)
+        part_to_etag = [
+            UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
+        ]
+        log.info(
+            "Uploaded %s, received %s",
+            f"{file=}",
+            f"{part_to_etag=}",
+        )
+        return part_to_etag
+    except ClientError as exc:
+        raise exceptions.S3TransferError(f"Could not upload file {file}:{exc}") from exc
 
-            # get the S3 etag from the headers
-            e_tag = json.loads(resp.headers.get("Etag", ""))
-            log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
-            return e_tag
-    except ClientError as err:
-        raise exceptions.S3TransferError(f"Could not upload file {file_path}:{err}")
+
+async def _complete_upload(
+    session: ClientSession,
+    upload_links: FileUploadSchema,
+    parts: list[UploadedPart],
+    completion_timeout_s: int = config.STORAGE_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S,
+) -> ETag:
+    """completes a potentially multipart upload in AWS
+    NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
+    it can take several minutes
+    :raises ValueError: _description_
+    :raises exceptions.S3TransferError: _description_
+    :rtype: ETag
+    """
+    log.debug("completing upload of %s", f"{upload_links=} with {parts=}")
+    async with session.post(
+        upload_links.links.complete_upload,
+        json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
+    ) as resp:
+        resp.raise_for_status()
+        # now poll for state
+        file_upload_complete_response = parse_obj_as(
+            Envelope[FileUploadCompleteResponse], await resp.json()
+        )
+        assert file_upload_complete_response.data  # nosec
+    state_url = file_upload_complete_response.data.links.state
+    log.info(
+        "completed upload of %s",
+        f"{upload_links=} with {parts=}, received {file_upload_complete_response=}",
+    )
+
+    log.debug("waiting for upload completion...")
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_fixed(1),
+        stop=stop_after_delay(completion_timeout_s),
+        retry=retry_if_exception_type(ValueError),
+        before_sleep=before_sleep_log(log, logging.DEBUG),
+    ):
+        with attempt:
+            async with session.post(state_url) as resp:
+                resp.raise_for_status()
+                future_enveloped = parse_obj_as(
+                    Envelope[FileUploadCompleteFutureResponse], await resp.json()
+                )
+                assert future_enveloped.data  # nosec
+                if future_enveloped.data.state == FileUploadCompleteState.NOK:
+                    raise ValueError("upload not ready yet")
+            assert future_enveloped.data.e_tag  # nosec
+            log.debug(
+                "multipart upload completed in %s, received %s",
+                attempt.retry_state.retry_object.statistics,
+                f"{future_enveloped.data.e_tag=}",
+            )
+            return future_enveloped.data.e_tag
+    raise exceptions.S3TransferError(
+        f"Could not complete the upload of file {upload_links=}"
+    )
 
 
 async def get_download_link_from_s3(
@@ -176,7 +322,7 @@ async def get_download_link_from_s3(
         )
 
 
-async def get_upload_link_from_s3(
+async def get_upload_links_from_s3(
     *,
     user_id: UserID,
     store_name: Optional[LocationName],
@@ -184,7 +330,8 @@ async def get_upload_link_from_s3(
     s3_object: StorageFileID,
     link_type: storage_client.LinkType,
     client_session: Optional[ClientSession] = None,
-) -> tuple[LocationID, URL]:
+    file_size: Optional[ByteSize] = None,
+) -> tuple[LocationID, FileUploadSchema]:
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
@@ -196,7 +343,9 @@ async def get_upload_link_from_s3(
         assert store_id is not None  # nosec
         return (
             store_id,
-            await _get_upload_link(user_id, store_id, s3_object, session, link_type),
+            await _get_upload_links(
+                user_id, store_id, s3_object, session, link_type, file_size
+            ),
         )
 
 
@@ -267,6 +416,18 @@ async def download_file_from_link(
     return local_file_path
 
 
+async def _abort_upload(
+    session: ClientSession, upload_links: FileUploadSchema, *, reraise_exceptions: bool
+) -> None:
+    try:
+        async with session.post(upload_links.links.abort_upload) as resp:
+            resp.raise_for_status()
+    except ClientError:
+        log.warning("Error while aborting upload", exc_info=True)
+        if reraise_exceptions:
+            raise
+
+
 async def upload_file(
     *,
     user_id: UserID,
@@ -298,9 +459,9 @@ async def upload_file(
     )
 
     async with ClientSessionContextManager(client_session) as session:
-        upload_link = None
+        upload_links = None
         try:
-            store_id, upload_link = await get_upload_link_from_s3(
+            store_id, upload_links = await get_upload_links_from_s3(
                 user_id=user_id,
                 store_name=store_name,
                 store_id=store_id,
@@ -309,42 +470,32 @@ async def upload_file(
                 link_type=storage_client.LinkType.S3
                 if use_rclone
                 else storage_client.LinkType.PRESIGNED,
+                file_size=ByteSize(local_file_path.stat().st_size),
             )
-
-            if not upload_link:
-                raise exceptions.S3InvalidPathError(s3_object)
-
+            # NOTE: in case of S3 upload, there are no multipart uploads, so this remains empty
+            uploaded_parts: list[UploadedPart] = []
             if use_rclone:
                 assert r_clone_settings  # nosec
                 await sync_local_to_s3(
                     local_file_path,
                     r_clone_settings,
-                    upload_link,
+                    upload_links,
                 )
             else:
-                try:
-                    e_tag = await _upload_file_to_link(
-                        session, upload_link, local_file_path
-                    )
-                except exceptions.S3TransferError as err:
-                    await delete_file(
-                        user_id=user_id,
-                        store_id=store_id,
-                        s3_object=s3_object,
-                        client_session=session,
-                    )
-                    raise err
-
-            # NOTE: this is not strictly necessary, only for RClone that does not retrieve the ETag
-            store_id, e_tag = await get_file_metadata(
-                user_id, store_id, s3_object, session
+                uploaded_parts = await _upload_file_to_presigned_links(
+                    session, upload_links, local_file_path
+                )
+            # complete the upload
+            e_tag = await _complete_upload(
+                session,
+                upload_links,
+                uploaded_parts,
             )
         except (RCloneFailedError, exceptions.S3TransferError) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
-            if upload_link:
+            if upload_links:
                 # abort the upload correctly, so it can revert back to last version
-                assert store_id is not None  # nosec
-                await delete_file(user_id, store_id, s3_object, session)
+                await _abort_upload(session, upload_links, reraise_exceptions=False)
                 log.warning("Upload aborted")
             raise exceptions.S3TransferError from exc
         return store_id, e_tag

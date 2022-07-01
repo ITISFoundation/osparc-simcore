@@ -1,5 +1,6 @@
 import datetime
 import urllib.parse
+from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
@@ -20,6 +21,7 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import (
+    AnyUrl,
     BaseModel,
     ByteSize,
     Extra,
@@ -27,6 +29,8 @@ from pydantic import (
     validate_arguments,
     validator,
 )
+
+UploadID = str
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -56,6 +60,7 @@ class FileMetaDataAtDB(BaseModel):
     last_modified: datetime.datetime
     entity_tag: Optional[ETag] = None
     is_soft_link: bool
+    upload_id: Optional[UploadID] = None
     upload_expires_at: Optional[datetime.datetime] = None
 
     class Config:
@@ -64,6 +69,7 @@ class FileMetaDataAtDB(BaseModel):
 
 
 class FileMetaData(FileMetaDataGet):
+    upload_id: Optional[UploadID] = None
     upload_expires_at: Optional[datetime.datetime] = None
 
     location: LocationName
@@ -105,10 +111,23 @@ class FileMetaData(FileMetaDataGet):
             "file_size": ByteSize(-1),
             "entity_tag": None,
             "is_soft_link": False,
+            "upload_id": None,
             "upload_expires_at": None,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
         return cls.parse_obj(fmd_kwargs)
+
+
+@dataclass
+class UploadLinks:
+    urls: list[AnyUrl]
+    chunk_size: ByteSize
+
+
+class MultiPartUploadLinks(BaseModel):
+    upload_id: UploadID
+    chunk_size: ByteSize
+    urls: list[AnyUrl]
 
 
 class StorageQueryParamsBase(BaseModel):
@@ -208,4 +227,6 @@ __all__ = (
     "S3BucketName",
     "SimcoreS3FileID",
     "StorageFileID",
+    "UploadID",
+    "UploadLinks",
 )

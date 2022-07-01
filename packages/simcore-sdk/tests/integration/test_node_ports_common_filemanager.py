@@ -10,10 +10,12 @@ from uuid import uuid4
 
 import np_helpers
 import pytest
+from aiohttp import ClientError
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager
 from simcore_sdk.node_ports_common.r_clone import RCloneFailedError
@@ -54,6 +56,7 @@ def _file_size(size_str: str, **pytest_params):
         _file_size("1003Mib"),
         _file_size("7Gib", marks=pytest.mark.heavy_load),
     ],
+    ids=byte_size_ids,
 )
 async def test_valid_upload_download(
     node_ports_config: None,
@@ -105,9 +108,9 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_to_link",
+        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
         autospec=True,
-        side_effect=exceptions.S3TransferError,
+        side_effect=ClientError,
     )
 
 
@@ -117,6 +120,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
         _file_size("10Mib"),
         _file_size("151Mib"),
     ],
+    ids=byte_size_ids,
 )
 async def test_failed_upload_is_properly_removed_from_storage(
     node_ports_config: None,
@@ -145,15 +149,13 @@ async def test_failed_upload_is_properly_removed_from_storage(
         )
 
 
-@pytest.mark.xfail(
-    reason="This will be fixed in one of the next PRs for storage refactoring"
-)
 @pytest.mark.parametrize(
     "file_size",
     [
         _file_size("10Mib"),
         _file_size("151Mib"),
     ],
+    ids=byte_size_ids,
 )
 async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     node_ports_config: None,
@@ -191,9 +193,9 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_to_link",
+        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
         autospec=True,
-        side_effect=exceptions.S3TransferError,
+        side_effect=ClientError,
     )
     with pytest.raises(exceptions.S3TransferError):
         await filemanager.upload_file(
