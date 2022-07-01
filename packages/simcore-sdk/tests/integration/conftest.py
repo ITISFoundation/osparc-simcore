@@ -4,15 +4,17 @@
 # pylint:disable=too-many-arguments
 
 import json
+import urllib.parse
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional
-from urllib.parse import quote_plus
 from uuid import uuid4
 
 import np_helpers
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
+from models_library.api_schemas_storage import FileUploadSchema
+from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -86,11 +88,8 @@ def s3_simcore_location() -> LocationID:
 def filemanager_cfg(
     storage_service: URL,
     testing_environ_vars: dict,
-    user_id: str,
-    bucket: str,
 ) -> None:
     node_config.STORAGE_ENDPOINT = f"{storage_service.host}:{storage_service.port}"
-    node_config.BUCKET = bucket
 
 
 @pytest.fixture
@@ -106,7 +105,6 @@ def create_valid_file_uuid(
 @pytest.fixture()
 def default_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     default_configuration_file: Path,
@@ -132,7 +130,6 @@ def create_node_link() -> Callable[[str], dict[str, str]]:
 
 @pytest.fixture()
 def create_store_link(
-    bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     user_id: int,
@@ -145,15 +142,19 @@ def create_store_link(
         assert file_path.exists()
 
         file_id = create_valid_file_uuid(file_path)
+        url = URL(
+            f"{storage_service}/v0/locations/{s3_simcore_location}/files/{urllib.parse.quote(file_id, safe='')}"
+        ).with_query(user_id=user_id, file_size=0)
         async with ClientSession() as session:
-            async with session.put(
-                f"{storage_service}/v0/locations/{s3_simcore_location}/files/{quote_plus(file_id)}",
-                params={"user_id": f"{user_id}"},
-            ) as resp:
+            async with session.put(url) as resp:
                 resp.raise_for_status()
-                presigned_links_enveloped = await resp.json()
-            link = presigned_links_enveloped.get("data", {}).get("urls")[0]
-            assert link is not None
+                presigned_links_enveloped = Envelope[FileUploadSchema].parse_obj(
+                    await resp.json()
+                )
+            assert presigned_links_enveloped.data
+            assert len(presigned_links_enveloped.data.urls) == 1
+            link = presigned_links_enveloped.data.urls[0]
+            assert link
 
             # Upload using the link
             extra_hdr = {
@@ -174,7 +175,6 @@ def create_store_link(
 @pytest.fixture(scope="function")
 def create_special_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     empty_configuration_file: Path,
@@ -202,7 +202,6 @@ def create_special_configuration(
 @pytest.fixture(scope="function")
 def create_2nodes_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     empty_configuration_file: Path,

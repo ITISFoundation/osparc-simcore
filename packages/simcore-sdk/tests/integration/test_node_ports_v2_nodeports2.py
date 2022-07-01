@@ -11,7 +11,7 @@ import tempfile
 import threading
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Iterable, Optional, Union
 from uuid import uuid4
 
 import np_helpers
@@ -40,7 +40,7 @@ pytest_simcore_ops_services_selection = [
 
 async def _check_port_valid(
     ports: Nodeports,
-    config_dict: Dict,
+    config_dict: dict,
     port_type: str,
     key_name: str,
     key: Union[str, int],
@@ -86,7 +86,7 @@ async def _check_port_valid(
         assert port.value == None
 
 
-async def _check_ports_valid(ports: Nodeports, config_dict: Dict, port_type: str):
+async def _check_ports_valid(ports: Nodeports, config_dict: dict, port_type: str):
     port_schemas = config_dict["schema"][port_type]
     for key in port_schemas.keys():
         # test using "key" name
@@ -96,7 +96,7 @@ async def _check_ports_valid(ports: Nodeports, config_dict: Dict, port_type: str
         await _check_port_valid(ports, config_dict, port_type, key, key_index)
 
 
-async def check_config_valid(ports: Nodeports, config_dict: Dict):
+async def check_config_valid(ports: Nodeports, config_dict: dict):
     await _check_ports_valid(ports, config_dict, "inputs")
     await _check_ports_valid(ports, config_dict, "outputs")
 
@@ -129,7 +129,7 @@ def symlink_path(tmp_path: Path) -> Iterable[Path]:
 
 
 @pytest.fixture
-def config_value_symlink_path(symlink_path: Path) -> Dict[str, Any]:
+def config_value_symlink_path(symlink_path: Path) -> dict[str, Any]:
     return {"store": 0, "path": symlink_path}
 
 
@@ -146,7 +146,7 @@ async def test_default_configuration(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
     option_r_clone_settings: Optional[RCloneSettings],
 ):
     config_dict = default_configuration
@@ -206,7 +206,7 @@ async def test_port_value_accessors(
     create_special_configuration: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
-    item_pytype: Type,
+    item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
 ):  # pylint: disable=W0613, W0621
     item_key = "some_key"
@@ -254,11 +254,10 @@ async def test_port_file_accessors(
     create_special_configuration: Callable,
     filemanager_cfg: None,
     s3_simcore_location: LocationID,
-    bucket: str,
     item_type: str,
     item_value: str,
-    item_pytype: Type,
-    config_value: Dict[str, str],
+    item_pytype: type,
+    config_value: dict[str, str],
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -430,7 +429,7 @@ async def test_get_value_from_previous_node(
     create_node_link: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
-    item_pytype: Type,
+    item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
 ):
     config_dict, _, _ = create_2nodes_configuration(
@@ -474,7 +473,7 @@ async def test_get_file_from_previous_node(
     create_store_link: Callable,
     item_type: str,
     item_value: str,
-    item_pytype: Type,
+    item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
 ):
     config_dict, _, _ = create_2nodes_configuration(
@@ -531,7 +530,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_type: str,
     item_value: str,
     item_alias: str,
-    item_pytype: Type,
+    item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
 ):
     config_dict, _, this_node_uuid = create_2nodes_configuration(
@@ -587,13 +586,12 @@ async def test_file_mapping(
     node_uuid: str,
     filemanager_cfg: None,
     s3_simcore_location: LocationID,
-    bucket: str,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,
     item_type: str,
     item_value: str,
     item_alias: str,
-    item_pytype: Type,
+    item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
 ):
     config_dict, project_id, node_uuid = create_special_configuration(

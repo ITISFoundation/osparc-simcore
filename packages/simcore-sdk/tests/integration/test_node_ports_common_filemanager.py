@@ -31,7 +31,6 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 @pytest.fixture
 def node_ports_config(
-    bucket: str,
     filemanager_cfg: None,
     cleanup_file_meta_data: None,
 ):

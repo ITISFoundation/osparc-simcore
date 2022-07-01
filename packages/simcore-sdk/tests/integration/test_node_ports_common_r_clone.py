@@ -100,7 +100,6 @@ def _fake_upload_file_link(
 
 # TESTS
 async def test_sync_local_to_s3(
-    bucket: str,
     r_clone_settings: RCloneSettings,
     file_name: str,
     create_file_of_size: Callable[[ByteSize, str], Path],

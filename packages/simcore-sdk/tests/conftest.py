@@ -4,7 +4,7 @@ import json
 # pylint:disable=redefined-outer-name
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import simcore_sdk
@@ -69,7 +69,7 @@ def default_configuration_file() -> Path:
 
 
 @pytest.fixture(scope="session")
-def default_configuration(default_configuration_file: Path) -> Dict[str, Any]:
+def default_configuration(default_configuration_file: Path) -> dict[str, Any]:
     config = json.loads(default_configuration_file.read_text())
     return config
 
@@ -83,10 +83,9 @@ def empty_configuration_file() -> Path:
 
 @pytest.fixture(scope="module")
 def node_ports_config(
-    postgres_dsn: Dict[str, str], minio_config: Dict[str, str]
+    postgres_dsn: dict[str, str], minio_config: dict[str, str]
 ) -> None:
     node_config.POSTGRES_DB = postgres_dsn["database"]
     node_config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
     node_config.POSTGRES_USER = postgres_dsn["user"]
     node_config.POSTGRES_PW = postgres_dsn["password"]
-    node_config.BUCKET = minio_config["bucket_name"]
