@@ -5,10 +5,11 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, cast
+from typing import Final, Optional, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
+from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
@@ -23,6 +24,8 @@ from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 log = logging.getLogger(__name__)
+
+_MAX_TRANSFER_CONCURRENCY: Final[int] = 4
 
 
 @dataclass(frozen=True)
@@ -251,7 +254,10 @@ class StorageS3Client:
         :type dst_file: SimcoreS3FileID
         """
         await self.client.copy(
-            CopySource={"Bucket": bucket, "Key": src_file}, Bucket=bucket, Key=dst_file
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Bucket=bucket,
+            Key=dst_file,
+            Config=TransferConfig(max_concurrency=_MAX_TRANSFER_CONCURRENCY),
         )
 
     @s3_exception_handler(log)
@@ -281,7 +287,12 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        await self.client.upload_file(f"{file}", Bucket=bucket, Key=file_id)
+        await self.client.upload_file(
+            f"{file}",
+            Bucket=bucket,
+            Key=file_id,
+            Config=TransferConfig(max_concurrency=_MAX_TRANSFER_CONCURRENCY),
+        )
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:
