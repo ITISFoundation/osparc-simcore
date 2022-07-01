@@ -11,6 +11,7 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+import simcore_service_dynamic_sidecar
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -32,6 +33,13 @@ pytest_plugins = [
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+@pytest.fixture(scope="session")
+def package_dir() -> Path:
+    folder = Path(simcore_service_dynamic_sidecar.__file__).resolve().parent
+    assert folder.exists()
+    return folder
 
 
 @pytest.fixture(scope="session")

@@ -22,23 +22,22 @@ from servicelib.fastapi.requests_decorators import cancellable_request
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
-from ..core.dependencies import (
+from ..core.docker_compose_utils import docker_compose_restart
+from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
+from ..models.shared_store import SharedStore
+from ..modules import directory_watcher, nodeports
+from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
+from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
     get_application,
     get_mounted_volumes,
     get_rabbitmq,
     get_settings,
     get_shared_store,
 )
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import write_file_and_run_command
-from ..models.domains.shared_store import SharedStore
-from ..models.schemas.ports import PortTypeName
-from ..modules import directory_watcher, nodeports
-from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
-from ..modules.mounted_fs import MountedVolumes
 from .containers import send_message
 
 logger = logging.getLogger(__name__)
@@ -143,7 +142,9 @@ async def pull_input_ports(
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
+        nodeports.PortTypeName.INPUTS,
+        mounted_volumes.disk_inputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling inputs")
     return int(transferred_bytes)
@@ -201,7 +202,9 @@ async def pull_output_ports(
 
     await send_message(rabbitmq, f"Pulling output for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
+        nodeports.PortTypeName.OUTPUTS,
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling output")
     return int(transferred_bytes)
@@ -255,10 +258,10 @@ async def restarts_containers(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> None:
     """Removes the previously started service
-    and returns the docker-compose output"""
+    and returns the docker-compose output
+    """
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
+    if shared_store.compose_spec is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose command was found",
@@ -267,21 +270,17 @@ async def restarts_containers(
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "restart --timeout {stop_and_remove_timeout}"
+    result = await docker_compose_restart(
+        shared_store.compose_spec, settings, command_timeout=command_timeout
     )
 
-    finished_without_errors, stdout = await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
-        command=command,
-        command_timeout=command_timeout,
-    )
-    if not finished_without_errors:
-        error_message = (f"'{command}' finished with errors\n{stdout}",)
-        logger.warning(error_message)
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+    if not result.success:
+        logger.warning(
+            "docker-compose restart finished with errors\n%s", result.decoded_stdout
+        )
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
+        )
 
     for container_name in shared_store.container_names:
         await start_log_fetching(app, container_name)

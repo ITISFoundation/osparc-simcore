@@ -1,11 +1,15 @@
+""" Free functions to inject dependencies in routes handlers
+"""
+
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 
-from ..models.domains.shared_store import SharedStore
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
-from .rabbitmq import RabbitMQ
-from .settings import DynamicSidecarSettings
 
 
 def get_application(request: Request) -> FastAPI:

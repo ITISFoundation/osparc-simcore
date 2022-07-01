@@ -7,8 +7,8 @@ from typing import Any, Generator
 import yaml
 
 from ..modules.mounted_fs import MountedVolumes
+from .docker_compose_utils import docker_compose_config
 from .settings import DynamicSidecarSettings
-from .shared_handlers import write_file_and_run_command
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -161,6 +161,8 @@ async def validate_compose_spec(
     settings: DynamicSidecarSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
+    *,
+    docker_compose_config_timeout: float,
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects
@@ -260,19 +262,18 @@ async def validate_compose_spec(
     )
 
     # validate against docker-compose config
-
-    command = "docker-compose --file {file_path} config"
-    finished_without_errors, stdout = await write_file_and_run_command(
+    result = await docker_compose_config(
+        compose_spec,
         settings=settings,
-        file_content=compose_spec,
-        command=command,
-        command_timeout=None,
+        command_timeout=docker_compose_config_timeout,
     )
-    if not finished_without_errors:
-        message = (
-            f"'docker-compose config' failed for:\n{compose_spec}\nSTDOUT\n{stdout}"
+
+    if not result.success:
+        logger.warning(
+            "'docker-compose config' failed for:\n%s\n%s",
+            f"{compose_spec}",
+            result.decoded_stdout,
         )
-        logger.warning(message)
-        raise InvalidComposeSpec(f"filed to run {command}")
+        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.decoded_stdout}")
 
     return compose_spec
