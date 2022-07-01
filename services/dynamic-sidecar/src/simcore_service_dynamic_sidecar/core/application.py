@@ -57,6 +57,9 @@ def create_base_app() -> FastAPI:
         debug=settings.DEBUG,
         version=__version__,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
+        servers=[
+            OAS_DEVELOPMENT_SERVER,
+        ],
         docs_url="/dev/doc",
     )
     override_fastapi_openapi_method(app)
