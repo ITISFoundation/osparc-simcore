@@ -3,7 +3,6 @@
 import functools
 import json
 import logging
-import traceback
 from typing import Any, Union
 
 from fastapi import (
@@ -19,7 +18,22 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 from servicelib.fastapi.requests_decorators import cancellable_request
 
-from ..core.dependencies import (
+from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
+from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
+from ..core.utils import assemble_container_names
+from ..core.validation import (
+    InvalidComposeSpec,
+    parse_compose_spec,
+    validate_compose_spec,
+)
+from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
+from ..modules.directory_watcher import directory_watcher_disabled
+from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
     get_application,
     get_application_health,
     get_mounted_volumes,
@@ -27,25 +41,6 @@ from ..core.dependencies import (
     get_settings,
     get_shared_store,
 )
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import (
-    cleanup_containers_and_volumes,
-    remove_the_compose_spec,
-    write_file_and_run_command,
-)
-from ..core.utils import assemble_container_names
-from ..core.validation import (
-    InvalidComposeSpec,
-    parse_compose_spec,
-    validate_compose_spec,
-)
-from ..models.domains.shared_store import SharedStore
-from ..models.schemas.application_health import ApplicationHealth
-from ..modules.directory_watcher import directory_watcher_disabled
-from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
 
@@ -55,34 +50,26 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
     await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
-async def _task_docker_compose_up(
+async def _task_docker_compose_up_and_send_message(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
+    command_timeout: float,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
+    assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        await cleanup_containers_and_volumes(shared_store, settings)
-
-        assert shared_store.compose_spec is not None  # nosec
-
-        command = (
-            "docker-compose --project-name {project} --file {file_path} "
-            "up --no-build --detach"
+        r = await docker_compose_up(
+            shared_store, settings, command_timeout=command_timeout
         )
-        finished_without_errors, stdout = await write_file_and_run_command(
-            settings=settings,
-            file_content=shared_store.compose_spec,
-            command=command,
-            command_timeout=None,
-        )
-    message = f"Finished {command} with output\n{stdout}"
 
-    if finished_without_errors:
+    message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
+
+    if r.success:
         await send_message(rabbitmq, "service containers started")
         logger.info(message)
         for container_name in shared_store.container_names:
@@ -130,6 +117,12 @@ async def runs_docker_compose_up(
     application_health: ApplicationHealth = Depends(get_application_health),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    command_timeout: float = Query(
+        3600.0, description="docker-compose up command timeout run as a background"
+    ),
+    validation_timeout: float = Query(
+        60.0, description="docker-compose config timeout (EXPERIMENTAL)"
+    ),
 ) -> Union[list[str], dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
@@ -141,24 +134,28 @@ async def runs_docker_compose_up(
             settings=settings,
             compose_file_content=body_as_text,
             mounted_volumes=mounted_volumes,
+            docker_compose_config_timeout=validation_timeout,
         )
         shared_store.container_names = assemble_container_names(
             shared_store.compose_spec
         )
+
+        logger.debug("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+
     except InvalidComposeSpec as e:
-        logger.warning("Error detected %s", traceback.format_exc())
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
 
     # run docker-compose in a background queue and return early
     assert shared_store.compose_spec is not None  # nosec
     background_tasks.add_task(
         functools.partial(
-            _task_docker_compose_up,
+            _task_docker_compose_up_and_send_message,
             settings=settings,
             shared_store=shared_store,
             app=app,
             application_health=application_health,
             rabbitmq=rabbitmq,
+            command_timeout=command_timeout,
         )
     )
 
@@ -177,7 +174,7 @@ async def runs_docker_compose_up(
 )
 async def runs_docker_compose_down(
     command_timeout: float = Query(
-        10.0, description="docker-compose down command timeout default"
+        10.0, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -187,14 +184,13 @@ async def runs_docker_compose_down(
     and returns the docker-compose output"""
     # TODO: convert into long running operation
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
+    if shared_store.compose_spec is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail="No spec for docker-compose down was found",
+            detail="No compose-specs were found",
         )
 
-    finished_without_errors, stdout = await remove_the_compose_spec(
+    result = await docker_compose_down(
         shared_store=shared_store,
         settings=settings,
         command_timeout=command_timeout,
@@ -203,11 +199,16 @@ async def runs_docker_compose_down(
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    if not finished_without_errors:
-        logger.warning("docker-compose down command finished with errors\n%s", stdout)
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+    if not result.success:
+        logger.warning(
+            "docker-compose down command finished with errors\n%s",
+            result.decoded_stdout,
+        )
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
+        )
 
-    return stdout
+    return result.decoded_stdout
 
 
 @containers_router.get(
