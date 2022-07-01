@@ -268,7 +268,7 @@ qx.Class.define("osparc.utils.Utils", {
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logosPath = lightLogo ? "osparc/s4l_zmt-white.png" : "osparc/s4l_zmt-black.png";
+          logosPath = lightLogo ? "osparc/s4l_zmt-white.svg" : "osparc/s4l_zmt-black.svg";
           break;
         case "tis": {
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
