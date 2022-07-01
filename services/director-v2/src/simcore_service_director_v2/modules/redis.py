@@ -88,7 +88,7 @@ class RedisLockManager:
     ) -> str:
         return f"lock_manager.{docker_node_id}.lock_slot.{slot_index}"
 
-    async def _get_node_slots(self, docker_node_id: DockerNodeId) -> int:
+    async def get_node_slots(self, docker_node_id: DockerNodeId) -> int:
         """get the total amount of slots available for the node"""
         node_slots_key = self._get_node_slots_key(docker_node_id)
         slots: Optional[bytes] = await self.redis.get(node_slots_key)
@@ -110,12 +110,13 @@ class RedisLockManager:
 
     async def acquire_lock(self, docker_node_id: DockerNodeId) -> Optional[Lock]:
         """
-        Tries to acquire a lock and returns one in case it succeeds.
+        Tries to acquire a lock for the provided `docker_node_id` and
+        returns one in case it succeeds.
 
-        NOTE: returns `None` if all Locks for the given docker_node_id are
+        NOTE: returns `None` if all Locks for the given `docker_node_id` are
             already in use (locked)
         """
-        slots = await self._get_node_slots(docker_node_id)
+        slots = await self.get_node_slots(docker_node_id)
         for slot in range(slots):
             node_lock_name = self._get_node_lock_name(docker_node_id, slot)
 

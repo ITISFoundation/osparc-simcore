@@ -2,7 +2,8 @@
 
 import asyncio
 from argparse import Namespace
-from asyncio import Task
+from asyncio import CancelledError, Task
+from contextlib import suppress
 from typing import AsyncIterable, Optional
 
 import pytest
@@ -24,6 +25,16 @@ from simcore_service_director_v2.modules.redis import (
 pytest_simcore_core_services_selection = [
     "redis",
 ]
+
+# UTILS
+
+
+class MockLocksPerNodeProvider:
+    def __init__(self, lock_per_node: int) -> None:
+        self.lock_per_node = lock_per_node
+
+    async def get(self, *args, **kwargs):
+        return self.lock_per_node
 
 
 # FIXTURES
@@ -197,16 +208,15 @@ async def test_acquire_all_available_node_locks_stress_test(
     # NOTE: this test is designed to spot if there are any issues when
     # acquiring and releasing locks in parallel with high concurrency
 
-    class MockLocksPerNodeProvider:
-        async def get(self, *args, **kwargs):
-            return locks_per_node
+    # adds more stress with lower lock_timeout
+    redis_lock_manager.lock_timeout = 1.0
 
-    redis_lock_manager.lock_per_node_provider = (  # type:ignore
-        MockLocksPerNodeProvider()
+    redis_lock_manager.lock_per_node_provider = MockLocksPerNodeProvider(  # type:ignore
+        locks_per_node
     )
 
     # pylint: disable=protected-access
-    total_node_slots = await redis_lock_manager._get_node_slots(docker_node_id)
+    total_node_slots = await redis_lock_manager.get_node_slots(docker_node_id)
     assert total_node_slots == locks_per_node
 
     async def _acquire_lock() -> Lock:
@@ -225,9 +235,44 @@ async def test_acquire_all_available_node_locks_stress_test(
             *[_acquire_lock() for _ in range(total_node_slots)]
         )
 
+        # trying to sleep enough to trigger the next steps while
+        # the locks are being refreshed. They are usually refreshed
+        # at `redis_lock_manager.lock_timeout * 0.5` interval
+        await asyncio.sleep(redis_lock_manager.lock_timeout * 0.48)
+
         # no more slots are available to acquire any other locks
         with pytest.raises(AssertionError):
             await _acquire_lock()
 
         # release locks in parallel
         await asyncio.gather(*[_release_lock(lock) for lock in acquired_locks])
+
+
+async def test_lock_extension_expiration(
+    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
+) -> None:
+    SHORT_INTERVAL = 0.10
+
+    redis_lock_manager.lock_timeout = SHORT_INTERVAL
+    redis_lock_manager.lock_per_node_provider = MockLocksPerNodeProvider(  # type:ignore
+        1
+    )
+
+    lock = await redis_lock_manager.acquire_lock(docker_node_id)
+    assert lock is not None
+
+    # lock should have been extended at least 2 times
+    # and should still be locked
+    await asyncio.sleep(SHORT_INTERVAL * 4)
+    assert await lock.locked() is True
+
+    # emulating process died (equivalent to no further renews)
+    task: Optional[Task] = getattr(lock, EXTEND_TASK_ATTR_NAME)
+    assert task
+    task.cancel()
+    with suppress(CancelledError):
+        await task
+
+    # lock is expected to be unlocked after timeout interval
+    await asyncio.sleep(redis_lock_manager.lock_timeout)
+    assert await lock.locked() is False
