@@ -220,7 +220,7 @@ async def _upload_file_to_presigned_links(
             )
         )
     try:
-        results = await logged_gather(*upload_tasks, log=log, max_concurrency=12)
+        results = await logged_gather(*upload_tasks, log=log, max_concurrency=4)
         part_to_etag = [
             UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
         ]
