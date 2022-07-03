@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataArray
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
+from models_library.generics import Envelope
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
@@ -106,9 +107,9 @@ class StorageApi(BaseServiceClientApi):
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": user_id, "file_size": 0},
         )
-
-        presigned_link = FileUploadSchema.parse_obj(resp.json()["data"])
-        return presigned_link
+        enveloped_data = Envelope[FileUploadSchema].parse_obj(resp.json())
+        assert enveloped_data.data  # nosec
+        return enveloped_data.data
 
     async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID
