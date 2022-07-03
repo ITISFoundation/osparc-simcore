@@ -18,7 +18,6 @@ from fastapi import (
 )
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
-from servicelib.fastapi.requests_decorators import cancellable_request
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
@@ -246,7 +245,6 @@ async def push_output_ports(
         },
     },
 )
-@cancellable_request
 async def restarts_containers(
     _request: Request,
     command_timeout: float = Query(
@@ -295,7 +293,6 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-@cancellable_request
 async def attach_container_to_network(
     _request: Request,
     id: str,
