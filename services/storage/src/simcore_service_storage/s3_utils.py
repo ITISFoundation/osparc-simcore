@@ -67,7 +67,7 @@ def s3_exception_handler(log: logging.Logger):
             except botocore_exc.EndpointConnectionError as exc:
                 raise S3AccessError from exc
 
-            except Exception as exc:
+            except botocore_exc.BotoCoreError as exc:
                 log.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
 
