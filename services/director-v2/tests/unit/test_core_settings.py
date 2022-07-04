@@ -75,7 +75,11 @@ def test_settings_with_project_env_devel(project_env_devel_environment: dict[str
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_settings_with_env_devel(mock_env_devel_environment: dict[str, str]):
+def test_settings_with_repository_env_devel(
+    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+):
+    monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
+
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
