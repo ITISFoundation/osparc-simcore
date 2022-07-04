@@ -157,12 +157,12 @@ def cancel_on_disconnect(handler: _Handler):
         # one to poll the request and check if the client disconnected
         poller_task = asyncio.create_task(
             disconnect_poller(request, sentinel),
-            name=f"{TASK_NAME_PREFIX}/poller/{handler.__name__}",
+            name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
         )
         # , and another which is the request handler
         handler_task = asyncio.create_task(
             handler(request, *args, **kwargs),
-            name=f"{TASK_NAME_PREFIX}/handler/{handler.__name__}",
+            name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
         )
 
         done, pending = await asyncio.wait(
@@ -193,6 +193,10 @@ def cancel_on_disconnect(handler: _Handler):
             request.url,
         )
 
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        # NOTE: uvicorn server fails with 499
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"client disconnected from {request=}",
+        )
 
     return wrapper
