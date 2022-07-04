@@ -354,7 +354,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     proxy_service_name: Optional[str] = Field(
         None, description="service name given to the proxy"
     )
-    dynamic_sidecar_node_id: Optional[str] = Field(
+    docker_node_id: Optional[str] = Field(
         None,
         description=(
             "contains node id of the docker node where all services "

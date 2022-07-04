@@ -184,12 +184,12 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        scheduler_data.dynamic_sidecar_node_id = await get_service_placement(
+        scheduler_data.docker_node_id = await get_service_placement(
             dynamic_sidecar_id, dynamic_sidecar_settings
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
-            node_id=scheduler_data.dynamic_sidecar_node_id,
+            node_id=scheduler_data.docker_node_id,
         )
 
         # update service_port and assing it to the status
@@ -405,17 +405,12 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_node_id = await get_service_placement(
-            scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
-        )
-
         dynamic_sidecar_proxy_create_service_params = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
             swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
-            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )
@@ -511,13 +506,13 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         # data. This causes a lot of disk and network stress.
         # Some nodes collapse under load or behave unexpectedly.
         lock_manager = RedisLockManager.instance(app)
-        assert scheduler_data.dynamic_sidecar_node_id  # nosec
+        assert scheduler_data.docker_node_id  # nosec
         lock: Optional[Lock] = await lock_manager.acquire_lock(
-            scheduler_data.dynamic_sidecar_node_id
+            scheduler_data.docker_node_id
         )
         if lock is None:
             node_slots = await lock_manager.get_node_slots(
-                scheduler_data.dynamic_sidecar_node_id
+                scheduler_data.docker_node_id
             )
             logger.debug("All %s are currently being used. Skipping", f"{node_slots=}")
             # Next observation cycle, the service will try again to save the state

@@ -97,5 +97,4 @@ async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
         if not await client.ping():
             raise ConnectionError(f"{redis_url=} not available")
     finally:
-        await client.flushall()
         await client.close(close_connection_pool=True)

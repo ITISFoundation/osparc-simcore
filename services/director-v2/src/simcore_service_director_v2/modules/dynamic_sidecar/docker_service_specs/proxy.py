@@ -18,7 +18,6 @@ def get_dynamic_proxy_spec(
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    dynamic_sidecar_node_id: str,
     entrypoint_container_name: str,
     service_port: PositiveInt,
 ) -> Dict[str, Any]:
@@ -98,7 +97,7 @@ def get_dynamic_proxy_spec(
             "Placement": {
                 "Constraints": [
                     "node.platform.os == linux",
-                    f"node.id == {dynamic_sidecar_node_id}",
+                    f"node.id == {scheduler_data.docker_node_id}",
                 ]
             },
             "Resources": {
