@@ -138,8 +138,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
 
-    if settings.REDIS:
-        redis.setup(app)
+    redis.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING)
