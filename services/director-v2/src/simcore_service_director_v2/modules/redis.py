@@ -65,15 +65,15 @@ class RedisLockManager:
             )
         return app.state.redis_lock_manager
 
-    @staticmethod
-    def _get_node_slots_key(docker_node_id: DockerNodeId) -> str:
-        return f"lock_manager.{docker_node_id}.lock_slots"
+    @classmethod
+    def _get_key(cls, docker_node_id: DockerNodeId) -> str:
+        return f"{cls.__name__}.{docker_node_id}.lock_slots"
 
-    @staticmethod
-    def _get_node_lock_name(
-        docker_node_id: DockerNodeId, slot_index: NonNegativeInt
+    @classmethod
+    def _get_lock_name(
+        cls, docker_node_id: DockerNodeId, slot_index: NonNegativeInt
     ) -> str:
-        return f"lock_manager.{docker_node_id}.lock_slot.{slot_index}"
+        return f"{cls._get_key(docker_node_id)}.{slot_index}"
 
     async def get_node_slots(self, docker_node_id: DockerNodeId) -> int:
         """get the total amount of slots available for the node"""
@@ -81,7 +81,7 @@ class RedisLockManager:
         # current slots per node might be provided looking at the
         # aiowait metric on the node over a period of time
 
-        node_slots_key = self._get_node_slots_key(docker_node_id)
+        node_slots_key = self._get_key(docker_node_id)
         slots: Optional[bytes] = await self._redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
@@ -109,7 +109,7 @@ class RedisLockManager:
         """
         slots = await self.get_node_slots(docker_node_id)
         for slot in range(slots):
-            node_lock_name = self._get_node_lock_name(docker_node_id, slot)
+            node_lock_name = self._get_lock_name(docker_node_id, slot)
 
             lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout)
             lock_acquired = await lock.acquire(blocking=False)
