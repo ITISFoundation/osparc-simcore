@@ -138,7 +138,16 @@ async def disconnect_poller(request: Request, result: Any):
 
 def cancel_on_disconnect(handler: _Handler):
 
-    _validate_signature(handler)
+    try:
+        first_parameter = next(iter(inspect.signature(handler).parameters.values()))
+        if not first_parameter.annotation == Request:
+            raise TypeError(
+                f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {first_parameter.annotation}"
+            )
+    except StopIteration as e:
+        raise TypeError(
+            f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got none"
+        ) from e
 
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs):
