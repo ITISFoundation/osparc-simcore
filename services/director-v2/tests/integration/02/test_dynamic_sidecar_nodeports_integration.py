@@ -50,6 +50,7 @@ from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -96,6 +97,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -137,6 +139,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
+    redis_service: RedisSettings,
 ) -> Iterator[None]:
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"

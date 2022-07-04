@@ -18,6 +18,7 @@ from models_library.services_resources import ServiceResourcesDict
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -44,6 +45,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -62,6 +64,7 @@ def minimal_configuration(
     simcore_services_ready: None,
     storage_service: URL,
     ensure_swarm_and_networks: None,
+    redis_service: RedisSettings,
 ):
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
