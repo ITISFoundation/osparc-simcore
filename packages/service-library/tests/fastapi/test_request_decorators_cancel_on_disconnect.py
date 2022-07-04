@@ -4,8 +4,6 @@
 
 import asyncio
 import socket
-
-# uvicorn test_request_decorators_cancel_on_disconnect:mock_app
 import subprocess
 import sys
 import time
@@ -55,7 +53,7 @@ def get_unused_port() -> Callable[[], int]:
 @pytest.fixture
 def server_url(get_unused_port: Callable[[], int]) -> Iterator[str]:
     port = get_unused_port()
-    proc = subprocess.Popen(
+    with subprocess.Popen(
         [
             "uvicorn",
             "test_request_decorators_cancel_on_disconnect:mock_app",
@@ -65,27 +63,27 @@ def server_url(get_unused_port: Callable[[], int]) -> Iterator[str]:
         cwd=f"{CURRENT_DIR}",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-    )
+    ) as proc:
 
-    url = f"http://127.0.0.1:{port}"
+        url = f"http://127.0.0.1:{port}"
 
-    # some time to start
-    time.sleep(2)
+        # some time to start
+        time.sleep(2)
 
-    # checks started successfully
-    assert proc.stdout
-    assert not proc.poll(), proc.stdout.read().decode("utf-8")
+        # checks started successfully
+        assert proc.stdout
+        assert not proc.poll(), proc.stdout.read().decode("utf-8")
 
-    yield url
+        yield url
 
-    proc.terminate()
-    print(
-        f"server @{url} stdout",
-        "-" * 10,
-        "\n",
-        proc.stdout.read().decode("utf-8"),
-        "-" * 30,
-    )
+        proc.terminate()
+        print(
+            f"server @{url} stdout",
+            "-" * 10,
+            "\n",
+            proc.stdout.read().decode("utf-8"),
+            "-" * 30,
+        )
 
 
 def test_cancel_on_disconnect(server_url: str):
