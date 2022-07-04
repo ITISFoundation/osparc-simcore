@@ -140,7 +140,7 @@ def cancel_on_disconnect(handler: _Handler):
 
     try:
         first_parameter = next(iter(inspect.signature(handler).parameters.values()))
-        if not first_parameter.annotation == Request:
+        if first_parameter.annotation != Request:
             raise TypeError(
                 f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {first_parameter.annotation}"
             )
