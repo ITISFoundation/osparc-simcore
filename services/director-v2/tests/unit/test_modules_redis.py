@@ -91,7 +91,7 @@ async def test_redis_lock_working_as_expected(
 
 
 async def test_redis_two_lock_instances(
-    redis_lock_manager: RedisLockManager, docker_node_id
+    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
 ) -> None:
     # NOTE: this test show cases how the locks work
     # you have to acquire the lock from the same istance
