@@ -132,7 +132,7 @@ def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None
         "10.10.10.10.no$ip:8080/dynamic-sidecar:the_tag",
     ],
 )
-def testing_environ_expected_failure(
+def environment_with_invalid_values(
     request: FixtureRequest,
     project_env_devel_environment,
     monkeypatch: MonkeyPatch,
@@ -142,10 +142,11 @@ def testing_environ_expected_failure(
 
 
 def test_expected_failure_dynamic_sidecar_settings(
-    testing_environ_expected_failure,
+    environment_with_invalid_values,
 ) -> None:
     with pytest.raises(ValidationError) as exc_info:
         DynamicSidecarSettings()
+    assert "DYNAMIC_SIDECAR_IMAGE" in f"{exc_info.value}"
 
 
 @pytest.mark.parametrize(
