@@ -34,7 +34,6 @@ from pydantic import AnyUrl, parse_obj_as
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -110,30 +109,11 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
 }
 
 
-@pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    database_from_template_before_each_function,
-) -> Iterator[None]:
-    yield
-
-
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_settings: RedisSettings):
-    client = aioredis.from_url(
-        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
-    )
-    await client.flushall()
-    await client.close(close_connection_pool=True)
-    yield
-    # do nothing on teadown
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict,
-    postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
 ):
