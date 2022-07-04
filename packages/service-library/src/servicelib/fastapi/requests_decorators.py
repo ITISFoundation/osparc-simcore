@@ -6,7 +6,7 @@ from contextlib import suppress
 from functools import wraps
 from typing import Any, Callable, Coroutine, Optional
 
-from fastapi import Request, Response
+from fastapi import Request, Response, status
 from fastapi.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -184,6 +184,6 @@ def cancel_on_disconnect(handler: _Handler):
             request.url,
         )
 
-        raise HTTPException(HTTP_499_CLIENT_CLOSED_REQUEST)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     return wrapper
