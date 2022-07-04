@@ -26,9 +26,7 @@ from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsException,
     S3InvalidPathError,
-    S3TransferError,
     StorageInvalidCall,
-    StorageServerIssue,
 )
 from simcore_sdk.node_ports_common.filemanager import (
     get_download_link_from_s3,
@@ -198,10 +196,7 @@ async def upload_file_to_storage(
         )
         return (link_and_path, e_tag)
     except (
-        S3InvalidPathError,
-        S3TransferError,
         NodeportsException,
-        StorageServerIssue,
         ClientError,
     ) as err:
         raise ExporterException(

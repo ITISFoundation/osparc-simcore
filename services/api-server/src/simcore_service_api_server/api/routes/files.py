@@ -13,12 +13,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
-from simcore_sdk.node_ports_common.exceptions import (
-    NodeportsException,
-    S3InvalidPathError,
-    S3TransferError,
-    StorageServerIssue,
-)
+from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
 from starlette.responses import RedirectResponse
 
@@ -109,10 +104,7 @@ async def upload_file(
         file_meta.checksum = entity_tag
         return file_meta
     except (
-        S3InvalidPathError,
-        S3TransferError,
         NodeportsException,
-        StorageServerIssue,
         ClientError,
     ) as err:
         raise HTTPException(
