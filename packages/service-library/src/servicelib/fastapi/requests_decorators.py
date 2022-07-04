@@ -28,7 +28,7 @@ def _validate_signature(handler: _Handler):
     """Raises ValueError if handler does not have expected signature"""
     # IMPROVEMENT: inject this parameter to handler_fun here before it returned in the wrapper and consumed by fastapi.router?
     if not any(
-        parameter.name == "request" and parameter.annotation == Request
+        parameter.name == "_request" and parameter.annotation == Request
         for parameter in inspect.signature(handler).parameters.values()
     ):
         raise ValueError(
