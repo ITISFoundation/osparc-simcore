@@ -38,6 +38,7 @@ def _get_environment_variables(
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
     return {
+        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.SC_BOOT_MODE}",
         "LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -190,7 +191,12 @@ def get_dynamic_sidecar_spec(
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-            }
+            },
+            # debugger port
+            {
+                "Protocol": "tcp",
+                "TargetPort": 3000,
+            },
         ]
 
     create_service_params = {

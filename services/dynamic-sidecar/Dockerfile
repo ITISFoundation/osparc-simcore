@@ -152,7 +152,8 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET=development
+ENV SC_BUILD_TARGET=development \
+  SC_BOOT_MODE=development
 
 WORKDIR /devel
 
