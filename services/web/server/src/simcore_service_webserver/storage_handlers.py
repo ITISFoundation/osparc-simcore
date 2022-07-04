@@ -3,23 +3,13 @@
     Mostly resolves and redirect to storage API
 """
 import logging
-import urllib
-import urllib.parse
 from typing import Any, Optional, Union
 
 from aiohttp import ClientResponse, web
 from models_library.api_schemas_storage import (
-    FileLocationArray,
-    FileMetaDataGet,
     FileUploadCompleteResponse,
-    FileUploadCompletionBody,
     FileUploadSchema,
-    PresignedLink,
-    UploadedPart,
 )
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
@@ -219,113 +209,3 @@ async def delete_file(request: web.Request) -> web.Response:
 async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     payload, status = await _request_storage(request, "POST")
     return create_data_response(payload, status=status)
-
-
-async def get_storage_locations_for_user(
-    app: web.Application, user_id: UserID
-) -> FileLocationArray:
-    session = get_client_session(app)
-
-    url: URL = _get_base_storage_url(app) / "locations"
-    params = dict(user_id=user_id)
-    async with session.get(url, ssl=False, params=params) as resp:
-        resp.raise_for_status()
-        envelope = Envelope[FileLocationArray].parse_obj(await resp.json())
-        assert envelope.data  # nosec
-        return envelope.data
-
-
-async def get_project_files_metadata(
-    app: web.Application, location_id: LocationID, uuid_filter: str, user_id: UserID
-) -> list[FileMetaDataGet]:
-    session = get_client_session(app)
-
-    url: URL = (
-        _get_base_storage_url(app)
-        / "locations"
-        / f"{location_id}"
-        / "files"
-        / "metadata"
-    )
-    params = dict(user_id=user_id, uuid_filter=uuid_filter)
-    async with session.get(url, ssl=False, params=params) as resp:
-        resp.raise_for_status()
-        envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
-        assert envelope.data  # nosec
-        return envelope.data
-
-
-async def get_file_download_url(
-    app: web.Application,
-    location_id: LocationID,
-    file_id: StorageFileID,
-    user_id: UserID,
-) -> AnyUrl:
-    session = get_client_session(app)
-
-    url: URL = (
-        _get_base_storage_url(app)
-        / "locations"
-        / f"{location_id}"
-        / "files"
-        / urllib.parse.quote(file_id, safe="")
-    )
-    params = dict(user_id=user_id)
-    async with session.get(url, ssl=False, params=params) as resp:
-        resp.raise_for_status()
-        envelope = Envelope[PresignedLink].parse_obj(await resp.json())
-        assert envelope.data  # nosec
-        return envelope.data.link
-
-
-async def get_file_upload_url(
-    app: web.Application,
-    location_id: LocationID,
-    file_id: StorageFileID,
-    user_id: UserID,
-) -> str:
-    session = get_client_session(app)
-
-    url: URL = (
-        _get_base_storage_url(app)
-        / "locations"
-        / f"{location_id}"
-        / "files"
-        / urllib.parse.quote(file_id, safe="")
-    )
-    params = dict(user_id=user_id, file_size=0)
-    async with session.put(url, ssl=False, params=params) as resp:
-        resp.raise_for_status()
-        envelope = Envelope[FileUploadSchema].parse_obj(await resp.json())
-        assert envelope.data  # nosec
-        assert len(envelope.data.urls) == 1  # nosec
-        return envelope.data.urls[0]
-
-
-async def complete_file_upload(
-    app: web.Application,
-    location_id: str,
-    file_id: str,
-    user_id: UserID,
-    parts: list[UploadedPart],
-) -> AnyUrl:
-    session = get_client_session(app)
-
-    url: URL = (
-        _get_base_storage_url(app)
-        / "locations"
-        / location_id
-        / "files"
-        / f"{urllib.parse.quote(file_id, safe='')}:complete"
-    )
-    params = dict(user_id=user_id)
-    async with session.post(
-        url,
-        ssl=False,
-        params=params,
-        json=FileUploadCompletionBody.construct(parts=parts),
-    ) as resp:
-        resp.raise_for_status()
-        envelope = Envelope[FileUploadCompleteResponse].parse_obj(await resp.json())
-        assert envelope.data  # nosec
-        return envelope.data.links.state

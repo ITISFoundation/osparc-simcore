@@ -50,7 +50,7 @@ async def _get_location_id_from_location_name(
     store: LocationName,
     session: ClientSession,
 ) -> LocationID:
-    resp = await storage_client.get_storage_locations(session, user_id)
+    resp = await storage_client.get_storage_locations(session=session, user_id=user_id)
     for location in resp:
         if location.name == store:
             return location.id
@@ -71,7 +71,11 @@ async def _get_download_link(
     :raises exceptions.StorageServerIssue
     """
     link: AnyUrl = await storage_client.get_download_file_link(
-        session, file_id, store_id, user_id, link_type
+        session=session,
+        file_id=file_id,
+        location_id=store_id,
+        user_id=user_id,
+        link_type=link_type,
     )
     if not link:
         raise exceptions.S3InvalidPathError(file_id)
@@ -91,7 +95,12 @@ async def _get_upload_links(
     :raises exceptions.S3InvalidPathError: _description_
     """
     links: FileUploadSchema = await storage_client.get_upload_file_links(
-        session, file_id, store_id, user_id, link_type, file_size
+        session=session,
+        file_id=file_id,
+        location_id=store_id,
+        user_id=user_id,
+        link_type=link_type,
+        file_size=file_size,
     )
     if not links:
         raise exceptions.S3InvalidPathError(file_id)
@@ -513,7 +522,10 @@ async def entry_exists(
             log.debug("Will request metadata for s3_object=%s", s3_object)
 
             file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
-                session, s3_object, store_id, user_id
+                session=session,
+                file_id=s3_object,
+                location_id=store_id,
+                user_id=user_id,
             )
             log.debug(
                 "Result for metadata s3_object=%s, result=%s",
@@ -537,7 +549,7 @@ async def get_file_metadata(
     async with ClientSessionContextManager(client_session) as session:
         log.debug("Will request metadata for s3_object=%s", s3_object)
         file_metadata = await storage_client.get_file_metadata(
-            session, s3_object, store_id, user_id
+            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
         )
 
     log.debug(
@@ -556,4 +568,6 @@ async def delete_file(
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:
         log.debug("Will delete file for s3_object=%s", s3_object)
-        await storage_client.delete_file(session, s3_object, store_id, user_id)
+        await storage_client.delete_file(
+            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
+        )
