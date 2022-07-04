@@ -36,9 +36,10 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from . import config, exceptions, storage_client
+from . import exceptions, storage_client
 from .constants import SIMCORE_LOCATION
 from .r_clone import RCloneFailedError, is_r_clone_available, sync_local_to_s3
+from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
 
@@ -247,7 +248,6 @@ async def _complete_upload(
     session: ClientSession,
     upload_links: FileUploadSchema,
     parts: list[UploadedPart],
-    completion_timeout_s: int = config.STORAGE_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S,
 ) -> ETag:
     """completes a potentially multipart upload in AWS
     NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
@@ -277,7 +277,9 @@ async def _complete_upload(
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_fixed(1),
-        stop=stop_after_delay(completion_timeout_s),
+        stop=stop_after_delay(
+            NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S
+        ),
         retry=retry_if_exception_type(ValueError),
         before_sleep=before_sleep_log(log, logging.DEBUG),
     ):

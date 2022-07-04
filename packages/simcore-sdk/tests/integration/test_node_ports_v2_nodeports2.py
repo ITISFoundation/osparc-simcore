@@ -252,7 +252,6 @@ async def test_port_value_accessors(
 )
 async def test_port_file_accessors(
     create_special_configuration: Callable,
-    filemanager_cfg: None,
     s3_simcore_location: LocationID,
     item_type: str,
     item_value: str,
@@ -468,7 +467,6 @@ async def test_get_file_from_previous_node(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    filemanager_cfg: None,
     create_node_link: Callable,
     create_store_link: Callable,
     item_type: str,
@@ -523,7 +521,6 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    filemanager_cfg: None,
     create_node_link: Callable,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,
@@ -584,7 +581,6 @@ async def test_file_mapping(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    filemanager_cfg: None,
     s3_simcore_location: LocationID,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,

@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import lru_cache, wraps
 from json import JSONDecodeError
 from typing import Callable
 from urllib.parse import quote
@@ -19,7 +19,8 @@ from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 
-from . import config, exceptions
+from . import exceptions
+from .settings import NodePortsSettings
 
 
 def handle_client_exception(handler: Callable):
@@ -49,8 +50,10 @@ def handle_client_exception(handler: Callable):
     return wrapped
 
 
+@lru_cache
 def _base_url() -> str:
-    return f"http://{config.STORAGE_ENDPOINT}/{config.STORAGE_VERSION}"
+    settings = NodePortsSettings.create_from_envs()
+    return settings.NODE_PORTS_STORAGE.api_base_url
 
 
 @handle_client_exception

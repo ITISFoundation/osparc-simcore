@@ -24,7 +24,6 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
@@ -83,14 +82,6 @@ def node_uuid() -> str:
 @pytest.fixture(scope="session")
 def s3_simcore_location() -> LocationID:
     return np_helpers.SIMCORE_STORE
-
-
-@pytest.fixture
-def filemanager_cfg(
-    storage_service: URL,
-    testing_environ_vars: dict,
-) -> None:
-    node_config.STORAGE_ENDPOINT = f"{storage_service.host}:{storage_service.port}"
 
 
 @pytest.fixture
@@ -379,3 +370,10 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
     yield
     with postgres_db.connect() as conn:
         conn.execute(file_meta_data.delete())
+
+
+@pytest.fixture
+def node_ports_config(
+    node_ports_config, simcore_services_ready, cleanup_file_meta_data: None, bucket: str
+):
+    ...

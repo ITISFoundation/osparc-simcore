@@ -11,6 +11,7 @@ import aiohttp
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
+from faker import Faker
 from models_library.api_schemas_storage import (
     FileLocationArray,
     FileMetaDataGet,
@@ -21,7 +22,6 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
-from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
@@ -35,11 +35,13 @@ from simcore_sdk.node_ports_common.storage_client import (
 
 
 @pytest.fixture()
-def mock_environment():
-    prev_defined_value = node_config.STORAGE_VERSION
-    node_config.STORAGE_ENDPOINT = "fake_storage:1535"
-    yield
-    node_config.STORAGE_VERSION = prev_defined_value
+def mock_environment(monkeypatch: pytest.MonkeyPatch, faker: Faker):
+    monkeypatch.setenv("STORAGE_HOST", "fake_storage")
+    monkeypatch.setenv("STORAGE_PORT", "1535")
+    monkeypatch.setenv("POSTGRES_HOST", faker.pystr())
+    monkeypatch.setenv("POSTGRES_USER", faker.user_name())
+    monkeypatch.setenv("POSTGRES_PASSWORD", faker.password())
+    monkeypatch.setenv("POSTGRES_DB", faker.pystr())
 
 
 @pytest.fixture()

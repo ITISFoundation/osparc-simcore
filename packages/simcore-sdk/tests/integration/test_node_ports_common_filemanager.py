@@ -29,14 +29,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-@pytest.fixture
-def node_ports_config(
-    filemanager_cfg: None,
-    cleanup_file_meta_data: None,
-):
-    ...
-
-
 @pytest.fixture(params=[True, False], ids=["with RClone", "without RClone"])
 def optional_r_clone(
     r_clone_settings: RCloneSettings, request: pytest.FixtureRequest
@@ -247,7 +239,7 @@ async def test_invalid_file_path(
 
 
 async def test_errors_upon_invalid_file_identifiers(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: UserID,
     project_id: str,
@@ -299,7 +291,7 @@ async def test_errors_upon_invalid_file_identifiers(
 
 
 async def test_invalid_store(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -331,7 +323,7 @@ async def test_invalid_store(
 
 
 async def test_valid_metadata(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -374,7 +366,7 @@ async def test_valid_metadata(
     [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
 )
 async def test_invalid_call_raises_exception(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -393,7 +385,7 @@ async def test_invalid_call_raises_exception(
         await fct(user_id=user_id, store_id=None, s3_object=file_id)  # type: ignore
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=user_id, store_id=s3_simcore_location, s3_object=None  # type: ignore
+            user_id=user_id, store_id=s3_simcore_location, s3_object="bing"  # type: ignore
         )
 
 
