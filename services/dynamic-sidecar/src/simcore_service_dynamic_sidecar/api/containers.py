@@ -16,6 +16,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
@@ -106,8 +107,9 @@ containers_router = APIRouter(tags=["containers"])
         }
     },
 )
+@cancel_on_disconnect
 async def runs_docker_compose_up(
-    _request: Request,
+    request: Request,
     background_tasks: BackgroundTasks,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -125,7 +127,7 @@ async def runs_docker_compose_up(
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
     # stores the compose spec after validation
-    body_as_text = (await _request.body()).decode("utf-8")
+    body_as_text = (await request.body()).decode("utf-8")
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
@@ -215,8 +217,9 @@ async def runs_docker_compose_down(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
+@cancel_on_disconnect
 async def containers_docker_inspect(
-    _request: Request,
+    request: Request,
     only_status: bool = Query(
         False, description="if True only show the status of the container"
     ),
@@ -261,8 +264,9 @@ async def containers_docker_inspect(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancel_on_disconnect
 async def get_container_logs(
-    _request: Request,
+    request: Request,
     id: str,
     since: int = Query(
         0,
@@ -306,8 +310,9 @@ async def get_container_logs(
         },
     },
 )
+@cancel_on_disconnect
 async def get_containers_name(
-    _request: Request,
+    request: Request,
     filters: str = Query(
         ...,
         description=(
@@ -365,8 +370,9 @@ async def get_containers_name(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancel_on_disconnect
 async def inspect_container(
-    _request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)

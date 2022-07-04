@@ -18,6 +18,7 @@ from fastapi import (
 )
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
@@ -245,8 +246,9 @@ async def push_output_ports(
         },
     },
 )
+@cancel_on_disconnect
 async def restarts_containers(
-    _request: Request,
+    request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -293,8 +295,9 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@cancel_on_disconnect
 async def attach_container_to_network(
-    _request: Request,
+    request: Request,
     id: str,
     item: AttachContainerToNetworkItem,
 ) -> None:
