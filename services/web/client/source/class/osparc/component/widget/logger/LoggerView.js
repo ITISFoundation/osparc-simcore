@@ -291,7 +291,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
     __downloadLogs: function() {
       const logs = this.__getLogsString();
-      osparc.utils.Utils.downloadContent("data:text/json;charset=utf-8," + logs, "logs.json");
+      osparc.utils.Utils.downloadContent("data:text/plain;charset=utf-8," + logs, "logs.txt");
     },
 
     debug: function(nodeId, msg = "") {
