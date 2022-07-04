@@ -49,7 +49,7 @@ def setup(app: FastAPI):
 class RedisLockManager:
     app: FastAPI
     _redis: Redis
-    lock_timeout: PositiveFloat = 10.0
+    lock_timeout_s: PositiveFloat = 10.0
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RedisLockManager":
@@ -92,12 +92,12 @@ class RedisLockManager:
 
     @cached_property
     def lock_extend_interval(self) -> float:
-        return self.lock_timeout / 2
+        return self.lock_timeout_s / 2
 
     async def _extend_task(self, lock: Lock) -> None:
         while True:
             await asyncio.sleep(self.lock_extend_interval)
-            await lock.extend(self.lock_timeout, replace_ttl=True)
+            await lock.extend(self.lock_timeout_s, replace_ttl=True)
 
     async def acquire_lock(self, docker_node_id: DockerNodeId) -> Optional[Lock]:
         """
@@ -111,7 +111,7 @@ class RedisLockManager:
         for slot in range(slots):
             node_lock_name = self._get_lock_name(docker_node_id, slot)
 
-            lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout)
+            lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout_s)
             lock_acquired = await lock.acquire(blocking=False)
 
             if lock_acquired:

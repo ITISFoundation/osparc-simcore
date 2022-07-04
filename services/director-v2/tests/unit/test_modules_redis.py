@@ -212,8 +212,8 @@ async def test_acquire_all_available_node_locks_stress_test(
     # NOTE: this test is designed to spot if there are any issues when
     # acquiring and releasing locks in parallel with high concurrency
 
-    # adds more stress with lower lock_timeout
-    redis_lock_manager.lock_timeout = 1.0
+    # adds more stress with lower lock_timeout_s
+    redis_lock_manager.lock_timeout_s = 1.0
 
     mock_default_locks_per_node(locks_per_node)
 
@@ -238,8 +238,8 @@ async def test_acquire_all_available_node_locks_stress_test(
 
         # trying to sleep enough to trigger the next steps while
         # the locks are being refreshed. They are usually refreshed
-        # at `redis_lock_manager.lock_timeout * 0.5` interval
-        await asyncio.sleep(redis_lock_manager.lock_timeout * 0.48)
+        # at `redis_lock_manager.lock_timeout_s * 0.5` interval
+        await asyncio.sleep(redis_lock_manager.lock_timeout_s * 0.48)
 
         # no more slots are available to acquire any other locks
         with pytest.raises(AssertionError):
@@ -256,7 +256,7 @@ async def test_lock_extension_expiration(
 ) -> None:
     SHORT_INTERVAL = 0.10
 
-    redis_lock_manager.lock_timeout = SHORT_INTERVAL
+    redis_lock_manager.lock_timeout_s = SHORT_INTERVAL
     mock_default_locks_per_node(1)
 
     lock = await redis_lock_manager.acquire_lock(docker_node_id)
@@ -275,5 +275,5 @@ async def test_lock_extension_expiration(
         await task
 
     # lock is expected to be unlocked after timeout interval
-    await asyncio.sleep(redis_lock_manager.lock_timeout)
+    await asyncio.sleep(redis_lock_manager.lock_timeout_s)
     assert await lock.locked() is False
