@@ -45,7 +45,9 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
 ]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture
@@ -123,7 +125,7 @@ async def director_v2_client(
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
@@ -249,12 +251,13 @@ async def test_start_status_stop(
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
     # starting the service
-    headers = {
-        "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
-        "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
-    }
     response: Response = await director_v2_client.post(
-        "/v2/dynamic_services", json=start_request_data, headers=headers
+        "/v2/dynamic_services",
+        json=start_request_data,
+        headers={
+            "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
+            "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
+        },
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)
