@@ -9,9 +9,15 @@ from typing import Deque, Optional
 from uuid import UUID
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.api_schemas_storage import ETag, FileMetaDataGet, LinkType
+from models_library.api_schemas_storage import ETag, LinkType
 from models_library.projects import AccessRights, Project
-from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
+from models_library.projects_nodes_io import (
+    BaseFileLink,
+    LocationID,
+    NodeID,
+    NodeIDStr,
+    StorageFileID,
+)
 from models_library.users import UserID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from pydantic import AnyUrl, parse_obj_as
@@ -60,6 +66,7 @@ async def download_all_files_from_storage(
             link_and_path.download_link,
             link_and_path.storage_path_to_file,
         )
+        assert link_and_path.download_link  # nosec
         await parallel_downloader.append_file(
             link=link_and_path.download_link,
             download_path=link_and_path.storage_path_to_file,
@@ -108,7 +115,6 @@ async def extract_download_links(
     log.debug("files metadata %s: ", all_file_metadata)
 
     for file_metadata in chain.from_iterable(all_file_metadata):
-        file_metadata: FileMetaDataGet
         try:
             download_link = await get_download_link_from_s3(
                 user_id=user_id,
@@ -199,8 +205,8 @@ async def upload_file_to_storage(
         ClientError,
     ) as err:
         raise ExporterException(
-            f"While requesting upload for {link_and_path.relative_path_to_file}"
-            f"the following error occurred {err}"
+            f"While requesting upload for '{link_and_path.relative_path_to_file}' "
+            f"the following error occurred: {err}"
         ) from err
 
 
@@ -226,10 +232,10 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
 
 
 async def _fix_node_run_hashes_based_on_old_project(
-    project: Project, original_project: Project, node_mapping: dict[NodeID, NodeID]
+    project: Project, original_project: Project, node_mapping: ShuffledData
 ) -> None:
     for old_node_id, old_node in original_project.workbench.items():
-        new_node_id = node_mapping.get(NodeID(old_node_id))
+        new_node_id = node_mapping.get(old_node_id)
         if new_node_id is None:
             # this should not happen
             log.warning("could not find new node id %s", new_node_id)
@@ -256,7 +262,7 @@ async def _fix_node_run_hashes_based_on_old_project(
             None
             if node_needs_update
             else await compute_node_hash(
-                new_node_id, project_node_io_payload_cb(project)
+                NodeID(new_node_id), project_node_io_payload_cb(project)
             )
         )
 
@@ -292,8 +298,7 @@ async def _fix_file_e_tags(
 
 async def _remove_runtime_states(project: Project):
     for node_data in project.workbench.values():
-        node_data.state.modified = None
-        node_data.state.dependencies = None
+        node_data.state = None
 
 
 async def _upload_files_to_storage(
@@ -303,7 +308,7 @@ async def _upload_files_to_storage(
     shuffled_data: ShuffledData,
 ) -> list[tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
-    client_timeout = ClientTimeout(
+    client_timeout = ClientTimeout(  # type: ignore
         total=UPLOAD_HTTP_TIMEOUT, connect=None, sock_connect=5
     )
     async with ClientSession(timeout=client_timeout) as session:
@@ -312,9 +317,11 @@ async def _upload_files_to_storage(
             attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
                 root_dir=root_folder,
-                storage_type=attachment_parts[0],
-                relative_path_to_file="/".join(attachment_parts[1:]),
-                download_link="",
+                storage_type=parse_obj_as(LocationID, attachment_parts[0]),
+                relative_path_to_file=parse_obj_as(
+                    StorageFileID, "/".join(attachment_parts[1:])
+                ),
+                download_link=None,
             )
             # check file exists
             if not await link_and_path.is_file():
