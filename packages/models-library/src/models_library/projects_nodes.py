@@ -71,7 +71,7 @@ class NodeState(BaseModel):
         description="contains the node inputs dependencies if they need to be computed first",
     )
     current_status: RunningState = Field(
-        RunningState.NOT_STARTED,
+        default=RunningState.NOT_STARTED,
         description="the node's current state",
         alias="currentStatus",
     )
@@ -175,7 +175,9 @@ class Node(BaseModel):
         description="Use projects_ui.WorkbenchUI.position instead",
     )
 
-    state: Optional[NodeState] = Field(None, description="The node's state object")
+    state: Optional[NodeState] = Field(
+        default_factory=NodeState, description="The node's state object"
+    )
 
     boot_options: Optional[dict[EnvVarKey, str]] = Field(
         None,
