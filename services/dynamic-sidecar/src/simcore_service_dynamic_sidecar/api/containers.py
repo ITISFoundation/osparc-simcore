@@ -219,7 +219,7 @@ async def runs_docker_compose_down(
 )
 @cancel_on_disconnect
 async def containers_docker_inspect(
-    _request: Request,
+    request: Request,
     only_status: bool = Query(
         False, description="if True only show the status of the container"
     ),
@@ -229,6 +229,7 @@ async def containers_docker_inspect(
     Returns entire docker inspect data, if only_state is True,
     the status of the containers is returned
     """
+    assert request  # nosec
 
     def _format_result(container_inspect: dict[str, Any]) -> dict[str, Any]:
         if only_status:
@@ -266,7 +267,7 @@ async def containers_docker_inspect(
 )
 @cancel_on_disconnect
 async def get_container_logs(
-    _request: Request,
+    request: Request,
     id: str,
     since: int = Query(
         0,
@@ -286,6 +287,8 @@ async def get_container_logs(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> list[str]:
     """Returns the logs of a given container if found"""
+    assert request  # nosec
+
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     async with docker_client() as docker:
@@ -312,7 +315,7 @@ async def get_container_logs(
 )
 @cancel_on_disconnect
 async def get_containers_name(
-    _request: Request,
+    request: Request,
     filters: str = Query(
         ...,
         description=(
@@ -328,6 +331,8 @@ async def get_containers_name(
     Supported filters:
         network: name of the network
     """
+    assert request  # nosec
+
     filters_dict: dict[str, str] = json.loads(filters)
     if not isinstance(filters_dict, dict):
         raise HTTPException(
@@ -372,10 +377,11 @@ async def get_containers_name(
 )
 @cancel_on_disconnect
 async def inspect_container(
-    _request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
+    assert request  # nosec
 
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)

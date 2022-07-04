@@ -248,7 +248,7 @@ async def push_output_ports(
 )
 @cancel_on_disconnect
 async def restarts_containers(
-    _request: Request,
+    request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -260,6 +260,7 @@ async def restarts_containers(
     """Removes the previously started service
     and returns the docker-compose output
     """
+    assert request  # nosec
 
     if shared_store.compose_spec is None:
         raise HTTPException(
@@ -297,10 +298,12 @@ async def restarts_containers(
 )
 @cancel_on_disconnect
 async def attach_container_to_network(
-    _request: Request,
+    request: Request,
     id: str,
     item: AttachContainerToNetworkItem,
 ) -> None:
+    assert request  # nosec
+
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
