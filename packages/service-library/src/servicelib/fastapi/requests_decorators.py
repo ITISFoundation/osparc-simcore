@@ -7,11 +7,12 @@ from functools import wraps
 from typing import Any, Callable, Coroutine, Optional
 
 from fastapi import Request, Response
+from fastapi.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
 
 
-_DEFAULT_CHECK_INTERVAL_S: float = 0.5
+_DEFAULT_CHECK_INTERVAL_S: float = 0.01
 
 HTTP_499_CLIENT_CLOSED_REQUEST = 499
 # A non-standard status code introduced by nginx for the case when a client
@@ -20,7 +21,19 @@ HTTP_499_CLIENT_CLOSED_REQUEST = 499
 
 TASK_NAME_PREFIX = "cancellable_request"
 
-_FastAPIHandlerCallable = Callable[..., Coroutine[Any, Any, Optional[Any]]]
+_Handler = Callable[[Request, Any], Coroutine[Any, Any, Optional[Any]]]
+
+
+def _validate_signature(handler: _Handler):
+    """Raises ValueError if handler does not have expected signature"""
+    # IMPROVEMENT: inject this parameter to handler_fun here before it returned in the wrapper and consumed by fastapi.router?
+    if not any(
+        parameter.name == "request" and parameter.annotation == Request
+        for parameter in inspect.signature(handler).parameters.values()
+    ):
+        raise ValueError(
+            f"Invalid handler {handler.__name__} signature: missing required parameter _request: Request"
+        )
 
 
 async def _cancel_task_if_client_disconnected(
@@ -47,7 +60,7 @@ async def _cancel_task_if_client_disconnected(
         logger.debug("task monitoring %s handler completed", f"{request.url}")
 
 
-def cancellable_request(handler_fun: _FastAPIHandlerCallable):
+def cancellable_request(handler: _Handler):
     """This decorator periodically checks if the client disconnected and
     then will cancel the request and return a HTTP_499_CLIENT_CLOSED_REQUEST code (a la nginx).
 
@@ -59,32 +72,23 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
             ...
         )
     """
-    # CHECK: Early check that will raise upon import
-    # IMPROVEMENT: inject this parameter to handler_fun here before it returned in the wrapper and consumed by fastapi.router?
-    found_required_arg = any(
-        parameter.name == "_request" and parameter.annotation == Request
-        for parameter in inspect.signature(handler_fun).parameters.values()
-    )
-    if not found_required_arg:
-        raise ValueError(
-            f"Invalid handler {handler_fun.__name__} signature: missing required parameter _request: Request"
-        )
+
+    _validate_signature(handler)
 
     # WRAPPER ----
-    @wraps(handler_fun)
-    async def wrapper(*args, **kwargs) -> Optional[Any]:
-        request: Request = kwargs["_request"]
+    @wraps(handler)
+    async def wrapper(request: Request, *args, **kwargs) -> Optional[Any]:
 
         # Intercepts handler call and creates a task out of it
         handler_task = asyncio.create_task(
-            handler_fun(*args, **kwargs),
-            name=f"{TASK_NAME_PREFIX}/handler/{handler_fun.__name__}",
+            handler(request, *args, **kwargs),
+            name=f"{TASK_NAME_PREFIX}/handler/{handler.__name__}",
         )
         # An extra task to monitor when the client disconnects so it can
         # cancel 'handler_task'
         auto_cancel_task = asyncio.create_task(
             _cancel_task_if_client_disconnected(request, handler_task),
-            name=f"{TASK_NAME_PREFIX}/auto_cancel/{handler_fun.__name__}",
+            name=f"{TASK_NAME_PREFIX}/auto_cancel/{handler.__name__}",
         )
 
         try:
@@ -106,5 +110,80 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
             auto_cancel_task.cancel()
             with suppress(CancelledError):
                 await auto_cancel_task
+
+    return wrapper
+
+
+#
+# Based on https://github.com/RedRoserade/fastapi-disconnect-example/blob/main/app.py
+#
+
+
+async def disconnect_poller(request: Request, result: Any):
+    """
+    Poll for a disconnect.
+    If the request disconnects, stop polling and return.
+    """
+    while not await request.is_disconnected():
+        await asyncio.sleep(_DEFAULT_CHECK_INTERVAL_S)
+
+    logger.debug(
+        "client %s disconnected! Cancelling handler for request %s %s",
+        request.client,
+        request.method,
+        request.url,
+    )
+    return result
+
+
+def cancel_on_disconnect(handler: _Handler):
+
+    _validate_signature(handler)
+
+    @wraps(handler)
+    async def wrapper(request: Request, *args, **kwargs):
+        sentinel = object()
+
+        # Create two tasks:
+        # one to poll the request and check if the client disconnected
+        poller_task = asyncio.create_task(
+            disconnect_poller(request, sentinel),
+            name=f"{TASK_NAME_PREFIX}/poller/{handler.__name__}",
+        )
+        # , and another which is the request handler
+        handler_task = asyncio.create_task(
+            handler(request, *args, **kwargs),
+            name=f"{TASK_NAME_PREFIX}/handler/{handler.__name__}",
+        )
+
+        done, pending = await asyncio.wait(
+            [poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED
+        )
+
+        # One has completed, cancel the other
+        for t in pending:
+            t.cancel()
+            try:
+                await t
+            except asyncio.CancelledError:
+                logger.debug("%s was cancelled", t)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.debug("%s raised %s when being cancelled", t, exc)
+
+        # Return the result if the handler finished first
+        if handler_task in done:
+            return await handler_task
+
+        # Otherwise, raise an exception
+        # This is not exactly needed, but it will prevent
+        # validation errors if your request handler is supposed
+        # to return something.
+        logger.debug(
+            "Request %s %s cancelled.",
+            request.method,
+            request.url,
+        )
+
+        raise HTTPException(HTTP_499_CLIENT_CLOSED_REQUEST)
 
     return wrapper
