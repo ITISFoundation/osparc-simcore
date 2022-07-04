@@ -1,11 +1,12 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import asyncio
 from argparse import Namespace
 from asyncio import CancelledError, Task
 from contextlib import suppress
-from typing import AsyncIterable, Optional
+from typing import AsyncIterable, Callable, Optional
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -15,6 +16,7 @@ from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
 from redis.exceptions import LockError
 from settings_library.redis import RedisSettings
+from pytest_mock import MockerFixture
 from simcore_service_director_v2.modules import redis
 from simcore_service_director_v2.modules.redis import (
     EXTEND_TASK_ATTR_NAME,
@@ -27,18 +29,18 @@ pytest_simcore_core_services_selection = [
     "redis",
 ]
 
-# UTILS
-
-
-class MockLocksPerNodeProvider:
-    def __init__(self, lock_per_node: int) -> None:
-        self.lock_per_node = lock_per_node
-
-    async def get(self, *args, **kwargs):
-        return self.lock_per_node
-
 
 # FIXTURES
+
+
+@pytest.fixture
+def mock_default_locks_per_node(mocker: MockerFixture) -> Callable[[int], None]:
+    def mock_default(slots: int) -> None:
+        mocker.patch(
+            "simcore_service_director_v2.modules.redis.DEFAULT_LOCKS_PER_NODE", slots
+        )
+
+    return mock_default
 
 
 @pytest.fixture
@@ -59,9 +61,9 @@ async def minimal_app(redis_settings: RedisSettings) -> AsyncIterable[FastAPI]:
 @pytest.fixture
 async def redis_lock_manager(minimal_app: FastAPI) -> AsyncIterable[RedisLockManager]:
     redis_lock_manger = RedisLockManager.instance(minimal_app)
-    await redis_lock_manger.redis.flushall()
+    await redis_lock_manger._redis.flushall()
     yield redis_lock_manger
-    await redis_lock_manger.redis.flushall()
+    await redis_lock_manger._redis.flushall()
 
 
 @pytest.fixture
@@ -75,7 +77,7 @@ def docker_node_id(faker: Faker) -> str:
 async def test_lock_working_as_expected(
     redis_lock_manager: RedisLockManager, docker_node_id
 ) -> None:
-    lock = redis_lock_manager.redis.lock(docker_node_id)
+    lock = redis_lock_manager._redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
@@ -95,14 +97,14 @@ async def test_two_lock_instances(
     # you have to acquire the lock from the same istance
     # in order to avoid tricky situations
 
-    lock = redis_lock_manager.redis.lock(docker_node_id)
+    lock = redis_lock_manager._redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
     assert await lock.locked() is True
 
     # we get a different instance
-    second_lock = redis_lock_manager.redis.lock(docker_node_id)
+    second_lock = redis_lock_manager._redis.lock(docker_node_id)
     assert await second_lock.locked() is True
 
     # cannot release lock form different instance!
@@ -204,6 +206,7 @@ async def test_acquire_all_available_node_locks_stress_test(
     redis_lock_manager: RedisLockManager,
     docker_node_id: DockerNodeId,
     repeat: int,
+    mock_default_locks_per_node: Callable[[int], None],
     locks_per_node: int,
 ) -> None:
     # NOTE: this test is designed to spot if there are any issues when
@@ -212,11 +215,8 @@ async def test_acquire_all_available_node_locks_stress_test(
     # adds more stress with lower lock_timeout
     redis_lock_manager.lock_timeout = 1.0
 
-    redis_lock_manager.lock_per_node_provider = MockLocksPerNodeProvider(  # type:ignore
-        locks_per_node
-    )
+    mock_default_locks_per_node(locks_per_node)
 
-    # pylint: disable=protected-access
     total_node_slots = await redis_lock_manager.get_node_slots(docker_node_id)
     assert total_node_slots == locks_per_node
 
@@ -250,14 +250,14 @@ async def test_acquire_all_available_node_locks_stress_test(
 
 
 async def test_lock_extension_expiration(
-    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
+    redis_lock_manager: RedisLockManager,
+    docker_node_id: DockerNodeId,
+    mock_default_locks_per_node: Callable[[int], None],
 ) -> None:
     SHORT_INTERVAL = 0.10
 
     redis_lock_manager.lock_timeout = SHORT_INTERVAL
-    redis_lock_manager.lock_per_node_provider = MockLocksPerNodeProvider(  # type:ignore
-        1
-    )
+    mock_default_locks_per_node(1)
 
     lock = await redis_lock_manager.acquire_lock(docker_node_id)
     assert lock is not None

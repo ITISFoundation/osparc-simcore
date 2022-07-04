@@ -46,29 +46,16 @@ def setup(app: FastAPI):
 
 
 @dataclass
-class LocksPerNodeProvider:
-    # NOTE: added here for future use, in this iteration just
-    # returns a constant
-
-    async def get(  # pylint: disable=unused-argument,no-self-use
-        self, docker_node_id: DockerNodeId
-    ) -> int:
-        return DEFAULT_LOCKS_PER_NODE
-
-
-@dataclass
 class RedisLockManager:
     app: FastAPI
-    redis: Redis
-    lock_per_node_provider: LocksPerNodeProvider
+    _redis: Redis
     lock_timeout: float = 10.0
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RedisLockManager":
         settings: RedisSettings = app.state.settings.REDIS
         redis = Redis.from_url(settings.dsn_locks)
-        lock_per_node_provider = LocksPerNodeProvider()
-        return cls(app=app, redis=redis, lock_per_node_provider=lock_per_node_provider)
+        return cls(app=app, _redis=redis)
 
     @classmethod
     def instance(cls, app: FastAPI) -> "RedisLockManager":
@@ -90,13 +77,17 @@ class RedisLockManager:
 
     async def get_node_slots(self, docker_node_id: DockerNodeId) -> int:
         """get the total amount of slots available for the node"""
+        # NOTE: this function might change in the future and the
+        # current slots per node might be provided looking at the
+        # aiowait metric on the node over a period of time
+
         node_slots_key = self._get_node_slots_key(docker_node_id)
-        slots: Optional[bytes] = await self.redis.get(node_slots_key)
+        slots: Optional[bytes] = await self._redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
 
-        default_slots = await self.lock_per_node_provider.get(docker_node_id)
-        await self.redis.set(node_slots_key, default_slots)
+        default_slots = DEFAULT_LOCKS_PER_NODE
+        await self._redis.set(node_slots_key, DEFAULT_LOCKS_PER_NODE)
         return default_slots
 
     @cached_property
@@ -120,7 +111,7 @@ class RedisLockManager:
         for slot in range(slots):
             node_lock_name = self._get_node_lock_name(docker_node_id, slot)
 
-            lock = self.redis.lock(name=node_lock_name, timeout=self.lock_timeout)
+            lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout)
             lock_acquired = await lock.acquire(blocking=False)
 
             if lock_acquired:
@@ -164,7 +155,7 @@ class RedisLockManager:
         await lock.release()
 
     async def close(self) -> None:
-        await self.redis.close(close_connection_pool=True)
+        await self._redis.close(close_connection_pool=True)
 
 
 @asynccontextmanager
