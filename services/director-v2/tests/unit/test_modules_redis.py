@@ -74,7 +74,7 @@ def docker_node_id(faker: Faker) -> str:
 # TESTS
 
 
-async def test_lock_working_as_expected(
+async def test_redis_lock_working_as_expected(
     redis_lock_manager: RedisLockManager, docker_node_id
 ) -> None:
     lock = redis_lock_manager._redis.lock(docker_node_id)
@@ -90,7 +90,7 @@ async def test_lock_working_as_expected(
         await lock.release()
 
 
-async def test_two_lock_instances(
+async def test_redis_two_lock_instances(
     redis_lock_manager: RedisLockManager, docker_node_id
 ) -> None:
     # NOTE: this test show cases how the locks work
