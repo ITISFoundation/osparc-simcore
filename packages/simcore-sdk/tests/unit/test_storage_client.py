@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 
 import re
-from os import link
 from typing import AsyncIterator
 from uuid import uuid4
 
