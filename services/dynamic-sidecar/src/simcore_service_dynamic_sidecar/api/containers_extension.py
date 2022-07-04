@@ -248,7 +248,7 @@ async def push_output_ports(
 )
 @cancel_on_disconnect
 async def restarts_containers(
-    request: Request,
+    _request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -297,7 +297,7 @@ async def restarts_containers(
 )
 @cancel_on_disconnect
 async def attach_container_to_network(
-    request: Request,
+    _request: Request,
     id: str,
     item: AttachContainerToNetworkItem,
 ) -> None:

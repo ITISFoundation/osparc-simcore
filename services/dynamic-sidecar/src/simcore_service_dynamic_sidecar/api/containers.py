@@ -219,7 +219,7 @@ async def runs_docker_compose_down(
 )
 @cancel_on_disconnect
 async def containers_docker_inspect(
-    request: Request,
+    _request: Request,
     only_status: bool = Query(
         False, description="if True only show the status of the container"
     ),
@@ -266,7 +266,7 @@ async def containers_docker_inspect(
 )
 @cancel_on_disconnect
 async def get_container_logs(
-    request: Request,
+    _request: Request,
     id: str,
     since: int = Query(
         0,
@@ -312,7 +312,7 @@ async def get_container_logs(
 )
 @cancel_on_disconnect
 async def get_containers_name(
-    request: Request,
+    _request: Request,
     filters: str = Query(
         ...,
         description=(
@@ -372,7 +372,7 @@ async def get_containers_name(
 )
 @cancel_on_disconnect
 async def inspect_container(
-    request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    _request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
