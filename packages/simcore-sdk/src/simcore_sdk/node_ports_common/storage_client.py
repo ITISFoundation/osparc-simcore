@@ -33,6 +33,10 @@ def handle_client_exception(handler: Callable):
                 raise exceptions.S3InvalidPathError(
                     kwargs.get("file_id", "unknown file id")
                 )
+            if err.status == web.HTTPUnprocessableEntity.status_code:
+                raise exceptions.StorageInvalidCall(
+                    f"Invalid call to storage: {err.message}"
+                )
             if 500 > err.status > 399:
                 raise exceptions.StorageInvalidCall(err.message) from err
             if err.status > 500:
