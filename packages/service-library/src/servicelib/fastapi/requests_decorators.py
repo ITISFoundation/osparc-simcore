@@ -90,6 +90,8 @@ def cancellable_request(handler_fun: _FastAPIHandlerCallable):
         try:
             return await handler_task
         except CancelledError:
+            # TODO: check that 'auto_cancel_task' actually executed this cancellation
+            # E.g. app shutdown might cancel all pending tasks
             logger.warning(
                 "Request %s was cancelled since client %s disconnected !",
                 f"{request.url}",
