@@ -3,7 +3,7 @@
 """
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -43,7 +43,7 @@ InputTypes = Union[
     PortLink,
     Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
-    Union[List[Any], Dict[str, Any]],  # arrays | object
+    Union[list[Any], dict[str, Any]],  # arrays | object
 ]
 OutputTypes = Union[
     StrictBool,
@@ -53,20 +53,20 @@ OutputTypes = Union[
     str,
     Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
-    Union[List[Any], Dict[str, Any]],  # arrays | object
+    Union[list[Any], dict[str, Any]],  # arrays | object
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
-InputsDict = Dict[InputID, InputTypes]
-OutputsDict = Dict[OutputID, OutputTypes]
+InputsDict = dict[InputID, InputTypes]
+OutputsDict = dict[OutputID, OutputTypes]
 UnitStr = constr(strip_whitespace=True)
 
 
 class NodeState(BaseModel):
     modified: bool = Field(
-        True, description="true if the node's outputs need to be re-computed"
+        default=True, description="true if the node's outputs need to be re-computed"
     )
-    dependencies: Set[NodeID] = Field(
+    dependencies: set[NodeID] = Field(
         default_factory=set,
         description="contains the node inputs dependencies if they need to be computed first",
     )
@@ -139,15 +139,15 @@ class Node(BaseModel):
     inputs: Optional[InputsDict] = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputs_units: Optional[Dict[InputID, UnitStr]] = Field(
+    inputs_units: Optional[dict[InputID, UnitStr]] = Field(
         None,
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
-    input_access: Optional[Dict[InputID, AccessEnum]] = Field(
+    input_access: Optional[dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs", alias="inputAccess"
     )
-    input_nodes: Optional[List[NodeID]] = Field(
+    input_nodes: Optional[list[NodeID]] = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
         alias="inputNodes",
@@ -158,7 +158,7 @@ class Node(BaseModel):
         default_factory=dict, description="values of output properties"
     )
     output_node: Optional[bool] = Field(None, deprecated=True, alias="outputNode")
-    output_nodes: Optional[List[NodeID]] = Field(
+    output_nodes: Optional[list[NodeID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         alias="outputNodes",
@@ -175,11 +175,9 @@ class Node(BaseModel):
         description="Use projects_ui.WorkbenchUI.position instead",
     )
 
-    state: Optional[NodeState] = Field(
-        default_factory=NodeState, description="The node's state object"
-    )
+    state: Optional[NodeState] = Field(None, description="The node's state object")
 
-    boot_options: Optional[Dict[EnvVarKey, str]] = Field(
+    boot_options: Optional[dict[EnvVarKey, str]] = Field(
         None,
         alias="bootOptions",
         description=(
@@ -197,7 +195,7 @@ class Node(BaseModel):
         return v
 
     @classmethod
-    def convert_old_enum_name(cls, v):
+    def convert_old_enum_name(cls, v) -> RunningState:
         if v == "FAILURE":
             return RunningState.FAILED
         return v

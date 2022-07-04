@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
-import aiofiles
+import aiofiles.os
 from models_library.projects import Project
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.projects_state import ProjectStatus
@@ -31,7 +31,7 @@ class LinkAndPath2(BaseModel):
         description="full path to where the file is going to be stored",
     )
 
-    download_link: AnyUrl = Field(
+    download_link: Optional[AnyUrl] = Field(
         ..., description="Link from where to download the file"
     )
 

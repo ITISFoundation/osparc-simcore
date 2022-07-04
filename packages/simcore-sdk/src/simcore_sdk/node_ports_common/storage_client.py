@@ -116,7 +116,7 @@ async def get_upload_file_links(
     query_params = {
         "user_id": f"{user_id}",
         "link_type": link_type.value,
-        "file_size": file_size,
+        "file_size": int(file_size),
     }
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",

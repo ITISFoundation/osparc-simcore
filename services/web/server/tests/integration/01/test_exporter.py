@@ -459,7 +459,7 @@ async def import_study_from_file(client, file_path: Path) -> str:
     assert url_import == URL(API_PREFIX + "/projects:import")
 
     data = {"fileName": open(file_path, mode="rb")}
-    async with await client.post(url_import, data=data, timeout=10) as import_response:
+    async with client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
         assert reply_data.get("data") is not None
