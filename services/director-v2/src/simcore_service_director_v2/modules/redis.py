@@ -7,7 +7,7 @@ from functools import cached_property
 from typing import AsyncIterator, Final, Optional
 
 from fastapi import FastAPI
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, PositiveFloat
 from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
 from settings_library.redis import RedisSettings
@@ -49,7 +49,7 @@ def setup(app: FastAPI):
 class RedisLockManager:
     app: FastAPI
     _redis: Redis
-    lock_timeout: float = 10.0
+    lock_timeout: PositiveFloat = 10.0
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RedisLockManager":
