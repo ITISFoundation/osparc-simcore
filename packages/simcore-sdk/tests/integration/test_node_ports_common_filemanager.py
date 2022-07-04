@@ -249,7 +249,7 @@ async def test_invalid_file_path(
 async def test_errors_upon_invalid_file_identifiers(
     filemanager_cfg: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     s3_simcore_location: LocationID,
 ):
@@ -258,7 +258,7 @@ async def test_errors_upon_invalid_file_identifiers(
     assert file_path.exists()
 
     store = s3_simcore_location
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.upload_file(
             user_id=user_id,
             store_id=store,
