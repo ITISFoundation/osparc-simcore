@@ -478,6 +478,10 @@ class SimcoreS3DataManager(BaseDataManager):
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
     ) -> list[FileMetaData]:
+        # NOTE: this entrypoint is solely used by api-server. It is the exact
+        # same as list_files but does not rename the found files with project
+        # name/node name which filters out this files
+        # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
             can_read_projects_ids = await get_readable_project_ids(conn, user_id)
             file_metadatas: list[
