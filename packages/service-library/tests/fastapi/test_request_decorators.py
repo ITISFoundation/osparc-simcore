@@ -30,7 +30,7 @@ def app() -> FastAPI:
 
     @api_router.get("/sleep/{delay}")
     @cancellable_request
-    async def _cancellable_with_await(_request: Request, delay: NonNegativeInt):
+    async def _cancellable_with_await(request: Request, delay: NonNegativeInt):
         await asyncio.sleep(delay)
 
     # TODO: handler spawns subprocesses
@@ -86,10 +86,10 @@ def test_raises_if_wrong_signature_upon_import(app: FastAPI):
     async def _correct_signature(_request: Request, x: int):
         ...
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
 
         @app.get("/wrong")
-        @cancellable_request
+        @cancellable_request  # <-- notice how the static-check already detects wrong signature
         async def _wrong_signature():
             ...
 

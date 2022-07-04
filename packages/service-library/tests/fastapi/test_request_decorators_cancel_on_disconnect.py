@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Callable, Iterator, cast
+from typing import Callable, Iterator, NamedTuple, cast
 
 import pytest
 import requests
@@ -39,6 +39,8 @@ async def example(
 
 
 # FIXTURES ---------------------
+
+
 @pytest.fixture
 def get_unused_port() -> Callable[[], int]:
     def go() -> int:
@@ -50,8 +52,13 @@ def get_unused_port() -> Callable[[], int]:
     return go
 
 
+class ServerInfo(NamedTuple):
+    url: str
+    proc: subprocess.Popen
+
+
 @pytest.fixture
-def server_url(get_unused_port: Callable[[], int]) -> Iterator[str]:
+def server(get_unused_port: Callable[[], int]) -> Iterator[ServerInfo]:
     port = get_unused_port()
     with subprocess.Popen(
         [
@@ -74,27 +81,40 @@ def server_url(get_unused_port: Callable[[], int]) -> Iterator[str]:
         assert proc.stdout
         assert not proc.poll(), proc.stdout.read().decode("utf-8")
 
-        yield url
+        yield ServerInfo(url, proc)
 
         proc.terminate()
+        server_log = proc.stdout.read().decode("utf-8")
         print(
             f"server @{url} stdout",
             "-" * 10,
             "\n",
-            proc.stdout.read().decode("utf-8"),
+            server_log,
             "-" * 30,
         )
 
+        assert "Exiting on cancellation" in server_log
+        # server @http://127.0.0.1:44077 stdout ----------
+        # Sleeping for 0.00
+        # Sleep not cancelled
+        # INFO:     127.0.0.1:35114 - "GET /example?wait=0 HTTP/1.1" 200 OK
+        # Sleeping for 2.00
+        # Exiting on cancellation
+        # Sleeping for 1.00
+        # Sleep not cancelled
+        # INFO:     127.0.0.1:35134 - "GET /example?wait=1 HTTP/1.1" 200 OK
 
-def test_cancel_on_disconnect(server_url: str):
+
+def test_cancel_on_disconnect(server: str):
+    url, proc = server
     print()
-    response = requests.get(f"{server_url}/example?wait=0", timeout=2)
+    response = requests.get(f"{url}/example?wait=0", timeout=2)
     print(response.url, "->", response.text)
     response.raise_for_status()
 
     with pytest.raises(requests.exceptions.ReadTimeout):
-        response = requests.get(f"{server_url}/example?wait=2", timeout=1)
+        response = requests.get(f"{url}/example?wait=2", timeout=1)
 
-    response = requests.get(f"{server_url}/example?wait=1", timeout=2)
+    response = requests.get(f"{url}/example?wait=1", timeout=2)
     print(response.url, "->", response.text)
     response.raise_for_status()

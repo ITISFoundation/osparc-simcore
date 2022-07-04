@@ -26,14 +26,16 @@ _Handler = Callable[[Request, Any], Coroutine[Any, Any, Optional[Any]]]
 
 def _validate_signature(handler: _Handler):
     """Raises ValueError if handler does not have expected signature"""
-    # IMPROVEMENT: inject this parameter to handler_fun here before it returned in the wrapper and consumed by fastapi.router?
-    if not any(
-        parameter.name == "_request" and parameter.annotation == Request
-        for parameter in inspect.signature(handler).parameters.values()
-    ):
-        raise ValueError(
-            f"Invalid handler {handler.__name__} signature: missing required parameter _request: Request"
-        )
+    try:
+        p = next(iter(inspect.signature(handler).parameters.values()))
+        if p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD or p.annotation != Request:
+            raise TypeError(
+                f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {p.annotation}"
+            )
+    except StopIteration as e:
+        raise TypeError(
+            f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got none"
+        ) from e
 
 
 async def _cancel_task_if_client_disconnected(
@@ -75,7 +77,6 @@ def cancellable_request(handler: _Handler):
 
     _validate_signature(handler)
 
-    # WRAPPER ----
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs) -> Optional[Any]:
 
@@ -138,16 +139,7 @@ async def disconnect_poller(request: Request, result: Any):
 
 def cancel_on_disconnect(handler: _Handler):
 
-    try:
-        first_parameter = next(iter(inspect.signature(handler).parameters.values()))
-        if first_parameter.annotation != Request:
-            raise TypeError(
-                f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {first_parameter.annotation}"
-            )
-    except StopIteration as e:
-        raise TypeError(
-            f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got none"
-        ) from e
+    _validate_signature(handler)
 
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs):
