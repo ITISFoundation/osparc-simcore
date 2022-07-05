@@ -121,7 +121,7 @@ containers_router = APIRouter(tags=["containers"])
         }
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def create_containers(
     request: Request,
     containers_create: ContainersCreate,
