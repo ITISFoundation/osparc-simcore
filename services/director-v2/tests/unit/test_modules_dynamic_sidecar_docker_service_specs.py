@@ -43,13 +43,11 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[dict[str, str]]:
         "S3_SECRET_KEY": "secret_key",
         "S3_BUCKET_NAME": "bucket_name",
         "S3_SECURE": "false",
+        "SC_BOOT_MODE": "production",
     }
 
-    with monkeypatch.context() as m:
-        for key, value in env_vars.items():
-            m.setenv(key, value)
-
-        yield env_vars
+    for key, value in env_vars.items():
+        monkeypatch.setenv(key, value)
 
 
 @pytest.fixture
@@ -177,7 +175,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "DY_SIDECAR_STATE_PATHS": '["/tmp/save_1", ' '"/tmp_save_2"]',
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
-                    "LOG_LEVEL": "WARNING",
+                    "LOG_LEVEL": "DEBUG",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
@@ -209,6 +207,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
                     "S3_SECRET_KEY": "12345678",
                     "S3_SECURE": "False",
+                    "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
@@ -300,6 +299,8 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
 
 
 # TESTS
+
+
 def test_get_dynamic_proxy_spec(
     project_env_devel_environment,
     mocked_catalog_service_api: respx.MockRouter,
