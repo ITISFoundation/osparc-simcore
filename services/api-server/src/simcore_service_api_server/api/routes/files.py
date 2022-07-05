@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import deque
 from datetime import datetime
@@ -5,16 +6,13 @@ from textwrap import dedent
 from typing import Optional
 from uuid import UUID
 
-from aiohttp import ClientError
+import httpx
 from fastapi import APIRouter, Depends
 from fastapi import File as FileParam
 from fastapi import Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
-from simcore_sdk.node_ports_common.exceptions import NodeportsException
-from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
+from pydantic import ValidationError
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
@@ -91,25 +89,40 @@ async def upload_file(
     )
     logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
 
+    # upload to S3 using pre-signed link
+    presigned_upload_links = await storage_client.get_upload_links(
+        user_id, file_meta.id, file_meta.filename
+    )
+
+    assert presigned_upload_links.urls  # nosec
+    assert len(presigned_upload_links.urls) == 1  # nosec
+    presigned_upload_link = presigned_upload_links.urls[0]
+
+    logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
     try:
-        _, entity_tag = await storage_upload_file(
-            user_id=user_id,
-            store_id=storage_client.SIMCORE_S3_ID,
-            store_name=None,
-            s3_object=parse_obj_as(
-                StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
-            ),
-            local_file_path=file,
-        )
-        file_meta.checksum = entity_tag
-        return file_meta
-    except (
-        NodeportsException,
-        ClientError,
-    ) as err:
+        #
+        # FIXME: TN was uploading files ~1GB and would raise httpx.ReadTimeout.
+        #  - Review timeout config (see api/dependencies/files.py)
+        #
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(5.0, read=60.0, write=3600.0)
+        ) as client:
+            assert file_meta.content_type  # nosec
+
+            resp = await client.put(presigned_upload_link, data=await file.read())
+            resp.raise_for_status()
+
+    except httpx.TimeoutException as err:
+        # SEE https://httpstatuses.com/504
         raise HTTPException(
-            f"Uploading {file_meta=} failed due to following error: {err}"
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Uploading file reached maximum time limit. Details: {file_meta}",
         ) from err
+
+    # update checksum
+    entity_tag = json.loads(resp.headers.get("Etag"))
+    file_meta.checksum = entity_tag
+    return file_meta
 
 
 # DISABLED @router.post(":upload-multiple", response_model=list[FileMetadata])
