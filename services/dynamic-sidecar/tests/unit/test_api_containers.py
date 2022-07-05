@@ -166,7 +166,9 @@ async def started_containers(client: TestClient, compose_spec: str) -> list[str]
     await _assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
 
     shared_store: SharedStore = client.application.state.shared_store
@@ -309,10 +311,11 @@ def test_ensure_api_vtag_is_v1():
 
 async def test_start_containers_wrong_spec(client: TestClient, rabbitmq_mock: None):
     response = await client.post(
-        f"/{API_VTAG}/containers", data={"opsie": "shame on me"}
+        f"/{API_VTAG}/containers",
+        json={"docker_compose_yaml": "INVALID_COMPOSE_SPEC_YAML"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+    assert "yaml is not valid" in response.json()["detail"]
 
 
 async def test_start_same_space_twice(
@@ -333,7 +336,9 @@ async def test_start_same_space_twice(
 
 
 async def test_compose_up(client: TestClient, compose_spec: dict[str, Any]):
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -343,12 +348,14 @@ async def test_compose_up(client: TestClient, compose_spec: dict[str, Any]):
 async def test_compose_up_spec_not_provided(client: TestClient):
     response = await client.post(f"/{API_VTAG}/containers")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
-    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+    assert "yaml not valid" in response.json()["detail"]
 
 
 async def test_compose_up_spec_invalid(client: TestClient):
     invalid_compose_spec = faker.Faker().text()  # pylint: disable=no-member
-    response = await client.post(f"/{API_VTAG}/containers", data=invalid_compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": invalid_compose_spec}
+    )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert "Provided yaml is not valid!" in response.text
     # 28+ characters means the compos spec is also present in the error message
@@ -359,7 +366,9 @@ async def test_containers_down_after_starting(
     client: TestClient, compose_spec: dict[str, Any]
 ):
     # store spec first
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", {"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -711,7 +720,9 @@ async def test_containers_entrypoint_name_containers_not_started(
 
 async def test_containers_restart(client: TestClient, compose_spec: dict[str, Any]):
     # store spec first
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -743,7 +754,9 @@ async def test_attach_detach_container_to_network(
     selected_spec: str,
     attachable_networks_and_ids: dict[str, str],
 ):
-    response = await client.post(f"/{API_VTAG}/containers", data=selected_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": selected_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
