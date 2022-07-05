@@ -84,7 +84,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         # NOTE: this sometimes takes longer that the default timeout, maybe raise timeout here as well!
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        return await self._client.post(url, data=compose_spec)
+        return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
