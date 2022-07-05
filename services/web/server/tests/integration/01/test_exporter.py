@@ -389,7 +389,7 @@ async def extract_download_links_from_storage(
             link_type=LinkType.PRESIGNED,
         )
 
-        return seq_key, parse_obj_as(AnyUrl, link)
+        return seq_key, parse_obj_as(AnyUrl, f"{link}")
 
     tasks = deque()
     for seq_key, data in original_files.items():
