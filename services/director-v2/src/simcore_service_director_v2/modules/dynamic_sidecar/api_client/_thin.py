@@ -84,6 +84,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         # NOTE: this sometimes takes longer that the default timeout, maybe raise timeout here as well!
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
+        # change introduce in OAS version==1.1.0
         return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
 
     @retry_on_errors
