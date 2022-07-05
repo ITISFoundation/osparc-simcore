@@ -32,11 +32,11 @@ redis_retry_policy = dict(
 def setup(app: FastAPI):
     @retry(**redis_retry_policy)
     async def on_startup() -> None:
-        app.state.redis_lock_manager = await RedisLockManager.create(app)
+        app.state.redis_slots_manager = await SlotsManager.create(app)
 
     async def on_shutdown() -> None:
-        lock_manager: RedisLockManager = app.state.redis_lock_manager
-        await lock_manager.close()
+        slots_manager: SlotsManager = app.state.redis_slots_manager
+        await slots_manager.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -70,7 +70,7 @@ class ExtendLock:
 
 
 @dataclass
-class RedisLockManager:
+class SlotsManager:
     app: FastAPI
     _redis: Redis
     is_enabled: bool
@@ -78,7 +78,7 @@ class RedisLockManager:
     concurrent_saves: PositiveInt
 
     @classmethod
-    async def create(cls, app: FastAPI) -> "RedisLockManager":
+    async def create(cls, app: FastAPI) -> "SlotsManager":
         redis_settings: RedisSettings = app.state.settings.REDIS
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -92,12 +92,12 @@ class RedisLockManager:
         )
 
     @classmethod
-    def instance(cls, app: FastAPI) -> "RedisLockManager":
-        if not hasattr(app.state, "redis_lock_manager"):
+    def instance(cls, app: FastAPI) -> "SlotsManager":
+        if not hasattr(app.state, "redis_slots_manager"):
             raise ConfigurationError(
                 "RedisLockManager client is not available. Please check the configuration."
             )
-        return app.state.redis_lock_manager
+        return app.state.redis_slots_manager
 
     @classmethod
     def _get_key(cls, docker_node_id: DockerNodeId) -> str:

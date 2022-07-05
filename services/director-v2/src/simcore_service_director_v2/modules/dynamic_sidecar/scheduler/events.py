@@ -28,7 +28,7 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...redis import RedisLockManager
+from ...redis import SlotsManager
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -580,10 +580,10 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             # When the study is closed, all the services will try to save their
             # data. This causes a lot of disk and network stress.
             # Some nodes collapse under load or behave unexpectedly.
-            lock_manager = RedisLockManager.instance(app)
+            slots_manager = SlotsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with lock_manager.lock(scheduler_data.docker_node_id):
+                async with slots_manager.lock(scheduler_data.docker_node_id):
                     await _remove_containers_save_state_and_outputs()
             except LockAcquireError:
                 logger.debug(
