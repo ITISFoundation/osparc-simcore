@@ -13,6 +13,7 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from faker import Faker
 from fastapi import FastAPI
+from settings_library.redis import RedisSettings
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
@@ -44,12 +45,16 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "migration",
     "postgres",
+    "redis",
 ]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture
 def minimal_configuration(
+    redis_settings: RedisSettings,
     postgres_db,
     postgres_host_config: dict[str, str],
     dy_static_file_server_dynamic_sidecar_service: dict,
@@ -124,6 +129,7 @@ async def director_v2_client(
     mock_env: None,
     network_name: str,
     monkeypatch,
+    redis_settings: RedisSettings,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
@@ -147,6 +153,9 @@ async def director_v2_client(
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+
+    monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
 
     settings = AppSettings.create_from_envs()
 

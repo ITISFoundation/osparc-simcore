@@ -265,3 +265,6 @@ async def test_lock_extension_expiration(
         err_info.traceback[-2].statement.__str__().strip()
         == "await self._redis_lock.release()"
     )
+
+
+# TODO: add test to release lock upon errror in context manger

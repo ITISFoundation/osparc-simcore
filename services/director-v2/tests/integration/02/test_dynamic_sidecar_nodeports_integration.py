@@ -131,6 +131,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitSettings,
@@ -139,7 +140,6 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
-    redis_service: RedisSettings,
 ) -> Iterator[None]:
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
@@ -300,6 +300,7 @@ def dev_features_enabled(request) -> str:
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch,
+    redis_service: RedisSettings,
     network_name: str,
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
@@ -347,6 +348,8 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
+    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
 
 
 @pytest.fixture

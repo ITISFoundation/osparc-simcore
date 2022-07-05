@@ -586,13 +586,13 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 async with slots_manager.lock(scheduler_data.docker_node_id):
                     await _remove_containers_save_state_and_outputs()
             except LockAcquireError:
+                # Next observation cycle, the service will try again to
+                # save the state.
                 logger.debug(
                     "Skip saving service state for %s. Docker node %s is busy. Will try later.",
                     scheduler_data.node_uuid,
                     scheduler_data.docker_node_id,
                 )
-                # Next observation cycle, the service will try again to save the state
-                # if it is able to acquire a lock
                 return
         else:
             await _remove_containers_save_state_and_outputs()

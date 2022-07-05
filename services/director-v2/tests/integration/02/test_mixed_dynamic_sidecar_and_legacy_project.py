@@ -11,6 +11,7 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from models_library.projects import ProjectAtDB
@@ -58,13 +59,13 @@ def minimal_configuration(
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     ensure_swarm_and_networks: None,
-    redis_service: RedisSettings,
 ):
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
@@ -131,11 +132,12 @@ async def dy_static_file_server_project(
 
 @pytest.fixture
 async def director_v2_client(
+    redis_service: RedisSettings,
     minimal_configuration: None,
     minio_config: Dict[str, Any],
     storage_service: URL,
     network_name: str,
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
 ) -> AsyncIterable[httpx.AsyncClient]:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -172,6 +174,9 @@ async def director_v2_client(
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+
+    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
 
     settings = AppSettings.create_from_envs()
 
