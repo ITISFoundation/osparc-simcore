@@ -3,262 +3,127 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from asyncio import AbstractEventLoop, Task
-from datetime import datetime
-from typing import AsyncIterable, Callable
+import socket
+import subprocess
+import sys
+import time
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Callable, Iterator, NamedTuple, cast
 
 import pytest
-from async_asgi_testclient import TestClient
-from async_asgi_testclient.utils import create_monitored_task, flatten_headers
-from fastapi import APIRouter, FastAPI, Request, status
-from fastapi.testclient import TestClient as SyncTestClient
-from pydantic import NonNegativeInt
-from servicelib.fastapi.requests_decorators import TASK_NAME_PREFIX, cancellable_request
-from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+import requests
+from fastapi import FastAPI, Query, Request
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+
+CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
+CURRENT_DIR = CURRENT_FILE.parent
+
+# UTILS -------------------------
+
+mock_app = FastAPI(title="Disconnect example")
+
+MESSAGE_ON_HANDLER_CANCELLATION = f"Exiting on cancellation @ {__name__}"
+
+
+@mock_app.get("/example")
+@cancel_on_disconnect
+async def example(
+    request: Request,
+    wait: float = Query(..., description="Time to wait, in seconds"),
+):
+    try:
+        print(f"Sleeping for {wait:.2f}")
+        await asyncio.sleep(wait)
+        print("Sleep not cancelled")
+        return f"I waited for {wait:.2f}s and now this is the result"
+    except asyncio.CancelledError:
+        print(MESSAGE_ON_HANDLER_CANCELLATION)
+        raise
+
+
+# FIXTURES ---------------------
 
 
 @pytest.fixture
-def app() -> FastAPI:
-
-    api_router = APIRouter()
-
-    @api_router.get("/")
-    def _get_root():
-        return {"name": __name__, "timestamp": datetime.utcnow().isoformat()}
-
-    @api_router.get("/sleep/{delay}")
-    @cancellable_request
-    async def _cancellable_with_await(request: Request, delay: NonNegativeInt):
-        await asyncio.sleep(delay)
-
-    # TODO: handler spawns subprocesses
-    # TODO: handler spawns threads
-    # TODO: handler spawns aio-tasks
-    # TODO: handler with backgroundtask
-
-    _app = FastAPI()
-    _app.include_router(api_router)
-
-    @_app.on_event("startup")
-    async def on_startup():
-        _app.state.started = True
-        _app.state.stopped = False
-
-    @_app.on_event("shutdown")
-    async def on_shutdown():
-        _app.state.started = True
-        _app.state.stopped = True
-
-    return _app
-
-
-@pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
-
-
-@pytest.fixture()
-def inspect_app_tasks(
-    event_loop: AbstractEventLoop,
-) -> Callable[[], list[Task]]:
-    """Function to return cancellable tasks"""
-
-    def go():
-        return [
-            task
-            for task in asyncio.all_tasks(event_loop)
-            if task.get_name().startswith(f"{TASK_NAME_PREFIX}/")
-        ]
+def get_unused_port() -> Callable[[], int]:
+    def go() -> int:
+        """Return a port that is unused on the current host."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            return cast(int, s.getsockname()[1])
 
     return go
 
 
-# TESTS
+class ServerInfo(NamedTuple):
+    url: str
+    proc: subprocess.Popen
 
 
-def test_raises_if_wrong_signature_upon_import(app: FastAPI):
-    # let's define some routes
-    @app.get("/correct")
-    @cancellable_request
-    async def _correct_signature(_request: Request, x: int):
-        ...
+@contextmanager
+def server_lifetime(port: int) -> Iterator[ServerInfo]:
+    with subprocess.Popen(
+        [
+            "uvicorn",
+            f"{CURRENT_FILE.stem}:mock_app",
+            "--port",
+            f"{port}",
+        ],
+        cwd=f"{CURRENT_DIR}",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ) as proc:
 
-    with pytest.raises(TypeError) as exc_info:
+        url = f"http://127.0.0.1:{port}"
+        print("\nStarted", proc.args)
 
-        @app.get("/wrong")
-        @cancellable_request  # <-- notice how the static-check already detects wrong signature
-        async def _wrong_signature():
-            ...
+        # some time to start
+        time.sleep(2)
 
-    assert "_wrong_signature" in str(exc_info.value)
+        # checks started successfully
+        assert proc.stdout
+        assert not proc.poll(), proc.stdout.read().decode("utf-8")
 
+        yield ServerInfo(url, proc)
 
-async def test_with_non_cancellable_entrypoint(
-    test_client: TestClient, inspect_app_tasks: Callable[[], list[Task]]
-):
-    assert not inspect_app_tasks()
-
-    # NOT cancellable entrypoint
-    r = await test_client.get("/")
-    assert r.status_code == status.HTTP_200_OK
-
-    assert not inspect_app_tasks()
-
-
-async def test_cancellable_handler_with_successful_request(
-    test_client: TestClient, inspect_app_tasks: Callable[[], list[Task]]
-):
-    # cancellable entrypoint
-    r = await test_client.get("/sleep/0")
-    assert r.status_code == status.HTTP_200_OK
-
-    assert all(
-        t.done() for t in inspect_app_tasks()
-    ), "All tasks (if any) should be done"
+        proc.terminate()
 
 
-#
-# NOTE:
-# - Cannot find a way to disconnect a client using the TestClient fixture  :-(
-# - Any ideas welcome!
-#
+def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
 
+    with server_lifetime(port=get_unused_port()) as server:
+        url, proc = server
+        print()
+        response = requests.get(f"{server.url}/example?wait=0", timeout=2)
+        print(response.url, "->", response.text)
+        response.raise_for_status()
 
-@pytest.mark.skip(reason="DEV: cannot emulate disconnect")
-async def test_it0(
-    app: FastAPI,
-    event_loop: asyncio.AbstractEventLoop,
-    inspect_app_tasks: Callable[[], list[Task]],
-):
-    #
-    # Extension of TestClient to send a disconnect request
-    #
-    # It does send a disconnect request but the monitor task
-    # interprets it as "separate" and does not cancel the
-    # initial
-    #
-    class TestClientExt(TestClient):
-        def disconnect(
-            self,
-            path: str,
-            *,
-            method: str = "GET",
-            scheme: str = "http",
-        ):
-            input_queue: asyncio.Queue[dict] = asyncio.Queue()
-            output_queue: asyncio.Queue[dict] = asyncio.Queue()
-            scope = {
-                "type": "http",
-                "http_version": "1.1",
-                "asgi": {"version": "3.0"},
-                "method": method,
-                "scheme": scheme,
-                "path": path,
-                "query_string": b"",
-                "root_path": "",
-                "headers": flatten_headers({"Connection": "close"}),
-            }
-            running_task = create_monitored_task(
-                self.application(scope, input_queue.get, output_queue.put),
-                output_queue.put_nowait,
-            )
+        with pytest.raises(requests.exceptions.ReadTimeout):
+            response = requests.get(f"{server.url}/example?wait=2", timeout=1)
 
-            send = input_queue.put_nowait
-            send({"type": "http.disconnect"})
+        response = requests.get(f"{server.url}/example?wait=1", timeout=2)
+        print(response.url, "->", response.text)
+        response.raise_for_status()
 
-    # tests ---
-
-    # on_start event not called
-    with pytest.raises(AttributeError) as exc_info:
-        assert app.state.started
-    assert "started" in f"{exc_info.value}"
-
-    # Emulating disconnect
-    async with TestClientExt(app) as client:
-        assert app.state.started
-        assert not app.state.stopped
-
-        client_task = event_loop.create_task(
-            client.get("/sleep/100", headers={"Connection": "close"})
+        # kill service
+        server.proc.terminate()
+        server_log = server.proc.stdout.read().decode("utf-8")
+        print(
+            f"{server.url=} stdout",
+            "-" * 10,
+            "\n",
+            server_log,
+            "-" * 30,
         )
-        await asyncio.sleep(0.1)  # triggers reg_task to start
-        app_tasks = inspect_app_tasks()
+        # server.url=http://127.0.0.1:44077 stdout ----------
+        # Sleeping for 0.00
+        # Sleep not cancelled
+        # INFO:     127.0.0.1:35114 - "GET /example?wait=0 HTTP/1.1" 200 OK
+        # Sleeping for 2.00
+        # Exiting on cancellation
+        # Sleeping for 1.00
+        # Sleep not cancelled
+        # INFO:     127.0.0.1:35134 - "GET /example?wait=1 HTTP/1.1" 200 OK
 
-        client.disconnect("/sleep/100")  # creates A NEW req that is canceled
-        await asyncio.sleep(0.1)
-
-        r = await client_task  # DOES NOT GET CANCELED
-        assert all(t.done() for t in app_tasks)
-
-    assert app.state.stopped
-
-
-@pytest.mark.skip(reason="DEV: cannot emulate disconnect")
-async def test_it1(app: FastAPI, inspect_app_tasks: Callable[[], list[Task]]):
-    # Emulating disconnect by producing a timemout with syncronous
-    # test client
-
-    async with TestClient(app, timeout=0.001) as client:
-        with pytest.raises(asyncio.TimeoutError):
-            r = await client.get("/sleep/100")
-
-        await asyncio.sleep(1)
-        app_tasks = inspect_app_tasks()
-        assert app_tasks
-
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.5), stop=stop_after_attempt(4)
-        ):
-            with attempt:
-                assert all(t.done() for t in app_tasks)
-
-
-@pytest.mark.skip(reason="DEV: cannot emulate disconnect")
-async def test_it1a(app: FastAPI, inspect_app_tasks: Callable[[], list[Task]]):
-    with SyncTestClient(app) as client:
-        with pytest.raises(asyncio.TimeoutError):
-            r = client.get("/sleep/100", timeout=0.001)
-
-            await asyncio.sleep(1)
-            app_tasks = inspect_app_tasks()
-            assert app_tasks
-
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(0.5), stop=stop_after_attempt(4)
-            ):
-                with attempt:
-                    assert all(t.done() for t in app_tasks)
-
-
-@pytest.mark.skip(reason="DEV: cannot emulate disconnect")
-async def test_it2(
-    test_client: TestClient,
-    inspect_app_tasks: Callable[[], list[Task]],
-    event_loop: asyncio.AbstractEventLoop,
-):
-    client_task = event_loop.create_task(test_client.get("/sleep/100"))
-
-    await asyncio.sleep(0.1)  # triggers client_task to start
-
-    app_tasks = inspect_app_tasks()
-    assert app_tasks
-    assert all(not t.done() for t in app_tasks)
-
-    assert client_task.cancel()
-
-    with pytest.raises(asyncio.CancelledError):
-        await client_task
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.5), stop=stop_after_attempt(4)
-    ):
-        with attempt:
-            assert all(t.done() for t in app_tasks)
-
-    # are tasks cancelled?
-    # create process and cancel
-    # create a thread and cancel
-    # create a aio task and cancel
+        assert MESSAGE_ON_HANDLER_CANCELLATION in server_log
