@@ -188,11 +188,6 @@ def get_dynamic_sidecar_spec(
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             },
-            # debugger port
-            {
-                "Protocol": "tcp",
-                "TargetPort": 3000,
-            },
         ]
 
     create_service_params = {
