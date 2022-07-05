@@ -247,7 +247,7 @@ async def push_output_ports(
         },
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def restarts_containers(
     request: Request,
     command_timeout: float = Query(
