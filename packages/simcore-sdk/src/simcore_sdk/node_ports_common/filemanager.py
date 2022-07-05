@@ -36,9 +36,8 @@ from tqdm import tqdm
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from . import exceptions, storage_client
+from . import exceptions, r_clone, storage_client
 from .constants import SIMCORE_LOCATION
-from .r_clone import RCloneFailedError, is_r_clone_available, sync_local_to_s3
 from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
@@ -462,7 +461,8 @@ async def upload_file(
     )
 
     use_rclone = (
-        await is_r_clone_available(r_clone_settings) and store_id == SIMCORE_LOCATION
+        await r_clone.is_r_clone_available(r_clone_settings)
+        and store_id == SIMCORE_LOCATION
     )
 
     async with ClientSessionContextManager(client_session) as session:
@@ -483,7 +483,7 @@ async def upload_file(
             uploaded_parts: list[UploadedPart] = []
             if use_rclone:
                 assert r_clone_settings  # nosec
-                await sync_local_to_s3(
+                await r_clone.sync_local_to_s3(
                     local_file_path,
                     r_clone_settings,
                     upload_links,
@@ -498,7 +498,7 @@ async def upload_file(
                 upload_links,
                 uploaded_parts,
             )
-        except (RCloneFailedError, exceptions.S3TransferError) as exc:
+        except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
             if upload_links:
                 # abort the upload correctly, so it can revert back to last version
