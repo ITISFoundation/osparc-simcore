@@ -1,4 +1,5 @@
 # pylint: disable=redefined-builtin
+# pylint: disable=too-many-arguments
 
 import functools
 import json
@@ -192,7 +193,6 @@ async def runs_docker_compose_down(
 ) -> Union[str, dict[str, Any]]:
     """Removes the previously started service
     and returns the docker-compose output"""
-    # TODO: convert into long running operation
 
     if shared_store.compose_spec is None:
         raise HTTPException(
