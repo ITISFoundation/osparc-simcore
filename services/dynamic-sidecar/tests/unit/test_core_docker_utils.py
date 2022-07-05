@@ -51,4 +51,4 @@ async def test_volume_label_missing(run_id: UUID) -> None:
 
     error_msg = f"{excinfo.value}"
     assert f"{run_id}" in error_msg
-    assert "not_exists" in error_msg
+    assert "not_exist" in error_msg
