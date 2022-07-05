@@ -282,6 +282,24 @@ class DynamicSidecarSettings(BaseCustomSettings):
         "3.8", description="docker-compose version used in the compose-specs"
     )
 
+    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED: bool = Field(
+        True,
+        description=(
+            "Limits concurrent service saves for a docker node. Guarantees "
+            "that no more than X services are being saved together."
+        ),
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES: PositiveInt = Field(
+        2, description="Total services allowed to save data concurrently"
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
+        10,
+        description=(
+            "Lifetime of the lock. Allows the system to recover a lock "
+            "in case of crash, the lock will expire and result as released."
+        ),
+    )
+
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
     def strip_leading_slashes(cls, v) -> str:

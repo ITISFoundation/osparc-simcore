@@ -575,24 +575,25 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # and make the director warn about hanging sidecars?
                     raise e
 
-        # STARTS HERE
-
-        # A node can end up with all the services from a single study.
-        # When the study is closed, all the services will try to save their
-        # data. This causes a lot of disk and network stress.
-        # Some nodes collapse under load or behave unexpectedly.
-        lock_manager = RedisLockManager.instance(app)
-        assert scheduler_data.docker_node_id  # nosec
-        try:
-            async with lock_manager.lock(scheduler_data.docker_node_id):
-                await _remove_containers_save_state_and_outputs()
-        except LockAcquireError:
-            logger.debug(
-                "Will try again a in a bit to save state for %s. Currently docker_node %s is busy."
-            )
-            # Next observation cycle, the service will try again to save the state
-            # if it is able to acquire a lock
-            return
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED:
+            # A node can end up with all the services from a single study.
+            # When the study is closed, all the services will try to save their
+            # data. This causes a lot of disk and network stress.
+            # Some nodes collapse under load or behave unexpectedly.
+            lock_manager = RedisLockManager.instance(app)
+            assert scheduler_data.docker_node_id  # nosec
+            try:
+                async with lock_manager.lock(scheduler_data.docker_node_id):
+                    await _remove_containers_save_state_and_outputs()
+            except LockAcquireError:
+                logger.debug(
+                    "Will try again a in a bit to save state for %s. Currently docker_node %s is busy."
+                )
+                # Next observation cycle, the service will try again to save the state
+                # if it is able to acquire a lock
+                return
+        else:
+            await _remove_containers_save_state_and_outputs()
 
         # remove the 2 services
         await remove_dynamic_sidecar_stack(

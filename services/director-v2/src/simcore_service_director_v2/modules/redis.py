@@ -3,10 +3,10 @@ import logging
 from asyncio import Task
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, Final, Optional
+from typing import AsyncIterator, Optional
 
 from fastapi import FastAPI
-from pydantic import NonNegativeInt, PositiveFloat
+from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
 from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
 from settings_library.redis import RedisSettings
@@ -15,8 +15,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_random
 
 from ..core.errors import ConfigurationError, LockAcquireError
-
-DEFAULT_LOCKS_PER_NODE: Final[int] = 2
+from ..core.settings import DynamicSidecarSettings
 
 DockerNodeId = str
 
@@ -74,13 +73,23 @@ class ExtendLock:
 class RedisLockManager:
     app: FastAPI
     _redis: Redis
-    lock_timeout_s: PositiveFloat = 10.0
+    is_enabled: bool
+    lock_timeout_s: PositiveFloat
+    concurrent_saves: PositiveInt
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RedisLockManager":
-        settings: RedisSettings = app.state.settings.REDIS
-        redis = Redis.from_url(settings.dsn_locks)
-        return cls(app=app, _redis=redis)
+        redis_settings: RedisSettings = app.state.settings.REDIS
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        return cls(
+            app=app,
+            _redis=Redis.from_url(redis_settings.dsn_locks),
+            is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED,
+            concurrent_saves=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES,
+            lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
+        )
 
     @classmethod
     def instance(cls, app: FastAPI) -> "RedisLockManager":
@@ -111,9 +120,8 @@ class RedisLockManager:
         if slots is not None:
             return int(slots)
 
-        default_slots = DEFAULT_LOCKS_PER_NODE
-        await self._redis.set(node_slots_key, DEFAULT_LOCKS_PER_NODE)
-        return default_slots
+        await self._redis.set(node_slots_key, self.concurrent_saves)
+        return self.concurrent_saves
 
     @staticmethod
     async def _release_extend_lock(extend_lock: ExtendLock) -> None:

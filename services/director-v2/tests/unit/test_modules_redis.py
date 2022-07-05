@@ -3,23 +3,22 @@
 # pylint: disable=protected-access
 
 import asyncio
-from argparse import Namespace
 from asyncio import CancelledError
 from contextlib import suppress
-from typing import AsyncIterable, Callable
+from typing import Any, AsyncIterable
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveFloat
-from pytest_mock import MockerFixture
 from redis.exceptions import LockError, LockNotOwnedError
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.errors import LockAcquireError
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import redis
 from simcore_service_director_v2.modules.redis import (
-    DEFAULT_LOCKS_PER_NODE,
     DockerNodeId,
     ExtendLock,
     RedisLockManager,
@@ -62,22 +61,18 @@ async def _assert_lock_acquired_and_released(
 
 
 @pytest.fixture
-def mock_default_locks_per_node(mocker: MockerFixture) -> Callable[[int], None]:
-    def mock_default(slots: int) -> None:
-        mocker.patch(
-            "simcore_service_director_v2.modules.redis.DEFAULT_LOCKS_PER_NODE", slots
-        )
+async def minimal_app(
+    project_env_devel_environment: dict[str, Any],
+    redis_settings: RedisSettings,
+    monkeypatch: MonkeyPatch,
+) -> AsyncIterable[FastAPI]:
+    monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
 
-    return mock_default
-
-
-@pytest.fixture
-async def minimal_app(redis_settings: RedisSettings) -> AsyncIterable[FastAPI]:
     app = FastAPI()
 
     # add expected redis_settings
-    app.state.settings = Namespace()
-    app.state.settings.REDIS = redis_settings
+    app.state.settings = AppSettings.create_from_envs()
 
     # setup redis module
     redis.setup(app)
@@ -167,7 +162,7 @@ async def test_no_more_locks_can_be_acquired(
 ) -> None:
     # acquire all available locks
     slots = await redis_lock_manager._get_node_slots(docker_node_id)
-    assert slots == DEFAULT_LOCKS_PER_NODE
+    assert slots == redis_lock_manager.concurrent_saves
 
     tasks = [
         asyncio.create_task(
@@ -206,7 +201,6 @@ async def test_no_more_locks_can_be_acquired(
 async def test_acquire_all_available_node_locks_stress_test(
     redis_lock_manager: RedisLockManager,
     docker_node_id: DockerNodeId,
-    mock_default_locks_per_node: Callable[[int], None],
     locks_per_node: int,
 ) -> None:
     # NOTE: this test is designed to spot if there are any issues when
@@ -215,7 +209,7 @@ async def test_acquire_all_available_node_locks_stress_test(
     # adds more stress with lower lock_timeout_s
     redis_lock_manager.lock_timeout_s = 1.0
 
-    mock_default_locks_per_node(locks_per_node)
+    redis_lock_manager.concurrent_saves = locks_per_node
 
     total_node_slots = await redis_lock_manager._get_node_slots(docker_node_id)
     assert total_node_slots == locks_per_node
@@ -235,14 +229,12 @@ async def test_acquire_all_available_node_locks_stress_test(
 
 
 async def test_lock_extension_expiration(
-    redis_lock_manager: RedisLockManager,
-    docker_node_id: DockerNodeId,
-    mock_default_locks_per_node: Callable[[int], None],
+    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
 ) -> None:
     SHORT_INTERVAL = 0.10
 
     redis_lock_manager.lock_timeout_s = SHORT_INTERVAL
-    mock_default_locks_per_node(1)
+    redis_lock_manager.concurrent_saves = 1
 
     with pytest.raises(LockNotOwnedError) as err_info:
         async with redis_lock_manager.lock(docker_node_id) as extend_lock:
