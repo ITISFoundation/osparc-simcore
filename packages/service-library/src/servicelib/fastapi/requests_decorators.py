@@ -10,10 +10,10 @@ from fastapi.exceptions import HTTPException
 logger = logging.getLogger(__name__)
 
 
-_Handler = Callable[[Request, Any], Coroutine[Any, Any, Optional[Any]]]
+_HandlerWithRequestArg = Callable[[Request], Coroutine[Any, Any, Optional[Any]]]
 
 
-def _validate_signature(handler: _Handler):
+def _validate_signature(handler: _HandlerWithRequestArg):
     """Raises ValueError if handler does not have expected signature"""
     try:
         p = next(iter(inspect.signature(handler).parameters.values()))
@@ -51,7 +51,7 @@ async def disconnect_poller(request: Request, result: Any):
     return result
 
 
-def cancel_on_disconnect(handler: _Handler):
+def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
     _validate_signature(handler)
 
