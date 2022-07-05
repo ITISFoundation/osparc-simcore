@@ -76,9 +76,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "Runs Docker Compose Up",
-        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text",
-        "operationId": "runs_docker_compose_up_v1_containers_post",
+        "summary": "Run docker-compose up",
+        "operationId": "create_containers_v1_containers_post",
         "parameters": [
           {
             "description": "docker-compose up command timeout run as a background",
@@ -105,12 +104,28 @@
             "in": "query"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainersCreate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Create Containers V1 Containers Post",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
@@ -715,6 +730,19 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "ContainersCreate": {
+        "title": "ContainersCreate",
+        "required": [
+          "docker_compose_yaml"
+        ],
+        "type": "object",
+        "properties": {
+          "docker_compose_yaml": {
+            "title": "Docker Compose Yaml",
+            "type": "string"
           }
         }
       },

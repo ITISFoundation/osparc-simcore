@@ -16,6 +16,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
@@ -30,7 +31,7 @@ from ..core.validation import (
     validate_compose_spec,
 )
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import SharedStore
+from ..models.shared_store import ContainerNameStr, SharedStore
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
@@ -93,6 +94,15 @@ def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
 
 
 #
+# API Schema Models ------------------
+#
+
+
+class ContainersCreate(BaseModel):
+    docker_compose_yaml: str
+
+
+#
 # HANDLERS ------------------
 #
 containers_router = APIRouter(tags=["containers"])
@@ -100,7 +110,9 @@ containers_router = APIRouter(tags=["containers"])
 
 @containers_router.post(
     "/containers",
+    summary="Run docker-compose up",
     status_code=status.HTTP_202_ACCEPTED,
+    response_model=list[ContainerNameStr],
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Cannot validate submitted compose spec"
@@ -108,31 +120,29 @@ containers_router = APIRouter(tags=["containers"])
     },
 )
 @cancel_on_disconnect
-async def runs_docker_compose_up(
+async def create_containers(
     request: Request,
+    containers_create: ContainersCreate,
     background_tasks: BackgroundTasks,
-    settings: DynamicSidecarSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-    app: FastAPI = Depends(get_application),
-    application_health: ApplicationHealth = Depends(get_application_health),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     command_timeout: float = Query(
         3600.0, description="docker-compose up command timeout run as a background"
     ),
     validation_timeout: float = Query(
         60.0, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
-) -> Union[list[str], dict[str, Any]]:
-    """Expects the docker-compose spec as raw-body utf-8 encoded text"""
-
-    # stores the compose spec after validation
-    body_as_text = (await request.body()).decode("utf-8")
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
+    app: FastAPI = Depends(get_application),
+    application_health: ApplicationHealth = Depends(get_application_health),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+):
+    assert request  # nosec
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
             settings=settings,
-            compose_file_content=body_as_text,
+            compose_file_content=containers_create.docker_compose_yaml,
             mounted_volumes=mounted_volumes,
             docker_compose_config_timeout=validation_timeout,
         )
