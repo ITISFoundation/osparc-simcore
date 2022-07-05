@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
