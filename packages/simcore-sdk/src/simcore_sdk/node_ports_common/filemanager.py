@@ -170,6 +170,7 @@ async def _upload_file_part(
     this_file_chunk_size: int,
     num_parts: int,
     upload_url: AnyUrl,
+    pbar,
 ) -> tuple[int, ETag]:
     log.debug(
         "--> uploading %s of %s, [%s]...",
@@ -189,6 +190,7 @@ async def _upload_file_part(
         },
     )
     response.raise_for_status()
+    pbar.update(this_file_chunk_size)
     # NOTE: the response from minio does not contain a json body
     assert response.status == web.HTTPOk.status_code
     assert response.headers
@@ -214,34 +216,43 @@ async def _upload_file_to_presigned_links(
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
-    for index, upload_url in enumerate(file_upload_links.urls):
-        this_file_chunk_size = (
-            file_chunk_size if (index + 1) < num_urls else last_chunk_size
-        )
-        upload_tasks.append(
-            _upload_file_part(
-                session,
-                file,
-                index,
-                index * file_chunk_size,
-                this_file_chunk_size,
-                num_urls,
-                upload_url,
+    with tqdm(
+        desc=f"uploading {file} [{ByteSize(file_size).human_readable()}]\n",
+        total=file_size,
+        unit="byte",
+        unit_scale=True,
+    ) as pbar:
+        for index, upload_url in enumerate(file_upload_links.urls):
+            this_file_chunk_size = (
+                file_chunk_size if (index + 1) < num_urls else last_chunk_size
             )
-        )
-    try:
-        results = await logged_gather(*upload_tasks, log=log, max_concurrency=4)
-        part_to_etag = [
-            UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
-        ]
-        log.info(
-            "Uploaded %s, received %s",
-            f"{file=}",
-            f"{part_to_etag=}",
-        )
-        return part_to_etag
-    except ClientError as exc:
-        raise exceptions.S3TransferError(f"Could not upload file {file}:{exc}") from exc
+            upload_tasks.append(
+                _upload_file_part(
+                    session,
+                    file,
+                    index,
+                    index * file_chunk_size,
+                    this_file_chunk_size,
+                    num_urls,
+                    upload_url,
+                    pbar,
+                )
+            )
+        try:
+            results = await logged_gather(*upload_tasks, log=log, max_concurrency=4)
+            part_to_etag = [
+                UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
+            ]
+            log.info(
+                "Uploaded %s, received %s",
+                f"{file=}",
+                f"{part_to_etag=}",
+            )
+            return part_to_etag
+        except ClientError as exc:
+            raise exceptions.S3TransferError(
+                f"Could not upload file {file}:{exc}"
+            ) from exc
 
 
 async def _complete_upload(
