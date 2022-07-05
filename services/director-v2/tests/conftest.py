@@ -8,7 +8,7 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Dict, Iterable
+from typing import Any, AsyncIterable, Iterable
 
 import dotenv
 import httpx
@@ -65,7 +65,7 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
+def project_env_devel_dict(project_slug_dir: Path) -> dict[str, Any]:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -74,8 +74,8 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict[str, Any]:
 
 @pytest.fixture(scope="function")
 def project_env_devel_environment(
-    project_env_devel_dict: Dict[str, Any], monkeypatch: MonkeyPatch
-) -> Dict[str, Any]:
+    project_env_devel_dict: dict[str, Any], monkeypatch: MonkeyPatch
+) -> dict[str, Any]:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
     return deepcopy(project_env_devel_dict)
@@ -130,28 +130,31 @@ def dynamic_sidecar_docker_image_name() -> str:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str) -> None:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image_name)
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+def mock_env(
+    monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str
+) -> dict[str, str]:
 
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_USER", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
-
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
-
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
-    # disable tracing as together with LifespanManager, it does not remove itself nicely
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+    env_vars: dict[str, str] = {
+        "DYNAMIC_SIDECAR_IMAGE": f"{dynamic_sidecar_docker_image_name}",
+        "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
+        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+        "SWARM_STACK_NAME": "test_swarm_name",
+        "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+        "COMPUTATIONAL_BACKEND_ENABLED": "false",
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
+        "REGISTRY_AUTH": "false",
+        "REGISTRY_USER": "test",
+        "REGISTRY_PW": "test",
+        "REGISTRY_SSL": "false",
+        "R_CLONE_PROVIDER": "MINIO",
+        "DIRECTOR_V2_POSTGRES_ENABLED": "false",
+        "SC_BOOT_MODE": "production",
+        # disable tracing as together with LifespanManager, it does not remove itself nicely
+        "DIRECTOR_V2_TRACING": "null",
+    }
+    for name, value in env_vars.items():
+        monkeypatch.setenv(name, value)
+    return env_vars
 
 
 @pytest.fixture(scope="function")
@@ -204,15 +207,15 @@ def fake_workbench(fake_workbench_file: Path) -> Workbench:
 
 
 @pytest.fixture
-def fake_workbench_as_dict(fake_workbench_file: Path) -> Dict[str, Any]:
+def fake_workbench_as_dict(fake_workbench_file: Path) -> dict[str, Any]:
     workbench_dict = json.loads(fake_workbench_file.read_text())
     return workbench_dict
 
 
 @pytest.fixture
 def fake_workbench_without_outputs(
-    fake_workbench_as_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+    fake_workbench_as_dict: dict[str, Any]
+) -> dict[str, Any]:
     workbench = deepcopy(fake_workbench_as_dict)
     # remove all the outputs from the workbench
     for _, data in workbench.items():
@@ -224,12 +227,12 @@ def fake_workbench_without_outputs(
 @pytest.fixture(scope="session")
 def fake_workbench_adjacency(
     fake_workbench_computational_adjacency_file: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return json.loads(fake_workbench_computational_adjacency_file.read_text())
 
 
 @pytest.fixture(scope="session")
 def fake_workbench_complete_adjacency(
     fake_workbench_complete_adjacency_file: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return json.loads(fake_workbench_complete_adjacency_file.read_text())

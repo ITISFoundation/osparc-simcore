@@ -346,6 +346,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def mocked_catalog_service_api(
+    mock_env: dict[str, str],
     mock_service_key_version: ServiceKeyVersion,
     fake_service_specifications: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:

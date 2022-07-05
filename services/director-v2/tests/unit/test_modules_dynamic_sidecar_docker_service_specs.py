@@ -1,12 +1,13 @@
-# pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+
 
 from typing import Any, Iterator, cast
 from uuid import UUID
 
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -15,6 +16,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from pytest import MonkeyPatch
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
@@ -27,31 +29,44 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[dict[str, str]]:
-    env_vars: dict[str, str] = {
-        "REGISTRY_AUTH": "false",
-        "REGISTRY_USER": "test",
-        "REGISTRY_PW": "test",
-        "REGISTRY_SSL": "false",
-        "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
-        "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
-        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "test_swarm_name",
-        "R_CLONE_PROVIDER": "MINIO",
-        "S3_ENDPOINT": "endpoint",
-        "S3_ACCESS_KEY": "access_key",
-        "S3_SECRET_KEY": "secret_key",
-        "S3_BUCKET_NAME": "bucket_name",
-        "S3_SECURE": "false",
-        "SC_BOOT_MODE": "production",
-    }
+def mock_env(
+    monkeypatch: MonkeyPatch, mock_env: dict[str, str]
+) -> Iterator[dict[str, str]]:
+    """overrides unit/conftest:mock_env fixture"""
+    env_vars: dict[str, str] = mock_env
+    env_vars.update(
+        {
+            "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
+            "POSTGRES_DB": "test",
+            "POSTGRES_ENDPOINT": "localhost:5432",
+            "POSTGRES_HOST": "localhost",
+            "POSTGRES_PASSWORD": "test",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_USER": "test",
+            "R_CLONE_PROVIDER": "MINIO",
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
+            "REGISTRY_USER": "test",
+            "S3_ACCESS_KEY": "12345678",
+            "S3_BUCKET_NAME": "simcore",
+            "S3_ENDPOINT": "http://172.17.0.1:9001",
+            "S3_SECRET_KEY": "12345678",
+            "S3_SECURE": "False",
+            "SC_BOOT_MODE": "production",
+            "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
+            "SWARM_STACK_NAME": "test_swarm_name",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+        }
+    )
 
-    for key, value in env_vars.items():
-        monkeypatch.setenv(key, value)
+    for name, value in env_vars.items():
+        monkeypatch.setenv(name, value)
+    return env_vars
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(mocked_env: dict[str, str]) -> DynamicSidecarSettings:
+def dynamic_sidecar_settings(mock_env: dict[str, str]) -> DynamicSidecarSettings:
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -302,7 +317,6 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
 
 
 def test_get_dynamic_proxy_spec(
-    project_env_devel_environment,
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
@@ -338,8 +352,6 @@ def test_get_dynamic_proxy_spec(
 
 
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
-    # pylint: disable=too-many-arguments
-    project_env_devel_environment,
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
