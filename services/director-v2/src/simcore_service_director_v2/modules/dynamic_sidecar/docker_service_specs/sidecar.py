@@ -1,6 +1,5 @@
 import logging
 from copy import deepcopy
-from typing import Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
@@ -26,7 +25,7 @@ def extract_service_port_from_compose_start_spec(
 
 def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
-) -> Dict[str, str]:
+) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     r_clone_settings = (
@@ -38,7 +37,6 @@ def _get_environment_variables(
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
     return {
-        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.SC_BOOT_MODE}",
         "LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -159,10 +157,8 @@ def get_dynamic_sidecar_spec(
         dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
         if dynamic_sidecar_path is None:
             log.warning(
-                (
-                    "Could not mount the sources for the dynamic-sidecar, please "
-                    "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
-                )
+                "Could not mount the sources for the dynamic-sidecar, please "
+                "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
             )
         else:
             mounts.append(
