@@ -78,7 +78,7 @@ def create_app():
     app.state.shared_store = SharedStore()
     app.state.application_health = ApplicationHealth()
 
-    if app.state.settings.is_development_mode:
+    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
     if app.state.settings.RABBIT_SETTINGS:
