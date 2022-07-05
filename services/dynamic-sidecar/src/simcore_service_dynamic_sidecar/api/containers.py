@@ -45,6 +45,7 @@ from ._dependencies import (
 )
 
 logger = logging.getLogger(__name__)
+assert cancel_on_disconnect  # nosec
 
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
@@ -120,7 +121,7 @@ containers_router = APIRouter(tags=["containers"])
         }
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def create_containers(
     request: Request,
     containers_create: ContainersCreate,
@@ -227,7 +228,7 @@ async def runs_docker_compose_down(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def containers_docker_inspect(
     request: Request,
     only_status: bool = Query(
@@ -275,7 +276,7 @@ async def containers_docker_inspect(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def get_container_logs(
     request: Request,
     id: str,
@@ -323,7 +324,7 @@ async def get_container_logs(
         },
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def get_containers_name(
     request: Request,
     filters: str = Query(
@@ -385,7 +386,7 @@ async def get_containers_name(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def inspect_container(
     request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:

@@ -41,6 +41,7 @@ from ._dependencies import (
 from .containers import send_message
 
 logger = logging.getLogger(__name__)
+assert cancel_on_disconnect  # nosec
 
 
 class CreateDirsRequestItem(BaseModel):
@@ -246,7 +247,7 @@ async def push_output_ports(
         },
     },
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def restarts_containers(
     request: Request,
     command_timeout: float = Query(
@@ -296,7 +297,7 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-@cancel_on_disconnect
+# FIXME: @cancel_on_disconnect
 async def attach_container_to_network(
     request: Request,
     id: str,
