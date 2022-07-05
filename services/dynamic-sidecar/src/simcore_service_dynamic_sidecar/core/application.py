@@ -55,6 +55,7 @@ def create_base_app() -> FastAPI:
     # minimal
     app = FastAPI(
         debug=settings.DEBUG,
+        version=__version__,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
