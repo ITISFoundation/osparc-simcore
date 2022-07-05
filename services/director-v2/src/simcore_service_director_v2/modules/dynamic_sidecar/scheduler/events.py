@@ -13,7 +13,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from redis.asyncio.lock import Lock
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.utils.dict_utils import nested_update
@@ -22,13 +21,14 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ....core.errors import LockAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...redis import RedisLockManager, auto_release
+from ...redis import RedisLockManager
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -499,27 +499,15 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         # invoke container cleanup at this point
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
-
-        # A node can end up with all the services from a single study.
-        # When the study is closed, all the services will try to save their
-        # data. This causes a lot of disk and network stress.
-        # Some nodes collapse under load or behave unexpectedly.
-        lock_manager = RedisLockManager.instance(app)
-        assert scheduler_data.docker_node_id  # nosec
-        lock: Optional[Lock] = await lock_manager.acquire_lock(
-            scheduler_data.docker_node_id
+        app_settings: AppSettings = app.state.settings
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        if lock is None:
-            node_slots = await lock_manager.get_node_slots(
-                scheduler_data.docker_node_id
-            )
-            logger.debug("All %s are currently being used. Skipping", f"{node_slots=}")
-            # Next observation cycle, the service will try again to save the state
-            # if it is able to acquire a lock
-            return
 
-        async with auto_release(lock_manager, lock):
+        async def _remove_containers_save_state_and_outputs() -> None:
+            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+                app
+            )
             try:
                 await dynamic_sidecar_client.begin_service_destruction(
                     dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
@@ -533,10 +521,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     scheduler_data.service_name,
                     f"{e}",
                 )
-            app_settings: AppSettings = app.state.settings
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
 
             # only try to save the status if :
             # - the dynamic-sidecar has finished booting correctly
@@ -591,43 +575,62 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # and make the director warn about hanging sidecars?
                     raise e
 
-            # remove the 2 services
-            await remove_dynamic_sidecar_stack(
-                node_uuid=scheduler_data.node_uuid,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-            )
-            # remove network
-            await remove_dynamic_sidecar_network(
-                scheduler_data.dynamic_sidecar_network_name
-            )
+        # STARTS HERE
 
-            # NOTE: for future attempts, volumes cannot be cleaned up
-            # since they are local to the node.
-            # That's why anonymous volumes are used!
-
+        # A node can end up with all the services from a single study.
+        # When the study is closed, all the services will try to save their
+        # data. This causes a lot of disk and network stress.
+        # Some nodes collapse under load or behave unexpectedly.
+        lock_manager = RedisLockManager.instance(app)
+        assert scheduler_data.docker_node_id  # nosec
+        try:
+            async with lock_manager.lock(scheduler_data.docker_node_id):
+                await _remove_containers_save_state_and_outputs()
+        except LockAcquireError:
             logger.debug(
-                "Removed dynamic-sidecar created services for '%s'",
-                scheduler_data.service_name,
+                "Will try again a in a bit to save state for %s. Currently docker_node %s is busy."
             )
+            # Next observation cycle, the service will try again to save the state
+            # if it is able to acquire a lock
+            return
 
-            # if a project network for the current project has no more
-            # containers attached to it (because the last service which
-            # was using it was removed), also removed the network
-            used_projects_networks = await get_projects_networks_containers(
-                project_id=scheduler_data.project_id
-            )
-            await logged_gather(
-                *[
-                    try_to_remove_network(network_name)
-                    for network_name, container_count in used_projects_networks.items()
-                    if container_count == 0
-                ]
-            )
+        # remove the 2 services
+        await remove_dynamic_sidecar_stack(
+            node_uuid=scheduler_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+        )
+        # remove network
+        await remove_dynamic_sidecar_network(
+            scheduler_data.dynamic_sidecar_network_name
+        )
 
-            await app.state.dynamic_sidecar_scheduler.finish_service_removal(
-                scheduler_data.node_uuid
-            )
-            scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
+        # NOTE: for future attempts, volumes cannot be cleaned up
+        # since they are local to the node.
+        # That's why anonymous volumes are used!
+
+        logger.debug(
+            "Removed dynamic-sidecar created services for '%s'",
+            scheduler_data.service_name,
+        )
+
+        # if a project network for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
+        used_projects_networks = await get_projects_networks_containers(
+            project_id=scheduler_data.project_id
+        )
+        await logged_gather(
+            *[
+                try_to_remove_network(network_name)
+                for network_name, container_count in used_projects_networks.items()
+                if container_count == 0
+            ]
+        )
+
+        await app.state.dynamic_sidecar_scheduler.finish_service_removal(
+            scheduler_data.node_uuid
+        )
+        scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 
 # register all handlers defined in this module here

@@ -4,28 +4,58 @@
 
 import asyncio
 from argparse import Namespace
-from asyncio import CancelledError, Task
+from asyncio import CancelledError
 from contextlib import suppress
-from typing import AsyncIterable, Callable, Optional
+from typing import AsyncIterable, Callable
 
 import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from redis.exceptions import LockError
-from settings_library.redis import RedisSettings
+from pydantic import PositiveFloat
 from pytest_mock import MockerFixture
+from redis.exceptions import LockError, LockNotOwnedError
+from settings_library.redis import RedisSettings
+from simcore_service_director_v2.core.errors import LockAcquireError
 from simcore_service_director_v2.modules import redis
 from simcore_service_director_v2.modules.redis import (
-    ExtendLock,
+    DEFAULT_LOCKS_PER_NODE,
     DockerNodeId,
+    ExtendLock,
     RedisLockManager,
-    auto_release,
 )
 
 pytest_simcore_core_services_selection = [
     "redis",
 ]
+
+
+# UTILS
+
+
+async def _assert_lock_acquired_and_released(
+    redis_lock_manager: RedisLockManager,
+    docker_node_id: DockerNodeId,
+    *,
+    sleep_before_release: PositiveFloat,
+) -> ExtendLock:
+    async with redis_lock_manager.lock(docker_node_id) as extend_lock:
+        assert await extend_lock._redis_lock.locked() is True
+        assert await extend_lock._redis_lock.owned() is True
+
+        # task is running and not cancelled
+        assert extend_lock.task
+        assert extend_lock.task.done() is False
+        assert extend_lock.task.cancelled() is False
+
+        await asyncio.sleep(sleep_before_release)
+
+    # task was canceled and lock is unlocked and not owned
+    assert extend_lock.task is None
+    assert await extend_lock._redis_lock.locked() is False
+    assert await extend_lock._redis_lock.owned() is False
+
+    return extend_lock
 
 
 # FIXTURES
@@ -120,77 +150,62 @@ async def test_redis_two_lock_instances(
     assert await second_lock.locked() is False
 
 
-async def test_auto_release_ok(
-    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
-) -> None:
-    extend_lock: Optional[ExtendLock] = await redis_lock_manager.acquire_lock(
-        docker_node_id
-    )
-    assert extend_lock is not None
-    assert await extend_lock._lock.locked() is True
-
-    # code completes without error
-    async with auto_release(redis_lock_manager, extend_lock):
-        assert await extend_lock._lock.locked() is True
-
-    assert await extend_lock._lock.locked() is False
-
-    # lock was already released and cannot be released again
-    with pytest.raises(LockError):
-        await redis_lock_manager.release_lock(extend_lock)
-
-
-async def test_auto_release_on_error_releases_lock(
-    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
-) -> None:
-    lock: Optional[ExtendLock] = await redis_lock_manager.acquire_lock(docker_node_id)
-    assert lock is not None
-    assert await lock._lock.locked() is True
-
-    # code will raise an error
-    with pytest.raises(RuntimeError):
-        async with auto_release(redis_lock_manager, lock):
-            assert await lock._lock.locked() is True
-            raise RuntimeError("Unexpected oops!")
-
-    assert await lock._lock.locked() is False
-
-    # lock was already released and cannot be released again
-    with pytest.raises(LockError):
-        await redis_lock_manager.release_lock(lock)
-
-
 async def test_lock_extend_task_life_cycle(
     redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
 ) -> None:
-    lock: Optional[ExtendLock] = await redis_lock_manager.acquire_lock(docker_node_id)
-    assert lock is not None
-    assert await lock._lock.locked() is True
+    extend_lock = await _assert_lock_acquired_and_released(
+        redis_lock_manager, docker_node_id, sleep_before_release=0
+    )
 
-    # task is running and not cancelled
-    task: Optional[Task] = lock.task
-    assert task
-    assert task.done() is False
-    assert task.cancelled() is False
-
-    await redis_lock_manager.release_lock(lock)
-
-    # task was cancelled and removed
-    assert task.done() is True
-    assert task.cancelled() is True
-    assert lock.task is None
-
-    # try to cancel again
+    # try to cancel again will not work!
     with pytest.raises(LockError):
-        await redis_lock_manager.release_lock(lock)
+        await redis_lock_manager._release_extend_lock(extend_lock)
 
 
-@pytest.mark.parametrize("repeat", [2, 10])
-@pytest.mark.parametrize("locks_per_node", [4, 10, 100])
+async def test_no_more_locks_can_be_acquired(
+    redis_lock_manager: RedisLockManager, docker_node_id: DockerNodeId
+) -> None:
+    # acquire all available locks
+    slots = await redis_lock_manager._get_node_slots(docker_node_id)
+    assert slots == DEFAULT_LOCKS_PER_NODE
+
+    tasks = [
+        asyncio.create_task(
+            _assert_lock_acquired_and_released(
+                redis_lock_manager, docker_node_id, sleep_before_release=1
+            )
+        )
+        for _ in range(slots)
+    ]
+
+    # ensure locks are acquired
+    await asyncio.sleep(0.25)
+
+    # no slots available
+    with pytest.raises(LockAcquireError) as exec_info:
+        await _assert_lock_acquired_and_released(
+            redis_lock_manager, docker_node_id, sleep_before_release=0
+        )
+    assert (
+        f"{exec_info.value}"
+        == f"Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
+    )
+
+    # wait for tasks to be released
+    await asyncio.gather(*tasks)
+
+
+@pytest.mark.parametrize(
+    "locks_per_node",
+    [
+        4,
+        10,
+        100,
+    ],
+)
 async def test_acquire_all_available_node_locks_stress_test(
     redis_lock_manager: RedisLockManager,
     docker_node_id: DockerNodeId,
-    repeat: int,
     mock_default_locks_per_node: Callable[[int], None],
     locks_per_node: int,
 ) -> None:
@@ -205,33 +220,18 @@ async def test_acquire_all_available_node_locks_stress_test(
     total_node_slots = await redis_lock_manager._get_node_slots(docker_node_id)
     assert total_node_slots == locks_per_node
 
-    async def _acquire_lock() -> ExtendLock:
-        lock = await redis_lock_manager.acquire_lock(docker_node_id)
-        assert lock is not None
-        return lock
-
-    async def _release_lock(lock: ExtendLock) -> None:
-        async with auto_release(redis_lock_manager, lock):
-            assert await lock._lock.locked() is True
-        assert await lock._lock.locked() is False
-
-    for _ in range(repeat):
-        # acquire locks in parallel
-        acquired_locks: tuple[ExtendLock] = await asyncio.gather(
-            *[_acquire_lock() for _ in range(total_node_slots)]
-        )
-
-        # trying to sleep enough to trigger the next steps while
-        # the locks are being refreshed. They are usually refreshed
-        # at `redis_lock_manager.lock_timeout_s * 0.5` interval
-        await asyncio.sleep(redis_lock_manager.lock_timeout_s * 0.48)
-
-        # no more slots are available to acquire any other locks
-        with pytest.raises(AssertionError):
-            await _acquire_lock()
-
-        # release locks in parallel
-        await asyncio.gather(*[_release_lock(lock) for lock in acquired_locks])
+    # THE extend task is causing things to hang!!! that is what is wrong here!
+    await asyncio.gather(
+        *[
+            _assert_lock_acquired_and_released(
+                redis_lock_manager,
+                docker_node_id,
+                sleep_before_release=redis_lock_manager.lock_timeout_s / 2,
+            )
+            for _ in range(total_node_slots)
+        ]
+    )
+    print("all locks have been released")
 
 
 async def test_lock_extension_expiration(
@@ -244,21 +244,32 @@ async def test_lock_extension_expiration(
     redis_lock_manager.lock_timeout_s = SHORT_INTERVAL
     mock_default_locks_per_node(1)
 
-    lock = await redis_lock_manager.acquire_lock(docker_node_id)
-    assert lock is not None
+    with pytest.raises(LockNotOwnedError) as err_info:
+        async with redis_lock_manager.lock(docker_node_id) as extend_lock:
+            # lock should have been extended at least 2 times
+            # and should still be locked
+            await asyncio.sleep(SHORT_INTERVAL * 4)
+            assert await extend_lock._redis_lock.locked() is True
+            assert await extend_lock._redis_lock.owned() is True
 
-    # lock should have been extended at least 2 times
-    # and should still be locked
-    await asyncio.sleep(SHORT_INTERVAL * 4)
-    assert await lock._lock.locked() is True
+            # emulating process died (equivalent to no further renews)
+            assert extend_lock.task
+            extend_lock.task.cancel()
+            with suppress(CancelledError):
+                await extend_lock.task
 
-    # emulating process died (equivalent to no further renews)
-    task: Optional[Task] = lock.task
-    assert task
-    task.cancel()
-    with suppress(CancelledError):
-        await task
+            # lock is expected to be unlocked after timeout interval
+            await asyncio.sleep(redis_lock_manager.lock_timeout_s)
+            assert await extend_lock._redis_lock.locked() is False
+            assert await extend_lock._redis_lock.owned() is False
 
-    # lock is expected to be unlocked after timeout interval
-    await asyncio.sleep(redis_lock_manager.lock_timeout_s)
-    assert await lock._lock.locked() is False
+    # since the lock expired we expect the lock to no longer be owned
+    assert (
+        err_info.traceback[-1].statement.__str__().strip()
+        == 'raise LockNotOwnedError("Cannot release a lock" " that\'s no longer owned")'
+    )
+    # the error must be raised by the release method inside the ExtendLock
+    assert (
+        err_info.traceback[-2].statement.__str__().strip()
+        == "await self._redis_lock.release()"
+    )
