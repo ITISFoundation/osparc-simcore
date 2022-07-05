@@ -183,6 +183,7 @@ def get_dynamic_sidecar_spec(
     # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         endpoint_spec["Ports"] = [
+            # server port
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
