@@ -46,9 +46,9 @@ async def test_volume_with_label(
 
 
 async def test_volume_label_missing(run_id: UUID) -> None:
-    with pytest.raises(VolumeNotFoundError) as excinfo:
+    with pytest.raises(VolumeNotFoundError) as exc_info:
         await get_volume_by_label("not_exist", run_id)
 
-    error_msg = f"{excinfo.value}"
+    error_msg = f"{exc_info.value}"
     assert f"{run_id}" in error_msg
     assert "not_exist" in error_msg
