@@ -367,7 +367,7 @@ async def test_containers_down_after_starting(
 ):
     # store spec first
     response = await client.post(
-        f"/{API_VTAG}/containers", {"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
