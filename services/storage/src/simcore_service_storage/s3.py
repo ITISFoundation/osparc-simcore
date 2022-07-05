@@ -12,6 +12,7 @@ from tenacity.wait import wait_fixed
 
 from .constants import APP_CONFIG_KEY, APP_S3_KEY, RETRY_WAIT_SECS
 from .s3_client import StorageS3Client
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,9 @@ log = logging.getLogger(__name__)
 async def setup_s3_client(app):
     log.debug("setup %s.setup.cleanup_ctx", __name__)
     # setup
-    storage_s3_settings = app[APP_CONFIG_KEY].STORAGE_S3
+    storage_settings: Settings = app[APP_CONFIG_KEY]
+    storage_s3_settings = storage_settings.STORAGE_S3
+    assert storage_s3_settings  # nosec
 
     async with AsyncExitStack() as exit_stack:
         client = None
@@ -29,7 +32,11 @@ async def setup_s3_client(app):
             reraise=True,
         ):
             with attempt:
-                client = await StorageS3Client.create(exit_stack, storage_s3_settings)
+                client = await StorageS3Client.create(
+                    exit_stack,
+                    storage_s3_settings,
+                    storage_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+                )
                 log.info(
                     "S3 client %s successfully created [%s]",
                     f"{client=}",

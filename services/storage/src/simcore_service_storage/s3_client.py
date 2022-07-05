@@ -5,7 +5,7 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Optional, cast
+from typing import Optional, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -25,8 +25,6 @@ from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 log = logging.getLogger(__name__)
 
-_MAX_TRANSFER_CONCURRENCY: Final[int] = 4
-
 
 @dataclass(frozen=True)
 class S3MetaData:
@@ -40,10 +38,11 @@ class S3MetaData:
 class StorageS3Client:
     session: aioboto3.Session
     client: S3Client
+    transfer_max_concurrency: int
 
     @classmethod
     async def create(
-        cls, exit_stack: AsyncExitStack, settings: S3Settings
+        cls, exit_stack: AsyncExitStack, settings: S3Settings, s3_max_concurrency: int
     ) -> "StorageS3Client":
         # upon creation the client does not try to connect, one need to make an operation
         session = aioboto3.Session()
@@ -62,7 +61,7 @@ class StorageS3Client:
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(session, client)
+        return cls(session, client, s3_max_concurrency)
 
     @s3_exception_handler(log)
     async def create_bucket(self, bucket: S3BucketName) -> None:
@@ -257,7 +256,7 @@ class StorageS3Client:
             CopySource={"Bucket": bucket, "Key": src_file},
             Bucket=bucket,
             Key=dst_file,
-            Config=TransferConfig(max_concurrency=_MAX_TRANSFER_CONCURRENCY),
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
         )
 
     @s3_exception_handler(log)
@@ -291,7 +290,7 @@ class StorageS3Client:
             f"{file}",
             Bucket=bucket,
             Key=file_id,
-            Config=TransferConfig(max_concurrency=_MAX_TRANSFER_CONCURRENCY),
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
         )
 
     @staticmethod
