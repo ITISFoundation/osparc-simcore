@@ -32,7 +32,9 @@ async def _write_file_and_run_command(
 async def cleanup_containers_and_volumes(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
-    command = 'docker-compose --project-name {project} --file "{file_path}" rm --force -v'
+    command = (
+        'docker-compose --project-name {project} --file "{file_path}" rm --force -v'
+    )
     result = await _write_file_and_run_command(
         settings=settings,
         file_content=compose_spec,
