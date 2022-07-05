@@ -137,21 +137,6 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url) from exc
 
 
-async def _file_sender(file_path: Path, file_size: int):
-    with tqdm(
-        desc=f"uploading {file_path} [{file_size} bytes]",
-        total=file_size,
-        unit="byte",
-        unit_scale=True,
-    ) as pbar:
-        async with aiofiles.open(file_path, "rb") as f:
-            chunk = await f.read(CHUNK_SIZE)
-            while chunk:
-                pbar.update(len(chunk))
-                yield chunk
-                chunk = await f.read(CHUNK_SIZE)
-
-
 async def _file_part_sender(file: Path, *, offset: int, bytes_to_send: int):
     chunk_size = CHUNK_SIZE
     async with aiofiles.open(file, "rb") as f:
