@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
@@ -54,6 +55,7 @@ def create_base_app() -> FastAPI:
     # minimal
     app = FastAPI(
         debug=settings.DEBUG,
+        version=__version__,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
@@ -78,7 +80,7 @@ def create_app():
     app.state.shared_store = SharedStore()
     app.state.application_health = ApplicationHealth()
 
-    if app.state.settings.is_development_mode:
+    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
     if app.state.settings.RABBIT_SETTINGS:

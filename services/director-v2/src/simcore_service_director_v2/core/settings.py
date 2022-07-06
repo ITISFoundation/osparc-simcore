@@ -195,7 +195,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
-        1.0,
+        5.0,
         description=(
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),

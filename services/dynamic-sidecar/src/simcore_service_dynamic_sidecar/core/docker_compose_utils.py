@@ -41,10 +41,12 @@ async def cleanup_containers_and_volumes(
         command=command,
         command_timeout=None,
     )
-    if result.success:
+    if not result.success:
         logger.warning(
-            "Unexpected error while running command\n%s:\n%s",
+            "Unexpected error while running command\n%s with %s %s:\n%s",
             f"{command=}",
+            f"project={settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}",
+            f"stop_and_remove_timeout={settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT}",
             f"{result.decoded_stdout}",
         )
 
