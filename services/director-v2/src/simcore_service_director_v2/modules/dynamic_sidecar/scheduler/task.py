@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from servicelib.errors import create_error_code
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -357,21 +358,21 @@ class DynamicSidecarsScheduler:
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
             except Exception as e:  # pylint: disable=broad-except
-                # TODO: should handle each case separately
-                # FIXME: this message gets to the front-end. Use service display name instead!
                 service_name = scheduler_data.service_name
 
                 # With unhandled errors, let's generate and ID and send it to the end-user
                 # so that we can trace the logs and debug the issue.
-                error_id = id(e)
+
+                error_code = create_error_code(e)
                 logger.exception(
-                    "[%s] Observation of %s unexpectedly failed",
-                    f"{error_id=}",
+                    "Observation of %s unexpectedly failed",
                     f"{service_name=}",
+                    extra={"error_code": error_code},
                 )
-                message_for_user = f"Upss! this service ({service_name}) failed unexpectedly [{error_id=}]]"
                 scheduler_data.dynamic_sidecar.status.update_failing_status(
-                    message_for_user
+                    # This message must be human-friendly
+                    f"Upss! This service ({service_name}) failed unexpectedly",
+                    error_code,
                 )
             finally:
                 if scheduler_data_copy != scheduler_data:

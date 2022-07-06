@@ -20,6 +20,7 @@ from pydantic import (
     constr,
     parse_obj_as,
 )
+from servicelib.errors import ErrorCodeStr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -68,8 +69,10 @@ class Status(BaseModel):
     def update_ok_status(self, info: str) -> None:
         self._update(DynamicSidecarStatus.OK, info)
 
-    def update_failing_status(self, info: str) -> None:
-        self._update(DynamicSidecarStatus.FAILING, info)
+    def update_failing_status(
+        self, user_msg: str, error_code: Optional[ErrorCodeStr] = None
+    ) -> None:
+        self._update(DynamicSidecarStatus.FAILING, f"{user_msg} {error_code or '' }")
 
     def __eq__(self, other: "Status") -> bool:
         return self.current == other.current and self.info == other.info
