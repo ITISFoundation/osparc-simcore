@@ -85,17 +85,24 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
             except Exception as exc:  # pylint: disable=broad-except
                 logger.debug("%s raised %s when being cancelled", t, exc)
 
+            assert t.done()  # nosec
+
         # Return the result if the handler finished first
         if handler_task in done:
+            assert poller_task.done()  # nosec
             return await handler_task
 
         # Otherwise, raise an exception. This is not exactly needed, but it will prevent
         # validation errors if your request handler is supposed to return something.
         logger.debug(
-            "Request %s %s cancelled.",
+            "Request %s %s cancelled:\n - %s\n - %s",
             request.method,
             request.url,
+            f"{poller_task=}",
+            f"{handler_task=}",
         )
+        assert poller_task.done()  # nosec
+        assert handler_task.done()  # nosec
 
         # NOTE: uvicorn server fails with 499
         raise HTTPException(
