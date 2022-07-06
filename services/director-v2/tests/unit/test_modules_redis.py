@@ -30,6 +30,7 @@ pytest_simcore_core_services_selection = [
 
 
 # UTILS
+TEST_RESOURCE = "a_resource"
 
 
 async def _assert_lock_acquired_and_released(
@@ -38,7 +39,9 @@ async def _assert_lock_acquired_and_released(
     *,
     sleep_before_release: PositiveFloat,
 ) -> ExtendLock:
-    async with slots_manager.lock(docker_node_id) as extend_lock:
+    async with slots_manager.lock(
+        docker_node_id, resource_name=TEST_RESOURCE
+    ) as extend_lock:
         assert await extend_lock._redis_lock.locked() is True
         assert await extend_lock._redis_lock.owned() is True
 
@@ -237,7 +240,9 @@ async def test_lock_extension_expiration(
     slots_manager.concurrent_saves = 1
 
     with pytest.raises(LockNotOwnedError) as err_info:
-        async with slots_manager.lock(docker_node_id) as extend_lock:
+        async with slots_manager.lock(
+            docker_node_id, resource_name=TEST_RESOURCE
+        ) as extend_lock:
             # lock should have been extended at least 2 times
             # and should still be locked
             await asyncio.sleep(SHORT_INTERVAL * 4)
@@ -267,4 +272,16 @@ async def test_lock_extension_expiration(
     )
 
 
-# TODO: add test to release lock upon errror in context manger
+async def test_lock_raises_error_if_no_slots_are_available(
+    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+) -> None:
+    slots_manager.concurrent_saves = 0
+
+    with pytest.raises(LockAcquireError) as err_info:
+        async with slots_manager.lock(docker_node_id, resource_name=TEST_RESOURCE):
+            pass
+
+    assert f"{err_info.value}" == (
+        f"Could not acquire a lock for {docker_node_id} since all "
+        f"{slots_manager.concurrent_saves} slots are used."
+    )
