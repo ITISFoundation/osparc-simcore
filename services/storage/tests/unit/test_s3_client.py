@@ -47,7 +47,9 @@ async def test_storage_storage_s3_client_creation(app_settings: Settings):
     assert app_settings.STORAGE_S3
     async with AsyncExitStack() as exit_stack:
         storage_s3_client = await StorageS3Client.create(
-            exit_stack, app_settings.STORAGE_S3
+            exit_stack,
+            app_settings.STORAGE_S3,
+            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
         )
         assert storage_s3_client
         response = await storage_s3_client.client.list_buckets()
@@ -98,7 +100,9 @@ async def storage_s3_client(
     assert app_settings.STORAGE_S3
     async with AsyncExitStack() as exit_stack:
         storage_s3_client = await StorageS3Client.create(
-            exit_stack, app_settings.STORAGE_S3
+            exit_stack,
+            app_settings.STORAGE_S3,
+            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
         )
         # check that no bucket is lying around
         assert storage_s3_client
