@@ -475,12 +475,13 @@ async def test_container_logs_with_timestamps(
     client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
-        # get container logs
+        print("getting logs of container", container, "...")
         response = await client.get(
             f"/{API_VTAG}/containers/{container}/logs",
             query_string=dict(timestamps=True),
         )
         assert response.status_code == status.HTTP_200_OK, response.text
+        assert response.json() == []
 
 
 async def test_container_missing_container(
