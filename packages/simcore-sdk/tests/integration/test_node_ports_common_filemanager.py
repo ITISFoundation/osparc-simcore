@@ -179,7 +179,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     assert get_e_tag == e_tag
     # now start an invalid update by generating an exception while uploading the same file
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.sync_local_to_s3",
+        "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
         autospec=True,
         side_effect=RCloneFailedError,
     )
