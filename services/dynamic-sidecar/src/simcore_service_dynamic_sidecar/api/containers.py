@@ -228,7 +228,7 @@ async def runs_docker_compose_down(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def containers_docker_inspect(
     request: Request,
     only_status: bool = Query(
