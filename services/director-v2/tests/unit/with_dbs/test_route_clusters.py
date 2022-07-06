@@ -4,7 +4,7 @@
 
 import json
 import random
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, Callable, Iterator
 
 import httpx
 import pytest
@@ -25,6 +25,7 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
@@ -41,9 +42,9 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture()
 def clusters_config(
-    mock_env: None,
+    mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
@@ -58,8 +59,8 @@ def clusters_config(
 
 
 @pytest.fixture
-def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
+def cluster_simple_authentication(faker: Faker) -> Callable[[], dict[str, Any]]:
+    def creator() -> dict[str, Any]:
         simple_auth = {
             "type": "simple",
             "username": faker.user_name(),
@@ -80,7 +81,7 @@ def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
 
 async def test_list_clusters(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
@@ -89,7 +90,7 @@ async def test_list_clusters(
     # there is no cluster at the moment, the list shall contain the default cluster
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
+    returned_clusters_list = parse_obj_as(list[ClusterGet], response.json())
     assert (
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
@@ -104,7 +105,7 @@ async def test_list_clusters(
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
+    returned_clusters_list = parse_obj_as(list[ClusterGet], response.json())
     assert (
         len(returned_clusters_list) == NUM_CLUSTERS + 1
     )  # the default cluster comes on top of the NUM_CLUSTERS
@@ -116,7 +117,7 @@ async def test_list_clusters(
     user_2 = registered_user()
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
+    returned_clusters_list = parse_obj_as(list[ClusterGet], response.json())
     assert (
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
@@ -142,7 +143,7 @@ async def test_list_clusters(
 
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
-    user_2_clusters = parse_obj_as(List[ClusterGet], response.json())
+    user_2_clusters = parse_obj_as(list[ClusterGet], response.json())
     # we should find 3 clusters + the default cluster
     assert len(user_2_clusters) == 3 + 1
     for name in [
@@ -161,7 +162,7 @@ async def test_list_clusters(
 
 async def test_get_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
@@ -232,7 +233,7 @@ async def test_get_cluster(
 )
 async def test_get_another_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
     cluster_sharing_rights: ClusterAccessRights,
@@ -267,7 +268,7 @@ async def test_get_another_cluster(
 @pytest.mark.parametrize("with_query", [True, False])
 async def test_get_default_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     async_client: httpx.AsyncClient,
     with_query: bool,
 ):
@@ -288,7 +289,7 @@ async def test_get_default_cluster(
 
 async def test_create_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
@@ -338,7 +339,7 @@ async def test_create_cluster(
 
 async def test_update_own_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -470,7 +471,7 @@ async def test_update_own_cluster(
 
 async def test_update_default_cluster_fails(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -507,7 +508,7 @@ async def test_update_default_cluster_fails(
 )
 async def test_update_another_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -613,7 +614,7 @@ async def test_update_another_cluster(
 
 async def test_delete_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
@@ -657,7 +658,7 @@ async def test_delete_cluster(
 )
 async def test_delete_another_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -702,7 +703,7 @@ async def test_delete_another_cluster(
 
 async def test_delete_default_cluster_fails(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()
@@ -714,7 +715,7 @@ async def test_ping_invalid_cluster_raises_422(
     clusters_config: None,
     async_client: httpx.AsyncClient,
     faker: Faker,
-    cluster_simple_authentication: Callable[[], Dict[str, Any]],
+    cluster_simple_authentication: Callable[[], dict[str, Any]],
 ):
     # calling with wrong data raises
     response = await async_client.post("/v2/clusters:ping", json={})
@@ -767,7 +768,7 @@ async def test_ping_cluster(
 
 async def test_ping_specific_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
@@ -803,7 +804,7 @@ async def test_ping_specific_cluster(
 
 async def test_ping_default_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
+    registered_user: Callable[..., dict],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()

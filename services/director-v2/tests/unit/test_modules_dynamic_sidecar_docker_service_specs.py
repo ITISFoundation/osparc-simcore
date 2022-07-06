@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 
 
-from typing import Any, Iterator, cast
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -17,6 +17,8 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceKeyVersion
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
@@ -29,11 +31,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mock_env(
-    monkeypatch: MonkeyPatch, mock_env: dict[str, str]
-) -> Iterator[dict[str, str]]:
+def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
-    env_vars: dict[str, str] = mock_env
+    env_vars = mock_env.copy()
     env_vars.update(
         {
             "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
@@ -59,9 +59,7 @@ def mock_env(
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         }
     )
-
-    for name, value in env_vars.items():
-        monkeypatch.setenv(name, value)
+    setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
 
 
@@ -327,7 +325,7 @@ def test_get_dynamic_proxy_spec(
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
-    for _ in range(10):
+    for _ in range(10):  # loop to check it does not repeat copies
         dynamic_sidecar_spec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,

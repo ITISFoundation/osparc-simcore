@@ -10,7 +10,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterable, Iterable
 
-import dotenv
 import httpx
 import pytest
 import simcore_service_director_v2
@@ -19,7 +18,7 @@ from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import setenvs_as_envfile, setenvs_from_dict
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -66,20 +65,16 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> EnvVarsDict:
-    env_devel_file = project_slug_dir / ".env-devel"
-    assert env_devel_file.exists()
-    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    return environ
-
-
 @pytest.fixture(scope="function")
 def project_env_devel_environment(
-    project_env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+    monkeypatch: MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
-    setenvs_from_dict(monkeypatch, project_env_devel_dict)
-    return project_env_devel_dict
+    env_devel_file = project_slug_dir / ".env-devel"
+    assert env_devel_file.exists()
+    envs = setenvs_as_envfile(
+        monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
+    )
+    return envs
 
 
 @pytest.fixture(scope="session")
@@ -156,8 +151,7 @@ def mock_env(
         # disable tracing as together with LifespanManager, it does not remove itself nicely
         "DIRECTOR_V2_TRACING": "null",
     }
-    for name, value in env_vars.items():
-        monkeypatch.setenv(name, "null" if value is None else value)
+    setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
 
 

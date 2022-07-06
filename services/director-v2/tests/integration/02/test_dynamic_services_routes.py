@@ -22,6 +22,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
@@ -123,7 +124,7 @@ def start_request_data(
 @pytest.fixture
 async def director_v2_client(
     minimal_configuration: None,
-    mock_env: None,
+    mock_env: EnvVarsDict,
     network_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterable[TestClient]:

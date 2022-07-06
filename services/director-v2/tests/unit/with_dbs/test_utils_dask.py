@@ -30,6 +30,7 @@ from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
@@ -259,7 +260,7 @@ async def test_parse_output_data(
 
 @pytest.fixture
 def app_with_db(
-    mock_env: None,
+    mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):

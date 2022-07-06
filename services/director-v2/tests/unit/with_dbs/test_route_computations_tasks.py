@@ -14,6 +14,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_raw_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
@@ -33,7 +34,7 @@ def get_app(async_client: httpx.AsyncClient) -> FastAPI:
 
 @pytest.fixture
 def mock_env(
-    mock_env: None,  # sets default env vars
+    mock_env: EnvVarsDict,  # sets default env vars
     postgres_host_config,  # sets postgres env vars
     monkeypatch: pytest.MonkeyPatch,
 ):

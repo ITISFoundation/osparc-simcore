@@ -55,7 +55,9 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(mock_env: None) -> AsyncIterable[DynamicSidecarClient]:
+async def dynamic_sidecar_client(
+    mock_env: EnvVarsDict,
+) -> AsyncIterable[DynamicSidecarClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
@@ -71,7 +73,7 @@ def retry_count() -> int:
 
 @pytest.fixture
 def raise_retry_count(
-    monkeypatch: MonkeyPatch, retry_count: int, mock_env: None
+    monkeypatch: MonkeyPatch, retry_count: int, mock_env: EnvVarsDict
 ) -> None:
     monkeypatch.setenv(
         "DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", f"{retry_count}"
