@@ -344,6 +344,9 @@ class SimcoreS3DataManager(BaseDataManager):
             fmd = await db_file_meta_data.get(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
+            if not is_file_entry_valid(fmd):
+                # try lazy update
+                fmd = await self._update_database_from_storage(conn, fmd)
 
         link = parse_obj_as(
             AnyUrl,
