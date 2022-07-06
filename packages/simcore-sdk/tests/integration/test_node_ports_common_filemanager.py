@@ -94,7 +94,7 @@ async def test_valid_upload_download(
 @pytest.fixture
 def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.sync_local_to_s3",
+        "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
         autospec=True,
         side_effect=RCloneFailedError,
     )
