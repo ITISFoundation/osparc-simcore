@@ -29,7 +29,7 @@ async def _write_file_and_run_command(
         return await async_command(formatted_command, command_timeout)
 
 
-async def cleanup_containers_and_volumes(
+async def _cleanup_containers_and_volumes(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
     command = (
@@ -58,7 +58,7 @@ async def docker_compose_up(
     if not shared_store.compose_spec:
         return CommandResult(True, "No started spec to remove was found")
 
-    await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
+    await _cleanup_containers_and_volumes(shared_store.compose_spec, settings)
 
     command = 'docker-compose --project-name {project} --file "{file_path}" up --no-build --detach'
 
@@ -79,7 +79,7 @@ async def docker_compose_down(
     if not shared_store.compose_spec:
         return CommandResult(True, "No started spec to remove was found")
 
-    await cleanup_containers_and_volumes(shared_store.compose_spec, settings)
+    await _cleanup_containers_and_volumes(shared_store.compose_spec, settings)
 
     command = (
         'docker-compose --project-name {project} --file "{file_path}" '
