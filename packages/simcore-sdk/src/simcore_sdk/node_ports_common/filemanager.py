@@ -117,10 +117,10 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-        file_size = int(response.headers.get("Content-Length", 0))
+        file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable()} bytes]",
+                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'} bytes]",
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
