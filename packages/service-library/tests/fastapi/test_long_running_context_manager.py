@@ -17,7 +17,6 @@ from servicelib.fastapi.long_running import (
     TaskId,
     start_task,
     server_setup,
-    mark_long_running_task,
     ProgressHandler,
     TaskClientTimeoutError,
     TaskClientResultErrorError,
@@ -37,7 +36,6 @@ async def _assert_task_removed(
 # FIXTURES
 
 
-@mark_long_running_task()
 async def a_test_task(progress: ProgressHandler) -> int:
     progress.update_progress(message="starting", percent=0.0)
     await asyncio.sleep(1)
@@ -45,7 +43,6 @@ async def a_test_task(progress: ProgressHandler) -> int:
     return 42
 
 
-@mark_long_running_task()
 async def a_failing_test_task(progress: ProgressHandler) -> None:
     progress.update_progress(message="starting", percent=0.0)
     await asyncio.sleep(1)
@@ -61,14 +58,14 @@ def user_routes() -> APIRouter:
     async def create_task_user_defined_route(
         task_manger: TaskManager = Depends(get_task_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manger, task_name="a_test_task")
+        task_id = start_task(task_manager=task_manger, handler=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
         task_manger: TaskManager = Depends(get_task_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manger, task_name="a_failing_test_task")
+        task_id = start_task(task_manager=task_manger, handler=a_failing_test_task)
         return task_id
 
     return router

@@ -1,22 +1,17 @@
 from contextlib import suppress
-from ._decorators import MARKED_FUNCTIONS
 from pydantic import BaseModel, Field
 import logging
-from typing import Any, Optional
-import inspect
+from typing import Any, Awaitable, Callable, Optional
 from collections import deque
 from ._models import TaskName, ProgressHandler, TrackedTask, TaskId, TaskStatus
 from uuid import uuid4
 from asyncio import Task, CancelledError
-from fastapi import BackgroundTasks, Response
 import asyncio
 from ._errors import (
-    TaskParametersError,
     TaskAlreadyRunningError,
     TaskNotFoundError,
     TaskNotCompletedError,
     TaskCancelledError,
-    TaskNotRegisteredError,
     TaskExceptionError,
 )
 
@@ -158,33 +153,21 @@ class TaskManager(BaseModel):
             await self.remove(task_id, reraise_errors=False)
 
 
-def start_task(task_manager: TaskManager, task_name: TaskName, **kwargs) -> TaskId:
-    if task_name not in MARKED_FUNCTIONS:
-        raise TaskNotRegisteredError(
-            task_name=task_name, registered_tasks=list(MARKED_FUNCTIONS.keys())
-        )
-
-    awaitable, mark_options = MARKED_FUNCTIONS[task_name]
+def start_task(
+    task_manager: TaskManager,
+    handler: Callable[..., Awaitable],
+    *,
+    unique: bool = False,
+    **kwargs,
+) -> TaskId:
+    task_name = handler.__qualname__
 
     # only one unique task can be running
-    if mark_options.unique and task_manager.is_task_name_running(task_name):
+    if unique and task_manager.is_task_name_running(task_name):
         managed_tasks_ids = list(task_manager.tasks[task_name].keys())
         assert len(managed_tasks_ids) == 1  # nosec
         managed_task = task_manager.tasks[task_name][managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
-
-    # check provided parameters match function's parameters
-    expected_parameter_names = {
-        x.name for x in inspect.signature(awaitable).parameters.values()
-    }
-    for param_name in kwargs.keys():
-        print(param_name, expected_parameter_names)
-        if param_name not in expected_parameter_names:
-            raise TaskParametersError(
-                task_name=task_name,
-                expected_parameter_names=sorted(expected_parameter_names),
-                param_name=param_name,
-            )
 
     progress = ProgressHandler.create()
     # NOTE: starlette's BackgroundTask is just awaited at the end
@@ -192,7 +175,8 @@ def start_task(task_manager: TaskManager, task_name: TaskName, **kwargs) -> Task
     # It blocks the server until the request is complete.
     # Below is not what we want
     # background_tasks.add_task(_handle_task, background_task)
-    task = asyncio.create_task(awaitable(progress, **kwargs))
+    awaitable = handler(ProgressHandler.create(), **kwargs)
+    task = asyncio.create_task(awaitable)
 
     tracked_task = task_manager.add(
         task_name=task_name, task=task, progress_handler=progress

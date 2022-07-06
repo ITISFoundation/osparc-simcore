@@ -12,7 +12,6 @@ from servicelib.fastapi.long_running import (
     TaskId,
     ProgressHandler,
     server_setup,
-    mark_long_running_task,
 )
 from typing import AsyncIterable
 
@@ -28,7 +27,6 @@ def _assert_not_found(response: Response, task_id: TaskId) -> None:
     }
 
 
-@mark_long_running_task()
 async def short_task(
     progress: ProgressHandler,
     raise_when_finished: bool,
@@ -58,7 +56,7 @@ def user_routes() -> APIRouter:
     ) -> TaskId:
         task_id = start_task(
             task_manager=task_manger,
-            task_name="short_task",
+            handler=short_task,
             raise_when_finished=raise_when_finished,
             total_sleep=1,
         )

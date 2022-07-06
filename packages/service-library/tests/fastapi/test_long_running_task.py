@@ -12,7 +12,6 @@ from servicelib.fastapi.long_running._errors import (
     TaskNotCompletedError,
     TaskCancelledError,
     TaskExceptionError,
-    TaskParametersError,
     TaskAlreadyRunningError,
     TaskNotFoundError,
 )
@@ -30,7 +29,6 @@ from fastapi import status
 # UTILS
 
 
-@long_running.mark_long_running_task()
 async def a_background_task(
     progress: ProgressHandler,
     raise_when_finished: bool,
@@ -46,13 +44,11 @@ async def a_background_task(
     return 42
 
 
-@long_running.mark_long_running_task()
 async def fast_background_task(progress: ProgressHandler) -> int:
     """this task does nothing and returns a constant"""
     return 42
 
 
-@long_running.mark_long_running_task()
 async def failing_background_task(progress: ProgressHandler) -> None:
     """this task does nothing and returns a constant"""
     raise RuntimeError("failing asap")
@@ -71,7 +67,7 @@ def user_routes() -> APIRouter:
     ) -> TaskId:
         task_id = start_task(
             task_manager=task_manger,
-            task_name="a_background_task",
+            handler=a_background_task,
             raise_when_finished=raise_when_finished,
             total_sleep=2,
         )
@@ -99,41 +95,27 @@ def task_manager(bg_task_app: FastAPI) -> TaskManager:
 # TESTS
 
 
-async def test_task_parameter_error(task_manager: TaskManager) -> None:
-    with pytest.raises(TaskParametersError) as exe_info:
-        start_task(
-            task_manager=task_manager,
-            task_name="a_background_task",
-            unexpected="parameter",
-        )
-    assert f"{exe_info.value}" == (
-        "a_background_task expects the following parameters="
-        "['progress', 'raise_when_finished', 'total_sleep'], "
-        "but a parameter=unexpected was provided."
-    )
-
-
 async def test_unique_task_already_running(task_manager: TaskManager) -> None:
-    @long_running.mark_long_running_task(unique=True)
     async def unique_task(progress: ProgressHandler) -> None:
         await asyncio.sleep(1)
 
-    start_task(task_manager=task_manager, task_name="unique_task")
+    start_task(task_manager=task_manager, handler=unique_task, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
     for _ in range(5):
         with pytest.raises(TaskAlreadyRunningError) as exec_info:
-            start_task(task_manager=task_manager, task_name="unique_task")
-        assert f"{exec_info.value}".startswith("unique_task must be unique, found:")
+            start_task(task_manager=task_manager, handler=unique_task, unique=True)
+        assert f"{exec_info.value}".startswith(
+            f"{unique_task.__qualname__} must be unique, found:"
+        )
 
 
 async def test_start_multiple_not_unique_tasks(task_manager: TaskManager) -> None:
-    @long_running.mark_long_running_task()
     async def not_unique_task(progress: ProgressHandler) -> None:
         await asyncio.sleep(1)
 
     for _ in range(5):
-        start_task(task_manager=task_manager, task_name="not_unique_task")
+        start_task(task_manager=task_manager, handler=not_unique_task)
 
 
 def test_get_task_id() -> None:
@@ -143,7 +125,7 @@ def test_get_task_id() -> None:
 async def test_get_status(task_manager: TaskManager) -> None:
     task_id = start_task(
         task_manager=task_manager,
-        task_name="a_background_task",
+        handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
     )
@@ -163,7 +145,7 @@ async def test_get_status_missing(task_manager: TaskManager) -> None:
 
 
 async def test_get_result(task_manager: TaskManager) -> None:
-    task_id = start_task(task_manager=task_manager, task_name="fast_background_task")
+    task_id = start_task(task_manager=task_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
     result = task_manager.get_result(task_id)
     assert result == 42
@@ -176,7 +158,7 @@ async def test_get_result_missing(task_manager: TaskManager) -> None:
 
 
 async def test_get_result_finished_with_error(task_manager: TaskManager) -> None:
-    task_id = start_task(task_manager=task_manager, task_name="failing_background_task")
+    task_id = start_task(task_manager=task_manager, handler=failing_background_task)
 
     can_continue = True
     while can_continue:
@@ -198,7 +180,7 @@ async def test_get_result_task_was_cancelled_multiple_times(
 ) -> None:
     task_id = start_task(
         task_manager=task_manager,
-        task_name="a_background_task",
+        handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
     )
@@ -213,7 +195,7 @@ async def test_get_result_task_was_cancelled_multiple_times(
 async def test_remove_ok(task_manager: TaskManager) -> None:
     task_id = start_task(
         task_manager=task_manager,
-        task_name="a_background_task",
+        handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
     )
