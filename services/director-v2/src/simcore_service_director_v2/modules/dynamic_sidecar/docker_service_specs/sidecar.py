@@ -205,7 +205,7 @@ def get_dynamic_sidecar_spec(
 
     #  -----------
     create_service_params = {
-        "endpoint_spec": {"Ports": ports},
+        "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",
