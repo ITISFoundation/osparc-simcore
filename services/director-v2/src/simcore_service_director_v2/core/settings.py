@@ -407,7 +407,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # docker environs
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum
     SC_BOOT_TARGET: Optional[BuildTargetEnum]
 
     LOG_LEVEL: LogLevel = Field(
