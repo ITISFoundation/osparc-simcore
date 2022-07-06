@@ -44,8 +44,8 @@ class BootModeEnum(str, Enum):
     DEVELOPMENT = "development"
 
     def is_devel_mode(self) -> bool:
-        """returns True if boot is set for development mode or not"""
-        return self in [self.DEBUG, self.DEVELOPMENT, self.LOCAL]
+        """returns True if this boot mode is used for development"""
+        return self in (self.DEBUG, self.DEVELOPMENT, self.LOCAL)
 
 
 class BuildTargetEnum(str, Enum):
