@@ -30,6 +30,7 @@ test() {
     --numprocesses=auto \
     --verbose \
     -m "not heavy_load" \
+    --setup-show \
     services/director-v2/tests/unit
 
   # these tests cannot be run in parallel
