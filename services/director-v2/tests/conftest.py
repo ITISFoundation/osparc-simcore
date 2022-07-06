@@ -14,11 +14,12 @@ import dotenv
 import httpx
 import pytest
 import simcore_service_director_v2
-from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -66,7 +67,7 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict[str, Any]:
+def project_env_devel_dict(project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -75,11 +76,10 @@ def project_env_devel_dict(project_slug_dir: Path) -> dict[str, Any]:
 
 @pytest.fixture(scope="function")
 def project_env_devel_environment(
-    project_env_devel_dict: dict[str, Any], monkeypatch: MonkeyPatch
-) -> dict[str, Any]:
-    for key, value in project_env_devel_dict.items():
-        monkeypatch.setenv(key, value)
-    return deepcopy(project_env_devel_dict)
+    project_env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    setenvs_from_dict(monkeypatch, project_env_devel_dict)
+    return project_env_devel_dict
 
 
 @pytest.fixture(scope="session")
