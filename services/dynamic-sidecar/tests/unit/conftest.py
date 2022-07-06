@@ -12,6 +12,7 @@ from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     _write_file_and_run_command,
@@ -71,7 +72,7 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def app(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
