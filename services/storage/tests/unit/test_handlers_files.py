@@ -603,6 +603,48 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     assert s3_metadata.e_tag == completion_etag
 
 
+async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
+    aiopg_engine: Engine,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    client: TestClient,
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    project_id: ProjectID,
+    node_id: NodeID,
+    faker: Faker,
+    get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
+):
+    assert client.app
+    file_size = parse_obj_as(ByteSize, "500Mib")
+    file_name = faker.file_name()
+    # create a file
+    file = create_file_of_size(file_size, file_name)
+    simcore_file_id = create_simcore_file_id(project_id, node_id, file_name)
+    # get an S3 upload link
+    file_upload_link = await create_upload_file_link_v2(
+        simcore_file_id, link_type="s3", file_size=file_size
+    )
+    # let's use the storage s3 internal client to upload
+    with file.open("rb") as fp:
+        response = await storage_s3_client.client.put_object(
+            Bucket=storage_s3_bucket, Key=simcore_file_id, Body=fp
+        )
+        assert "ETag" in response
+        upload_e_tag = json.loads(response["ETag"])
+    # check the file is now on S3
+    s3_metadata = await storage_s3_client.get_file_metadata(
+        storage_s3_bucket, simcore_file_id
+    )
+    assert s3_metadata.size == file_size
+    assert s3_metadata.last_modified
+    assert s3_metadata.e_tag == upload_e_tag
+    # check getting the file actually lazily updates the table and returns the expected values
+    received_fmd: FileMetaDataGet = await get_file_meta_data(simcore_file_id)
+    assert received_fmd.entity_tag == upload_e_tag
+
+
 async def test_upload_real_file_with_s3_client(
     aiopg_engine: Engine,
     storage_s3_client: StorageS3Client,
@@ -641,9 +683,6 @@ async def test_upload_real_file_with_s3_client(
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == upload_e_tag
 
-    # check getting the file actually lazily updates the table and returns the expected values
-    # received_fmd: FileMetaDataGet = await get_file_meta_data(simcore_file_id)
-    # assert received_fmd.entity_tag == upload_e_tag
     # complete the upload
     complete_url = URL(file_upload_link.links.complete_upload).relative()
     start = perf_counter()
