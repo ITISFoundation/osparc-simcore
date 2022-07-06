@@ -276,7 +276,7 @@ async def containers_docker_inspect(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def get_container_logs(
     request: Request,
     id: str,
