@@ -678,9 +678,9 @@ class SimcoreS3DataManager(BaseDataManager):
             max_concurrency=2,
         )
         logger.warning(
-            "Dangling multipart uploads %s, were aborted. "
-            "TIP: If storage was NOT improperly restarted, this might indicate that something went"
-            " wrong in how storage handles multipart uploads!!",
+            "Dangling multipart uploads '%s', were aborted. "
+            "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
+            "This might indicate that something went wrong in how storage handles multipart uploads!!",
             f"{list_of_invalid_uploads}",
         )
 
