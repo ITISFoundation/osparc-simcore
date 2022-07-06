@@ -4,7 +4,6 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from sqlalchemy import desc
 
 
 class DBConfig(BaseModel):
@@ -15,7 +14,8 @@ class DBConfig(BaseModel):
 
 
 class S3Config(BaseModel):
-    endpoint: Optional[str] = None
+    endpoint: str = "https://s3.amazonaws.com"
+    provider: str = "AWS"
     access_key: str
     secret_key: str
     bucket: str
@@ -59,6 +59,7 @@ class Settings(BaseModel):
                     "db": {"address": "", "user": "", "password": "", "database": ""},
                     "s3": {
                         "endpoint": "",
+                        "provider": "",
                         "access_key": "",
                         "secret_key": "",
                         "bucket": "",
@@ -69,7 +70,8 @@ class Settings(BaseModel):
                 "destination": {
                     "db": {"address": "", "user": "", "password": "", "database": ""},
                     "s3": {
-                        "endpoint": None,
+                        "endpoint": "",
+                        "provider": "",
                         "access_key": "",
                         "secret_key": "",
                         "bucket": "",
