@@ -10,6 +10,7 @@ from servicelib.utils import logged_gather
 
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
+from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
@@ -30,7 +31,6 @@ class DynamicSidecarClient:
         except BaseClientHTTPError:
             return False
 
-    # TODO: ANE @log_decorator(logger=logger)
     async def containers_inspect(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, Any]:
@@ -43,7 +43,7 @@ class DynamicSidecarClient:
         )
         return response.json()
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, dict[str, str]]:
@@ -55,7 +55,7 @@ class DynamicSidecarClient:
         except UnexpectedStatusError:
             return {}
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def start_service_creation(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, compose_spec: str
     ) -> None:
@@ -64,7 +64,7 @@ class DynamicSidecarClient:
         )
         logger.info("Spec submit result %s", response.text)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def begin_service_destruction(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
@@ -72,15 +72,15 @@ class DynamicSidecarClient:
         response = await self.thin_client.post_containers_down(dynamic_sidecar_endpoint)
         logger.info("Compose down result %s", response.text)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_save_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         await self.thin_client.post_containers_state_save(dynamic_sidecar_endpoint)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_restore_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         await self.thin_client.post_containers_state_restore(dynamic_sidecar_endpoint)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_pull_input_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -92,7 +92,7 @@ class DynamicSidecarClient:
         )
         return int(response.text)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_disable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
@@ -100,7 +100,7 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_enable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
@@ -108,7 +108,7 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_outputs_create_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
     ) -> None:
@@ -116,7 +116,7 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint, outputs_labels=outputs_labels
         )
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_pull_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -127,7 +127,7 @@ class DynamicSidecarClient:
         )
         return int(response.text)
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def service_push_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -147,7 +147,7 @@ class DynamicSidecarClient:
                     ) from e
             raise e
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
     ) -> str:
@@ -167,7 +167,7 @@ class DynamicSidecarClient:
                 raise EntrypointContainerNotFoundError() from e
             raise e
 
-    # TODO: ANE @log_decorator(logger=logger)
+    @log_decorator(logger=logger)
     async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         """
         runs docker-compose stop and docker-compose start in succession
