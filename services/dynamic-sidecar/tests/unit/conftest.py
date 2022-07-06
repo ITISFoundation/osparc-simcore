@@ -81,8 +81,16 @@ def app(
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
+def max_response_time() -> int:
+    """sets client timeout: can be used to detect SLOW handlers"""
+    return 60
+
+
+@pytest.fixture
+async def test_client(
+    app: FastAPI, max_response_time: int
+) -> AsyncIterable[TestClient]:
+    async with TestClient(app, timeout=max_response_time) as client:
         yield client
 
 

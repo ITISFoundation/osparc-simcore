@@ -18,6 +18,7 @@ from fastapi import (
 )
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
@@ -40,6 +41,7 @@ from ._dependencies import (
 from .containers import send_message
 
 logger = logging.getLogger(__name__)
+assert cancel_on_disconnect  # nosec
 
 
 class CreateDirsRequestItem(BaseModel):
@@ -245,8 +247,9 @@ async def push_output_ports(
         },
     },
 )
+@cancel_on_disconnect
 async def restarts_containers(
-    _request: Request,
+    request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -258,6 +261,7 @@ async def restarts_containers(
     """Removes the previously started service
     and returns the docker-compose output
     """
+    assert request  # nosec
 
     if shared_store.compose_spec is None:
         raise HTTPException(
@@ -293,11 +297,14 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
+# FIXME: @cancel_on_disconnect
 async def attach_container_to_network(
-    _request: Request,
+    request: Request,
     id: str,
     item: AttachContainerToNetworkItem,
 ) -> None:
+    assert request  # nosec
+
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()

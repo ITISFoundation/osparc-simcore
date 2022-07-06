@@ -5,11 +5,13 @@ import logging
 
 from fastapi import FastAPI
 
+from .settings import DynamicSidecarSettings
+
 logger = logging.getLogger(__name__)
 
 
 def setup(app: FastAPI) -> None:
-    settings = app.state.settings
+    settings: DynamicSidecarSettings = app.state.settings
 
     def on_startup() -> None:
         try:
@@ -17,9 +19,15 @@ def setup(app: FastAPI) -> None:
             #
             # SEE https://github.com/microsoft/ptvsd#enabling-debugging
             #
-            import ptvsd  # pylint: disable=import-outside-toplevel
+            # pylint: disable=import-outside-toplevel
+            import ptvsd
 
-            ptvsd.enable_attach(address=(settings.host, settings.remote_debug_port))
+            ptvsd.enable_attach(
+                address=(
+                    settings.DYNAMIC_SIDECAR_HOST,
+                    settings.DYNAMIC_SIDECAR_REMOTE_DEBUG_PORT,
+                )
+            )
 
         except ImportError as err:
             raise Exception(
@@ -27,7 +35,8 @@ def setup(app: FastAPI) -> None:
             ) from err
 
         logger.info(
-            "Remote debugging enabled: listening port %s", settings.remote_debug_port
+            "Remote debugging enabled: listening port %s",
+            settings.DYNAMIC_SIDECAR_REMOTE_DEBUG_PORT,
         )
 
     app.add_event_handler("startup", on_startup)

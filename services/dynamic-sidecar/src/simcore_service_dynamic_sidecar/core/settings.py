@@ -18,7 +18,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
-    SC_BOOT_MODE: Optional[BootModeEnum] = Field(
+    SC_BOOT_MODE: BootModeEnum = Field(
         ...,
         description="boot mode helps determine if in development mode or normal operation",
     )
@@ -103,11 +103,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
-
-    @property
-    def is_development_mode(self) -> bool:
-        """If in development mode this will be True"""
-        return self.SC_BOOT_MODE is BootModeEnum.DEVELOPMENT
 
     @property
     def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:
