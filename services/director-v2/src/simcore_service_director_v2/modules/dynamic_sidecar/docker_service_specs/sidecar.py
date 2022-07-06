@@ -38,7 +38,7 @@ def _get_environment_variables(
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
     return {
-        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.SC_BOOT_MODE}",
+        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -96,6 +96,7 @@ def get_dynamic_sidecar_spec(
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
+    # MOUNTS -----------
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -154,11 +155,12 @@ def get_dynamic_sidecar_spec(
                 )
             )
 
-    endpoint_spec = {}
-
     if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
         # Settings validators guarantees that this never happens in production mode
-        assert dynamic_sidecar_settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION
+        assert (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE
+            != BootModeEnum.PRODUCTION
+        )
 
         mounts.append(
             {
@@ -180,18 +182,30 @@ def get_dynamic_sidecar_spec(
                 "Type": "bind",
             }
         )
-    # expose this service on an empty port
+
+    # PORTS -----------
+    ports = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
-        endpoint_spec["Ports"] = [
+        ports.append(
             # server port
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-            },
-        ]
+            }
+        )
 
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE == BootModeEnum.DEBUG:
+            ports.append(
+                # debugger port
+                {
+                    "Protocol": "tcp",
+                    "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
+                }
+            )
+
+    #  -----------
     create_service_params = {
-        "endpoint_spec": endpoint_spec,
+        "endpoint_spec": {"Ports": ports},
         "labels": {
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",

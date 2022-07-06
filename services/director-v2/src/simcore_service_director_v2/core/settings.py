@@ -145,10 +145,11 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    SC_BOOT_MODE: BootModeEnum = Field(
+    DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
-        description="Captures SC_BOOT_MODE from THIS service (i.e. the directorv2)"
-        "and uses it to determine the mode to create the dynamic-sidecar service",
+        description="Boot mode used for the dynamic-sidecar services"
+        "By defaults, it uses the same boot mode set for the director-v2",
+        env=["DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"],
     )
 
     DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
