@@ -7,10 +7,6 @@ from dotenv import dotenv_values
 from .typing_env import EnvVarsDict
 
 
-def load_dotenv(envfile_text: str) -> EnvVarsDict:
-    return {k: v or "" for k, v in dotenv_values(stream=StringIO(envfile_text)).items()}
-
-
 def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
     for key, value in envs.items():
         assert value is not None  # None keys cannot be is defined w/o value
@@ -18,8 +14,14 @@ def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
     return envs
 
 
-def setenvs_as_envfile(monkeypatch: MonkeyPatch, envfile_text: str) -> EnvVarsDict:
-    envs = load_dotenv(envfile_text)
+def load_dotenv(**kwargs) -> EnvVarsDict:
+    return {k: v or "" for k, v in dotenv_values(**kwargs).items()}
+
+
+def setenvs_as_envfile(
+    monkeypatch: MonkeyPatch, envfile_text: str, **dotenv_kwags
+) -> EnvVarsDict:
+    envs = load_dotenv(stream=StringIO(envfile_text), **dotenv_kwags)
     setenvs_from_dict(monkeypatch, envs)
 
     assert all(env in os.environ for env in envs)
@@ -27,9 +29,9 @@ def setenvs_as_envfile(monkeypatch: MonkeyPatch, envfile_text: str) -> EnvVarsDi
 
 
 def delenvs_as_envfile(
-    monkeypatch: MonkeyPatch, envfile_text: str, raising: bool
+    monkeypatch: MonkeyPatch, envfile_text: str, raising: bool, **dotenv_kwags
 ) -> EnvVarsDict:
-    envs = load_dotenv(envfile_text)
+    envs = load_dotenv(stream=StringIO(envfile_text), **dotenv_kwags)
     for key in envs.keys():
         monkeypatch.delenv(key, raising=raising)
 
