@@ -117,10 +117,10 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-        file_size = int(response.headers.get("Content-Length", 0)) or None
+        file_size = int(response.headers.get("Content-Length", 0))
         try:
             with tqdm(
-                desc=f"downloading {file_path} [{file_size} bytes]",
+                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable()} bytes]",
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
@@ -373,7 +373,7 @@ async def download_file_from_s3(
     :return: path to downloaded file
     """
     log.debug(
-        "Downloading from store %s:id %s, s3 object %s, to %s",
+        "Downloading from store %s:id %s, s3 object %s, to %s\n",
         store_name,
         store_id,
         s3_object,
