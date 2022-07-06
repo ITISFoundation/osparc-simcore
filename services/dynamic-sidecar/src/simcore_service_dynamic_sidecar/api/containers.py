@@ -324,7 +324,7 @@ async def get_container_logs(
         },
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def get_containers_name(
     request: Request,
     filters: str = Query(
@@ -386,7 +386,7 @@ async def get_containers_name(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
-# FIXME: @cancel_on_disconnect
+@cancel_on_disconnect
 async def inspect_container(
     request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> dict[str, Any]:
