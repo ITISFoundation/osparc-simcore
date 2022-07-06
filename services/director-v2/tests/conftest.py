@@ -18,6 +18,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -132,9 +133,12 @@ def dynamic_sidecar_docker_image_name() -> str:
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str
-) -> dict[str, str]:
+) -> EnvVarsDict:
+    """This is the base mock envs used to configure the app.
 
-    env_vars: dict[str, str] = {
+    Do override/extend this fixture to change configurations
+    """
+    env_vars: EnvVarsDict = {
         "DYNAMIC_SIDECAR_IMAGE": f"{dynamic_sidecar_docker_image_name}",
         "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
@@ -153,12 +157,12 @@ def mock_env(
         "DIRECTOR_V2_TRACING": "null",
     }
     for name, value in env_vars.items():
-        monkeypatch.setenv(name, value)
+        monkeypatch.setenv(name, "null" if value is None else value)
     return env_vars
 
 
 @pytest.fixture(scope="function")
-def client(mock_env: None) -> Iterable[TestClient]:
+def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", settings.json(indent=2))
@@ -169,7 +173,7 @@ def client(mock_env: None) -> Iterable[TestClient]:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app(mock_env: None) -> AsyncIterable[FastAPI]:
+async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
