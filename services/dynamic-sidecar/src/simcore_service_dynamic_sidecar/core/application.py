@@ -1,13 +1,14 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
