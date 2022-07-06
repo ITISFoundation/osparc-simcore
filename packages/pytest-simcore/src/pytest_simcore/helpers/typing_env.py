@@ -1,6 +1,4 @@
-from typing import Optional
-
-EnvVarsDict = dict[str, Optional[str]]
+EnvVarsDict = dict[str, str]
 #
 # NOTE: that this means that env vars do not require a value. If that happens a None is assigned
 #   For instance, a valid env file is
@@ -9,5 +7,5 @@ EnvVarsDict = dict[str, Optional[str]]
 #   INDEX=33
 #   ONLY_NAME=
 #
-# will return env: EnvVarsDict = {"NAME": "foo", "INDEX": 33, "ONLY_NAME": None}
+# will return env: EnvVarsDict = {"NAME": "foo", "INDEX": 33, "ONLY_NAME": ''}
 #
