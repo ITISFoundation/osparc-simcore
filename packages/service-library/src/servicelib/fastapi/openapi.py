@@ -12,7 +12,7 @@ from ..functools_utils import copy_func
 
 # Some common values for FastAPI(... server=[ ... ]) parameter
 # It will be added to the OpenAPI Specs (OAS).
-OAS_DEVELOPMENT_SERVER = {
+_OAS_DEVELOPMENT_SERVER = {
     "description": "Development server",
     "url": "http://{host}:{port}",
     "variables": {
@@ -20,6 +20,19 @@ OAS_DEVELOPMENT_SERVER = {
         "port": {"default": "8000"},
     },
 }
+
+
+def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
+    """common OAS options for FastAPI constructor"""
+    return dict(
+        servers=[
+            _OAS_DEVELOPMENT_SERVER,
+        ]
+        if is_devel_mode
+        else None,
+        docs_url="/dev/doc",
+        redoc_url=None,  # default disabled
+    )
 
 
 def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
