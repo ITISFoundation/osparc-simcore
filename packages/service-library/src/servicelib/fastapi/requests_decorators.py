@@ -56,6 +56,9 @@ async def disconnect_poller(request: Request, result: Any):
 
 
 def cancel_on_disconnect(handler: _HandlerWithRequestArg):
+    """
+    After client dicsonnects, handler gets cancelled in ~<3 secs
+    """
 
     _validate_signature(handler)
 
@@ -83,13 +86,17 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
         for t in pending:
             t.cancel()
             try:
-                await t
+                await asyncio.wait_for(t, timeout=3)
             except asyncio.CancelledError:
                 logger.debug("%s was cancelled", t)
             except Exception as exc:  # pylint: disable=broad-except
-                logger.debug("%s raised %s when being cancelled", t, exc)
-
-            assert t.done()  # nosec
+                if t is handler_task:
+                    logger.warning(
+                        "%s raised %s when being cancelled.", t, exc, exc_info=True
+                    )
+                    raise
+            finally:
+                assert t.done()  # nosec
 
         # Return the result if the handler finished first
         if handler_task in done:
