@@ -90,9 +90,13 @@ async def upload_file(
     logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
 
     # upload to S3 using pre-signed link
-    presigned_upload_link = await storage_client.get_upload_link(
+    presigned_upload_links = await storage_client.get_upload_links(
         user_id, file_meta.id, file_meta.filename
     )
+
+    assert presigned_upload_links.urls  # nosec
+    assert len(presigned_upload_links.urls) == 1  # nosec
+    presigned_upload_link = presigned_upload_links.urls[0]
 
     logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
     try:

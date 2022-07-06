@@ -11,6 +11,7 @@ from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
+from servicelib.utils import logged_gather
 from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -31,8 +32,9 @@ async def dsm_mockup_complete_db(
     faker: Faker,
 ) -> tuple[FileMetaData, FileMetaData]:
     file_size = parse_obj_as(ByteSize, "10Mib")
-    uploaded_files = await asyncio.gather(
-        *(upload_file(file_size, faker.file_name(), None) for _ in range(2))
+    uploaded_files = await logged_gather(
+        *(upload_file(file_size, faker.file_name(), None) for _ in range(2)),
+        max_concurrency=2,
     )
     fmds = await asyncio.gather(
         *(simcore_s3_dsm.get_file(user_id, file_id) for _, file_id in uploaded_files)

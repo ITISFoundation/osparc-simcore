@@ -10,10 +10,12 @@ from uuid import uuid4
 
 import np_helpers
 import pytest
+from aiohttp import ClientError
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager
 from simcore_sdk.node_ports_common.r_clone import RCloneFailedError
@@ -25,15 +27,6 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
-
-
-@pytest.fixture
-def node_ports_config(
-    bucket: str,
-    filemanager_cfg: None,
-    cleanup_file_meta_data: None,
-):
-    ...
 
 
 @pytest.fixture(params=[True, False], ids=["with RClone", "without RClone"])
@@ -54,6 +47,7 @@ def _file_size(size_str: str, **pytest_params):
         _file_size("1003Mib"),
         _file_size("7Gib", marks=pytest.mark.heavy_load),
     ],
+    ids=byte_size_ids,
 )
 async def test_valid_upload_download(
     node_ports_config: None,
@@ -100,14 +94,14 @@ async def test_valid_upload_download(
 @pytest.fixture
 def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.sync_local_to_s3",
+        "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
         autospec=True,
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_to_link",
+        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
         autospec=True,
-        side_effect=exceptions.S3TransferError,
+        side_effect=ClientError,
     )
 
 
@@ -117,6 +111,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
         _file_size("10Mib"),
         _file_size("151Mib"),
     ],
+    ids=byte_size_ids,
 )
 async def test_failed_upload_is_properly_removed_from_storage(
     node_ports_config: None,
@@ -145,15 +140,13 @@ async def test_failed_upload_is_properly_removed_from_storage(
         )
 
 
-@pytest.mark.xfail(
-    reason="This will be fixed in one of the next PRs for storage refactoring"
-)
 @pytest.mark.parametrize(
     "file_size",
     [
         _file_size("10Mib"),
         _file_size("151Mib"),
     ],
+    ids=byte_size_ids,
 )
 async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     node_ports_config: None,
@@ -186,14 +179,14 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     assert get_e_tag == e_tag
     # now start an invalid update by generating an exception while uploading the same file
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.sync_local_to_s3",
+        "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
         autospec=True,
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_to_link",
+        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
         autospec=True,
-        side_effect=exceptions.S3TransferError,
+        side_effect=ClientError,
     )
     with pytest.raises(exceptions.S3TransferError):
         await filemanager.upload_file(
@@ -246,9 +239,9 @@ async def test_invalid_file_path(
 
 
 async def test_errors_upon_invalid_file_identifiers(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     s3_simcore_location: LocationID,
 ):
@@ -257,7 +250,7 @@ async def test_errors_upon_invalid_file_identifiers(
     assert file_path.exists()
 
     store = s3_simcore_location
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.upload_file(
             user_id=user_id,
             store_id=store,
@@ -298,7 +291,7 @@ async def test_errors_upon_invalid_file_identifiers(
 
 
 async def test_invalid_store(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -330,7 +323,7 @@ async def test_invalid_store(
 
 
 async def test_valid_metadata(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -373,7 +366,7 @@ async def test_valid_metadata(
     [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
 )
 async def test_invalid_call_raises_exception(
-    filemanager_cfg: None,
+    node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
@@ -392,7 +385,7 @@ async def test_invalid_call_raises_exception(
         await fct(user_id=user_id, store_id=None, s3_object=file_id)  # type: ignore
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=user_id, store_id=s3_simcore_location, s3_object=None  # type: ignore
+            user_id=user_id, store_id=s3_simcore_location, s3_object="bing"  # type: ignore
         )
 
 

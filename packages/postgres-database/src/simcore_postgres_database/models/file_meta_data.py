@@ -32,6 +32,12 @@ file_meta_data = sa.Table(
         "i.e. is another entry with the same object_name",
     ),
     sa.Column(
+        "upload_id",
+        sa.String(),
+        nullable=True,
+        doc="if filled, contains the uploadId for S3 multipart file upload",
+    ),
+    sa.Column(
         "upload_expires_at", sa.DateTime(), nullable=True, doc="Timestamp of expiration"
     ),
 )
