@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import (
-    OAS_DEVELOPMENT_SERVER,
+    get_common_oas_options,
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import setup_tracing
@@ -98,14 +98,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
-        servers=[
-            OAS_DEVELOPMENT_SERVER,
-        ]
-        if settings.SC_BOOT_MODE.is_devel_mode()
-        else None,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
-        redoc_url=None,  # default disabled
+        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
 
