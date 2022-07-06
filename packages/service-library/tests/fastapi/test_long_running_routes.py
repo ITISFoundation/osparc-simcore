@@ -11,7 +11,7 @@ from servicelib.fastapi.long_running import (
     start_task,
     TaskId,
     ProgressHandler,
-    server_setup,
+    setup_server,
 )
 from typing import AsyncIterable
 
@@ -73,7 +73,7 @@ async def bg_task_app(
 
     app.include_router(user_routes)
 
-    server_setup(app, router_prefix=router_prefix)
+    setup_server(app, router_prefix=router_prefix)
 
     async with LifespanManager(app):
         yield app

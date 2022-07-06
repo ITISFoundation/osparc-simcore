@@ -82,7 +82,7 @@ async def bg_task_app(user_routes: APIRouter) -> AsyncIterable[FastAPI]:
 
     app.include_router(user_routes)
 
-    long_running.server_setup(app)
+    long_running.setup_server(app)
     async with LifespanManager(app):
         yield app
 

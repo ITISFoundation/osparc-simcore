@@ -43,9 +43,8 @@ def router_prefix(request: FixtureRequest) -> str:
 async def bg_task_app(router_prefix: str) -> AsyncIterable[FastAPI]:
     app = FastAPI()
 
-    await long_running.server_setup(app, router_prefix=router_prefix)
+    long_running.setup_server(app, router_prefix=router_prefix)
     yield app
-    await long_running.server_teardown(app)
 
 
 @pytest.fixture(scope="function")

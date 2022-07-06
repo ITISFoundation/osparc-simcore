@@ -10,14 +10,16 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, APIRouter, status, Depends
 from servicelib.fastapi.long_running._context_manager import ProgressUpdater
 from servicelib.fastapi.long_running import (
-    client_setup,
+    setup_client,
     task_result,
     TaskManager,
     get_task_manager,
     TaskId,
     start_task,
-    server_setup,
+    setup_server,
     ProgressHandler,
+)
+from servicelib.fastapi.long_running._errors import (
     TaskClientTimeoutError,
     TaskClientResultErrorError,
 )
@@ -79,8 +81,8 @@ async def bg_task_app(
 
     app.include_router(user_routes)
 
-    server_setup(app, router_prefix=router_prefix)
-    client_setup(app, router_prefix=router_prefix, status_poll_interval=0.2)
+    setup_server(app, router_prefix=router_prefix)
+    setup_client(app, router_prefix=router_prefix, status_poll_interval=0.2)
 
     async with LifespanManager(app):
         yield app
