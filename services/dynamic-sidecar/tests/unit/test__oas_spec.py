@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import json
 from pathlib import Path
 
@@ -8,6 +12,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict
 
 @pytest.fixture
 def mock_environment(mock_environment_with_envdevel: EnvVarsDict) -> None:
+    # serialized openapi.json is produce with .env-devel from the project
     assert mock_environment_with_envdevel
 
 
