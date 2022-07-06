@@ -460,6 +460,7 @@ async def test_container_inspect_logs_remove(
 ):
     for container in started_containers:
         # get container logs
+        # FIXME: slow call?
         response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == status.HTTP_200_OK, response.text
 

@@ -81,8 +81,16 @@ def app(
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
+def test_client_timeout_s() -> int:
+    # can be used to detect SLOW handlers
+    return 60
+
+
+@pytest.fixture
+async def test_client(
+    app: FastAPI, test_client_timeout_s: int
+) -> AsyncIterable[TestClient]:
+    async with TestClient(app, timeout=test_client_timeout_s) as client:
         yield client
 
 
