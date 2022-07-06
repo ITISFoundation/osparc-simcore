@@ -300,7 +300,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
     @classmethod
     def auto_disable_if_production(cls, v, values):
-        if v and values.get("SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
             logger.warning(
                 "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
                 v,
@@ -311,7 +311,9 @@ class DynamicSidecarSettings(BaseCustomSettings):
     @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
     @classmethod
     def auto_enable_if_development(cls, v, values):
-        if (boot_mode := values.get("SC_BOOT_MODE")) and boot_mode.is_devel_mode():
+        if (
+            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
+        ) and boot_mode.is_devel_mode():
             # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
             return True
         return v
