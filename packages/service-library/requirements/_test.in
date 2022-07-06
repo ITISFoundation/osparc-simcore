@@ -11,6 +11,7 @@
 --constraint _fastapi.txt
 
 # testing
+asgi_lifespan
 coverage
 coveralls
 faker
@@ -25,3 +26,4 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
+respx
