@@ -24,12 +24,17 @@ _OAS_DEVELOPMENT_SERVER = {
 
 def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
     """common OAS options for FastAPI constructor"""
-    return dict(
-        servers=[
+    servers = None
+    if is_devel_mode:
+        # NOTE: for security, only exposed in devel mode
+        # Make sure also that this is NOT used in edge services
+        # SEE https://sonarcloud.io/project/security_hotspots?id=ITISFoundation_osparc-simcore&pullRequest=3165&hotspots=AYHPqDfX5LRQZ1Ko6y4-
+        servers = [
             _OAS_DEVELOPMENT_SERVER,
         ]
-        if is_devel_mode
-        else None,
+
+    return dict(
+        servers=servers,
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
