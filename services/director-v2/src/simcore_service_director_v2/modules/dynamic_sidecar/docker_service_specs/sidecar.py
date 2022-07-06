@@ -10,7 +10,7 @@ from servicelib.json_serialization import json_dumps
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-from .._namepsace import get_compose_namespace
+from .._namespace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import update_service_params_from_settings
 
