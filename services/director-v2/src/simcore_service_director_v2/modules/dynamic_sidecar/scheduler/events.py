@@ -28,7 +28,7 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...redis import SlotsManager
+from ...redis import ResourceName, SlotsManager
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -75,6 +75,8 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "ContainerSpec", "Env"],
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
+
+RESOURCE_SAVE_STATE: Final[ResourceName] = "save_state"
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -584,7 +586,10 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             slots_manager = SlotsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with slots_manager.lock(scheduler_data.docker_node_id):
+                async with slots_manager.lock(
+                    scheduler_data.docker_node_id,
+                    resource_name=RESOURCE_SAVE_STATE,
+                ):
                     await _remove_containers_save_state_and_outputs()
             except LockAcquireError:
                 # Next observation cycle, the service will try again to

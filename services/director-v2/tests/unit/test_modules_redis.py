@@ -3,9 +3,9 @@
 # pylint: disable=protected-access
 
 import asyncio
-from asyncio import CancelledError
+from asyncio import CancelledError, Task
 from contextlib import suppress
-from typing import Any, AsyncIterable
+from typing import Any, AsyncIterable, Final
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -21,6 +21,7 @@ from simcore_service_director_v2.modules import redis
 from simcore_service_director_v2.modules.redis import (
     DockerNodeId,
     ExtendLock,
+    ResourceName,
     SlotsManager,
 )
 
@@ -30,17 +31,18 @@ pytest_simcore_core_services_selection = [
 
 
 # UTILS
-TEST_RESOURCE = "a_resource"
+TEST_RESOURCE: Final[ResourceName] = "a_resource"
 
 
 async def _assert_lock_acquired_and_released(
     slots_manager: SlotsManager,
     docker_node_id: DockerNodeId,
+    resource_name: ResourceName,
     *,
     sleep_before_release: PositiveFloat,
 ) -> ExtendLock:
     async with slots_manager.lock(
-        docker_node_id, resource_name=TEST_RESOURCE
+        docker_node_id, resource_name=resource_name
     ) as extend_lock:
         assert await extend_lock._redis_lock.locked() is True
         assert await extend_lock._redis_lock.owned() is True
@@ -152,7 +154,7 @@ async def test_lock_extend_task_life_cycle(
     slots_manager: SlotsManager, docker_node_id: DockerNodeId
 ) -> None:
     extend_lock = await _assert_lock_acquired_and_released(
-        slots_manager, docker_node_id, sleep_before_release=0
+        slots_manager, docker_node_id, TEST_RESOURCE, sleep_before_release=0
     )
 
     # try to cancel again will not work!
@@ -160,34 +162,45 @@ async def test_lock_extend_task_life_cycle(
         await slots_manager._release_extend_lock(extend_lock)
 
 
+@pytest.mark.parametrize("resource_count", [1, 2, 10])
 async def test_no_more_locks_can_be_acquired(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+    slots_manager: SlotsManager, docker_node_id: DockerNodeId, resource_count: int
 ) -> None:
     # acquire all available locks
-    slots = await slots_manager._get_node_slots(docker_node_id)
-    assert slots == slots_manager.concurrent_saves
 
-    tasks = [
-        asyncio.create_task(
-            _assert_lock_acquired_and_released(
-                slots_manager, docker_node_id, sleep_before_release=1
+    async def _acquire_tasks(resource_name: ResourceName) -> tuple[int, list[Task]]:
+        slots = await slots_manager._get_node_slots(docker_node_id, resource_name)
+        assert slots == slots_manager.concurrent_saves
+
+        tasks = [
+            asyncio.create_task(
+                _assert_lock_acquired_and_released(
+                    slots_manager, docker_node_id, resource_name, sleep_before_release=1
+                )
             )
-        )
-        for _ in range(slots)
-    ]
+            for _ in range(slots)
+        ]
 
-    # ensure locks are acquired
-    await asyncio.sleep(0.25)
+        # ensure locks are acquired
+        await asyncio.sleep(0.25)
 
-    # no slots available
-    with pytest.raises(LockAcquireError) as exec_info:
-        await _assert_lock_acquired_and_released(
-            slots_manager, docker_node_id, sleep_before_release=0
+        # no slots available
+        with pytest.raises(LockAcquireError) as exec_info:
+            await _assert_lock_acquired_and_released(
+                slots_manager, docker_node_id, resource_name, sleep_before_release=0
+            )
+        assert (
+            f"{exec_info.value}"
+            == f"Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
         )
-    assert (
-        f"{exec_info.value}"
-        == f"Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
-    )
+        return slots, tasks
+
+    tasks = []
+    for r in range(resource_count):
+        resource_name = f"resource_{r}"
+        used_slots_r1, resource_tasks = await _acquire_tasks(resource_name)
+        assert len(resource_tasks) == used_slots_r1
+        tasks += resource_tasks
 
     # wait for tasks to be released
     await asyncio.gather(*tasks)
@@ -214,7 +227,9 @@ async def test_acquire_all_available_node_locks_stress_test(
 
     slots_manager.concurrent_saves = locks_per_node
 
-    total_node_slots = await slots_manager._get_node_slots(docker_node_id)
+    total_node_slots = await slots_manager._get_node_slots(
+        docker_node_id, TEST_RESOURCE
+    )
     assert total_node_slots == locks_per_node
 
     # THE extend task is causing things to hang!!! that is what is wrong here!
@@ -223,6 +238,7 @@ async def test_acquire_all_available_node_locks_stress_test(
             _assert_lock_acquired_and_released(
                 slots_manager,
                 docker_node_id,
+                TEST_RESOURCE,
                 sleep_before_release=slots_manager.lock_timeout_s / 2,
             )
             for _ in range(total_node_slots)

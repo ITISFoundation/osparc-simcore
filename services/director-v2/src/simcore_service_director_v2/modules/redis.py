@@ -18,6 +18,7 @@ from ..core.errors import ConfigurationError, LockAcquireError
 from ..core.settings import DynamicSidecarSettings
 
 DockerNodeId = str
+ResourceName = str
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,16 @@ class ExtendLock:
 
 @dataclass
 class SlotsManager:
+    """
+    A `slot` is used to limit `resource` usage. It can be viewed as a token
+    which has to be returned, once the user finished using the `resource`.
+
+    A slot can be reserved via the `lock` context manger. If no
+    `LockAcquireError` is raised, the user is free to use
+    the locked `resource`. If an error is raised the
+    user must try again at a later time.
+    """
+
     app: FastAPI
     _redis: Redis
     is_enabled: bool
@@ -100,22 +111,27 @@ class SlotsManager:
         return app.state.redis_slots_manager
 
     @classmethod
-    def _get_key(cls, docker_node_id: DockerNodeId) -> str:
-        return f"{cls.__name__}.{docker_node_id}.lock_slots"
+    def _get_key(cls, docker_node_id: DockerNodeId, resource_name: ResourceName) -> str:
+        return f"{cls.__name__}.{docker_node_id}.{resource_name}.lock_slots"
 
     @classmethod
     def _get_lock_name(
-        cls, docker_node_id: DockerNodeId, slot_index: NonNegativeInt
+        cls,
+        docker_node_id: DockerNodeId,
+        resource_name: ResourceName,
+        slot_index: NonNegativeInt,
     ) -> str:
-        return f"{cls._get_key(docker_node_id)}.{slot_index}"
+        return f"{cls._get_key(docker_node_id, resource_name)}.{slot_index}"
 
-    async def _get_node_slots(self, docker_node_id: DockerNodeId) -> int:
+    async def _get_node_slots(
+        self, docker_node_id: DockerNodeId, resource_name: ResourceName
+    ) -> int:
         """get the total amount of slots available for the node"""
         # NOTE: this function might change in the future and the
         # current slots per node might be provided looking at the
         # aiowait metric on the node over a period of time
 
-        node_slots_key = self._get_key(docker_node_id)
+        node_slots_key = self._get_key(docker_node_id, resource_name)
         slots: Optional[bytes] = await self._redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
@@ -169,16 +185,18 @@ class SlotsManager:
         await extend_lock.release()
 
     @asynccontextmanager
-    async def lock(self, docker_node_id: DockerNodeId) -> AsyncIterator[ExtendLock]:
+    async def lock(
+        self, docker_node_id: DockerNodeId, *, resource_name: ResourceName
+    ) -> AsyncIterator[ExtendLock]:
         """
         Context manger to helo with acquire and release. If it is not possible
 
         raises: `LockAcquireError` if the lock was not acquired.
         """
-        slots = await self._get_node_slots(docker_node_id)
+        slots = await self._get_node_slots(docker_node_id, resource_name)
         acquired_lock: Optional[Lock] = None
         for slot in range(slots):
-            node_lock_name = self._get_lock_name(docker_node_id, slot)
+            node_lock_name = self._get_lock_name(docker_node_id, resource_name, slot)
 
             lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout_s)
             lock_acquired = await lock.acquire(blocking=False)
@@ -189,10 +207,7 @@ class SlotsManager:
                 break
 
         if acquired_lock is None:
-            raise LockAcquireError(
-                docker_node_id=docker_node_id,
-                slots=await self._get_node_slots(docker_node_id),
-            )
+            raise LockAcquireError(docker_node_id=docker_node_id, slots=slots)
 
         # In order to avoid deadlock situations, where resources are not being
         # released, a lock with a timeout will be acquired.

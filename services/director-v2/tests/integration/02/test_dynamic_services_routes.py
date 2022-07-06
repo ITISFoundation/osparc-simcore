@@ -13,7 +13,6 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from faker import Faker
 from fastapi import FastAPI
-from settings_library.redis import RedisSettings
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
@@ -25,6 +24,7 @@ from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from tenacity._asyncio import AsyncRetrying
