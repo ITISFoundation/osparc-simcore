@@ -108,7 +108,7 @@ async def _assert_get_dynamic_services_mocked(
         assert scheduler_data.service_name not in scheduler._to_observe
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,

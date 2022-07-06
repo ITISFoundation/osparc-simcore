@@ -325,7 +325,14 @@ def test_get_dynamic_proxy_spec(
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
-    for _ in range(10):  # loop to check it does not repeat copies
+
+    assert (
+        dynamic_sidecar_settings.dict()
+        == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.dict()
+    )
+
+    for count in range(1, 11):  # loop to check it does not repeat copies
+        print(f"{count:*^50}")
         dynamic_sidecar_spec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
