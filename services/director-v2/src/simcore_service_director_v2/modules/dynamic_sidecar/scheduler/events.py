@@ -545,7 +545,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         )
                     ]
                     # When enabled no longer uploads state via nodeports
-                    # S3 is used to store state paths
+                    # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
                             dynamic_sidecar_client.service_save_state(
@@ -554,7 +554,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         )
 
                     try:
-                        await logged_gather(*tasks)
+                        # at most 2 parallel tasks will be running
+                        await logged_gather(*tasks, max_concurrency=2)
                     except NodeportsDidNotFindNodeError as err:
                         logger.warning("%s", f"{err}")
 
