@@ -310,7 +310,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
     @classmethod
     def auto_enable_if_development(cls, v, values):
-        if values.get("SC_BOOT_MODE") != BootModeEnum.PRODUCTION:
+        if (boot_mode := values.get("SC_BOOT_MODE")) and boot_mode.is_devel_mode():
             # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
             return True
         return v
