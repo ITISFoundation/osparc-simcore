@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from functools import wraps
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Protocol
 
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
@@ -10,7 +10,11 @@ from fastapi.exceptions import HTTPException
 logger = logging.getLogger(__name__)
 
 
-_HandlerWithRequestArg = Callable[[Request], Coroutine[Any, Any, Optional[Any]]]
+class _HandlerWithRequestArg(Protocol):
+    __name__: str
+
+    async def __call__(self, request: Request, *args: Any) -> Any:
+        ...
 
 
 def _validate_signature(handler: _HandlerWithRequestArg):
