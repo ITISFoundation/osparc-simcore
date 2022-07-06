@@ -35,10 +35,18 @@ async function runTutorial() {
 
     // open JLab
     // await tutorial.openNode(0);
+    await tutorial.waitFor(10000, "wait for jupyter lab to appear...")
     await tutorial.takeScreenshot("opened " + serviceName);
 
     // get the file menu
-    await utils.waitAndClick(jLabIframe, '#jp-MainMenu > ul > li:nth-child(1)', timeout = 10000);
+    const iframeHandles = await tutorial.getIframe();
+    let iframes2 = [];
+    for (let i = 0; i < iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes2.push(frame);
+    }
+    const jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][0]));
+    await utils.waitAndClick(jLabIframe, '#jp-MainMenu > ul > li:nth-child(1)', timeout = 35000);
     await tutorial.takeScreenshot("opened_File_menu");
     // click the New entry
     await utils.waitAndClick(jLabIframe, "#jp-mainmenu-file > ul > li:nth-child(1) > div.lm-Menu-itemLabel.p-Menu-itemLabel");
@@ -48,6 +56,18 @@ async function runTutorial() {
     await tutorial.takeScreenshot("created_File_New_Terminal_entry");
     await tutorial.waitFor(3000, "wait for terminal to start...");
     await tutorial.takeScreenshot("terminal is up");
+    await page.keyboard.type("cd work/workspace", {
+      delay: 100
+    });
+    await tutorial.takeScreenshot("terminal in workspace");
+    await page.keyboard.type("fallocate -l 10G big_file.txt", {
+      delay: 100
+    });
+    await tutorial.takeScreenshot("terminal created big_file");
+    await page.keyboard.type("ls -tlah", {
+      delay: 100
+    });
+    await tutorial.takeScreenshot("terminal ls");
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
