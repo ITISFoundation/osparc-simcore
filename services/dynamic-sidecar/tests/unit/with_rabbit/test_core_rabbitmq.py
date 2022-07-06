@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -15,6 +16,8 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
@@ -28,23 +31,25 @@ pytest_simcore_core_services_selection = [
 
 @pytest.fixture
 def mock_environment(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     rabbit_service: RabbitSettings,
-) -> None:
+) -> EnvVarsDict:
+    envs = mock_environment.copy()
 
     # TODO: PC->ANE: this is already guaranteed in the pytest_simcore.rabbit_service fixture
-    monkeypatch.setenv("RABBIT_HOST", rabbit_service.RABBIT_HOST)
-    monkeypatch.setenv("RABBIT_PORT", f"{rabbit_service.RABBIT_PORT}")
-    monkeypatch.setenv("RABBIT_USER", rabbit_service.RABBIT_USER)
-    monkeypatch.setenv(
-        "RABBIT_PASSWORD", rabbit_service.RABBIT_PASSWORD.get_secret_value()
-    )
+    envs["RABBIT_HOST"] = rabbit_service.RABBIT_HOST
+    envs["RABBIT_PORT"] = f"{rabbit_service.RABBIT_PORT}"
+    envs["RABBIT_USER"] = rabbit_service.RABBIT_USER
+    envs["RABBIT_PASSWORD"] = rabbit_service.RABBIT_PASSWORD.get_secret_value()
+
     # ---
+    setenvs_from_dict(monkeypatch, envs)
+    return envs
 
 
 @pytest.fixture
-def app(mock_environment: None) -> FastAPI:
+def app(mock_environment: EnvVarsDict) -> FastAPI:
     """app w/o mocking registry or rabbit"""
     return create_app()
 
@@ -78,7 +83,8 @@ async def test_rabbitmq(
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
     await rabbit.connect()
-    assert rabbit._connection.ready  # pylint: disable=protected-access
+    assert rabbit._connection
+    assert rabbit._connection.ready
 
     log_msg: str = "I am logging"
     log_messages: list[str] = ["I", "am a logger", "man..."]
