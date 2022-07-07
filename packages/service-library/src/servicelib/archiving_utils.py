@@ -117,6 +117,7 @@ def _zipfile_single_file_extract_worker(
                 desc=desc,
                 unit="byte",
                 unit_scale=True,
+                unit_divisor=1024,
             ) as pbar:
                 for chunk in _read_in_chunks(zip_fp):
                     destination_fp.write(chunk)
@@ -212,6 +213,7 @@ def _add_to_archive(
                 total=folder_size_bytes,
                 unit="byte",
                 unit_scale=True,
+                unit_divisor=1024,
             ) as pbar:
                 for file_to_add in files_to_compress_generator:
                     try:

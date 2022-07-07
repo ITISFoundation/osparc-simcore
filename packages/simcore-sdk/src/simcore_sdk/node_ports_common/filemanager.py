@@ -124,6 +124,7 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
+                unit_divisor=1024,
             ) as pbar:
                 async with aiofiles.open(file_path, "wb") as file_pointer:
                     chunk = await response.content.read(CHUNK_SIZE)
@@ -205,6 +206,7 @@ async def _upload_file_to_presigned_links(
         total=file_size,
         unit="byte",
         unit_scale=True,
+        unit_divisor=1024,
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (
