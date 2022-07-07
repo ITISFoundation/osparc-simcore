@@ -120,7 +120,7 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'}]\n",
+                desc=f"downloading {url} to {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'}]\n",
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
@@ -265,7 +265,7 @@ async def _complete_upload(
     state_url = file_upload_complete_response.data.links.state
     log.info(
         "completed upload of %s",
-        f"{upload_links=} with {parts=}, received {file_upload_complete_response=}",
+        f"{parts=}, received {file_upload_complete_response.json(indent=2)}",
     )
 
     log.debug("waiting for upload completion...")
