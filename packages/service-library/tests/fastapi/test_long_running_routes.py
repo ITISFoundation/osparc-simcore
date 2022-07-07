@@ -1,20 +1,20 @@
 # pylint: disable=redefined-outer-name
 
-from fastapi import status, APIRouter, FastAPI, Depends
-from httpx import AsyncClient, Response
-import pytest
 import asyncio
-from asgi_lifespan import LifespanManager
-from servicelib.fastapi.long_running import (
-    get_task_manager,
-    TaskManager,
-    start_task,
-    TaskId,
-    ProgressHandler,
-    setup_server,
-)
 from typing import AsyncIterable
 
+import pytest
+from asgi_lifespan import LifespanManager
+from fastapi import APIRouter, Depends, FastAPI, status
+from httpx import AsyncClient, Response
+from servicelib.fastapi.long_running import (
+    ProgressHandler,
+    TaskId,
+    TaskManager,
+    get_task_manager,
+    setup_server,
+    start_task,
+)
 
 # UTILS
 

@@ -1,11 +1,12 @@
+from functools import cached_property
+from typing import Any, Optional
+
+from fastapi import FastAPI, status
 from httpx import AsyncClient, Timeout
 from pydantic import AnyHttpUrl
-from fastapi import status, FastAPI
-from functools import cached_property
 
-from ._models import TaskStatus, TaskId
 from ._errors import TaskClientResultErrorError
-from typing import Optional, Any
+from ._models import TaskId, TaskStatus
 
 
 # change like the other PR with the same model to fetch the properties

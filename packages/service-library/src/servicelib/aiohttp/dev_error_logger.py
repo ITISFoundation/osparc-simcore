@@ -1,8 +1,9 @@
 
-from aiohttp.web import Application, middleware, Request, HTTPError
-from servicelib.aiohttp.typing_extension import Handler, Middleware
 import logging
 import traceback
+
+from aiohttp.web import Application, HTTPError, Request, middleware
+from servicelib.aiohttp.typing_extension import Handler, Middleware
 
 logger = logging.getLogger(__name__)
 

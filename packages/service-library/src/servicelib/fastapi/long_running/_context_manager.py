@@ -1,13 +1,14 @@
-from typing import Any, Callable, Optional, AsyncIterator
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator, Callable, Optional
 
 from fastapi import FastAPI
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl
-from ._models import TaskId, TaskStatus
-from contextlib import asynccontextmanager
+
 from ._client import Client
 from ._errors import TaskClientTimeoutError
-import asyncio
+from ._models import TaskId, TaskStatus
 
 
 class ProgressUpdater:

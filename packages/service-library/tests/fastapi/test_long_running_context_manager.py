@@ -3,27 +3,27 @@
 
 import asyncio
 from typing import AsyncIterable
-from httpx import AsyncClient
-from pydantic import AnyHttpUrl, parse_obj_as
+
 import pytest
 from asgi_lifespan import LifespanManager
-from fastapi import FastAPI, APIRouter, status, Depends
-from servicelib.fastapi.long_running._context_manager import ProgressUpdater
+from fastapi import APIRouter, Depends, FastAPI, status
+from httpx import AsyncClient
+from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.fastapi.long_running import (
-    setup_client,
-    task_result,
+    ProgressHandler,
+    TaskId,
     TaskManager,
     get_task_manager,
-    TaskId,
-    start_task,
+    setup_client,
     setup_server,
-    ProgressHandler,
+    start_task,
+    task_result,
 )
+from servicelib.fastapi.long_running._context_manager import ProgressUpdater
 from servicelib.fastapi.long_running._errors import (
-    TaskClientTimeoutError,
     TaskClientResultErrorError,
+    TaskClientTimeoutError,
 )
-
 
 # UTILS
 

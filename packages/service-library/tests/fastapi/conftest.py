@@ -3,16 +3,16 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime
+from typing import AsyncIterable
 
 import pytest
+from _pytest.fixtures import FixtureRequest
 from fastapi import FastAPI
 from fastapi.params import Query
 from fastapi.routing import APIRouter
-from pydantic.types import PositiveFloat
-from _pytest.fixtures import FixtureRequest
 from httpx import AsyncClient
+from pydantic.types import PositiveFloat
 from servicelib.fastapi import long_running
-from typing import AsyncIterable
 
 
 @pytest.fixture
