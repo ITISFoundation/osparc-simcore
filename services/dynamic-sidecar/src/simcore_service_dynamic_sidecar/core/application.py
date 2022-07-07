@@ -160,7 +160,8 @@ def create_app():
             result = await docker_compose_down(
                 docker_compose_yaml,
                 app.state.settings,
-                command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
+                # NOTE: in the event of a SIGTERM, there is a limited time to cleanup
+                timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
             )
 
             logger.log(

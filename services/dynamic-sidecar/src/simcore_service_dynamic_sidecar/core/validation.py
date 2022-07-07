@@ -265,7 +265,7 @@ async def validate_compose_spec(
     result = await docker_compose_config(
         compose_spec,
         settings=settings,
-        command_timeout=docker_compose_config_timeout,
+        timeout=docker_compose_config_timeout,
     )
 
     if not result.success:

@@ -106,7 +106,7 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 async def _docker_ps_a_container_names() -> list[str]:
     command = 'docker ps -a --format "{{.Names}}"'
-    success, stdout, _ = await async_command(command=command, command_timeout=None)
+    success, stdout, _ = await async_command(command=command, timeout=None)
 
     assert success is True, stdout
     return stdout.split("\n")
@@ -125,7 +125,7 @@ async def _assert_compose_spec_pulled(
         settings=settings,
         compose_spec_yaml_content=compose_spec,
         command=command,
-        timeout=None,
+        kill_on_timeout=None,
     )
 
     assert success is True, stdout
