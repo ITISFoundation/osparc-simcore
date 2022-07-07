@@ -72,7 +72,11 @@ class Status(BaseModel):
     def update_failing_status(
         self, user_msg: str, error_code: Optional[ErrorCodeStr] = None
     ) -> None:
-        self._update(DynamicSidecarStatus.FAILING, f"{user_msg} {error_code or '' }")
+        next_info = f"{user_msg}"
+        if error_code:
+            next_info = f"{user_msg} [{error_code}]"
+
+        self._update(DynamicSidecarStatus.FAILING, next_info)
 
     def __eq__(self, other: "Status") -> bool:
         return self.current == other.current and self.info == other.info

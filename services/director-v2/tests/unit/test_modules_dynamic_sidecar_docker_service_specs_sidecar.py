@@ -13,6 +13,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
     _get_environment_variables,
 )
 
+# PLEASE keep alphabetical to simplify debugging
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "DY_SIDECAR_NODE_ID",
     "DY_SIDECAR_PATH_INPUTS",
@@ -50,7 +51,8 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "S3_SECURE",
     "SC_BOOT_MODE",
     "SIMCORE_HOST_NAME",
-    "STORAGE_ENDPOINT",
+    "STORAGE_HOST",
+    "STORAGE_PORT",
 }
 
 
