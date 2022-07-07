@@ -36,8 +36,12 @@ from simcore_service_director_v2.models.schemas.clusters import (
 )
 from starlette import status
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()

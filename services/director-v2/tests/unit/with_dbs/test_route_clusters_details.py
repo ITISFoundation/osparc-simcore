@@ -24,8 +24,12 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()

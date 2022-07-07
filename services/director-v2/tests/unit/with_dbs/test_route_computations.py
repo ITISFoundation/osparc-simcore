@@ -25,8 +25,12 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()

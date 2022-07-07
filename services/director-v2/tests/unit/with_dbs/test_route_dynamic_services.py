@@ -36,8 +36,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from starlette import status
 from starlette.testclient import TestClient
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 WAIT_FOR_HEALTH_CALLS: Final[float] = 1.0
