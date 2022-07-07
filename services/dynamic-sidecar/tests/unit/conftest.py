@@ -181,13 +181,12 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         # if no compose-spec is stored skip this operation
         return
 
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "down --remove-orphans --timeout {stop_and_remove_timeout}"
-    )
     await _write_file_and_run_command(
         settings=app_state.settings,
-        file_content=app_state.compose_spec,
-        command=command,
-        command_timeout=5.0,
+        compose_spec_yaml_content=app_state.compose_spec,
+        command=(
+            'docker-compose --project-name {project} --file "{file_path}" '
+            "down --remove-orphans --timeout {stop_and_remove_timeout}"
+        ),
+        timeout=5.0,
     )
