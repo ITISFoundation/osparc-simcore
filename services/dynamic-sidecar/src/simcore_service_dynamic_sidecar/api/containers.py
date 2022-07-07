@@ -12,7 +12,11 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
+from ..core.docker_compose_utils import (
+    docker_compose_down,
+    docker_compose_rm,
+    docker_compose_up,
+)
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -69,6 +73,7 @@ async def _task_docker_compose_up_and_send_message(
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
+        # TODO: Use AppState(app).health
         application_health.is_healthy = False
         application_health.error_message = message
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
@@ -193,13 +198,15 @@ async def runs_docker_compose_down(
         )
 
     result = await docker_compose_down(
-        shared_store=shared_store,
-        settings=settings,
+        shared_store.compose_spec,
+        settings,
         command_timeout=command_timeout,
     )
 
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
+
+    await docker_compose_rm(shared_store.compose_spec, settings)
 
     if not result.success:
         logger.warning(
@@ -209,6 +216,11 @@ async def runs_docker_compose_down(
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
         )
+
+    # removing compose-file spec
+    assert result.success  # nosec
+    shared_store.compose_spec = None
+    shared_store.container_names = []
 
     return result.decoded_stdout
 
