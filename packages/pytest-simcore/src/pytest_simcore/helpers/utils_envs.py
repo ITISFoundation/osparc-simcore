@@ -1,12 +1,17 @@
 import os
 from io import StringIO
+from pathlib import Path
+from typing import Union
 
-from _pytest.monkeypatch import MonkeyPatch
-from dotenv import dotenv_values
+import dotenv
+from pytest import MonkeyPatch
 
 from .typing_env import EnvVarsDict
 
 
+#
+# monkeypatch using dict
+#
 def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
     for key, value in envs.items():
         assert value is not None  # None keys cannot be is defined w/o value
@@ -14,14 +19,33 @@ def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
     return envs
 
 
-def load_dotenv(**kwargs) -> EnvVarsDict:
-    return {k: v or "" for k, v in dotenv_values(**kwargs).items()}
+#
+# .env (dotenv) files (or envfile)
+#
+
+
+def load_dotenv(envfile: Union[Path, str], **options) -> EnvVarsDict:
+    """Convenient wrapper around dotenv.dotenv_values"""
+    kwargs = options.copy()
+    if isinstance(envfile, Path):
+        # path
+        kwargs["dotenv_path"] = envfile
+    else:
+        # content
+        kwargs["stream"] = StringIO(envfile)
+
+    return {k: v or "" for k, v in dotenv.dotenv_values(**kwargs).items()}
+
+
+#
+# monkeypath using envfiles
+#
 
 
 def setenvs_as_envfile(
     monkeypatch: MonkeyPatch, envfile_text: str, **dotenv_kwags
 ) -> EnvVarsDict:
-    envs = load_dotenv(stream=StringIO(envfile_text), **dotenv_kwags)
+    envs = load_dotenv(envfile_text, **dotenv_kwags)
     setenvs_from_dict(monkeypatch, envs)
 
     assert all(env in os.environ for env in envs)
@@ -31,7 +55,7 @@ def setenvs_as_envfile(
 def delenvs_as_envfile(
     monkeypatch: MonkeyPatch, envfile_text: str, raising: bool, **dotenv_kwags
 ) -> EnvVarsDict:
-    envs = load_dotenv(stream=StringIO(envfile_text), **dotenv_kwags)
+    envs = load_dotenv(envfile_text, **dotenv_kwags)
     for key in envs.keys():
         monkeypatch.delenv(key, raising=raising)
 
