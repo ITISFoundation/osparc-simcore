@@ -162,7 +162,7 @@ async def validate_compose_spec(
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
     *,
-    docker_compose_config_timeout: float,
+    docker_compose_config_timeout: int,
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects

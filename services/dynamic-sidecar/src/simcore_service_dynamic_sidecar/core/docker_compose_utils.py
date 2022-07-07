@@ -11,7 +11,7 @@ async def _write_file_and_run_command(
     settings: DynamicSidecarSettings,
     compose_spec_yaml_content: str,
     command: str,
-    kill_on_timeout: Optional[float],
+    kill_on_timeout: Optional[int],
 ) -> CommandResult:
     """The command which accepts {file_path} as an argument for string formatting
 
@@ -33,14 +33,12 @@ async def _write_file_and_run_command(
 #   thin wrapper above docker-compose CLI with some
 #   of the options already bound for this service's purpose
 #
-#
-#
 
 
 async def docker_compose_config(
     compose_spec_yaml: str,
     settings: DynamicSidecarSettings,
-    timeout: float,
+    timeout: int,
 ) -> CommandResult:
     """
     Validate and view the Compose file.
@@ -58,7 +56,7 @@ async def docker_compose_config(
 
 
 async def docker_compose_up(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
 ) -> CommandResult:
     """
     (Re)creates, starts, and attaches to containers for a service
@@ -75,12 +73,11 @@ async def docker_compose_up(
         " --no-build --detach",
         kill_on_timeout=timeout,
     )
-
     return result
 
 
 async def docker_compose_restart(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
 ) -> CommandResult:
     """
     Restarts running containers (w/ a timeout)
@@ -90,7 +87,7 @@ async def docker_compose_restart(
         compose_spec_yaml_content=compose_spec_yaml,
         command=(
             'docker-compose --project-name {project} --file "{file_path}" restart'
-            f" --timeout {timeout}"
+            f" --timeout {int(timeout)}"
         ),
         kill_on_timeout=None,
     )
@@ -98,7 +95,7 @@ async def docker_compose_restart(
 
 
 async def docker_compose_down(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
 ) -> CommandResult:
     """
     Stops containers and removes containers, networks and volumes declared in the Compose specs file
@@ -113,11 +110,10 @@ async def docker_compose_down(
         compose_spec_yaml_content=compose_spec_yaml,
         command=(
             'docker-compose --project-name {project} --file "{file_path}" down'
-            f" --volumes --remove-orphans --timeout {timeout}"
+            f" --volumes --remove-orphans --timeout {int(timeout)}"
         ),
         kill_on_timeout=None,
     )
-
     return result
 
 
