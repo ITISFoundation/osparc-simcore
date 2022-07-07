@@ -29,13 +29,20 @@ async def _write_file_and_run_command(
         return await async_command(formatted_command, command_timeout)
 
 
+#
+# API: wrapper above docker-compose CLI
+#
+
+
 async def docker_compose_config(
-    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+    compose_spec_yaml_content: str,
+    settings: DynamicSidecarSettings,
+    command_timeout: float,
 ) -> CommandResult:
     command = 'docker-compose --file "{file_path}" config'
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        file_content=compose_spec_yaml_content,
         command=command,
         command_timeout=command_timeout,
     )
@@ -65,7 +72,7 @@ async def docker_compose_up(
 
 
 async def docker_compose_restart(
-    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, command_timeout: float
 ) -> CommandResult:
     command = (
         'docker-compose --project-name {project} --file "{file_path}" '
@@ -73,7 +80,7 @@ async def docker_compose_restart(
     )
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        file_content=compose_spec_yaml,
         command=command,
         command_timeout=command_timeout,
     )
@@ -81,7 +88,7 @@ async def docker_compose_restart(
 
 
 async def docker_compose_down(
-    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, command_timeout: float
 ) -> CommandResult:
     command = (
         'docker-compose --project-name {project} --file "{file_path}" '
@@ -89,7 +96,7 @@ async def docker_compose_down(
     )
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        file_content=compose_spec_yaml,
         command=command,
         command_timeout=command_timeout,
     )
@@ -98,7 +105,7 @@ async def docker_compose_down(
 
 
 async def docker_compose_rm(
-    compose_spec: str, settings: DynamicSidecarSettings
+    compose_spec_yaml: str, settings: DynamicSidecarSettings
 ) -> CommandResult:
     """
     Removes stopped service containers
@@ -111,7 +118,7 @@ async def docker_compose_rm(
     )
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        file_content=compose_spec_yaml,
         command=command,
         command_timeout=None,
     )
