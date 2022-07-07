@@ -44,6 +44,14 @@ log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 16 * 1024 * 1024
 
+_TQDM_FILE_OPTIONS = dict(
+    unit="byte",
+    unit_scale=True,
+    unit_divisor=1024,
+    colour="yellow",
+    miniters=1,
+)
+
 
 async def _get_location_id_from_location_name(
     user_id: UserID,
@@ -120,11 +128,9 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {url.path} --> {file_path}\n",
+                desc=f"downloading {url.path} --> {file_path.name}\n",
                 total=file_size,
-                unit="byte",
-                unit_scale=True,
-                unit_divisor=1024,
+                **_TQDM_FILE_OPTIONS,
             ) as pbar:
                 async with aiofiles.open(file_path, "wb") as file_pointer:
                     chunk = await response.content.read(CHUNK_SIZE)
@@ -202,11 +208,7 @@ async def _upload_file_to_presigned_links(
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm(
-        desc=f"uploading {file}\n",
-        total=file_size,
-        unit="byte",
-        unit_scale=True,
-        unit_divisor=1024,
+        desc=f"uploading {file}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (

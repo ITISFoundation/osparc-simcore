@@ -88,6 +88,15 @@ class _FastZipFileReader(zipfile.ZipFile):
         """method disabled"""
 
 
+_TQDM_FILE_OPTIONS = dict(
+    unit="byte",
+    unit_scale=True,
+    unit_divisor=1024,
+    colour="yellow",
+    miniters=1,
+)
+
+
 def _zipfile_single_file_extract_worker(
     zip_file_path: Path,
     file_in_archive: zipfile.ZipInfo,
@@ -109,11 +118,7 @@ def _zipfile_single_file_extract_worker(
         desc = f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}\n"
         with zf.open(name=file_in_archive) as zip_fp:
             with open(destination_path, "wb") as destination_fp, tqdm(
-                total=file_in_archive.file_size,
-                desc=desc,
-                unit="byte",
-                unit_scale=True,
-                unit_divisor=1024,
+                total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
             ) as pbar:
                 for chunk in _read_in_chunks(zip_fp):
                     destination_fp.write(chunk)
@@ -206,11 +211,7 @@ def _add_to_archive(
             folder_size_bytes = _get_folder_size(dir_to_compress)
             desc = f"compressing {dir_to_compress} -> {destination}"
             with tqdm(
-                desc=f"{desc}\n",
-                total=folder_size_bytes,
-                unit="byte",
-                unit_scale=True,
-                unit_divisor=1024,
+                desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
             ) as pbar:
                 for file_to_add in files_to_compress_generator:
                     pbar.set_description(f"{desc}/{file_to_add.name}")
