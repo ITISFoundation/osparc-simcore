@@ -1,7 +1,6 @@
 import logging
 from typing import Optional
 
-from ..models.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -30,40 +29,48 @@ async def _write_file_and_run_command(
 
 
 #
-# API: wrapper above docker-compose CLI
+# API
+#   thin wrapper above docker-compose CLI with some
+#   of the options already bound for this service's purpose
 #
 
 
 async def docker_compose_config(
-    compose_spec_yaml_content: str,
+    compose_spec_yaml: str,
     settings: DynamicSidecarSettings,
     command_timeout: float,
 ) -> CommandResult:
-    command = 'docker-compose --file "{file_path}" config'
+    """
+    Validate and view the Compose file.
+
+    The output:
+        - interpolates env vars in the compose file
+    """
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec_yaml_content,
-        command=command,
+        file_content=compose_spec_yaml,
+        command='docker-compose --file "{file_path}" config',
         command_timeout=command_timeout,
     )
     return result
 
 
 async def docker_compose_up(
-    shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
+    compose_spec_yaml: str, settings: DynamicSidecarSettings, command_timeout: float
 ) -> CommandResult:
+    """
+    (Re)creates, starts, and attaches to containers for a service
 
-    if not shared_store.compose_spec:
-        # TODO: should fail (outside)
-        return CommandResult(True, "No started spec to remove was found")
+    - does NOT build images
+    - runs in detached mode, i.e. runs containers in the background, prints new container names
 
-    await docker_compose_rm(shared_store.compose_spec, settings)
+    """
 
     command = 'docker-compose --project-name {project} --file "{file_path}" up --no-build --detach'
 
     result = await _write_file_and_run_command(
         settings=settings,
-        file_content=shared_store.compose_spec,
+        file_content=compose_spec_yaml,
         command=command,
         command_timeout=command_timeout,
     )
