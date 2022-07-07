@@ -11,7 +11,7 @@ from ._errors import TaskClientTimeoutError
 from ._models import TaskId, TaskStatus
 
 
-class ProgressUpdater:
+class _ProgressUpdater:
     def __init__(self, progress_update: Optional[Callable[[str, float], None]]) -> None:
         self._callable = progress_update
         self._last_message: Optional[str] = None
@@ -54,7 +54,7 @@ async def task_result(
     # TODO: better way to recover the client?
     client: Client = app.state.long_running_client
 
-    progress_helper = ProgressUpdater(progress)
+    progress_helper = _ProgressUpdater(progress)
 
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(async_client, base_url, task_id)

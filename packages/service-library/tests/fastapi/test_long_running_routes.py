@@ -7,14 +7,14 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
-from servicelib.fastapi.long_running import (
+from servicelib.fastapi.long_running.server import (
     ProgressHandler,
     TaskId,
     TaskManager,
     get_task_manager,
-    setup_server,
-    start_task,
 )
+from servicelib.fastapi.long_running.server import setup as setup_server
+from servicelib.fastapi.long_running.server import start_task
 
 # UTILS
 

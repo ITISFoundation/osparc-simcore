@@ -9,21 +9,21 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
-from servicelib.fastapi.long_running import (
-    ProgressHandler,
-    TaskId,
-    TaskManager,
-    get_task_manager,
-    setup_client,
-    setup_server,
-    start_task,
-    task_result,
-)
-from servicelib.fastapi.long_running._context_manager import ProgressUpdater
+from servicelib.fastapi.long_running._context_manager import _ProgressUpdater
 from servicelib.fastapi.long_running._errors import (
     TaskClientResultErrorError,
     TaskClientTimeoutError,
 )
+from servicelib.fastapi.long_running.client import setup as setup_client
+from servicelib.fastapi.long_running.client import task_result
+from servicelib.fastapi.long_running.server import (
+    ProgressHandler,
+    TaskId,
+    TaskManager,
+    get_task_manager,
+)
+from servicelib.fastapi.long_running.server import setup as setup_server
+from servicelib.fastapi.long_running.server import start_task
 
 # UTILS
 
@@ -158,7 +158,7 @@ def test_progress_updater(repeat: int) -> None:
         nonlocal counter
         counter += 1
 
-    progress_updater = ProgressUpdater(progress_update)
+    progress_updater = _ProgressUpdater(progress_update)
 
     # different from None and the last value only
     # triggers once

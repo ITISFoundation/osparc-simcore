@@ -8,15 +8,6 @@ from typing import AsyncIterable
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
-from servicelib.fastapi import long_running
-from servicelib.fastapi.long_running import (
-    ProgressHandler,
-    TaskId,
-    TaskManager,
-    TaskStatus,
-    get_task_manager,
-    start_task,
-)
 from servicelib.fastapi.long_running._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -24,6 +15,15 @@ from servicelib.fastapi.long_running._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
+from servicelib.fastapi.long_running.server import (
+    ProgressHandler,
+    TaskId,
+    TaskManager,
+    TaskStatus,
+    get_task_manager,
+)
+from servicelib.fastapi.long_running.server import setup as setup_server
+from servicelib.fastapi.long_running.server import start_task
 
 # UTILS
 
@@ -81,7 +81,7 @@ async def bg_task_app(user_routes: APIRouter) -> AsyncIterable[FastAPI]:
 
     app.include_router(user_routes)
 
-    long_running.setup_server(app)
+    setup_server(app)
     async with LifespanManager(app):
         yield app
 
