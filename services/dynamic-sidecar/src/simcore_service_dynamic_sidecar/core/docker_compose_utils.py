@@ -29,9 +29,83 @@ async def _write_file_and_run_command(
         return await async_command(formatted_command, command_timeout)
 
 
-async def _cleanup_containers_and_volumes(
+async def docker_compose_config(
+    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+) -> CommandResult:
+    command = 'docker-compose --file "{file_path}" config'
+    result = await _write_file_and_run_command(
+        settings=settings,
+        file_content=compose_spec,
+        command=command,
+        command_timeout=command_timeout,
+    )
+    return result
+
+
+async def docker_compose_up(
+    shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
+) -> CommandResult:
+
+    if not shared_store.compose_spec:
+        # TODO: should fail (outside)
+        return CommandResult(True, "No started spec to remove was found")
+
+    await docker_compose_rm(shared_store.compose_spec, settings)
+
+    command = 'docker-compose --project-name {project} --file "{file_path}" up --no-build --detach'
+
+    result = await _write_file_and_run_command(
+        settings=settings,
+        file_content=shared_store.compose_spec,
+        command=command,
+        command_timeout=command_timeout,
+    )
+
+    return result
+
+
+async def docker_compose_restart(
+    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+) -> CommandResult:
+    command = (
+        'docker-compose --project-name {project} --file "{file_path}" '
+        "restart --timeout {stop_and_remove_timeout}"
+    )
+    result = await _write_file_and_run_command(
+        settings=settings,
+        file_content=compose_spec,
+        command=command,
+        command_timeout=command_timeout,
+    )
+    return result
+
+
+async def docker_compose_down(
+    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
+) -> CommandResult:
+    command = (
+        'docker-compose --project-name {project} --file "{file_path}" '
+        "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
+    )
+    result = await _write_file_and_run_command(
+        settings=settings,
+        file_content=compose_spec,
+        command=command,
+        command_timeout=command_timeout,
+    )
+
+    return result
+
+
+async def docker_compose_rm(
     compose_spec: str, settings: DynamicSidecarSettings
-) -> None:
+) -> CommandResult:
+    """
+    Removes stopped service containers
+        - stops the containers, if still running, before removing  (recommended to stop first)
+        - removes any anonymous VOLUMES attached to containers
+        - runs w/o confirmation
+    """
     command = (
         'docker-compose --project-name {project} --file "{file_path}" rm --force -v'
     )
@@ -49,80 +123,4 @@ async def _cleanup_containers_and_volumes(
             f"stop_and_remove_timeout={settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT}",
             f"{result.decoded_stdout}",
         )
-
-
-async def docker_compose_up(
-    shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
-) -> CommandResult:
-
-    if not shared_store.compose_spec:
-        return CommandResult(True, "No started spec to remove was found")
-
-    await _cleanup_containers_and_volumes(shared_store.compose_spec, settings)
-
-    command = 'docker-compose --project-name {project} --file "{file_path}" up --no-build --detach'
-
-    result = await _write_file_and_run_command(
-        settings=settings,
-        file_content=shared_store.compose_spec,
-        command=command,
-        command_timeout=command_timeout,
-    )
-
-    return result
-
-
-async def docker_compose_down(
-    shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
-) -> CommandResult:
-
-    if not shared_store.compose_spec:
-        return CommandResult(True, "No started spec to remove was found")
-
-    await _cleanup_containers_and_volumes(shared_store.compose_spec, settings)
-
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
-    )
-    result = await _write_file_and_run_command(
-        settings=settings,
-        file_content=shared_store.compose_spec,
-        command=command,
-        command_timeout=command_timeout,
-    )
-
-    # removing compose-file spec
-    shared_store.compose_spec = None
-    shared_store.container_names = []
-
-    return result
-
-
-async def docker_compose_config(
-    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
-) -> CommandResult:
-    command = 'docker-compose --file "{file_path}" config'
-    result = await _write_file_and_run_command(
-        settings=settings,
-        file_content=compose_spec,
-        command=command,
-        command_timeout=command_timeout,
-    )
-    return result
-
-
-async def docker_compose_restart(
-    compose_spec: str, settings: DynamicSidecarSettings, command_timeout: float
-) -> CommandResult:
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "restart --timeout {stop_and_remove_timeout}"
-    )
-    result = await _write_file_and_run_command(
-        settings=settings,
-        file_content=compose_spec,
-        command=command,
-        command_timeout=command_timeout,
-    )
     return result
