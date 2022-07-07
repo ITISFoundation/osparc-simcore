@@ -178,7 +178,7 @@ def test_services_custom_constraints_default_empty_list(
     assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
 
 
-def test_DynamicSidecarSettings_in_development(
+def test_class_dynamicsidecarsettings_in_development(
     monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
 ):
     # assume in environ is set
@@ -198,7 +198,7 @@ def test_DynamicSidecarSettings_in_development(
     assert devel_settings.DYNAMIC_SIDECAR_PORT
 
 
-def test_DynamicSidecarSettings_in_production(
+def test_class_dynamicsidecarsettings_in_production(
     monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
 ):
     # assume in environ is set
