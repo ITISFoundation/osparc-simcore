@@ -127,7 +127,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 20,
             alignY: "middle",
             source: "@MaterialIcons/update/18",
-            toolTipText: this.tr("Update available"),
             visibility: "excluded"
           });
           this._add(control, {

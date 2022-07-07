@@ -77,6 +77,27 @@ qx.Class.define("osparc.utils.Study", {
       });
     },
 
+    isWorkbenchDeprecated: function(workbench) {
+      const services = new Set(this.extractServices(workbench));
+      const filtered = [];
+      services.forEach(srv => {
+        const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
+        if (idx === -1) {
+          filtered.push(srv);
+        }
+      });
+      const deprecated = filtered.some(srv => {
+        const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
+        if (srvMetadata && "deprecated" in srvMetadata && ![null, undefined].includes(srvMetadata["deprecated"])) {
+          const depTime = new Date(srvMetadata["deprecated"]);
+          const now = new Date();
+          return depTime.getTime() < now.getTime();
+        }
+        return false;
+      });
+      return deprecated;
+    },
+
     getInaccessibleServicesMsg: function(inaccessibleServices) {
       let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
       inaccessibleServices.forEach(unaccessibleService => {
