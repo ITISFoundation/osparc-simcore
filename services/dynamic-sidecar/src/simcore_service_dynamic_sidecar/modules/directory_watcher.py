@@ -15,7 +15,7 @@ from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from .mounted_fs import MountedVolumes, setup_mounted_fs
+from .mounted_fs import MountedVolumes
 
 DETECTION_INTERVAL: float = 1.0
 TASK_NAME_FOR_CLEANUP = f"{name}.InvokeTask"
@@ -39,7 +39,7 @@ class AsyncLockedFloat:
             return self._value
 
 
-def async_run_once_after_event_chain(  # type:ignore
+def async_run_once_after_event_chain(
     detection_interval: float,
 ):
     """
@@ -51,11 +51,11 @@ def async_run_once_after_event_chain(  # type:ignore
     returns: decorator to be applied to async functions
     """
 
-    def internal(decorated_function: Callable[..., Awaitable[Any]]):  # type:ignore
+    def internal(decorated_function: Callable[..., Awaitable[Any]]):
         last = AsyncLockedFloat(initial_value=None)
 
         @wraps(decorated_function)
-        async def wrapper(*args: Any, **kwargs: Any):  # type:ignore
+        async def wrapper(*args: Any, **kwargs: Any):
             # skipping  the first time the event chain starts
             if await last.get_value() is None:
                 await last.set_value(time.time())
@@ -199,7 +199,8 @@ class DirectoryWatcherObservers:
 
 def setup_directory_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
-        mounted_volumes: MountedVolumes = setup_mounted_fs(app)
+        mounted_volumes: MountedVolumes
+        mounted_volumes = app.state.mounted_volumes  # nosec
 
         app.state.dir_watcher = DirectoryWatcherObservers()
         app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
@@ -233,9 +234,9 @@ def directory_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
         enable_directory_watcher(app)
 
 
-__all__ = [
+__all__: tuple[str, ...] = (
+    "directory_watcher_disabled",
     "disable_directory_watcher",
     "enable_directory_watcher",
-    "directory_watcher_disabled",
     "setup_directory_watcher",
-]
+)

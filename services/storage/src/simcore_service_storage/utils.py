@@ -1,61 +1,34 @@
 import logging
-import uuid
-from functools import lru_cache
+import urllib.parse
 from pathlib import Path
-from typing import Union
-from uuid import UUID
+from typing import Optional, Union
 
 import aiofiles
-import tenacity
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
-from aiopg.sa.result import ResultProxy, RowProxy
-from yarl import URL
+from models_library.projects_nodes_io import StorageFileID
+from models_library.users import UserID
 
-from .models import FileMetaData, FileMetaDataEx
+from .constants import MAX_CHUNK_SIZE, S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+from .models import FileMetaData, FileMetaDataAtDB, UploadID
 
 logger = logging.getLogger(__name__)
 
 
-MAX_CHUNK_SIZE = 1024
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
-
-
-@tenacity.retry(
-    wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
-    stop=tenacity.stop_after_attempt(RETRY_COUNT),
-    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
-)
-async def assert_enpoint_is_ok(
-    session: ClientSession, url: URL, expected_response: int = 200
-):
-    """Tenace check to GET given url endpoint
-
-    Typically used to check connectivity to a given service
-
-    In sync code use as
-        loop.run_until_complete( check_endpoint(url) )
-
-    :param url: endpoint service URL
-    :type url: URL
-    :param expected_response: expected http status, defaults to 200 (OK)
-    :param expected_response: int, optional
-    """
-    async with session.get(url) as resp:
-        if resp.status != expected_response:
-            raise AssertionError(f"{resp.status} != {expected_response}")
-
-
-def is_url(location):
-    return bool(URL(str(location)).host)
+def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
+    return FileMetaData.parse_obj(
+        x.dict()
+        | {
+            "file_uuid": x.file_id,
+            "file_name": x.file_id.split("/")[-1],
+        }
+    )
 
 
 async def download_to_file_or_raise(
     session: ClientSession,
     url: StrOrURL,
-    destination_path: Union[str, Path],
+    destination_path: Path,
     *,
     chunk_size=MAX_CHUNK_SIZE,
 ) -> int:
@@ -83,35 +56,23 @@ async def download_to_file_or_raise(
     return total_size
 
 
-def create_reverse_dns(*resource_name_parts) -> str:
-    """
-    Returns a name for the resource following the reverse domain name notation
-    """
-    # See https://en.wikipedia.org/wiki/Reverse_domain_name_notation
-    return "io.simcore.storage" + ".".join(map(str, resource_name_parts))
-
-
-@lru_cache()
-def create_resource_uuid(*resource_name_parts) -> UUID:
-    revers_dns = create_reverse_dns(*resource_name_parts)
-    return uuid.uuid5(uuid.NAMESPACE_DNS, revers_dns)
-
-
-def to_meta_data_extended(row: Union[ResultProxy, RowProxy]) -> FileMetaDataEx:
-    assert row  # nosec
-    meta = FileMetaData(**dict(row))  # type: ignore
-    # NOTE: I know this is sad but this is fixed in a later PR where the class is replaced by a pydantic class
-    meta.location_id = int(meta.location_id)
-    meta_extended = FileMetaDataEx(
-        fmd=meta,
-        parent_id=str(Path(meta.object_name).parent),
-    )  # type: ignore
-    return meta_extended
-
-
-def is_file_entry_valid(file_metadata: FileMetaData) -> bool:
+def is_file_entry_valid(file_metadata: Union[FileMetaData, FileMetaDataAtDB]) -> bool:
     return (
         file_metadata.entity_tag is not None
-        and file_metadata.file_size is not None
         and file_metadata.file_size > 0
+        and file_metadata.upload_id is None
+        and file_metadata.upload_expires_at is None
     )
+
+
+def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) -> str:
+    return f"upload_complete_task_{user_id}_{urllib.parse.quote(file_id, safe='')}"
+
+
+def is_valid_managed_multipart_upload(upload_id: Optional[UploadID]) -> bool:
+    """the upload ID is valid (created by storage service) AND internally managed by storage (e.g. PRESIGNED multipart upload)
+
+    :type upload_id: Optional[UploadID]
+    :rtype: bool
+    """
+    return upload_id is not None and upload_id != S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID

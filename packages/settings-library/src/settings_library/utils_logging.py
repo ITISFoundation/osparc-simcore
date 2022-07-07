@@ -4,8 +4,13 @@ from typing import Any
 
 
 class MixinLoggingSettings:
+    """
+    USAGE example in packages/settings-library/tests/test_utils_logging.py::test_mixin_logging
+    """
+
     @classmethod
     def validate_log_level(cls, value: Any) -> str:
+        """Standard implementation for @validator("LOG_LEVEL")"""
         try:
             getattr(logging, value.upper())
         except AttributeError as err:

@@ -51,7 +51,6 @@ async def list_files(
     files_meta = deque()
     for stored_file_meta in stored_files:
         try:
-            assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
             file_meta: File = to_file_api_model(stored_file_meta)
@@ -91,9 +90,13 @@ async def upload_file(
     logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
 
     # upload to S3 using pre-signed link
-    presigned_upload_link = await storage_client.get_upload_link(
+    presigned_upload_links = await storage_client.get_upload_links(
         user_id, file_meta.id, file_meta.filename
     )
+
+    assert presigned_upload_links.urls  # nosec
+    assert len(presigned_upload_links.urls) == 1  # nosec
+    presigned_upload_link = presigned_upload_links.urls[0]
 
     logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
     try:
@@ -151,7 +154,6 @@ async def get_file(
             raise ValueError("Not found in storage")
 
         stored_file_meta = stored_files[0]
-        assert stored_file_meta.user_id == user_id  # nosec
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model

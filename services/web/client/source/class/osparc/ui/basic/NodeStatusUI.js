@@ -184,6 +184,13 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           return this.tr("Select a file");
         }
       });
+
+      this.getNode().getStatus().addListener("changeProgress", e => {
+        const progress = e.getData();
+        if (progress > 0 && progress < 100) {
+          this.__label.setValue(this.tr("Uploading"));
+        }
+      });
     },
 
     __setupBlank: function() {

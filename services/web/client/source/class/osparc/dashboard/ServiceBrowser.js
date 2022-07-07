@@ -270,16 +270,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
         marginRight: 8
       });
-      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
-      byNameBtn.sortBy = "name";
       const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
       byHitsBtn.sortBy = "hits";
+      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
+      byNameBtn.sortBy = "name";
       const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: false
       });
       [
-        byNameBtn,
-        byHitsBtn
+        byHitsBtn,
+        byNameBtn
       ].forEach(btn => {
         containterSortBtns.add(btn);
         sortByGroup.add(btn);

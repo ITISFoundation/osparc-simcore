@@ -610,16 +610,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       // callback for incoming progress
       const slotName2 = "progress";
       if (!socket.slotExists(slotName2)) {
-        socket.on(slotName2, data => {
-          const d = JSON.parse(data);
-          const nodeId = d["node_id"];
-          const progress = Number.parseFloat(d["progress"]).toFixed(4);
+        socket.on(slotName2, jsonString => {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          const nodeId = data["node_id"];
+          const progress = Number.parseFloat(data["progress"]).toFixed(4);
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
             node.getStatus().setProgress(progress);
           } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'progress' msg", d);
+            console.log("Ignored ws 'progress' msg", data);
           }
         }, this);
       }
@@ -627,15 +631,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.listenToNodeUpdated();
 
       // callback for events
-      const slotName4 = "event";
-      if (!socket.slotExists(slotName4)) {
-        socket.on(slotName4, eventData => {
-          const eventPayload = JSON.parse(eventData);
-          const action = eventPayload["action"];
+      const slotName3 = "event";
+      if (!socket.slotExists(slotName3)) {
+        socket.on(slotName3, jsonString => {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          const action = data["action"];
           if (action == "RELOAD_IFRAME") {
             // TODO: maybe reload iframe in the future
             // for now a message is displayed to the user
-            const nodeId = eventPayload["node_id"];
+            const nodeId = data["node_id"];
 
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
@@ -652,9 +660,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const slotName = "nodeUpdated";
       if (!socket.slotExists(slotName)) {
-        socket.on(slotName, data => {
-          const d = JSON.parse(data);
-          this.getStudy().nodeUpdated(d);
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          this.getStudy().nodeUpdated(data);
         }, this);
       }
     },

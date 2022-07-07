@@ -8,11 +8,27 @@
 
 import re
 from datetime import datetime
-from typing import List, Optional, Pattern, Union
+from enum import Enum
+from typing import Any, Optional, Pattern, Union
 from uuid import UUID
 
-from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Extra, Field, validator
+from models_library.projects_nodes_io import (
+    LocationID,
+    LocationName,
+    NodeID,
+    SimcoreS3FileID,
+    StorageFileID,
+)
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConstrainedStr,
+    Extra,
+    Field,
+    PositiveInt,
+    root_validator,
+    validator,
+)
 from pydantic.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
@@ -127,8 +143,8 @@ class FileMetaDataGet(BaseModel):
 
     @validator("location_id", pre=True)
     @classmethod
-    def convert_from_str(cls, v):
-        if isinstance(v, str):
+    def ensure_location_is_integer(cls, v):
+        if v is not None:
             return int(v)
         return v
 
@@ -198,14 +214,86 @@ class FileMetaDataGet(BaseModel):
 
 
 class FileMetaDataArray(BaseModel):
-    __root__: List[FileMetaDataGet] = []
+    __root__: list[FileMetaDataGet] = []
 
 
 # /locations/{location_id}/files/{file_id}
+
+
+class LinkType(str, Enum):
+    PRESIGNED = "PRESIGNED"
+    S3 = "S3"
 
 
 class PresignedLink(BaseModel):
     link: AnyUrl
 
 
+class FileUploadLinks(BaseModel):
+    abort_upload: AnyUrl
+    complete_upload: AnyUrl
+
+
+class FileUploadSchema(BaseModel):
+    chunk_size: ByteSize
+    urls: list[AnyUrl]
+    links: FileUploadLinks
+
+
+# /locations/{location_id}/files/{file_id}:complete
+class UploadedPart(BaseModel):
+    number: PositiveInt
+    e_tag: ETag
+
+
+class FileUploadCompletionBody(BaseModel):
+    parts: list[UploadedPart]
+
+
+class FileUploadCompleteLinks(BaseModel):
+    state: AnyUrl
+
+
+class FileUploadCompleteResponse(BaseModel):
+    links: FileUploadCompleteLinks
+
+
+# /locations/{location_id}/files/{file_id}:complete/futures/{future_id}
+class FileUploadCompleteState(Enum):
+    OK = "ok"
+    NOK = "nok"
+
+
+class FileUploadCompleteFutureResponse(BaseModel):
+    state: FileUploadCompleteState
+    e_tag: Optional[ETag] = Field(default=None)
+
+
 # /simcore-s3/
+
+
+class FoldersBody(BaseModel):
+    source: dict[str, Any] = Field(default_factory=dict)
+    destination: dict[str, Any] = Field(default_factory=dict)
+    nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
+
+    @root_validator()
+    @classmethod
+    def ensure_consistent_entries(cls, values):
+        source_node_keys = (
+            NodeID(n) for n in values["source"].get("workbench", {}).keys()
+        )
+        if set(source_node_keys) != set(values["nodes_map"].keys()):
+            raise ValueError("source project nodes do not fit with nodes_map entries")
+        destination_node_keys = (
+            NodeID(n) for n in values["destination"].get("workbench", {}).keys()
+        )
+        if set(destination_node_keys) != set(values["nodes_map"].values()):
+            raise ValueError(
+                "destination project nodes do not fit with nodes_map values"
+            )
+        return values
+
+
+class SoftCopyBody(BaseModel):
+    link_id: SimcoreS3FileID

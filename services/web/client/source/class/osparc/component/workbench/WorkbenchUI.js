@@ -308,11 +308,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const newNodeUI = this.__addNode(service, nodePos);
         if (nodeLeftId !== null || nodeRightId !== null) {
           const newNodeId = newNodeUI.getNodeId();
-          this._createEdgeBetweenNodes({
-            nodeId: nodeLeftId ? nodeLeftId : newNodeId
-          }, {
-            nodeId: nodeRightId ? nodeRightId : newNodeId
-          });
+          this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
         }
       }, this);
       srvCat.open();
@@ -326,8 +322,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       const newNodeUI = this._createNodeUI(node.getNodeId());
-      this.__createDragDropMechanism(newNodeUI);
       this._addNodeUIToWorkbench(newNodeUI, pos);
+      qx.ui.core.queue.Layout.flush();
+      this.__createDragDropMechanism(newNodeUI);
       return newNodeUI;
     },
 
@@ -359,7 +356,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let onNodeUI = null;
       this.__nodesUI.forEach(nodeUI => {
         const nBounds = nodeUI.getBounds();
-        console.log();
         if (onNodeUI === null &&
           pos.x > nBounds.left &&
           pos.x < nBounds.left + nBounds.width &&
@@ -386,9 +382,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.open();
       this.__nodesUI.push(nodeUI);
 
-      nodeUI.addListener("appear", () => {
-        this.__updateNodeUIPos(nodeUI);
-      }, this);
+      nodeUI.addListener("appear", () => this.__updateNodeUIPos(nodeUI), this);
 
       const isStudyReadOnly = this.getStudy().isReadOnly();
       nodeUI.set({
@@ -403,8 +397,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         this.__addNodeListeners(nodeUI);
       }
-
-      qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
     },
@@ -600,58 +592,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
-    __createEdgeUI: function(node1Id, node2Id, edgeId) {
-      const edge = this.__getWorkbench().createEdge(edgeId, node1Id, node2Id);
-      if (!edge) {
-        return null;
-      }
-      if (this.__edgeRepresentationExists(edge)) {
-        return null;
-      }
-
-      // build representation
-      const nodeUI1 = this.getNodeUI(node1Id);
-      const nodeUI2 = this.getNodeUI(node2Id);
-      if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
-        console.error("bounds not ready");
-        return null;
-      }
-      const port1 = nodeUI1.getOutputPort();
-      const port2 = nodeUI2.getInputPort();
-      if (port1 && port2) {
-        nodeUI2.getNode().addInputNode(node1Id);
-        const pointList = this.__getEdgePoints(nodeUI1, port1, nodeUI2, port2);
-        const x1 = pointList[0] ? pointList[0][0] : 0;
-        const y1 = pointList[0] ? pointList[0][1] : 0;
-        const x2 = pointList[1] ? pointList[1][0] : 0;
-        const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgLayer.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
-
-        edge.addListener("changePortConnected", e => {
-          const portConnected = e.getData();
-          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
-        }, this);
-
-        const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
-        this.__edgesUI.push(edgeUI);
-
-        const that = this;
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
-        }, this);
-        edgeUI.getRepresentation().node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
-        }, this);
-
-        return edgeUI;
-      }
-      return null;
-    },
-
     __edgeRepresentationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];
@@ -732,11 +672,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
 
-          this._createEdgeBetweenNodes({
-            nodeId: nodeAId
-          }, {
-            nodeId: nodeBId
-          });
+          this._createEdgeBetweenNodes(nodeAId, nodeBId, true);
           this.__removeTempEdge();
           this.__removePointerMoveListener();
         }
@@ -759,10 +695,54 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
     },
 
-    _createEdgeBetweenNodes: function(from, to, edgeId) {
-      const node1Id = from.nodeId;
-      const node2Id = to.nodeId;
-      this.__createEdgeUI(node1Id, node2Id, edgeId);
+    _createEdgeBetweenNodes: function(node1Id, node2Id, autoConnect = true) {
+      const edge = this.__getWorkbench().createEdge(null, node1Id, node2Id, autoConnect);
+      if (!edge) {
+        return;
+      }
+      if (this.__edgeRepresentationExists(edge)) {
+        return;
+      }
+
+      // build representation
+      const nodeUI1 = this.getNodeUI(node1Id);
+      const nodeUI2 = this.getNodeUI(node2Id);
+      if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
+        console.error("bounds not ready");
+        return;
+      }
+
+      const port1 = nodeUI1.getOutputPort();
+      const port2 = nodeUI2.getInputPort();
+      if (port1 && port2) {
+        nodeUI2.getNode().addInputNode(node1Id);
+        const pointList = this.__getEdgePoints(nodeUI1, port1, nodeUI2, port2);
+        const x1 = pointList[0] ? pointList[0][0] : 0;
+        const y1 = pointList[0] ? pointList[0][1] : 0;
+        const x2 = pointList[1] ? pointList[1][0] : 0;
+        const y2 = pointList[1] ? pointList[1][1] : 0;
+        const edgeRepresentation = this.__svgLayer.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
+
+        edge.addListener("changePortConnected", e => {
+          const portConnected = e.getData();
+          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
+        }, this);
+
+        const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
+        this.__edgesUI.push(edgeUI);
+
+        const that = this;
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+        edgeUI.getRepresentation().node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+      }
     },
 
     __updateAllEdges: function() {
@@ -1041,19 +1021,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__clearAllAnnotations();
     },
 
+    __reloadCurrentModel: function() {
+      if (this._currentModel) {
+        this.loadModel(this.getStudy().getWorkbench());
+      }
+    },
+
     loadModel: function(model) {
       if (this.__svgLayer.getReady()) {
         this._loadModel(model);
       } else {
-        this.__svgLayer.addListenerOnce("SvgWidgetReady", () => {
-          this._loadModel(model);
-        }, this);
-      }
-    },
-
-    __reloadCurrentModel: function() {
-      if (this._currentModel) {
-        this.loadModel(this._currentModel);
+        this.__svgLayer.addListenerOnce("SvgWidgetReady", () => this._loadModel(model), this);
       }
     },
 
@@ -1061,18 +1039,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this._clearAll();
       this._currentModel = model;
       if (model) {
-        qx.ui.core.queue.Visibility.flush();
-
         // create nodes
         const nodes = model.getNodes();
         const nodeUIs = [];
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
-          this.__createDragDropMechanism(nodeUI);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
           nodeUIs.push(nodeUI);
         }
+        qx.ui.core.queue.Layout.flush();
 
         let tries = 0;
         const maxTries = 40;
@@ -1084,17 +1060,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
         console.log("nodes visible", nodeUIs.length, tries*sleepFor);
 
+        nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
+
         // create edges
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const inputNodeIDs = node.getInputNodes();
           inputNodeIDs.forEach(inputNodeId => {
             if (inputNodeId in nodes) {
-              this._createEdgeBetweenNodes({
-                nodeId: inputNodeId
-              }, {
-                nodeId: nodeId
-              });
+              this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
             }
           });
         }
@@ -1523,7 +1497,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), nodeId, this.getStudy());
+        const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
+          nodeId,
+          label: node.getLabel(),
+          study: this.getStudy()
+        });
         const title = this.tr("Service information");
         const width = 600;
         const height = 700;

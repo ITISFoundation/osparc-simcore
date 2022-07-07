@@ -4,26 +4,19 @@
 # pylint:disable=too-many-arguments
 
 import json
+import urllib.parse
 from pathlib import Path
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-)
-from urllib.parse import quote_plus
+from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional
 from uuid import uuid4
 
 import np_helpers
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
+from models_library.api_schemas_storage import FileUploadSchema
+from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -31,13 +24,12 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports_common import config as node_config
 from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
 
 @pytest.fixture
-def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
+def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
     # inject user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
@@ -93,17 +85,6 @@ def s3_simcore_location() -> LocationID:
 
 
 @pytest.fixture
-def filemanager_cfg(
-    storage_service: URL,
-    testing_environ_vars: Dict,
-    user_id: str,
-    bucket: str,
-) -> None:
-    node_config.STORAGE_ENDPOINT = f"{storage_service.host}:{storage_service.port}"
-    node_config.BUCKET = bucket
-
-
-@pytest.fixture
 def create_valid_file_uuid(
     project_id: str, node_uuid: str
 ) -> Callable[[Path], SimcoreS3FileID]:
@@ -116,13 +97,12 @@ def create_valid_file_uuid(
 @pytest.fixture()
 def default_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     default_configuration_file: Path,
     project_id: str,
     node_uuid: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     create_pipeline(project_id)
@@ -133,8 +113,8 @@ def default_configuration(
 
 
 @pytest.fixture()
-def create_node_link() -> Callable[[str], Dict[str, str]]:
-    def _create(key: str) -> Dict[str, str]:
+def create_node_link() -> Callable[[str], dict[str, str]]:
+    def _create(key: str) -> dict[str, str]:
         return {"nodeUuid": "TEST_NODE_UUID", "output": key}
 
     return _create
@@ -142,28 +122,31 @@ def create_node_link() -> Callable[[str], Dict[str, str]]:
 
 @pytest.fixture()
 def create_store_link(
-    bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
     create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     user_id: int,
     project_id: str,
     node_uuid: str,
     storage_service: URL,  # packages/pytest-simcore/src/pytest_simcore/simcore_storage_service.py
-) -> Callable[[Path], Awaitable[Dict[str, Any]]]:
-    async def _create(file_path: Path) -> Dict[str, Any]:
+) -> Callable[[Path], Awaitable[dict[str, Any]]]:
+    async def _create(file_path: Path) -> dict[str, Any]:
         file_path = Path(file_path)
         assert file_path.exists()
 
         file_id = create_valid_file_uuid(file_path)
+        url = URL(
+            f"{storage_service}/v0/locations/{s3_simcore_location}/files/{urllib.parse.quote(file_id, safe='')}"
+        ).with_query(user_id=user_id, file_size=0)
         async with ClientSession() as session:
-            async with session.put(
-                f"{storage_service}/v0/locations/{s3_simcore_location}/files/{quote_plus(file_id)}",
-                params={"user_id": f"{user_id}"},
-            ) as resp:
+            async with session.put(url) as resp:
                 resp.raise_for_status()
-                presigned_link_enveloped = await resp.json()
-            link = presigned_link_enveloped.get("data", {}).get("link")
-            assert link is not None
+                presigned_links_enveloped = Envelope[FileUploadSchema].parse_obj(
+                    await resp.json()
+                )
+            assert presigned_links_enveloped.data
+            assert len(presigned_links_enveloped.data.urls) == 1
+            link = presigned_links_enveloped.data.urls[0]
+            assert link
 
             # Upload using the link
             extra_hdr = {
@@ -184,7 +167,6 @@ def create_store_link(
 @pytest.fixture(scope="function")
 def create_special_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     empty_configuration_file: Path,
@@ -192,11 +174,11 @@ def create_special_configuration(
     node_uuid: str,
 ) -> Callable:
     def _create(
-        inputs: Optional[List[Tuple[str, str, Any]]] = None,
-        outputs: Optional[List[Tuple[str, str, Any]]] = None,
+        inputs: Optional[list[tuple[str, str, Any]]] = None,
+        outputs: Optional[list[tuple[str, str, Any]]] = None,
         project_id: str = project_id,
         node_id: str = node_uuid,
-    ) -> Tuple[Dict, str, str]:
+    ) -> tuple[dict, str, str]:
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
@@ -212,20 +194,19 @@ def create_special_configuration(
 @pytest.fixture(scope="function")
 def create_2nodes_configuration(
     node_ports_config: None,
-    bucket: str,
     create_pipeline: Callable[[str], str],
     create_task: Callable[..., str],
     empty_configuration_file: Path,
 ) -> Callable:
     def _create(
-        prev_node_inputs: List[Tuple[str, str, Any]],
-        prev_node_outputs: List[Tuple[str, str, Any]],
-        inputs: List[Tuple[str, str, Any]],
-        outputs: List[Tuple[str, str, Any]],
+        prev_node_inputs: list[tuple[str, str, Any]],
+        prev_node_outputs: list[tuple[str, str, Any]],
+        inputs: list[tuple[str, str, Any]],
+        outputs: list[tuple[str, str, Any]],
         project_id: str,
         previous_node_id: str,
         node_id: str,
-    ) -> Tuple[Dict, str, str]:
+    ) -> tuple[dict, str, str]:
         create_pipeline(project_id)
 
         # create previous node
@@ -260,7 +241,7 @@ def create_2nodes_configuration(
 
 @pytest.fixture
 def create_pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[[str], str]]:
-    created_pipeline_ids: List[str] = []
+    created_pipeline_ids: list[str] = []
 
     def _create(project_id: str) -> str:
         with postgres_db.connect() as conn:
@@ -288,7 +269,7 @@ def create_pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[[str], s
 
 @pytest.fixture
 def create_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., str]]:
-    created_task_ids: List[int] = []
+    created_task_ids: list[int] = []
 
     def _create(project_id: str, node_uuid: str, **overrides) -> str:
         task_config = {
@@ -324,7 +305,7 @@ def _set_configuration(
     project_id: str,
     node_id: str,
     json_configuration: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_id))
     configuration = json.loads(json_configuration)
     task(project_id, node_id, **configuration)
@@ -332,7 +313,7 @@ def _set_configuration(
 
 
 def _assign_config(
-    config_dict: dict, port_type: str, entries: List[Tuple[str, str, Any]]
+    config_dict: dict, port_type: str, entries: list[tuple[str, str, Any]]
 ):
     if entries is None:
         return
@@ -353,7 +334,7 @@ def _assign_config(
 
 @pytest.fixture
 async def r_clone_settings_factory(
-    minio_config: Dict[str, Any], storage_service: URL
+    minio_config: dict[str, Any], storage_service: URL
 ) -> Awaitable[RCloneSettings]:
     async def _factory() -> RCloneSettings:
         client = minio_config["client"]
@@ -389,3 +370,10 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
     yield
     with postgres_db.connect() as conn:
         conn.execute(file_meta_data.delete())
+
+
+@pytest.fixture
+def node_ports_config(
+    node_ports_config, simcore_services_ready, cleanup_file_meta_data: None, bucket: str
+):
+    ...

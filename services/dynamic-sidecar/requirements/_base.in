@@ -16,16 +16,22 @@
 --requirement ../../../packages/simcore-sdk/requirements/_base.in
 
 
+
+#
+# TODO: Fix warning messages due to aiocache required in simcore-sdk (for r-clone!)
+#  WARNING message is
+#   ujson module not found, using json
+#   msgpack not installed, MsgPackSerializer unavailable
+#  SEE aiocache[mspack]
+
 aio-pika
 aiodocker
 aiofiles
-async_generator
-async-timeout
 docker-compose
 fastapi
 httpx
 pydantic
-python-magic
+python-magic # file type identification library. See 'magic.from_file(...)'
 PyYAML
 uvicorn
 watchdog

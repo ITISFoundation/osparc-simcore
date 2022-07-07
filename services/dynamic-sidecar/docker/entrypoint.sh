@@ -98,16 +98,16 @@ fi
 # Change ownership of volumes mount directory
 # directories are empty at this point
 # each individual subdirectory is a unique volume
-chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DY_VOLUMES}"
+chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 # Allow owner and group to edit write and execute
 # files from all the subdirectories
 # When the service access files downloaded by the dynamic-sidecar
 # it uses group permissions
-chmod --verbose --recursive 774 "${DY_VOLUMES}"
+chmod --verbose --recursive 774 "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
-echo "  volumes dir : $(ls -al "${DY_VOLUMES}")"
+echo "  volumes dir : $(ls -al "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}")"
 
 exec gosu "$SC_USER_NAME" "$@"

@@ -1,22 +1,23 @@
 import logging
-from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
-from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
+from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
-from .shared_handlers import on_shutdown_handler
 from .utils import login_registry, volumes_fix_permissions
 
 logger = logging.getLogger(__name__)
@@ -32,76 +33,106 @@ S     b    S    Y      S S     b S       S       S   `b S    P
 S     S    S      ss.  S S     S S sSSs  S       S sSSO S sS'
 S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
-P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {0}
+P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
 
 """.format(
     f"v{__version__}"
 )
 
 
-def assemble_application() -> FastAPI:
+def setup_logger(settings: DynamicSidecarSettings):
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
+
+
+def create_base_app() -> FastAPI:
+    # settings
+    settings = DynamicSidecarSettings.create_from_envs()
+    setup_logger(settings)
+    logger.debug(settings.json(indent=2))
+
+    # minimal
+    app = FastAPI(
+        debug=settings.DEBUG,
+        version=__version__,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
+        docs_url="/dev/doc",
+    )
+    override_fastapi_openapi_method(app)
+    app.state.settings = settings
+
+    app.include_router(main_router)
+    return app
+
+
+def create_app():
     """
     Creates the application from using the env vars as a context
     Also stores inside the state all instances of classes
     needed in other requests and used to share data.
     """
 
-    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
+    app = create_base_app()
 
-    logging.basicConfig(level=dynamic_sidecar_settings.loglevel)
-    logging.root.setLevel(dynamic_sidecar_settings.loglevel)
-    logger.debug(dynamic_sidecar_settings.json(indent=2))
+    # MODULES SETUP --------------
 
-    application = FastAPI(
-        debug=dynamic_sidecar_settings.DEBUG,
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
-    )
-    override_fastapi_openapi_method(application)
+    app.state.shared_store = SharedStore()
+    app.state.application_health = ApplicationHealth()
 
-    # store "settings"  and "shared_store" for later usage
-    application.state.settings = dynamic_sidecar_settings
-    application.state.shared_store = SharedStore(settings=dynamic_sidecar_settings)  # type: ignore
-    # used to keep track of the health of the application
-    # also will be used in the /health endpoint
-    application.state.application_health = ApplicationHealth()
+    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+        remote_debug_setup(app)
 
-    # enable debug if required
-    if dynamic_sidecar_settings.is_development_mode:
-        remote_debug_setup(application)
-
-    if dynamic_sidecar_settings.RABBIT_SETTINGS:
-        setup_rabbitmq(application)
-        # requires rabbitmq to be in place
-        setup_background_log_fetcher(application)
-
-    # add routing paths
-    application.include_router(main_router)
-
-    # error handlers
-    application.add_exception_handler(NodeNotFound, node_not_found_error_handler)
-    application.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+    if app.state.settings.RABBIT_SETTINGS:
+        setup_rabbitmq(app)
+        setup_background_log_fetcher(app)
 
     # also sets up mounted_volumes
-    setup_directory_watcher(application)
+    setup_mounted_fs(app)
+    setup_directory_watcher(app)
 
-    def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
-        async def on_startup() -> None:
-            await login_registry(application.state.settings.REGISTRY_SETTINGS)
-            await volumes_fix_permissions(application.state.mounted_volumes)
+    # ERROR HANDLERS  ------------
+    app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
+    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
-            print(WELCOME_MSG, flush=True)
+    # EVENTS ---------------------
+    async def _on_startup() -> None:
+        await login_registry(app.state.settings.REGISTRY_SETTINGS)
+        await volumes_fix_permissions(app.state.mounted_volumes)
+        print(WELCOME_MSG, flush=True)
 
-        return on_startup
+    async def _on_shutdown() -> None:
+        logger.info("Going to remove spawned containers")
+        result = await docker_compose_down(
+            shared_store=app.state.shared_store,
+            settings=app.state.settings,
+            command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
+        )
+        logger.info("Container removal did_succeed=%s\n%s", result[0], result[1])
 
-    def create_stop_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
-        async def on_shutdown() -> None:
-            await on_shutdown_handler(application)
-            logger.info("shutdown cleanup completed")
+        logger.info("shutdown cleanup completed")
 
-        return on_shutdown
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
 
-    application.add_event_handler("startup", create_start_app_handler())
-    application.add_event_handler("shutdown", create_stop_app_handler())
+    return app
 
-    return application
+
+class AppState:
+    def __init__(self, app: FastAPI):
+        self._app = app
+
+    @property
+    def settings(self) -> DynamicSidecarSettings:
+        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
+        return self._app.state.settings
+
+    @property
+    def mounted_volumes(self) -> MountedVolumes:
+        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
+        return self._app.state.mounted_volumes
+
+    @property
+    def shared_store(self) -> SharedStore:
+        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
+        return self._app.state.shared_store

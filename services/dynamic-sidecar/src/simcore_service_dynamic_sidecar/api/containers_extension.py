@@ -3,45 +3,49 @@
 
 import logging
 from collections import deque
-from typing import Any, Awaitable, Deque, Dict, List, Optional, Set
+from typing import Any, Awaitable, Deque, Optional
 
 from aiodocker.networks import DockerNetwork
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
-from ..core.dependencies import (
+from ..core.docker_compose_utils import docker_compose_restart
+from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
+from ..core.rabbitmq import RabbitMQ
+from ..core.settings import DynamicSidecarSettings
+from ..models.shared_store import SharedStore
+from ..modules import directory_watcher, nodeports
+from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
+from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
     get_application,
     get_mounted_volumes,
     get_rabbitmq,
     get_settings,
     get_shared_store,
 )
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
-from ..core.shared_handlers import write_file_and_run_command
-from ..models.domains.shared_store import SharedStore
-from ..models.schemas.ports import PortTypeName
-from ..modules import directory_watcher, nodeports
-from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
-from ..modules.mounted_fs import MountedVolumes
 from .containers import send_message
 
-# NOTE: importing the `containers_router` router from .containers
-# and generating the openapi spec, will not add the below entrypoints
-# we need to create a new one in order for all the APIs to be
-# detected as before
-containers_router = APIRouter(tags=["containers"])
-
 logger = logging.getLogger(__name__)
+assert cancel_on_disconnect  # nosec
 
 
 class CreateDirsRequestItem(BaseModel):
-    outputs_labels: Dict[str, ServiceOutput]
+    outputs_labels: dict[str, ServiceOutput]
 
 
 class PatchDirectoryWatcherItem(BaseModel):
@@ -53,11 +57,22 @@ class _BaseNetworkItem(BaseModel):
 
 
 class AttachContainerToNetworkItem(_BaseNetworkItem):
-    network_aliases: List[str]
+    network_aliases: list[str]
 
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
+
+
+#
+# HANDLERS ------------------
+#
+# - ANE: importing the `containers_router` router from .containers
+# and generating the openapi spec, will not add the below entrypoints
+# we need to create a new one in order for all the APIs to be
+# detected as before
+#
+containers_router = APIRouter(tags=["containers"])
 
 
 @containers_router.post(
@@ -69,6 +84,7 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
 async def restore_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
     """
     When restoring the state:
@@ -81,7 +97,7 @@ async def restore_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Downloading state for {state_path}")
 
-        awaitables.append(pull_path_if_exists(state_path))
+        awaitables.append(pull_path_if_exists(state_path, settings))
 
     await logged_gather(*awaitables)
 
@@ -97,6 +113,7 @@ async def restore_state(
 async def save_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> None:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
@@ -104,7 +121,7 @@ async def save_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(
-            upload_path_if_exists(state_path, mounted_volumes.state_exclude)
+            upload_path_if_exists(state_path, mounted_volumes.state_exclude, settings)
         )
 
     await logged_gather(*awaitables)
@@ -118,7 +135,7 @@ async def save_state(
     status_code=status.HTTP_200_OK,
 )
 async def pull_input_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
@@ -126,7 +143,9 @@ async def pull_input_ports(
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
+        nodeports.PortTypeName.INPUTS,
+        mounted_volumes.disk_inputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling inputs")
     return int(transferred_bytes)
@@ -176,7 +195,7 @@ async def create_output_dirs(
     status_code=status.HTTP_200_OK,
 )
 async def pull_output_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> int:
@@ -184,7 +203,9 @@ async def pull_output_ports(
 
     await send_message(rabbitmq, f"Pulling output for {port_keys}")
     transferred_bytes = await nodeports.download_target_ports(
-        PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
+        nodeports.PortTypeName.OUTPUTS,
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
     )
     await send_message(rabbitmq, "Finished pulling output")
     return int(transferred_bytes)
@@ -202,7 +223,7 @@ async def pull_output_ports(
     },
 )
 async def push_output_ports(
-    port_keys: Optional[List[str]] = None,
+    port_keys: Optional[list[str]] = None,
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> None:
@@ -226,7 +247,9 @@ async def push_output_ports(
         },
     },
 )
+@cancel_on_disconnect
 async def restarts_containers(
+    request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -236,10 +259,11 @@ async def restarts_containers(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> None:
     """Removes the previously started service
-    and returns the docker-compose output"""
+    and returns the docker-compose output
+    """
+    assert request  # nosec
 
-    stored_compose_content = shared_store.compose_spec
-    if stored_compose_content is None:
+    if shared_store.compose_spec is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose command was found",
@@ -248,21 +272,17 @@ async def restarts_containers(
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    command = (
-        "docker-compose --project-name {project} --file {file_path} "
-        "restart --timeout {stop_and_remove_timeout}"
+    result = await docker_compose_restart(
+        shared_store.compose_spec, settings, command_timeout=command_timeout
     )
 
-    finished_without_errors, stdout = await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
-        command=command,
-        command_timeout=command_timeout,
-    )
-    if not finished_without_errors:
-        error_message = (f"'{command}' finished with errors\n{stdout}",)
-        logger.warning(error_message)
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+    if not result.success:
+        logger.warning(
+            "docker-compose restart finished with errors\n%s", result.decoded_stdout
+        )
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
+        )
 
     for container_name in shared_store.container_names:
         await start_log_fetching(app, container_name)
@@ -277,14 +297,19 @@ async def restarts_containers(
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
+# FIXME: @cancel_on_disconnect
 async def attach_container_to_network(
-    id: str, item: AttachContainerToNetworkItem
+    request: Request,
+    id: str,
+    item: AttachContainerToNetworkItem,
 ) -> None:
+    assert request  # nosec
+
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: Set[str] = {
+        attached_network_ids: set[str] = {
             x["NetworkID"]
             for x in container_inspect["NetworkSettings"]["Networks"].values()
         }
@@ -319,7 +344,7 @@ async def detach_container_from_network(
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: Set[str] = {
+        attached_network_ids: set[str] = {
             x["NetworkID"]
             for x in container_inspect["NetworkSettings"]["Networks"].values()
         }

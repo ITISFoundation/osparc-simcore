@@ -1,6 +1,5 @@
 import logging
 from copy import deepcopy
-from typing import Dict
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
@@ -26,7 +25,7 @@ def extract_service_port_from_compose_start_spec(
 
 def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
-) -> Dict[str, str]:
+) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     r_clone_settings = (
@@ -57,7 +56,8 @@ def _get_environment_variables(
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
-        "STORAGE_ENDPOINT": app_settings.DIRECTOR_V2_STORAGE.storage_endpoint,
+        "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
+        "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
         "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
         "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
         "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
@@ -158,10 +158,8 @@ def get_dynamic_sidecar_spec(
         dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
         if dynamic_sidecar_path is None:
             log.warning(
-                (
-                    "Could not mount the sources for the dynamic-sidecar, please "
-                    "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
-                )
+                "Could not mount the sources for the dynamic-sidecar, please "
+                "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
             )
         else:
             mounts.append(
@@ -190,7 +188,7 @@ def get_dynamic_sidecar_spec(
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-            }
+            },
         ]
 
     create_service_params = {

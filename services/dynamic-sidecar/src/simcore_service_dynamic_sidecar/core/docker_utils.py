@@ -1,6 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 import aiodocker
@@ -17,7 +17,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
-        logger.debug("An unexpected Docker error occurred", stack_info=True)
+        logger.debug("An unexpected Docker error occurred", exc_info=True)
         raise UnexpectedDockerError(
             message=error.message, status=error.status
         ) from error
@@ -25,7 +25,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def get_volume_by_label(label: str, run_id: UUID) -> Dict[str, Any]:
+async def get_volume_by_label(label: str, run_id: UUID) -> dict[str, Any]:
     async with docker_client() as docker:
         filters = {"label": [f"source={label}", f"run_id={run_id}"]}
         params = {"filters": clean_filters(filters)}

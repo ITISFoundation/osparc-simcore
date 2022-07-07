@@ -37,8 +37,6 @@ bcrypt==3.2.2
 certifi==2022.6.15
     # via
     #   -c requirements/_fastapi.txt
-    #   httpcore
-    #   httpx
     #   requests
 cffi==1.15.0
     # via
@@ -48,6 +46,7 @@ cffi==1.15.0
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_fastapi.txt
     #   aiohttp
     #   requests
 coverage==6.3.2
@@ -126,6 +125,7 @@ mccabe==0.7.0
 multidict==6.0.2
     # via
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_fastapi.txt
     #   aiohttp
     #   yarl
 openapi-schema-validator==0.2.3
@@ -199,8 +199,9 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   docker-compose
     #   openapi-spec-validator
-requests==2.27.1
+requests==2.28.0
     # via
+    #   -c requirements/_fastapi.txt
     #   coveralls
     #   docker
     #   docker-compose
@@ -244,6 +245,7 @@ typing-extensions==4.2.0
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_fastapi.txt
     #   requests
 websocket-client==0.59.0
     # via

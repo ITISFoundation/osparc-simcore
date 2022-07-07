@@ -467,7 +467,13 @@ qx.Class.define("osparc.data.model.Node", {
     populateStates: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
-        this.getStatus().setProgress(progress);
+        const oldProgress = this.getStatus().getProgress();
+        if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
+          // file is being uploaded
+          this.getStatus().setProgress(oldProgress);
+        } else {
+          this.getStatus().setProgress(progress);
+        }
       }
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
@@ -762,15 +768,8 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    // post edge creation routine
-    edgeAdded: function(edge) {
-      const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
-      const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
-      this.__createAutoPortConnection(inputNode, outputNode);
-    },
-
     // Iterate over output ports and connect them to first compatible input port
-    __createAutoPortConnection: async function(node1, node2) {
+    createAutoPortConnection: async function(node1, node2) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
@@ -975,6 +974,9 @@ qx.Class.define("osparc.data.model.Node", {
           case "number":
           case "integer":
             val = 1;
+            break;
+          case "array":
+            val = "[1]";
             break;
         }
         if (val !== null) {

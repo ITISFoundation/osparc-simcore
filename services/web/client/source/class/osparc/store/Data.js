@@ -212,7 +212,7 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getPresignedLink: function(download = true, locationId, fileUuid) {
+    getPresignedLink: function(download = true, locationId, fileUuid, fileSize) {
       return new Promise((resolve, reject) => {
         if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
           reject();
@@ -222,19 +222,23 @@ qx.Class.define("osparc.store.Data", {
         }
 
         // GET: Returns download link for requested file
-        // POST: Returns upload link or performs copy operation to datcore
+        // PUT: Returns upload object link(s)
         const params = {
           url: {
             locationId,
             fileUuid: encodeURIComponent(fileUuid)
           }
         };
+        if (!download && fileSize) {
+          params.url["fileSize"] = fileSize;
+        }
         osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
           .then(data => {
             const presignedLinkData = {
-              presignedLink: data,
-              locationId: locationId,
-              fileUuid: fileUuid
+              resp: data,
+              locationId,
+              fileUuid,
+              fileSize
             };
             resolve(presignedLinkData);
           })

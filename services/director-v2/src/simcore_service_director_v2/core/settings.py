@@ -112,13 +112,6 @@ class StorageSettings(BaseCustomSettings):
             path=f"/{self.STORAGE_VTAG}",
         )
 
-    @cached_property
-    def storage_endpoint(self) -> str:
-        """used to re-create STORAGE_ENDPOINT: used by node_ports and must be
-        in style host:port
-        without scheme or version tag"""
-        return f"{self.STORAGE_HOST}:{self.STORAGE_PORT}"
-
 
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
@@ -194,7 +187,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
-        1.0,
+        5.0,
         description=(
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),

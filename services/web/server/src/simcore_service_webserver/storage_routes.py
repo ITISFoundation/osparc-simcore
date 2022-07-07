@@ -4,7 +4,6 @@ FIXME: for the moment all routings are here and done by hand
 """
 
 import logging
-from typing import List
 
 from aiohttp import web
 from servicelib.aiohttp import openapi
@@ -14,7 +13,7 @@ from . import storage_handlers
 log = logging.getLogger(__name__)
 
 
-def create(specs: openapi.Spec) -> List[web.RouteDef]:
+def create(specs: openapi.Spec) -> list[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     # TODO: should this be taken from servers instead?
     BASEPATH = "/v" + specs.info.version.split(".")[0]
@@ -64,11 +63,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    # TODO: Implements update
-    # path, handle = '/{location_id}/files/{file_id}/metadata', handlers.update_file_metadata
-    # operation_id = specs.paths[path].operations['patch'].operation_id
-    # routes.append( web.patch(BASEPATH+path, handle, name=operation_id) )
-
     _FILE_PATH = "/storage/locations/{location_id}/files/{file_id}"
     path, handle = (
         _FILE_PATH,
@@ -91,4 +85,24 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations["put"].operation_id
     routes.append(web.put(BASEPATH + path, handle, name=operation_id))
 
+    path, handle = (
+        f"{_FILE_PATH}:complete",
+        storage_handlers.complete_upload_file,
+    )
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
+
+    path, handle = (
+        f"{_FILE_PATH}:abort",
+        storage_handlers.abort_upload_file,
+    )
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
+
+    path, handle = (
+        f"{_FILE_PATH}:complete/futures/{{future_id}}",
+        storage_handlers.is_completed_upload_file,
+    )
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
     return routes

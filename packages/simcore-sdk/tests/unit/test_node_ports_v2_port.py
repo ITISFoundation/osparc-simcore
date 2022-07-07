@@ -12,17 +12,7 @@ import shutil
 import tempfile
 import threading
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Iterator, NamedTuple, Optional, Union
 from unittest.mock import AsyncMock
 
 import pytest
@@ -31,7 +21,7 @@ from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
-from simcore_sdk.node_ports_v2 import exceptions, node_config
+from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
     DownloadLink,
@@ -233,13 +223,11 @@ def common_fixtures(
 ):
     """this module main fixture"""
 
-    node_config.STORAGE_ENDPOINT = "storage:8080"
-
 
 class PortParams(NamedTuple):
     port_cfg: Union[InputsList, OutputsList]
-    exp_value_type: Union[Callable, Tuple[Callable, ...]]
-    exp_value_converter: Type[ItemConcreteValue]
+    exp_value_type: Union[Callable, tuple[Callable, ...]]
+    exp_value_converter: type[ItemConcreteValue]
     exp_value: Union[DataItemValue, None]
     exp_get_value: Union[int, float, bool, str, Path, None]
     new_value: Union[int, float, bool, str, Path, None]
@@ -593,9 +581,9 @@ async def test_valid_port(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    port_cfg: Dict[str, Any],
-    exp_value_type: Type[Union[int, float, bool, str, Path]],
-    exp_value_converter: Type[Union[int, float, bool, str, Path]],
+    port_cfg: dict[str, Any],
+    exp_value_type: type[Union[int, float, bool, str, Path]],
+    exp_value_converter: type[Union[int, float, bool, str, Path]],
     exp_value: Union[int, float, bool, str, Path, FileLink, DownloadLink, PortLink],
     exp_get_value: Union[int, float, bool, str, Path],
     new_value: Union[int, float, bool, str, Path],
@@ -717,7 +705,7 @@ async def test_valid_port(
         },
     ],
 )
-def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
+def test_invalid_port(common_fixtures: None, port_cfg: dict[str, Any]):
     with pytest.raises(ValidationError):
         Port(**port_cfg)
 
@@ -726,7 +714,7 @@ def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
     "port_cfg", [(create_valid_port_config("data:*/*", key="set_some_inexisting_file"))]
 )
 async def test_invalid_file_type_setter(
-    common_fixtures: None, project_id: str, node_uuid: str, port_cfg: Dict[str, Any]
+    common_fixtures: None, project_id: str, node_uuid: str, port_cfg: dict[str, Any]
 ):
     port = Port(**port_cfg)
     port._node_ports = AsyncMock()
