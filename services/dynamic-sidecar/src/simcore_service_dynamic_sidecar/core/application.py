@@ -158,9 +158,9 @@ def create_app():
                 command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
             )
 
-            logger.info(
-                "Removed spawned containers [%s]:\n%s",
-                "OK" if result.success else "FAILED",
+            logger.log(
+                logging.INFO if result.success else logging.ERROR,
+                "Removed spawned containers:\n%s",
                 result.decoded_stdout,
             )
         # FINISHED
