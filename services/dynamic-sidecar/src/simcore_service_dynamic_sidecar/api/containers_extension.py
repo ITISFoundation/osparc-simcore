@@ -113,7 +113,7 @@ async def save_state(
             upload_path_if_exists(state_path, mounted_volumes.state_exclude, settings)
         )
 
-    await logged_gather(*awaitables)
+    await logged_gather(*awaitables, max_concurrency=2)
 
     await send_message(rabbitmq, "Finished state saving")
 
