@@ -1,19 +1,7 @@
 import asyncio
 import collections
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    get_args,
-)
+from typing import Any, Awaitable, Callable, Final, Iterable, Optional, Union, get_args
 from uuid import uuid4
 
 import distributed
@@ -31,7 +19,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl, ValidationError
+from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -63,7 +51,7 @@ assert len(get_args(_PVType)) == len(  # nosec
 ), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
 
 
-def _get_port_validation_errors(port_key: str, err: ValidationError) -> List[ErrorDict]:
+def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[ErrorDict]:
     errors = err.errors()
     for error in errors:
         assert error["loc"][-1] != (port_key,)
@@ -88,7 +76,7 @@ def generate_dask_job_id(
 
 def parse_dask_job_id(
     job_id: str,
-) -> Tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
+) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
     assert len(parts) == 6  # nosec
     return (
@@ -263,7 +251,7 @@ async def compute_output_data_schema(
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port_utils.is_file_type(port.property_type):
-            value_link = await port_utils.get_upload_link_from_storage(
+            value_links = await port_utils.get_upload_links_from_storage(
                 user_id=user_id,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
@@ -271,13 +259,16 @@ async def compute_output_data_schema(
                 if port.file_to_key_map
                 else port.key,
                 link_type=file_link_type,
+                file_size=ByteSize(0),  # will create a single presigned link
             )
+            assert value_links.urls  # nosec
+            assert len(value_links.urls) == 1  # nosec
             output_data_schema[port.key].update(
                 {
                     "mapping": next(iter(port.file_to_key_map))
                     if port.file_to_key_map
                     else None,
-                    "url": value_link,
+                    "url": f"{value_links.urls[0]}",
                 }
             )
 
@@ -294,14 +285,15 @@ async def compute_service_log_file_upload_link(
     file_link_type: FileLinkType,
 ) -> AnyUrl:
 
-    value_link = await port_utils.get_upload_link_from_storage(
+    value_links = await port_utils.get_upload_links_from_storage(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=_LOGS_FILE_NAME,
         link_type=file_link_type,
+        file_size=ByteSize(0),  # will create a single presigned link
     )
-    return value_link
+    return value_links.urls[0]
 
 
 async def get_service_log_file_download_link(
@@ -409,7 +401,7 @@ async def dask_sub_consumer_task(
 
 def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
-) -> Dict[str, Union[int, float]]:
+) -> dict[str, Union[int, float]]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
     dask_resources = node_reqs.dict(
         exclude_unset=True, by_alias=True, exclude_none=True
@@ -457,8 +449,8 @@ def check_scheduler_status(client: distributed.Client):
 def check_if_cluster_is_able_to_run_pipeline(
     project_id: ProjectID,
     node_id: NodeID,
-    scheduler_info: Dict[str, Any],
-    task_resources: Dict[str, Any],
+    scheduler_info: dict[str, Any],
+    task_resources: dict[str, Any],
     node_image: Image,
     cluster_id: ClusterID,
 ):
@@ -466,10 +458,10 @@ def check_if_cluster_is_able_to_run_pipeline(
     workers = scheduler_info.get("workers", {})
 
     def can_task_run_on_worker(
-        task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+        task_resources: dict[str, Any], worker_resources: dict[str, Any]
     ) -> bool:
         def gen_check(
-            task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+            task_resources: dict[str, Any], worker_resources: dict[str, Any]
         ) -> Iterable[bool]:
             for name, required_value in task_resources.items():
                 if required_value is None:
@@ -482,8 +474,8 @@ def check_if_cluster_is_able_to_run_pipeline(
         return all(gen_check(task_resources, worker_resources))
 
     def cluster_missing_resources(
-        task_resources: Dict[str, Any], cluster_resources: Dict[str, Any]
-    ) -> List[str]:
+        task_resources: dict[str, Any], cluster_resources: dict[str, Any]
+    ) -> list[str]:
         return [r for r in task_resources if r not in cluster_resources]
 
     cluster_resources_counter = collections.Counter()

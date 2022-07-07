@@ -1,5 +1,3 @@
-from typing import Dict
-
 from _pytest.monkeypatch import MonkeyPatch
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
@@ -9,7 +7,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
     _get_environment_variables,
 )
 
-MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
+MOCKED_BASE_REGISTRY_ENV_VARS: dict[str, str] = {
     "REGISTRY_AUTH": "False",
     "REGISTRY_USER": "usr",
     "REGISTRY_PW": "pwd",
@@ -59,7 +57,8 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "REGISTRY_URL",
     "REGISTRY_USER",
     "SIMCORE_HOST_NAME",
-    "STORAGE_ENDPOINT",
+    "STORAGE_HOST",
+    "STORAGE_PORT",
     "R_CLONE_PROVIDER",
     "R_CLONE_ENABLED",
     "S3_ENDPOINT",

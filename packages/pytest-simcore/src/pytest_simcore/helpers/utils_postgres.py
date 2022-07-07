@@ -9,7 +9,7 @@ from simcore_postgres_database.models.base import metadata
 
 @contextmanager
 def migrated_pg_tables_context(
-    postgres_config: dict[str, Any]
+    postgres_config: dict[str, str],
 ) -> Iterator[dict[str, Any]]:
     """
     Within the context, tables are created and dropped

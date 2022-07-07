@@ -3,6 +3,9 @@ from aioresponses import aioresponses as AioResponsesMock
 
 from .helpers.utils_docker import get_localhost_ip
 
+# WARNING: any request done through the client will go through aioresponses. It is
+# unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
+# Other than that it seems to behave nicely
 PASSTHROUGH_REQUESTS_PREFIXES = [
     "http://127.0.0.1",
     "ws://",

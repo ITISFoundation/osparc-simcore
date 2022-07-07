@@ -186,7 +186,7 @@ def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
 
 @pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: PostgresTestConfig[str, str],
+    postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""

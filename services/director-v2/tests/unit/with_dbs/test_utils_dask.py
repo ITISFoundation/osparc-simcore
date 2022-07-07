@@ -22,9 +22,11 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
 )
 from faker import Faker
+from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -64,12 +66,26 @@ async def mocked_node_ports_filemanager_fcts(
             autospec=True,
             return_value=None,
         ),
-        "get_upload_link_from_s3": mocker.patch(
-            "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_link_from_s3",
+        "get_upload_links_from_s3": mocker.patch(
+            "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_links_from_s3",
             autospec=True,
             side_effect=lambda **kwargs: (
                 0,
-                URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme)),
+                FileUploadSchema(
+                    urls=[
+                        parse_obj_as(
+                            AnyUrl,
+                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",
+                        )
+                    ],
+                    chunk_size=parse_obj_as(ByteSize, "5GiB"),
+                    links=FileUploadLinks(
+                        abort_upload=parse_obj_as(AnyUrl, "https://www.fakeabort.com"),
+                        complete_upload=parse_obj_as(
+                            AnyUrl, "https://www.fakecomplete.com"
+                        ),
+                    ),
+                ),
             ),
         ),
     }

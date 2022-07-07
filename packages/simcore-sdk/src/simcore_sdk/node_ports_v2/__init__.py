@@ -3,7 +3,6 @@ from typing import Optional
 
 from settings_library.r_clone import RCloneSettings
 
-from ..node_ports_common import config as node_config
 from ..node_ports_common import exceptions
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.storage_client import LinkType as FileLinkType
@@ -38,4 +37,4 @@ async def ports(
     )
 
 
-__all__ = ("ports", "node_config", "exceptions", "Port", "FileLinkType")
+__all__ = ("ports", "exceptions", "Port", "FileLinkType")

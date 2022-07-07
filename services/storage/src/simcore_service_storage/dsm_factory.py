@@ -3,12 +3,12 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from aiohttp import web
-from models_library.api_schemas_storage import LinkType
+from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize
 
-from .models import DatasetMetaData, FileMetaData
+from .models import DatasetMetaData, FileMetaData, UploadLinks
 
 
 class BaseDataManager(ABC):
@@ -57,13 +57,23 @@ class BaseDataManager(ABC):
         """returns the file meta data of file_id if user_id has the rights to"""
 
     @abstractmethod
-    async def create_file_upload_link(
+    async def create_file_upload_links(
         self,
         user_id: UserID,
         file_id: StorageFileID,
         link_type: LinkType,
-    ) -> AnyUrl:
-        """creates an upload file link if user has the rights to"""
+        file_size_bytes: ByteSize,
+    ) -> UploadLinks:
+        """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
+
+    @abstractmethod
+    async def complete_file_upload(
+        self,
+        file_id: StorageFileID,
+        user_id: UserID,
+        uploaded_parts: list[UploadedPart],
+    ) -> FileMetaData:
+        """completes an upload if the user has the rights to"""
 
     @abstractmethod
     async def abort_file_upload(self, user_id: UserID, file_id: StorageFileID) -> None:

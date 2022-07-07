@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from typing import Any, Dict, Iterator, cast
+from typing import Any, Iterator, cast
 from uuid import UUID
 
 import pytest
@@ -27,8 +27,8 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
-    env_vars: Dict[str, str] = {
+def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[dict[str, str]]:
+    env_vars: dict[str, str] = {
         "REGISTRY_AUTH": "false",
         "REGISTRY_USER": "test",
         "REGISTRY_PW": "test",
@@ -53,7 +53,7 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(mocked_env: Dict[str, str]) -> DynamicSidecarSettings:
+def dynamic_sidecar_settings(mocked_env: dict[str, str]) -> DynamicSidecarSettings:
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -211,7 +211,8 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "S3_SECRET_KEY": "12345678",
                     "S3_SECURE": "False",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "STORAGE_ENDPOINT": "storage:8080",
+                    "STORAGE_HOST": "storage",
+                    "STORAGE_PORT": "8080",
                 },
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
