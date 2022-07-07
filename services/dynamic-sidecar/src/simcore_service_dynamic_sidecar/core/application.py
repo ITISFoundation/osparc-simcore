@@ -161,10 +161,10 @@ def create_app():
 
     async def _on_shutdown() -> None:
         if docker_compose_yaml := app_state.compose_spec:
-            logger.info("Removing spawned containers%s", docker_compose_yaml)
+            logger.info("Removing spawned containers")
 
             result = await docker_compose_down(
-                app.state.shared_store,
+                docker_compose_yaml,
                 app.state.settings,
                 command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
             )
