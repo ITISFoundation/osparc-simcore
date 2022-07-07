@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 class CommandResult(NamedTuple):
     success: bool
     decoded_stdout: str
+    command: str
 
 
 class _RegistryNotReachableException(Exception):
@@ -129,7 +130,11 @@ async def async_command(
         )
         raise
 
-    return CommandResult(success=proc.returncode == 0, decoded_stdout=stdout.decode())
+    return CommandResult(
+        success=proc.returncode == 0,
+        decoded_stdout=stdout.decode(),
+        command=f"{command}",
+    )
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:
