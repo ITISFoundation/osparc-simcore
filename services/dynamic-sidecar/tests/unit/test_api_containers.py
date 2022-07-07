@@ -36,7 +36,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
-DEFAULT_COMMAND_TIMEOUT = 5.0
+DEFAULT_COMMAND_TIMEOUT = 5
 WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 
