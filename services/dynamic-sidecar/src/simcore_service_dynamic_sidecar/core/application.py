@@ -53,28 +53,37 @@ class AppState:
     after the app is initialized
     """
 
+    _STATES = {
+        "settings": DynamicSidecarSettings,
+        "mounted_volumes": MountedVolumes,
+        "shared_store": SharedStore,
+    }
+
     def __init__(self, initialized_app: FastAPI):
         # guarantees app states are in place
-        assert isinstance(
-            initialized_app.state.settings, DynamicSidecarSettings
-        )  # nosec
-        assert isinstance(
-            initialized_app.state.mounted_volumes, MountedVolumes
-        )  # nosec
-        assert isinstance(initialized_app.state.shared_store, SharedStore)  # nosec
+        errors = [
+            "app.state.{name}"
+            for name, type_ in AppState._STATES.items()
+            if not isinstance(getattr(initialized_app.state, name, None), type_)
+        ]
+        if errors:
+            raise ValueError(f"App states are not properly initialized. Found {errors}")
 
         self._app = initialized_app
 
     @property
     def settings(self) -> DynamicSidecarSettings:
+        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
         return self._app.state.settings
 
     @property
     def mounted_volumes(self) -> MountedVolumes:
+        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
         return self._app.state.mounted_volumes
 
     @property
     def _shared_store(self) -> SharedStore:
+        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
         return self._app.state.shared_store
 
     @property

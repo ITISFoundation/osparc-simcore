@@ -20,9 +20,9 @@ def test_class_appstate_decorator_class(mock_environment_with_envdevel: EnvVarsD
     app_state = AppState(app)
 
     # ensure exposed properties are init after creation
-    exclude = {"compose_spec", "_shared_store"}
     properties = inspect.getmembers(
-        AppState, lambda o: isinstance(o, property) and o.fget.__name__ not in exclude
+        AppState,
+        lambda o: isinstance(o, property) and o.fget.__name__ in AppState._STATES,
     )
     for prop_name, prop in properties:
         # checks GETTERS
