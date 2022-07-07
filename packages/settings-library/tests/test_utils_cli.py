@@ -11,7 +11,7 @@ import pytest
 import typer
 from dotenv import dotenv_values
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
+from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
@@ -180,7 +180,7 @@ def test_cli_default_settings_envs(
     monkeypatch: pytest.MonkeyPatch,
 ):
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content
         )
 
@@ -194,7 +194,7 @@ def test_cli_default_settings_envs(
 
     # now let's use these as env vars
     with monkeypatch.context() as patch:
-        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_2: EnvVarsDict = setenvs_from_envfile(
             patch,
             cli_settings_output,
         )
@@ -229,7 +229,7 @@ def test_cli_compact_settings_envs(
 ):
 
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content
         )
 
@@ -262,7 +262,7 @@ def test_cli_compact_settings_envs(
     print(setting_env_content_compact)
 
     with monkeypatch.context() as patch:
-        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_2: EnvVarsDict = setenvs_from_envfile(
             patch,
             setting_env_content_compact,
         )
@@ -282,7 +282,7 @@ def test_compact_format(
     monkeypatch: pytest.MonkeyPatch,
     fake_settings_class: type[BaseCustomSettings],
 ):
-    compact_envs: EnvVarsDict = setenvs_as_envfile(
+    compact_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         APP_HOST=localhost
@@ -302,7 +302,7 @@ def test_granular_format(
     monkeypatch: pytest.MonkeyPatch,
     fake_settings_class: type[BaseCustomSettings],
 ):
-    setenvs_as_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
     APP_HOST=localhost
@@ -353,7 +353,7 @@ def test_cli_settings_exclude_unset(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # minimal envfile
-    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+    mocked_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         # these are required
@@ -397,7 +397,7 @@ def test_cli_settings_exclude_unset_as_json(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # minimal envfile
-    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+    mocked_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         # these are required

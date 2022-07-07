@@ -2,10 +2,13 @@ import logging
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.openapi import (
+    get_common_oas_options,
+    override_fastapi_openapi_method,
+)
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VTAG, __version__
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
@@ -54,10 +57,12 @@ def create_base_app() -> FastAPI:
 
     # minimal
     app = FastAPI(
-        debug=settings.DEBUG,
-        version=__version__,
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        title=PROJECT_NAME,
+        description=SUMMARY,
+        version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
+        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings

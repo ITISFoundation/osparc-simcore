@@ -1,9 +1,24 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "FastAPI",
+    "title": "simcore-service-dynamic-sidecar",
+    "description": " Implements a sidecar service to manage user's dynamic/interactive services",
     "version": "1.1.0"
   },
+  "servers": [
+    {
+      "url": "http://{host}:{port}",
+      "description": "Development server",
+      "variables": {
+        "host": {
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "default": "8000"
+        }
+      }
+    }
+  ],
   "paths": {
     "/health": {
       "get": {

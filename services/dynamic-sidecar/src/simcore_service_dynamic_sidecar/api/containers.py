@@ -1,4 +1,3 @@
-# pylint: disable=redefined-builtin
 # pylint: disable=too-many-arguments
 
 import functools
@@ -6,16 +5,9 @@ import json
 import logging
 from typing import Any, Union
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    HTTPException,
-    Query,
-    Request,
-    status,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import Path as PathParam
+from fastapi import Query, Request, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -45,7 +37,6 @@ from ._dependencies import (
 )
 
 logger = logging.getLogger(__name__)
-assert cancel_on_disconnect  # nosec
 
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
@@ -86,11 +77,11 @@ async def _task_docker_compose_up_and_send_message(
     return None
 
 
-def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
-    if id not in container_names:
-        message = (
-            f"No container '{id}' was started. Started containers '{container_names}'"
-        )
+def _raise_if_container_is_missing(
+    container_id: str, container_names: list[str]
+) -> None:
+    if container_id not in container_names:
+        message = f"No container '{container_id}' was started. Started containers '{container_names}'"
         logger.warning(message)
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
@@ -279,7 +270,7 @@ async def containers_docker_inspect(
 @cancel_on_disconnect
 async def get_container_logs(
     request: Request,
-    id: str,
+    container_id: str = PathParam(..., alias="id"),
     since: int = Query(
         0,
         title="Timestamp",
@@ -300,10 +291,10 @@ async def get_container_logs(
     """Returns the logs of a given container if found"""
     assert request  # nosec
 
-    _raise_if_container_is_missing(id, shared_store.container_names)
+    _raise_if_container_is_missing(container_id, shared_store.container_names)
 
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
 
         args = dict(stdout=True, stderr=True, since=since, until=until)
         if timestamps:
@@ -388,13 +379,16 @@ async def get_containers_name(
 )
 @cancel_on_disconnect
 async def inspect_container(
-    request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    request: Request,
+    container_id: str = PathParam(..., alias="id"),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
     assert request  # nosec
 
+    _raise_if_container_is_missing(container_id, shared_store.container_names)
+
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
         inspect_result: dict[str, Any] = await container_instance.show()
         return inspect_result

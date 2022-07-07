@@ -27,7 +27,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 # UTILS
 
 
-class TestThickClient(BaseThinClient):
+class FakeThickClient(BaseThinClient):
     @retry_on_errors
     async def get_provided_url(self, provided_url: str) -> Response:
         return await self._client.get(provided_url)
@@ -41,8 +41,8 @@ class TestThickClient(BaseThinClient):
 
 
 @pytest.fixture
-def thick_client() -> TestThickClient:
-    return TestThickClient(request_max_retries=1)
+def thick_client() -> FakeThickClient:
+    return FakeThickClient(request_max_retries=1)
 
 
 @pytest.fixture
@@ -54,13 +54,13 @@ def test_url() -> AnyHttpUrl:
 
 
 async def test_base_with_async_context_manager(test_url: AnyHttpUrl) -> None:
-    async with TestThickClient(request_max_retries=1) as client:
+    async with FakeThickClient(request_max_retries=1) as client:
         with pytest.raises(ClientHttpError):
             await client.get_provided_url(test_url)
 
 
 async def test_connection_error(
-    thick_client: TestThickClient, test_url: AnyHttpUrl
+    thick_client: FakeThickClient, test_url: AnyHttpUrl
 ) -> None:
     with pytest.raises(ClientHttpError) as exe_info:
         await thick_client.get_provided_url(test_url)
@@ -73,7 +73,7 @@ async def test_connection_error(
 async def test_retry_on_errors(
     retry_count: int, test_url: AnyHttpUrl, caplog_info_level: LogCaptureFixture
 ) -> None:
-    client = TestThickClient(request_max_retries=retry_count)
+    client = FakeThickClient(request_max_retries=retry_count)
 
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
