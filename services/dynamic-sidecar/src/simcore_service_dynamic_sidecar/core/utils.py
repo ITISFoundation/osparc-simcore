@@ -111,7 +111,8 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
 
 async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
     """
-    Does not raise for error or timeout
+
+    Does not raise Exception
     """
     try:
         proc = await asyncio.create_subprocess_shell(
@@ -129,13 +130,11 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             f"{command=!r}",
             f"{timeout=}",
         )
-        # FIXME: Implement
-        # return = CommandResult(
-        #    success=False,
-        #    decoded_stdout=f"Execution timed out after {timeout} secs",
-        #    command=f"{command}",
-        # )
-        raise
+        return CommandResult(
+            success=False,
+            decoded_stdout=f"Execution timed out after {timeout} secs",
+            command=f"{command}",
+        )
 
     except Exception as err:  # pylint: disable=broad-except
         error_code = create_error_code(err)
