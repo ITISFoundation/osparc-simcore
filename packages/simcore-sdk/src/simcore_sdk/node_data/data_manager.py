@@ -4,8 +4,11 @@ from shutil import move
 from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
+from models_library.projects_nodes_io import StorageFileID
+from pydantic import parse_obj_as
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 from ..node_ports_common import filemanager
 
@@ -14,9 +17,9 @@ log = logging.getLogger(__name__)
 
 def _create_s3_object(
     project_id: str, node_uuid: str, file_path: Union[Path, str]
-) -> str:
+) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return f"{project_id}/{node_uuid}/{file_name}"
+    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
 
 
 async def _push_file(
@@ -27,7 +30,7 @@ async def _push_file(
     rename_to: Optional[str],
     r_clone_settings: Optional[RCloneSettings] = None,
 ):
-    store_id = "0"  # this is for simcore.s3
+    store_id = SIMCORE_LOCATION
     s3_object = _create_s3_object(
         project_id, node_uuid, rename_to if rename_to else file_path
     )
@@ -85,7 +88,7 @@ async def _pull_file(
     log.info("pulling data from %s to %s...", s3_object, file_path)
     downloaded_file = await filemanager.download_file_from_s3(
         user_id=user_id,
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
@@ -132,6 +135,6 @@ async def is_file_present_in_storage(
     log.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
-        store_id="0",  # this is for simcore.s3
+        store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )
