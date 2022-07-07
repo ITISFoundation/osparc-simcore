@@ -21,10 +21,10 @@ def _human_readable_size(size, decimal_places=3):
     human_readable_file_size = float(deepcopy(size))
     unit = "B"
     for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if human_readable_file_size < 1000.0:
+        if human_readable_file_size < 1024.0:
             unit = t_unit
             break
-        human_readable_file_size /= 1000.0
+        human_readable_file_size /= 1024.0
 
     return f"{human_readable_file_size:.{decimal_places}f}{unit}"
 
