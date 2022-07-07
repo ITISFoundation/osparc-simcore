@@ -106,11 +106,7 @@ def _zipfile_single_file_extract_worker(
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
             return destination_path
-        desc = (
-            f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}"
-            f"[{_human_readable_size(file_in_archive.file_size)}"
-            f" from total: {_human_readable_size(zip_file_path.stat().st_size)}]\n"
-        )
+        desc = f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}\n"
         with zf.open(name=file_in_archive) as zip_fp:
             with open(destination_path, "wb") as destination_fp, tqdm(
                 total=file_in_archive.file_size,
@@ -179,7 +175,7 @@ async def unarchive_dir(
             extracted_paths: list[Path] = await tqdm_asyncio.gather(
                 *tasks,
                 desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
-                f" total: {_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=len(tasks),
                 unit="file",
             )
@@ -208,14 +204,16 @@ def _add_to_archive(
                 dir_to_compress, exclude_patterns
             )
             folder_size_bytes = _get_folder_size(dir_to_compress)
+            desc = f"compressing {dir_to_compress} -> {destination}"
             with tqdm(
-                desc=f"compressing {dir_to_compress} -> {destination} [{_human_readable_size(folder_size_bytes)}]\n",
+                desc=f"{desc}\n",
                 total=folder_size_bytes,
                 unit="byte",
                 unit_scale=True,
                 unit_divisor=1024,
             ) as pbar:
                 for file_to_add in files_to_compress_generator:
+                    pbar.set_description(f"{desc}/{file_to_add.name}")
                     try:
                         file_name_in_archive = (
                             _strip_directory_from_path(file_to_add, dir_to_compress)

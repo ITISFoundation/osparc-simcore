@@ -120,7 +120,7 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {url.path} to {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'}]\n",
+                desc=f"downloading {url.path} --> {file_path}\n",
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
@@ -202,7 +202,7 @@ async def _upload_file_to_presigned_links(
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm(
-        desc=f"uploading {file} [{ByteSize(file_size).human_readable()}]\n",
+        desc=f"uploading {file}\n",
         total=file_size,
         unit="byte",
         unit_scale=True,
