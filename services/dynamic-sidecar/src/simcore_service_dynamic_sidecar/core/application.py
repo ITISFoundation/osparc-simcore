@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
@@ -36,11 +37,49 @@ S     b    S    Y      S S     b S       S       S   `b S    P
 S     S    S      ss.  S S     S S sSSs  S       S sSSO S sS'
 S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
-P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
+P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
 
 """.format(
     f"v{__version__}"
 )
+
+TSCHUESS_MSG = "{:=^100}".format("App shutdown completed 🎉")
+
+
+class AppState:
+    """Guarantees states are initialized upon construction
+
+    Defines access to app's states, i.e. which are read/write
+    after the app is initialized
+    """
+
+    def __init__(self, initialized_app: FastAPI):
+        # guarantees app states are in place
+        assert isinstance(
+            initialized_app.state.settings, DynamicSidecarSettings
+        )  # nosec
+        assert isinstance(
+            initialized_app.state.mounted_volumes, MountedVolumes
+        )  # nosec
+        assert isinstance(initialized_app.state.shared_store, SharedStore)  # nosec
+
+        self._app = initialized_app
+
+    @property
+    def settings(self) -> DynamicSidecarSettings:
+        return self._app.state.settings
+
+    @property
+    def mounted_volumes(self) -> MountedVolumes:
+        return self._app.state.mounted_volumes
+
+    @property
+    def _shared_store(self) -> SharedStore:
+        return self._app.state.shared_store
+
+    @property
+    def compose_spec(self) -> Optional[str]:
+        return self._shared_store.compose_spec
 
 
 def setup_logger(settings: DynamicSidecarSettings):
@@ -101,43 +140,33 @@ def create_app():
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
     # EVENTS ---------------------
+    app_state = AppState(app)
+
     async def _on_startup() -> None:
-        await login_registry(app.state.settings.REGISTRY_SETTINGS)
-        await volumes_fix_permissions(app.state.mounted_volumes)
+        await login_registry(app_state.settings.REGISTRY_SETTINGS)
+        await volumes_fix_permissions(app_state.mounted_volumes)
+        # STARTED
         print(WELCOME_MSG, flush=True)
 
     async def _on_shutdown() -> None:
-        logger.info("Going to remove spawned containers")
-        result = await docker_compose_down(
-            shared_store=app.state.shared_store,
-            settings=app.state.settings,
-            command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
-        )
-        logger.info("Container removal did_succeed=%s\n%s", result[0], result[1])
+        if docker_compose_yaml := app_state.compose_spec:
+            logger.info("Removing spawned containers")
 
-        logger.info("shutdown cleanup completed")
+            result = await docker_compose_down(
+                docker_compose_yaml,
+                app.state.settings,
+                command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
+            )
+
+            logger.info(
+                "Removed spawned containers [%s]:\n%s",
+                "OK" if result.success else "FAILED",
+                result.decoded_stdout,
+            )
+        # FINISHED
+        print(TSCHUESS_MSG, flush=True)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
     return app
-
-
-class AppState:
-    def __init__(self, app: FastAPI):
-        self._app = app
-
-    @property
-    def settings(self) -> DynamicSidecarSettings:
-        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
-        return self._app.state.settings
-
-    @property
-    def mounted_volumes(self) -> MountedVolumes:
-        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
-        return self._app.state.mounted_volumes
-
-    @property
-    def shared_store(self) -> SharedStore:
-        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
-        return self._app.state.shared_store
