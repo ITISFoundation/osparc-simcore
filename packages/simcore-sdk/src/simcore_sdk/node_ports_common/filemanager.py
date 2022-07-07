@@ -120,7 +120,7 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'} bytes]",
+                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'}]\n",
                 total=file_size,
                 unit="byte",
                 unit_scale=True,
@@ -373,7 +373,7 @@ async def download_file_from_s3(
     :return: path to downloaded file
     """
     log.debug(
-        "Downloading from store %s:id %s, s3 object %s, to %s\n",
+        "Downloading from store %s:id %s, s3 object %s, to %s",
         store_name,
         store_id,
         s3_object,
