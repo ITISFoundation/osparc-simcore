@@ -99,9 +99,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number",
+              "type": "integer",
               "description": "docker-compose up command timeout run as a background",
-              "default": 3600.0
+              "default": 3600
             },
             "name": "command_timeout",
             "in": "query"
@@ -111,9 +111,9 @@
             "required": false,
             "schema": {
               "title": "Validation Timeout",
-              "type": "number",
+              "type": "integer",
               "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 60.0
+              "default": 60
             },
             "name": "validation_timeout",
             "in": "query"
@@ -164,9 +164,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number",
+              "type": "integer",
               "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-              "default": 10.0
+              "default": 10
             },
             "name": "command_timeout",
             "in": "query"
@@ -596,9 +596,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number",
+              "type": "integer",
               "description": "docker-compose stop command timeout default",
-              "default": 10.0
+              "default": 10
             },
             "name": "command_timeout",
             "in": "query"
