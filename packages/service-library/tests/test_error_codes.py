@@ -5,7 +5,7 @@
 
 import logging
 
-from servicelib.errors import create_error_code, parse_error_code
+from servicelib.error_codes import create_error_code, parse_error_code
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,10 @@
-""" utils for service errors
+""" osparc ERROR CODES (OEC)
+  Unique identifier of an exception instance
+  Intended to report a user about unexpected errors.
+    Unexpected exceptions can be traced by matching the
+    logged error code with that appeneded to the user-friendly message
 
+SEE test_error_codes for some use cases
 """
 
 
@@ -8,15 +13,6 @@ from typing import TYPE_CHECKING
 
 from pydantic.tools import parse_obj_as
 from pydantic.types import constr
-
-#
-#
-# osparc ERROR CODES (OEC):
-#   - unique identifier of an exception instance
-#   - Intended to report user about unexpected errors.
-#     Unexpected exceptions can be traced by matching the
-#     logged error code with that appeneded to the user-friendly message
-#
 
 _LABEL = "OEC:{}"
 _PATTERN = r"OEC:\d+"

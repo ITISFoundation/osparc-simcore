@@ -20,7 +20,7 @@ from pydantic import (
     constr,
     parse_obj_as,
 )
-from servicelib.errors import ErrorCodeStr
+from servicelib.error_codes import ErrorCodeStr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
