@@ -77,7 +77,6 @@ async def _task_docker_compose_up_and_send_message(
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
-        # TODO: Use AppState(app).health
         application_health.is_healthy = False
         application_health.error_message = message
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
@@ -223,8 +222,8 @@ async def runs_docker_compose_down(
 
     # removing compose-file spec
     assert result.success  # nosec
-    shared_store.compose_spec = None
-    shared_store.container_names = []
+    app.state.shared_store.compose_spec = None
+    app.state.shared_store.container_names = []
 
     return result.decoded_stdout
 

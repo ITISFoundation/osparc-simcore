@@ -60,7 +60,7 @@ class AppState:
     }
 
     def __init__(self, initialized_app: FastAPI):
-        # guarantees app states are in place
+        # Ensures states are initialized upon construction
         errors = [
             "app.state.{name}"
             for name, type_ in AppState._STATES.items()
@@ -84,13 +84,13 @@ class AppState:
         return self._app.state.mounted_volumes
 
     @property
-    def shared_store(self) -> SharedStore:
+    def _shared_store(self) -> SharedStore:
         assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
         return self._app.state.shared_store
 
     @property
     def compose_spec(self) -> Optional[str]:
-        return self.shared_store.compose_spec
+        return self._shared_store.compose_spec
 
 
 def setup_logger(settings: DynamicSidecarSettings):
