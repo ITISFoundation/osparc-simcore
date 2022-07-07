@@ -47,10 +47,9 @@ TSCHUESS_MSG = "{:=^100}".format("App shutdown completed 🎉")
 
 
 class AppState:
-    """Guarantees states are initialized upon construction
-
-    Defines access to app's states, i.e. which are read/write
-    after the app is initialized
+    """Exposes states of an initialized app and defines
+    the access rights for each state (i.e. read/write)
+    during the app's lifetime
     """
 
     _STATES = {
@@ -60,7 +59,7 @@ class AppState:
     }
 
     def __init__(self, initialized_app: FastAPI):
-        # guarantees app states are in place
+        # Ensures states are initialized upon construction
         errors = [
             "app.state.{name}"
             for name, type_ in AppState._STATES.items()
@@ -73,18 +72,15 @@ class AppState:
 
     @property
     def settings(self) -> DynamicSidecarSettings:
-        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
-        return self._app.state.settings
+        return self._app.state.settings  # type: ignore
 
     @property
     def mounted_volumes(self) -> MountedVolumes:
-        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
-        return self._app.state.mounted_volumes
+        return self._app.state.mounted_volumes  # type: ignore
 
     @property
     def _shared_store(self) -> SharedStore:
-        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
-        return self._app.state.shared_store
+        return self._app.state.shared_store  # type: ignore
 
     @property
     def compose_spec(self) -> Optional[str]:
