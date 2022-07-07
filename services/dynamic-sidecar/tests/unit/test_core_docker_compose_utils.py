@@ -24,12 +24,13 @@ COMPOSE_SPEC_SAMPLE = {
     "version": "3.8",
     "services": {
         "my-container": {
-            "deploy": {
-                "resources": {
-                    "limits": {"cpus": 4, "memory": "17179869184"},
-                    "reservations": {"cpus": 0.1, "memory": "2147483648"},
-                }
-            },
+            # "deploy": {
+            #    # FIXME: github actions errors with 'Range of CPUs is from 0.01 to 2.00, as there are only 2 CPUs available'
+            #    "resources": {
+            #        "limits": {"cpus": 1, "memory": "17179869184"},
+            #        "reservations": {"cpus": 0.1, "memory": "2147483648"},
+            #    }
+            # },
             "environment": [
                 "DY_SIDECAR_PATH_INPUTS=/work/inputs",
                 "DY_SIDECAR_PATH_OUTPUTS=/work/outputs",
