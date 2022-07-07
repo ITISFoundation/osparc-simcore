@@ -371,7 +371,7 @@ class DynamicSidecarsScheduler:
                 )
                 scheduler_data.dynamic_sidecar.status.update_failing_status(
                     # This message must be human-friendly
-                    f"Upss! This service ({service_name}) failed unexpectedly",
+                    f"Upss! This service ({service_name}) unexpectedly failed",
                     error_code,
                 )
             finally:
