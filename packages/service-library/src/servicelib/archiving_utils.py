@@ -29,13 +29,6 @@ def _human_readable_size(size, decimal_places=3):
     return f"{human_readable_file_size:.{decimal_places}f}{unit}"
 
 
-def _get_folder_size(folder: Path) -> int:
-    size = 0
-    for file_ in Path(folder).rglob("*"):
-        size += file_.stat().st_size
-    return size
-
-
 def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
@@ -196,15 +189,17 @@ def _add_to_archive(
         with zipfile.ZipFile(
             destination, "w", compression=compression
         ) as zip_file_handler:
-            files_to_compress_generator = _iter_files_to_compress(
-                dir_to_compress, exclude_patterns
+            folder_size_bytes = sum(
+                file.stat().st_size
+                for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
             )
-            folder_size_bytes = _get_folder_size(dir_to_compress)
             desc = f"compressing {dir_to_compress} -> {destination}"
             with tqdm(
                 desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
             ) as pbar:
-                for file_to_add in files_to_compress_generator:
+                for file_to_add in _iter_files_to_compress(
+                    dir_to_compress, exclude_patterns
+                ):
                     pbar.set_description(f"{desc}:{file_to_add.name}")
                     try:
                         file_name_in_archive = (
