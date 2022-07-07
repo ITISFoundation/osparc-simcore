@@ -37,6 +37,8 @@ bcrypt==3.2.2
 certifi==2022.6.15
     # via
     #   -c requirements/_fastapi.txt
+    #   httpcore
+    #   httpx
     #   requests
 cffi==1.15.0
     # via
