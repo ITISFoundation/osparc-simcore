@@ -105,7 +105,7 @@ def _zipfile_single_file_extract_worker(
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
             return destination_path
-        desc = f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}\n"
+        desc = f"decompressing {zip_file_path}:{file_in_archive.filename} -> {destination_path}\n"
         with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
             "wb"
         ) as dest_fp, tqdm(
@@ -205,7 +205,7 @@ def _add_to_archive(
                 desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
             ) as pbar:
                 for file_to_add in files_to_compress_generator:
-                    pbar.set_description(f"{desc}/{file_to_add.name}")
+                    pbar.set_description(f"{desc}:{file_to_add.name}")
                     try:
                         file_name_in_archive = (
                             _strip_directory_from_path(file_to_add, dir_to_compress)
