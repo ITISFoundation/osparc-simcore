@@ -132,6 +132,7 @@ async def ensure_external_volumes(
         )
 
         #
+        #
         # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
         #
         #
@@ -150,6 +151,9 @@ async def ensure_external_volumes(
         #     "CreatedTime": 1655947328000,
         #     "Containers": {}
         #   }
+        #
+        # CLEAN:
+        #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
 
         yield volumes
 

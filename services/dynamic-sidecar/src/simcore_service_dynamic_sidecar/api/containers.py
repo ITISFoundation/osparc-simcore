@@ -54,13 +54,16 @@ async def _task_docker_compose_up_and_send_message(
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
-    command_timeout: float,
+    command_timeout: int,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
+        # prunes first stopped containers
+        await docker_compose_rm(shared_store.compose_spec, settings)
+
         r = await docker_compose_up(
             shared_store.compose_spec, settings, timeout=command_timeout
         )
@@ -121,11 +124,11 @@ async def create_containers(
     request: Request,
     containers_create: ContainersCreate,
     background_tasks: BackgroundTasks,
-    command_timeout: float = Query(
-        3600.0, description="docker-compose up command timeout run as a background"
+    command_timeout: int = Query(
+        3600, description="docker-compose up command timeout run as a background"
     ),
-    validation_timeout: float = Query(
-        60.0, description="docker-compose config timeout (EXPERIMENTAL)"
+    validation_timeout: int = Query(
+        60, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -180,8 +183,8 @@ async def create_containers(
     },
 )
 async def runs_docker_compose_down(
-    command_timeout: float = Query(
-        10.0, description="docker-compose down command timeout default  (EXPERIMENTAL)"
+    command_timeout: int = Query(
+        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),

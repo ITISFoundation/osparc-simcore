@@ -270,8 +270,8 @@ async def push_output_ports(
 @cancel_on_disconnect
 async def restarts_containers(
     request: Request,
-    command_timeout: float = Query(
-        10.0, description="docker-compose stop command timeout default"
+    command_timeout: int = Query(
+        10, description="docker-compose stop command timeout default"
     ),
     app: FastAPI = Depends(get_application),
     settings: DynamicSidecarSettings = Depends(get_settings),
