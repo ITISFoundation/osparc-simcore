@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_as_envfile, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -71,7 +71,7 @@ def project_env_devel_environment(
 ) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    envs = setenvs_as_envfile(
+    envs = setenvs_from_envfile(
         monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
     )
     return envs

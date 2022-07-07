@@ -7,7 +7,7 @@ from typing import Callable, Optional
 
 import pytest
 from pydantic import Field, ValidationError
-from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
+from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 from settings_library.basic_types import PortInt
 
@@ -138,7 +138,7 @@ def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
 
     # environment
     #  - with individual envs (PostgresSettings required fields)
-    setenvs_as_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
             POSTGRES_HOST=pg
@@ -205,7 +205,7 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
     JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
                 WEBSERVER_POSTGRES='{JSON_VALUE}'
@@ -237,7 +237,7 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
                 WEBSERVER_POSTGRES_NULLABLE_OPTIONAL='{JSON_VALUE}'
@@ -254,7 +254,7 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
                 WEBSERVER_POSTGRES_DEFAULT_ENV='{JSON_VALUE}'
@@ -274,7 +274,7 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
                 WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
@@ -291,7 +291,7 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
                 WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL='{JSON_VALUE}'
@@ -325,7 +325,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
         """
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES"),
         )
@@ -358,7 +358,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_OPTIONAL"),
         )
@@ -375,7 +375,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_DEFAULT_ENV"),
         )
@@ -392,7 +392,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV"),
         )
@@ -409,7 +409,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
         }
 
     with monkeypatch.context() as patch:
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL"),
         )
@@ -459,7 +459,7 @@ def test_toggle_plugin_2(monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
 
     # minimal
-    setenvs_as_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
         POSTGRES_HOST=pg
@@ -480,7 +480,7 @@ def test_toggle_plugin_3(monkeypatch, model_classes_factory):
     *_, S4, S5 = model_classes_factory()
 
     # explicitly disables
-    setenvs_as_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
         WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV=null
@@ -506,7 +506,7 @@ def test_toggle_plugin_4(monkeypatch, model_classes_factory):
 
     with monkeypatch.context() as patch:
         # Enables both
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
             WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
@@ -532,7 +532,7 @@ def test_toggle_plugin_4(monkeypatch, model_classes_factory):
     with monkeypatch.context() as patch:
 
         # Enables both but remove individuals
-        setenvs_as_envfile(
+        setenvs_from_envfile(
             patch,
             f"""
             WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
