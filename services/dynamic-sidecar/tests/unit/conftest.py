@@ -177,7 +177,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
     yield
     # run docker compose down here
 
-    if app_state.shared_store.compose_spec is None:
+    if app_state.compose_spec is None:
         # if no compose-spec is stored skip this operation
         return
 
@@ -187,7 +187,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
     )
     await _write_file_and_run_command(
         settings=app_state.settings,
-        file_content=app_state.shared_store.compose_spec,
+        file_content=app_state.compose_spec,
         command=command,
         command_timeout=5.0,
     )
