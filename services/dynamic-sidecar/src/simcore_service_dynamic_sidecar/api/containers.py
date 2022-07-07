@@ -61,12 +61,8 @@ async def _task_docker_compose_up_and_send_message(
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        # cleans any containers/volumes from previous runs
-        await docker_compose_rm(shared_store.compose_spec, settings)
-
-        # compose up
         r = await docker_compose_up(
-            shared_store.compose_spec, settings, command_timeout=command_timeout
+            shared_store.compose_spec, settings, timeout=command_timeout
         )
 
     message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
@@ -203,7 +199,7 @@ async def runs_docker_compose_down(
     result = await docker_compose_down(
         shared_store.compose_spec,
         settings,
-        command_timeout=command_timeout,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
     )
 
     for container_name in shared_store.container_names:

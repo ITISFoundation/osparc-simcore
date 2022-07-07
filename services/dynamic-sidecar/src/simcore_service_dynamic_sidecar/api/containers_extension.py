@@ -293,7 +293,9 @@ async def restarts_containers(
         await stop_log_fetching(app, container_name)
 
     result = await docker_compose_restart(
-        shared_store.compose_spec, settings, command_timeout=command_timeout
+        shared_store.compose_spec,
+        settings,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
     )
 
     if not result.success:

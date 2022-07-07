@@ -87,6 +87,7 @@ async def test_docker_compose_workflow(
 
     # stops and removes
     # TODO: test if --remove-orphans might affect containers from other Compose
+    # NOTE: tried using CMD and does not seem to affect. Which orphans are those? previously not downed because timeout?
     r = await docker_compose_down(
         compose_spec_yaml,
         settings,
