@@ -133,11 +133,9 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
                 **_TQDM_FILE_OPTIONS,
             ) as pbar:
                 async with aiofiles.open(file_path, "wb") as file_pointer:
-                    chunk = await response.content.read(CHUNK_SIZE)
-                    while chunk:
+                    while chunk := await response.content.read(CHUNK_SIZE):
                         await file_pointer.write(chunk)
                         pbar.update(len(chunk))
-                        chunk = await response.content.read(CHUNK_SIZE)
                 log.debug("Download complete")
         except ClientPayloadError as exc:
             raise exceptions.TransferError(url) from exc

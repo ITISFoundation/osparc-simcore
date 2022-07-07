@@ -6,14 +6,14 @@ import zipfile
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Final, Iterator, Optional, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 
-MAX_UNARCHIVING_WORKER_COUNT = 2
-
+MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
+CHUNK_SIZE: Final[int] = 1024 * 8
 log = logging.getLogger(__name__)
 
 
@@ -54,16 +54,6 @@ def _iter_files_to_compress(
 def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     _to_strip = f"{str(to_strip)}/"
     return Path(str(input_path).replace(_to_strip, ""))
-
-
-def _read_in_chunks(file_object, chunk_size=1024 * 8):
-    """Lazy function (generator) to read a file piece by piece.
-    Default chunk size: 8k."""
-    while True:
-        data = file_object.read(chunk_size)
-        if not data:
-            break
-        yield data
 
 
 class _FastZipFileReader(zipfile.ZipFile):
@@ -116,14 +106,15 @@ def _zipfile_single_file_extract_worker(
             destination_path.mkdir(parents=True, exist_ok=True)
             return destination_path
         desc = f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}\n"
-        with zf.open(name=file_in_archive) as zip_fp:
-            with open(destination_path, "wb") as destination_fp, tqdm(
-                total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
-            ) as pbar:
-                for chunk in _read_in_chunks(zip_fp):
-                    destination_fp.write(chunk)
-                    pbar.update(len(chunk))
-                return destination_path
+        with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
+            "wb"
+        ) as dest_fp, tqdm(
+            total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
+        ) as pbar:
+            while chunk := zip_fp.read(CHUNK_SIZE):
+                dest_fp.write(chunk)
+                pbar.update(len(chunk))
+            return destination_path
 
 
 def ensure_destination_subdirectories_exist(
