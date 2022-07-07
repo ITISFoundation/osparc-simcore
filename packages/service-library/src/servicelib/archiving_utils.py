@@ -10,10 +10,30 @@ from typing import Iterator, Optional, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
 MAX_UNARCHIVING_WORKER_COUNT = 2
 
 log = logging.getLogger(__name__)
+
+
+def _human_readable_size(size, decimal_places=3):
+    human_readable_file_size = float(deepcopy(size))
+    unit = "B"
+    for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
+        if human_readable_file_size < 1000.0:
+            unit = t_unit
+            break
+        human_readable_file_size /= 1000.0
+
+    return f"{human_readable_file_size:.{decimal_places}f}{unit}"
+
+
+def _get_folder_size(folder: Path) -> int:
+    size = 0
+    for file_ in Path(folder).rglob("*"):
+        size += file_.stat().st_size
+    return size
 
 
 def _strip_undecodable_in_path(path: Path) -> Path:
@@ -86,11 +106,21 @@ def _zipfile_single_file_extract_worker(
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
             return destination_path
-
+        desc = (
+            f"decompressing {zip_file_path}/{file_in_archive.filename} -> {destination_path}"
+            f"[{_human_readable_size(file_in_archive.file_size)}"
+            f" from total: {_human_readable_size(zip_file_path.stat().st_size)}]\n"
+        )
         with zf.open(name=file_in_archive) as zip_fp:
-            with open(destination_path, "wb") as destination_fp:
+            with open(destination_path, "wb") as destination_fp, tqdm(
+                total=file_in_archive.file_size,
+                desc=desc,
+                unit="byte",
+                unit_scale=True,
+            ) as pbar:
                 for chunk in _read_in_chunks(zip_fp):
                     destination_fp.write(chunk)
+                    pbar.update(len(chunk))
                 return destination_path
 
 
@@ -145,7 +175,13 @@ async def unarchive_dir(
                 for zip_entry in zip_file_handler.infolist()
             ]
 
-            extracted_paths: tuple[Path] = await asyncio.gather(*tasks)
+            extracted_paths: list[Path] = await tqdm_asyncio.gather(
+                *tasks,
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
+                f" total: {_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                total=len(tasks),
+                unit="file",
+            )
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
             return {
@@ -153,25 +189,6 @@ async def unarchive_dir(
                 for p in extracted_paths
                 if p.is_file() or (p.is_dir() and not any(p.glob("*")))
             }
-
-
-def _human_readable_size(size, decimal_places=3):
-    human_readable_file_size = deepcopy(size)
-    unit = "B"
-    for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if human_readable_file_size < 1024.0:
-            unit = t_unit
-            break
-        human_readable_file_size /= 1024.0
-
-    return f"{human_readable_file_size:.{decimal_places}f}{unit}"
-
-
-def _get_folder_size(folder: Path) -> int:
-    size = 0
-    for file_ in Path(folder).rglob("*"):
-        size += file_.stat().st_size
-    return size
 
 
 def _add_to_archive(
@@ -191,7 +208,7 @@ def _add_to_archive(
             )
             folder_size_bytes = _get_folder_size(dir_to_compress)
             with tqdm(
-                desc=f"compressing {dir_to_compress} [{_human_readable_size(folder_size_bytes)}]\n",
+                desc=f"compressing {dir_to_compress} -> {destination} [{_human_readable_size(folder_size_bytes)}]\n",
                 total=folder_size_bytes,
                 unit="byte",
                 unit_scale=True,
@@ -210,11 +227,14 @@ def _add_to_archive(
                             file_name_in_archive
                         )
 
-                        def _write_with_progress(zip_write_fct, self, data):
+                        def _write_with_progress(
+                            zip_write_fct, self, data  # pylint: disable=unused-argument
+                        ):
                             pbar.update(len(data))
                             return zip_write_fct(data)
 
                         # Replace original write() with a wrapper to track progress
+                        assert zip_file_handler.fp  # nosec
                         zip_file_handler.fp.write = types.MethodType(
                             partial(
                                 _write_with_progress,
