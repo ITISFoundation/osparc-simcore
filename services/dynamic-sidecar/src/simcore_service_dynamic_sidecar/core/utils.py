@@ -11,6 +11,7 @@ import aiofiles
 import httpx
 import yaml
 from aiofiles import os as aiofiles_os
+from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity import retry
@@ -108,27 +109,47 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles_os.remove(file_path)
 
 
-async def async_command(
-    command: str, command_timeout: Optional[float] = None
-) -> CommandResult:
+async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
+    """
+    Does not raise for error or timeout
+    """
     try:
         proc = await asyncio.create_subprocess_shell(
             command,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
+            stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
         )
 
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
     except asyncio.TimeoutError:
         logger.warning(
-            "%s timed out after %ss",
+            "Process %s timed out after %ss",
             f"{command=!r}",
-            f"{command_timeout=}",
-            stack_info=True,
+            f"{timeout=}",
         )
+        # FIXME: Implement
+        # return = CommandResult(
+        #    success=False,
+        #    decoded_stdout=f"Execution timed out after {timeout} secs",
+        #    command=f"{command}",
+        # )
         raise
+
+    except Exception as err:  # pylint: disable=broad-except
+        error_code = create_error_code(err)
+        logger.exception(
+            "Process with %s failed unexpectedly",
+            f"{command=!r}",
+            extra={"error_code": error_code},
+        )
+
+        return CommandResult(
+            success=False,
+            decoded_stdout=f"Unexpected error [{error_code}]",
+            command=f"{command}",
+        )
 
     return CommandResult(
         success=proc.returncode == 0,
