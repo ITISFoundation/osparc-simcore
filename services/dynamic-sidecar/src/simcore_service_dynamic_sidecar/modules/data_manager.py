@@ -1,12 +1,6 @@
 import logging
-import shutil
-import tempfile
-from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
 
-from servicelib.archiving_utils import archive_dir
-from servicelib.pools import async_on_threadpool
 from simcore_sdk.node_data import data_manager
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 
@@ -41,38 +35,18 @@ async def pull_path_if_exists(path: Path, settings: DynamicSidecarSettings) -> N
     logger.info("Finished pulling and extracting %s", str(path))
 
 
-@asynccontextmanager
-async def _isolated_temp_zip_path(path_to_compress: Path) -> AsyncIterator[Path]:
-    base_dir = Path(tempfile.mkdtemp())
-    zip_temp_name = base_dir / f"{path_to_compress.name}.zip"
-    try:
-        yield zip_temp_name
-    finally:
-        await async_on_threadpool(lambda: shutil.rmtree(base_dir, ignore_errors=True))
-
-
 async def upload_path_if_exists(
     path: Path, state_exclude: list[str], settings: DynamicSidecarSettings
 ) -> None:
     """
     Zips the path in a temporary directory and uploads to storage
     """
-    # pylint: disable=unnecessary-comprehension
-    logger.info("Files in %s: %s", path, [x for x in path.rglob("*")])
-
-    async with _isolated_temp_zip_path(path) as archive_path:
-        await archive_dir(
-            dir_to_compress=path,
-            destination=archive_path,
-            compress=False,
-            store_relative_path=True,
-            exclude_patterns=state_exclude,
-        )
-        await data_manager.push(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-            node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-            file_or_folder=path,
-            r_clone_settings=settings.rclone_settings_for_nodeports,
-        )
+    await data_manager.push(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        file_or_folder=path,
+        r_clone_settings=settings.rclone_settings_for_nodeports,
+        archive_exclude_patterns=state_exclude,
+    )
     logger.info("Finished upload of %s", path)

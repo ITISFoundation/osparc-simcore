@@ -53,6 +53,7 @@ async def push(
     file_or_folder: Path,
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
+    archive_exclude_patterns: Optional[list[str]] = None,
 ):
     if file_or_folder.is_file():
         return await _push_file(
@@ -62,14 +63,15 @@ async def push(
     with TemporaryDirectory() as tmp_dir_name:
         log.info("compressing %s into %s...", file_or_folder.name, tmp_dir_name)
         # compress the files
-        archive_file_path = Path(tmp_dir_name) / (
-            "%s.zip" % (rename_to if rename_to else file_or_folder.stem)
+        archive_file_path = (
+            Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
         )
         await archive_dir(
             dir_to_compress=file_or_folder,
             destination=archive_file_path,
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
+            exclude_patterns=archive_exclude_patterns,
         )
         return await _push_file(
             user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
