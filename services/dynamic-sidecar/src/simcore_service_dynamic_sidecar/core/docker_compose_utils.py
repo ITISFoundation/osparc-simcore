@@ -97,6 +97,13 @@ async def docker_compose_restart(
 async def docker_compose_down(
     compose_spec_yaml: str, settings: DynamicSidecarSettings, command_timeout: float
 ) -> CommandResult:
+    """
+    Stops containers and removes containers, networks and volumes declared in the Compose specs file
+
+    - Removes named volumes declared in the `volumes` section of the Compose specs file and anonymous volumes attached to containers.
+    - Removes containers for services NOT defined in the Compose specs file
+    - Does NOT remove images
+    """
     command = (
         'docker-compose --project-name {project} --file "{file_path}" '
         "down --volumes --remove-orphans --timeout {stop_and_remove_timeout}"
