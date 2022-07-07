@@ -10,3 +10,4 @@ pydantic
 pyinstrument
 pyyaml
 tenacity
+tqdm
