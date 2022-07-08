@@ -43,7 +43,7 @@ P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
     f"v{__version__}"
 )
 
-TSCHUESS_MSG = "{:=^100}".format("App shutdown completed 🎉")
+TSCHUESS_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
 
 
 class AppState:

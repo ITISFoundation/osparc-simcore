@@ -6,11 +6,16 @@ IFS=$(printf '\n\t')
 
 INFO="INFO: [$(basename "$0")] "
 
-# BOOTING application ---------------------------------------------
 echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
 echo "$INFO" "User :$(id "$(whoami)")"
 echo "$INFO" "Workdir : $(pwd)"
 
+#
+# DEVELOPMENT MODE
+#
+# - prints environ info
+# - installs requirements in mounted volume
+#
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Environment :"
   printenv | sed 's/=/: /' | sed 's/^/    /' | sort
@@ -25,8 +30,10 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 fi
 
-# RUNNING application ----------------------------------------
-APP_LOG_LEVEL=${DIRECTOR_V2_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
+#
+# RUNNING application
+#
+APP_LOG_LEVEL=${DYNAMIC_SIDECAR_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
@@ -46,5 +53,4 @@ else
   exec uvicorn simcore_service_dynamic_sidecar.main:the_app \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
-
 fi
