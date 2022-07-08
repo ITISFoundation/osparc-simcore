@@ -21,6 +21,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
+from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
@@ -681,10 +682,6 @@ async def test_get_node_ids_from_project(
         }
 
 
-def _ignore_dict_keys(input_dict: dict[str, Any], exclude: set[str]) -> dict[str, Any]:
-    return {k: v for k, v in input_dict.items() if k not in exclude}
-
-
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
@@ -702,9 +699,9 @@ async def test_replace_user_project(
         user_id=logged_user["id"],
         project_uuid=original_project["uuid"],
     )
-    assert _ignore_dict_keys(
+    assert copy_from_dict_ex(
         original_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == _ignore_dict_keys(working_project, PROJECT_DICT_IGNORE_FIELDS)
+    ) == copy_from_dict_ex(working_project, PROJECT_DICT_IGNORE_FIELDS)
 
     # now let's create some outputs (similar to what happens when running services)
     NODE_INDEX = 1  # this is not the file-picker
@@ -728,9 +725,9 @@ async def test_replace_user_project(
         user_id=logged_user["id"],
         project_uuid=working_project["uuid"],
     )
-    assert _ignore_dict_keys(
+    assert copy_from_dict_ex(
         working_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == _ignore_dict_keys(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
+    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
 
     # the frontend sends project without some fields, but for FRONTEND type of nodes
     # replacing should keep the values
@@ -745,6 +742,6 @@ async def test_replace_user_project(
         user_id=logged_user["id"],
         project_uuid=incoming_frontend_project["uuid"],
     )
-    assert _ignore_dict_keys(
+    assert copy_from_dict_ex(
         working_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == _ignore_dict_keys(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
+    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
