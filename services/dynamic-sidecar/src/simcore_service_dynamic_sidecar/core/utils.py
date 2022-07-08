@@ -15,7 +15,7 @@ from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..modules.mounted_fs import MountedVolumes
@@ -38,7 +38,7 @@ class _RegistryNotReachableException(Exception):
 
 @retry(
     wait=wait_fixed(1),
-    stop=stop_after_attempt(1),
+    stop=stop_after_delay(10),
     before_sleep=before_sleep_log(logger, logging.INFO),
     reraise=True,
 )
@@ -55,7 +55,7 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
         url = f"{protocol}://{registry_settings.api_url}/"
 
         logging.info("Registry test url ='%s'", url)
-        response = await client.get(url, timeout=1, **params)
+        response = await client.get(url, **params)
         reachable = response.status_code == status.HTTP_200_OK and response.json() == {}
         if not reachable:
             logger.error("Response: %s", response)

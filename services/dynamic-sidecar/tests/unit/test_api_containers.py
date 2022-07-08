@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import importlib
 import json
 import random
 from collections import namedtuple
@@ -215,18 +214,19 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 @pytest.fixture
 def mock_data_manager(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.data_manager.upload_path_if_exists",
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.push",
+        autospec=True,
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.data_manager.pull_path_if_exists",
-        return_value=None,
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.exists",
+        autospec=True,
+        return_value=True,
     )
-
-    importlib.reload(
-        importlib.import_module(
-            "simcore_service_dynamic_sidecar.api.containers_extension"
-        )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.pull",
+        autospec=True,
+        return_value=None,
     )
 
 

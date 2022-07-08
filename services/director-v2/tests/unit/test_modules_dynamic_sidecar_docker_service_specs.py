@@ -190,7 +190,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": '["/tmp/strip_me/*", ' '"*.py"]',
+                    "DY_SIDECAR_STATE_EXCLUDE": '["/tmp/strip_me/*", "*.py"]',
                     "DY_SIDECAR_STATE_PATHS": '["/tmp/save_1", ' '"/tmp_save_2"]',
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
@@ -348,16 +348,12 @@ def test_get_dynamic_proxy_spec(
             app_settings=minimal_app.state.settings,
         )
         assert dynamic_sidecar_spec
-        assert (
-            jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
-            == expected_dynamic_sidecar_spec
+        assert jsonable_encoder(dynamic_sidecar_spec) == jsonable_encoder(
+            AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec)
         )
         dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
-    assert (
-        jsonable_encoder(
-            dynamic_sidecar_spec_accumulated, by_alias=True, exclude_unset=True
-        )
-        == expected_dynamic_sidecar_spec
+    assert jsonable_encoder(dynamic_sidecar_spec_accumulated) == jsonable_encoder(
+        AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec)
     )
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 

@@ -70,6 +70,8 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
+execnet==1.9.0
+    # via pytest-xdist
 faker==13.7.0
     # via -r requirements/_test.in
 flaky==3.7.0
@@ -128,7 +130,9 @@ platformdirs==2.5.2
 pluggy==1.0.0
     # via pytest
 py==1.11.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-forked
 pycparser==2.21
     # via cffi
 pylint==2.13.8
@@ -148,9 +152,11 @@ pytest==7.1.2
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
+    #   pytest-forked
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
+    #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.18.3
@@ -159,6 +165,8 @@ pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.12.0
     # via -r requirements/_test.in
+pytest-forked==1.4.0
+    # via pytest-xdist
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-mock==3.7.0
@@ -166,6 +174,8 @@ pytest-mock==3.7.0
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
+    # via -r requirements/_test.in
+pytest-xdist==2.5.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker

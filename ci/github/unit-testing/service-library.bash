@@ -27,6 +27,7 @@ test_all() {
     --durations=10 \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --numprocesses=auto \
     --verbose \
     -m "not heavy_load" \
     packages/service-library/tests
