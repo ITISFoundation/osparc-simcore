@@ -339,8 +339,8 @@ class PrunableFolder:
                 p.rmdir()
 
 
-__all__ = [
+__all__ = (
     "archive_dir",
     "PrunableFolder",
     "unarchive_dir",
-]
+)
