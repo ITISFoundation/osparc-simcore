@@ -15,7 +15,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import ProgressHandler, TaskId, TaskName, TaskStatus, TrackedTask
+from ._models import TaskProgress, TaskId, TaskName, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class TaskManager(BaseModel):
         return len(managed_tasks_ids) > 0
 
     def add(
-        self, task_name: TaskName, task: Task, progress_handler: ProgressHandler
+        self, task_name: TaskName, task: Task, task_progress: TaskProgress
     ) -> TrackedTask:
         """keep track of a task, if unique is True, only one of these can be running at a time"""
 
@@ -47,7 +47,7 @@ class TaskManager(BaseModel):
                 task_id=task_id,
                 task=task,
                 task_name=task_name,
-                progress_handler=progress_handler,
+                task_progress=task_progress,
             )
         )
 
@@ -79,7 +79,7 @@ class TaskManager(BaseModel):
 
         return TaskStatus.parse_obj(
             dict(
-                progress=tracked_task.progress_handler,
+                task_progress=tracked_task.task_progress,
                 done=done,
                 successful=successful,
                 started=tracked_task.started,
@@ -171,16 +171,16 @@ def start_task(
         managed_task = task_manager.tasks[task_name][managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    progress = ProgressHandler.create()
+    task_progress = TaskProgress.create()
     # NOTE: starlette's BackgroundTask is just awaited at the end
     # of a request after the response is sent.
     # It blocks the server until the request is complete.
     # Below is not what we want
     # background_tasks.add_task(_handle_task, background_task)
-    awaitable = handler(ProgressHandler.create(), **kwargs)
+    awaitable = handler(TaskProgress.create(), **kwargs)
     task = asyncio.create_task(awaitable)
 
     tracked_task = task_manager.add(
-        task_name=task_name, task=task, progress_handler=progress
+        task_name=task_name, task=task, task_progress=task_progress
     )
     return tracked_task.task_id

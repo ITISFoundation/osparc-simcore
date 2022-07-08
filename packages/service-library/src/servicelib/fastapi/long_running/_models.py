@@ -16,7 +16,7 @@ class MarkOptions(BaseModel):
     unique: bool = False
 
 
-class ProgressHandler(BaseModel):
+class TaskProgress(BaseModel):
     message: str
     percent: float
 
@@ -34,7 +34,7 @@ class ProgressHandler(BaseModel):
         logger.debug("Progress update: %s", f"{self}")
 
     @classmethod
-    def create(cls) -> "ProgressHandler":
+    def create(cls) -> "TaskProgress":
         return cls.parse_obj(dict(message="", percent=0.0))
 
 
@@ -42,7 +42,7 @@ class TrackedTask(BaseModel):
     task_id: str
     task: Task
     task_name: TaskName
-    progress_handler: ProgressHandler
+    task_progress: TaskProgress
 
     started: datetime = Field(default_factory=datetime.utcnow)
     # have a date when it resulted as completed after a check
@@ -52,7 +52,7 @@ class TrackedTask(BaseModel):
 
 
 class TaskStatus(BaseModel):
-    progress: ProgressHandler
+    task_progress: TaskProgress
     done: bool
     successful: bool
     started: datetime

@@ -17,7 +17,7 @@ from servicelib.fastapi.long_running._errors import (
 from servicelib.fastapi.long_running.client import setup as setup_client
 from servicelib.fastapi.long_running.client import task_result
 from servicelib.fastapi.long_running.server import (
-    ProgressHandler,
+    TaskProgress,
     TaskId,
     TaskManager,
     get_task_manager,
@@ -38,17 +38,17 @@ async def _assert_task_removed(
 # FIXTURES
 
 
-async def a_test_task(progress: ProgressHandler) -> int:
-    progress.update_progress(message="starting", percent=0.0)
+async def a_test_task(task_progress: TaskProgress) -> int:
+    task_progress.update_progress(message="starting", percent=0.0)
     await asyncio.sleep(1)
-    progress.update_progress(message="finished", percent=1.0)
+    task_progress.update_progress(message="finished", percent=1.0)
     return 42
 
 
-async def a_failing_test_task(progress: ProgressHandler) -> None:
-    progress.update_progress(message="starting", percent=0.0)
+async def a_failing_test_task(task_progress: TaskProgress) -> None:
+    task_progress.update_progress(message="starting", percent=0.0)
     await asyncio.sleep(1)
-    progress.update_progress(message="finished", percent=1.0)
+    task_progress.update_progress(message="finished", percent=1.0)
     raise RuntimeError("I am failing as requested")
 
 

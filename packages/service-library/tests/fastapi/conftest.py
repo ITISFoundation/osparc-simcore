@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import socket
 from datetime import datetime
-from typing import AsyncIterable
+from typing import AsyncIterable, Callable, cast
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -55,3 +56,14 @@ async def async_client(bg_task_app: FastAPI) -> AsyncIterable[AsyncClient]:
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+@pytest.fixture
+def get_unused_port() -> Callable[[], int]:
+    def go() -> int:
+        """Return a port that is unused on the current host."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            return cast(int, s.getsockname()[1])
+
+    return go

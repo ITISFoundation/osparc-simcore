@@ -59,7 +59,8 @@ async def task_result(
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(async_client, base_url, task_id)
         progress_helper.update(
-            message=task_status.progress.message, percent=task_status.progress.percent
+            message=task_status.task_progress.message,
+            percent=task_status.task_progress.percent,
         )
         return task_status
 

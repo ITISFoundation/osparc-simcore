@@ -8,7 +8,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from servicelib.fastapi.long_running.server import (
-    ProgressHandler,
+    TaskProgress,
     TaskId,
     TaskManager,
     get_task_manager,
@@ -28,14 +28,14 @@ def _assert_not_found(response: Response, task_id: TaskId) -> None:
 
 
 async def short_task(
-    progress: ProgressHandler,
+    task_progress: TaskProgress,
     raise_when_finished: bool,
     total_sleep: float,
 ) -> int:
     """sleeps and raises an error or returns 42"""
-    progress.update_progress(percent=0.0, message="starting")
+    task_progress.update_progress(percent=0.0, message="starting")
     await asyncio.sleep(total_sleep)
-    progress.update_progress(percent=1.0, message="finished")
+    task_progress.update_progress(percent=1.0, message="finished")
 
     if raise_when_finished:
         raise RuntimeError("raised this error as instructed")

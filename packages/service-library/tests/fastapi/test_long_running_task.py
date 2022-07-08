@@ -16,7 +16,7 @@ from servicelib.fastapi.long_running._errors import (
     TaskNotFoundError,
 )
 from servicelib.fastapi.long_running.server import (
-    ProgressHandler,
+    TaskProgress,
     TaskId,
     TaskManager,
     TaskStatus,
@@ -29,26 +29,26 @@ from servicelib.fastapi.long_running.server import start_task
 
 
 async def a_background_task(
-    progress: ProgressHandler,
+    task_progress: TaskProgress,
     raise_when_finished: bool,
     total_sleep: int,
 ) -> int:
     """sleeps and raises an error or returns 42"""
     for i in range(total_sleep):
         await asyncio.sleep(1)
-        progress.update_progress(percent=float((i + 1) / total_sleep))
+        task_progress.update_progress(percent=float((i + 1) / total_sleep))
     if raise_when_finished:
         raise RuntimeError("raised this error as instructed")
 
     return 42
 
 
-async def fast_background_task(progress: ProgressHandler) -> int:
+async def fast_background_task(task_progress: TaskProgress) -> int:
     """this task does nothing and returns a constant"""
     return 42
 
 
-async def failing_background_task(progress: ProgressHandler) -> None:
+async def failing_background_task(task_progress: TaskProgress) -> None:
     """this task does nothing and returns a constant"""
     raise RuntimeError("failing asap")
 
@@ -95,7 +95,7 @@ def task_manager(bg_task_app: FastAPI) -> TaskManager:
 
 
 async def test_unique_task_already_running(task_manager: TaskManager) -> None:
-    async def unique_task(progress: ProgressHandler) -> None:
+    async def unique_task(task_progress: TaskProgress) -> None:
         await asyncio.sleep(1)
 
     start_task(task_manager=task_manager, handler=unique_task, unique=True)
@@ -110,7 +110,7 @@ async def test_unique_task_already_running(task_manager: TaskManager) -> None:
 
 
 async def test_start_multiple_not_unique_tasks(task_manager: TaskManager) -> None:
-    async def not_unique_task(progress: ProgressHandler) -> None:
+    async def not_unique_task(task_progress: TaskProgress) -> None:
         await asyncio.sleep(1)
 
     for _ in range(5):
@@ -130,8 +130,8 @@ async def test_get_status(task_manager: TaskManager) -> None:
     )
     task_status = task_manager.get_status(task_id)
     assert isinstance(task_status, TaskStatus)
-    assert task_status.progress.message == ""
-    assert task_status.progress.percent == 0.0
+    assert task_status.task_progress.message == ""
+    assert task_status.task_progress.percent == 0.0
     assert task_status.done == False
     assert task_status.successful == False
     assert isinstance(task_status.started, datetime)
