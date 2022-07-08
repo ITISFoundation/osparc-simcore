@@ -29,7 +29,7 @@ async def _push_file(
     file_path: Path,
     rename_to: Optional[str],
     r_clone_settings: Optional[RCloneSettings] = None,
-):
+) -> None:
     store_id = SIMCORE_LOCATION
     s3_object = _create_s3_object(
         project_id, node_uuid, rename_to if rename_to else file_path
@@ -54,7 +54,7 @@ async def push(
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
     archive_exclude_patterns: Optional[set[str]] = None,
-):
+) -> None:
     if file_or_folder.is_file():
         return await _push_file(
             user_id, project_id, node_uuid, file_or_folder, rename_to
@@ -73,7 +73,7 @@ async def push(
             store_relative_path=True,
             exclude_patterns=archive_exclude_patterns,
         )
-        return await _push_file(
+        await _push_file(
             user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
         )
 
@@ -84,7 +84,7 @@ async def _pull_file(
     node_uuid: str,
     file_path: Path,
     save_to: Optional[Path] = None,
-):
+) -> None:
     destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
@@ -111,7 +111,7 @@ async def pull(
     node_uuid: str,
     file_or_folder: Path,
     save_to: Optional[Path] = None,
-):
+) -> None:
     if file_or_folder.is_file():
         return await _pull_file(user_id, project_id, node_uuid, file_or_folder, save_to)
     # we have a folder, so we need somewhere to extract it to
@@ -127,7 +127,7 @@ async def pull(
         log.info("extraction completed")
 
 
-async def is_file_present_in_storage(
+async def exists(
     user_id: int, project_id: str, node_uuid: str, file_path: Path
 ) -> bool:
     """
