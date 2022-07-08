@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.basic_types import BootModeEnum
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -9,7 +10,7 @@ from servicelib.json_serialization import json_dumps
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-from .._namepsace import get_compose_namespace
+from .._namespace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import update_service_params_from_settings
 
@@ -37,6 +38,7 @@ def _get_environment_variables(
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
     return {
+        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -94,6 +96,7 @@ def get_dynamic_sidecar_spec(
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
+    # MOUNTS -----------
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -152,47 +155,57 @@ def get_dynamic_sidecar_spec(
                 )
             )
 
-    endpoint_spec = {}
+    if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
+        # Settings validators guarantees that this never happens in production mode
+        assert (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE
+            != BootModeEnum.PRODUCTION
+        )
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV is not None:
-        dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-        if dynamic_sidecar_path is None:
-            log.warning(
-                "Could not mount the sources for the dynamic-sidecar, please "
-                "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
-            )
-        else:
-            mounts.append(
-                {
-                    "Source": str(dynamic_sidecar_path),
-                    "Target": "/devel/services/dynamic-sidecar",
-                    "Type": "bind",
-                }
-            )
-            packages_path = (
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-                / ".."
-                / ".."
-                / "packages"
-            )
-            mounts.append(
-                {
-                    "Source": str(packages_path),
-                    "Target": "/devel/packages",
-                    "Type": "bind",
-                }
-            )
-    # expose this service on an empty port
+        mounts.append(
+            {
+                "Source": str(dynamic_sidecar_path),
+                "Target": "/devel/services/dynamic-sidecar",
+                "Type": "bind",
+            }
+        )
+        packages_path = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+            / ".."
+            / ".."
+            / "packages"
+        )
+        mounts.append(
+            {
+                "Source": str(packages_path),
+                "Target": "/devel/packages",
+                "Type": "bind",
+            }
+        )
+
+    # PORTS -----------
+    ports = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
-        endpoint_spec["Ports"] = [
+        ports.append(
+            # server port
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-            },
-        ]
+            }
+        )
 
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE == BootModeEnum.DEBUG:
+            ports.append(
+                # debugger port
+                {
+                    "Protocol": "tcp",
+                    "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
+                }
+            )
+
+    #  -----------
     create_service_params = {
-        "endpoint_spec": endpoint_spec,
+        "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",

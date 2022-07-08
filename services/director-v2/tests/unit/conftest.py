@@ -20,7 +20,6 @@ import respx
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
 from _pytest.logging import LogCaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
@@ -32,6 +31,8 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.settings import AppSettings
@@ -346,6 +347,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def mocked_catalog_service_api(
+    mock_env: EnvVarsDict,
     mock_service_key_version: ServiceKeyVersion,
     fake_service_specifications: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:

@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 import aiodocker
 import httpx
+import pytest
 from fastapi import FastAPI
 from models_library.projects import Node
 from models_library.services_resources import (
@@ -18,6 +19,7 @@ from models_library.services_resources import (
 from models_library.users import UserID
 from pydantic import PositiveInt, parse_obj_as
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -90,7 +92,9 @@ async def ensure_network_cleanup(
                     assert delete_result is True
 
 
-async def _get_service_published_port(service_name: str) -> int:
+async def _get_service_published_port(
+    service_name: str, target_port: Optional[int] = None
+) -> int:
     # it takes a bit of time for the port to be auto generated
     # keep trying until it is there
     async with aiodocker.Docker() as docker_client:
@@ -110,19 +114,68 @@ async def _get_service_published_port(service_name: str) -> int:
                 )
                 assert len(services) == 1, f"{service_name=} is not running!"
                 service = services[0]
+                # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
+                # Example:
+                # [
+                #   {
+                #     "Spec": {
+                #      "Name": "hopeful_cori"
+                #
                 assert service["Spec"]["Name"] == service_name
+                #
+                #     "Endpoint": {
+                #       "Spec": {
+                #         "Mode": "vip",
+                #         "Ports": [
+                #           {
+                #             "Protocol": "tcp",
+                #             "TargetPort": 6379,
+                #             "PublishedPort": 30001
+                #           }
+                #         ]
+                #       },
+                #       "Ports": [
+                #         {
+                #           "Protocol": "tcp",
+                #           "TargetPort": 6379,
+                #           "PublishedPort": 30001
+                #         }
+                #       ],
+                #
+                #   ...
+                #
+                #   }
+                # ]
                 assert "Endpoint" in service
                 ports = service["Endpoint"].get("Ports", [])
-                assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
-                published_port = ports[0]["PublishedPort"]
+
+                if target_port:
+                    try:
+                        published_port = next(
+                            p["PublishedPort"]
+                            for p in ports
+                            if p.get("TargetPort") == target_port
+                        )
+                    except StopIteration as e:
+                        raise RuntimeError(
+                            f"Cannot find {target_port} in {ports=} for {service_name=}"
+                        ) from e
+                else:
+                    assert (
+                        len(ports) == 1
+                    ), f"number of ports in {service_name=} is not 1!"
+                    published_port = ports[0]["PublishedPort"]
+
                 assert (
                     published_port is not None
                 ), f"published port of {service_name=} is not set!"
+
                 print(
                     f"--> found {service_name=} {published_port=}, statistics: {json.dumps(attempt.retry_state.retry_object.statistics)}"
                 )
                 return published_port
-    assert False, f"no published port found for {service_name=}"
+
+    pytest.fail(f"no published port found for {service_name=}")
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
@@ -135,8 +188,18 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     returns: the local endpoint
     """
     service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
-    published_port = await _get_service_published_port(service_name)
-    assert published_port is not None
+
+    assert app.state
+    settings: AppSettings = app.state.settings
+
+    published_port = await _get_service_published_port(
+        service_name,
+        target_port=settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
+    )
+    assert (
+        published_port is not None
+    ), f"{settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.json()=}"
+
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     endpoint: Optional[str] = None
