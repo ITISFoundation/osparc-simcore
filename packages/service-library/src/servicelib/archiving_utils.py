@@ -225,7 +225,7 @@ def _add_to_archive(
             for file_to_add in _iter_files_to_compress(
                 dir_to_compress, exclude_patterns
             ):
-                progress_bar.set_description(f"{desc}/{file_to_add.name}")
+                progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
                 file_name_in_archive = (
                     _strip_directory_from_path(file_to_add, dir_to_compress)
                     if store_relative_path

@@ -14,7 +14,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -71,7 +71,7 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-async def validate_project(app: web.Application, project: Dict):
+async def validate_project(app: web.Application, project: dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
     await asyncio.get_event_loop().run_in_executor(
         None, validate_instance, project, project_schema
@@ -85,7 +85,7 @@ async def get_project_for_user(
     *,
     include_templates: Optional[bool] = False,
     include_state: Optional[bool] = False,
-) -> Dict:
+) -> dict:
     """Returns a VALID project accessible to user
 
     :raises ProjectNotFoundError: if no match found
@@ -95,7 +95,7 @@ async def get_project_for_user(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
 
-    project: Dict = {}
+    project: dict = {}
     is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
@@ -139,7 +139,7 @@ async def get_project_for_user(
 
 
 async def start_project_interactive_services(
-    request: web.Request, project: Dict, user_id: PositiveInt
+    request: web.Request, project: dict, user_id: PositiveInt
 ) -> None:
     # first get the services if they already exist
     log.debug(
@@ -167,14 +167,14 @@ async def start_project_interactive_services(
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
     unique_project_needed_services = set(project_needed_services.keys())
-    service_resources_result: List[ServiceResourcesDict] = await logged_gather(
+    service_resources_result: list[ServiceResourcesDict] = await logged_gather(
         *[
             get_project_node_resources(request.app, project=project, node_id=node_uuid)
             for node_uuid in unique_project_needed_services
         ],
         reraise=True,
     )
-    service_resources_search: Dict[str, ServiceResourcesDict] = dict(
+    service_resources_search: dict[str, ServiceResourcesDict] = dict(
         zip(unique_project_needed_services, service_resources_result)
     )
 
@@ -246,7 +246,7 @@ async def user_disconnected(
 ) -> None:
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as rt:
-        list_projects: List[str] = await rt.find(PROJECT_ID_KEY)
+        list_projects: list[str] = await rt.find(PROJECT_ID_KEY)
 
     await logged_gather(
         *[
@@ -444,14 +444,14 @@ async def delete_project_node(
 
 async def update_project_node_state(
     app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
-) -> Dict:
+) -> dict:
     log.debug(
         "updating node %s current state in project %s for user %s",
         node_id,
         project_id,
         user_id,
     )
-    partial_workbench_data: Dict[str, Any] = {
+    partial_workbench_data: dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
     if RunningState(new_state) in [
@@ -463,7 +463,7 @@ async def update_project_node_state(
     elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
         partial_workbench_data[node_id]["progress"] = 100
 
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     updated_project, _ = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
@@ -477,7 +477,7 @@ async def update_project_node_state(
 
 async def update_project_node_progress(
     app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
-) -> Optional[Dict]:
+) -> Optional[dict]:
     log.debug(
         "updating node %s progress in project %s for user %s with %s",
         node_id,
@@ -488,7 +488,7 @@ async def update_project_node_progress(
     partial_workbench_data = {
         node_id: {"progress": int(100.0 * float(progress) + 0.5)},
     }
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     updated_project, _ = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
@@ -505,9 +505,9 @@ async def update_project_node_outputs(
     user_id: int,
     project_id: str,
     node_id: str,
-    new_outputs: Optional[Dict],
+    new_outputs: Optional[dict],
     new_run_hash: Optional[str],
-) -> Tuple[Dict, List[str]]:
+) -> tuple[dict, list[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
@@ -525,7 +525,7 @@ async def update_project_node_outputs(
         node_id: {"outputs": new_outputs, "runHash": new_run_hash},
     }
 
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     updated_project, changed_entries = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
@@ -549,7 +549,7 @@ async def update_project_node_outputs(
 async def get_workbench_node_ids_from_project_uuid(
     app: web.Application,
     project_uuid: str,
-) -> Set[str]:
+) -> set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.get_node_ids_from_project(project_uuid)
@@ -566,10 +566,10 @@ async def is_node_id_present_in_any_project_workbench(
 
 async def notify_project_state_update(
     app: web.Application,
-    project: Dict,
+    project: dict,
     notify_only_user: Optional[int] = None,
 ) -> None:
-    messages: List[SocketMessageDict] = [
+    messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
             "data": {
@@ -593,15 +593,15 @@ async def notify_project_state_update(
 
 async def notify_project_node_update(
     app: web.Application,
-    project: Dict,
+    project: dict,
     node_id: str,
-    errors: Optional[List[ErrorDict]],
+    errors: Optional[list[ErrorDict]],
 ) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    messages: List[SocketMessageDict] = [
+    messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
             "data": {
@@ -630,10 +630,10 @@ async def post_trigger_connected_service_retrieve(
 
 
 async def trigger_connected_service_retrieve(
-    app: web.Application, project: Dict, updated_node_uuid: str, changed_keys: List[str]
+    app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
     workbench = project["workbench"]
-    nodes_keys_to_update: Dict[str, List[str]] = defaultdict(list)
+    nodes_keys_to_update: dict[str, list[str]] = defaultdict(list)
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
         # check this node is dynamic
@@ -667,7 +667,7 @@ async def trigger_connected_service_retrieve(
 
 
 async def _user_has_another_client_open(
-    user_session_id_list: List[UserSessionID], app: web.Application
+    user_session_id_list: list[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
     for user_session in user_session_id_list:
@@ -680,7 +680,7 @@ async def _user_has_another_client_open(
 
 
 async def _clean_user_disconnected_clients(
-    user_session_id_list: List[UserSessionID], app: web.Application
+    user_session_id_list: list[UserSessionID], app: web.Application
 ):
     for user_session in user_session_id_list:
         with managed_resource(
@@ -709,7 +709,7 @@ async def try_open_project_for_user(
         ):
 
             with managed_resource(user_id, client_session_id, app) as rt:
-                user_session_id_list: List[
+                user_session_id_list: list[
                     UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
 
@@ -751,7 +751,7 @@ async def try_close_project_for_user(
     app: web.Application,
 ):
     with managed_resource(user_id, client_session_id, app) as rt:
-        user_to_session_ids: List[UserSessionID] = await rt.find_users_of_resource(
+        user_to_session_ids: list[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
@@ -814,7 +814,7 @@ async def _get_project_lock_state(
 
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
-        user_session_id_list: List[UserSessionID] = await rt.find_users_of_resource(
+        user_session_id_list: list[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
     set_user_ids = {user_session.user_id for user_session in user_session_id_list}
@@ -833,7 +833,7 @@ async def _get_project_lock_state(
         f"{project_uuid=}",
         f"{set_user_ids=}",
     )
-    usernames: List[UserNameDict] = [
+    usernames: list[UserNameDict] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
@@ -884,10 +884,10 @@ async def get_project_states_for_user(
 
 async def add_project_states_for_user(
     user_id: int,
-    project: Dict[str, Any],
+    project: dict[str, Any],
     is_template: bool,
     app: web.Application,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     log.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",
