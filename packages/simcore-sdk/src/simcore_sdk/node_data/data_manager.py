@@ -53,7 +53,7 @@ async def push(
     file_or_folder: Path,
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-    archive_exclude_patterns: Optional[list[str]] = None,
+    archive_exclude_patterns: Optional[set[str]] = None,
 ):
     if file_or_folder.is_file():
         return await _push_file(

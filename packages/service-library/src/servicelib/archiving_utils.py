@@ -33,9 +33,9 @@ def _strip_undecodable_in_path(path: Path) -> Path:
 
 
 def _iter_files_to_compress(
-    dir_path: Path, exclude_patterns: Optional[list[str]]
+    dir_path: Path, exclude_patterns: Optional[set[str]]
 ) -> Iterator[Path]:
-    exclude_patterns = exclude_patterns if exclude_patterns else []
+    exclude_patterns = exclude_patterns if exclude_patterns else set()
     for path in dir_path.rglob("*"):
         if path.is_file() and not any(
             fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
@@ -181,7 +181,7 @@ def _add_to_archive(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: Optional[list[str]] = None,
+    exclude_patterns: Optional[set[str]] = None,
 ) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
@@ -199,7 +199,7 @@ def _add_to_archive(
                 for file_to_add in _iter_files_to_compress(
                     dir_to_compress, exclude_patterns
                 ):
-                    pbar.set_description(f"{desc}:{file_to_add.name}")
+                    pbar.set_description(f"{desc}/{file_to_add.name}")
                     try:
                         file_name_in_archive = (
                             _strip_directory_from_path(file_to_add, dir_to_compress)
@@ -245,7 +245,7 @@ async def archive_dir(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: Optional[list[str]] = None,
+    exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -253,7 +253,7 @@ async def archive_dir(
     When unarchiveing, the **escaped version** of the file names
     will be created.
 
-    The **exclude_patterns** is a list of patterns created using
+    The **exclude_patterns** is a set of patterns created using
     Unix shell-style wildcards to exclude files and directories.
     """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
@@ -335,4 +335,8 @@ class PrunableFolder:
                 p.rmdir()
 
 
-__all__ = ["archive_dir", "unarchive_dir", "PrunableFolder"]
+__all__ = [
+    "archive_dir",
+    "PrunableFolder",
+    "unarchive_dir",
+]

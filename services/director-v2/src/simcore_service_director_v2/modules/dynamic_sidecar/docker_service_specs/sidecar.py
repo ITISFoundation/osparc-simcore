@@ -33,7 +33,7 @@ def _get_environment_variables(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
 
-    state_exclude = []
+    state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
@@ -47,7 +47,7 @@ def _get_environment_variables(
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps([f"{x}" for x in state_exclude]),
+        "DY_SIDECAR_STATE_EXCLUDE": json_dumps({f"{x}" for x in state_exclude}),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",

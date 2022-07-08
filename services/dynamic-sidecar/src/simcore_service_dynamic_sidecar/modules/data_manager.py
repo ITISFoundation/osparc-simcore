@@ -36,7 +36,7 @@ async def pull_path_if_exists(path: Path, settings: DynamicSidecarSettings) -> N
 
 
 async def upload_path_if_exists(
-    path: Path, state_exclude: list[str], settings: DynamicSidecarSettings
+    path: Path, state_exclude: set[str], settings: DynamicSidecarSettings
 ) -> None:
     """
     Zips the path in a temporary directory and uploads to storage

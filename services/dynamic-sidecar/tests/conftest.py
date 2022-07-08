@@ -153,7 +153,7 @@ def mock_environment(
         "DY_SIDECAR_STATE_PATHS", json.dumps([f"{x}" for x in state_paths_dirs])
     )
     monkeypatch.setenv(
-        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([f"{x}" for x in state_exclude_dirs])
+        "DY_SIDECAR_STATE_EXCLUDE", json.dumps({f"{x}" for x in state_exclude_dirs})
     )
 
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
