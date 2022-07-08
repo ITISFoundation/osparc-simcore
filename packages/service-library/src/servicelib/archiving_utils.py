@@ -3,6 +3,7 @@ import fnmatch
 import logging
 import types
 import zipfile
+from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 from typing import Final, Iterator, Optional, Union
@@ -176,6 +177,31 @@ async def unarchive_dir(
             }
 
 
+@contextmanager
+def _progress_enabled_zip_write_handler(
+    zip_file_handler: zipfile.ZipFile, progress_bar: tqdm
+) -> Iterator[zipfile.ZipFile]:
+    """This function overrides the default zip write fct to allow to get progress using tqdm library"""
+
+    def _write_with_progress(
+        original_write_fct, self, data, pbar  # pylint: disable=unused-argument
+    ):
+        pbar.update(len(data))
+        return original_write_fct(data)
+
+    # Replace original write() with a wrapper to track progress
+    assert zip_file_handler.fp  # nosec
+    old_write_method = zip_file_handler.fp.write
+    zip_file_handler.fp.write = types.MethodType(
+        partial(_write_with_progress, old_write_method, pbar=progress_bar),
+        zip_file_handler.fp,
+    )
+    try:
+        yield zip_file_handler
+    finally:
+        zip_file_handler.fp.write = old_write_method
+
+
 def _add_to_archive(
     dir_to_compress: Path,
     destination: Path,
@@ -185,56 +211,34 @@ def _add_to_archive(
 ) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-        with zipfile.ZipFile(
-            destination, "w", compression=compression
+        folder_size_bytes = sum(
+            file.stat().st_size
+            for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+        )
+        desc = f"compressing {dir_to_compress} -> {destination}"
+
+        with tqdm(
+            desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
+        ) as progress_bar, _progress_enabled_zip_write_handler(
+            zipfile.ZipFile(destination, "w", compression=compression), progress_bar
         ) as zip_file_handler:
-            folder_size_bytes = sum(
-                file.stat().st_size
-                for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
-            )
-            desc = f"compressing {dir_to_compress} -> {destination}"
-            with tqdm(
-                desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
-            ) as pbar:
-                for file_to_add in _iter_files_to_compress(
-                    dir_to_compress, exclude_patterns
-                ):
-                    pbar.set_description(f"{desc}/{file_to_add.name}")
-                    try:
-                        file_name_in_archive = (
-                            _strip_directory_from_path(file_to_add, dir_to_compress)
-                            if store_relative_path
-                            else file_to_add
-                        )
+            for file_to_add in _iter_files_to_compress(
+                dir_to_compress, exclude_patterns
+            ):
+                progress_bar.set_description(f"{desc}/{file_to_add.name}")
+                file_name_in_archive = (
+                    _strip_directory_from_path(file_to_add, dir_to_compress)
+                    if store_relative_path
+                    else file_to_add
+                )
 
-                        # because surrogates are not allowed in zip files,
-                        # replacing them will ensure errors will not happen.
-                        escaped_file_name_in_archive = _strip_undecodable_in_path(
-                            file_name_in_archive
-                        )
+                # because surrogates are not allowed in zip files,
+                # replacing them will ensure errors will not happen.
+                escaped_file_name_in_archive = _strip_undecodable_in_path(
+                    file_name_in_archive
+                )
 
-                        def _write_with_progress(
-                            zip_write_fct, self, data  # pylint: disable=unused-argument
-                        ):
-                            pbar.update(len(data))
-                            return zip_write_fct(data)
-
-                        # Replace original write() with a wrapper to track progress
-                        assert zip_file_handler.fp  # nosec
-                        zip_file_handler.fp.write = types.MethodType(
-                            partial(
-                                _write_with_progress,
-                                zip_file_handler.fp.write,
-                            ),
-                            zip_file_handler.fp,
-                        )
-                        # zip_file_handler.write(in_file)
-                        zip_file_handler.write(
-                            file_to_add, escaped_file_name_in_archive
-                        )
-                    except ValueError as value_error:
-                        log.exception("Could write files to archive, please check logs")
-                        raise value_error
+                zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
     except Exception as e:  # pylint: disable=broad-except
         return e
     return None
