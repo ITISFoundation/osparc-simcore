@@ -663,7 +663,7 @@ class ProjectDBAPI:
                 # update the workbench
                 def _update_workbench(
                     old_project: ProjectDict, new_project: ProjectDict
-                ) -> ProjectDict:
+                ) -> None:
                     # any non set entry in the new workbench is taken from the old one if available
                     old_workbench = old_project["workbench"]
                     new_workbench = new_project["workbench"]
@@ -676,7 +676,6 @@ class ProjectDBAPI:
                             if prop not in node:
                                 # use the old value
                                 node[prop] = old_node[prop]
-                    return new_project
 
                 _update_workbench(current_project, new_project_data)
                 # update timestamps
