@@ -39,16 +39,16 @@ async def _assert_task_removed(
 
 
 async def a_test_task(task_progress: TaskProgress) -> int:
-    task_progress.update_progress(message="starting", percent=0.0)
+    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(1)
-    task_progress.update_progress(message="finished", percent=1.0)
+    task_progress.publish(message="finished", percent=1.0)
     return 42
 
 
 async def a_failing_test_task(task_progress: TaskProgress) -> None:
-    task_progress.update_progress(message="starting", percent=0.0)
+    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(1)
-    task_progress.update_progress(message="finished", percent=1.0)
+    task_progress.publish(message="finished", percent=1.0)
     raise RuntimeError("I am failing as requested")
 
 

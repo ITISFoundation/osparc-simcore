@@ -20,7 +20,7 @@ class TaskProgress(BaseModel):
     message: str
     percent: float
 
-    def update_progress(
+    def publish(
         self, *, message: Optional[str] = None, percent: Optional[float] = None
     ) -> None:
         """`percent` must be between 0.0 and 1.0 otherwise ValueError is raised"""

@@ -41,17 +41,18 @@ async def create_task(
     async def _long_running_name_generator(
         task_progress: server.TaskProgress, items: int
     ) -> list[str]:
-        task_progress.update_progress(message="starting", percent=0)
+        task_progress.publish(message="starting", percent=0)
         generated_strings = []
         for x in range(items):
             string = f"{x}"
             generated_strings.append(string)
             percent = x / items
             print(f"progress {percent}")
-            task_progress.update_progress(message="generated item", percent=percent)
-        task_progress.update_progress(message="finished", percent=1)
+            task_progress.publish(message="generated item", percent=percent)
+        task_progress.publish(message="finished", percent=1)
         return generated_strings
 
+    # NOTE: TaskProgress is injected by start_task
     task_id = server.start_task(
         task_manager=task_manger,
         handler=_long_running_name_generator,
@@ -151,4 +152,4 @@ async def test_workflow(
     ) as string_list:
         assert string_list == [f"{x}" for x in range(10)]
 
-        #assert progress_updates == []
+        # assert progress_updates == []

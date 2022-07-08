@@ -33,9 +33,9 @@ async def short_task(
     total_sleep: float,
 ) -> int:
     """sleeps and raises an error or returns 42"""
-    task_progress.update_progress(percent=0.0, message="starting")
+    task_progress.publish(percent=0.0, message="starting")
     await asyncio.sleep(total_sleep)
-    task_progress.update_progress(percent=1.0, message="finished")
+    task_progress.publish(percent=1.0, message="finished")
 
     if raise_when_finished:
         raise RuntimeError("raised this error as instructed")
