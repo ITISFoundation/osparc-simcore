@@ -3,7 +3,6 @@ import fnmatch
 import logging
 import types
 import zipfile
-from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from typing import Final, Iterator, Optional, Union
@@ -18,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def _human_readable_size(size, decimal_places=3):
-    human_readable_file_size = float(deepcopy(size))
+    human_readable_file_size = float(size)
     unit = "B"
     for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
         if human_readable_file_size < 1024.0:
