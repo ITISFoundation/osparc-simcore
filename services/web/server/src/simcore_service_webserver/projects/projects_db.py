@@ -20,14 +20,12 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
-
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
@@ -662,6 +660,25 @@ class ProjectDBAPI:
                     )
                 )
 
+                # update the workbench
+                def _update_workbench(
+                    old_project: ProjectDict, new_project: ProjectDict
+                ) -> ProjectDict:
+                    # any non set entry in the new workbench is taken from the old one if available
+                    old_workbench = old_project["workbench"]
+                    new_workbench = new_project["workbench"]
+                    for node_key, node in new_workbench.items():
+                        old_node = old_workbench.get(node_key)
+                        if not old_node:
+                            continue
+                        for prop in old_node:
+                            # check if the key is missing in the new node
+                            if prop not in node:
+                                # use the old value
+                                node[prop] = old_node[prop]
+                    return new_project
+
+                _update_workbench(current_project, new_project_data)
                 # update timestamps
                 new_project_data["lastChangeDate"] = now_str()
 
