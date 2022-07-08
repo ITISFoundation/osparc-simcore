@@ -45,7 +45,11 @@ async def docker_compose_config(
 
     The output:
         - interpolates env vars in the compose file
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_convert/)
+    [SEE compose-file](https://docs.docker.com/compose/compose-file/)
     """
+
     result = await _write_file_and_run_command(
         settings=settings,
         compose_spec_yaml_content=compose_spec_yaml,
@@ -64,6 +68,7 @@ async def docker_compose_up(
     - does NOT build images
     - runs in detached mode, i.e. runs containers in the background, prints new container names
 
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
 
     result = await _write_file_and_run_command(
@@ -81,7 +86,10 @@ async def docker_compose_restart(
 ) -> CommandResult:
     """
     Restarts running containers (w/ a timeout)
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_restart/)
     """
+
     result = await _write_file_and_run_command(
         settings=settings,
         compose_spec_yaml_content=compose_spec_yaml,
@@ -103,6 +111,8 @@ async def docker_compose_down(
     - Removes named volumes declared in the `volumes` section of the Compose specs file and anonymous volumes attached to containers.
     - Removes containers for services NOT defined in the Compose specs file
     - Does NOT remove images
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_down/)
     """
 
     result = await _write_file_and_run_command(
@@ -125,6 +135,8 @@ async def docker_compose_rm(
         - stops the containers, if still running, before removing  (recommended to stop first)
         - removes any anonymous VOLUMES attached to containers
         - runs w/o confirmation
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_rm)
     """
 
     result = await _write_file_and_run_command(
