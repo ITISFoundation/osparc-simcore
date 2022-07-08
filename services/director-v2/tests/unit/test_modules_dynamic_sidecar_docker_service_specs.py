@@ -9,7 +9,6 @@ from uuid import UUID
 import pytest
 import respx
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
@@ -348,12 +347,15 @@ def test_get_dynamic_proxy_spec(
             app_settings=minimal_app.state.settings,
         )
         assert dynamic_sidecar_spec
-        assert jsonable_encoder(dynamic_sidecar_spec) == jsonable_encoder(
-            AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec)
+        assert (
+            dynamic_sidecar_spec.dict()
+            == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
         )
         dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
-    assert jsonable_encoder(dynamic_sidecar_spec_accumulated) == jsonable_encoder(
-        AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec)
+    assert dynamic_sidecar_spec_accumulated is not None
+    assert (
+        dynamic_sidecar_spec_accumulated.dict()
+        == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
     )
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
@@ -380,8 +382,8 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert dynamic_sidecar_spec
     assert (
-        jsonable_encoder(dynamic_sidecar_spec, by_alias=True, exclude_unset=True)
-        == expected_dynamic_sidecar_spec
+        dynamic_sidecar_spec.dict()
+        == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
     )
 
     catalog_client = CatalogClient.instance(minimal_app)
