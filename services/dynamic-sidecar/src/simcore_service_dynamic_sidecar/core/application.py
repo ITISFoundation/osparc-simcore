@@ -47,9 +47,10 @@ TSCHUESS_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
 
 
 class AppState:
-    """Exposes states of an initialized app and defines
-    the access rights for each state (i.e. read/write)
-    during the app's lifetime
+    """Exposes states of an initialized app
+
+    Provides a stricter control on the read/write access
+    of the different app.state fields during the app's lifespan
     """
 
     _STATES = {
@@ -66,7 +67,9 @@ class AppState:
             if not isinstance(getattr(initialized_app.state, name, None), type_)
         ]
         if errors:
-            raise ValueError(f"App states are not properly initialized. Found {errors}")
+            raise ValueError(
+                f"These app states were not properly initialized: {errors}"
+            )
 
         self._app = initialized_app
 
