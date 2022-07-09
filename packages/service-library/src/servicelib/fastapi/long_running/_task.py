@@ -5,6 +5,7 @@ from collections import deque
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
+import inspect
 
 from pydantic import BaseModel, Field
 
@@ -166,9 +167,16 @@ def start_task(
     positional argument and adding all `kwargs` as named parameters.
 
     NOTE: the first progress update will be (message='', percent=0.0)
+    NOTE: the `handler` name must be unique in the module, otherwise when using
+        the unique parameter is True, it will not be able to distinguish between
+        the them.
     """
-    # TODO: think about using a smaller name
-    task_name = handler.__qualname__
+
+    # NOTE: Composing the task_name out of the handler's module and it's name
+    # to keep the urls shorter and more meaningful.
+    handler_module = inspect.getmodule(handler)
+    handler_module_name = handler_module.__name__ if handler_module else ""
+    task_name = f"{handler_module_name}.{handler.__name__}"
 
     # only one unique task can be running
     if unique and task_manager.is_task_name_running(task_name):

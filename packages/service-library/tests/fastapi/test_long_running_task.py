@@ -105,7 +105,7 @@ async def test_unique_task_already_running(task_manager: TaskManager) -> None:
         with pytest.raises(TaskAlreadyRunningError) as exec_info:
             start_task(task_manager=task_manager, handler=unique_task, unique=True)
         assert f"{exec_info.value}".startswith(
-            f"{unique_task.__qualname__} must be unique, found:"
+            "test_long_running_task.unique_task must be unique, found:"
         )
 
 
