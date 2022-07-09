@@ -51,5 +51,5 @@ async def get_task_result(
 async def cancel_and_delete_task(
     task_id: TaskId,
     task_manger: TaskManager = Depends(get_task_manager),
-) -> None:
-    await task_manger.remove(task_id)
+) -> bool:
+    return await task_manger.remove(task_id)

@@ -127,7 +127,12 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
 @pytest.fixture
 async def client_app() -> AsyncIterator[FastAPI]:
     app = FastAPI()
-    client.setup(app, status_poll_interval=ITEM_PUBLISH_SLEEP / 2)
+
+    # NOTE: polling very fast to capture all the progress updates and to check
+    # that duplicate progress messages do not get sent
+    high_status_poll_interval = ITEM_PUBLISH_SLEEP / 4
+    client.setup(app, status_poll_interval=high_status_poll_interval)
+
     async with LifespanManager(app):
         yield app
 
@@ -176,3 +181,19 @@ async def test_workflow(
             ("generated item", 0.8),
             ("finished", 1.0),
         ]
+
+
+async def test_error_after_result(
+    run_server: AnyHttpUrl, client_app: FastAPI, async_client: AsyncClient
+) -> None:
+    task_create_url = f"{run_server}/long-running-task"
+    result = await async_client.post(task_create_url)
+    assert result.status_code == status.HTTP_200_OK
+    task_id = result.json()
+
+    with pytest.raises(RuntimeError):
+        async with client.task_result(
+            client_app, async_client, run_server, task_id, timeout=10
+        ) as string_list:
+            assert string_list == [f"{x}" for x in range(10)]
+            raise RuntimeError("has no influence")

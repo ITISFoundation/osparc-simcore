@@ -9,7 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
-from servicelib.fastapi.long_running._context_manager import _ProgressUpdater
+from servicelib.fastapi.long_running._context_manager import _ProgressManager
 from servicelib.fastapi.long_running._errors import (
     TaskClientResultErrorError,
     TaskClientTimeoutError,
@@ -161,7 +161,7 @@ def test_progress_updater(repeat: int) -> None:
         counter += 1
         received = (message, percent)
 
-    progress_updater = _ProgressUpdater(progress_update)
+    progress_updater = _ProgressManager(progress_update)
 
     # different from None and the last value only
     # triggers once

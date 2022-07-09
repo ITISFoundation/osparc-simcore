@@ -130,7 +130,7 @@ class TaskManager(BaseModel):
                 if reraise_errors:
                     raise TaskExceptionError(task_id=task_id, exception=e) from e
 
-    async def remove(self, task_id: TaskId, *, reraise_errors: bool = True) -> None:
+    async def remove(self, task_id: TaskId, *, reraise_errors: bool = True) -> bool:
         """cancels and removes task"""
         for tasks in self.tasks.values():
             if task_id in tasks:
@@ -140,6 +140,8 @@ class TaskManager(BaseModel):
                     )
                 finally:
                     del tasks[task_id]
+                return True
+        return False
 
     async def close(self) -> None:
         # cancel all pending tasks and remove when closing

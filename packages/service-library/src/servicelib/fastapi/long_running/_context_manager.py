@@ -12,7 +12,15 @@ from ._errors import TaskClientTimeoutError
 from ._models import TaskId, TaskStatus
 
 
-class _ProgressUpdater:
+class _ProgressManager:
+    """
+    Avoids sending duplicate progress updates.
+
+    When polling the status, the same progress messages can arrive in a row.
+    This allows the client to filter out the flood of messages when it subscribes
+    for progress updates.
+    """
+
     def __init__(self, progress_update: Optional[Callable[[str, float], None]]) -> None:
         self._callable = progress_update
         self._last_message: Optional[str] = None
@@ -33,7 +41,6 @@ class _ProgressUpdater:
             self._last_percent = percent
             has_changes = True
 
-        # if parameters have changed
         if has_changes:
             self._callable(self._last_message, self._last_percent)
 
@@ -52,15 +59,14 @@ async def task_result(
     raises: `TaskClientResultErrorError` if the timeout is reached
     raises: `asyncio.TimeoutError`, when this is raised the task removed on remote
     """
-    # TODO: better way to recover the client?
     client: Client = app.state.long_running_client
 
-    progress_helper = _ProgressUpdater(progress)
+    progress_manager = _ProgressManager(progress)
 
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(async_client, base_url, task_id)
         logger.info("Task status %s", task_status.json())
-        progress_helper.update(
+        progress_manager.update(
             message=task_status.task_progress.message,
             percent=task_status.task_progress.percent,
         )
