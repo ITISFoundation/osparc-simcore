@@ -221,8 +221,7 @@ async def runs_docker_compose_down(
 
     # removing compose-file spec
     assert result.success  # nosec
-    app.state.shared_store.compose_spec = None
-    app.state.shared_store.container_names = []
+    shared_store.clear()
 
     return result.decoded_stdout
 
