@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
 
 import asyncio
-from typing import AsyncIterable
+from typing import AsyncIterable, Final
+from pydantic import PositiveFloat, PositiveInt
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -16,6 +18,8 @@ from servicelib.fastapi.long_running.server import (
 from servicelib.fastapi.long_running.server import setup as setup_server
 from servicelib.fastapi.long_running.server import start_task
 
+TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
+
 # UTILS
 
 
@@ -25,6 +29,15 @@ def _assert_not_found(response: Response, task_id: TaskId) -> None:
         "code": "fastapi.long_running.task_not_found",
         "message": f"No task with {task_id} found",
     }
+
+
+def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) -> None:
+    app: FastAPI = async_client._transport.app
+    assert app
+    task_manager: TaskManager = app.state.long_running_task_manager
+    assert task_manager
+
+    assert len(task_manager.tasks["test_long_running_routes.short_task"]) == task_count
 
 
 async def short_task(
@@ -58,7 +71,7 @@ def user_routes() -> APIRouter:
             task_manager=task_manger,
             handler=short_task,
             raise_when_finished=raise_when_finished,
-            total_sleep=1,
+            total_sleep=TASK_SLEEP_INTERVAL,
         )
         return task_id
 
@@ -97,6 +110,7 @@ async def test_task_workflow(
     )
     assert create_resp.status_code == status.HTTP_202_ACCEPTED
     task_id = create_resp.json()
+    assert_expected_tasks(async_client, 1)
 
     # fetch status
     can_continue = True
@@ -105,10 +119,11 @@ async def test_task_workflow(
         assert status_resp.status_code == status.HTTP_200_OK
         task_status = status_resp.json()
         can_continue = not task_status["done"]
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(TASK_SLEEP_INTERVAL / 3)
 
     # fetch result
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
+    assert_expected_tasks(async_client, 0)
     if raise_when_finished:
         assert result_resp.status_code == status.HTTP_400_BAD_REQUEST
         assert result_resp.json() == {
@@ -127,12 +142,14 @@ async def test_task_workflow(
 
 
 async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) -> None:
+
     # create task
     create_resp = await async_client.post(
         "/api/create", params=dict(raise_when_finished=False)
     )
     assert create_resp.status_code == status.HTTP_202_ACCEPTED
     task_id = create_resp.json()
+    assert_expected_tasks(async_client, 1)
 
     # task has not finished, is ongoing
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
@@ -141,11 +158,13 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
         "code": "fastapi.long_running.task_not_completed",
         "message": f"Task {task_id} has not finished yet",
     }
+    assert_expected_tasks(async_client, 1)
 
     # cancel and remove the task
     delete_resp = await async_client.delete(f"{router_prefix}/task/{task_id}")
     assert delete_resp.status_code == status.HTTP_200_OK
-    assert delete_resp.json() is None
+    assert delete_resp.json() is True
+    assert_expected_tasks(async_client, 0)
 
     # ensure task does not exist any longer
     status_resp = await async_client.get(f"{router_prefix}/task/{task_id}")
