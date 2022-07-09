@@ -38,9 +38,10 @@ class TaskManager(BaseModel):
     def add(
         self, task_name: TaskName, task: Task, task_progress: TaskProgress
     ) -> TrackedTask:
-        """keep track of a task, if unique is True, only one of these can be running at a time"""
-
         task_id = self.get_task_id(task_name)
+
+        if task_name not in self.tasks:
+            self.tasks[task_name] = {}
 
         tracked_task = TrackedTask.parse_obj(
             dict(
@@ -50,9 +51,6 @@ class TaskManager(BaseModel):
                 task_progress=task_progress,
             )
         )
-
-        if task_name not in self.tasks:
-            self.tasks[task_name] = {}
         self.tasks[task_name][task_id] = tracked_task
 
         return tracked_task
@@ -162,6 +160,14 @@ def start_task(
     unique: bool = False,
     **kwargs,
 ) -> TaskId:
+    """
+    Creates a task from a given callable to an async function.
+    A task will be created out of it by injecting a `TaskProgress` as the first
+    positional argument and adding all `kwargs` as named parameters.
+
+    NOTE: the first progress update will be (message='', percent=0.0)
+    """
+    # TODO: think about using a smaller name
     task_name = handler.__qualname__
 
     # only one unique task can be running
@@ -172,12 +178,7 @@ def start_task(
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_progress = TaskProgress.create()
-    # NOTE: starlette's BackgroundTask is just awaited at the end
-    # of a request after the response is sent.
-    # It blocks the server until the request is complete.
-    # Below is not what we want
-    # background_tasks.add_task(_handle_task, background_task)
-    awaitable = handler(TaskProgress.create(), **kwargs)
+    awaitable = handler(task_progress, **kwargs)
     task = asyncio.create_task(awaitable)
 
     tracked_task = task_manager.add(

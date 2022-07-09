@@ -17,6 +17,10 @@ class MarkOptions(BaseModel):
 
 
 class TaskProgress(BaseModel):
+    """
+    Helps the user to keep track of the progress. Progress is expected to be
+    defined as a float bound between 0.0 and 1.0
+    """
     message: str
     percent: float
 
