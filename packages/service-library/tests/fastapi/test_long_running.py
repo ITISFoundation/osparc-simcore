@@ -25,7 +25,7 @@ from servicelib.fastapi.long_running import client, server
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
-ITEM_PUBLISH_SLEEP: Final[float] = 0.05
+ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 # NOTE: `mock_server_app` needs to be defined at module level
 # uvicorn is only able to import an object from a module
@@ -128,7 +128,7 @@ async def client_app() -> AsyncIterator[FastAPI]:
 
     # NOTE: polling very fast to capture all the progress updates and to check
     # that duplicate progress messages do not get sent
-    high_status_poll_interval = ITEM_PUBLISH_SLEEP / 4
+    high_status_poll_interval = ITEM_PUBLISH_SLEEP / 3
     client.setup(app, status_poll_interval=high_status_poll_interval)
 
     async with LifespanManager(app):
