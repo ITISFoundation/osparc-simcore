@@ -39,11 +39,11 @@ def health() -> None:
     """used to check if application is ready"""
 
 
-@mock_server_app.post("/long-running-task")
-async def create_task(
+@mock_server_app.post("/string-list-task")
+async def create_string_list_task(
     task_manger: server.TaskManager = Depends(server.get_task_manager),
 ) -> server.TaskId:
-    async def _long_running_name_generator(
+    async def _string_list_task(
         task_progress: server.TaskProgress, items: int
     ) -> list[str]:
         task_progress.publish(message="starting", percent=0)
@@ -59,9 +59,7 @@ async def create_task(
 
     # NOTE: TaskProgress is injected by start_task
     task_id = server.start_task(
-        task_manager=task_manger,
-        handler=_long_running_name_generator,
-        items=10,
+        task_manager=task_manger, handler=_string_list_task, items=10
     )
     return task_id
 
@@ -148,8 +146,7 @@ async def async_client() -> AsyncClient:
 async def test_workflow(
     run_server: AnyHttpUrl, client_app: FastAPI, async_client: AsyncClient
 ) -> None:
-    task_create_url = f"{run_server}/long-running-task"
-    result = await async_client.post(task_create_url)
+    result = await async_client.post(f"{run_server}/string-list-task")
     assert result.status_code == status.HTTP_200_OK
     task_id = result.json()
 
@@ -186,8 +183,7 @@ async def test_workflow(
 async def test_error_after_result(
     run_server: AnyHttpUrl, client_app: FastAPI, async_client: AsyncClient
 ) -> None:
-    task_create_url = f"{run_server}/long-running-task"
-    result = await async_client.post(task_create_url)
+    result = await async_client.post(f"{run_server}/string-list-task")
     assert result.status_code == status.HTTP_200_OK
     task_id = result.json()
 
