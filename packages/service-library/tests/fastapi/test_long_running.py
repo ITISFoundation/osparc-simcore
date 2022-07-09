@@ -13,25 +13,30 @@ import asyncio
 import subprocess
 import sys
 from pathlib import Path
-from typing import AsyncIterator, Callable
+from typing import AsyncIterator, Callable, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.fastapi.long_running import client, server
 
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
+ITEM_PUBLISH_SLEEP: Final[float] = 0.05
 
-# NOTE: `mock_server_app` needs to be defined at module level so uvicorn can import it
-# SERVER SETUP
-
+# NOTE: `mock_server_app` needs to be defined at module level
+# uvicorn is only able to import an object from a module
 mock_server_app = FastAPI(title="app containing the server")
 
 server.setup(mock_server_app)
+
+
+@mock_server_app.get("/")
+def health() -> None:
+    """used to check if application is ready"""
 
 
 @mock_server_app.post("/long-running-task")
@@ -47,7 +52,7 @@ async def create_task(
             string = f"{x}"
             generated_strings.append(string)
             percent = x / items
-            print(f"progress {percent}")
+            await asyncio.sleep(ITEM_PUBLISH_SLEEP)
             task_progress.publish(message="generated item", percent=percent)
         task_progress.publish(message="finished", percent=1)
         return generated_strings
@@ -61,7 +66,23 @@ async def create_task(
     return task_id
 
 
-## FIXTURES - SERVER
+# UTILS
+
+
+async def _wait_server_ready(address: AnyHttpUrl) -> None:
+    client = AsyncClient()
+    while True:
+        print(f"Checking if server running at: {address}")
+        try:
+            response = await client.get(address, timeout=0.1)
+            if response.status_code == status.HTTP_200_OK:
+                return
+        except HTTPError:
+            pass
+        await asyncio.sleep(0.1)
+
+
+# FIXTURES - SERVER
 
 
 @pytest.fixture
@@ -80,10 +101,8 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
     ) as proc:
 
         url = parse_obj_as(AnyHttpUrl, f"http://127.0.0.1:{port}")
-        print("\nStarted", proc.args)
-
-        # some time to start
-        await asyncio.sleep(2)
+        await _wait_server_ready(url)
+        print("\nReady and listening on", proc.args)
 
         # checks started successfully
 
@@ -102,16 +121,13 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
         print(_process_output())
 
 
-## FIXTURES - CLIENT
+# FIXTURES - CLIENT
 
 
 @pytest.fixture
 async def client_app() -> AsyncIterator[FastAPI]:
     app = FastAPI()
-    # TODO: faster polling here!!!
-    # should we maybe move the polling to the task_result context manger? maybe makes more sense
-    # seems like a better option for that
-    client.setup(app)
+    client.setup(app, status_poll_interval=ITEM_PUBLISH_SLEEP / 2)
     async with LifespanManager(app):
         yield app
 
@@ -134,11 +150,6 @@ async def test_workflow(
 
     progress_updates = []
 
-    # TODO: check why progress is providing an tuple ('', 0.0) not ideal
-    # TODO: change when getting the result first provide the last progress update maybe
-    # return this with the result?
-    # TODO: use faster polling, when configuring client
-
     def progress_handler(message: str, percent: float) -> None:
         progress_updates.append((message, percent))
 
@@ -147,9 +158,21 @@ async def test_workflow(
         async_client,
         run_server,
         task_id,
-        timeout=2,
+        timeout=10,
         progress=progress_handler,
     ) as string_list:
         assert string_list == [f"{x}" for x in range(10)]
 
-        # assert progress_updates == []
+        assert progress_updates == [
+            ("starting", 0.0),
+            ("generated item", 0.0),
+            ("generated item", 0.1),
+            ("generated item", 0.2),
+            ("generated item", 0.3),
+            ("generated item", 0.4),
+            ("generated item", 0.5),
+            ("generated item", 0.6),
+            ("generated item", 0.7),
+            ("generated item", 0.8),
+            ("finished", 1.0),
+        ]
