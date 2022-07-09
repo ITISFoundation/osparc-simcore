@@ -16,9 +16,9 @@ from servicelib.fastapi.long_running._errors import (
     TaskNotFoundError,
 )
 from servicelib.fastapi.long_running.server import (
-    TaskProgress,
     TaskId,
     TaskManager,
+    TaskProgress,
     TaskStatus,
     get_task_manager,
 )

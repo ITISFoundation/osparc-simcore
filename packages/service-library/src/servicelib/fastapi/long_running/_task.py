@@ -1,11 +1,11 @@
 import asyncio
+import inspect
 import logging
 from asyncio import CancelledError, Task
 from collections import deque
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
-import inspect
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskProgress, TaskId, TaskName, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class TaskManager(BaseModel):
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task: TrackedTask = self._get_tracked_task(task_id)
         task = tracked_task.task
         done = task.done()
         successful = task.done() and not task.cancelled()

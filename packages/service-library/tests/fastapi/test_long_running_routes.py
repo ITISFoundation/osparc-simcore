@@ -8,9 +8,9 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from servicelib.fastapi.long_running.server import (
-    TaskProgress,
     TaskId,
     TaskManager,
+    TaskProgress,
     get_task_manager,
 )
 from servicelib.fastapi.long_running.server import setup as setup_server

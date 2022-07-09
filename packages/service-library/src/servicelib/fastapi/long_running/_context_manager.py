@@ -1,4 +1,5 @@
 import asyncio
+from asyncio.log import logger
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Optional
 
@@ -23,18 +24,18 @@ class _ProgressUpdater:
         if self._callable is None:
             return
 
-        params = {"message": None, "percent": None}
+        has_changes = False
 
         if message is not None and self._last_message != message:
             self._last_message = message
-            params["message"] = message
+            has_changes = True
         if percent is not None and self._last_percent != percent:
             self._last_percent = percent
-            params["percent"] = percent
+            has_changes = True
 
         # if parameters have changed
-        if set(params.values()) != {None}:
-            self._callable(**params)
+        if has_changes:
+            self._callable(self._last_message, self._last_percent)
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ async def task_result(
 
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(async_client, base_url, task_id)
+        logger.info("Task status %s", task_status.json())
         progress_helper.update(
             message=task_status.task_progress.message,
             percent=task_status.task_progress.percent,
@@ -67,8 +69,8 @@ async def task_result(
     async def _wait_task_completion() -> None:
         task_status = await _status_update()
         while not task_status.done:
-            task_status = await _status_update()
             await asyncio.sleep(client.status_poll_interval)
+            task_status = await _status_update()
 
     try:
         await asyncio.wait_for(_wait_task_completion(), timeout=timeout)

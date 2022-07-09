@@ -17,9 +17,9 @@ from servicelib.fastapi.long_running._errors import (
 from servicelib.fastapi.long_running.client import setup as setup_client
 from servicelib.fastapi.long_running.client import task_result
 from servicelib.fastapi.long_running.server import (
-    TaskProgress,
     TaskId,
     TaskManager,
+    TaskProgress,
     get_task_manager,
 )
 from servicelib.fastapi.long_running.server import setup as setup_server
@@ -153,10 +153,13 @@ async def test_task_result_task_result_is_an_error(
 @pytest.mark.parametrize("repeat", [1, 2, 10])
 def test_progress_updater(repeat: int) -> None:
     counter = 0
+    received = ()
 
     def progress_update(message, percent) -> None:
         nonlocal counter
+        nonlocal received
         counter += 1
+        received = (message, percent)
 
     progress_updater = _ProgressUpdater(progress_update)
 
@@ -165,14 +168,17 @@ def test_progress_updater(repeat: int) -> None:
     for _ in range(repeat):
         progress_updater.update(message="")
         assert counter == 1
+        assert received == ("", None)
 
     for _ in range(repeat):
         progress_updater.update(percent=0.0)
         assert counter == 2
+        assert received == ("", 0.0)
 
     for _ in range(repeat):
         progress_updater.update(percent=1.0, message="done")
         assert counter == 3
+        assert received == ("done", 1.0)
 
     # setting percent or message to None
     # will not trigger an event
@@ -180,15 +186,19 @@ def test_progress_updater(repeat: int) -> None:
     for _ in range(repeat):
         progress_updater.update(message=None)
         assert counter == 3
+        assert received == ("done", 1.0)
 
     for _ in range(repeat):
         progress_updater.update(percent=None)
         assert counter == 3
+        assert received == ("done", 1.0)
 
     for _ in range(repeat):
         progress_updater.update(percent=None, message=None)
         assert counter == 3
+        assert received == ("done", 1.0)
 
     for _ in range(repeat):
         progress_updater.update()
         assert counter == 3
+        assert received == ("done", 1.0)
