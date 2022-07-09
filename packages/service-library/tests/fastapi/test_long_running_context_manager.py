@@ -2,13 +2,13 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import AsyncIterable
+from typing import AsyncIterable, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running._context_manager import _ProgressManager
 from servicelib.fastapi.long_running._errors import (
     TaskClientResultErrorError,
@@ -25,6 +25,8 @@ from servicelib.fastapi.long_running.server import (
 from servicelib.fastapi.long_running.server import setup as setup_server
 from servicelib.fastapi.long_running.server import start_task
 
+TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
+
 # UTILS
 
 
@@ -40,14 +42,14 @@ async def _assert_task_removed(
 
 async def a_test_task(task_progress: TaskProgress) -> int:
     task_progress.publish(message="starting", percent=0.0)
-    await asyncio.sleep(1)
+    await asyncio.sleep(TASK_SLEEP_INTERVAL)
     task_progress.publish(message="finished", percent=1.0)
     return 42
 
 
 async def a_failing_test_task(task_progress: TaskProgress) -> None:
     task_progress.publish(message="starting", percent=0.0)
-    await asyncio.sleep(1)
+    await asyncio.sleep(TASK_SLEEP_INTERVAL)
     task_progress.publish(message="finished", percent=1.0)
     raise RuntimeError("I am failing as requested")
 
@@ -82,7 +84,9 @@ async def bg_task_app(
     app.include_router(user_routes)
 
     setup_server(app, router_prefix=router_prefix)
-    setup_client(app, router_prefix=router_prefix, status_poll_interval=0.2)
+    setup_client(
+        app, router_prefix=router_prefix, status_poll_interval=TASK_SLEEP_INTERVAL / 3
+    )
 
     async with LifespanManager(app):
         yield app
@@ -115,7 +119,7 @@ async def test_task_result_times_out(
     task_id = result.json()
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
-    timeout = 1
+    timeout = TASK_SLEEP_INTERVAL / 2
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with task_result(
             bg_task_app, async_client, url, task_id, timeout=timeout

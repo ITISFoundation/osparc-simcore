@@ -3,12 +3,12 @@
 
 import asyncio
 from typing import AsyncIterable, Final
-from pydantic import PositiveFloat, PositiveInt
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
+from pydantic import PositiveFloat, PositiveInt
 from servicelib.fastapi.long_running.server import (
     TaskId,
     TaskManager,
