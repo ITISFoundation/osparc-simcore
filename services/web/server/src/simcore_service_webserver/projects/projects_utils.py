@@ -324,7 +324,7 @@ def find_changed_node_keys(
     *,
     look_for_removed_keys: bool,
 ) -> dict[str, Any]:
-    # The `store` key inside outputs can be either `0` (integer) or `"0"` (string)
+    # The `store` key inside outputs could be either `0` (integer) or `"0"` (string)
     # this generates false positives.
     # Casting to `int` to fix the issue.
     # NOTE: this could make services relying on side effects to stop form propagating

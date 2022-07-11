@@ -5,7 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import httpx
 import pytest
@@ -16,6 +16,7 @@ from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
@@ -24,14 +25,18 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()
 def minimal_configuration(
-    mock_env: None,
-    postgres_host_config: Dict[str, str],
+    mock_env: EnvVarsDict,
+    postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
@@ -46,12 +51,12 @@ def minimal_configuration(
 
 async def test_get_computation_from_empty_project(
     minimal_configuration: None,
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
-    registered_user: Callable[..., Dict[str, Any]],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
+    tasks: Callable[..., list[CompTaskAtDB]],
     faker: Faker,
     async_client: httpx.AsyncClient,
 ):
@@ -94,12 +99,12 @@ async def test_get_computation_from_empty_project(
 
 async def test_get_computation_from_not_started_computation_task(
     minimal_configuration: None,
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
-    registered_user: Callable[..., Dict[str, Any]],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
+    tasks: Callable[..., list[CompTaskAtDB]],
     faker: Faker,
     async_client: httpx.AsyncClient,
 ):
@@ -127,7 +132,7 @@ async def test_get_computation_from_not_started_computation_task(
         state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
             adjacency_list=parse_obj_as(
-                Dict[NodeID, List[NodeID]], fake_workbench_adjacency
+                dict[NodeID, list[NodeID]], fake_workbench_adjacency
             ),
             node_states={
                 t.node_id: NodeState(
@@ -157,12 +162,12 @@ async def test_get_computation_from_not_started_computation_task(
 
 async def test_get_computation_from_published_computation_task(
     minimal_configuration: None,
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
-    registered_user: Callable[..., Dict[str, Any]],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
+    tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
     async_client: httpx.AsyncClient,
 ):
@@ -189,7 +194,7 @@ async def test_get_computation_from_published_computation_task(
         state=RunningState.PUBLISHED,
         pipeline_details=PipelineDetails(
             adjacency_list=parse_obj_as(
-                Dict[NodeID, List[NodeID]], fake_workbench_adjacency
+                dict[NodeID, list[NodeID]], fake_workbench_adjacency
             ),
             node_states={
                 t.node_id: NodeState(

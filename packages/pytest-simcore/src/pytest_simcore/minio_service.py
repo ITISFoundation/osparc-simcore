@@ -98,7 +98,7 @@ def minio_service(minio_config: dict[str, str]) -> Iterator[Minio]:
     _ensure_remove_bucket(client, bucket_name)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def bucket(minio_config: dict[str, str], minio_service: Minio) -> Iterator[str]:
     bucket_name = minio_config["bucket_name"]
 

@@ -4,8 +4,11 @@ from shutil import move
 from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
+from models_library.projects_nodes_io import StorageFileID
+from pydantic import parse_obj_as
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 from ..node_ports_common import filemanager
 
@@ -14,9 +17,9 @@ log = logging.getLogger(__name__)
 
 def _create_s3_object(
     project_id: str, node_uuid: str, file_path: Union[Path, str]
-) -> str:
+) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return f"{project_id}/{node_uuid}/{file_name}"
+    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
 
 
 async def _push_file(
@@ -26,8 +29,8 @@ async def _push_file(
     file_path: Path,
     rename_to: Optional[str],
     r_clone_settings: Optional[RCloneSettings] = None,
-):
-    store_id = "0"  # this is for simcore.s3
+) -> None:
+    store_id = SIMCORE_LOCATION
     s3_object = _create_s3_object(
         project_id, node_uuid, rename_to if rename_to else file_path
     )
@@ -50,7 +53,8 @@ async def push(
     file_or_folder: Path,
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-):
+    archive_exclude_patterns: Optional[set[str]] = None,
+) -> None:
     if file_or_folder.is_file():
         return await _push_file(
             user_id, project_id, node_uuid, file_or_folder, rename_to
@@ -59,16 +63,17 @@ async def push(
     with TemporaryDirectory() as tmp_dir_name:
         log.info("compressing %s into %s...", file_or_folder.name, tmp_dir_name)
         # compress the files
-        archive_file_path = Path(tmp_dir_name) / (
-            "%s.zip" % (rename_to if rename_to else file_or_folder.stem)
+        archive_file_path = (
+            Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
         )
         await archive_dir(
             dir_to_compress=file_or_folder,
             destination=archive_file_path,
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
+            exclude_patterns=archive_exclude_patterns,
         )
-        return await _push_file(
+        await _push_file(
             user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
         )
 
@@ -79,13 +84,13 @@ async def _pull_file(
     node_uuid: str,
     file_path: Path,
     save_to: Optional[Path] = None,
-):
+) -> None:
     destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
     downloaded_file = await filemanager.download_file_from_s3(
         user_id=user_id,
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
@@ -106,7 +111,7 @@ async def pull(
     node_uuid: str,
     file_or_folder: Path,
     save_to: Optional[Path] = None,
-):
+) -> None:
     if file_or_folder.is_file():
         return await _pull_file(user_id, project_id, node_uuid, file_or_folder, save_to)
     # we have a folder, so we need somewhere to extract it to
@@ -122,7 +127,7 @@ async def pull(
         log.info("extraction completed")
 
 
-async def is_file_present_in_storage(
+async def exists(
     user_id: int, project_id: str, node_uuid: str, file_path: Path
 ) -> bool:
     """
@@ -132,6 +137,6 @@ async def is_file_present_in_storage(
     log.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
-        store_id="0",  # this is for simcore.s3
+        store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )

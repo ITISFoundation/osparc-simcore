@@ -37,14 +37,14 @@ class MountedVolumes:
         inputs_path: Path,
         outputs_path: Path,
         state_paths: list[Path],
-        state_exclude: list[str],
+        state_exclude: set[str],
         compose_namespace: str,
         dy_volumes: Path,
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: list[Path] = state_paths
-        self.state_exclude: list[str] = state_exclude
+        self.state_exclude: set[str] = state_exclude
         self.compose_namespace = compose_namespace
         self._dy_volumes = dy_volumes
 

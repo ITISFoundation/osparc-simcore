@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import Any, AsyncIterator, Callable, Dict
+from typing import Any, AsyncIterator, Callable
 
 import httpx
 import pytest
@@ -17,21 +17,26 @@ from faker import Faker
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from pydantic import SecretStr
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()
 def clusters_config(
-    mock_env: None,
+    mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
@@ -80,8 +85,8 @@ async def dask_gateway_cluster_client(
 
 
 @pytest.fixture
-def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
+def cluster_simple_authentication(faker: Faker) -> Callable[[], dict[str, Any]]:
+    def creator() -> dict[str, Any]:
         simple_auth = {
             "type": "simple",
             "username": faker.user_name(),
@@ -182,7 +187,7 @@ async def _get_cluster_details(
 
 async def test_get_cluster_details(
     clusters_config: None,
-    registered_user: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., dict[str, Any]],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],

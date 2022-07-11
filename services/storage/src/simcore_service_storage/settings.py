@@ -55,6 +55,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
     )
 
+    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(
+        4,
+        description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
+    )
+
     @validator("LOG_LEVEL")
     @classmethod
     def _validate_loglevel(cls, value) -> str:
