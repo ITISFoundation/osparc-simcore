@@ -129,19 +129,20 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
 
 def _close_transport(proc: Process):
 
-    # Closes transport (initialized during 'await proc.communicate(...)' )
+    # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
     # Traceback (most recent call last):
-    #   File "/home/crespo/.pyenv/versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
+    #   File " ... .pyenv/versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
     #     self.close()
     #
-    #
+
     # SEE implementation of asyncio.subprocess.Process._read_stream(...)
     for fd in (1, 2):
         # pylint: disable=protected-access
-        if transport := proc._transport.get_pipe_transport(fd):
-            transport.close()
+        if transport := getattr(proc, "_transport", None):
+            if t := transport.get_pipe_transport(fd):
+                t.close()
 
 
 async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
@@ -186,8 +187,9 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     except Exception as err:  # pylint: disable=broad-except
         error_code = create_error_code(err)
         logger.exception(
-            "Process with %s failed unexpectedly",
+            "Process with %s failed unexpectedly [%s]",
             f"{command=!r}",
+            f"{error_code}",
             extra={"error_code": error_code},
         )
 
