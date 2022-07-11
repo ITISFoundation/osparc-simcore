@@ -427,7 +427,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
