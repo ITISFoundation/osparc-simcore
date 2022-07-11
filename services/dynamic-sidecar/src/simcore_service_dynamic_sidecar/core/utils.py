@@ -13,6 +13,7 @@ from typing import AsyncGenerator, NamedTuple, Optional
 
 import aiofiles
 import httpx
+import psutil
 import yaml
 from aiofiles import os as aiofiles_os
 from servicelib.error_codes import create_error_code
@@ -101,21 +102,6 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
         )
 
 
-def check_pid_exists(pid):
-    """Check For the existence of a unix pid."""
-    try:
-        import psutil
-
-        return psutil.pid_exists(pid)
-    except ImportError:
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            return False
-        else:
-            return True
-
-
 @asynccontextmanager
 async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     """Disposes of file on exit"""
@@ -156,7 +142,7 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
     )
-    assert check_pid_exists(proc.pid)  # nosec
+    assert psutil.pid_exists(proc.pid)  # nosec
 
     start = time.time()
 
@@ -175,7 +161,7 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         # and only check during development ...
         #
         assert await proc.wait() == -signal.SIGTERM  # nosec
-        assert not check_pid_exists(proc.pid)  # nosec
+        assert not psutil.pid_exists(proc.pid)  # nosec
 
         logger.warning(
             "Process %s timed out after %ss",
