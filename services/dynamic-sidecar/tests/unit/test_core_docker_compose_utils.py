@@ -42,8 +42,9 @@ def compose_spec_yaml(faker: Faker) -> str:
     return yaml.safe_dump(COMPOSE_SPEC_SAMPLE, indent=1)
 
 
-# async def test_docker_compose_workflow(
-async def test_it(compose_spec_yaml: str, mock_environment: EnvVarsDict):
+async def test_docker_compose_workflow(
+    compose_spec_yaml: str, mock_environment: EnvVarsDict
+):
     settings = DynamicSidecarSettings.create_from_envs()
 
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
