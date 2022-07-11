@@ -7,8 +7,12 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "Default server: requests directed to serving url"
+    },
+    {
       "url": "http://{host}:{port}",
-      "description": "Development server",
+      "description": "Development server: can configure any base url",
       "variables": {
         "host": {
           "default": "127.0.0.1"
@@ -99,9 +103,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "integer",
+              "type": "number",
               "description": "docker-compose up command timeout run as a background",
-              "default": 3600
+              "default": 3600.0
             },
             "name": "command_timeout",
             "in": "query"
@@ -111,9 +115,9 @@
             "required": false,
             "schema": {
               "title": "Validation Timeout",
-              "type": "integer",
+              "type": "number",
               "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 60
+              "default": 60.0
             },
             "name": "validation_timeout",
             "in": "query"
@@ -164,9 +168,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "integer",
+              "type": "number",
               "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-              "default": 10
+              "default": 10.0
             },
             "name": "command_timeout",
             "in": "query"
@@ -596,9 +600,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "integer",
+              "type": "number",
               "description": "docker-compose stop command timeout default",
-              "default": 10
+              "default": 10.0
             },
             "name": "command_timeout",
             "in": "query"

@@ -84,13 +84,13 @@ class AppState:
         return self._app.state.mounted_volumes
 
     @property
-    def _shared_store(self) -> SharedStore:
+    def shared_store(self) -> SharedStore:
         assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
         return self._app.state.shared_store
 
     @property
     def compose_spec(self) -> Optional[str]:
-        return self._shared_store.compose_spec
+        return self.shared_store.compose_spec
 
 
 def setup_logger(settings: DynamicSidecarSettings):
@@ -161,10 +161,10 @@ def create_app():
 
     async def _on_shutdown() -> None:
         if docker_compose_yaml := app_state.compose_spec:
-            logger.info("Removing spawned containers")
+            logger.info("Removing spawned containers%s", docker_compose_yaml)
 
             result = await docker_compose_down(
-                docker_compose_yaml,
+                app.state.shared_store,
                 app.state.settings,
                 command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
             )
