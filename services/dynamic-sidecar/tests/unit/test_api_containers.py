@@ -121,7 +121,7 @@ async def _assert_compose_spec_pulled(
         'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
-    success, stdout, _ = await _write_file_and_run_command(
+    success, stdout, *_ = await _write_file_and_run_command(
         settings=settings,
         compose_spec_yaml_content=compose_spec,
         command=command,
