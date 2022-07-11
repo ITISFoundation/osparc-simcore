@@ -6,7 +6,7 @@ from httpx import AsyncClient, Timeout
 from pydantic import AnyHttpUrl
 
 from ._errors import TaskClientResultErrorError
-from ._models import TaskId, TaskStatus
+from ._models import TaskId, TaskStatus, TaskResult
 
 
 # change like the other PR with the same model to fetch the properties
@@ -45,7 +45,13 @@ class Client:
             self._get_url(base_url, f"/task/{task_id}/result"), timeout=self._timeout
         )
         if result.status_code == status.HTTP_200_OK:
-            return result.json()
+            task_result = TaskResult.parse_obj(result.json())
+            if task_result.error is not None:
+                raise TaskClientResultErrorError(
+                    task_id=task_id, message=task_result.error
+                )
+            return task_result.result
+
         if result.status_code == status.HTTP_400_BAD_REQUEST:
             raise TaskClientResultErrorError(task_id=task_id, message=result.json())
 

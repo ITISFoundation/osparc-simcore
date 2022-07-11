@@ -5,7 +5,7 @@ from asyncio import CancelledError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Awaitable, Callable, Final
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -17,7 +17,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask, TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -157,13 +157,11 @@ class TaskManager:
             )
         )
 
-    def get_result(self, task_id: TaskId) -> Optional[Any]:
+    def get_result(self, task_id: TaskId) -> TaskResult:
         """
         returns: the result of the task
 
         raises TaskNotFoundError if the task cannot be found
-        raises TaskExceptionError if task finished with an error
-        raises TaskCancelledError if task was cancelled before completion
         """
         tracked_task = self._get_tracked_task(task_id)
 
@@ -173,11 +171,13 @@ class TaskManager:
         try:
             exception = tracked_task.task.exception()
             if exception is not None:
-                raise TaskExceptionError(task_id=task_id, exception=exception)
-        except CancelledError as e:
-            raise TaskCancelledError(task_id=task_id) from e
+                error = TaskExceptionError(task_id=task_id, exception=exception)
+                return TaskResult(result=None, error=f"{error}")
+        except CancelledError:
+            error = TaskCancelledError(task_id=task_id)
+            return TaskResult(result=None, error=f"{error}")
 
-        return tracked_task.task.result()
+        return TaskResult(result=tracked_task.task.result(), error=None)
 
     async def cancel_task(self, task_id: TaskId) -> None:
         """

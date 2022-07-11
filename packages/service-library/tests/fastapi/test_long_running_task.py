@@ -11,6 +11,7 @@ from typing import AsyncIterable, AsyncIterator, Optional
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
+from servicelib.fastapi.long_running._models import TaskResult
 from servicelib.fastapi.long_running._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -149,7 +150,7 @@ async def test_get_result(task_manager: TaskManager) -> None:
     task_id = start_task(task_manager=task_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
     result = task_manager.get_result(task_id)
-    assert result == 42
+    assert result == TaskResult(result=42, error=None)
 
 
 async def test_get_result_missing(task_manager: TaskManager) -> None:
@@ -170,10 +171,11 @@ async def test_get_result_finished_with_error(task_manager: TaskManager) -> None
 
         await asyncio.sleep(0.1)
 
-    with pytest.raises(TaskExceptionError) as exec_info:
-        task_manager.get_result(task_id)
-    assert isinstance(exec_info.value.exception, RuntimeError)
-    assert f"{exec_info.value.exception}" == "failing asap"
+    task_result = task_manager.get_result(task_id)
+    assert task_result.result is None
+    assert (
+        task_result.error == f"Task {task_id} finished with exception: 'failing asap'"
+    )
 
 
 async def test_get_result_task_was_cancelled_multiple_times(
@@ -187,10 +189,10 @@ async def test_get_result_task_was_cancelled_multiple_times(
     )
     for _ in range(5):
         await task_manager.cancel_task(task_id)
-    with pytest.raises(TaskCancelledError) as exec_info:
-        task_manager.get_result(task_id)
 
-    assert f"{exec_info.value}" == f"Task {task_id} was cancelled before completing"
+    task_result = task_manager.get_result(task_id)
+    assert task_result.result is None
+    assert task_result.error == f"Task {task_id} was cancelled before completing"
 
 
 async def test_remove_ok(task_manager: TaskManager) -> None:

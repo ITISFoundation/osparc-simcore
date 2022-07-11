@@ -17,6 +17,7 @@ from servicelib.fastapi.long_running.server import (
 )
 from servicelib.fastapi.long_running.server import setup as setup_server
 from servicelib.fastapi.long_running.server import start_task
+from servicelib.fastapi.long_running._models import TaskResult
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -132,7 +133,7 @@ async def test_task_workflow(
         }
     else:
         assert result_resp.status_code == status.HTTP_200_OK
-        assert result_resp.json() == 42
+        assert result_resp.json() == TaskResult(result=42, error=None)
 
     # ensure task does not exist any longer
     status_when_finished_resp = await async_client.get(
@@ -173,9 +174,3 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
     # task is no longer present
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
     _assert_not_found(result_resp, task_id)
-
-
-# TODO:
-# - test to see what happens if this is cancelled while running
-# - test to run interferance from other endpoint 2 of them are launched in parallel (and they do not know of each other)
-# - .
