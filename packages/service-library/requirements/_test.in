@@ -26,4 +26,5 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
+pytest-xdist
 respx

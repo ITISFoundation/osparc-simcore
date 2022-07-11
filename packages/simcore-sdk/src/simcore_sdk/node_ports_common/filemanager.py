@@ -44,6 +44,14 @@ log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 16 * 1024 * 1024
 
+_TQDM_FILE_OPTIONS = dict(
+    unit="byte",
+    unit_scale=True,
+    unit_divisor=1024,
+    colour="yellow",
+    miniters=1,
+)
+
 
 async def _get_location_id_from_location_name(
     user_id: UserID,
@@ -120,17 +128,14 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
-                desc=f"downloading {file_path} [{ByteSize(file_size).human_readable() if file_size is not None else 'unknown'} bytes]",
+                desc=f"downloading {url.path} --> {file_path.name}\n",
                 total=file_size,
-                unit="byte",
-                unit_scale=True,
+                **_TQDM_FILE_OPTIONS,
             ) as pbar:
                 async with aiofiles.open(file_path, "wb") as file_pointer:
-                    chunk = await response.content.read(CHUNK_SIZE)
-                    while chunk:
+                    while chunk := await response.content.read(CHUNK_SIZE):
                         await file_pointer.write(chunk)
                         pbar.update(len(chunk))
-                        chunk = await response.content.read(CHUNK_SIZE)
                 log.debug("Download complete")
         except ClientPayloadError as exc:
             raise exceptions.TransferError(url) from exc
@@ -201,10 +206,7 @@ async def _upload_file_to_presigned_links(
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm(
-        desc=f"uploading {file} [{ByteSize(file_size).human_readable()}]\n",
-        total=file_size,
-        unit="byte",
-        unit_scale=True,
+        desc=f"uploading {file}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (
@@ -265,7 +267,7 @@ async def _complete_upload(
     state_url = file_upload_complete_response.data.links.state
     log.info(
         "completed upload of %s",
-        f"{upload_links=} with {parts=}, received {file_upload_complete_response=}",
+        f"{parts=}, received {file_upload_complete_response.json(indent=2)}",
     )
 
     log.debug("waiting for upload completion...")
@@ -373,7 +375,7 @@ async def download_file_from_s3(
     :return: path to downloaded file
     """
     log.debug(
-        "Downloading from store %s:id %s, s3 object %s, to %s\n",
+        "Downloading from store %s:id %s, s3 object %s, to %s",
         store_name,
         store_id,
         s3_object,

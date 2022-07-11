@@ -5,6 +5,7 @@ import logging
 import os
 import socket
 from asyncio import CancelledError, Queue, Task
+from contextlib import suppress
 from typing import Any
 
 import aio_pika
@@ -181,7 +182,9 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         # wait for queues to be empty before sending the last messages
         self._keep_running = False
         if self._queues_worker is not None:
-            await self._queues_worker
+            self._queues_worker.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._queues_worker
 
 
 def setup_rabbitmq(app: FastAPI) -> None:

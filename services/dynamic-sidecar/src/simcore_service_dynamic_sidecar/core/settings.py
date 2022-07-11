@@ -86,7 +86,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_STATE_PATHS: list[Path] = Field(
         ..., description="list of additional paths to be synced"
     )
-    DY_SIDECAR_STATE_EXCLUDE: list[str] = Field(
+    DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_USER_ID: UserID

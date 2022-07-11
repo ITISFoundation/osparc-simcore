@@ -567,7 +567,7 @@ async def _fetch_data_via_data_manager(
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.is_file_present_in_storage(
+        await data_manager.exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
