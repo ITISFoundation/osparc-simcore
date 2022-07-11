@@ -2,7 +2,10 @@ import asyncio
 import base64
 import json
 import logging
+import os
+import signal
 import tempfile
+from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, NamedTuple, Optional
@@ -96,6 +99,21 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
         )
 
 
+def check_pid_exists(pid):
+    """Check For the existence of a unix pid."""
+    try:
+        import psutil
+
+        return psutil.pid_exists(pid)
+    except ImportError:
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            return False
+        else:
+            return True
+
+
 @asynccontextmanager
 async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     """Disposes of file on exit"""
@@ -109,22 +127,51 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles_os.remove(file_path)
 
 
+def _close_transport(proc: Process):
+
+    # Closes transport (initialized during 'await proc.communicate(...)' )
+    #
+    # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
+    # Traceback (most recent call last):
+    #   File "/home/crespo/.pyenv/versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
+    #     self.close()
+    #
+    #
+    # SEE implementation of asyncio.subprocess.Process._read_stream(...)
+    for fd in (1, 2):
+        # pylint: disable=protected-access
+        if transport := proc._transport.get_pipe_transport(fd):
+            transport.close()
+
+
 async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
     """
-
     Does not raise Exception
     """
-    try:
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
-        )
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
+    )
+    assert check_pid_exists(proc.pid)  # nosec
 
+    try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
     except asyncio.TimeoutError:
+        # NOTE: Sending SIGTERM to the process and awaits for termination
+        # i.e. giving the opportunity to the underying process to
+        # perform graceful shutdown (i.e. run shutdown events and cleanup tasks)
+        proc.terminate()
+        _close_transport(proc)
+
+        # There is a small risk that the process refused to shutdown
+        # when received a SIGTERM. For the moment, we will accept that risk
+        # and only check during development ...
+        #
+        assert await proc.wait() == -signal.SIGTERM  # nosec
+        assert not check_pid_exists(proc.pid)  # nosec
+
         logger.warning(
             "Process %s timed out after %ss",
             f"{command=!r}",
@@ -151,7 +198,7 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         )
 
     return CommandResult(
-        success=proc.returncode == 0,
+        success=proc.returncode == os.EX_OK,
         decoded_stdout=stdout.decode(),
         command=f"{command}",
     )
