@@ -26,7 +26,7 @@ def registry_with_auth(
     monkeypatch.setenv("REGISTRY_USER", "testuser")
     monkeypatch.setenv("REGISTRY_PW", "testpassword")
     monkeypatch.setenv("REGISTRY_SSL", "false")
-    return RegistrySettings()
+    return RegistrySettings.create_from_envs()
 
 
 async def test_is_registry_reachable(registry_with_auth: RegistrySettings) -> None:
@@ -54,14 +54,16 @@ services:
     """
     )
 
-    print(docker_compose.read_text())
+    print("docker-compose from cmd fixture:\n", docker_compose.read_text(), "\n")
     return f"docker-compose -f {docker_compose} up"
 
 
 @pytest.mark.parametrize(
     "sleep,timeout,expected_success", [(1, 10, True), (10, 2, False)]
 )
-async def test_it(cmd: str, sleep: int, timeout: int, expected_success: bool):
+async def test_async_command_with_timeout(
+    cmd: str, sleep: int, timeout: int, expected_success: bool
+):
     result: CommandResult = await async_command(cmd, timeout)
 
     assert result.success == expected_success, result
