@@ -362,6 +362,7 @@ def mock_check_project_exists(mocker: MockerFixture):
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "project",
     [pytest.param(prj, id=prj.name) for prj in _get_project_with_data()],

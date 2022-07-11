@@ -5,10 +5,10 @@
 from typing import Any
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from models_library.basic_types import LogLevel
 from pydantic import ValidationError
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.settings import (
     AppSettings,
@@ -50,7 +50,7 @@ def test_expected_s3_endpoint(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
 
-    r_clone_settings = RCloneSettings()
+    r_clone_settings = RCloneSettings.create_from_envs()
 
     scheme = "https" if is_secure else "http"
     assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.startswith(f"{scheme}://")
@@ -61,7 +61,7 @@ def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
     with pytest.raises(ValueError):
-        RCloneSettings()
+        RCloneSettings.create_from_envs()
 
 
 def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
@@ -75,7 +75,11 @@ def test_settings_with_project_env_devel(project_env_devel_environment: dict[str
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_settings_with_env_devel(mock_env_devel_environment: dict[str, str]):
+def test_settings_with_repository_env_devel(
+    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+):
+    monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
+
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
@@ -116,7 +120,7 @@ def testing_environ_expected_success(
 
 
 def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
-    settings = DynamicSidecarSettings()
+    settings = DynamicSidecarSettings.create_from_envs()
     assert settings.DYNAMIC_SIDECAR_IMAGE == testing_environ_expected_success.lstrip(
         "/"
     )
@@ -128,7 +132,7 @@ def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None
         "10.10.10.10.no$ip:8080/dynamic-sidecar:the_tag",
     ],
 )
-def testing_environ_expected_failure(
+def environment_with_invalid_values(
     request: FixtureRequest,
     project_env_devel_environment,
     monkeypatch: MonkeyPatch,
@@ -138,10 +142,11 @@ def testing_environ_expected_failure(
 
 
 def test_expected_failure_dynamic_sidecar_settings(
-    testing_environ_expected_failure,
+    environment_with_invalid_values,
 ) -> None:
     with pytest.raises(ValidationError) as exc_info:
-        DynamicSidecarSettings()
+        DynamicSidecarSettings.create_from_envs()
+    assert "DYNAMIC_SIDECAR_IMAGE" in f"{exc_info.value}"
 
 
 @pytest.mark.parametrize(
@@ -157,17 +162,57 @@ def test_expected_failure_dynamic_sidecar_settings(
 def test_services_custom_constraints(
     custom_constraints: str,
     expected: list[str],
-    project_env_devel_environment,
+    project_env_devel_environment: EnvVarsDict,
     monkeypatch: MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
-    settings = AppSettings()
+    settings = AppSettings.create_from_envs()
     assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
     assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == expected
 
 
 def test_services_custom_constraints_default_empty_list(
-    project_env_devel_environment,
+    project_env_devel_environment: EnvVarsDict,
 ) -> None:
-    settings = AppSettings()
+    settings = AppSettings.create_from_envs()
     assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
+
+
+def test_class_dynamicsidecarsettings_in_development(
+    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If development ...
+    monkeypatch.setenv("SC_BOOT_MODE", "development")
+    devel_settings = DynamicSidecarSettings.create_from_envs()
+
+    assert devel_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE.is_devel_mode()
+    assert devel_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert devel_settings.DYNAMIC_SIDECAR_EXPOSE_PORT, "Should auto-enable"
+    assert devel_settings.DYNAMIC_SIDECAR_PORT
+
+
+def test_class_dynamicsidecarsettings_in_production(
+    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If production ...
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    prod_settings = DynamicSidecarSettings.create_from_envs()
+
+    assert not prod_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE.is_devel_mode()
+    assert not prod_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert not prod_settings.DYNAMIC_SIDECAR_EXPOSE_PORT
+    assert prod_settings.DYNAMIC_SIDECAR_PORT

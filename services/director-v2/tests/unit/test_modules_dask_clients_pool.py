@@ -4,7 +4,7 @@
 
 
 from random import choice
-from typing import Any, AsyncIterator, Callable, Dict, List, get_args
+from typing import Any, AsyncIterator, Callable, get_args
 from unittest import mock
 
 import pytest
@@ -23,6 +23,7 @@ from models_library.clusters import (
 )
 from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
@@ -37,8 +38,8 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_dask_config(
-    mock_env: None,
-    project_env_devel_environment: Dict[str, Any],
+    mock_env: EnvVarsDict,
+    project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
@@ -82,8 +83,8 @@ def test_dask_clients_pool_properly_setup_and_deleted(
 
 
 @pytest.fixture
-def fake_clusters(faker: Faker) -> Callable[[int], List[Cluster]]:
-    def creator(num_clusters: int) -> List[Cluster]:
+def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
+    def creator(num_clusters: int) -> list[Cluster]:
         fake_clusters = []
         for n in range(num_clusters):
             fake_clusters.append(
@@ -167,7 +168,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], List[Cluster]],
+    fake_clusters: Callable[[int], list[Cluster]],
 ):
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
@@ -208,7 +209,7 @@ async def test_acquiring_wrong_cluster_raises_exception(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], List[Cluster]],
+    fake_clusters: Callable[[int], list[Cluster]],
 ):
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",

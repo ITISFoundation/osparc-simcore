@@ -2,7 +2,7 @@
 # pylint:disable=redefined-outer-name
 
 from contextlib import contextmanager
-from typing import Any, AsyncIterable, Callable, Iterator, Optional, Type
+from typing import Any, AsyncIterable, Callable, Iterator, Optional
 from unittest.mock import AsyncMock
 
 import pytest
@@ -12,6 +12,7 @@ from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     ClientHttpError,
@@ -37,7 +38,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_env(monkeypatch: MonkeyPatch, mock_env: None) -> None:
+def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
     monkeypatch.setenv("S3_BUCKET_NAME", "")
@@ -54,7 +55,9 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: None) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(mock_env: None) -> AsyncIterable[DynamicSidecarClient]:
+async def dynamic_sidecar_client(
+    mock_env: EnvVarsDict,
+) -> AsyncIterable[DynamicSidecarClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
@@ -70,7 +73,7 @@ def retry_count() -> int:
 
 @pytest.fixture
 def raise_retry_count(
-    monkeypatch: MonkeyPatch, retry_count: int, mock_env: None
+    monkeypatch: MonkeyPatch, retry_count: int, mock_env: EnvVarsDict
 ) -> None:
     monkeypatch.setenv(
         "DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", f"{retry_count}"
@@ -377,7 +380,7 @@ async def test_service_push_output_ports_api_fail(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     port_keys: Optional[list[str]],
     side_effect: UnexpectedStatusError,
-    expected_error: Type[Exception],
+    expected_error: type[Exception],
 ) -> None:
     with get_patched_client(
         "post_containers_ports_outputs_push", side_effect=side_effect

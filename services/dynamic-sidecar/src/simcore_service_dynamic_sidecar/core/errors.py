@@ -17,7 +17,7 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
     ) -> None:
         super().__init__(
             f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=!s}: "
-            f"Found {' '.join(v.get('Name', '???') for v in volumes)}",
+            f"Found {' '.join(v.get('Name', 'UNKNOWN') for v in volumes)}",
             status=404,
         )
 

@@ -15,6 +15,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -43,8 +44,12 @@ MAX_INT64 = sys.maxsize
 
 
 # FIXTURES
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture
@@ -54,7 +59,9 @@ async def async_docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> DynamicSidecarSettings:
+def dynamic_sidecar_settings(
+    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict
+) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")

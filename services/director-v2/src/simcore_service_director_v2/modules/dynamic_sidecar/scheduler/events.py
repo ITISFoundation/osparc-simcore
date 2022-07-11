@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Coroutine, Final, Optional, Type, cast
+from typing import Any, Coroutine, Final, Optional, cast
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -352,7 +352,11 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             service_resources=scheduler_data.service_resources,
         )
-
+        logger.debug(
+            "Starting service %s with compose-specs:\n%s",
+            scheduler_data.service_name,
+            compose_spec,
+        )
         await dynamic_sidecar_client.start_service_creation(
             dynamic_sidecar_endpoint, compose_spec
         )
@@ -369,13 +373,11 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
         ):
             raise ValueError(
-                (
-                    "Expected a value for all the following values: "
-                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
-                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
-                    f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                    f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
-                )
+                "Expected a value for all the following values: "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
             )
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -644,7 +646,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
-REGISTERED_EVENTS: list[Type[DynamicSchedulerEvent]] = [
+REGISTERED_EVENTS: list[type[DynamicSchedulerEvent]] = [
     CreateSidecars,
     GetStatus,
     PrepareServicesEnvironment,

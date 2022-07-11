@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 
-import json
 import logging
 import sys
 from pathlib import Path
@@ -17,7 +16,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pytest import MonkeyPatch
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_as_envfile
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_envfile
+from servicelib.json_serialization import json_dumps
 
 logger = logging.getLogger(__name__)
 
@@ -149,12 +149,8 @@ def mock_environment(
     monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
     monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", f"{inputs_dir}")
     monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", f"{outputs_dir}")
-    monkeypatch.setenv(
-        "DY_SIDECAR_STATE_PATHS", json.dumps([f"{x}" for x in state_paths_dirs])
-    )
-    monkeypatch.setenv(
-        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([f"{x}" for x in state_exclude_dirs])
-    )
+    monkeypatch.setenv("DY_SIDECAR_STATE_PATHS", json_dumps(state_paths_dirs))
+    monkeypatch.setenv("DY_SIDECAR_STATE_EXCLUDE", json_dumps(state_exclude_dirs))
 
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -174,5 +170,5 @@ def mock_environment_with_envdevel(
     .env-devel is used mainly to run CLI
     """
     env_file = project_slug_dir / ".env-devel"
-    envs = setenvs_as_envfile(monkeypatch, env_file.read_text())
+    envs = setenvs_from_envfile(monkeypatch, env_file.read_text())
     return envs

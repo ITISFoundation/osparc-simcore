@@ -22,6 +22,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -126,10 +127,10 @@ def start_request_data(
 @pytest.fixture
 async def director_v2_client(
     minimal_configuration: None,
-    mock_env: None,
+    mock_env: EnvVarsDict,
     network_name: str,
-    monkeypatch,
     redis_settings: RedisSettings,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
@@ -258,12 +259,13 @@ async def test_start_status_stop(
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
     # starting the service
-    headers = {
-        "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
-        "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
-    }
     response: Response = await director_v2_client.post(
-        "/v2/dynamic_services", json=start_request_data, headers=headers
+        "/v2/dynamic_services",
+        json=start_request_data,
+        headers={
+            "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
+            "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
+        },
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)

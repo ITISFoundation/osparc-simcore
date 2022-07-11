@@ -4,8 +4,10 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-async-asgi-testclient==1.4.10
-    # via -r requirements/_test.in
+async-asgi-testclient==1.4.11
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt

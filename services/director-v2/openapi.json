@@ -3,8 +3,22 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": " Orchestrates the pipeline of services defined by the user",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
+  "servers": [
+    {
+      "url": "http://{host}:{port}",
+      "description": "Development server",
+      "variables": {
+        "host": {
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "default": "8000"
+        }
+      }
+    }
+  ],
   "paths": {
     "/": {
       "get": {
@@ -658,7 +672,7 @@
         ],
         "summary": "Gets computation task logs file after is done",
         "description": "Returns a link to download logs file of a give task.\nThe log is only available when the task is done",
-        "operationId": "get_task_logs_file_v2_computations__project_id__tasks__node_uuid__logfile_get",
+        "operationId": "get_task_log_file_v2_computations__project_id__tasks__node_uuid__logfile_get",
         "parameters": [
           {
             "required": true,
