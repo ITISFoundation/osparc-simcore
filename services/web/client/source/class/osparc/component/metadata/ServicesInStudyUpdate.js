@@ -113,7 +113,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         if (isDeprecated) {
           currentVersionLabel.set({
             textColor: "contrasted-text-dark",
-            backgroundColor: "danger-red",
+            backgroundColor: "failed-red",
             toolTipText: this.tr("Service deprecated, please update")
           });
         } else if (updatable) {
