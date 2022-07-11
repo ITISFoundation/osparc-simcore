@@ -337,6 +337,9 @@ def mock_env(
     monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
 
+    # always test the node limit feature, by default is disabled
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
+
 
 @pytest.fixture
 async def cleanup_services_and_networks(
