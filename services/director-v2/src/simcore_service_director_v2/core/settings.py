@@ -301,15 +301,15 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="exposes the proxy on localhost for debuging and testing",
     )
 
-    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED: bool = Field(
+    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
         False,
         description=(
             "Limits concurrent service saves for a docker node. Guarantees "
-            "that no more than X services are being saved together."
+            "that no more than X services use a resource together."
         ),
     )
     DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES: PositiveInt = Field(
-        2, description="Total services allowed to save data concurrently"
+        2, description="Amount of services allowed to access a resource concurrently"
     )
     DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
         10,

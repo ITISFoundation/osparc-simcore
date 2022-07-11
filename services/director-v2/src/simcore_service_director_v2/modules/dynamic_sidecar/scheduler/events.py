@@ -76,7 +76,7 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
 
-RESOURCE_SAVE_STATE: Final[ResourceName] = "save_state"
+RESOURCE_STATE_SAVE_RESTORE: Final[ResourceName] = "state_save_restore"
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -274,6 +274,8 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+        # TODO: add here the check!
 
         async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
@@ -580,7 +582,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # and make the director warn about hanging sidecars?
                     raise e
 
-        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED:
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             # A node can end up with all the services from a single study.
             # When the study is closed, all the services will try to save their
             # data. This causes a lot of disk and network stress.
@@ -590,7 +592,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             try:
                 async with slots_manager.lock(
                     scheduler_data.docker_node_id,
-                    resource_name=RESOURCE_SAVE_STATE,
+                    resource_name=RESOURCE_STATE_SAVE_RESTORE,
                 ):
                     await _remove_containers_save_state_and_outputs()
             except LockAcquireError:

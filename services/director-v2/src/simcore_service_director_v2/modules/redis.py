@@ -97,7 +97,7 @@ class SlotsManager:
         return cls(
             app=app,
             _redis=Redis.from_url(redis_settings.dsn_locks),
-            is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED,
+            is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
             concurrent_saves=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES,
             lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
