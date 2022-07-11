@@ -55,14 +55,16 @@ async def test_it(compose_spec_yaml: str, mock_environment: EnvVarsDict):
         settings,
         10,
     )
-    assert r.success, r.decoded_stdout
+    print(r.message, "ELAPSED:", r.elapsed)
+    assert r.success, r.message
 
     # removes all stopped containers from specs
     r = await docker_compose_rm(
         compose_spec_yaml,
         settings,
     )
-    assert r.success, r.decoded_stdout
+    print(r.message, "ELAPSED:", r.elapsed)
+    assert r.success, r.message
 
     # creates and starts in detached mode
     r = await docker_compose_up(
@@ -70,7 +72,8 @@ async def test_it(compose_spec_yaml: str, mock_environment: EnvVarsDict):
         settings,
         10,
     )
-    assert r.success, r.decoded_stdout
+    print(r.message, "ELAPSED:", r.elapsed)
+    assert r.success, r.message
 
     # stops and removes
     # TODO: test if --remove-orphans might affect containers from other Compose
@@ -81,14 +84,17 @@ async def test_it(compose_spec_yaml: str, mock_environment: EnvVarsDict):
         10,
     )
 
-    assert r.success, r.decoded_stdout
+    print(r.message, "ELAPSED:", r.elapsed)
+    assert r.success, r.message
 
     # full cleanup
     r = await docker_compose_rm(
         compose_spec_yaml,
         settings,
     )
-    assert r.success, r.decoded_stdout
+
+    print(r.message, "ELAPSED:", r.elapsed)
+    assert r.success, r.message
 
 
 @pytest.mark.skip(reason="DEV")

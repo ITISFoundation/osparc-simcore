@@ -173,7 +173,7 @@ def create_app():
             logger.log(
                 logging.INFO if result.success else logging.ERROR,
                 "Removed spawned containers:\n%s",
-                result.decoded_stdout,
+                result.message,
             )
         # FINISHED
         print(APP_FINISHED_BANNER_MSG, flush=True)

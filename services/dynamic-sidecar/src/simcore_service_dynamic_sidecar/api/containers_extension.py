@@ -300,11 +300,9 @@ async def restarts_containers(
 
     if not result.success:
         logger.warning(
-            "docker-compose restart finished with errors\n%s", result.decoded_stdout
+            "docker-compose restart finished with errors\n%s", result.message
         )
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
-        )
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.message)
 
     for container_name in shared_store.container_names:
         await start_log_fetching(app, container_name)

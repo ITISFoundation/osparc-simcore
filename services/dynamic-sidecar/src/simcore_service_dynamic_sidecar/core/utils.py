@@ -5,6 +5,7 @@ import logging
 import os
 import signal
 import tempfile
+import time
 from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -33,8 +34,9 @@ logger = logging.getLogger(__name__)
 
 class CommandResult(NamedTuple):
     success: bool
-    decoded_stdout: str
+    message: str
     command: str
+    elapsed: Optional[float]
 
 
 class _RegistryNotReachableException(Exception):
@@ -156,6 +158,8 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     )
     assert check_pid_exists(proc.pid)  # nosec
 
+    start = time.time()
+
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
@@ -180,8 +184,9 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         )
         return CommandResult(
             success=False,
-            decoded_stdout=f"Execution timed out after {timeout} secs",
+            message=f"Execution timed out after {timeout} secs",
             command=f"{command}",
+            elapsed=start - time.time(),
         )
 
     except Exception as err:  # pylint: disable=broad-except
@@ -195,14 +200,16 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
 
         return CommandResult(
             success=False,
-            decoded_stdout=f"Unexpected error [{error_code}]",
+            message=f"Unexpected error [{error_code}]",
             command=f"{command}",
+            elapsed=start - time.time(),
         )
 
     return CommandResult(
         success=proc.returncode == os.EX_OK,
-        decoded_stdout=stdout.decode(),
+        message=stdout.decode(),
         command=f"{command}",
+        elapsed=start - time.time(),
     )
 
 

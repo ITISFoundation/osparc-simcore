@@ -272,8 +272,8 @@ async def validate_compose_spec(
         logger.warning(
             "'docker-compose config' failed for:\n%s\n%s",
             f"{compose_spec}",
-            result.decoded_stdout,
+            result.message,
         )
-        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.decoded_stdout}")
+        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.message}")
 
     return compose_spec

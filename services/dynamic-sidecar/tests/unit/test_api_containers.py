@@ -106,7 +106,7 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 async def _docker_ps_a_container_names() -> list[str]:
     command = 'docker ps -a --format "{{.Names}}"'
-    success, stdout, _ = await async_command(command=command, timeout=None)
+    success, stdout, *_ = await async_command(command=command, timeout=None)
 
     assert success is True, stdout
     return stdout.split("\n")

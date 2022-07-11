@@ -153,6 +153,6 @@ async def docker_compose_rm(
             "Unexpected error while %s with\n %s :\n%s",
             f"{result.command=}",
             f"project={settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}",
-            f"{result.decoded_stdout}",
+            f"{result.message}",
         )
     return result

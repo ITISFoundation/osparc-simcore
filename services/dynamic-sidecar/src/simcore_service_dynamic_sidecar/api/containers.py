@@ -68,7 +68,7 @@ async def _task_docker_compose_up_and_send_message(
             shared_store.compose_spec, settings, timeout=command_timeout
         )
 
-    message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
+    message = f"Finished docker-compose up with output\n{r.message}"
 
     if r.success:
         await send_message(rabbitmq, "service containers started")
@@ -213,17 +213,15 @@ async def runs_docker_compose_down(
     if not result.success:
         logger.warning(
             "docker-compose down command finished with errors\n%s",
-            result.decoded_stdout,
+            result.message,
         )
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
-        )
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.message)
 
     # removing compose-file spec
     assert result.success  # nosec
     shared_store.clear()
 
-    return result.decoded_stdout
+    return result.message
 
 
 @containers_router.get(
