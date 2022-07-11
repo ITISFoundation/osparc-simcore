@@ -172,7 +172,7 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             success=False,
             message=f"Execution timed out after {timeout} secs",
             command=f"{command}",
-            elapsed=start - time.time(),
+            elapsed=time.time() - start,
         )
 
     except Exception as err:  # pylint: disable=broad-except
@@ -188,14 +188,14 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             success=False,
             message=f"Unexpected error [{error_code}]",
             command=f"{command}",
-            elapsed=start - time.time(),
+            elapsed=time.time() - start,
         )
 
     return CommandResult(
         success=proc.returncode == os.EX_OK,
         message=stdout.decode(),
         command=f"{command}",
-        elapsed=start - time.time(),
+        elapsed=time.time() - start,
     )
 
 

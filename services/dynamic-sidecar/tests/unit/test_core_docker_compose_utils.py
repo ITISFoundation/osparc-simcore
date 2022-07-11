@@ -2,15 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
-from pathlib import Path
 from typing import Any
 
 import pytest
 import yaml
 from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.async_utils import run_sequentially_in_context
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_config,
     docker_compose_down,
@@ -19,6 +16,7 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_up,
 )
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
+from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
 COMPOSE_SPEC_SAMPLE = {
     "version": "3.8",
@@ -47,6 +45,10 @@ async def test_docker_compose_workflow(
 ):
     settings = DynamicSidecarSettings.create_from_envs()
 
+    def _print_result(r: CommandResult):
+        assert r.elapsed and r.elapsed > 0
+        print(f"{r.command:*^100}", "\nELAPSED:", r.elapsed)
+
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
     print("compose_spec:\n", compose_spec)
 
@@ -56,7 +58,7 @@ async def test_docker_compose_workflow(
         settings,
         10,
     )
-    print(r.command, "ELAPSED:", r.elapsed)
+    _print_result(r)
     assert r.success, r.message
 
     # removes all stopped containers from specs
@@ -64,7 +66,7 @@ async def test_docker_compose_workflow(
         compose_spec_yaml,
         settings,
     )
-    print(r.command, "ELAPSED:", r.elapsed)
+    _print_result(r)
     assert r.success, r.message
 
     # creates and starts in detached mode
@@ -73,7 +75,16 @@ async def test_docker_compose_workflow(
         settings,
         10,
     )
-    print(r.command, "ELAPSED:", r.elapsed)
+    _print_result(r)
+    assert r.success, r.message
+
+    # restarts
+    r = await docker_compose_restart(
+        compose_spec_yaml,
+        settings,
+        10,
+    )
+    _print_result(r)
     assert r.success, r.message
 
     # stops and removes
@@ -83,7 +94,7 @@ async def test_docker_compose_workflow(
         10,
     )
 
-    print(r.command, "ELAPSED:", r.elapsed)
+    _print_result(r)
     assert r.success, r.message
 
     # full cleanup
@@ -92,40 +103,5 @@ async def test_docker_compose_workflow(
         settings,
     )
 
-    print(r.command, "ELAPSED:", r.elapsed)
+    _print_result(r)
     assert r.success, r.message
-
-
-@pytest.mark.skip(reason="DEV")
-def test_enforce_sequencial_execution():
-    assert run_sequentially_in_context
-    assert docker_compose_config
-    assert docker_compose_restart
-
-
-@pytest.mark.skip(reason="DEV")
-def test_docker_compose_down_timeouts():
-    assert docker_compose_down
-    raise NotImplementedError("Add test around timeout error below")
-    # 2022-07-05T22:12:57.276979315Z WARNING:simcore_service_dynamic_sidecar.core.utils:
-    #   command='docker-compose --project-name dy-sidecar_2f734972-8282-4a26-9904-60a4a82406ee
-    #   --file "/tmp/3cr4o_k8" down --volumes --remove-orphans --timeout 5'
-    #   timed out after command_timeout=10.0s
-
-
-@pytest.mark.skip(reason="DEV")
-async def test_docker_compose_calls_bursts(
-    tmp_path: Path, mock_environment: EnvVarsDict, compose_spec_yaml: str
-):
-    settings = DynamicSidecarSettings.create_from_envs()
-
-    r = await docker_compose_config(compose_spec_yaml, settings, 1000)
-
-    results = await asyncio.gather(
-        *(docker_compose_config(compose_spec_yaml, settings, 1000) for _ in range(100)),
-        return_exceptions=True,
-    )
-    for r in results:
-        print(r)
-
-    assert all(not isinstance(r, Exception) and r.success for r in results)
