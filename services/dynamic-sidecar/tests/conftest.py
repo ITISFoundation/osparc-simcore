@@ -16,12 +16,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pytest import MonkeyPatch
-from servicelib.json_serialization import json_dumps
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
     setenvs_from_dict,
     setenvs_from_envfile,
 )
+from servicelib.json_serialization import json_dumps
 
 logger = logging.getLogger(__name__)
 
