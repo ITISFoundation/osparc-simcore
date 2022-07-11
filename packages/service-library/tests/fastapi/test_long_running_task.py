@@ -14,8 +14,6 @@ from fastapi import APIRouter, Depends, FastAPI, status
 from servicelib.fastapi.long_running._models import TaskResult
 from servicelib.fastapi.long_running._errors import (
     TaskAlreadyRunningError,
-    TaskCancelledError,
-    TaskExceptionError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
