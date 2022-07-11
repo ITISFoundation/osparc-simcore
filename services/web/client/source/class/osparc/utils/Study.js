@@ -88,10 +88,8 @@ qx.Class.define("osparc.utils.Study", {
       });
       const deprecated = filtered.some(srv => {
         const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
-        if (srvMetadata && "deprecated" in srvMetadata && ![null, undefined].includes(srvMetadata["deprecated"])) {
-          const depTime = new Date(srvMetadata["deprecated"]);
-          const now = new Date();
-          return depTime.getTime() < now.getTime();
+        if (srvMetadata) {
+          return osparc.utils.Services.isDeprecated(srvMetadata);
         }
         return false;
       });
