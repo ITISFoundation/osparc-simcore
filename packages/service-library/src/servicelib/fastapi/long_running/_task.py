@@ -54,6 +54,11 @@ class TaskManager:
         - crashed without removing the task
         - did not fetch the result
         """
+        # NOTE:
+        # When a task has finished with a result or error and its
+        # status is being polled it would appear that there is
+        # an issue with the client.
+        # Since we own the client, we assume this will not be the case.
 
         while True:
             await asyncio.sleep(self.stale_task_check_interval_s)
