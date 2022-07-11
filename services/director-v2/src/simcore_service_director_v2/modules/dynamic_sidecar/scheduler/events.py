@@ -76,7 +76,19 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
 
-RESOURCE_STATE_SAVE_RESTORE: Final[ResourceName] = "state_save_restore"
+
+# NOTE regarding locking resources
+# A node can end up with all the services from a single study.
+# When the study is closed/opened all the services will try to
+# upload/download their data. This causes a lot of disk
+# and network stress (especially for low power nodes like in AWS).
+# Some nodes collapse under load or behave unexpectedly.
+
+# Used to ensure no more that X services per node pull or push data
+# Locking is applied when:
+# - study is being opened (state and outputs are pulled)
+# - study is being closed (state and outputs are saved)
+RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -274,47 +286,70 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
 
-        # TODO: add here the check!
-
-        async with disabled_directory_watcher(
-            dynamic_sidecar_client, dynamic_sidecar_endpoint
-        ):
-            tasks: list[Coroutine[Any, Any, Any]] = [
-                dynamic_sidecar_client.service_pull_output_ports(
-                    dynamic_sidecar_endpoint
-                )
-            ]
-            # When enabled no longer downloads state via nodeports
-            # S3 is used to store state paths
-            if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-                tasks.append(
-                    dynamic_sidecar_client.service_restore_state(
+        async def _pull_outputs_and_state():
+            async with disabled_directory_watcher(
+                dynamic_sidecar_client, dynamic_sidecar_endpoint
+            ):
+                tasks: list[Coroutine[Any, Any, Any]] = [
+                    dynamic_sidecar_client.service_pull_output_ports(
                         dynamic_sidecar_endpoint
                     )
-                )
-            await logged_gather(*tasks)
+                ]
+                # When enabled no longer downloads state via nodeports
+                # S3 is used to store state paths
+                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                    tasks.append(
+                        dynamic_sidecar_client.service_restore_state(
+                            dynamic_sidecar_endpoint
+                        )
+                    )
+                await logged_gather(*tasks)
 
-            # inside this directory create the missing dirs, fetch those form the labels
-            director_v0_client: DirectorV0Client = get_director_v0_client(app)
-            simcore_service_labels: SimcoreServiceLabels = (
-                await director_v0_client.get_service_labels(
-                    service=ServiceKeyVersion(
-                        key=scheduler_data.key, version=scheduler_data.version
+                # inside this directory create the missing dirs, fetch those form the labels
+                director_v0_client: DirectorV0Client = get_director_v0_client(app)
+                simcore_service_labels: SimcoreServiceLabels = (
+                    await director_v0_client.get_service_labels(
+                        service=ServiceKeyVersion(
+                            key=scheduler_data.key, version=scheduler_data.version
+                        )
                     )
                 )
-            )
-            service_outputs_labels = json.loads(
-                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-            ).get("outputs", {})
-            logger.debug(
-                "Creating dirs from service outputs labels: %s", service_outputs_labels
-            )
-            await dynamic_sidecar_client.service_outputs_create_dirs(
-                dynamic_sidecar_endpoint, service_outputs_labels
-            )
+                service_outputs_labels = json.loads(
+                    simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+                ).get("outputs", {})
+                logger.debug(
+                    "Creating dirs from service outputs labels: %s",
+                    service_outputs_labels,
+                )
+                await dynamic_sidecar_client.service_outputs_create_dirs(
+                    dynamic_sidecar_endpoint, service_outputs_labels
+                )
 
-            scheduler_data.dynamic_sidecar.service_environment_prepared = True
+                scheduler_data.dynamic_sidecar.service_environment_prepared = True
+
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
+            slots_manager = SlotsManager.instance(app)
+            assert scheduler_data.docker_node_id  # nosec
+            try:
+                async with slots_manager.lock(
+                    scheduler_data.docker_node_id,
+                    resource_name=RESOURCE_STATE_AND_INPUTS,
+                ):
+                    await _pull_outputs_and_state()
+            except LockAcquireError:
+                # Next observation cycle, the service will try again
+                logger.debug(
+                    "Skip saving service state for %s. Docker node %s is busy. Will try later.",
+                    scheduler_data.node_uuid,
+                    scheduler_data.docker_node_id,
+                )
+                return
+        else:
+            await _pull_outputs_and_state()
 
 
 class CreateUserServices(DynamicSchedulerEvent):
@@ -583,21 +618,16 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     raise e
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-            # A node can end up with all the services from a single study.
-            # When the study is closed, all the services will try to save their
-            # data. This causes a lot of disk and network stress.
-            # Some nodes collapse under load or behave unexpectedly.
             slots_manager = SlotsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
                 async with slots_manager.lock(
                     scheduler_data.docker_node_id,
-                    resource_name=RESOURCE_STATE_SAVE_RESTORE,
+                    resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
                     await _remove_containers_save_state_and_outputs()
             except LockAcquireError:
-                # Next observation cycle, the service will try again to
-                # save the state.
+                # Next observation cycle, the service will try again
                 logger.debug(
                     "Skip saving service state for %s. Docker node %s is busy. Will try later.",
                     scheduler_data.node_uuid,
