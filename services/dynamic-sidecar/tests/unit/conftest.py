@@ -192,5 +192,5 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
             'docker-compose --project-name {project} --file "{file_path}" down'
             " --remove-orphans --timeout 5"
         ),
-        kill_on_timeout=None,
+        terminate_process_on_timeout=None,
     )

@@ -23,7 +23,7 @@ from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 COMPOSE_SPEC_SAMPLE = {
     "version": "3.8",
     "services": {
-        "my-container": {
+        "my-test-container": {
             "environment": [
                 "DY_SIDECAR_PATH_INPUTS=/work/inputs",
                 "DY_SIDECAR_PATH_OUTPUTS=/work/outputs",
@@ -31,7 +31,7 @@ COMPOSE_SPEC_SAMPLE = {
             ],
             "working_dir": "/work",
             "image": "busybox",
-            "command": "sh -c \"echo 'setup'; sleep 60; echo 'teardown'\"",
+            "command": f"sh -c \"echo 'setup {__name__}'; sleep 60; echo 'teardown {__name__}'\"",
         }
     },
 }
@@ -48,7 +48,7 @@ async def test_docker_compose_workflow(
     settings = DynamicSidecarSettings.create_from_envs()
 
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
-    print(compose_spec)
+    print("compose_spec:\n", compose_spec)
 
     # validates specs
     r = await docker_compose_config(
@@ -56,7 +56,7 @@ async def test_docker_compose_workflow(
         settings,
         10,
     )
-    print(r.message, "ELAPSED:", r.elapsed)
+    print(r.command, "ELAPSED:", r.elapsed)
     assert r.success, r.message
 
     # removes all stopped containers from specs
@@ -64,7 +64,7 @@ async def test_docker_compose_workflow(
         compose_spec_yaml,
         settings,
     )
-    print(r.message, "ELAPSED:", r.elapsed)
+    print(r.command, "ELAPSED:", r.elapsed)
     assert r.success, r.message
 
     # creates and starts in detached mode
@@ -73,19 +73,17 @@ async def test_docker_compose_workflow(
         settings,
         10,
     )
-    print(r.message, "ELAPSED:", r.elapsed)
+    print(r.command, "ELAPSED:", r.elapsed)
     assert r.success, r.message
 
     # stops and removes
-    # TODO: test if --remove-orphans might affect containers from other Compose
-    # NOTE: tried using CMD and does not seem to affect. Which orphans are those? previously not downed because timeout?
     r = await docker_compose_down(
         compose_spec_yaml,
         settings,
         10,
     )
 
-    print(r.message, "ELAPSED:", r.elapsed)
+    print(r.command, "ELAPSED:", r.elapsed)
     assert r.success, r.message
 
     # full cleanup
@@ -94,7 +92,7 @@ async def test_docker_compose_workflow(
         settings,
     )
 
-    print(r.message, "ELAPSED:", r.elapsed)
+    print(r.command, "ELAPSED:", r.elapsed)
     assert r.success, r.message
 
 
@@ -125,7 +123,7 @@ async def test_docker_compose_calls_bursts(
 
     results = await asyncio.gather(
         *(docker_compose_config(compose_spec_yaml, settings, 1000) for _ in range(100)),
-        return_exceptions=True
+        return_exceptions=True,
     )
     for r in results:
         print(r)

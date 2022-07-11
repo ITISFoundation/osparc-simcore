@@ -125,7 +125,7 @@ async def _assert_compose_spec_pulled(
         settings=settings,
         compose_spec_yaml_content=compose_spec,
         command=command,
-        kill_on_timeout=None,
+        terminate_process_on_timeout=None,
     )
 
     assert success is True, stdout
