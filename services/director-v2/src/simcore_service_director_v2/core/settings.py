@@ -302,7 +302,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LIMIT_ENABLED: bool = Field(
-        True,
+        False,
         description=(
             "Limits concurrent service saves for a docker node. Guarantees "
             "that no more than X services are being saved together."
