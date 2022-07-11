@@ -8,7 +8,7 @@ import asyncio
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional, Type
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 from unittest import mock
 from uuid import uuid4
 
@@ -43,6 +43,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
@@ -110,8 +111,8 @@ def user_id(faker: Faker) -> UserID:
 
 @pytest.fixture
 def minimal_dask_config(
-    mock_env: None,
-    project_env_devel_environment: Dict[str, Any],
+    mock_env: EnvVarsDict,
+    project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
@@ -246,9 +247,9 @@ def node_id() -> NodeID:
 @dataclass
 class ImageParams:
     image: Image
-    expected_annotations: Dict[str, Any]
-    expected_used_resources: Dict[str, Any]
-    fake_tasks: Dict[NodeID, Image]
+    expected_annotations: dict[str, Any]
+    expected_used_resources: dict[str, Any]
+    fake_tasks: dict[NodeID, Image]
 
 
 @pytest.fixture
@@ -428,7 +429,7 @@ async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClie
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
 async def test_dask_does_report_any_non_base_exception_derived_error(
-    dask_client: DaskClient, exc: Type[Exception]
+    dask_client: DaskClient, exc: type[Exception]
 ):
     def fct_that_raise_exception():
         raise exc
@@ -469,7 +470,7 @@ async def test_send_computation_task(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
         expected_annotations,
     ) -> TaskOutputData:
@@ -561,7 +562,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # get the task data
@@ -639,7 +640,7 @@ async def test_abort_computation_tasks(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # get the task data
@@ -716,7 +717,7 @@ async def test_failed_task_returns_exceptions(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
 
@@ -937,7 +938,7 @@ async def test_get_tasks_status(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
@@ -1016,7 +1017,7 @@ async def test_dask_sub_handlers(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
     ) -> TaskOutputData:
 
@@ -1095,7 +1096,7 @@ async def test_get_cluster_details(
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
-        command: List[str],
+        command: list[str],
         s3_settings: Optional[S3Settings],
         expected_annotations,
     ) -> TaskOutputData:

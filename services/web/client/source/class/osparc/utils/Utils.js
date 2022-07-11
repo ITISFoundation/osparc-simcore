@@ -381,8 +381,8 @@ qx.Class.define("osparc.utils.Utils", {
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getPresignedLink(download, locationId, fileId)
         .then(presignedLinkData => {
-          if (presignedLinkData.presignedLink) {
-            const link = presignedLinkData.presignedLink.link;
+          if (presignedLinkData.resp) {
+            const link = presignedLinkData.resp.link;
             const fileNameFromLink = this.fileNameFromPresignedLink(link);
             fileName = fileNameFromLink ? fileNameFromLink : fileName;
             this.downloadLink(link, "GET", fileName);

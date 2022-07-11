@@ -31,7 +31,6 @@ class DynamicSidecarClient:
         except BaseClientHTTPError:
             return False
 
-    @log_decorator(logger=logger)
     async def containers_inspect(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, Any]:

@@ -9,10 +9,10 @@ from typing import AsyncGenerator, Optional
 
 from aiocache import cached
 from aiofiles import tempfile
+from models_library.api_schemas_storage import FileUploadSchema
 from pydantic.errors import PydanticErrorMixin
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +63,14 @@ async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bo
 async def sync_local_to_s3(
     local_file_path: Path,
     r_clone_settings: RCloneSettings,
-    upload_file_link: URL,
+    upload_file_links: FileUploadSchema,
 ) -> None:
     """_summary_
 
     :raises e: RCloneFailedError
     """
-    s3_link = urllib.parse.unquote(f"{upload_file_link}")
+    assert len(upload_file_links.urls) == 1  # nosec
+    s3_link = urllib.parse.unquote(upload_file_links.urls[0])
     s3_path = re.sub(r"^s3://", "", s3_link)
     logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
 

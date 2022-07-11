@@ -122,6 +122,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.UI_MODE
           });
           break;
+        case "hits-service": {
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle",
+            toolTipText: this.tr("Number of times it was instantiated")
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.HITS
+          });
+          break;
+        }
         case "update-study":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,

@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import aiofiles
 from aiohttp import ClientSession
@@ -9,8 +9,8 @@ from aiohttp.typedefs import StrOrURL
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 
-from .constants import MAX_CHUNK_SIZE
-from .models import FileMetaData, FileMetaDataAtDB
+from .constants import MAX_CHUNK_SIZE, S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+from .models import FileMetaData, FileMetaDataAtDB, UploadID
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +60,19 @@ def is_file_entry_valid(file_metadata: Union[FileMetaData, FileMetaDataAtDB]) ->
     return (
         file_metadata.entity_tag is not None
         and file_metadata.file_size > 0
+        and file_metadata.upload_id is None
         and file_metadata.upload_expires_at is None
     )
 
 
 def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) -> str:
     return f"upload_complete_task_{user_id}_{urllib.parse.quote(file_id, safe='')}"
+
+
+def is_valid_managed_multipart_upload(upload_id: Optional[UploadID]) -> bool:
+    """the upload ID is valid (created by storage service) AND internally managed by storage (e.g. PRESIGNED multipart upload)
+
+    :type upload_id: Optional[UploadID]
+    :rtype: bool
+    """
+    return upload_id is not None and upload_id != S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID

@@ -9,15 +9,19 @@ from typing import Optional, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
+from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
+from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
+from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
 
-from .models import ETag, S3BucketName
-from .s3_utils import s3_exception_handler
+from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
+from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 log = logging.getLogger(__name__)
 
@@ -34,10 +38,11 @@ class S3MetaData:
 class StorageS3Client:
     session: aioboto3.Session
     client: S3Client
+    transfer_max_concurrency: int
 
     @classmethod
     async def create(
-        cls, exit_stack: AsyncExitStack, settings: S3Settings
+        cls, exit_stack: AsyncExitStack, settings: S3Settings, s3_max_concurrency: int
     ) -> "StorageS3Client":
         # upon creation the client does not try to connect, one need to make an operation
         session = aioboto3.Session()
@@ -56,7 +61,7 @@ class StorageS3Client:
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(session, client)
+        return cls(session, client, s3_max_concurrency)
 
     @s3_exception_handler(log)
     async def create_bucket(self, bucket: S3BucketName) -> None:
@@ -107,6 +112,99 @@ class StorageS3Client:
         return parse_obj_as(AnyUrl, generated_link)
 
     @s3_exception_handler(log)
+    async def create_multipart_upload_links(
+        self,
+        bucket: S3BucketName,
+        file_id: SimcoreS3FileID,
+        file_size: ByteSize,
+        expiration_secs: int,
+    ) -> MultiPartUploadLinks:
+        # NOTE: ensure the bucket/object exists, this will raise if not
+        await self.client.head_bucket(Bucket=bucket)
+        # first initiate the multipart upload
+        response = await self.client.create_multipart_upload(Bucket=bucket, Key=file_id)
+        upload_id = response["UploadId"]
+        # compute the number of links, based on the announced file size
+        num_upload_links, chunk_size = compute_num_file_chunks(file_size)
+        # now create the links
+        upload_links = parse_obj_as(
+            list[AnyUrl],
+            await logged_gather(
+                *[
+                    self.client.generate_presigned_url(
+                        "upload_part",
+                        Params={
+                            "Bucket": bucket,
+                            "Key": file_id,
+                            "PartNumber": i + 1,
+                            "UploadId": upload_id,
+                        },
+                        ExpiresIn=expiration_secs,
+                    )
+                    for i in range(num_upload_links)
+                ],
+                log=log,
+                max_concurrency=20,
+            ),
+        )
+        return MultiPartUploadLinks(
+            upload_id=upload_id, chunk_size=chunk_size, urls=upload_links
+        )
+
+    @s3_exception_handler(log)
+    async def list_ongoing_multipart_uploads(
+        self,
+        bucket: S3BucketName,
+    ) -> list[tuple[UploadID, SimcoreS3FileID]]:
+        """Returns all the currently ongoing multipart uploads
+
+        NOTE: minio does not implement the same behaviour as AWS here and will
+        only return the uploads if a prefix or object name is given [minio issue](https://github.com/minio/minio/issues/7632).
+
+        :return: list of AWS uploads see [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_multipart_uploads)
+        """
+        response = await self.client.list_multipart_uploads(
+            Bucket=bucket,
+        )
+
+        return [
+            (
+                upload.get("UploadId", "undefined-uploadid"),
+                SimcoreS3FileID(upload.get("Key", "undefined-key")),
+            )
+            for upload in response.get("Uploads", [])
+        ]
+
+    @s3_exception_handler(log)
+    async def abort_multipart_upload(
+        self, bucket: S3BucketName, file_id: SimcoreS3FileID, upload_id: UploadID
+    ) -> None:
+        await self.client.abort_multipart_upload(
+            Bucket=bucket, Key=file_id, UploadId=upload_id
+        )
+
+    @s3_exception_handler(log)
+    async def complete_multipart_upload(
+        self,
+        bucket: S3BucketName,
+        file_id: SimcoreS3FileID,
+        upload_id: UploadID,
+        uploaded_parts: list[UploadedPart],
+    ) -> ETag:
+        response = await self.client.complete_multipart_upload(
+            Bucket=bucket,
+            Key=file_id,
+            UploadId=upload_id,
+            MultipartUpload={
+                "Parts": [
+                    {"ETag": part.e_tag, "PartNumber": part.number}
+                    for part in uploaded_parts
+                ]
+            },
+        )
+        return response["ETag"]
+
+    @s3_exception_handler(log)
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
@@ -155,7 +253,10 @@ class StorageS3Client:
         :type dst_file: SimcoreS3FileID
         """
         await self.client.copy(
-            CopySource={"Bucket": bucket, "Key": src_file}, Bucket=bucket, Key=dst_file
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Bucket=bucket,
+            Key=dst_file,
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
         )
 
     @s3_exception_handler(log)
@@ -185,8 +286,17 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        await self.client.upload_file(f"{file}", Bucket=bucket, Key=file_id)
+        await self.client.upload_file(
+            f"{file}",
+            Bucket=bucket,
+            Key=file_id,
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        )
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:
         return parse_obj_as(AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}")
+
+    @staticmethod
+    def is_multipart(file_size: ByteSize) -> bool:
+        return file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE

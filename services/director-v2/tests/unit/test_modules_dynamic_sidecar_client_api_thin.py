@@ -9,6 +9,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI, status
 from httpx import Response
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
 from simcore_service_director_v2.core.settings import AppSettings
@@ -36,7 +37,7 @@ def assert_responses(mocked: Response, result: Optional[Response]) -> None:
 
 
 @pytest.fixture
-def mocked_app(monkeypatch: MonkeyPatch, mock_env: None) -> FastAPI:
+def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("S3_ENDPOINT", "")
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")

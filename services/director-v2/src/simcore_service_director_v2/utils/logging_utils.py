@@ -11,7 +11,7 @@ import sys
 from asyncio import iscoroutinefunction
 from inspect import getframeinfo, stack
 from logging import Formatter
-from typing import Callable, Dict, Optional, Type
+from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def config_all_loggers():
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base: Optional[Type[Formatter]] = None,
+    formatter_base: Optional[type[Formatter]] = None,
     formatting: Optional[str] = None,
 ) -> None:
     if not formatting:
@@ -96,7 +96,7 @@ def set_logging_handler(
 
 def _log_arguments(
     logger_obj: logging.Logger, func: Callable, *args, **kwargs
-) -> Dict[str, str]:
+) -> dict[str, str]:
     args_passed_in_function = [repr(a) for a in args]
     kwargs_passed_in_function = [f"{k}={v!r}" for k, v in kwargs.items()]
 
@@ -123,7 +123,9 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(*, logger: logging.Logger = None, log_exceptions: bool = False):
+def log_decorator(
+    *, logger: Optional[logging.Logger] = None, log_exceptions: bool = False
+):
     """will automatically log entry/end of decorated function.
     Args:
         logger ([logging.Logger], optional): [description]. Defaults to None.
@@ -132,49 +134,39 @@ def log_decorator(*, logger: logging.Logger = None, log_exceptions: bool = False
     # Build logger object
     logger_obj = logger or log
 
-    def log_decorator_info(func):
-        if iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
-                try:
-                    # log return value from the function
-                    value = await func(*args, **kwargs)
-                    logger_obj.debug(
-                        "Returned: - End function %r", value, extra=extra_args
-                    )
-                except:
-                    # log exception if occurs in function
-                    if log_exceptions:
-                        logger_obj.error(
-                            "Exception: %s", sys.exc_info()[1], extra=extra_args
-                        )
-                    raise
-                # Return function value
-                return value
-
-        else:
-
-            @functools.wraps(func)
-            def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
-                try:
-                    # log return value from the function
-                    value = func(*args, **kwargs)
-                    logger_obj.debug(
-                        "Returned: - End function %r", value, extra=extra_args
-                    )
-                except:
-                    # log exception if occurs in function
+    def decorator(func: Callable):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
+            try:
+                # log return value from the function
+                value = await func(*args, **kwargs)
+                logger_obj.debug("Returned: - End function %r", value, extra=extra_args)
+            except:
+                # log exception if occurs in function
+                if log_exceptions:
                     logger_obj.error(
                         "Exception: %s", sys.exc_info()[1], extra=extra_args
                     )
-                    raise
-                # Return function value
-                return value
+                raise
+            # Return function value
+            return value
 
-        # Return the pointer to the function
-        return log_decorator_wrapper
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
+            try:
+                # log return value from the function
+                value = func(*args, **kwargs)
+                logger_obj.debug("Returned: - End function %r", value, extra=extra_args)
+            except:
+                # log exception if occurs in function
+                logger_obj.error("Exception: %s", sys.exc_info()[1], extra=extra_args)
+                raise
+            # Return function value
+            return value
 
-    return log_decorator_info
+        # wrapper
+        return async_wrapper if iscoroutinefunction(func) else sync_wrapper
+
+    return decorator

@@ -82,8 +82,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
   statics: {
     POS: {
-      ORIGIN: 0,
-      TIMESTAMP: 1,
+      TIMESTAMP: 0,
+      ORIGIN: 1,
       MESSAGE: 2
     },
 
@@ -92,6 +92,14 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       info: 0,
       warning: 1,
       error: 2
+    },
+
+    logLevel2Str: function(logLevel) {
+      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
+      if (pairFound && pairFound.length) {
+        return pairFound[0].toUpperCase();
+      }
+      return undefined;
     }
   },
 
@@ -243,16 +251,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
+      resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
       this.__applyFilters();
 
@@ -280,7 +288,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __getLogsString: function() {
       let logs = "";
       this.__loggerModel.getRows().forEach(row => {
-        logs += `(${row.nodeId}) - [${row.timeStamp}] ${row.label}: ${row.msg} \n`;
+        logs += `${row.timeStamp} ${this.self().logLevel2Str(row.logLevel)} ${row.nodeId} ${row.label}: ${row.msg} \n`;
       });
       return logs;
     },
@@ -291,7 +299,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
     __downloadLogs: function() {
       const logs = this.__getLogsString();
-      osparc.utils.Utils.downloadContent("data:text/json;charset=utf-8," + logs, "logs.json");
+      osparc.utils.Utils.downloadContent("data:text/plain;charset=utf-8," + logs, "logs.log");
     },
 
     debug: function(nodeId, msg = "") {
@@ -337,9 +345,9 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const msgLogs = [];
       msgs.forEach(msg => {
         const msgLog = {
+          timeStamp: new Date(),
           nodeId,
           label,
-          timeStamp: new Date(),
           msg,
           tooltip: msg,
           logLevel

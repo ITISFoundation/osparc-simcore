@@ -13,7 +13,6 @@ import asyncio
 import contextlib
 import functools
 import logging
-import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -24,6 +23,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -357,14 +357,23 @@ class DynamicSidecarsScheduler:
                 logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
-            except Exception:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 service_name = scheduler_data.service_name
 
-                message = (
-                    f"Observation of {service_name} failed:\n{traceback.format_exc()}"
+                # With unhandled errors, let's generate and ID and send it to the end-user
+                # so that we can trace the logs and debug the issue.
+
+                error_code = create_error_code(e)
+                logger.exception(
+                    "Observation of %s unexpectedly failed",
+                    f"{service_name=}",
+                    extra={"error_code": error_code},
                 )
-                logger.error(message)
-                scheduler_data.dynamic_sidecar.status.update_failing_status(message)
+                scheduler_data.dynamic_sidecar.status.update_failing_status(
+                    # This message must be human-friendly
+                    f"Upss! This service ({service_name}) unexpectedly failed",
+                    error_code,
+                )
             finally:
                 if scheduler_data_copy != scheduler_data:
                     try:
@@ -413,7 +422,7 @@ class DynamicSidecarsScheduler:
         )
 
         while self._keep_running:
-            logger.debug("Observing dynamic-sidecars %s", self._to_observe.keys())
+            logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
 
             try:
                 # prevent access to self._to_observe

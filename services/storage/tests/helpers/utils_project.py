@@ -18,7 +18,7 @@ def clone_project_data(
 
     # Workbench nodes shall be unique within the project context
     def _create_new_node_uuid(old_uuid: NodeIDStr) -> NodeIDStr:
-        return str(uuidlib.uuid5(project_copy_uuid, str(old_uuid)))
+        return NodeIDStr(uuidlib.uuid5(project_copy_uuid, old_uuid))
 
     nodes_map = {}
     for node_uuid in project.get("workbench", {}).keys():

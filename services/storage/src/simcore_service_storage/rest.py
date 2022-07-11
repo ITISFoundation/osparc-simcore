@@ -19,6 +19,7 @@ from . import (
     handlers_simcore_s3,
 )
 from .constants import APP_OPENAPI_SPECS_KEY
+from .handlers_files import UPLOAD_TASKS_KEY
 from .resources import resources
 
 log = logging.getLogger(__name__)
@@ -62,6 +63,8 @@ def setup_rest(app: web.Application):
     ]:
         set_default_names(routes)
         app.router.add_routes(routes)
+    # prepare container for upload tasks
+    app[UPLOAD_TASKS_KEY] = {}
 
     log.debug(
         "routes:\n %s",

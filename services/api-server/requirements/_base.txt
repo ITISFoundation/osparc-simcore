@@ -49,6 +49,8 @@ anyio==3.6.1
     #   watchgod
 asgiref==3.5.2
     # via uvicorn
+async-asgi-testclient==1.4.11
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -171,6 +173,7 @@ markupsafe==2.1.1
 multidict==6.0.2
     # via
     #   aiohttp
+    #   async-asgi-testclient
     #   yarl
 opentracing==2.4.0
     # via
@@ -253,7 +256,9 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 requests==2.27.1
-    # via fastapi
+    # via
+    #   async-asgi-testclient
+    #   fastapi
 rfc3986==1.5.0
     # via httpx
 six==1.16.0
@@ -300,8 +305,12 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-tqdm==4.63.1
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+tqdm==4.64.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -328,7 +337,9 @@ urllib3==1.26.9
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 uvicorn==0.15.0
-    # via fastapi
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   fastapi
 uvloop==0.16.0
     # via uvicorn
 watchgod==0.8.2

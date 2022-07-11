@@ -10,7 +10,7 @@ import json
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import httpx
 import pytest
@@ -30,7 +30,6 @@ from shared_comp_utils import (
     assert_computation_task_out_obj,
     create_pipeline,
 )
-from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from starlette.testclient import TestClient
@@ -72,23 +71,22 @@ def mock_env(
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
 @pytest.fixture()
 def minimal_configuration(
-    sleeper_service: Dict[str, str],
-    jupyter_service: Dict[str, str],
+    sleeper_service: dict[str, str],
+    jupyter_service: dict[str, str],
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
 ) -> None:
-    node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_service.host}:{storage_service.port}"
-    )
+    ...
 
 
 @pytest.fixture(scope="session")
@@ -156,7 +154,7 @@ def fake_workbench_computational_pipeline_details_not_started(
 def test_invalid_computation(
     minimal_configuration: None,
     client: TestClient,
-    body: Dict,
+    body: dict,
     exp_response: int,
 ):
     # create a bunch of invalid stuff
@@ -188,12 +186,12 @@ async def test_start_empty_computation_is_refused(
 
 @dataclass
 class PartialComputationParams:
-    subgraph_elements: List[int]
-    exp_pipeline_adj_list: Dict[int, List[int]]
-    exp_node_states: Dict[int, Dict[str, Any]]
-    exp_node_states_after_run: Dict[int, Dict[str, Any]]
-    exp_pipeline_adj_list_after_force_run: Dict[int, List[int]]
-    exp_node_states_after_force_run: Dict[int, Dict[str, Any]]
+    subgraph_elements: list[int]
+    exp_pipeline_adj_list: dict[int, list[int]]
+    exp_node_states: dict[int, dict[str, Any]]
+    exp_node_states_after_run: dict[int, dict[str, Any]]
+    exp_pipeline_adj_list_after_force_run: dict[int, list[int]]
+    exp_node_states_after_force_run: dict[int, dict[str, Any]]
 
 
 @pytest.mark.parametrize(
@@ -349,7 +347,7 @@ async def test_run_partial_computation(
     registered_user: Callable,
     project: Callable,
     update_project_workbench_with_comp_tasks: Callable,
-    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
 ):
     user = registered_user()
@@ -359,16 +357,16 @@ async def test_run_partial_computation(
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
-        exp_pipeline_adj_list: Dict[int, List[int]],
-        exp_node_states: Dict[int, Dict[str, Any]],
+        exp_pipeline_adj_list: dict[int, list[int]],
+        exp_node_states: dict[int, dict[str, Any]],
     ) -> PipelineDetails:
         workbench_node_uuids = list(project.workbench.keys())
-        converted_adj_list: Dict[NodeID, List[NodeID]] = {}
+        converted_adj_list: dict[NodeID, list[NodeID]] = {}
         for node_key, next_nodes in exp_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
             ]
-        converted_node_states: Dict[NodeID, NodeState] = {
+        converted_node_states: dict[NodeID, NodeState] = {
             NodeID(workbench_node_uuids[n]): NodeState(
                 modified=s["modified"],
                 dependencies={
@@ -486,7 +484,7 @@ async def test_run_computation(
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
-    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
@@ -596,7 +594,7 @@ async def test_abort_computation(
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
-    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
     user = registered_user()
@@ -674,7 +672,7 @@ async def test_update_and_delete_computation(
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
-    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
@@ -802,7 +800,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
-    jupyter_service: Dict[str, Any],
+    jupyter_service: dict[str, Any],
 ):
     user = registered_user()
     # create a workbench with just a dynamic service
@@ -844,7 +842,7 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     client: TestClient,
     registered_user: Callable,
     project: Callable,
-    jupyter_service: Dict[str, Any],
+    jupyter_service: dict[str, Any],
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -910,8 +908,8 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     client: TestClient,
     registered_user: Callable,
     project: Callable,
-    sleeper_service: Dict[str, Any],
-    jupyter_service: Dict[str, Any],
+    sleeper_service: dict[str, Any],
+    jupyter_service: dict[str, Any],
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -989,7 +987,7 @@ async def test_burst_create_computations(
     async_client: AsyncClient,
     registered_user: Callable,
     project: Callable,
-    fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,

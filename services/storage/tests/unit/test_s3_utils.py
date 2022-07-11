@@ -7,10 +7,13 @@
 import pytest
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
-from simcore_service_storage.s3_utils import compute_num_file_chunks
+from simcore_service_storage.s3_utils import (
+    _MULTIPART_MAX_NUMBER_OF_PARTS,
+    _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
+    compute_num_file_chunks,
+)
 
 
-@pytest.mark.xfail(reason="will work soon")
 @pytest.mark.parametrize(
     "file_size, expected_num_chunks, expected_chunk_size",
     [
@@ -32,3 +35,16 @@ def test_compute_num_file_chunks(
     num_chunks, chunk_size = compute_num_file_chunks(file_size)
     assert num_chunks == expected_num_chunks
     assert chunk_size == expected_chunk_size
+
+
+def test_enormous_file_size_raises_value_error():
+    enormous_file_size = parse_obj_as(
+        ByteSize,
+        (
+            max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE)
+            * _MULTIPART_MAX_NUMBER_OF_PARTS
+            + 1
+        ),
+    )
+    with pytest.raises(ValueError):
+        compute_num_file_chunks(enormous_file_size)

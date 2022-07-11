@@ -11,6 +11,7 @@ from .exceptions import (
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
+    S3AccessError,
     S3KeyNotFoundError,
 )
 
@@ -35,5 +36,9 @@ async def dsm_exception_handler(
         raise web.HTTPUnprocessableEntity(reason=f"{err}") from err
     except DBAPIError as err:
         raise web.HTTPServiceUnavailable(
-            reason="Unexpected error while accessing the database"
+            reason=f"Unexpected error while accessing the database: {err}"
+        ) from err
+    except S3AccessError as err:
+        raise web.HTTPServiceUnavailable(
+            reason=f"Unexpected error while accessing S3 backend: {err}"
         ) from err

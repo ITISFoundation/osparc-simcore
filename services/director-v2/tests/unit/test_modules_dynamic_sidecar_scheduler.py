@@ -17,6 +17,9 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
+
+# FIXTURES
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import (
@@ -105,12 +108,9 @@ async def _assert_get_dynamic_services_mocked(
         assert scheduler_data.service_name not in scheduler._to_observe
 
 
-# FIXTURES
-
-
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
-    mock_env: None,
+    mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     simcore_services_network_name: str,
     mock_docker_api: None,

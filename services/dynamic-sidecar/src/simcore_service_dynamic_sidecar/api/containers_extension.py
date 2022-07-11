@@ -1,24 +1,16 @@
-# pylint: disable=redefined-builtin
-
-
 import logging
 from collections import deque
 from typing import Any, Awaitable, Deque, Optional
 
 from aiodocker.networks import DockerNetwork
-from fastapi import (
-    APIRouter,
-    Depends,
-    FastAPI,
-    HTTPException,
-    Query,
-    Request,
-    Response,
-    status,
-)
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import Path as PathParam
+from fastapi import Query, Request, Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.utils import logged_gather
+from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_compose_utils import docker_compose_restart
@@ -28,7 +20,6 @@ from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..models.shared_store import SharedStore
 from ..modules import directory_watcher, nodeports
-from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
     get_application,
@@ -90,14 +81,38 @@ async def restore_state(
     - pull all the extra state paths
     """
 
-    awaitables: Deque[Awaitable[Optional[Any]]] = deque()
+    # first check if there are files (no max concurrency here, these are just quick REST calls)
+    existing_files: list[bool] = await logged_gather(
+        *(
+            data_manager.exists(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
+                node_uuid=f"{settings.DY_SIDECAR_NODE_ID}",
+                file_path=path,
+            )
+            for path in mounted_volumes.disk_state_paths()
+        ),
+        reraise=True,
+    )
 
-    for state_path in mounted_volumes.disk_state_paths():
-        await send_message(rabbitmq, f"Downloading state for {state_path}")
-
-        awaitables.append(pull_path_if_exists(state_path, settings))
-
-    await logged_gather(*awaitables)
+    await send_message(
+        rabbitmq,
+        f"Downloading state files for {existing_files}...",
+    )
+    await logged_gather(
+        *(
+            data_manager.pull(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                file_or_folder=path,
+            )
+            for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
+            if exists
+        ),
+        max_concurrency=2,  # limit amount of downloads
+        reraise=True,  # this should raise if there is an issue
+    )
 
     await send_message(rabbitmq, "Finished state downloading")
 
@@ -119,10 +134,17 @@ async def save_state(
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(
-            upload_path_if_exists(state_path, mounted_volumes.state_exclude, settings)
+            data_manager.push(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                file_or_folder=state_path,
+                r_clone_settings=settings.rclone_settings_for_nodeports,
+                archive_exclude_patterns=mounted_volumes.state_exclude,
+            )
         )
 
-    await logged_gather(*awaitables)
+    await logged_gather(*awaitables, max_concurrency=2)
 
     await send_message(rabbitmq, "Finished state saving")
 
@@ -245,8 +267,9 @@ async def push_output_ports(
         },
     },
 )
+@cancel_on_disconnect
 async def restarts_containers(
-    _request: Request,
+    request: Request,
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
@@ -258,6 +281,7 @@ async def restarts_containers(
     """Removes the previously started service
     and returns the docker-compose output
     """
+    assert request  # nosec
 
     if shared_store.compose_spec is None:
         raise HTTPException(
@@ -294,12 +318,14 @@ async def restarts_containers(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def attach_container_to_network(
-    _request: Request,
-    id: str,
+    request: Request,
     item: AttachContainerToNetworkItem,
+    container_id: str = PathParam(..., alias="id"),
 ) -> None:
+    assert request  # nosec
+
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
         container_inspect = await container_instance.show()
 
         attached_network_ids: set[str] = {
@@ -309,7 +335,9 @@ async def attach_container_to_network(
 
         if item.network_id in attached_network_ids:
             logger.info(
-                "Container %s already attached to network %s", id, item.network_id
+                "Container %s already attached to network %s",
+                container_id,
+                item.network_id,
             )
             return
 
@@ -318,7 +346,7 @@ async def attach_container_to_network(
         network = DockerNetwork(docker=docker, id_=item.network_id)
         await network.connect(
             {
-                "Container": id,
+                "Container": container_id,
                 "EndpointConfig": {"Aliases": item.network_aliases},
             }
         )
@@ -331,10 +359,11 @@ async def attach_container_to_network(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def detach_container_from_network(
-    id: str, item: DetachContainerFromNetworkItem
+    item: DetachContainerFromNetworkItem,
+    container_id: str = PathParam(..., alias="id"),
 ) -> None:
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
         container_inspect = await container_instance.show()
 
         attached_network_ids: set[str] = {
@@ -344,11 +373,13 @@ async def detach_container_from_network(
 
         if item.network_id not in attached_network_ids:
             logger.info(
-                "Container %s already detached from network %s", id, item.network_id
+                "Container %s already detached from network %s",
+                container_id,
+                item.network_id,
             )
             return
 
         # NOTE: A docker network is only visible on a docker node when it is
         # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
-        await network.disconnect({"Container": id})
+        await network.disconnect({"Container": container_id})
