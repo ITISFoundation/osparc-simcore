@@ -24,13 +24,6 @@ COMPOSE_SPEC_SAMPLE = {
     "version": "3.8",
     "services": {
         "my-container": {
-            # "deploy": {
-            #    # FIXME: github actions errors with 'Range of CPUs is from 0.01 to 2.00, as there are only 2 CPUs available'
-            #    "resources": {
-            #        "limits": {"cpus": 1, "memory": "17179869184"},
-            #        "reservations": {"cpus": 0.1, "memory": "2147483648"},
-            #    }
-            # },
             "environment": [
                 "DY_SIDECAR_PATH_INPUTS=/work/inputs",
                 "DY_SIDECAR_PATH_OUTPUTS=/work/outputs",
@@ -38,30 +31,23 @@ COMPOSE_SPEC_SAMPLE = {
             ],
             "working_dir": "/work",
             "image": "busybox",
-            "command": "sh -c \"echo 'setup'; sleep 10; echo 'teardown'\"",
-            # "networks": [
-            #     network_name,
-            # ],
+            "command": "sh -c \"echo 'setup'; sleep 60; echo 'teardown'\"",
         }
     },
-    # "networks": {
-    #     network_name: {"driver": "overlay", "external": {"name": network_name}}
-    # },
 }
 
 
 @pytest.fixture
 def compose_spec_yaml(faker: Faker) -> str:
-    # network_name = f"dy-sidecar_{faker.uuid4()}"
     return yaml.safe_dump(COMPOSE_SPEC_SAMPLE, indent=1)
 
 
-async def test_docker_compose_workflow(
-    compose_spec_yaml: str, mock_environment: EnvVarsDict
-):
+# async def test_docker_compose_workflow(
+async def test_it(compose_spec_yaml: str, mock_environment: EnvVarsDict):
     settings = DynamicSidecarSettings.create_from_envs()
 
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
+    print(compose_spec)
 
     # validates specs
     r = await docker_compose_config(
