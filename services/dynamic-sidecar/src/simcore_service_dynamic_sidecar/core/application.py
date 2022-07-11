@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
 #
 
-WELCOME_MSG = r"""
+APP_STARTED_BANNER_MSG = r"""
 d ss    Ss   sS   sss. d d ss    d sss     sSSs. d s.   d ss.
 S   ~o    S S   d      S S   ~o  S        S      S  ~O  S    b
 S     b    S    Y      S S     b S       S       S   `b S    P
@@ -43,7 +43,7 @@ P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
     f"v{__version__}"
 )
 
-TSCHUESS_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
+APP_FINISHED_BANNER_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
 
 
 class AppState:
@@ -157,7 +157,7 @@ def create_app():
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
-        print(WELCOME_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)
 
     async def _on_shutdown() -> None:
         if docker_compose_yaml := app_state.compose_spec:
@@ -175,7 +175,7 @@ def create_app():
                 result.decoded_stdout,
             )
         # FINISHED
-        print(TSCHUESS_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
