@@ -21,6 +21,7 @@ class TaskProgress(BaseModel):
     Helps the user to keep track of the progress. Progress is expected to be
     defined as a float bound between 0.0 and 1.0
     """
+
     message: str
     percent: float
 
@@ -49,7 +50,13 @@ class TrackedTask(BaseModel):
     task_progress: TaskProgress
 
     started: datetime = Field(default_factory=datetime.utcnow)
-    # have a date when it resulted as completed after a check
+    last_status_check: Optional[datetime] = Field(
+        None,
+        description=(
+            "used to detect when if the task is not actively "
+            "polled by the client who created it"
+        ),
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -58,5 +65,4 @@ class TrackedTask(BaseModel):
 class TaskStatus(BaseModel):
     task_progress: TaskProgress
     done: bool
-    successful: bool
     started: datetime

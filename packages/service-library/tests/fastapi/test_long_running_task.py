@@ -2,8 +2,11 @@
 # pylint: disable=unused-argument
 
 import asyncio
+from asyncio import Task
+from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import AsyncIterable
+from enum import Enum
+from typing import AsyncIterable, AsyncIterator, Optional
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -133,7 +136,6 @@ async def test_get_status(task_manager: TaskManager) -> None:
     assert task_status.task_progress.message == ""
     assert task_status.task_progress.percent == 0.0
     assert task_status.done == False
-    assert task_status.successful == False
     assert isinstance(task_status.started, datetime)
 
 
@@ -203,3 +205,121 @@ async def test_remove_ok(task_manager: TaskManager) -> None:
     await task_manager.remove(task_id)
     with pytest.raises(TaskNotFoundError):
         assert task_manager._get_tracked_task(task_id)
+
+
+# TESTS - stale task detection
+
+
+class ExpectedTaskResult(str, Enum):
+    RUNNING = "RUNNING"
+    RAISE_ERROR = "RAISE_ERROR"
+    HAS_RESULT = "HAS_RESULT"
+
+
+BASE_SLEEP = 1.0
+STATUS_POLL_INTERVAL = BASE_SLEEP * 0.2
+TASK_CHECK_INTERVAL = BASE_SLEEP * 0.6
+TASK_DETECT_TIMEOUT = BASE_SLEEP * 0.3
+
+
+async def task_to_track(expected_task_result: ExpectedTaskResult) -> Optional[int]:
+    if expected_task_result == ExpectedTaskResult.RUNNING:
+        # sleeps for a very long amount of time
+        await asyncio.sleep(BASE_SLEEP * 10)
+    if expected_task_result == ExpectedTaskResult.RAISE_ERROR:
+        raise RuntimeError("Task raised error as expected")
+    if expected_task_result == ExpectedTaskResult.HAS_RESULT:
+        return 42
+
+    raise RuntimeError("OPS task finished running, this is unexpected!")
+
+
+TASK_NAME = task_to_track.__name__
+
+
+@pytest.fixture
+async def stall_task_manager() -> AsyncIterable[TaskManager]:
+    task_manager = TaskManager(
+        stale_task_check_interval_s=TASK_CHECK_INTERVAL,
+        stale_task_detect_timeout_s=TASK_DETECT_TIMEOUT,
+    )
+
+    yield task_manager
+
+    await task_manager.close()
+
+
+@asynccontextmanager
+async def poll_status(
+    task_manager: TaskManager, task_id: TaskId
+) -> AsyncIterator[None]:
+    continue_progress_check = True
+
+    async def progress_checker() -> None:
+        while continue_progress_check:
+            task_status = task_manager.get_status(task_id)
+            print(f"POLLING STATUS------> {task_status=}")
+            await asyncio.sleep(STATUS_POLL_INTERVAL)
+
+    progress_checker_task: Task = asyncio.create_task(progress_checker())
+    try:
+        yield
+    finally:
+        # close progress checker task when done with it
+        assert progress_checker_task
+        continue_progress_check = False
+        await progress_checker_task
+
+
+@pytest.mark.parametrize(
+    "expected_task_result, is_done",
+    [
+        (ExpectedTaskResult.RUNNING, False),
+        (ExpectedTaskResult.HAS_RESULT, True),
+        (ExpectedTaskResult.RAISE_ERROR, True),
+    ],
+)
+async def test_stall_task_is_tracked(
+    stall_task_manager: TaskManager,
+    expected_task_result: ExpectedTaskResult,
+    is_done: bool,
+) -> None:
+    task = asyncio.create_task(task_to_track(expected_task_result))
+    tracked_task = stall_task_manager.add(TASK_NAME, task, TaskProgress.create())
+    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+
+    async with poll_status(stall_task_manager, tracked_task.task_id):
+        # let some time pass
+        await asyncio.sleep(STATUS_POLL_INTERVAL)
+
+        task_status: TaskStatus = stall_task_manager.get_status(tracked_task.task_id)
+        assert task_status.done is is_done
+    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+
+
+@pytest.mark.parametrize(
+    "expected_task_result",
+    [
+        ExpectedTaskResult.RUNNING,
+        ExpectedTaskResult.HAS_RESULT,
+        ExpectedTaskResult.RAISE_ERROR,
+    ],
+)
+async def test_stall_task_not_tracked(
+    stall_task_manager: TaskManager, expected_task_result: ExpectedTaskResult
+) -> None:
+    task = asyncio.create_task(task_to_track(expected_task_result))
+    tracked_task = stall_task_manager.add(TASK_NAME, task, TaskProgress.create())
+    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+    # expected task still running
+    await asyncio.sleep(TASK_CHECK_INTERVAL)
+    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+
+    # let task remove itself
+    await asyncio.sleep(TASK_CHECK_INTERVAL * 2)
+
+    # task will no longer be found
+    with pytest.raises(TaskNotFoundError):
+        stall_task_manager.get_status(tracked_task.task_id)
+    # expect this to have been removed
+    assert len(stall_task_manager.tasks[TASK_NAME]) == 0
