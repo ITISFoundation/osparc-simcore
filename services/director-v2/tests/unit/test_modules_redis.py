@@ -15,14 +15,14 @@ from fastapi import FastAPI
 from pydantic import PositiveFloat
 from redis.exceptions import LockError, LockNotOwnedError
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.core.errors import LockAcquireError
+from simcore_service_director_v2.core.errors import NodeRightsAcquireError
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import redis
 from simcore_service_director_v2.modules.redis import (
     DockerNodeId,
     ExtendLock,
+    NodeRightsManager,
     ResourceName,
-    SlotsManager,
 )
 
 pytest_simcore_core_services_selection = [
@@ -35,13 +35,13 @@ TEST_RESOURCE: Final[ResourceName] = "a_resource"
 
 
 async def _assert_lock_acquired_and_released(
-    slots_manager: SlotsManager,
+    node_rights_manager: NodeRightsManager,
     docker_node_id: DockerNodeId,
     resource_name: ResourceName,
     *,
     sleep_before_release: PositiveFloat,
 ) -> ExtendLock:
-    async with slots_manager.lock(
+    async with node_rights_manager.lock(
         docker_node_id, resource_name=resource_name
     ) as extend_lock:
         assert await extend_lock._redis_lock.locked() is True
@@ -87,8 +87,8 @@ async def minimal_app(
 
 
 @pytest.fixture
-async def slots_manager(minimal_app: FastAPI) -> AsyncIterable[SlotsManager]:
-    redis_lock_manger = SlotsManager.instance(minimal_app)
+async def node_rights_manager(minimal_app: FastAPI) -> AsyncIterable[NodeRightsManager]:
+    redis_lock_manger = NodeRightsManager.instance(minimal_app)
     await redis_lock_manger._redis.flushall()
     yield redis_lock_manger
     await redis_lock_manger._redis.flushall()
@@ -103,9 +103,9 @@ def docker_node_id(faker: Faker) -> str:
 
 
 async def test_redis_lock_working_as_expected(
-    slots_manager: SlotsManager, docker_node_id
+    node_rights_manager: NodeRightsManager, docker_node_id
 ) -> None:
-    lock = slots_manager._redis.lock(docker_node_id)
+    lock = node_rights_manager._redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
@@ -119,20 +119,20 @@ async def test_redis_lock_working_as_expected(
 
 
 async def test_redis_two_lock_instances(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+    node_rights_manager: NodeRightsManager, docker_node_id: DockerNodeId
 ) -> None:
     # NOTE: this test show cases how the locks work
     # you have to acquire the lock from the same istance
     # in order to avoid tricky situations
 
-    lock = slots_manager._redis.lock(docker_node_id)
+    lock = node_rights_manager._redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
     assert await lock.locked() is True
 
     # we get a different instance
-    second_lock = slots_manager._redis.lock(docker_node_id)
+    second_lock = node_rights_manager._redis.lock(docker_node_id)
     assert await second_lock.locked() is True
 
     # cannot release lock form different instance!
@@ -151,31 +151,36 @@ async def test_redis_two_lock_instances(
 
 
 async def test_lock_extend_task_life_cycle(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+    node_rights_manager: NodeRightsManager, docker_node_id: DockerNodeId
 ) -> None:
     extend_lock = await _assert_lock_acquired_and_released(
-        slots_manager, docker_node_id, TEST_RESOURCE, sleep_before_release=0
+        node_rights_manager, docker_node_id, TEST_RESOURCE, sleep_before_release=0
     )
 
     # try to cancel again will not work!
     with pytest.raises(LockError):
-        await slots_manager._release_extend_lock(extend_lock)
+        await node_rights_manager._release_extend_lock(extend_lock)
 
 
 @pytest.mark.parametrize("resource_count", [1, 2, 10])
 async def test_no_more_locks_can_be_acquired(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId, resource_count: int
+    node_rights_manager: NodeRightsManager,
+    docker_node_id: DockerNodeId,
+    resource_count: int,
 ) -> None:
     # acquire all available locks
 
     async def _acquire_tasks(resource_name: ResourceName) -> tuple[int, list[Task]]:
-        slots = await slots_manager._get_node_slots(docker_node_id, resource_name)
-        assert slots == slots_manager.concurrent_saves
+        slots = await node_rights_manager._get_node_slots(docker_node_id, resource_name)
+        assert slots == node_rights_manager.concurrent_resource_slots
 
         tasks = [
             asyncio.create_task(
                 _assert_lock_acquired_and_released(
-                    slots_manager, docker_node_id, resource_name, sleep_before_release=1
+                    node_rights_manager,
+                    docker_node_id,
+                    resource_name,
+                    sleep_before_release=1,
                 )
             )
             for _ in range(slots)
@@ -185,9 +190,12 @@ async def test_no_more_locks_can_be_acquired(
         await asyncio.sleep(0.25)
 
         # no slots available
-        with pytest.raises(LockAcquireError) as exec_info:
+        with pytest.raises(NodeRightsAcquireError) as exec_info:
             await _assert_lock_acquired_and_released(
-                slots_manager, docker_node_id, resource_name, sleep_before_release=0
+                node_rights_manager,
+                docker_node_id,
+                resource_name,
+                sleep_before_release=0,
             )
         assert (
             f"{exec_info.value}"
@@ -215,7 +223,7 @@ async def test_no_more_locks_can_be_acquired(
     ],
 )
 async def test_acquire_all_available_node_locks_stress_test(
-    slots_manager: SlotsManager,
+    node_rights_manager: NodeRightsManager,
     docker_node_id: DockerNodeId,
     locks_per_node: int,
 ) -> None:
@@ -223,11 +231,11 @@ async def test_acquire_all_available_node_locks_stress_test(
     # acquiring and releasing locks in parallel with high concurrency
 
     # adds more stress with lower lock_timeout_s
-    slots_manager.lock_timeout_s = 1.0
+    node_rights_manager.lock_timeout_s = 1.0
 
-    slots_manager.concurrent_saves = locks_per_node
+    node_rights_manager.concurrent_resource_slots = locks_per_node
 
-    total_node_slots = await slots_manager._get_node_slots(
+    total_node_slots = await node_rights_manager._get_node_slots(
         docker_node_id, TEST_RESOURCE
     )
     assert total_node_slots == locks_per_node
@@ -236,10 +244,10 @@ async def test_acquire_all_available_node_locks_stress_test(
     await asyncio.gather(
         *[
             _assert_lock_acquired_and_released(
-                slots_manager,
+                node_rights_manager,
                 docker_node_id,
                 TEST_RESOURCE,
-                sleep_before_release=slots_manager.lock_timeout_s / 2,
+                sleep_before_release=node_rights_manager.lock_timeout_s / 2,
             )
             for _ in range(total_node_slots)
         ]
@@ -248,15 +256,15 @@ async def test_acquire_all_available_node_locks_stress_test(
 
 
 async def test_lock_extension_expiration(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+    node_rights_manager: NodeRightsManager, docker_node_id: DockerNodeId
 ) -> None:
     SHORT_INTERVAL = 0.10
 
-    slots_manager.lock_timeout_s = SHORT_INTERVAL
-    slots_manager.concurrent_saves = 1
+    node_rights_manager.lock_timeout_s = SHORT_INTERVAL
+    node_rights_manager.concurrent_resource_slots = 1
 
     with pytest.raises(LockNotOwnedError) as err_info:
-        async with slots_manager.lock(
+        async with node_rights_manager.lock(
             docker_node_id, resource_name=TEST_RESOURCE
         ) as extend_lock:
             # lock should have been extended at least 2 times
@@ -272,7 +280,7 @@ async def test_lock_extension_expiration(
                 await extend_lock.task
 
             # lock is expected to be unlocked after timeout interval
-            await asyncio.sleep(slots_manager.lock_timeout_s)
+            await asyncio.sleep(node_rights_manager.lock_timeout_s)
             assert await extend_lock._redis_lock.locked() is False
             assert await extend_lock._redis_lock.owned() is False
 
@@ -289,15 +297,17 @@ async def test_lock_extension_expiration(
 
 
 async def test_lock_raises_error_if_no_slots_are_available(
-    slots_manager: SlotsManager, docker_node_id: DockerNodeId
+    node_rights_manager: NodeRightsManager, docker_node_id: DockerNodeId
 ) -> None:
-    slots_manager.concurrent_saves = 0
+    node_rights_manager.concurrent_resource_slots = 0
 
-    with pytest.raises(LockAcquireError) as err_info:
-        async with slots_manager.lock(docker_node_id, resource_name=TEST_RESOURCE):
+    with pytest.raises(NodeRightsAcquireError) as err_info:
+        async with node_rights_manager.lock(
+            docker_node_id, resource_name=TEST_RESOURCE
+        ):
             pass
 
     assert f"{err_info.value}" == (
         f"Could not acquire a lock for {docker_node_id} since all "
-        f"{slots_manager.concurrent_saves} slots are used."
+        f"{node_rights_manager.concurrent_resource_slots} slots are used."
     )

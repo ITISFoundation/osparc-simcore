@@ -14,7 +14,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_random
 
-from ..core.errors import ConfigurationError, LockAcquireError
+from ..core.errors import ConfigurationError, NodeRightsAcquireError
 from ..core.settings import DynamicSidecarSettings
 
 DockerNodeId = str
@@ -33,11 +33,11 @@ redis_retry_policy = dict(
 def setup(app: FastAPI):
     @retry(**redis_retry_policy)
     async def on_startup() -> None:
-        app.state.redis_slots_manager = await SlotsManager.create(app)
+        app.state.node_rights_manager = await NodeRightsManager.create(app)
 
     async def on_shutdown() -> None:
-        slots_manager: SlotsManager = app.state.redis_slots_manager
-        await slots_manager.close()
+        node_rights_manager: NodeRightsManager = app.state.node_rights_manager
+        await node_rights_manager.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -70,14 +70,15 @@ class ExtendLock:
         await self._redis_lock.release()
 
 
+# acquire the rights to use a docker swarm node
 @dataclass
-class SlotsManager:
+class NodeRightsManager:
     """
     A `slot` is used to limit `resource` usage. It can be viewed as a token
     which has to be returned, once the user finished using the `resource`.
 
-    A slot can be reserved via the `lock` context manger. If no
-    `LockAcquireError` is raised, the user is free to use
+    A slot can be reserved via the `acquire` context manger. If no
+    `NodeRightsAcquireError` is raised, the user is free to use
     the locked `resource`. If an error is raised the
     user must try again at a later time.
     """
@@ -89,7 +90,7 @@ class SlotsManager:
     concurrent_resource_slots: PositiveInt
 
     @classmethod
-    async def create(cls, app: FastAPI) -> "SlotsManager":
+    async def create(cls, app: FastAPI) -> "NodeRightsManager":
         redis_settings: RedisSettings = app.state.settings.REDIS
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -103,12 +104,12 @@ class SlotsManager:
         )
 
     @classmethod
-    def instance(cls, app: FastAPI) -> "SlotsManager":
-        if not hasattr(app.state, "redis_slots_manager"):
+    def instance(cls, app: FastAPI) -> "NodeRightsManager":
+        if not hasattr(app.state, "node_rights_manager"):
             raise ConfigurationError(
                 "RedisLockManager client is not available. Please check the configuration."
             )
-        return app.state.redis_slots_manager
+        return app.state.node_rights_manager
 
     @classmethod
     def _get_key(cls, docker_node_id: DockerNodeId, resource_name: ResourceName) -> str:
@@ -191,7 +192,7 @@ class SlotsManager:
         """
         Context manger to helo with acquire and release. If it is not possible
 
-        raises: `LockAcquireError` if the lock was not acquired.
+        raises: `NodeRightsAcquireError` if the lock was not acquired.
         """
         slots = await self._get_node_slots(docker_node_id, resource_name)
         acquired_lock: Optional[Lock] = None
@@ -207,7 +208,7 @@ class SlotsManager:
                 break
 
         if acquired_lock is None:
-            raise LockAcquireError(docker_node_id=docker_node_id, slots=slots)
+            raise NodeRightsAcquireError(docker_node_id=docker_node_id, slots=slots)
 
         # In order to avoid deadlock situations, where resources are not being
         # released, a lock with a timeout will be acquired.

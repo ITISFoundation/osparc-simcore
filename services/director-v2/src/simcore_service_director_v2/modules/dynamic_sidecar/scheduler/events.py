@@ -21,14 +21,14 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ....core.errors import LockAcquireError
+from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...redis import ResourceName, SlotsManager
+from ...redis import NodeRightsManager, ResourceName
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -332,15 +332,15 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 scheduler_data.dynamic_sidecar.service_environment_prepared = True
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-            slots_manager = SlotsManager.instance(app)
+            node_rights_manager = NodeRightsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with slots_manager.lock(
+                async with node_rights_manager.lock(
                     scheduler_data.docker_node_id,
                     resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
                     await _pull_outputs_and_state()
-            except LockAcquireError:
+            except NodeRightsAcquireError:
                 # Next observation cycle, the service will try again
                 logger.debug(
                     "Skip saving service state for %s. Docker node %s is busy. Will try later.",
@@ -618,15 +618,15 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     raise e
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-            slots_manager = SlotsManager.instance(app)
+            node_rights_manager = NodeRightsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with slots_manager.lock(
+                async with node_rights_manager.lock(
                     scheduler_data.docker_node_id,
                     resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
                     await _remove_containers_save_state_and_outputs()
-            except LockAcquireError:
+            except NodeRightsAcquireError:
                 # Next observation cycle, the service will try again
                 logger.debug(
                     "Skip saving service state for %s. Docker node %s is busy. Will try later.",
