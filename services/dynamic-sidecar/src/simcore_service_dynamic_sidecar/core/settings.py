@@ -33,7 +33,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # LOGGING
     LOG_LEVEL: str = Field(
-        default="WARNING", env=["DYNAMIC_SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default="WARNING", env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
