@@ -186,7 +186,7 @@ class NodeRightsManager:
         await extend_lock.release()
 
     @asynccontextmanager
-    async def lock(
+    async def acquire(
         self, docker_node_id: DockerNodeId, *, resource_name: ResourceName
     ) -> AsyncIterator[ExtendLock]:
         """

@@ -41,7 +41,7 @@ async def _assert_lock_acquired_and_released(
     *,
     sleep_before_release: PositiveFloat,
 ) -> ExtendLock:
-    async with node_rights_manager.lock(
+    async with node_rights_manager.acquire(
         docker_node_id, resource_name=resource_name
     ) as extend_lock:
         assert await extend_lock._redis_lock.locked() is True
@@ -264,7 +264,7 @@ async def test_lock_extension_expiration(
     node_rights_manager.concurrent_resource_slots = 1
 
     with pytest.raises(LockNotOwnedError) as err_info:
-        async with node_rights_manager.lock(
+        async with node_rights_manager.acquire(
             docker_node_id, resource_name=TEST_RESOURCE
         ) as extend_lock:
             # lock should have been extended at least 2 times
@@ -302,7 +302,7 @@ async def test_lock_raises_error_if_no_slots_are_available(
     node_rights_manager.concurrent_resource_slots = 0
 
     with pytest.raises(NodeRightsAcquireError) as err_info:
-        async with node_rights_manager.lock(
+        async with node_rights_manager.acquire(
             docker_node_id, resource_name=TEST_RESOURCE
         ):
             pass

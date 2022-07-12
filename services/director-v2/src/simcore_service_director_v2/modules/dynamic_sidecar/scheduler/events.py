@@ -335,7 +335,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
             node_rights_manager = NodeRightsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with node_rights_manager.lock(
+                async with node_rights_manager.acquire(
                     scheduler_data.docker_node_id,
                     resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
@@ -621,7 +621,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             node_rights_manager = NodeRightsManager.instance(app)
             assert scheduler_data.docker_node_id  # nosec
             try:
-                async with node_rights_manager.lock(
+                async with node_rights_manager.acquire(
                     scheduler_data.docker_node_id,
                     resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
