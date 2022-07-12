@@ -116,10 +116,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
 def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):
     #
     # Ensures colon are allowed in routes
-    # - Issue in  https://github.com/encode/starlette/pull/1657
-    # - FIX released  https://github.com/encode/starlette/releases/tag/0.20.2
-    # BUT fastapi starlette==0.19.1 https://github.com/tiangolo/fastapi/blob/master/pyproject.toml#L38
-    # Waiting for https://github.com/tiangolo/fastapi/issues/4892
+    # SEE https://github.com/encode/starlette/pull/1657
 
     solver_key = Solver.Config.schema_extra["example"]["id"]
     version = Solver.Config.schema_extra["example"]["version"]
