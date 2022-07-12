@@ -12,6 +12,7 @@ from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     _write_file_and_run_command,
@@ -71,7 +72,7 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def app(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
@@ -131,6 +132,7 @@ async def ensure_external_volumes(
         )
 
         #
+        #
         # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
         #
         #
@@ -149,6 +151,9 @@ async def ensure_external_volumes(
         #     "CreatedTime": 1655947328000,
         #     "Containers": {}
         #   }
+        #
+        # CLEAN:
+        #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
 
         yield volumes
 
@@ -176,17 +181,16 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
     yield
     # run docker compose down here
 
-    if app_state.shared_store.compose_spec is None:
+    if app_state.compose_spec is None:
         # if no compose-spec is stored skip this operation
         return
 
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "down --remove-orphans --timeout {stop_and_remove_timeout}"
-    )
     await _write_file_and_run_command(
         settings=app_state.settings,
-        file_content=app_state.shared_store.compose_spec,
-        command=command,
-        command_timeout=5.0,
+        compose_spec_yaml_content=app_state.compose_spec,
+        command=(
+            'docker-compose --project-name {project} --file "{file_path}" down'
+            " --remove-orphans --timeout 5"
+        ),
+        terminate_process_on_timeout=None,
     )

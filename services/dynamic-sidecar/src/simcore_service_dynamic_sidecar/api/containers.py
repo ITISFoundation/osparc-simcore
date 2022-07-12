@@ -12,7 +12,11 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
+from ..core.docker_compose_utils import (
+    docker_compose_down,
+    docker_compose_rm,
+    docker_compose_up,
+)
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -50,18 +54,21 @@ async def _task_docker_compose_up_and_send_message(
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
-    command_timeout: float,
+    command_timeout: int,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
+        # prunes first stopped containers
+        await docker_compose_rm(shared_store.compose_spec, settings)
+
         r = await docker_compose_up(
-            shared_store, settings, command_timeout=command_timeout
+            shared_store.compose_spec, settings, timeout=command_timeout
         )
 
-    message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
+    message = f"Finished docker-compose up with output\n{r.message}"
 
     if r.success:
         await send_message(rabbitmq, "service containers started")
@@ -117,11 +124,11 @@ async def create_containers(
     request: Request,
     containers_create: ContainersCreate,
     background_tasks: BackgroundTasks,
-    command_timeout: float = Query(
-        3600.0, description="docker-compose up command timeout run as a background"
+    command_timeout: int = Query(
+        3600, description="docker-compose up command timeout run as a background"
     ),
-    validation_timeout: float = Query(
-        60.0, description="docker-compose config timeout (EXPERIMENTAL)"
+    validation_timeout: int = Query(
+        60, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -176,8 +183,8 @@ async def create_containers(
     },
 )
 async def runs_docker_compose_down(
-    command_timeout: float = Query(
-        10.0, description="docker-compose down command timeout default  (EXPERIMENTAL)"
+    command_timeout: int = Query(
+        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -193,24 +200,28 @@ async def runs_docker_compose_down(
         )
 
     result = await docker_compose_down(
-        shared_store=shared_store,
-        settings=settings,
-        command_timeout=command_timeout,
+        shared_store.compose_spec,
+        settings,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
     )
 
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
+    await docker_compose_rm(shared_store.compose_spec, settings)
+
     if not result.success:
         logger.warning(
             "docker-compose down command finished with errors\n%s",
-            result.decoded_stdout,
+            result.message,
         )
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
-        )
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.message)
 
-    return result.decoded_stdout
+    # removing compose-file spec
+    assert result.success  # nosec
+    shared_store.clear()
+
+    return result.message
 
 
 @containers_router.get(
