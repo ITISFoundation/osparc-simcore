@@ -28,4 +28,5 @@ httpx
 networkx
 orjson
 pydantic[dotenv]
+redis
 tenacity
