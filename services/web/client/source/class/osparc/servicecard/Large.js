@@ -110,6 +110,11 @@ qx.Class.define("osparc.servicecard.Large", {
     __rebuildLayout: function() {
       this._removeAll();
 
+      const deprecated = this.__createDeprecated();
+      if (deprecated) {
+        this._add(deprecated);
+      }
+
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       this._add(titleLayout);
@@ -172,6 +177,21 @@ qx.Class.define("osparc.servicecard.Large", {
       }
 
       return layout;
+    },
+
+    __createDeprecated: function() {
+      const isDeprecated = osparc.utils.Services.isDeprecated(this.getService());
+      if (isDeprecated) {
+        const chip = new osparc.ui.basic.Chip().set({
+          label: this.tr("Service deprecated"),
+          icon: "@FontAwesome5Solid/exclamation-triangle/12",
+          textColor: "contrasted-text-dark",
+          backgroundColor: "failed-red",
+          allowGrowX: false
+        });
+        return chip;
+      }
+      return null;
     },
 
     __createTitle: function() {
@@ -407,7 +427,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
