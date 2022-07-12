@@ -152,7 +152,7 @@ async def test_workflow(
 
     progress_updates = []
 
-    def progress_handler(message: str, percent: float) -> None:
+    async def progress_handler(message: str, percent: float) -> None:
         progress_updates.append((message, percent))
 
     async with client.task_result(

@@ -155,11 +155,11 @@ async def test_task_result_task_result_is_an_error(
 
 
 @pytest.mark.parametrize("repeat", [1, 2, 10])
-def test_progress_updater(repeat: int) -> None:
+async def test_progress_updater(repeat: int) -> None:
     counter = 0
     received = ()
 
-    def progress_update(message, percent) -> None:
+    async def progress_update(message: str, percent: float) -> None:
         nonlocal counter
         nonlocal received
         counter += 1
@@ -170,17 +170,17 @@ def test_progress_updater(repeat: int) -> None:
     # different from None and the last value only
     # triggers once
     for _ in range(repeat):
-        progress_updater.update(message="")
+        await progress_updater.update(message="")
         assert counter == 1
         assert received == ("", None)
 
     for _ in range(repeat):
-        progress_updater.update(percent=0.0)
+        await progress_updater.update(percent=0.0)
         assert counter == 2
         assert received == ("", 0.0)
 
     for _ in range(repeat):
-        progress_updater.update(percent=1.0, message="done")
+        await progress_updater.update(percent=1.0, message="done")
         assert counter == 3
         assert received == ("done", 1.0)
 
@@ -188,21 +188,21 @@ def test_progress_updater(repeat: int) -> None:
     # will not trigger an event
 
     for _ in range(repeat):
-        progress_updater.update(message=None)
+        await progress_updater.update(message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        progress_updater.update(percent=None)
+        await progress_updater.update(percent=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        progress_updater.update(percent=None, message=None)
+        await progress_updater.update(percent=None, message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        progress_updater.update()
+        await progress_updater.update()
         assert counter == 3
         assert received == ("done", 1.0)

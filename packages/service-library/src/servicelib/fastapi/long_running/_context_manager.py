@@ -1,7 +1,7 @@
 import asyncio
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 
 from fastapi import FastAPI
 from httpx import AsyncClient
@@ -21,12 +21,14 @@ class _ProgressManager:
     for progress updates.
     """
 
-    def __init__(self, progress_update: Optional[Callable[[str, float], None]]) -> None:
+    def __init__(
+        self, progress_update: Optional[Callable[[str, float], Awaitable[None]]]
+    ) -> None:
         self._callable = progress_update
         self._last_message: Optional[str] = None
         self._last_percent: Optional[float] = None
 
-    def update(
+    async def update(
         self, *, message: Optional[str] = None, percent: Optional[float] = None
     ) -> None:
         if self._callable is None:
@@ -42,20 +44,29 @@ class _ProgressManager:
             has_changes = True
 
         if has_changes:
-            self._callable(self._last_message, self._last_percent)
+            await self._callable(self._last_message, self._last_percent)
 
 
 @asynccontextmanager
 async def task_result(
-    app: FastAPI,  # pass a client here
+    app: FastAPI,
     async_client: AsyncClient,
-    base_url: AnyHttpUrl,  # result, status, delete paths http://dy-sidecar/v1/some-route
+    base_url: AnyHttpUrl,
     task_id: TaskId,
     *,
     timeout: float,
-    progress: Optional[Callable[[str, float], None]] = None,
+    progress: Optional[Callable[[str, float], Awaitable[None]]] = None,
 ) -> AsyncIterator[Optional[Any]]:
     """
+    - `app` will extract the `Client` form it
+    - `async_client` an AsyncClient instance used by `Client`
+    - `base_url` base endpoint where the server is listening on
+    - `timeout` when this expires the task will be cancelled and
+        removed form the server
+    - `progress` user defined awaitable with two positional arguments:
+        * first argument `message`, type `str`
+        * second argument `percent`, type `float` between [0.0, 1.0]
+
     raises: `TaskClientResultErrorError` if the timeout is reached
     raises: `asyncio.TimeoutError`, when this is raised the task removed on remote
     """
@@ -66,7 +77,7 @@ async def task_result(
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(async_client, base_url, task_id)
         logger.info("Task status %s", task_status.json())
-        progress_manager.update(
+        await progress_manager.update(
             message=task_status.task_progress.message,
             percent=task_status.task_progress.percent,
         )
