@@ -39,6 +39,7 @@ from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -84,6 +85,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -117,6 +119,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
@@ -283,6 +286,7 @@ def dev_features_enabled(request) -> str:
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch,
+    redis_service: RedisSettings,
     network_name: str,
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
@@ -330,6 +334,11 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
+    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
+
+    # always test the node limit feature, by default is disabled
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
 
 @pytest.fixture
@@ -758,7 +767,7 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
                 containers_names.append(container_name)
                 print(f"Fetching logs for {container_name}")
                 container_logs_response = await client.get(
-                    f"/containers/{container_name}/logs"
+                    f"/containers/{container_name}/logs", timeout=60
                 )
                 assert container_logs_response.status_code == status.HTTP_200_OK
                 logs = "".join(container_logs_response.json())

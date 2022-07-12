@@ -38,6 +38,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -300,6 +301,24 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="exposes the proxy on localhost for debuging and testing",
     )
 
+    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
+        False,
+        description=(
+            "Limits concurrent service saves for a docker node. Guarantees "
+            "that no more than X services use a resource together."
+        ),
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
+        2, description="Amount of slots per resource on a node"
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
+        10,
+        description=(
+            "Lifetime of the lock. Allows the system to recover a lock "
+            "in case of crash, the lock will expire and result as released."
+        ),
+    )
+
     @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
     @classmethod
     def auto_disable_if_production(cls, v, values):
@@ -468,6 +487,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
     POSTGRES: PGSettings = Field(auto_default_from_env=True)
+
+    REDIS: RedisSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
