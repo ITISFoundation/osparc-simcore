@@ -150,16 +150,21 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
     except asyncio.TimeoutError:
-        # NOTE: Sending SIGTERM to the process and awaits for termination
-        # i.e. giving the opportunity to the underying process to
-        # perform graceful shutdown (i.e. run shutdown events and cleanup tasks)
         proc.terminate()
         _close_transport(proc)
 
-        # There is a small risk that the process refused to shutdown
-        # when received a SIGTERM. For the moment, we will accept that risk
-        # and only check during development ...
+        # The SIGTERM signal is a generic signal used to cause program termination.
+        # Unlike SIGKILL, this signal can be **blocked, handled, and ignored**.
+        # It is the normal way to politely ask a program to terminate, i.e. giving
+        # the opportunity to the underying process to perform graceful shutdown
+        # (i.e. run shutdown events and cleanup tasks)
         #
+        # SEE https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html
+        #
+        # There is a chance that the launched process ignores SIGTERM
+        # in that case, it would proc.wait() forever. This code will be
+        # used only to run docker-compose CLI which behaves well. Nonetheless,
+        # we add here some asserts.
         assert await proc.wait() == -signal.SIGTERM  # nosec
         assert not psutil.pid_exists(proc.pid)  # nosec
 
