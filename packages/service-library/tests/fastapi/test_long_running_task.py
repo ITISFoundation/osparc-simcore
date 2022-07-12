@@ -11,12 +11,12 @@ from typing import AsyncIterable, AsyncIterator, Optional
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
-from servicelib.fastapi.long_running._models import TaskResult
 from servicelib.fastapi.long_running._errors import (
     TaskAlreadyRunningError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
+from servicelib.fastapi.long_running._models import TaskResult
 from servicelib.fastapi.long_running.server import (
     TaskId,
     TaskManager,

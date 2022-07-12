@@ -3,10 +3,10 @@ from typing import Any, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, Timeout
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, PositiveFloat
 
 from ._errors import TaskClientResultErrorError
-from ._models import TaskId, TaskStatus, TaskResult
+from ._models import TaskId, TaskResult, TaskStatus
 
 
 class Client:
@@ -14,15 +14,15 @@ class Client:
         self,
         *,
         prefix: str,
-        timeout: float,
-        status_poll_interval: float,
+        timeout: PositiveFloat,
+        status_poll_interval: PositiveFloat,
     ) -> None:
         self._timeout = Timeout(timeout)
         self._prefix = prefix
         self._status_poll_interval = status_poll_interval
 
     @cached_property
-    def status_poll_interval(self) -> float:
+    def status_poll_interval(self) -> PositiveFloat:
         return self._status_poll_interval
 
     def _get_url(self, base_url: AnyHttpUrl, path: str) -> str:
@@ -67,8 +67,8 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    http_requests_timeout: float = 15,
-    status_poll_interval: float = 5,
+    http_requests_timeout: PositiveFloat = 15,
+    status_poll_interval: PositiveFloat = 5,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on
@@ -79,6 +79,7 @@ def setup(
     - `status_poll_interval` when waiting for a task to finish, how frequent
         should the server queried
     """
+
     async def on_startup() -> None:
         app.state.long_running_client = Client(
             prefix=router_prefix,

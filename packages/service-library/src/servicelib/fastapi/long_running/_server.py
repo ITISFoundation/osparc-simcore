@@ -1,12 +1,33 @@
+from typing import Final
+
 from fastapi import APIRouter, FastAPI
+from pydantic import PositiveFloat
 
 from ._error_handlers import base_long_running_error_handler
 from ._errors import BaseLongRunningError
 from ._routes import router
 from ._task import TaskManager
 
+_MINUTE: Final[PositiveFloat] = 60
 
-def setup(app: FastAPI, *, router_prefix: str = "") -> None:
+
+def setup(
+    app: FastAPI,
+    *,
+    router_prefix: str = "",
+    stale_task_check_interval_s: PositiveFloat = 1 * _MINUTE,
+    stale_task_detect_timeout_s: PositiveFloat = 5 * _MINUTE,
+) -> None:
+    """
+    - `router_prefix` APIs are mounted on `/task/...`, this
+        will change them to be mounted as `{router_prefix}/task/...`
+    - `stale_task_check_interval_s` interval at which the
+        TaskManager checks for tasks which are no longer being
+        actively monitored by a client
+    - `stale_task_detect_timeout_s` interval after which a
+        task is considered stale
+    """
+
     async def on_startup() -> None:
         # add routing paths
         main_router = APIRouter()
@@ -14,7 +35,10 @@ def setup(app: FastAPI, *, router_prefix: str = "") -> None:
         app.include_router(main_router)
 
         # add components to state
-        app.state.long_running_task_manager = TaskManager()
+        app.state.long_running_task_manager = TaskManager(
+            stale_task_check_interval_s=stale_task_check_interval_s,
+            stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+        )
 
         # add error handlers
         app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)

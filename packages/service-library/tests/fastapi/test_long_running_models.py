@@ -1,8 +1,8 @@
 from typing import Any, Optional
 
 import pytest
-from servicelib.fastapi.long_running._models import TaskResult
 from pydantic import ValidationError
+from servicelib.fastapi.long_running._models import TaskResult
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,7 @@ from asyncio import CancelledError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Awaitable, Callable, Final
+from typing import Awaitable, Callable
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -17,11 +17,9 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask, TaskResult
+from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
-
-_MINUTE: Final[PositiveFloat] = 60
 
 
 async def _await_task(task: Task):
@@ -31,8 +29,8 @@ async def _await_task(task: Task):
 class TaskManager:
     def __init__(
         self,
-        stale_task_check_interval_s: PositiveFloat = 1 * _MINUTE,
-        stale_task_detect_timeout_s: PositiveFloat = 5 * _MINUTE,
+        stale_task_check_interval_s: PositiveFloat,
+        stale_task_detect_timeout_s: PositiveFloat,
     ) -> None:
         self.tasks: dict[TaskName, dict[TaskId, TrackedTask]] = {}
 
@@ -58,7 +56,8 @@ class TaskManager:
         # When a task has finished with a result or error and its
         # status is being polled it would appear that there is
         # an issue with the client.
-        # Since we own the client, we assume this will not be the case.
+        # Since we own the client, we assume (for now) this
+        # will not be the case.
 
         while True:
             await asyncio.sleep(self.stale_task_check_interval_s)
@@ -230,7 +229,9 @@ class TaskManager:
         return False
 
     async def close(self) -> None:
-        # cancel all pending tasks and remove when closing
+        """
+        cancels all pending tasks and removes them before closing
+        """
         task_ids_to_remove: deque[TaskId] = deque()
 
         for tasks_dict in self.tasks.values():

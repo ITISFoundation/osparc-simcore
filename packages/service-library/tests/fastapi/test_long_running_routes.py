@@ -9,6 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from pydantic import PositiveFloat, PositiveInt
+from servicelib.fastapi.long_running._models import TaskResult
 from servicelib.fastapi.long_running.server import (
     TaskId,
     TaskManager,
@@ -17,7 +18,6 @@ from servicelib.fastapi.long_running.server import (
 )
 from servicelib.fastapi.long_running.server import setup as setup_server
 from servicelib.fastapi.long_running.server import start_task
-from servicelib.fastapi.long_running._models import TaskResult
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
