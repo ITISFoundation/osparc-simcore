@@ -16,7 +16,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -120,10 +120,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
 
 @lru_cache
-def get_settings() -> DynamicSidecarSettings:
+def get_settings() -> ApplicationSettings:
     """used outside the context of a request"""
     warnings.warn(
         "Use instead app.state.settings",
         DeprecationWarning,
     )
-    return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())
+    return cast(ApplicationSettings, ApplicationSettings.create_from_envs())

@@ -6,13 +6,13 @@ from settings_library.utils_cli import create_settings_command
 from simcore_service_dynamic_sidecar.core.application import create_base_app
 
 from ._meta import PROJECT_NAME
-from .core.settings import DynamicSidecarSettings
+from .core.settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
 main = typer.Typer(name=PROJECT_NAME)
 
 
-main.command()(create_settings_command(settings_cls=DynamicSidecarSettings, logger=log))
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
 
 
 @main.command()

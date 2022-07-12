@@ -29,7 +29,7 @@ from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     _write_file_and_run_command,
 )
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
@@ -112,9 +112,7 @@ async def _docker_ps_a_container_names() -> list[str]:
     return stdout.split("\n")
 
 
-async def _assert_compose_spec_pulled(
-    compose_spec: str, settings: DynamicSidecarSettings
-):
+async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSettings):
     """ensures all containers inside compose_spec are pulled"""
 
     command = (
@@ -161,7 +159,7 @@ async def _get_container_timestamps(
 
 @pytest.fixture
 async def started_containers(client: TestClient, compose_spec: str) -> list[str]:
-    settings: DynamicSidecarSettings = client.application.state.settings
+    settings: ApplicationSettings = client.application.state.settings
     await _assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers

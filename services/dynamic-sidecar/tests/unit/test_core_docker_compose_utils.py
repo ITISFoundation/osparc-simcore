@@ -15,7 +15,7 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_rm,
     docker_compose_up,
 )
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
 COMPOSE_SPEC_SAMPLE = {
@@ -44,7 +44,7 @@ def compose_spec_yaml(faker: Faker) -> str:
 async def test_docker_compose_workflow(
     compose_spec_yaml: str, mock_environment: EnvVarsDict, with_restart: bool
 ):
-    settings = DynamicSidecarSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
 
     def _print_result(r: CommandResult):
         assert r.elapsed and r.elapsed > 0

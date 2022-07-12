@@ -17,7 +17,7 @@ from ..core.docker_compose_utils import docker_compose_restart
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
+from ..core.settings import ApplicationSettings
 from ..models.shared_store import SharedStore
 from ..modules import directory_watcher, nodeports
 from ..modules.mounted_fs import MountedVolumes
@@ -73,7 +73,7 @@ containers_router = APIRouter(tags=["containers"])
 async def restore_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
 ) -> None:
     """
     When restoring the state:
@@ -126,7 +126,7 @@ async def restore_state(
 async def save_state(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
 ) -> None:
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
@@ -274,7 +274,7 @@ async def restarts_containers(
         10, description="docker-compose stop command timeout default"
     ),
     app: FastAPI = Depends(get_application),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> None:

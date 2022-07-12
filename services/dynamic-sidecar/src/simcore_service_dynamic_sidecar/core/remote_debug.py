@@ -5,13 +5,13 @@ import logging
 
 from fastapi import FastAPI
 
-from .settings import DynamicSidecarSettings
+from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
 
 def setup(app: FastAPI) -> None:
-    settings: DynamicSidecarSettings = app.state.settings
+    settings: ApplicationSettings = app.state.settings
 
     def on_startup() -> None:
         try:

@@ -5,14 +5,14 @@
 import logging
 from typing import Optional
 
-from .settings import DynamicSidecarSettings
+from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)
 
 
 async def _write_file_and_run_command(
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     compose_spec_yaml_content: str,
     command: str,
     terminate_process_on_timeout: Optional[int],
@@ -31,7 +31,7 @@ async def _write_file_and_run_command(
 
 async def docker_compose_config(
     compose_spec_yaml: str,
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     timeout: int,
 ) -> CommandResult:
     """
@@ -54,7 +54,7 @@ async def docker_compose_config(
 
 
 async def docker_compose_up(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
     """
     (Re)creates, starts, and attaches to containers for a service
@@ -76,7 +76,7 @@ async def docker_compose_up(
 
 
 async def docker_compose_restart(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
     """
     Restarts running containers (w/ a timeout)
@@ -97,7 +97,7 @@ async def docker_compose_restart(
 
 
 async def docker_compose_down(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings, timeout: int
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
     """
     Stops containers and removes containers, networks and volumes declared in the Compose specs file
@@ -122,7 +122,7 @@ async def docker_compose_down(
 
 
 async def docker_compose_rm(
-    compose_spec_yaml: str, settings: DynamicSidecarSettings
+    compose_spec_yaml: str, settings: ApplicationSettings
 ) -> CommandResult:
     """
     Removes stopped service containers

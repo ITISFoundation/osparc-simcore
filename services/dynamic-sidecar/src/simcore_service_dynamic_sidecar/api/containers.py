@@ -20,7 +20,7 @@ from ..core.docker_compose_utils import (
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
+from ..core.settings import ApplicationSettings
 from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
@@ -49,7 +49,7 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
 
 
 async def _task_docker_compose_up_and_send_message(
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     shared_store: SharedStore,
     app: FastAPI,
     application_health: ApplicationHealth,
@@ -130,7 +130,7 @@ async def create_containers(
     validation_timeout: int = Query(
         60, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
@@ -186,7 +186,7 @@ async def runs_docker_compose_down(
     command_timeout: int = Query(
         10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
 ) -> Union[str, dict[str, Any]]:
