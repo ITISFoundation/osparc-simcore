@@ -1,3 +1,7 @@
+""" Wrapper around docker-compose CLI with pre-defined options
+
+
+"""
 import logging
 from typing import Optional
 
@@ -13,10 +17,7 @@ async def _write_file_and_run_command(
     command: str,
     terminate_process_on_timeout: Optional[int],
 ) -> CommandResult:
-    """The command which accepts {file_path} as an argument for string formatting
-
-    TODO: explain kill_on_timeout vs timeout in command
-    """
+    """The command which accepts {file_path} as an argument for string formatting"""
 
     # pylint: disable=not-async-context-manager
     async with write_to_tmp_file(compose_spec_yaml_content) as file_path:
@@ -26,13 +27,6 @@ async def _write_file_and_run_command(
         )
         logger.debug("Running '%s' w/ compose-spec\n%s", cmd, compose_spec_yaml_content)
         return await async_command(cmd, terminate_process_on_timeout)
-
-
-# -----------------------------------------------------------
-# API
-#   thin wrapper above docker-compose CLI with some
-#   of the options already bound for this service's purpose
-#
 
 
 async def docker_compose_config(
@@ -51,8 +45,8 @@ async def docker_compose_config(
     """
 
     result = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec_yaml,
+        settings,
+        compose_spec_yaml,
         command='docker-compose --file "{file_path}" config',
         terminate_process_on_timeout=timeout,
     )
@@ -72,8 +66,8 @@ async def docker_compose_up(
     """
 
     result = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec_yaml,
+        settings,
+        compose_spec_yaml,
         command='docker-compose --project-name {project} --file "{file_path}" up'
         " --no-build --detach",
         terminate_process_on_timeout=timeout,
@@ -91,8 +85,8 @@ async def docker_compose_restart(
     """
 
     result = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec_yaml,
+        settings,
+        compose_spec_yaml,
         command=(
             'docker-compose --project-name {project} --file "{file_path}" restart'
             f" --timeout {int(timeout)}"
@@ -116,8 +110,8 @@ async def docker_compose_down(
     """
 
     result = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec_yaml,
+        settings,
+        compose_spec_yaml,
         command=(
             'docker-compose --project-name {project} --file "{file_path}" down'
             f" --volumes --remove-orphans --timeout {int(timeout)}"
@@ -140,19 +134,12 @@ async def docker_compose_rm(
     """
 
     result = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec_yaml,
+        settings,
+        compose_spec_yaml,
         command=(
             'docker-compose --project-name {project} --file "{file_path}" rm'
             " --force -v"
         ),
         terminate_process_on_timeout=None,
     )
-    if not result.success:
-        logger.warning(
-            "Unexpected error while %s with\n %s :\n%s",
-            f"{result.command=}",
-            f"project={settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}",
-            f"{result.message}",
-        )
     return result
