@@ -17,8 +17,8 @@ from redis.exceptions import LockError, LockNotOwnedError
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.errors import NodeRightsAcquireError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules import redis
-from simcore_service_director_v2.modules.redis import (
+from simcore_service_director_v2.modules import node_rights
+from simcore_service_director_v2.modules.node_rights import (
     DockerNodeId,
     ExtendLock,
     NodeRightsManager,
@@ -80,7 +80,7 @@ async def minimal_app(
     app.state.settings = AppSettings.create_from_envs()
 
     # setup redis module
-    redis.setup(app)
+    node_rights.setup(app)
 
     async with LifespanManager(app):
         yield app

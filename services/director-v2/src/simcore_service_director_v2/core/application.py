@@ -24,8 +24,8 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    node_rights,
     rabbitmq,
-    redis,
     remote_debug,
     storage,
 )
@@ -139,7 +139,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
 
-    redis.setup(app)
+    node_rights.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING)

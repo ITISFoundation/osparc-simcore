@@ -28,7 +28,7 @@ from ....modules.director_v0 import DirectorV0Client
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...redis import NodeRightsManager, ResourceName
+from ...node_rights import NodeRightsManager, ResourceName
 from ..api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
