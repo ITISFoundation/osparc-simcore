@@ -19,7 +19,7 @@ translate into something like
 }
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -104,6 +104,10 @@ class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational run not found"
 
 
+class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
+    msg_template = "Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
+
+
 #
 # SCHEDULER ERRORS
 #
@@ -133,7 +137,7 @@ class TaskSchedulingError(SchedulerError):
         self.project_id = project_id
         self.node_id = node_id
 
-    def get_errors(self) -> List[ErrorDict]:
+    def get_errors(self) -> list[ErrorDict]:
         # default implementation
         return [
             {
@@ -175,7 +179,7 @@ class PortsValidationError(TaskSchedulingError):
     ports in a project's node.
     """
 
-    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: List[ErrorDict]):
+    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: list[ErrorDict]):
         super().__init__(
             project_id,
             node_id,
@@ -183,7 +187,7 @@ class PortsValidationError(TaskSchedulingError):
         )
         self.errors = errors
 
-    def get_errors(self) -> List[ErrorDict]:
+    def get_errors(self) -> list[ErrorDict]:
         """Returns 'public errors': filters only value_error.port_validation errors for the client.
         The rest only shown as number
         """

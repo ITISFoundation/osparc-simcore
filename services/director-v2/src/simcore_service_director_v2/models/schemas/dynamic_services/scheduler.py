@@ -352,9 +352,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ..., description="service resources used to enforce limits"
     )
 
-    # Below values are used only once and then are nto required, thus optional
-    # after the service is picked up by the scheduler after a reboot these are not required
-    # and can be set to None
     request_dns: Optional[str] = Field(
         None, description="used when configuring the CORS options on the proxy"
     )
@@ -363,6 +360,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_service_name: Optional[str] = Field(
         None, description="service name given to the proxy"
+    )
+    docker_node_id: Optional[str] = Field(
+        None,
+        description=(
+            "contains node id of the docker node where all services "
+            "and created containers are started"
+        ),
     )
 
     @classmethod

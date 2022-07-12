@@ -69,6 +69,7 @@ async-timeout==4.0.2
     #   aiohttp
     #   aiopg
     #   aioredis
+    #   redis
 attrs==20.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -109,6 +110,8 @@ dask-gateway==2022.6.1
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
+deprecated==1.2.13
+    # via redis
 distributed==2022.6.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -242,6 +245,7 @@ packaging==21.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
+    #   redis
 pamqp==2.3.0
     # via aiormq
 partd==1.2.0
@@ -329,6 +333,8 @@ pyyaml==5.4.1
     #   distributed
     #   fastapi
     #   uvicorn
+redis==4.3.4
+    # via -r requirements/_base.in
 requests==2.27.1
     # via
     #   async-asgi-testclient
@@ -444,6 +450,8 @@ watchgod==0.8.2
     # via uvicorn
 websockets==10.1
     # via uvicorn
+wrapt==1.14.1
+    # via deprecated
 yarl==1.7.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
