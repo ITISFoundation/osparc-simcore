@@ -9,7 +9,6 @@ from ._errors import TaskClientResultErrorError
 from ._models import TaskId, TaskStatus, TaskResult
 
 
-# change like the other PR with the same model to fetch the properties
 class Client:
     def __init__(
         self,
@@ -71,6 +70,15 @@ def setup(
     http_requests_timeout: float = 15,
     status_poll_interval: float = 5,
 ):
+    """
+    - `router_prefix` by default it is assumed the server mounts the APIs on
+        `/task/...` this will assume the APIs are as following
+        `{router_prefix}/task/...`
+    - `http_requests_timeout` short requests are used to interact with the
+        server API, a low timeout is sufficient
+    - `status_poll_interval` when waiting for a task to finish, how frequent
+        should the server queried
+    """
     async def on_startup() -> None:
         app.state.long_running_client = Client(
             prefix=router_prefix,
