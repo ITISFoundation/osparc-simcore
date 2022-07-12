@@ -217,8 +217,15 @@ typing-extensions==4.3.0
     #   pydantic
     #   types-aiobotocore
     #   types-aiobotocore-s3
-ujson==5.3.0
-    # via aiohttp-swagger
+ujson==5.4.0
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiohttp-swagger
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
