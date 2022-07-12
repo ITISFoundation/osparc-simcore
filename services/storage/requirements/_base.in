@@ -21,4 +21,4 @@ aiopg[sa] # db
 semantic_version
 tenacity
 typer
-types-aiobotocore[s3]# s3 storage
+types-aiobotocore[s3] # s3 storage
