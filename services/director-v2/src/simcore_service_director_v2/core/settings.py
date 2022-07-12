@@ -308,8 +308,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "that no more than X services use a resource together."
         ),
     )
-    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES: PositiveInt = Field(
-        2, description="Amount of services allowed to access a resource concurrently"
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
+        2, description="Amount of slots per resource on a node"
     )
     DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
         10,

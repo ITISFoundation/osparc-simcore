@@ -86,7 +86,7 @@ class SlotsManager:
     _redis: Redis
     is_enabled: bool
     lock_timeout_s: PositiveFloat
-    concurrent_saves: PositiveInt
+    concurrent_resource_slots: PositiveInt
 
     @classmethod
     async def create(cls, app: FastAPI) -> "SlotsManager":
@@ -98,7 +98,7 @@ class SlotsManager:
             app=app,
             _redis=Redis.from_url(redis_settings.dsn_locks),
             is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
-            concurrent_saves=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_SAVES,
+            concurrent_resource_slots=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
             lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
 
@@ -126,18 +126,18 @@ class SlotsManager:
     async def _get_node_slots(
         self, docker_node_id: DockerNodeId, resource_name: ResourceName
     ) -> int:
-        """get the total amount of slots available for the node"""
-        # NOTE: this function might change in the future and the
-        # current slots per node might be provided looking at the
-        # aiowait metric on the node over a period of time
+        """
+        get the total amount of slots available for the provided
+        resource on the node
+        """
 
         node_slots_key = self._get_key(docker_node_id, resource_name)
         slots: Optional[bytes] = await self._redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
 
-        await self._redis.set(node_slots_key, self.concurrent_saves)
-        return self.concurrent_saves
+        await self._redis.set(node_slots_key, self.concurrent_resource_slots)
+        return self.concurrent_resource_slots
 
     @staticmethod
     async def _release_extend_lock(extend_lock: ExtendLock) -> None:
