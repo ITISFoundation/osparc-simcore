@@ -13,3 +13,7 @@ class SharedStore(BaseModel):
         default_factory=list,
         description="stores the container names from the compose_spec",
     )
+
+    def clear(self):
+        self.compose_spec = None
+        self.container_names = []
