@@ -353,17 +353,29 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       const updateStudy = this.getChildControl("update-study");
-      osparc.utils.Study.isWorkbenchUpdatable(workbench)
-        .then(updatable => {
-          if (updatable) {
-            updateStudy.show();
-            updateStudy.addListener("tap", e => {
-              e.stopPropagation();
-              this.__openUpdateServices();
-            }, this);
-            updateStudy.addListener("pointerdown", e => e.stopPropagation());
-          }
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        this.__openUpdateServices();
+      }, this);
+      if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText: this.tr("Service(s) deprecated, please update"),
+          textColor: "red"
         });
+      } else {
+        osparc.utils.Study.isWorkbenchUpdatable(workbench)
+          .then(updatable => {
+            if (updatable) {
+              updateStudy.show();
+              updateStudy.set({
+                toolTipText: this.tr("Update available"),
+                textColor: "text"
+              });
+            }
+          });
+      }
 
       osparc.utils.Study.getUnaccessibleServices(workbench)
         .then(unaccessibleServices => {

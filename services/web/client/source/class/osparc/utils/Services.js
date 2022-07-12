@@ -279,6 +279,15 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    isDeprecated: function(metadata) {
+      if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
+        const depTime = new Date(metadata["deprecated"]);
+        const now = new Date();
+        return depTime.getTime() < now.getTime();
+      }
+      return false;
+    },
+
     getFilePicker: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
     },
