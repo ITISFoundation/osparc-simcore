@@ -2,15 +2,21 @@ import asyncio
 import base64
 import json
 import logging
+import os
+import signal
 import tempfile
+import time
+from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, NamedTuple, Optional
 
 import aiofiles
 import httpx
+import psutil
 import yaml
 from aiofiles import os as aiofiles_os
+from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity import retry
@@ -29,7 +35,9 @@ logger = logging.getLogger(__name__)
 
 class CommandResult(NamedTuple):
     success: bool
-    decoded_stdout: str
+    message: str
+    command: str
+    elapsed: Optional[float]
 
 
 class _RegistryNotReachableException(Exception):
@@ -107,29 +115,93 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles_os.remove(file_path)
 
 
-async def async_command(
-    command: str, command_timeout: Optional[float] = None
-) -> CommandResult:
-    try:
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
+def _close_transport(proc: Process):
 
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=command_timeout)
+    # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
+    #
+    # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
+    # Traceback (most recent call last):
+    #   File " ... .pyenv/versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
+    #     self.close()
+    #
+
+    # SEE implementation of asyncio.subprocess.Process._read_stream(...)
+    for fd in (1, 2):
+        # pylint: disable=protected-access
+        if transport := getattr(proc, "_transport", None):
+            if t := transport.get_pipe_transport(fd):
+                t.close()
+
+
+async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
+    """
+    Does not raise Exception
+    """
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
+    )
+    assert psutil.pid_exists(proc.pid)  # nosec
+
+    start = time.time()
+
+    try:
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
     except asyncio.TimeoutError:
-        logger.warning(
-            "%s timed out after %ss",
-            f"{command=!r}",
-            f"{command_timeout=}",
-            stack_info=True,
-        )
-        raise
+        proc.terminate()
+        _close_transport(proc)
 
-    return CommandResult(success=proc.returncode == 0, decoded_stdout=stdout.decode())
+        # The SIGTERM signal is a generic signal used to cause program termination.
+        # Unlike SIGKILL, this signal can be **blocked, handled, and ignored**.
+        # It is the normal way to politely ask a program to terminate, i.e. giving
+        # the opportunity to the underying process to perform graceful shutdown
+        # (i.e. run shutdown events and cleanup tasks)
+        #
+        # SEE https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html
+        #
+        # There is a chance that the launched process ignores SIGTERM
+        # in that case, it would proc.wait() forever. This code will be
+        # used only to run docker-compose CLI which behaves well. Nonetheless,
+        # we add here some asserts.
+        assert await proc.wait() == -signal.SIGTERM  # nosec
+        assert not psutil.pid_exists(proc.pid)  # nosec
+
+        logger.warning(
+            "Process %s timed out after %ss",
+            f"{command=!r}",
+            f"{timeout=}",
+        )
+        return CommandResult(
+            success=False,
+            message=f"Execution timed out after {timeout} secs",
+            command=f"{command}",
+            elapsed=time.time() - start,
+        )
+
+    except Exception as err:  # pylint: disable=broad-except
+        error_code = create_error_code(err)
+        logger.exception(
+            "Process with %s failed unexpectedly [%s]",
+            f"{command=!r}",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+
+        return CommandResult(
+            success=False,
+            message=f"Unexpected error [{error_code}]",
+            command=f"{command}",
+            elapsed=time.time() - start,
+        )
+
+    return CommandResult(
+        success=proc.returncode == os.EX_OK,
+        message=stdout.decode(),
+        command=f"{command}",
+        elapsed=time.time() - start,
+    )
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:
