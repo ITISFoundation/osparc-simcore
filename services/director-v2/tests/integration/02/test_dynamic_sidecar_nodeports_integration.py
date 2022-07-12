@@ -767,7 +767,7 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
                 containers_names.append(container_name)
                 print(f"Fetching logs for {container_name}")
                 container_logs_response = await client.get(
-                    f"/containers/{container_name}/logs"
+                    f"/containers/{container_name}/logs", timeout=60
                 )
                 assert container_logs_response.status_code == status.HTTP_200_OK
                 logs = "".join(container_logs_response.json())
