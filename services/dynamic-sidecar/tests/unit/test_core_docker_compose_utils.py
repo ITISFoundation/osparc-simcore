@@ -40,8 +40,9 @@ def compose_spec_yaml(faker: Faker) -> str:
     return yaml.safe_dump(COMPOSE_SPEC_SAMPLE, indent=1)
 
 
+@pytest.mark.parametrize("with_restart", (True, False))
 async def test_docker_compose_workflow(
-    compose_spec_yaml: str, mock_environment: EnvVarsDict
+    compose_spec_yaml: str, mock_environment: EnvVarsDict, with_restart: bool
 ):
     settings = DynamicSidecarSettings.create_from_envs()
 
@@ -78,14 +79,15 @@ async def test_docker_compose_workflow(
     _print_result(r)
     assert r.success, r.message
 
-    # restarts
-    r = await docker_compose_restart(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
-    _print_result(r)
-    assert r.success, r.message
+    if with_restart:
+        # restarts
+        r = await docker_compose_restart(
+            compose_spec_yaml,
+            settings,
+            10,
+        )
+        _print_result(r)
+        assert r.success, r.message
 
     # stops and removes
     r = await docker_compose_down(
