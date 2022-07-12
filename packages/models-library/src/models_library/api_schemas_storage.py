@@ -25,6 +25,7 @@ from pydantic import (
     ConstrainedStr,
     Extra,
     Field,
+    PositiveInt,
     root_validator,
     validator,
 )
@@ -226,6 +227,46 @@ class LinkType(str, Enum):
 
 class PresignedLink(BaseModel):
     link: AnyUrl
+
+
+class FileUploadLinks(BaseModel):
+    abort_upload: AnyUrl
+    complete_upload: AnyUrl
+
+
+class FileUploadSchema(BaseModel):
+    chunk_size: ByteSize
+    urls: list[AnyUrl]
+    links: FileUploadLinks
+
+
+# /locations/{location_id}/files/{file_id}:complete
+class UploadedPart(BaseModel):
+    number: PositiveInt
+    e_tag: ETag
+
+
+class FileUploadCompletionBody(BaseModel):
+    parts: list[UploadedPart]
+
+
+class FileUploadCompleteLinks(BaseModel):
+    state: AnyUrl
+
+
+class FileUploadCompleteResponse(BaseModel):
+    links: FileUploadCompleteLinks
+
+
+# /locations/{location_id}/files/{file_id}:complete/futures/{future_id}
+class FileUploadCompleteState(Enum):
+    OK = "ok"
+    NOK = "nok"
+
+
+class FileUploadCompleteFutureResponse(BaseModel):
+    state: FileUploadCompleteState
+    e_tag: Optional[ETag] = Field(default=None)
 
 
 # /simcore-s3/

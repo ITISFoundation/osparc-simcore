@@ -16,6 +16,7 @@
 --editable ../../../packages/postgres-database/
 --editable ../../../packages/settings-library/
 --editable ../../../packages/service-library[aiohttp]
+--editable ../../../packages/simcore-sdk/
 --editable ../../../packages/pytest-simcore/
 
 # installs current package

@@ -41,8 +41,10 @@ asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.11.5
     # via pylint
-async-asgi-testclient==1.4.10
-    # via -r requirements/_test.in
+async-asgi-testclient==1.4.11
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -353,6 +355,7 @@ websocket-client==0.59.0
     #   docker-compose
 wrapt==1.14.1
     # via
+    #   -c requirements/_base.txt
     #   aiobotocore
     #   astroid
 yarl==1.7.2

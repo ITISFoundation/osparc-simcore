@@ -5,12 +5,13 @@
 import asyncio
 import logging
 import os
-from typing import Any, AsyncIterable, Callable, Dict, Iterable
+from typing import Any, AsyncIterable, Callable, Iterable
 
 import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from models_library.projects import ProjectAtDB
@@ -18,7 +19,7 @@ from models_library.services_resources import ServiceResourcesDict
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
-from simcore_sdk.node_ports_common import config as node_ports_config
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import (
@@ -44,6 +45,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -53,19 +55,18 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def minimal_configuration(
-    dy_static_file_server_service: Dict,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    dy_static_file_server_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     ensure_swarm_and_networks: None,
 ):
-    node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_service.host}:{storage_service.port}"
-    )
+    ...
 
 
 @pytest.fixture
@@ -84,23 +85,23 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
-def user_dict(registered_user: Callable) -> Iterable[Dict[str, Any]]:
+def user_dict(registered_user: Callable) -> Iterable[dict[str, Any]]:
     yield registered_user()
 
 
 @pytest.fixture
 async def dy_static_file_server_project(
     minimal_configuration: None,
-    user_dict: Dict[str, Any],
+    user_dict: dict[str, Any],
     project: Callable,
-    dy_static_file_server_service: Dict,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    dy_static_file_server_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     uuid_legacy: str,
     uuid_dynamic_sidecar: str,
     uuid_dynamic_sidecar_compose: str,
 ) -> ProjectAtDB:
-    def _assemble_node_data(spec: Dict, label: str) -> Dict[str, str]:
+    def _assemble_node_data(spec: dict, label: str) -> dict[str, str]:
         return {
             "key": spec["image"]["name"],
             "version": spec["image"]["tag"],
@@ -128,11 +129,12 @@ async def dy_static_file_server_project(
 
 @pytest.fixture
 async def director_v2_client(
+    redis_service: RedisSettings,
     minimal_configuration: None,
-    minio_config: Dict[str, Any],
+    minio_config: dict[str, Any],
     storage_service: URL,
     network_name: str,
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
 ) -> AsyncIterable[httpx.AsyncClient]:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -169,6 +171,9 @@ async def director_v2_client(
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+
+    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
 
     settings = AppSettings.create_from_envs()
 
@@ -225,8 +230,8 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
 
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
-    user_dict: Dict[str, Any],
-    services_endpoint: Dict[str, URL],
+    user_dict: dict[str, Any],
+    services_endpoint: dict[str, URL],
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,

@@ -15,6 +15,7 @@
 ../../../packages/postgres-database/
 ../../../packages/settings-library/
 ../../../packages/service-library[aiohttp]
+../../../packages/simcore-sdk/
 ../../../packages/pytest-simcore/
 
 # installs current package

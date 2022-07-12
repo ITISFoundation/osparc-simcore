@@ -162,7 +162,7 @@ async def validate_compose_spec(
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
     *,
-    docker_compose_config_timeout: float,
+    docker_compose_config_timeout: int,
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects
@@ -265,15 +265,15 @@ async def validate_compose_spec(
     result = await docker_compose_config(
         compose_spec,
         settings=settings,
-        command_timeout=docker_compose_config_timeout,
+        timeout=docker_compose_config_timeout,
     )
 
     if not result.success:
         logger.warning(
             "'docker-compose config' failed for:\n%s\n%s",
             f"{compose_spec}",
-            result.decoded_stdout,
+            result.message,
         )
-        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.decoded_stdout}")
+        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.message}")
 
     return compose_spec

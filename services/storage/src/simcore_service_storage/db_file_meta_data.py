@@ -1,5 +1,5 @@
 import datetime
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Union
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -27,10 +27,12 @@ async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
     )
 
 
-async def upsert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
+async def upsert(
+    conn: SAConnection, fmd: Union[FileMetaData, FileMetaDataAtDB]
+) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
-    fmd_db = FileMetaDataAtDB.from_orm(fmd)
+    fmd_db = FileMetaDataAtDB.from_orm(fmd) if isinstance(fmd, FileMetaData) else fmd
     insert_statement = pg_insert(file_meta_data).values(**jsonable_encoder(fmd_db))
     on_update_statement = insert_statement.on_conflict_do_update(
         index_elements=[file_meta_data.c.file_id], set_=jsonable_encoder(fmd_db)

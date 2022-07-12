@@ -38,6 +38,32 @@ define _transfer-images-to-registry
 @curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
 endef
 
+define _transfer-jupyter-from-master-to-registry
+# smash image
+@docker pull registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-smash:3.0.7
+@docker tag registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-smash:3.0.7 registry:5000/simcore/services/dynamic/jupyter-smash:3.0.7
+@docker push registry:5000/simcore/services/dynamic/jupyter-smash:3.0.7
+# completed transfer of images
+@curl -s registry:5000/v2/_catalog | jq '.repositories'
+@curl -s http://registry:5000/v2/simcore/services/dynamic/jupyter-smash/tags/list?n=50 | jq '.'
+endef
+
+NUMBERS = 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+define _register-20-users
+$(foreach var,$(NUMBERS),\
+	curl -d '{"email":"test$(var)@test.com","password":"test","confirm":"test","invitation":""}' -H "Content-Type: application/json" -X POST http://localhost:9081/v0/auth/register \
+;)
+endef
+
+
+# Below feels a bit like magic I am not sure why the thing awaits for the scirpts to finish
+DEV_MACHINE_IP = "10.43.103.168"
+define _test-jupyters
+echo $(shell python -c 'import os ;\
+[os.system("node --trace-warnings tutorials/jupyterlabs.js http://${DEV_MACHINE_IP}.nip.io:9081 test%s@test.com test 60000 &" % x) for x in range(1, 21)]
+')
+echo "finished parallel run"
+endef
 
 define _inject-templates-in-db
 # inject the sleepers template
@@ -75,3 +101,17 @@ test: ## test the platform
 	npm test
 	# tests whether tutorial run
 	npm run tutorials http://127.0.0.1:9081
+
+
+.PHONY: dev-prepare-jupyters
+dev-prepare-jupyters: ## pull images and create users
+	@$(_transfer-jupyter-from-master-to-registry)
+	@$(_register-20-users)
+	@echo "NOTE: Below should be automated in the future"
+	@echo "- remember to give permission to the service"
+	@echo "- remmeber to import the JupyterLabs template in the deployment"
+
+
+.PHONY: dev-test-jupyters
+dev-test-jupyters: ## run the parallel jupyter tests
+	@$(_test-jupyters)

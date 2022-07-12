@@ -252,7 +252,10 @@ tomli==2.0.1
     #   coverage
     #   pytest
 tqdm==4.64.0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in

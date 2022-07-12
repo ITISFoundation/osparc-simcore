@@ -7,7 +7,7 @@ import logging
 import os
 import urllib.parse
 from time import sleep
-from typing import Any, AsyncIterator, Dict, Final, Iterator, NamedTuple, Optional
+from typing import Any, AsyncIterator, Final, Iterator, NamedTuple, Optional
 from uuid import UUID
 
 import pytest
@@ -18,6 +18,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -35,8 +36,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from starlette import status
 from starlette.testclient import TestClient
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 WAIT_FOR_HEALTH_CALLS: Final[float] = 1.0
@@ -54,8 +59,8 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_config(
-    mock_env: None,
-    postgres_host_config: Dict[str, str],
+    mock_env: EnvVarsDict,
+    postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the director connection only"""
@@ -67,7 +72,7 @@ def minimal_config(
 
 
 @pytest.fixture(scope="session")
-def dynamic_sidecar_headers() -> Dict[str, str]:
+def dynamic_sidecar_headers() -> dict[str, str]:
     return {
         "X-Dynamic-Sidecar-Request-DNS": "",
         "X-Dynamic-Sidecar-Request-Scheme": "",
@@ -119,7 +124,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 @pytest.fixture
 async def mock_retrieve_features(
     minimal_app: FastAPI,
-    service: Dict[str, Any],
+    service: dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
 ) -> AsyncIterator[Optional[MockRouter]]:
@@ -162,7 +167,7 @@ async def mock_retrieve_features(
 
 @pytest.fixture
 def mocked_director_v0_service_api(
-    minimal_app: FastAPI, service: Dict[str, Any], service_labels: Dict[str, Any]
+    minimal_app: FastAPI, service: dict[str, Any], service_labels: dict[str, Any]
 ) -> Iterator[MockRouter]:
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -259,8 +264,8 @@ def test_create_dynamic_services(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
-    dynamic_sidecar_headers: Dict[str, str],
-    service: Dict[str, Any],
+    dynamic_sidecar_headers: dict[str, str],
+    service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
 ):
@@ -331,7 +336,7 @@ def test_get_service_status(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
-    service: Dict[str, Any],
+    service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
 ):
@@ -392,7 +397,7 @@ def test_delete_service(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
-    service: Dict[str, Any],
+    service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
     can_save: Optional[bool],
@@ -456,7 +461,7 @@ def test_retrieve(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
-    service: Dict[str, Any],
+    service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
 ) -> None:

@@ -467,7 +467,13 @@ qx.Class.define("osparc.data.model.Node", {
     populateStates: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
-        this.getStatus().setProgress(progress);
+        const oldProgress = this.getStatus().getProgress();
+        if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
+          // file is being uploaded
+          this.getStatus().setProgress(oldProgress);
+        } else {
+          this.getStatus().setProgress(progress);
+        }
       }
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);

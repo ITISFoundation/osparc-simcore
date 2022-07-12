@@ -6,7 +6,7 @@
 import hashlib
 import os
 from pathlib import Path
-from typing import Callable, Set, Tuple
+from typing import Callable
 from uuid import uuid4
 
 import pytest
@@ -37,7 +37,7 @@ def _remove_file_or_folder(file_or_folder: Path) -> None:
         assert file_or_folder.exists() is True
 
 
-def _get_file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
+def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
         with open(path, "rb") as f:
@@ -130,7 +130,7 @@ def dir_content_multiple_files_path(temp_dir: Path) -> Path:
     ],
 )
 async def test_valid_upload_download(
-    filemanager_cfg: None,
+    node_ports_config,
     content_path: Path,
     user_id: int,
     project_id: str,
@@ -169,7 +169,7 @@ async def test_valid_upload_download(
     ],
 )
 async def test_valid_upload_download_saved_to(
-    filemanager_cfg: None,
+    node_ports_config,
     content_path: Path,
     user_id: int,
     project_id: str,

@@ -62,11 +62,14 @@ anyio==3.6.1
     #   watchgod
 asgiref==3.5.2
     # via uvicorn
+async-asgi-testclient==1.4.11
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
     #   aioredis
+    #   redis
 attrs==20.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -107,6 +110,8 @@ dask-gateway==2022.6.1
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
+deprecated==1.2.13
+    # via redis
 distributed==2022.6.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -222,6 +227,7 @@ msgpack==1.0.3
 multidict==6.0.2
     # via
     #   aiohttp
+    #   async-asgi-testclient
     #   yarl
 networkx==2.5.1
     # via -r requirements/_base.in
@@ -239,6 +245,7 @@ packaging==21.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
+    #   redis
 pamqp==2.3.0
     # via aiormq
 partd==1.2.0
@@ -326,8 +333,12 @@ pyyaml==5.4.1
     #   distributed
     #   fastapi
     #   uvicorn
+redis==4.3.4
+    # via -r requirements/_base.in
 requests==2.27.1
-    # via fastapi
+    # via
+    #   async-asgi-testclient
+    #   fastapi
 rfc3986==1.4.0
     # via httpx
 six==1.15.0
@@ -393,8 +404,12 @@ tornado==6.1
     #   distributed
     #   jaeger-client
     #   threadloop
-tqdm==4.62.3
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+tqdm==4.64.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -426,13 +441,17 @@ urllib3==1.26.9
     #   distributed
     #   requests
 uvicorn==0.15.0
-    # via fastapi
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   fastapi
 uvloop==0.16.0
     # via uvicorn
 watchgod==0.8.2
     # via uvicorn
 websockets==10.1
     # via uvicorn
+wrapt==1.14.1
+    # via deprecated
 yarl==1.7.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in

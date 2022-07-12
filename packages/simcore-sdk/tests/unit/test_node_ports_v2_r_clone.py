@@ -4,7 +4,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -31,7 +31,7 @@ def r_clone_settings(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-    return RCloneSettings()
+    return RCloneSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ async def test__async_command_ok() -> None:
         ("ls_", "-lah"),
     ],
 )
-async def test__async_command_error(cmd: List[str]) -> None:
+async def test__async_command_error(cmd: list[str]) -> None:
     with pytest.raises(r_clone.RCloneFailedError) as exe_info:
         await r_clone._async_command(*cmd)
     assert (

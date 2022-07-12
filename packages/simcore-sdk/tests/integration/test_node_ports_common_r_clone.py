@@ -13,10 +13,10 @@ import aioboto3
 import pytest
 from _pytest.fixtures import FixtureRequest
 from faker import Faker
-from pydantic import ByteSize, parse_obj_as
+from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import r_clone
-from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -80,15 +80,26 @@ async def _download_s3_object(
         await s3_object_in_s3.download_file(f"{local_path}")
 
 
-def _fake_upload_file_link(r_clone_settings: RCloneSettings, s3_object: str) -> URL:
-    return URL(
-        f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote( s3_object, safe='')}"
+def _fake_upload_file_link(
+    r_clone_settings: RCloneSettings, s3_object: str
+) -> FileUploadSchema:
+    return FileUploadSchema(
+        chunk_size=ByteSize(0),
+        urls=[
+            parse_obj_as(
+                AnyUrl,
+                f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote( s3_object, safe='')}",
+            )
+        ],
+        links=FileUploadLinks(
+            abort_upload=parse_obj_as(AnyUrl, "https://www.fakeabort.com"),
+            complete_upload=parse_obj_as(AnyUrl, "https://www.fakecomplete.com"),
+        ),
     )
 
 
 # TESTS
 async def test_sync_local_to_s3(
-    bucket: str,
     r_clone_settings: RCloneSettings,
     file_name: str,
     create_file_of_size: Callable[[ByteSize, str], Path],

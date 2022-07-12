@@ -20,6 +20,7 @@ from pydantic import (
     constr,
     parse_obj_as,
 )
+from servicelib.error_codes import ErrorCodeStr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -68,8 +69,14 @@ class Status(BaseModel):
     def update_ok_status(self, info: str) -> None:
         self._update(DynamicSidecarStatus.OK, info)
 
-    def update_failing_status(self, info: str) -> None:
-        self._update(DynamicSidecarStatus.FAILING, info)
+    def update_failing_status(
+        self, user_msg: str, error_code: Optional[ErrorCodeStr] = None
+    ) -> None:
+        next_info = f"{user_msg}"
+        if error_code:
+            next_info = f"{user_msg} [{error_code}]"
+
+        self._update(DynamicSidecarStatus.FAILING, next_info)
 
     def __eq__(self, other: "Status") -> bool:
         return self.current == other.current and self.info == other.info
@@ -345,9 +352,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ..., description="service resources used to enforce limits"
     )
 
-    # Below values are used only once and then are nto required, thus optional
-    # after the service is picked up by the scheduler after a reboot these are not required
-    # and can be set to None
     request_dns: Optional[str] = Field(
         None, description="used when configuring the CORS options on the proxy"
     )
@@ -356,6 +360,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_service_name: Optional[str] = Field(
         None, description="service name given to the proxy"
+    )
+    docker_node_id: Optional[str] = Field(
+        None,
+        description=(
+            "contains node id of the docker node where all services "
+            "and created containers are started"
+        ),
     )
 
     @classmethod

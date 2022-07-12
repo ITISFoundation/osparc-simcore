@@ -156,9 +156,33 @@ paths:
           required: true
           schema:
             type: string
+        - name: file_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
       responses:
         "200":
-          $ref: "#/components/responses/PresignedLink_200"
+          description: Return upload object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadEnveloped"
+          links:
+            CompleteUpload:
+              operationId: complete_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                query.user_id: "$request.query.user_id"
+            AbortUpload:
+              operationId: abort_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                query.user_id: "$request.query.user_id"
     delete:
       summary: Deletes File
       tags:
@@ -179,6 +203,111 @@ paths:
         "204":
           description: ""
 
+  /storage/locations/{location_id}/files/{file_id}:abort:
+    post:
+      summary: Asks the server to abort the upload and revert to the last valid version if any
+      operationId: abort_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Abort OK
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /storage/locations/{location_id}/files/{file_id}:complete:
+    post:
+      summary: Asks the server to complete the upload
+      operationId: complete_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parts
+              properties:
+                parts:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - number
+                      - e_tag
+                    properties:
+                      number:
+                        type: integer
+                        minimum: 1
+                      e_tag:
+                        type: string
+      responses:
+        "202":
+          description: Completion of upload is accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadCompleteEnveloped"
+          links:
+            CompleteUploadStatus:
+              operationId: is_completed_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                path.future_id: "$response.body.data.links.state"
+                query.user_id: "$request.query.user_id"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
+    post:
+      summary: Check for upload completion
+      operationId: is_completed_upload_file
+      parameters:
+        - name: future_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: returns state of upload completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadCompleteFutureEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /storage/locations/{location_id}/files/{file_id}/metadata:
     get:
       summary: Get File Metadata
@@ -196,27 +325,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/FileMetaData_200"
-    patch:
-      summary: Update File Metadata
-      tags:
-        - storage
-      operationId: update_file_meta_data
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        $ref: "#/components/requestBodies/FileMetaDataBody"
       responses:
         "200":
           $ref: "#/components/responses/FileMetaData_200"
@@ -246,3 +354,93 @@ components:
 
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+
+  schemas:
+    FileUploadEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadSchema"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadSchema:
+      type: object
+      required:
+        - chunk_size
+        - urls
+        - links
+      properties:
+        chunk_size:
+          type: integer
+          format: int64
+          minimum: 0
+        urls:
+          type: array
+          items:
+            type: string
+        links:
+          type: object
+          required:
+            - abort_upload
+            - complete_upload
+          properties:
+            abort_upload:
+              type: string
+            complete_upload:
+              type: string
+
+    FileUploadCompleteEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadComplete"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadComplete:
+      type: object
+      required:
+        - links
+      properties:
+        links:
+          type: object
+          required:
+            - state
+          properties:
+            state:
+              type: string
+
+    FileUploadCompleteFutureEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadCompleteFuture"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadCompleteFuture:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+          enum:
+            - ok
+            - nok
+        e_tag:
+          type: string
+          nullable: true

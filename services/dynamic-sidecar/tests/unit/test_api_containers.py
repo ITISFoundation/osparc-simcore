@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import importlib
 import json
 import random
 from collections import namedtuple
@@ -37,7 +36,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
-DEFAULT_COMMAND_TIMEOUT = 5.0
+DEFAULT_COMMAND_TIMEOUT = 5
 WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 
@@ -107,7 +106,7 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 async def _docker_ps_a_container_names() -> list[str]:
     command = 'docker ps -a --format "{{.Names}}"'
-    success, stdout = await async_command(command=command, command_timeout=None)
+    success, stdout, *_ = await async_command(command=command, timeout=None)
 
     assert success is True, stdout
     return stdout.split("\n")
@@ -122,11 +121,11 @@ async def _assert_compose_spec_pulled(
         'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
-    success, stdout = await _write_file_and_run_command(
+    success, stdout, *_ = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        compose_spec_yaml_content=compose_spec,
         command=command,
-        command_timeout=None,
+        terminate_process_on_timeout=None,
     )
 
     assert success is True, stdout
@@ -166,7 +165,9 @@ async def started_containers(client: TestClient, compose_spec: str) -> list[str]
     await _assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
 
     shared_store: SharedStore = client.application.state.shared_store
@@ -213,18 +214,19 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 @pytest.fixture
 def mock_data_manager(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.data_manager.upload_path_if_exists",
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.push",
+        autospec=True,
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.data_manager.pull_path_if_exists",
-        return_value=None,
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.exists",
+        autospec=True,
+        return_value=True,
     )
-
-    importlib.reload(
-        importlib.import_module(
-            "simcore_service_dynamic_sidecar.api.containers_extension"
-        )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.pull",
+        autospec=True,
+        return_value=None,
     )
 
 
@@ -309,10 +311,11 @@ def test_ensure_api_vtag_is_v1():
 
 async def test_start_containers_wrong_spec(client: TestClient, rabbitmq_mock: None):
     response = await client.post(
-        f"/{API_VTAG}/containers", data={"opsie": "shame on me"}
+        f"/{API_VTAG}/containers",
+        json={"docker_compose_yaml": "INVALID_COMPOSE_SPEC_YAML"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+    assert "yaml is not valid" in response.json()["detail"]
 
 
 async def test_start_same_space_twice(
@@ -333,7 +336,9 @@ async def test_start_same_space_twice(
 
 
 async def test_compose_up(client: TestClient, compose_spec: dict[str, Any]):
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -343,12 +348,15 @@ async def test_compose_up(client: TestClient, compose_spec: dict[str, Any]):
 async def test_compose_up_spec_not_provided(client: TestClient):
     response = await client.post(f"/{API_VTAG}/containers")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
-    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
+    # FIXME: next PR, error schemas in OAS are NOT consistent with this check
+    #  assert "yaml not valid" in response.json()["detail"]
 
 
 async def test_compose_up_spec_invalid(client: TestClient):
     invalid_compose_spec = faker.Faker().text()  # pylint: disable=no-member
-    response = await client.post(f"/{API_VTAG}/containers", data=invalid_compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": invalid_compose_spec}
+    )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert "Provided yaml is not valid!" in response.text
     # 28+ characters means the compos spec is also present in the error message
@@ -359,7 +367,9 @@ async def test_containers_down_after_starting(
     client: TestClient, compose_spec: dict[str, Any]
 ):
     # store spec first
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -450,6 +460,7 @@ async def test_container_inspect_logs_remove(
 ):
     for container in started_containers:
         # get container logs
+        # FIXME: slow call?
         response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == status.HTTP_200_OK, response.text
 
@@ -464,12 +475,13 @@ async def test_container_logs_with_timestamps(
     client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
-        # get container logs
+        print("getting logs of container", container, "...")
         response = await client.get(
             f"/{API_VTAG}/containers/{container}/logs",
             query_string=dict(timestamps=True),
         )
         assert response.status_code == status.HTTP_200_OK, response.text
+        assert response.json() == []
 
 
 async def test_container_missing_container(
@@ -711,7 +723,9 @@ async def test_containers_entrypoint_name_containers_not_started(
 
 async def test_containers_restart(client: TestClient, compose_spec: dict[str, Any]):
     # store spec first
-    response = await client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names
@@ -743,7 +757,9 @@ async def test_attach_detach_container_to_network(
     selected_spec: str,
     attachable_networks_and_ids: dict[str, str],
 ):
-    response = await client.post(f"/{API_VTAG}/containers", data=selected_spec)
+    response = await client.post(
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": selected_spec}
+    )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = client.application.state.shared_store
     container_names = shared_store.container_names

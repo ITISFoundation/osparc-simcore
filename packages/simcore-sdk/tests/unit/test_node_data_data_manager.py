@@ -5,21 +5,22 @@
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
-from typing import Callable, Iterator, List
+from typing import Callable, Iterator
 
 import pytest
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 
 @pytest.fixture
-def create_files() -> Iterator[Callable[..., List[Path]]]:
+def create_files() -> Iterator[Callable[..., list[Path]]]:
     created_files = []
 
-    def _create_files(number: int, folder: Path) -> List[Path]:
+    def _create_files(number: int, folder: Path) -> list[Path]:
 
         for i in range(number):
-            file_path = folder / "{}.test".format(i)
-            file_path.write_text("I am test file number {}".format(i))
+            file_path = folder / f"{i}.test"
+            file_path.write_text(f"I am test file number {i}")
             assert file_path.exists()
             created_files.append(file_path)
         return created_files
@@ -73,15 +74,15 @@ async def test_push_folder(
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
-        local_file_path=(test_compression_folder / "{}.zip".format(test_folder.stem)),
+        local_file_path=(test_compression_folder / f"{test_folder.stem}.zip"),
         r_clone_settings=None,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
     )
 
-    archive_file = test_compression_folder / "{}.zip".format(test_folder.stem)
+    archive_file = test_compression_folder / f"{test_folder.stem}.zip"
     assert archive_file.exists()
 
     # create control folder
@@ -123,7 +124,7 @@ async def test_push_file(
         r_clone_settings=None,
         local_file_path=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
     )
@@ -182,7 +183,7 @@ async def test_pull_folder(
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
     )
@@ -227,7 +228,7 @@ async def test_pull_file(
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=file_path.parent,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
-        store_id="0",
+        store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
     )

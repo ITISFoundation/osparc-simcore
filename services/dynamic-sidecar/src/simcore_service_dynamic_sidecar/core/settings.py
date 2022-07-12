@@ -18,7 +18,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
-    SC_BOOT_MODE: Optional[BootModeEnum] = Field(
+    SC_BOOT_MODE: BootModeEnum = Field(
         ...,
         description="boot mode helps determine if in development mode or normal operation",
     )
@@ -32,7 +32,9 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # LOGGING
-    LOG_LEVEL: str = Field(default="WARNING")
+    LOG_LEVEL: str = Field(
+        default="WARNING", env=["DYNAMIC_SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     DYNAMIC_SIDECAR_HOST: str = Field(
@@ -86,7 +88,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_STATE_PATHS: list[Path] = Field(
         ..., description="list of additional paths to be synced"
     )
-    DY_SIDECAR_STATE_EXCLUDE: list[str] = Field(
+    DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_USER_ID: UserID
@@ -103,11 +105,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
-
-    @property
-    def is_development_mode(self) -> bool:
-        """If in development mode this will be True"""
-        return self.SC_BOOT_MODE is BootModeEnum.DEVELOPMENT
 
     @property
     def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:

@@ -1,23 +1,22 @@
-# pylint: disable=redefined-builtin
+# pylint: disable=too-many-arguments
 
 import functools
 import json
 import logging
 from typing import Any, Union
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    HTTPException,
-    Query,
-    Request,
-    status,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import Path as PathParam
+from fastapi import Query, Request, status
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.docker_compose_utils import docker_compose_down, docker_compose_up
+from ..core.docker_compose_utils import (
+    docker_compose_down,
+    docker_compose_rm,
+    docker_compose_up,
+)
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
@@ -29,7 +28,7 @@ from ..core.validation import (
     validate_compose_spec,
 )
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import SharedStore
+from ..models.shared_store import ContainerNameStr, SharedStore
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
@@ -55,18 +54,21 @@ async def _task_docker_compose_up_and_send_message(
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
-    command_timeout: float,
+    command_timeout: int,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
+        # prunes first stopped containers
+        await docker_compose_rm(shared_store.compose_spec, settings)
+
         r = await docker_compose_up(
-            shared_store, settings, command_timeout=command_timeout
+            shared_store.compose_spec, settings, timeout=command_timeout
         )
 
-    message = f"Finished docker-compose up with output\n{r.decoded_stdout}"
+    message = f"Finished docker-compose up with output\n{r.message}"
 
     if r.success:
         await send_message(rabbitmq, "service containers started")
@@ -82,13 +84,22 @@ async def _task_docker_compose_up_and_send_message(
     return None
 
 
-def _raise_if_container_is_missing(id: str, container_names: list[str]) -> None:
-    if id not in container_names:
-        message = (
-            f"No container '{id}' was started. Started containers '{container_names}'"
-        )
+def _raise_if_container_is_missing(
+    container_id: str, container_names: list[str]
+) -> None:
+    if container_id not in container_names:
+        message = f"No container '{container_id}' was started. Started containers '{container_names}'"
         logger.warning(message)
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
+
+
+#
+# API Schema Models ------------------
+#
+
+
+class ContainersCreate(BaseModel):
+    docker_compose_yaml: str
 
 
 #
@@ -99,38 +110,39 @@ containers_router = APIRouter(tags=["containers"])
 
 @containers_router.post(
     "/containers",
+    summary="Run docker-compose up",
     status_code=status.HTTP_202_ACCEPTED,
+    response_model=list[ContainerNameStr],
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Cannot validate submitted compose spec"
         }
     },
 )
-async def runs_docker_compose_up(
-    _request: Request,
+@cancel_on_disconnect
+async def create_containers(
+    request: Request,
+    containers_create: ContainersCreate,
     background_tasks: BackgroundTasks,
+    command_timeout: int = Query(
+        3600, description="docker-compose up command timeout run as a background"
+    ),
+    validation_timeout: int = Query(
+        60, description="docker-compose config timeout (EXPERIMENTAL)"
+    ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    command_timeout: float = Query(
-        3600.0, description="docker-compose up command timeout run as a background"
-    ),
-    validation_timeout: float = Query(
-        60.0, description="docker-compose config timeout (EXPERIMENTAL)"
-    ),
-) -> Union[list[str], dict[str, Any]]:
-    """Expects the docker-compose spec as raw-body utf-8 encoded text"""
-
-    # stores the compose spec after validation
-    body_as_text = (await _request.body()).decode("utf-8")
+):
+    assert request  # nosec
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
             settings=settings,
-            compose_file_content=body_as_text,
+            compose_file_content=containers_create.docker_compose_yaml,
             mounted_volumes=mounted_volumes,
             docker_compose_config_timeout=validation_timeout,
         )
@@ -171,8 +183,8 @@ async def runs_docker_compose_up(
     },
 )
 async def runs_docker_compose_down(
-    command_timeout: float = Query(
-        10.0, description="docker-compose down command timeout default  (EXPERIMENTAL)"
+    command_timeout: int = Query(
+        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -180,7 +192,6 @@ async def runs_docker_compose_down(
 ) -> Union[str, dict[str, Any]]:
     """Removes the previously started service
     and returns the docker-compose output"""
-    # TODO: convert into long running operation
 
     if shared_store.compose_spec is None:
         raise HTTPException(
@@ -189,24 +200,28 @@ async def runs_docker_compose_down(
         )
 
     result = await docker_compose_down(
-        shared_store=shared_store,
-        settings=settings,
-        command_timeout=command_timeout,
+        shared_store.compose_spec,
+        settings,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
     )
 
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
+    await docker_compose_rm(shared_store.compose_spec, settings)
+
     if not result.success:
         logger.warning(
             "docker-compose down command finished with errors\n%s",
-            result.decoded_stdout,
+            result.message,
         )
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.decoded_stdout
-        )
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.message)
 
-    return result.decoded_stdout
+    # removing compose-file spec
+    assert result.success  # nosec
+    shared_store.clear()
+
+    return result.message
 
 
 @containers_router.get(
@@ -215,8 +230,9 @@ async def runs_docker_compose_down(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
+@cancel_on_disconnect
 async def containers_docker_inspect(
-    _request: Request,
+    request: Request,
     only_status: bool = Query(
         False, description="if True only show the status of the container"
     ),
@@ -226,6 +242,7 @@ async def containers_docker_inspect(
     Returns entire docker inspect data, if only_state is True,
     the status of the containers is returned
     """
+    assert request  # nosec
 
     def _format_result(container_inspect: dict[str, Any]) -> dict[str, Any]:
         if only_status:
@@ -261,9 +278,10 @@ async def containers_docker_inspect(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancel_on_disconnect
 async def get_container_logs(
-    _request: Request,
-    id: str,
+    request: Request,
+    container_id: str = PathParam(..., alias="id"),
     since: int = Query(
         0,
         title="Timestamp",
@@ -282,10 +300,12 @@ async def get_container_logs(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> list[str]:
     """Returns the logs of a given container if found"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
+    assert request  # nosec
+
+    _raise_if_container_is_missing(container_id, shared_store.container_names)
 
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
 
         args = dict(stdout=True, stderr=True, since=since, until=until)
         if timestamps:
@@ -306,8 +326,9 @@ async def get_container_logs(
         },
     },
 )
+@cancel_on_disconnect
 async def get_containers_name(
-    _request: Request,
+    request: Request,
     filters: str = Query(
         ...,
         description=(
@@ -323,6 +344,8 @@ async def get_containers_name(
     Supported filters:
         network: name of the network
     """
+    assert request  # nosec
+
     filters_dict: dict[str, str] = json.loads(filters)
     if not isinstance(filters_dict, dict):
         raise HTTPException(
@@ -365,13 +388,18 @@ async def get_containers_name(
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
     },
 )
+@cancel_on_disconnect
 async def inspect_container(
-    _request: Request, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    request: Request,
+    container_id: str = PathParam(..., alias="id"),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
-    _raise_if_container_is_missing(id, shared_store.container_names)
+    assert request  # nosec
+
+    _raise_if_container_is_missing(container_id, shared_store.container_names)
 
     async with docker_client() as docker:
-        container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(container_id)
         inspect_result: dict[str, Any] = await container_instance.show()
         return inspect_result

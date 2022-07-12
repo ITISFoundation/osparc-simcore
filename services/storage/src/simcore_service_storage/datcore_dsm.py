@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 
 from aiohttp import web
-from models_library.api_schemas_storage import LinkType
+from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .datcore_adapter import datcore_adapter
 from .db_tokens import get_api_token_and_secret
 from .dsm_factory import BaseDataManager
-from .models import DatasetMetaData, FileMetaData
+from .models import DatasetMetaData, FileMetaData, UploadLinks
 
 
 @dataclass
@@ -59,9 +59,21 @@ class DatCoreDataManager(BaseDataManager):
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         raise NotImplementedError
 
-    async def create_file_upload_link(
-        self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
-    ) -> AnyUrl:
+    async def create_file_upload_links(
+        self,
+        user_id: UserID,
+        file_id: StorageFileID,
+        link_type: LinkType,
+        file_size_bytes: ByteSize,
+    ) -> UploadLinks:
+        raise NotImplementedError
+
+    async def complete_file_upload(
+        self,
+        file_id: StorageFileID,
+        user_id: UserID,
+        uploaded_parts: list[UploadedPart],
+    ) -> FileMetaData:
         raise NotImplementedError
 
     async def abort_file_upload(self, user_id: UserID, file_id: StorageFileID) -> None:

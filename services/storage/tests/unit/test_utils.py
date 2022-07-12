@@ -10,12 +10,14 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
-from simcore_service_storage.models import ETag, FileMetaData, S3BucketName
+from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from simcore_service_storage.utils import (
     MAX_CHUNK_SIZE,
     download_to_file_or_raise,
     is_file_entry_valid,
+    is_valid_managed_multipart_upload,
 )
 
 
@@ -34,25 +36,34 @@ async def test_download_files(tmpdir):
 
 
 @pytest.mark.parametrize(
-    "file_size, entity_tag, upload_expires_at, expected_validity",
+    "file_size, entity_tag, upload_id, upload_expires_at, expected_validity",
     [
-        (-1, None, None, False),
-        (0, None, None, False),
-        (random.randint(1, 1000000), None, None, False),
-        (-1, "some_valid_entity_tag", None, False),
-        (0, "some_valid_entity_tag", None, False),
+        (-1, None, None, None, False),
+        (0, None, None, None, False),
+        (random.randint(1, 1000000), None, None, None, False),
+        (-1, "some_valid_entity_tag", None, None, False),
+        (0, "some_valid_entity_tag", None, None, False),
         (
             random.randint(1, 1000000),
             "some_valid_entity_tag",
+            "som_upload_id",
+            None,
+            False,
+        ),
+        (
+            random.randint(1, 1000000),
+            "some_valid_entity_tag",
+            None,
             datetime.datetime.utcnow(),
             False,
         ),
-        (random.randint(1, 1000000), "some_valid_entity_tag", None, True),
+        (random.randint(1, 1000000), "some_valid_entity_tag", None, None, True),
     ],
 )
 def test_file_entry_valid(
     file_size: ByteSize,
     entity_tag: Optional[ETag],
+    upload_id: Optional[UploadID],
     upload_expires_at: Optional[datetime.datetime],
     expected_validity: bool,
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
@@ -68,5 +79,22 @@ def test_file_entry_valid(
     )
     fmd.file_size = parse_obj_as(ByteSize, file_size)
     fmd.entity_tag = entity_tag
+    fmd.upload_id = upload_id
     fmd.upload_expires_at = upload_expires_at
     assert is_file_entry_valid(fmd) == expected_validity
+
+
+@pytest.mark.parametrize(
+    "upload_id, is_valid_and_internally_managed",
+    [
+        (None, False),
+        (S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID, False),
+        ("any_other_id", True),
+    ],
+)
+def test_is_valid_internally_managed_multipart_upload(
+    upload_id: UploadID, is_valid_and_internally_managed: bool
+):
+    assert (
+        is_valid_managed_multipart_upload(upload_id) == is_valid_and_internally_managed
+    )

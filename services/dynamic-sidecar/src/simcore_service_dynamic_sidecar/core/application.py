@@ -1,10 +1,15 @@
 import logging
+from typing import Optional
 
 from fastapi import FastAPI
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.openapi import (
+    get_common_oas_options,
+    override_fastapi_openapi_method,
+)
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VTAG, __version__
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
@@ -25,18 +30,67 @@ logger = logging.getLogger(__name__)
 # https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
 #
 
-WELCOME_MSG = r"""
+APP_STARTED_BANNER_MSG = r"""
 d ss    Ss   sS   sss. d d ss    d sss     sSSs. d s.   d ss.
 S   ~o    S S   d      S S   ~o  S        S      S  ~O  S    b
 S     b    S    Y      S S     b S       S       S   `b S    P
 S     S    S      ss.  S S     S S sSSs  S       S sSSO S sS'
 S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
-P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {}
+P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
 
 """.format(
     f"v{__version__}"
 )
+
+APP_FINISHED_BANNER_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
+
+
+class AppState:
+    """Exposes states of an initialized app
+
+    Provides a stricter control on the read/write access
+    of the different app.state fields during the app's lifespan
+    """
+
+    _STATES = {
+        "settings": DynamicSidecarSettings,
+        "mounted_volumes": MountedVolumes,
+        "shared_store": SharedStore,
+    }
+
+    def __init__(self, initialized_app: FastAPI):
+        # Ensures states are initialized upon construction
+        errors = [
+            "app.state.{name}"
+            for name, type_ in AppState._STATES.items()
+            if not isinstance(getattr(initialized_app.state, name, None), type_)
+        ]
+        if errors:
+            raise ValueError(
+                f"These app states were not properly initialized: {errors}"
+            )
+
+        self._app = initialized_app
+
+    @property
+    def settings(self) -> DynamicSidecarSettings:
+        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
+        return self._app.state.settings
+
+    @property
+    def mounted_volumes(self) -> MountedVolumes:
+        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
+        return self._app.state.mounted_volumes
+
+    @property
+    def _shared_store(self) -> SharedStore:
+        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
+        return self._app.state.shared_store
+
+    @property
+    def compose_spec(self) -> Optional[str]:
+        return self._shared_store.compose_spec
 
 
 def setup_logger(settings: DynamicSidecarSettings):
@@ -53,9 +107,12 @@ def create_base_app() -> FastAPI:
 
     # minimal
     app = FastAPI(
-        debug=settings.DEBUG,
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        title=PROJECT_NAME,
+        description=SUMMARY,
+        version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
+        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
@@ -78,7 +135,7 @@ def create_app():
     app.state.shared_store = SharedStore()
     app.state.application_health = ApplicationHealth()
 
-    if app.state.settings.is_development_mode:
+    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
     if app.state.settings.RABBIT_SETTINGS:
@@ -94,43 +151,34 @@ def create_app():
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
     # EVENTS ---------------------
+    app_state = AppState(app)
+
     async def _on_startup() -> None:
-        await login_registry(app.state.settings.REGISTRY_SETTINGS)
-        await volumes_fix_permissions(app.state.mounted_volumes)
-        print(WELCOME_MSG, flush=True)
+        await login_registry(app_state.settings.REGISTRY_SETTINGS)
+        await volumes_fix_permissions(app_state.mounted_volumes)
+        # STARTED
+        print(APP_STARTED_BANNER_MSG, flush=True)
 
     async def _on_shutdown() -> None:
-        logger.info("Going to remove spawned containers")
-        result = await docker_compose_down(
-            shared_store=app.state.shared_store,
-            settings=app.state.settings,
-            command_timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
-        )
-        logger.info("Container removal did_succeed=%s\n%s", result[0], result[1])
+        if docker_compose_yaml := app_state.compose_spec:
+            logger.info("Removing spawned containers")
 
-        logger.info("shutdown cleanup completed")
+            result = await docker_compose_down(
+                docker_compose_yaml,
+                app.state.settings,
+                # NOTE: in the event of a SIGTERM, there is a limited time to cleanup
+                timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
+            )
+
+            logger.log(
+                logging.INFO if result.success else logging.ERROR,
+                "Removed spawned containers:\n%s",
+                result.message,
+            )
+        # FINISHED
+        print(APP_FINISHED_BANNER_MSG, flush=True)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
     return app
-
-
-class AppState:
-    def __init__(self, app: FastAPI):
-        self._app = app
-
-    @property
-    def settings(self) -> DynamicSidecarSettings:
-        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
-        return self._app.state.settings
-
-    @property
-    def mounted_volumes(self) -> MountedVolumes:
-        assert isinstance(self._app.state.mounted_volumes, MountedVolumes)  # nosec
-        return self._app.state.mounted_volumes
-
-    @property
-    def shared_store(self) -> SharedStore:
-        assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
-        return self._app.state.shared_store

@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-nested-blocks
 
-import asyncio
 import sys
 from collections import deque
 from copy import deepcopy
@@ -27,6 +26,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
 from simcore_service_storage.s3_client import StorageS3Client
@@ -205,7 +205,7 @@ async def random_project_with_files(
                 for _ in range(randint(0, 3))
             ]
         )
-    await asyncio.gather(*upload_tasks)
+    await logged_gather(*upload_tasks, max_concurrency=2)
 
     project = await _get_updated_project(aiopg_engine, project["uuid"])
     return project, src_projects_list
@@ -261,6 +261,7 @@ async def test_copy_folders_from_valid_project(
                 ),
                 expected_entry_exists=True,
                 expected_file_size=src_file.stat().st_size,
+                expected_upload_id=None,
                 expected_upload_expiration_date=None,
             )
 
@@ -361,6 +362,7 @@ def mock_check_project_exists(mocker: MockerFixture):
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "project",
     [pytest.param(prj, id=prj.name) for prj in _get_project_with_data()],
@@ -399,13 +401,14 @@ async def test_create_and_delete_folders_from_project_burst(
         project, exclude={"tags", "state", "prj_owner"}, by_alias=False
     )
     await create_project(**project_as_dict)
-    await asyncio.gather(
+    await logged_gather(
         *[
             _create_and_delete_folders_from_project(
                 user_id, project_as_dict, client, create_project, check_list_files=False
             )
             for _ in range(100)
-        ]
+        ],
+        max_concurrency=2,
     )
 
 

@@ -3,7 +3,10 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.openapi import (
+    get_common_oas_options,
+    override_fastapi_openapi_method,
+)
 from servicelib.fastapi.tracing import setup_tracing
 
 from ..api.entrypoints import api_router
@@ -21,6 +24,7 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    node_rights,
     rabbitmq,
     remote_debug,
     storage,
@@ -91,14 +95,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE
-        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
-        redoc_url=None,  # default disabled
+        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
 
@@ -136,6 +138,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
+
+    node_rights.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING)
