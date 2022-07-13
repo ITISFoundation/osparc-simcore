@@ -25,6 +25,10 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
+#
+# projects/*/nodes COLLECTION -------------------------
+#
+
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
 @login_required
@@ -105,6 +109,75 @@ async def get_node(request: web.Request) -> web.Response:
         ) from exc
 
 
+@login_required
+@permission_required("project.node.delete")
+async def delete_node(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    try:
+        # ensure the project exists
+
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
+            include_templates=True,
+        )
+
+        await projects_api.delete_project_node(
+            request,
+            f"{path_params.project_id}",
+            req_ctx.user_id,
+            f"{path_params.node_id}",
+        )
+
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve")
+@login_required
+@permission_required("project.node.read")
+async def retrieve_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    try:
+        data = await request.json()
+        port_keys = data.get("port_keys", [])
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
+
+    return web.json_response(
+        await director_v2_api.retrieve(
+            request.app, f"{path_params.node_id}", port_keys
+        ),
+        dumps=json_dumps,
+    )
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
+@login_required
+@permission_required("project.node.read")
+async def restart_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+
+    return web.HTTPNoContent()
+
+
+#
+# projects/*/nodes/*/resources  COLLECTION -------------------------
+#
+
+
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
 @login_required
 @permission_required("project.node.read")
@@ -171,65 +244,4 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     except NodeNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Node {path_params.node_id} not found in project"
-        ) from exc
-
-
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve")
-@login_required
-@permission_required("project.node.read")
-async def post_retrieve(request: web.Request) -> web.Response:
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
-    try:
-        data = await request.json()
-        port_keys = data.get("port_keys", [])
-    except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
-
-    return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", port_keys
-        ),
-        dumps=json_dumps,
-    )
-
-
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
-@login_required
-@permission_required("project.node.read")
-async def post_restart(request: web.Request) -> web.Response:
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
-    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
-
-    return web.HTTPNoContent()
-
-
-@login_required
-@permission_required("project.node.delete")
-async def delete_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
-    try:
-        # ensure the project exists
-
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-            include_templates=True,
-        )
-
-        await projects_api.delete_project_node(
-            request,
-            f"{path_params.project_id}",
-            req_ctx.user_id,
-            f"{path_params.node_id}",
-        )
-
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
         ) from exc
