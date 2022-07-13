@@ -275,7 +275,7 @@ def create_dynamic_service_mock(
             "director_v2_api.get_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2_core_computational.get_dynamic_services"
+            "director_v2_core_dynamic_services.get_dynamic_services"
         ].return_value = services
         return running_service_dict
 
