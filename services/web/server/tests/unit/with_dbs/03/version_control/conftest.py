@@ -200,7 +200,7 @@ async def request_delete_project(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
     )
     director_v2_api_stop_services: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_dynamic_services",
+        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_dynamic_service",
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
