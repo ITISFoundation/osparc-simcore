@@ -88,6 +88,9 @@ async def list_running_dynamic_services(
             dynamic_services_settings.DYNAMIC_SIDECAR, user_id, project_id
         )
     ]
+
+    # FIXME: handle DynamicSidecarNotFoundError. Check other values raise by get_stack ... as well
+    # add exception handler to HTTP
     dynamic_sidecar_running_services: list[DynamicServiceOut] = cast(
         list[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
     )
