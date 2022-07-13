@@ -100,16 +100,28 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
+        const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
         const updatable = node["version"] !== latestCompatibleMetadata["version"];
         if (updatable) {
           updatableServices.push(nodeId);
         }
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
-          font: "text-14",
-          textColor: updatable ? "text-darker" : "text",
-          backgroundColor: updatable ? "warning-yellow" : null
+          font: "text-14"
         });
+        if (isDeprecated) {
+          currentVersionLabel.set({
+            textColor: "contrasted-text-dark",
+            backgroundColor: "failed-red",
+            toolTipText: this.tr("Service deprecated, please update")
+          });
+        } else if (updatable) {
+          currentVersionLabel.set({
+            textColor: "contrasted-text-dark",
+            backgroundColor: "warning-yellow"
+          });
+        }
         this._add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION

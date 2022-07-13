@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.addListener("changeSelection", e => {
           const currentSelection = e.getData()[0];
           if (currentSelection === tabPage) {
-            tabPage.addAt(this.__serviceVersionLayout, 0);
+            tabPage.addAt(this.__serviceVersionLayout, 1);
           }
         }, this);
       }

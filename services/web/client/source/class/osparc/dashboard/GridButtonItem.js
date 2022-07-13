@@ -70,7 +70,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/18",
-            toolTipText: this.tr("Update available"),
             visibility: "excluded"
           });
           layout.add(control);
