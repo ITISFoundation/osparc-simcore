@@ -4,17 +4,14 @@ PLEASE avoid importing from any other module to access this plugin's functionali
 """
 
 
-from typing import Tuple
-
 from .director_v2_abc import (
     AbstractProjectRunPolicy,
     get_project_run_policy,
     set_project_run_policy,
 )
-from .director_v2_core import (
+from .director_v2_core_computational import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
-    DirectorServiceError,
     create_cluster,
     create_or_update_pipeline,
     delete_cluster,
@@ -22,22 +19,25 @@ from .director_v2_core import (
     get_cluster,
     get_cluster_details,
     get_computation_task,
-    get_dynamic_service_state,
-    get_dynamic_services,
-    is_healthy,
     is_pipeline_running,
     list_clusters,
     ping_cluster,
     ping_specific_cluster,
+    update_cluster,
+)
+from .director_v2_core_dynamic_services import (
+    DirectorServiceError,
+    get_dynamic_service_state,
+    get_dynamic_services,
     request_retrieve_dyn_service,
     restart_dynamic_service,
     retrieve,
     run_dynamic_service,
     stop_dynamic_service,
     stop_dynamic_services_in_project,
-    update_cluster,
     update_dynamic_service_networks_in_project,
 )
+from .director_v2_core_utils import is_healthy
 
 # director-v2 module internal API
 __all__: tuple[str, ...] = (

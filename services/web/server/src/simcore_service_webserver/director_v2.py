@@ -15,7 +15,8 @@ from servicelib.aiohttp.rest_routing import (
 from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
-from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
+from .director_v2_core_base import DirectorV2ApiClient, set_client
+from .director_v2_core_utils import DefaultProjectRunPolicy
 from .rest import setup_rest
 
 log = logging.getLogger(__name__)

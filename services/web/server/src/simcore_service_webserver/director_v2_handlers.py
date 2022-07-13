@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 from aiohttp import web
 from models_library.clusters import ClusterID
@@ -13,7 +13,8 @@ from servicelib.json_serialization import json_dumps
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
-from .director_v2_core import DirectorServiceError, DirectorV2ApiClient
+from .director_v2_core_base import DirectorV2ApiClient
+from .director_v2_exceptions import DirectorServiceError
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 from .version_control_db import CommitID
@@ -37,7 +38,7 @@ async def start_computation(request: web.Request) -> web.Response:
     user_id = UserID(request[RQT_USERID_KEY])
     project_id = ProjectID(request.match_info["project_id"])
 
-    subgraph: Set[str] = set()
+    subgraph: set[str] = set()
     force_restart: bool = False  # TODO: deprecate this entry
     cluster_id: NonNegativeInt = 0
 
@@ -55,8 +56,8 @@ async def start_computation(request: web.Request) -> web.Response:
     }
 
     try:
-        running_project_ids: List[ProjectID]
-        project_vc_commits: List[CommitID]
+        running_project_ids: list[ProjectID]
+        project_vc_commits: list[CommitID]
 
         (
             running_project_ids,
@@ -76,7 +77,7 @@ async def start_computation(request: web.Request) -> web.Response:
             else True
         )
 
-        _started_pipelines_ids: Tuple[str] = await asyncio.gather(
+        _started_pipelines_ids: tuple[str] = await asyncio.gather(
             *[client.start(pid, user_id, **options) for pid in running_project_ids]
         )
 
@@ -84,7 +85,7 @@ async def start_computation(request: web.Request) -> web.Response:
             map(str, running_project_ids)
         )  # nosec
 
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "pipeline_id": project_id,
         }
         # Optional
@@ -118,7 +119,7 @@ async def stop_computation(request: web.Request) -> web.Response:
     project_id = ProjectID(request.match_info["project_id"])
 
     try:
-        project_ids: List[ProjectID] = await run_policy.get_runnable_projects_ids(
+        project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
             request, project_id
         )
         log.debug("Project %s will stop %d variants", project_id, len(project_ids))
@@ -157,12 +158,12 @@ async def get_computation(request: web.Request) -> web.Response:
     project_id = ProjectID(request.match_info["project_id"])
 
     try:
-        project_ids: List[ProjectID] = await run_policy.get_runnable_projects_ids(
+        project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
             request, project_id
         )
         log.debug("Project %s will get %d variants", project_id, len(project_ids))
         list_computation_tasks = parse_obj_as(
-            List[ComputationTaskGet],
+            list[ComputationTaskGet],
             await asyncio.gather(
                 *[client.get(project_id=pid, user_id=user_id) for pid in project_ids]
             ),
