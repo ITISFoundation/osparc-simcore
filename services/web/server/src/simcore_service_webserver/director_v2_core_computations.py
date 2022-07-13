@@ -71,12 +71,15 @@ class ComputationsApi:
         )
 
 
+_APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
+
+
 def get_client(app: web.Application) -> Optional[ComputationsApi]:
-    return app.get(f"{__name__}.{ComputationsApi.__name__}")
+    return app.get(_APP_KEY)
 
 
 def set_client(app: web.Application, obj: ComputationsApi):
-    app[f"{__name__}.{ComputationsApi.__name__}"] = obj
+    app[_APP_KEY] = obj
 
 
 #
