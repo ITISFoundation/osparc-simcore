@@ -18,66 +18,67 @@ from typing import AsyncIterator, Callable, Final
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
-from httpx import AsyncClient, HTTPError
+from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.fastapi.long_running import client, server
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
 ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
-# NOTE: `mock_server_app` needs to be defined at module level
-# uvicorn is only able to import an object from a module
-mock_server_app = FastAPI(title="app containing the server")
-
-server.setup(mock_server_app)
-
-
-@mock_server_app.get("/")
-def health() -> None:
-    """used to check if application is ready"""
-
-
-@mock_server_app.post("/string-list-task")
-async def create_string_list_task(
-    task_manger: server.TaskManager = Depends(server.get_task_manager),
-) -> server.TaskId:
-    async def _string_list_task(
-        task_progress: server.TaskProgress, items: int
-    ) -> list[str]:
-        task_progress.publish(message="starting", percent=0)
-        generated_strings = []
-        for x in range(items):
-            string = f"{x}"
-            generated_strings.append(string)
-            percent = x / items
-            await asyncio.sleep(ITEM_PUBLISH_SLEEP)
-            task_progress.publish(message="generated item", percent=percent)
-        task_progress.publish(message="finished", percent=1)
-        return generated_strings
-
-    # NOTE: TaskProgress is injected by start_task
-    task_id = server.start_task(
-        task_manager=task_manger, handler=_string_list_task, items=10
-    )
-    return task_id
-
-
 # UTILS
+
+
+def create_mock_app() -> FastAPI:
+    mock_server_app = FastAPI(title="app containing the server")
+
+    server.setup(mock_server_app)
+
+    @mock_server_app.get("/")
+    def health() -> None:
+        """used to check if application is ready"""
+
+    @mock_server_app.post("/string-list-task")
+    async def create_string_list_task(
+        task_manger: server.TaskManager = Depends(server.get_task_manager),
+    ) -> server.TaskId:
+        async def _string_list_task(
+            task_progress: server.TaskProgress, items: int
+        ) -> list[str]:
+            task_progress.publish(message="starting", percent=0)
+            generated_strings = []
+            for x in range(items):
+                string = f"{x}"
+                generated_strings.append(string)
+                percent = x / items
+                await asyncio.sleep(ITEM_PUBLISH_SLEEP)
+                task_progress.publish(message="generated item", percent=percent)
+            task_progress.publish(message="finished", percent=1)
+            return generated_strings
+
+        # NOTE: TaskProgress is injected by start_task
+        task_id = server.start_task(
+            task_manager=task_manger, handler=_string_list_task, items=10
+        )
+        return task_id
+
+    return mock_server_app
 
 
 async def _wait_server_ready(address: AnyHttpUrl) -> None:
     client = AsyncClient()
-    while True:
-        print(f"Checking if server running at: {address}")
-        try:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
+    ):
+        with attempt:
+            print(f"Checking if server running at: {address}")
             response = await client.get(address, timeout=0.1)
             if response.status_code == status.HTTP_200_OK:
                 return
-        except HTTPError:
-            pass
-        await asyncio.sleep(0.1)
 
 
 # FIXTURES - SERVER
@@ -89,7 +90,8 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
     with subprocess.Popen(
         [
             "uvicorn",
-            f"{CURRENT_FILE.stem}:mock_server_app",
+            "--factory",
+            f"{CURRENT_FILE.stem}:create_mock_app",
             "--port",
             f"{port}",
         ],
