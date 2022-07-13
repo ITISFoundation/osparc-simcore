@@ -4,7 +4,7 @@
 
 import json
 import logging
-from typing import Dict, List, Union
+from typing import Union
 
 from aiohttp import web
 from models_library.projects_nodes import NodeID
@@ -87,16 +87,18 @@ async def get_node(request: web.Request) -> web.Response:
         )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        reply: Union[Dict, List] = await director_v2_api.get_service_state(
+        service_state: Union[
+            dict, list
+        ] = await director_v2_api.get_dynamic_service_state(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
-        if "data" not in reply:
+        if "data" not in service_state:
             # dynamic-service NODE STATE
-            return web.json_response({"data": reply}, dumps=json_dumps)
+            return web.json_response({"data": service_state}, dumps=json_dumps)
 
         # LEGACY-service NODE STATE
-        return web.json_response({"data": reply["data"]}, dumps=json_dumps)
+        return web.json_response({"data": service_state["data"]}, dumps=json_dumps)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
@@ -198,7 +200,7 @@ async def post_retrieve(request: web.Request) -> web.Response:
 async def post_restart(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
-    await director_v2_api.restart(request.app, f"{path_params.node_id}")
+    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
     return web.HTTPNoContent()
 

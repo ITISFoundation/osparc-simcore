@@ -138,7 +138,7 @@ async def get_project_for_user(
 #     return updated_project
 
 
-async def start_project_interactive_services(
+async def run_project_dynamic_services(
     request: web.Request, project: dict, user_id: PositiveInt
 ) -> None:
     # first get the services if they already exist
@@ -147,7 +147,7 @@ async def start_project_interactive_services(
         f"{project['uuid']=}",
         f"{user_id=}",
     )
-    running_services = await director_v2_api.get_services(
+    running_services = await director_v2_api.get_dynamic_services(
         request.app, user_id, project["uuid"]
     )
     log.debug(
@@ -156,7 +156,7 @@ async def start_project_interactive_services(
         f"{user_id=}",
     )
 
-    running_service_uuids = [x["service_uuid"] for x in running_services]
+    running_service_uuids = [d["service_uuid"] for d in running_services]
     # now start them if needed
     project_needed_services = {
         service_uuid: service
@@ -179,7 +179,7 @@ async def start_project_interactive_services(
     )
 
     start_service_tasks = [
-        director_v2_api.start_service(
+        director_v2_api.run_dynamic_service(
             request.app,
             user_id=user_id,
             project_id=project["uuid"],
@@ -362,7 +362,7 @@ async def remove_project_dynamic_services(
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                await director_v2_api.stop_services(
+                await director_v2_api.stop_dynamic_services_in_project(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
@@ -401,7 +401,7 @@ async def add_project_node(
             },
             node_id=UUID(node_uuid),
         )
-        await director_v2_api.start_service(
+        await director_v2_api.run_dynamic_service(
             request.app,
             project_id=project_uuid,
             user_id=user_id,
@@ -422,7 +422,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_v2_api.get_services(
+    list_of_services = await director_v2_api.get_dynamic_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
@@ -430,7 +430,7 @@ async def delete_project_node(
         if service["service_uuid"] == node_uuid:
             log.error("deleting service=%s", service)
             # no need to save the state of the node when deleting it
-            await director_v2_api.stop_service(
+            await director_v2_api.stop_dynamic_service(
                 request.app,
                 node_uuid,
                 save_state=False,

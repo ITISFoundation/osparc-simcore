@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import aiohttp
@@ -53,8 +53,8 @@ DEFAULT_RETRY_POLICY = dict(
 )
 
 
-DataType = Dict[str, Any]
-DataBody = Union[DataType, List[DataType], None]
+DataType = dict[str, Any]
+DataBody = Union[DataType, list[DataType], None]
 
 
 class DirectorV2ApiClient:
@@ -62,7 +62,7 @@ class DirectorV2ApiClient:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
-    async def get(self, project_id: ProjectID, user_id: UserID) -> Dict[str, Any]:
+    async def get(self, project_id: ProjectID, user_id: UserID) -> dict[str, Any]:
         computation_task_out = await _request_director_v2(
             self._app,
             "GET",
@@ -107,11 +107,11 @@ async def _request_director_v2(
     app: web.Application,
     method: str,
     url: URL,
-    expected_status: Type[web.HTTPSuccessful] = web.HTTPOk,
-    headers: Optional[Dict[str, str]] = None,
+    expected_status: type[web.HTTPSuccessful] = web.HTTPOk,
+    headers: Optional[dict[str, str]] = None,
     data: Optional[Any] = None,
     on_error: Optional[
-        Dict[int, Tuple[Type[DirectorServiceError], Dict[str, Any]]]
+        dict[int, tuple[type[DirectorServiceError], dict[str, Any]]]
     ] = None,
     **kwargs,
 ) -> DataBody:
@@ -170,7 +170,7 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> List[ProjectID]:
+    ) -> list[ProjectID]:
         return [
             project_uuid,
         ]
@@ -179,7 +179,7 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> Tuple[List[ProjectID], List[int]]:
+    ) -> tuple[list[ProjectID], list[int]]:
         """
         Returns ids and refid of projects that can run
         If project_uuid is a std-project, then it returns itself
@@ -209,6 +209,11 @@ async def is_healthy(app: web.Application) -> bool:
         # SEE https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
         log.warning("Director is NOT healthy: %s", err)
         return False
+
+
+#
+# COMPUTATIONAL SERVICES: pipeline resource ----------------------
+#
 
 
 @log_decorator(logger=log)
@@ -292,8 +297,11 @@ async def delete_pipeline(
     )
 
 
+#
+# DYNAMIC SERVICES ----------------------
+#
 @log_decorator(logger=log)
-async def start_service(
+async def run_dynamic_service(
     app: web.Application,
     user_id: PositiveInt,
     project_id: str,
@@ -305,7 +313,7 @@ async def start_service(
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
-    Requests to start a service:
+    Requests to run (i.e. create and start) a dynamic service:
     - legacy services request is redirected to `director-v0`
     - dynamic-sidecar `director-v2` will handle the request
     """
@@ -341,11 +349,11 @@ async def start_service(
 
 
 @log_decorator(logger=log)
-async def get_services(
+async def get_dynamic_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
-) -> List[DataType]:
+) -> list[DataType]:
     params = {}
     if user_id:
         params["user_id"] = user_id
@@ -364,7 +372,7 @@ async def get_services(
 
 
 @log_decorator(logger=log)
-async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
+async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
 
@@ -377,7 +385,7 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 
 
 @log_decorator(logger=log)
-async def stop_service(
+async def stop_dynamic_service(
     app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
     # stopping a service can take a lot of time
@@ -396,19 +404,19 @@ async def stop_service(
 
 
 @log_decorator(logger=log)
-async def stop_services(
+async def stop_dynamic_services_in_project(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
     save_state: bool = True,
 ) -> None:
     """Stops all services of either project_id or user_id in concurrently"""
-    running_dynamic_services = await get_services(
+    running_dynamic_services = await get_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 
     services_to_stop = [
-        stop_service(
+        stop_dynamic_service(
             app=app, service_uuid=service["service_uuid"], save_state=save_state
         )
         for service in running_dynamic_services
@@ -416,10 +424,10 @@ async def stop_services(
     await logged_gather(*services_to_stop)
 
 
-# FIXME: ANE please unduplicate the 2 following calls
+# FIXME: ANE please unduplicate the 2 following calls!!!!
 @log_decorator(logger=log)
 async def retrieve(
-    app: web.Application, service_uuid: str, port_keys: List[str]
+    app: web.Application, service_uuid: str, port_keys: list[str]
 ) -> DataType:
     """Pulls data from connections to the dynamic service inputs"""
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -436,7 +444,7 @@ async def retrieve(
 
 @log_decorator(logger=log)
 async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: List[str]
+    app: web.Application, service_uuid: str, port_keys: list[str]
 ) -> None:
     # TODO: notice that this function is identical to retrieve except that it does NOT reaise
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -461,7 +469,7 @@ async def request_retrieve_dyn_service(
 
 
 @log_decorator(logger=log)
-async def restart(app: web.Application, node_uuid: str) -> None:
+async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     await _request_director_v2(
         app,
@@ -473,7 +481,9 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 
 
 @log_decorator(logger=log)
-async def projects_networks_update(app: web.Application, project_id: ProjectID) -> None:
+async def update_dynamic_service_networks_in_project(
+    app: web.Application, project_id: ProjectID
+) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (
         URL(settings.base_url) / f"dynamic_services/projects/{project_id}/-/networks"
@@ -481,6 +491,11 @@ async def projects_networks_update(app: web.Application, project_id: ProjectID) 
     await _request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
     )
+
+
+#
+# CLUSTERS ----------------------
+#
 
 
 @log_decorator(logger=log)
@@ -506,7 +521,7 @@ async def create_cluster(
     return cluster
 
 
-async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
+async def list_clusters(app: web.Application, user_id: UserID) -> list[DataType]:
     settings: DirectorV2Settings = get_plugin_settings(app)
     clusters = await _request_director_v2(
         app,
