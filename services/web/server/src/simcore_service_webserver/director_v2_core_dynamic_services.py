@@ -1,28 +1,19 @@
-import json
 import logging
 from typing import Optional
 
 from aiohttp import web
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from settings_library.utils_cli import create_json_encoder_wo_secrets
 from yarl import URL
 
 from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import (
-    ClusterDefinedPingError,
-    ClusterPingError,
-    DirectorServiceError,
-)
-from .director_v2_models import ClusterPing
+from .director_v2_exceptions import DirectorServiceError
 from .director_v2_settings import DirectorV2Settings, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -221,47 +212,4 @@ async def update_dynamic_service_networks_in_project(
     )
     await request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
-    )
-
-
-async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / "clusters:ping",
-        expected_status=web.HTTPNoContent,
-        data=json.loads(
-            cluster_ping.json(
-                by_alias=True,
-                exclude_unset=True,
-                encoder=create_json_encoder_wo_secrets(ClusterPing),
-            )
-        ),
-        on_error={
-            web.HTTPUnprocessableEntity.status_code: (
-                ClusterPingError,
-                {"endpoint": f"{cluster_ping.endpoint}"},
-            )
-        },
-    )
-
-
-async def ping_specific_cluster(
-    app: web.Application, user_id: UserID, cluster_id: ClusterID
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=(settings.base_url / f"clusters/{cluster_id}:ping").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPNoContent,
-        on_error={
-            web.HTTPUnprocessableEntity.status_code: (
-                ClusterDefinedPingError,
-                {"cluster_id": f"{cluster_id}"},
-            )
-        },
     )
