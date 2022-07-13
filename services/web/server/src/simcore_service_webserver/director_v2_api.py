@@ -9,7 +9,7 @@ from .director_v2_abc import (
     get_project_run_policy,
     set_project_run_policy,
 )
-from .director_v2_core_computational import (
+from .director_v2_core_computations import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
     create_cluster,

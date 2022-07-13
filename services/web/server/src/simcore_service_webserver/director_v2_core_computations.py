@@ -1,11 +1,13 @@
-""" Computational services
+""" Computations API
+
+Wraps interactions to the director-v2 service
 
 """
 
 
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from aiohttp import web
@@ -31,9 +33,56 @@ from .director_v2_settings import DirectorV2Settings, get_plugin_settings
 log = logging.getLogger(__name__)
 
 
+class ComputationsApi:
+    def __init__(self, app: web.Application) -> None:
+        self._app = app
+        self._settings: DirectorV2Settings = get_plugin_settings(app)
+
+    async def get(self, project_id: ProjectID, user_id: UserID) -> dict[str, Any]:
+        computation_task_out = await request_director_v2(
+            self._app,
+            "GET",
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(
+                user_id=int(user_id)
+            ),
+            expected_status=web.HTTPOk,
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out
+
+    async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
+        computation_task_out = await request_director_v2(
+            self._app,
+            "POST",
+            self._settings.base_url / "computations",
+            expected_status=web.HTTPCreated,
+            data={"user_id": user_id, "project_id": project_id, **options},
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out["id"]
+
+    async def stop(self, project_id: ProjectID, user_id: UserID):
+        await request_director_v2(
+            self._app,
+            "POST",
+            self._settings.base_url / "computations" / f"{project_id}:stop",
+            expected_status=web.HTTPAccepted,
+            data={"user_id": user_id},
+        )
+
+
+def get_client(app: web.Application) -> Optional[ComputationsApi]:
+    return app.get(f"{__name__}.{ComputationsApi.__name__}")
+
+
+def set_client(app: web.Application, obj: ComputationsApi):
+    app[f"{__name__}.{ComputationsApi.__name__}"] = obj
+
+
 #
 # PIPELINE RESOURCE ----------------------
 #
+# TODO: REFACTOR! the client class above and the free functions below are duplicates of the same interface!
 
 
 @log_decorator(logger=log)

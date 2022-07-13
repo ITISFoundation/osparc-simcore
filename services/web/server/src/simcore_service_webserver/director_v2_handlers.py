@@ -13,7 +13,7 @@ from servicelib.json_serialization import json_dumps
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
-from .director_v2_core_base import DirectorV2ApiClient
+from .director_v2_core_computations import ComputationsApi
 from .director_v2_exceptions import DirectorServiceError
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
@@ -30,7 +30,7 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_computation(request: web.Request) -> web.Response:
-    client = DirectorV2ApiClient(request.app)
+    computations = ComputationsApi(request.app)
 
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
@@ -78,7 +78,10 @@ async def start_computation(request: web.Request) -> web.Response:
         )
 
         _started_pipelines_ids: tuple[str] = await asyncio.gather(
-            *[client.start(pid, user_id, **options) for pid in running_project_ids]
+            *[
+                computations.start(pid, user_id, **options)
+                for pid in running_project_ids
+            ]
         )
 
         assert set(_started_pipelines_ids) == set(
@@ -111,7 +114,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_computation(request: web.Request) -> web.Response:
-    client = DirectorV2ApiClient(request.app)
+    computations = ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -124,7 +127,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         )
         log.debug("Project %s will stop %d variants", project_id, len(project_ids))
 
-        await asyncio.gather(*[client.stop(pid, user_id) for pid in project_ids])
+        await asyncio.gather(*[computations.stop(pid, user_id) for pid in project_ids])
 
         # FIXME: our middleware has this issue
         #
@@ -150,7 +153,7 @@ class ComputationTaskGet(BaseModel):
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def get_computation(request: web.Request) -> web.Response:
-    client = DirectorV2ApiClient(request.app)
+    computations = ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
@@ -165,7 +168,10 @@ async def get_computation(request: web.Request) -> web.Response:
         list_computation_tasks = parse_obj_as(
             list[ComputationTaskGet],
             await asyncio.gather(
-                *[client.get(project_id=pid, user_id=user_id) for pid in project_ids]
+                *[
+                    computations.get(project_id=pid, user_id=user_id)
+                    for pid in project_ids
+                ]
             ),
         )
         assert len(list_computation_tasks) == len(project_ids)  # nosec

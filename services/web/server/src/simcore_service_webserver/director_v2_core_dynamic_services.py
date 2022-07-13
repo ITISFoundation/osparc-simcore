@@ -1,3 +1,9 @@
+""" Operations on dynamic-services
+
+- This interface HIDES request/responses/exceptions to the director-v2 API service
+
+"""
+
 import logging
 from typing import Optional
 
@@ -19,9 +25,42 @@ from .director_v2_settings import DirectorV2Settings, get_plugin_settings
 log = logging.getLogger(__name__)
 
 
-#
-# DYNAMIC SERVICES ----------------------
-#
+@log_decorator(logger=log)
+async def get_dynamic_services(
+    app: web.Application,
+    user_id: Optional[PositiveInt] = None,
+    project_id: Optional[str] = None,
+) -> list[DataType]:
+    params = {}
+    if user_id:
+        params["user_id"] = user_id
+    if project_id:
+        params["project_id"] = project_id
+
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = settings.base_url / "dynamic_services"
+
+    services = await request_director_v2(
+        app, "GET", backend_url, params=params, expected_status=web.HTTPOk
+    )
+
+    assert isinstance(services, list)  # nosec
+    return services
+
+
+@log_decorator(logger=log)
+async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
+
+    service_state = await request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+
+    assert isinstance(service_state, dict)  # nosec
+    return service_state
+
+
 @log_decorator(logger=log)
 async def run_dynamic_service(
     app: web.Application,
@@ -68,42 +107,6 @@ async def run_dynamic_service(
 
     assert isinstance(started_service, dict)  # nosec
     return started_service
-
-
-@log_decorator(logger=log)
-async def get_dynamic_services(
-    app: web.Application,
-    user_id: Optional[PositiveInt] = None,
-    project_id: Optional[str] = None,
-) -> list[DataType]:
-    params = {}
-    if user_id:
-        params["user_id"] = user_id
-    if project_id:
-        params["project_id"] = project_id
-
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services"
-
-    services = await request_director_v2(
-        app, "GET", backend_url, params=params, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(services, list)  # nosec
-    return services
-
-
-@log_decorator(logger=log)
-async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
-
-    service_state = await request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(service_state, dict)  # nosec
-    return service_state
 
 
 @log_decorator(logger=log)
