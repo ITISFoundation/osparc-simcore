@@ -1,3 +1,7 @@
+""" Handlers to events registered in servicelib.observer.event_registry
+
+"""
+
 import logging
 
 from aiohttp import web
@@ -34,6 +38,6 @@ def setup_project_events(_app: web.Application):
     # This way the functions above are registered as handlers of a give event
     # using the @observe decorator
     assert on_user_disconnected  # nosec
-    assert on_user_disconnected in _event_registry.values()  # nosec
+    assert on_user_disconnected in _event_registry["SIGNAL_USER_DISCONNECTED"]  # nosec
 
-    logger.info("Registered events: %s", _event_registry.keys())
+    logger.info("App registered events (at this point): %s", _event_registry.keys())
