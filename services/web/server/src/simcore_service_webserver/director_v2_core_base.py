@@ -40,18 +40,35 @@ DataType = dict[str, Any]
 DataBody = Union[DataType, list[DataType], None]
 
 
+_StatusToExceptionMapping = dict[int, tuple[type[DirectorServiceError], dict[str, Any]]]
+
+
+def _get_exception_from(
+    status_code: int, on_error: _StatusToExceptionMapping, reason: str, url: URL
+):
+    if status_code in on_error:
+        exc, exc_ctx = on_error[status_code]
+        return exc(**exc_ctx, status=status_code, reason=reason)
+    # default
+    return DirectorServiceError(status=status_code, reason=reason, url=url)
+
+
 async def request_director_v2(
     app: web.Application,
     method: str,
     url: URL,
+    *,
     expected_status: type[web.HTTPSuccessful] = web.HTTPOk,
     headers: Optional[dict[str, str]] = None,
     data: Optional[Any] = None,
-    on_error: Optional[
-        dict[int, tuple[type[DirectorServiceError], dict[str, Any]]]
-    ] = None,
+    on_error: Optional[_StatusToExceptionMapping] = None,
     **kwargs,
-) -> DataBody:
+) -> Union[DataBody, str]:
+    """
+    helper to make requests to director-v2 API
+    SEE OAS in services/director-v2/openapi.json
+    """
+    # TODO: deprecate!
     session = get_client_session(app)
     on_error = on_error or {}
 
@@ -66,16 +83,12 @@ async def request_director_v2(
                         await response.json()
                         if response.content_type == "application/json"
                         else await response.text()
+                        # FIXME: text should never happen ... perhaps unhandled exception!
                     )
 
                     if response.status != expected_status.status_code:
-                        if response.status in on_error:
-                            exc, exc_ctx = on_error[response.status]
-                            raise exc(
-                                **exc_ctx, status=response.status, reason=f"{payload}"
-                            )
-                        raise DirectorServiceError(
-                            status=response.status, reason=f"{payload}", url=url
+                        raise _get_exception_from(
+                            response.status, on_error, reason=f"{payload}", url=url
                         )
                     return payload
 
@@ -93,9 +106,3 @@ async def request_director_v2(
             reason=f"request to director-v2 service unexpected error {err}",
             url=url,
         ) from err
-    log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
-    raise DirectorServiceError(
-        status=web.HTTPClientError.status_code,
-        reason="Unexpected client error",
-        url=url,
-    )
