@@ -218,7 +218,11 @@ async def delete_project_node(
     # stop the service if it is running
     for service in list_of_services:
         if service["service_uuid"] == node_uuid:
-            log.error("deleting service=%s", service)
+            log.info(
+                "Stopping dynamic %s in prj/node=%s",
+                f"{service}",
+                f"{project_uuid}/{node_uuid}",
+            )
             # no need to save the state of the node when deleting it
             await director_v2_api.stop_dynamic_service(
                 request.app,
