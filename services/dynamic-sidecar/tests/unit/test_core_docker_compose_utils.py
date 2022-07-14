@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 from typing import Any
 
 import pytest
@@ -107,3 +108,34 @@ async def test_docker_compose_workflow(
 
     _print_result(r)
     assert r.success, r.message
+
+
+async def test_burst_calls_to_docker_compose_config(
+    compose_spec_yaml: str, mock_environment: EnvVarsDict
+):
+    settings = ApplicationSettings.create_from_envs()
+
+    CALLS_COUNT = 10  # tried manually with 1E3 but takes too long
+    results = await asyncio.gather(
+        *(
+            docker_compose_config(
+                compose_spec_yaml,
+                settings,
+                100 + i,  # large timeout and emulates change in parameters
+            )
+            for i in range(CALLS_COUNT)
+        ),
+        return_exceptions=True,
+    )
+
+    exceptions = [r for r in results if isinstance(r, Exception)]
+    assert not exceptions, "docker_compose* does NOT raise exceptions"
+
+    assert all(
+        isinstance(r, CommandResult) for r in results
+    ), "docker_compose* does NOT raise exceptions"
+
+    success = [r for r in results if r.success]
+    failed = [r for r in results if not r.success]
+
+    assert len(success) == CALLS_COUNT and not failed

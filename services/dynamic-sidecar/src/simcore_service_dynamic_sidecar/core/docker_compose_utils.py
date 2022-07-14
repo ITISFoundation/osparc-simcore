@@ -5,6 +5,8 @@
 import logging
 from typing import Optional
 
+from servicelib.async_utils import run_sequentially_in_context
+
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -26,6 +28,7 @@ async def _write_file_and_run_command(
         return await async_command(cmd, terminate_process_on_timeout)
 
 
+@run_sequentially_in_context()
 async def docker_compose_config(
     compose_spec_yaml: str,
     settings: ApplicationSettings,
@@ -50,6 +53,7 @@ async def docker_compose_config(
     return result
 
 
+@run_sequentially_in_context()
 async def docker_compose_up(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -71,6 +75,7 @@ async def docker_compose_up(
     return result
 
 
+@run_sequentially_in_context()
 async def docker_compose_restart(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -91,6 +96,7 @@ async def docker_compose_restart(
     return result
 
 
+@run_sequentially_in_context()
 async def docker_compose_down(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -114,6 +120,7 @@ async def docker_compose_down(
     return result
 
 
+@run_sequentially_in_context()
 async def docker_compose_rm(
     compose_spec_yaml: str, settings: ApplicationSettings
 ) -> CommandResult:
