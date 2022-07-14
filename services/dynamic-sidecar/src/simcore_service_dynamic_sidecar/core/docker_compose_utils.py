@@ -3,6 +3,8 @@
 
 """
 import logging
+from copy import deepcopy
+from pprint import pformat
 from typing import Optional
 
 from servicelib.async_utils import run_sequentially_in_context
@@ -13,19 +15,31 @@ from .utils import CommandResult, async_command, write_to_tmp_file
 logger = logging.getLogger(__name__)
 
 
-async def _write_file_and_run_command(
-    compose_spec_yaml_content: str,
+async def _write_file_and_spawn_process(
+    yaml_content: str,
     *,
     command: str,
-    terminate_process_on_timeout: Optional[int],
+    process_termination_timeout: Optional[int],
 ) -> CommandResult:
-    """The command which accepts {file_path} as an argument for string formatting"""
+    """The command which accepts {file_path} as an argument for string formatting
+
+
+    This calls is intentionally verbose at INFO level
+    """
 
     # pylint: disable=not-async-context-manager
-    async with write_to_tmp_file(compose_spec_yaml_content) as file_path:
+    async with write_to_tmp_file(yaml_content) as file_path:
         cmd = command.format(file_path=file_path)
-        logger.debug("Running '%s' w/ compose-spec\n%s", cmd, compose_spec_yaml_content)
-        return await async_command(cmd, terminate_process_on_timeout)
+
+        logger.info("Runs %s ...\n%s", cmd, yaml_content)
+
+        result = await async_command(
+            command=cmd,
+            timeout=process_termination_timeout,
+        )
+
+        logger.info("Done %s", pformat(deepcopy(result._asdict())))
+        return result
 
 
 @run_sequentially_in_context()
@@ -43,10 +57,10 @@ async def docker_compose_config(
     """
     assert settings  # nosec
 
-    result = await _write_file_and_run_command(
+    result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command='docker-compose --file "{file_path}" config',
-        terminate_process_on_timeout=timeout,
+        process_termination_timeout=timeout,
     )
     return result
 
@@ -64,11 +78,11 @@ async def docker_compose_up(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
 
-    result = await _write_file_and_run_command(
+    result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
         " --no-build --detach",
-        terminate_process_on_timeout=timeout,
+        process_termination_timeout=timeout,
     )
     return result
 
@@ -84,13 +98,13 @@ async def docker_compose_restart(
     """
     assert timeout, "timeout here is mandatory"
 
-    result = await _write_file_and_run_command(
+    result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
             f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
             f" --timeout {int(timeout)}"
         ),
-        terminate_process_on_timeout=None,
+        process_termination_timeout=None,
     )
     return result
 
@@ -110,13 +124,13 @@ async def docker_compose_down(
     """
     assert timeout, "timeout here is mandatory"
 
-    result = await _write_file_and_run_command(
+    result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
             f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
             f" --volumes --remove-orphans --timeout {int(timeout)}"
         ),
-        terminate_process_on_timeout=None,
+        process_termination_timeout=None,
     )
     return result
 
@@ -133,12 +147,12 @@ async def docker_compose_rm(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_rm)
     """
-    result = await _write_file_and_run_command(
+    result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
             f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
             " --force -v"
         ),
-        terminate_process_on_timeout=None,
+        process_termination_timeout=None,
     )
     return result
