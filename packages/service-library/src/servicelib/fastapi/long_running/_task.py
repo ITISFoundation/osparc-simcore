@@ -1,13 +1,13 @@
 import asyncio
 import inspect
 import logging
+import traceback
 from asyncio import CancelledError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
 from typing import Awaitable, Callable
 from uuid import uuid4
-import traceback
 
 from pydantic import PositiveFloat
 

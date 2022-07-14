@@ -3,7 +3,6 @@
 
 import asyncio
 from typing import AsyncIterable, Final
-from black import err
 
 import pytest
 from asgi_lifespan import LifespanManager

@@ -20,7 +20,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
-from servicelib.fastapi.long_running import client, server
+from servicelib.fastapi import long_running as long_running_tasks
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -36,7 +36,7 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 def create_mock_app() -> FastAPI:
     mock_server_app = FastAPI(title="app containing the server")
 
-    server.setup(mock_server_app)
+    long_running_tasks.server.setup(mock_server_app)
 
     @mock_server_app.get("/")
     def health() -> None:
@@ -44,10 +44,12 @@ def create_mock_app() -> FastAPI:
 
     @mock_server_app.post("/string-list-task")
     async def create_string_list_task(
-        task_manger: server.TaskManager = Depends(server.get_task_manager),
-    ) -> server.TaskId:
+        task_manger: long_running_tasks.server.TaskManager = Depends(
+            long_running_tasks.server.get_task_manager
+        ),
+    ) -> long_running_tasks.server.TaskId:
         async def _string_list_task(
-            task_progress: server.TaskProgress, items: int
+            task_progress: long_running_tasks.server.TaskProgress, items: int
         ) -> list[str]:
             task_progress.publish(message="starting", percent=0)
             generated_strings = []
@@ -61,7 +63,7 @@ def create_mock_app() -> FastAPI:
             return generated_strings
 
         # NOTE: TaskProgress is injected by start_task
-        task_id = server.start_task(
+        task_id = long_running_tasks.server.start_task(
             task_manager=task_manger, handler=_string_list_task, items=10
         )
         return task_id
@@ -135,7 +137,7 @@ def high_status_poll_interval() -> PositiveFloat:
 async def client_app() -> AsyncIterator[FastAPI]:
     app = FastAPI()
 
-    client.setup(app)
+    long_running_tasks.client.setup(app)
 
     async with LifespanManager(app):
         yield app
@@ -164,7 +166,7 @@ async def test_workflow(
     async def progress_handler(message: str, percent: float) -> None:
         progress_updates.append((message, percent))
 
-    async with client.task_result(
+    async with long_running_tasks.client.task_result(
         client_app,
         async_client,
         run_server,
@@ -201,7 +203,7 @@ async def test_error_after_result(
     task_id = result.json()
 
     with pytest.raises(RuntimeError):
-        async with client.task_result(
+        async with long_running_tasks.client.task_result(
             client_app,
             async_client,
             run_server,
