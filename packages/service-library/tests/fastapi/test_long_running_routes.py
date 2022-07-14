@@ -9,7 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.fastapi.long_running_tasks._models import TaskResult
+from servicelib.fastapi.long_running_tasks.client import TaskResult, CancelResult
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,
@@ -166,7 +166,7 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
     # cancel and remove the task
     delete_resp = await async_client.delete(f"{router_prefix}/task/{task_id}")
     assert delete_resp.status_code == status.HTTP_200_OK
-    assert delete_resp.json() is True
+    assert CancelResult.parse_obj(delete_resp.json()).task_removed is True
     assert_expected_tasks(async_client, 0)
 
     # ensure task does not exist any longer

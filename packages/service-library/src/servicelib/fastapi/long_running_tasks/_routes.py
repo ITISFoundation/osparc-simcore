@@ -1,10 +1,8 @@
-from typing import Any, Optional
-
 from fastapi import APIRouter, Depends, status
 
 from ._dependencies import get_task_manager
 from ._errors import TaskNotCompletedError
-from ._models import TaskId, TaskResult, TaskStatus
+from ._models import TaskId, TaskResult, TaskStatus, CancelResult
 from ._task import TaskManager
 
 router = APIRouter(prefix="/task")
@@ -59,5 +57,5 @@ async def get_task_result(
 async def cancel_and_delete_task(
     task_id: TaskId,
     task_manager: TaskManager = Depends(get_task_manager),
-) -> bool:
-    return await task_manager.remove(task_id)
+) -> CancelResult:
+    return CancelResult(task_removed=await task_manager.remove(task_id))

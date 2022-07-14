@@ -80,3 +80,7 @@ class TaskResult(BaseModel):
         if not (bool(result) ^ bool(error)):
             raise ValueError(f"Please provide either an {result=} or a {error=}")
         return values
+
+
+class CancelResult(BaseModel):
+    task_removed: bool
