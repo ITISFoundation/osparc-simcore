@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, BaseModel, PositiveFloat
+from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
 
 from ._errors import GenericClientError, TaskClientResultError
 from ._models import TaskId, TaskResult, TaskStatus
@@ -30,8 +30,11 @@ class Client:
     def _client_configuration(self) -> ClientConfiguration:
         return self.app.state.long_running_client_configuration
 
-    def _get_url(self, path: str) -> str:
-        return f"{self.base_url}{self._client_configuration.router_prefix}{path}"
+    def _get_url(self, path: str) -> AnyHttpUrl:
+        return parse_obj_as(
+            AnyHttpUrl,
+            f"{self.base_url}{self._client_configuration.router_prefix}{path}",
+        )
 
     async def get_task_status(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None

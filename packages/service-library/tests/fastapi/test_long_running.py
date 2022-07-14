@@ -44,7 +44,7 @@ def create_mock_app() -> FastAPI:
 
     @mock_server_app.post("/string-list-task")
     async def create_string_list_task(
-        task_manger: long_running_tasks.server.TaskManager = Depends(
+        task_manager: long_running_tasks.server.TaskManager = Depends(
             long_running_tasks.server.get_task_manager
         ),
     ) -> long_running_tasks.server.TaskId:
@@ -64,7 +64,7 @@ def create_mock_app() -> FastAPI:
 
         # NOTE: TaskProgress is injected by start_task
         task_id = long_running_tasks.server.start_task(
-            task_manager=task_manger, handler=_string_list_task, items=10
+            task_manager=task_manager, handler=_string_list_task, items=10
         )
         return task_id
 

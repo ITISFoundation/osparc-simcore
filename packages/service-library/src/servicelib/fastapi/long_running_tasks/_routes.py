@@ -18,9 +18,9 @@ router = APIRouter(prefix="/task")
 )
 async def get_task_status(
     task_id: TaskId,
-    task_manger: TaskManager = Depends(get_task_manager),
+    task_manager: TaskManager = Depends(get_task_manager),
 ) -> TaskStatus:
-    return task_manger.get_status(task_id=task_id)
+    return task_manager.get_status(task_id=task_id)
 
 
 @router.get(
@@ -34,18 +34,18 @@ async def get_task_status(
 )
 async def get_task_result(
     task_id: TaskId,
-    task_manger: TaskManager = Depends(get_task_manager),
+    task_manager: TaskManager = Depends(get_task_manager),
 ) -> TaskResult:
     remove_task = True
 
     try:
-        task_result = task_manger.get_result(task_id=task_id)
+        task_result = task_manager.get_result(task_id=task_id)
     except TaskNotCompletedError:
         remove_task = False
         raise
     finally:
         if remove_task:
-            await task_manger.remove(task_id, reraise_errors=False)
+            await task_manager.remove(task_id, reraise_errors=False)
 
     return task_result
 
@@ -58,6 +58,6 @@ async def get_task_result(
 )
 async def cancel_and_delete_task(
     task_id: TaskId,
-    task_manger: TaskManager = Depends(get_task_manager),
+    task_manager: TaskManager = Depends(get_task_manager),
 ) -> bool:
-    return await task_manger.remove(task_id)
+    return await task_manager.remove(task_id)

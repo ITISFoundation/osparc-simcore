@@ -60,16 +60,16 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        task_manger: TaskManager = Depends(get_task_manager),
+        task_manager: TaskManager = Depends(get_task_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manger, handler=a_test_task)
+        task_id = start_task(task_manager=task_manager, handler=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        task_manger: TaskManager = Depends(get_task_manager),
+        task_manager: TaskManager = Depends(get_task_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manger, handler=a_failing_test_task)
+        task_id = start_task(task_manager=task_manager, handler=a_failing_test_task)
         return task_id
 
     return router

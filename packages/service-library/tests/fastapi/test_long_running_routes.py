@@ -66,10 +66,10 @@ def user_routes() -> APIRouter:
 
     @router.post("/api/create", status_code=status.HTTP_202_ACCEPTED)
     async def create_task_user_defined_route(
-        raise_when_finished: bool, task_manger: TaskManager = Depends(get_task_manager)
+        raise_when_finished: bool, task_manager: TaskManager = Depends(get_task_manager)
     ) -> TaskId:
         task_id = start_task(
-            task_manager=task_manger,
+            task_manager=task_manager,
             handler=short_task,
             raise_when_finished=raise_when_finished,
             total_sleep=TASK_SLEEP_INTERVAL,
