@@ -2,7 +2,7 @@
 Showcases/tests an example of long running tasks.
 
 How these tests works:
-- setup a FastAPI server and lunch it in the background.
+- setup a FastAPI server and launch it in the background.
 - client directly makes requests to the FastAPI background client.
 
 """
@@ -19,7 +19,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running import client, server
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -125,13 +125,17 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
 
 
 @pytest.fixture
+def high_status_poll_interval() -> PositiveFloat:
+    # NOTE: polling very fast to capture all the progress updates and to check
+    # that duplicate progress messages do not get sent
+    return ITEM_PUBLISH_SLEEP / 3
+
+
+@pytest.fixture
 async def client_app() -> AsyncIterator[FastAPI]:
     app = FastAPI()
 
-    # NOTE: polling very fast to capture all the progress updates and to check
-    # that duplicate progress messages do not get sent
-    high_status_poll_interval = ITEM_PUBLISH_SLEEP / 3
-    client.setup(app, status_poll_interval=high_status_poll_interval)
+    client.setup(app)
 
     async with LifespanManager(app):
         yield app
@@ -146,7 +150,10 @@ async def async_client() -> AsyncClient:
 
 
 async def test_workflow(
-    run_server: AnyHttpUrl, client_app: FastAPI, async_client: AsyncClient
+    run_server: AnyHttpUrl,
+    client_app: FastAPI,
+    async_client: AsyncClient,
+    high_status_poll_interval: PositiveFloat,
 ) -> None:
     result = await async_client.post(f"{run_server}/string-list-task")
     assert result.status_code == status.HTTP_200_OK
@@ -162,8 +169,9 @@ async def test_workflow(
         async_client,
         run_server,
         task_id,
-        timeout=10,
+        task_timeout=10,
         progress=progress_handler,
+        status_poll_interval=high_status_poll_interval,
     ) as string_list:
         assert string_list == [f"{x}" for x in range(10)]
 
@@ -183,7 +191,10 @@ async def test_workflow(
 
 
 async def test_error_after_result(
-    run_server: AnyHttpUrl, client_app: FastAPI, async_client: AsyncClient
+    run_server: AnyHttpUrl,
+    client_app: FastAPI,
+    async_client: AsyncClient,
+    high_status_poll_interval: PositiveFloat,
 ) -> None:
     result = await async_client.post(f"{run_server}/string-list-task")
     assert result.status_code == status.HTTP_200_OK
@@ -191,7 +202,12 @@ async def test_error_after_result(
 
     with pytest.raises(RuntimeError):
         async with client.task_result(
-            client_app, async_client, run_server, task_id, timeout=10
+            client_app,
+            async_client,
+            run_server,
+            task_id,
+            task_timeout=10,
+            status_poll_interval=high_status_poll_interval,
         ) as string_list:
             assert string_list == [f"{x}" for x in range(10)]
             raise RuntimeError("has no influence")

@@ -7,6 +7,7 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Awaitable, Callable
 from uuid import uuid4
+import traceback
 
 from pydantic import PositiveFloat
 
@@ -177,7 +178,12 @@ class TaskManager:
         try:
             exception = tracked_task.task.exception()
             if exception is not None:
-                error = TaskExceptionError(task_id=task_id, exception=exception)
+                formatted_traceback = "\n".join(
+                    traceback.format_tb(exception.__traceback__)
+                )
+                error = TaskExceptionError(
+                    task_id=task_id, exception=exception, traceback=formatted_traceback
+                )
                 return TaskResult(result=None, error=f"{error}")
         except CancelledError:
             error = TaskCancelledError(task_id=task_id)

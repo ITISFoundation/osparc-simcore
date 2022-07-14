@@ -1,66 +1,93 @@
-from functools import cached_property
 from typing import Any, Optional
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient, Timeout
-from pydantic import AnyHttpUrl, PositiveFloat
+from httpx import AsyncClient
+from pydantic import AnyHttpUrl, BaseModel, PositiveFloat
 
-from ._errors import TaskClientResultErrorError
+from ._errors import GenericClientError, TaskClientResultError
 from ._models import TaskId, TaskResult, TaskStatus
 
 
+class ClientConfiguration(BaseModel):
+    router_prefix: str
+    default_timeout: PositiveFloat
+
+
 class Client:
+    """
+    This is a client that aims to simplify the requests to get the
+    status, result and/or cancel of a long running task.
+    """
+
     def __init__(
-        self,
-        *,
-        prefix: str,
-        timeout: PositiveFloat,
-        status_poll_interval: PositiveFloat,
+        self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl
     ) -> None:
-        self._timeout = Timeout(timeout)
-        self._prefix = prefix
-        self._status_poll_interval = status_poll_interval
+        self.app = app
+        self.async_client = async_client
+        self.base_url = base_url
 
-    @cached_property
-    def status_poll_interval(self) -> PositiveFloat:
-        return self._status_poll_interval
+    @property
+    def _client_configuration(self) -> ClientConfiguration:
+        return self.app.state.long_running_client_configuration
 
-    def _get_url(self, base_url: AnyHttpUrl, path: str) -> str:
-        return f"{base_url}{self._prefix}{path}"
+    def _get_url(self, path: str) -> str:
+        return f"{self.base_url}{self._client_configuration.router_prefix}{path}"
 
     async def get_task_status(
-        self, async_client: AsyncClient, base_url: AnyHttpUrl, task_id: TaskId
+        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> TaskStatus:
-        result = await async_client.get(
-            self._get_url(base_url, f"/task/{task_id}"), timeout=self._timeout
+        timeout = timeout or self._client_configuration.default_timeout
+        result = await self.async_client.get(
+            self._get_url(f"/task/{task_id}"),
+            timeout=timeout,
         )
-        assert result.status_code == status.HTTP_200_OK  # nosec
+        if result.status_code != status.HTTP_200_OK:
+            raise GenericClientError(
+                action="getting_status",
+                task_id=task_id,
+                status=result.status_code,
+                body=result.text,
+            )
+
         return TaskStatus.parse_obj(result.json())
 
     async def get_task_result(
-        self, async_client: AsyncClient, base_url: AnyHttpUrl, task_id: TaskId
+        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> Optional[Any]:
-        result = await async_client.get(
-            self._get_url(base_url, f"/task/{task_id}/result"), timeout=self._timeout
+        timeout = timeout or self._client_configuration.default_timeout
+        result = await self.async_client.get(
+            self._get_url(f"/task/{task_id}/result"),
+            timeout=timeout,
         )
-        if result.status_code == status.HTTP_200_OK:
-            task_result = TaskResult.parse_obj(result.json())
-            if task_result.error is not None:
-                raise TaskClientResultErrorError(
-                    task_id=task_id, message=task_result.error
-                )
-            return task_result.result
+        if result.status_code != status.HTTP_200_OK:
+            raise GenericClientError(
+                action="getting_result",
+                task_id=task_id,
+                status=result.status_code,
+                body=result.text,
+            )
 
-        if result.status_code == status.HTTP_400_BAD_REQUEST:
-            raise TaskClientResultErrorError(task_id=task_id, message=result.json())
+        task_result = TaskResult.parse_obj(result.json())
+        if task_result.error is not None:
+            raise TaskClientResultError(message=task_result.error)
+        return task_result.result
 
     async def cancel_and_delete_task(
-        self, async_client: AsyncClient, base_url: AnyHttpUrl, task_id: TaskId
-    ) -> None:
-        result = await async_client.delete(
-            self._get_url(base_url, f"/task/{task_id}"), timeout=self._timeout
+        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
+    ) -> bool:
+        timeout = timeout or self._client_configuration.default_timeout
+        result = await self.async_client.delete(
+            self._get_url(f"/task/{task_id}"),
+            timeout=timeout,
         )
-        assert result.status_code == status.HTTP_200_OK  # nosec
+        if result.status_code != status.HTTP_200_OK:
+            raise GenericClientError(
+                action="cancelling_and_removing_task",
+                task_id=task_id,
+                status=result.status_code,
+                body=result.text,
+            )
+        return result.json()
 
 
 def setup(
@@ -68,7 +95,6 @@ def setup(
     *,
     router_prefix: str = "",
     http_requests_timeout: PositiveFloat = 15,
-    status_poll_interval: PositiveFloat = 5,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on
@@ -76,19 +102,11 @@ def setup(
         `{router_prefix}/task/...`
     - `http_requests_timeout` short requests are used to interact with the
         server API, a low timeout is sufficient
-    - `status_poll_interval` when waiting for a task to finish, how frequent
-        should the server queried
     """
 
     async def on_startup() -> None:
-        app.state.long_running_client = Client(
-            prefix=router_prefix,
-            timeout=http_requests_timeout,
-            status_poll_interval=status_poll_interval,
+        app.state.long_running_client_configuration = ClientConfiguration(
+            router_prefix=router_prefix, default_timeout=http_requests_timeout
         )
 
-    async def on_shutdown() -> None:
-        app.state.long_running_client = None
-
     app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)

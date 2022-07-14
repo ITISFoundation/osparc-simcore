@@ -3,6 +3,7 @@
 
 import asyncio
 from typing import AsyncIterable, Final
+from black import err
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -96,9 +97,9 @@ async def bg_task_app(
 # TESTS
 
 
-@pytest.mark.parametrize("raise_when_finished", [True, False])
+@pytest.mark.parametrize("finish_with_error", [True, False])
 async def test_task_workflow(
-    async_client: AsyncClient, raise_when_finished: bool, router_prefix: str
+    async_client: AsyncClient, finish_with_error: bool, router_prefix: str
 ) -> None:
     # Using the API to:
     # [x] create task
@@ -107,7 +108,7 @@ async def test_task_workflow(
 
     # create task
     create_resp = await async_client.post(
-        "/api/create", params=dict(raise_when_finished=raise_when_finished)
+        "/api/create", params=dict(raise_when_finished=finish_with_error)
     )
     assert create_resp.status_code == status.HTTP_202_ACCEPTED
     task_id = create_resp.json()
@@ -125,14 +126,16 @@ async def test_task_workflow(
     # fetch result
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
     assert_expected_tasks(async_client, 0)
-    if raise_when_finished:
-        assert result_resp.status_code == status.HTTP_400_BAD_REQUEST
-        assert result_resp.json() == {
-            "code": "fastapi.long_running.task_exception_error",
-            "message": f"Task {task_id} finished with exception: 'raised this error as instructed'",
-        }
+    assert result_resp.status_code == status.HTTP_200_OK
+    if finish_with_error:
+        task_result = TaskResult.parse_obj(result_resp.json())
+        assert task_result.result is None
+        assert task_result.error is not None
+        assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
+        assert (
+            'raise RuntimeError("raised this error as instructed")' in task_result.error
+        )
     else:
-        assert result_resp.status_code == status.HTTP_200_OK
         assert result_resp.json() == TaskResult(result=42, error=None)
 
     # ensure task does not exist any longer

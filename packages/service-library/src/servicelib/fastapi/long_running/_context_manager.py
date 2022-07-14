@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 
 from fastapi import FastAPI
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, PositiveFloat
 
 from ._client import Client
 from ._errors import TaskClientTimeoutError
@@ -54,28 +54,33 @@ async def task_result(
     base_url: AnyHttpUrl,
     task_id: TaskId,
     *,
-    timeout: float,
+    task_timeout: PositiveFloat,
     progress: Optional[Callable[[str, float], Awaitable[None]]] = None,
+    status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """
-    - `app` will extract the `Client` form it
-    - `async_client` an AsyncClient instance used by `Client`
-    - `base_url` base endpoint where the server is listening on
-    - `timeout` when this expires the task will be cancelled and
+    A convenient wrapper around the Client
+    - `app`: used byt the `Client` to recover the `ClientConfiguration`
+    - `async_client`: an AsyncClient instance used by `Client`
+    - `base_url`: base endpoint where the server is listening on
+    - `task_timeout`: when this expires the task will be cancelled and
         removed form the server
-    - `progress` user defined awaitable with two positional arguments:
+    - `progress` optional: user defined awaitable with two positional arguments:
         * first argument `message`, type `str`
         * second argument `percent`, type `float` between [0.0, 1.0]
+    - `status_poll_interval` optional: when waiting for a task to finish,
+        how frequent should the server be queried
 
-    raises: `TaskClientResultErrorError` if the timeout is reached
-    raises: `asyncio.TimeoutError`, when this is raised the task removed on remote
+    raises: `TaskClientResultError` if the task finished with an error instead of
+        the expected result
+    raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
-    client: Client = app.state.long_running_client
+    client = Client(app=app, async_client=async_client, base_url=base_url)
 
     progress_manager = _ProgressManager(progress)
 
     async def _status_update() -> TaskStatus:
-        task_status = await client.get_task_status(async_client, base_url, task_id)
+        task_status = await client.get_task_status(task_id)
         logger.info("Task status %s", task_status.json())
         await progress_manager.update(
             message=task_status.task_progress.message,
@@ -86,18 +91,19 @@ async def task_result(
     async def _wait_task_completion() -> None:
         task_status = await _status_update()
         while not task_status.done:
-            await asyncio.sleep(client.status_poll_interval)
+            await asyncio.sleep(status_poll_interval)
             task_status = await _status_update()
 
     try:
-        await asyncio.wait_for(_wait_task_completion(), timeout=timeout)
+        await asyncio.wait_for(_wait_task_completion(), timeout=task_timeout)
 
-        result: Optional[Any] = await client.get_task_result(
-            async_client, base_url, task_id
-        )
+        result: Optional[Any] = await client.get_task_result(task_id)
         yield result
     except asyncio.TimeoutError as e:
-        await client.cancel_and_delete_task(async_client, base_url, task_id)
+        task_removed = await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
-            task_id=task_id, timeout=timeout, exception=e
+            task_id=task_id,
+            timeout=task_timeout,
+            exception=e,
+            task_removed=task_removed,
         ) from e

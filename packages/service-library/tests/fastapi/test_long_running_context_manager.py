@@ -11,7 +11,7 @@ from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running._context_manager import _ProgressManager
 from servicelib.fastapi.long_running._errors import (
-    TaskClientResultErrorError,
+    TaskClientResultError,
     TaskClientTimeoutError,
 )
 from servicelib.fastapi.long_running.client import setup as setup_client
@@ -84,9 +84,7 @@ async def bg_task_app(
     app.include_router(user_routes)
 
     setup_server(app, router_prefix=router_prefix)
-    setup_client(
-        app, router_prefix=router_prefix, status_poll_interval=TASK_SLEEP_INTERVAL / 3
-    )
+    setup_client(app, router_prefix=router_prefix)
 
     async with LifespanManager(app):
         yield app
@@ -104,7 +102,12 @@ async def test_task_result(
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     async with task_result(
-        bg_task_app, async_client, url, task_id, timeout=10
+        bg_task_app,
+        async_client,
+        url,
+        task_id,
+        task_timeout=10,
+        status_poll_interval=TASK_SLEEP_INTERVAL / 3,
     ) as result:
         assert result == 42
 
@@ -122,7 +125,12 @@ async def test_task_result_times_out(
     timeout = TASK_SLEEP_INTERVAL / 2
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with task_result(
-            bg_task_app, async_client, url, task_id, timeout=timeout
+            bg_task_app,
+            async_client,
+            url,
+            task_id,
+            task_timeout=timeout,
+            status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
     assert (
@@ -141,16 +149,18 @@ async def test_task_result_task_result_is_an_error(
     task_id = result.json()
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
-    with pytest.raises(TaskClientResultErrorError) as exec_info:
-        async with task_result(bg_task_app, async_client, url, task_id, timeout=10):
+    with pytest.raises(TaskClientResultError) as exec_info:
+        async with task_result(
+            bg_task_app,
+            async_client,
+            url,
+            task_id,
+            task_timeout=10,
+            status_poll_interval=TASK_SLEEP_INTERVAL / 3,
+        ):
             pass
-    assert f"{exec_info.value}" == (
-        f"Task '{task_id}' did no finish successfully but raised: "
-        "{'code': 'fastapi.long_running.task_exception_error', "
-        f"'message': \"Task {task_id} finished with exception: "
-        "'I am failing as requested'\"}"
-    )
-
+    assert f"{exec_info.value}".startswith(f"Task {task_id} finished with exception:")
+    assert 'raise RuntimeError("I am failing as requested")' in f"{exec_info.value}"
     await _assert_task_removed(async_client, task_id, router_prefix)
 
 

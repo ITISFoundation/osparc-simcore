@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from ._dependencies import get_task_manager
 from ._errors import TaskNotCompletedError
-from ._models import TaskId, TaskStatus
+from ._models import TaskId, TaskStatus, TaskResult
 from ._task import TaskManager
 
 router = APIRouter(prefix="/task")
@@ -35,7 +35,7 @@ async def get_task_status(
 async def get_task_result(
     task_id: TaskId,
     task_manger: TaskManager = Depends(get_task_manager),
-) -> Optional[Any]:
+) -> TaskResult:
     remove_task = True
 
     try:
@@ -45,7 +45,7 @@ async def get_task_result(
         raise
     finally:
         if remove_task:
-            await task_manger.remove(task_id)
+            await task_manger.remove(task_id, reraise_errors=False)
 
     return task_result
 

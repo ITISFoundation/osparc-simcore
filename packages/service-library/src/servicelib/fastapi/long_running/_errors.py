@@ -27,7 +27,9 @@ class TaskCancelledError(BaseLongRunningError):
 
 class TaskExceptionError(BaseLongRunningError):
     code: str = "fastapi.long_running.task_exception_error"
-    msg_template: str = "Task {task_id} finished with exception: '{exception}'"
+    msg_template: str = (
+        "Task {task_id} finished with exception: '{exception}'\n{traceback}"
+    )
 
 
 class TaskClientTimeoutError(BaseLongRunningError):
@@ -37,8 +39,13 @@ class TaskClientTimeoutError(BaseLongRunningError):
     )
 
 
-class TaskClientResultErrorError(BaseLongRunningError):
-    code: str = "fastapi.client.task_raised_error"
+class GenericClientError(BaseLongRunningError):
+    code: str = "fastapi.client.generic_error"
     msg_template: str = (
-        "Task '{task_id}' did no finish successfully but raised: {message}"
+        "Unexpected error while '{action}' for '{task_id}': status={status} body={body}"
     )
+
+
+class TaskClientResultError(GenericClientError):
+    code: str = "fastapi.client.task_raised_error"
+    msg_template: str = "{message}"
