@@ -59,7 +59,7 @@ async def periodic_task_result(
     once available.
 
     Parameters:
-    - `client`: an istance of `long_running_tasks.client.Client`
+    - `client`: an instance of `long_running_tasks.client.Client`
     - `task_timeout`: when this expires the task will be cancelled and
         removed form the server
     - `progress` optional: user defined awaitable with two positional arguments:
