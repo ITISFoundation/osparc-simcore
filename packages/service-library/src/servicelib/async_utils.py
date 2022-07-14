@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections import deque
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Deque, Optional
@@ -35,12 +36,13 @@ _sequential_jobs_contexts: dict[str, Context] = {}
 async def stop_sequential_workers() -> None:
     """Signals all workers to close thus avoiding errors on shutdown"""
     for context in _sequential_jobs_contexts.values():
-        await context.in_queue.put(None)
-        if context.task is not None:
-            # TODO: PC->ANE you are not stopping/cancelling
-            # if so we should we also context.task.cancel() here?
-            # Do you rather mean ``await wait_sequential_workers_until_done()``??
-            await context.task
+        with suppress(RuntimeError):  # e.g. close loop
+            await context.in_queue.put(None)
+            if context.task is not None:
+                # TODO: PC->ANE you are not stopping/cancelling
+                # if so we should we also context.task.cancel() here?
+                # Do you rather mean ``await wait_sequential_workers_until_done()``??
+                await context.task
     _sequential_jobs_contexts.clear()
     logger.info("All run_sequentially_in_context pending workers stopped")
 
