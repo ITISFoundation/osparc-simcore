@@ -9,7 +9,7 @@ import time
 from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, NamedTuple, Optional
+from typing import AsyncIterator, NamedTuple, Optional
 
 import aiofiles
 import httpx
@@ -103,7 +103,7 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
 
 
 @asynccontextmanager
-async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
+async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
     """Disposes of file on exit"""
     # pylint: disable=protected-access,stop-iteration-return
     file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"  # type: ignore
@@ -148,13 +148,6 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
-        return CommandResult(
-            success=proc.returncode == os.EX_OK,
-            message=stdout.decode(),
-            command=f"{command}",
-            elapsed=time.time() - start,
-        )
-
     except asyncio.TimeoutError:
         proc.terminate()
         _close_transport(proc)
@@ -198,6 +191,14 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         return CommandResult(
             success=False,
             message=f"Unexpected error [{error_code}]",
+            command=f"{command}",
+            elapsed=time.time() - start,
+        )
+    else:
+        # no exceptions
+        return CommandResult(
+            success=proc.returncode == os.EX_OK,
+            message=stdout.decode(),
             command=f"{command}",
             elapsed=time.time() - start,
         )
