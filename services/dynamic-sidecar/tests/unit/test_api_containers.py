@@ -26,9 +26,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
-from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
-    _write_file_and_run_command,
-)
+from simcore_service_dynamic_sidecar.core.docker_compose_utils import docker_compose_up
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
@@ -115,18 +113,9 @@ async def _docker_ps_a_container_names() -> list[str]:
 async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSettings):
     """ensures all containers inside compose_spec are pulled"""
 
-    command = (
-        'docker-compose --project-name {project} --file "{file_path}" '
-        "up --no-build --detach"
-    )
-    success, stdout, *_ = await _write_file_and_run_command(
-        settings=settings,
-        compose_spec_yaml_content=compose_spec,
-        command=command,
-        terminate_process_on_timeout=None,
-    )
+    result = await docker_compose_up(compose_spec, settings)
 
-    assert success is True, stdout
+    assert result.success is True, result.message
 
     dict_compose_spec = json.loads(compose_spec)
     expected_services_count = len(dict_compose_spec["services"])

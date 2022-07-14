@@ -30,9 +30,7 @@ async def _write_file_and_run_command(
 
 @run_sequentially_in_context()
 async def docker_compose_config(
-    compose_spec_yaml: str,
-    settings: ApplicationSettings,
-    timeout: int,
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
     """
     Validate and view the Compose file.
@@ -55,7 +53,7 @@ async def docker_compose_config(
 
 @run_sequentially_in_context()
 async def docker_compose_up(
-    compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
     """
     (Re)creates, starts, and attaches to containers for a service
@@ -84,6 +82,7 @@ async def docker_compose_restart(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_restart/)
     """
+    assert timeout, "timeout here is mandatory"
 
     result = await _write_file_and_run_command(
         compose_spec_yaml,
@@ -109,6 +108,8 @@ async def docker_compose_down(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_down/)
     """
+    assert timeout, "timeout here is mandatory"
+
     result = await _write_file_and_run_command(
         compose_spec_yaml,
         command=(
