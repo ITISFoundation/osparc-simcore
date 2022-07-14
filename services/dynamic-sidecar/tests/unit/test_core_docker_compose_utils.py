@@ -43,7 +43,10 @@ def compose_spec_yaml(faker: Faker) -> str:
 
 @pytest.mark.parametrize("with_restart", (True, False))
 async def test_docker_compose_workflow(
-    compose_spec_yaml: str, mock_environment: EnvVarsDict, with_restart: bool
+    compose_spec_yaml: str,
+    mock_environment: EnvVarsDict,
+    with_restart: bool,
+    ensure_run_in_sequence_context_is_empty: None,
 ):
     settings = ApplicationSettings.create_from_envs()
 
@@ -111,7 +114,9 @@ async def test_docker_compose_workflow(
 
 
 async def test_burst_calls_to_docker_compose_config(
-    compose_spec_yaml: str, mock_environment: EnvVarsDict
+    compose_spec_yaml: str,
+    mock_environment: EnvVarsDict,
+    ensure_run_in_sequence_context_is_empty: None,
 ):
     settings = ApplicationSettings.create_from_envs()
 
