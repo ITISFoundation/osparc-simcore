@@ -38,14 +38,12 @@ DEFAULT_COMMAND_TIMEOUT = 5
 WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def client(
     test_client: TestClient,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers,
+    ensure_run_in_sequence_context_is_empty: None,
 ):
     """creates external volumes and provides a client to dy-sidecar service"""
     return test_client
