@@ -46,7 +46,7 @@ def setup_project_events(_app: web.Application):
     # This typically happens when somewhere importlib.reload was used.
     # Since the function is stateless and registstered once, for the moment
     # we make a weaker
-    assert _on_user_disconnected.__name__ in (
+    assert _on_user_disconnected.__name__ in (  # nosec
         f.__name__ for f in _event_registry["SIGNAL_USER_DISCONNECTED"]
     )
 
