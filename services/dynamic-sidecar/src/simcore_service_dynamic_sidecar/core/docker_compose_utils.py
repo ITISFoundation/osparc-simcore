@@ -15,6 +15,7 @@ from .utils import CommandResult, async_command, write_to_tmp_file
 logger = logging.getLogger(__name__)
 
 
+@run_sequentially_in_context()
 async def _write_file_and_spawn_process(
     yaml_content: str,
     *,
@@ -23,6 +24,7 @@ async def _write_file_and_spawn_process(
 ) -> CommandResult:
     """The command which accepts {file_path} as an argument for string formatting
 
+    ALL docker_compose run sequentially
 
     This calls is intentionally verbose at INFO level
     """
@@ -42,7 +44,6 @@ async def _write_file_and_spawn_process(
         return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_config(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
@@ -65,7 +66,6 @@ async def docker_compose_config(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_up(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
@@ -87,7 +87,6 @@ async def docker_compose_up(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_restart(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -109,7 +108,6 @@ async def docker_compose_restart(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_down(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -135,7 +133,6 @@ async def docker_compose_down(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_rm(
     compose_spec_yaml: str, settings: ApplicationSettings
 ) -> CommandResult:
