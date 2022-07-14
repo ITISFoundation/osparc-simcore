@@ -140,14 +140,20 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     proc = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
+        stderr=asyncio.subprocess.STDOUT,
+        # NOTE that stdout/stderr together. Might want to separate them?
     )
-    assert psutil.pid_exists(proc.pid)  # nosec
-
     start = time.time()
 
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+
+        return CommandResult(
+            success=proc.returncode == os.EX_OK,
+            message=stdout.decode(),
+            command=f"{command}",
+            elapsed=time.time() - start,
+        )
 
     except asyncio.TimeoutError:
         proc.terminate()
@@ -195,13 +201,6 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             command=f"{command}",
             elapsed=time.time() - start,
         )
-
-    return CommandResult(
-        success=proc.returncode == os.EX_OK,
-        message=stdout.decode(),
-        command=f"{command}",
-        elapsed=time.time() - start,
-    )
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:
