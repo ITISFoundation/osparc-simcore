@@ -189,7 +189,7 @@ async def runs_docker_compose_down(
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
-) -> Union[str, dict[str, Any]]:
+) -> str:
     """Removes the previously started service
     and returns the docker-compose output"""
 
@@ -221,6 +221,10 @@ async def runs_docker_compose_down(
     assert result.success  # nosec
     shared_store.clear()
 
+    # NOTE: @run_sequentially_in_context decorator on docker_compose* functions
+    # change return type to Any and mypy gets confused! Should use generics
+    # SEE https://github.com/python/mypy/issues/8645
+    assert isinstance(result.message, str)  # nosec
     return result.message
 
 
