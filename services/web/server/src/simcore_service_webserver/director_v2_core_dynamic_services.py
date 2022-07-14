@@ -113,9 +113,11 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
-    # stopping a service can take a lot of time
-    # bumping the stop command timeout to 1 hour
-    # this will allow to sava bigger datasets from the services
+    """
+    Stopping a service can take a lot of time
+    bumping the stop command timeout to 1 hour
+    this will allow to sava bigger datasets from the services
+    """
     settings: DirectorV2Settings = get_plugin_settings(app)
     await request_director_v2(
         app,
@@ -135,7 +137,7 @@ async def stop_dynamic_services_in_project(
     project_id: Optional[str] = None,
     save_state: bool = True,
 ) -> None:
-    """Stops all services of either project_id or user_id in concurrently"""
+    """Stops all dynamic services of either project_id or user_id in concurrently"""
     running_dynamic_services = await get_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
@@ -149,7 +151,7 @@ async def stop_dynamic_services_in_project(
     await logged_gather(*services_to_stop)
 
 
-# FIXME: ANE please unduplicate the 2 following calls!!!!
+# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
 @log_decorator(logger=log)
 async def retrieve(
     app: web.Application, service_uuid: str, port_keys: list[str]
@@ -167,11 +169,12 @@ async def retrieve(
     return result
 
 
+# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
+# notice that this function is identical to retrieve except that it does NOT raises
 @log_decorator(logger=log)
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: list[str]
 ) -> None:
-    # TODO: notice that this function is identical to retrieve except that it does NOT reaise
     settings: DirectorV2Settings = get_plugin_settings(app)
     body = {"port_keys": port_keys}
 
@@ -195,6 +198,12 @@ async def request_retrieve_dyn_service(
 
 @log_decorator(logger=log)
 async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
+    """User restart the dynamic dynamic service started in the node_uuid
+
+    NOTE that this operation will NOT restart all sidecar services
+    (``simcore-service-dynamic-sidecar`` or ``reverse-proxy caddy`` services) but
+    ONLY those containers in the compose-spec (i.e. the ones exposed to the user)
+    """
     settings: DirectorV2Settings = get_plugin_settings(app)
     await request_director_v2(
         app,
