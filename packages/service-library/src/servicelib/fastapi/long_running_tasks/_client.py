@@ -22,6 +22,11 @@ class Client:
     def __init__(
         self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl
     ) -> None:
+        """
+        `app`: used byt the `Client` to recover the `ClientConfiguration`
+        `async_client`: an AsyncClient instance used by `Client`
+        `base_url`: base endpoint where the server is listening on
+        """
         self.app = app
         self.async_client = async_client
         self.base_url = base_url

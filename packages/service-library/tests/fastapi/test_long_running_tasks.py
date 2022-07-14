@@ -166,13 +166,14 @@ async def test_workflow(
     async def progress_handler(message: str, percent: float) -> None:
         progress_updates.append((message, percent))
 
-    async with long_running_tasks.client.task_result(
-        client_app,
-        async_client,
-        run_server,
+    client = long_running_tasks.client.Client(
+        app=client_app, async_client=async_client, base_url=run_server
+    )
+    async with long_running_tasks.client.periodic_task_result(
+        client,
         task_id,
         task_timeout=10,
-        progress=progress_handler,
+        progress_callback=progress_handler,
         status_poll_interval=high_status_poll_interval,
     ) as string_list:
         assert string_list == [f"{x}" for x in range(10)]
@@ -202,11 +203,12 @@ async def test_error_after_result(
     assert result.status_code == status.HTTP_200_OK
     task_id = result.json()
 
+    client = long_running_tasks.client.Client(
+        app=client_app, async_client=async_client, base_url=run_server
+    )
     with pytest.raises(RuntimeError):
-        async with long_running_tasks.client.task_result(
-            client_app,
-            async_client,
-            run_server,
+        async with long_running_tasks.client.periodic_task_result(
+            client,
             task_id,
             task_timeout=10,
             status_poll_interval=high_status_poll_interval,

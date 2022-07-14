@@ -3,9 +3,7 @@ from asyncio.log import logger
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 
-from fastapi import FastAPI
-from httpx import AsyncClient
-from pydantic import AnyHttpUrl, PositiveFloat
+from pydantic import PositiveFloat
 
 from ._client import Client
 from ._errors import TaskClientTimeoutError
@@ -22,16 +20,16 @@ class _ProgressManager:
     """
 
     def __init__(
-        self, progress_update: Optional[Callable[[str, float], Awaitable[None]]]
+        self, update_callback: Optional[Callable[[str, float], Awaitable[None]]]
     ) -> None:
-        self._callable = progress_update
+        self._callback = update_callback
         self._last_message: Optional[str] = None
         self._last_percent: Optional[float] = None
 
     async def update(
         self, *, message: Optional[str] = None, percent: Optional[float] = None
     ) -> None:
-        if self._callable is None:
+        if self._callback is None:
             return
 
         has_changes = False
@@ -44,25 +42,24 @@ class _ProgressManager:
             has_changes = True
 
         if has_changes:
-            await self._callable(self._last_message, self._last_percent)
+            await self._callback(self._last_message, self._last_percent)
 
 
 @asynccontextmanager
-async def task_result(
-    app: FastAPI,
-    async_client: AsyncClient,
-    base_url: AnyHttpUrl,
+async def periodic_task_result(
+    client: Client,
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress: Optional[Callable[[str, float], Awaitable[None]]] = None,
+    progress_callback: Optional[Callable[[str, float], Awaitable[None]]] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """
-    A convenient wrapper around the Client
-    - `app`: used byt the `Client` to recover the `ClientConfiguration`
-    - `async_client`: an AsyncClient instance used by `Client`
-    - `base_url`: base endpoint where the server is listening on
+    A convenient wrapper around the Client. Polls for results and returns them
+    once available.
+
+    Parameters:
+    - `client`: an istance of `long_running_tasks.client.Client`
     - `task_timeout`: when this expires the task will be cancelled and
         removed form the server
     - `progress` optional: user defined awaitable with two positional arguments:
@@ -75,9 +72,7 @@ async def task_result(
         the expected result
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
-    client = Client(app=app, async_client=async_client, base_url=base_url)
-
-    progress_manager = _ProgressManager(progress)
+    progress_manager = _ProgressManager(progress_callback)
 
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(task_id)

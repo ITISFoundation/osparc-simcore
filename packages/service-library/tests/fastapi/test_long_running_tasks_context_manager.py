@@ -15,7 +15,7 @@ from servicelib.fastapi.long_running_tasks._errors import (
     TaskClientTimeoutError,
 )
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.client import task_result
+from servicelib.fastapi.long_running_tasks.client import periodic_task_result, Client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,
@@ -101,10 +101,9 @@ async def test_task_result(
     task_id = result.json()
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
-    async with task_result(
-        bg_task_app,
-        async_client,
-        url,
+    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
+    async with periodic_task_result(
+        client,
         task_id,
         task_timeout=10,
         status_poll_interval=TASK_SLEEP_INTERVAL / 3,
@@ -122,12 +121,11 @@ async def test_task_result_times_out(
     task_id = result.json()
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     timeout = TASK_SLEEP_INTERVAL / 2
     with pytest.raises(TaskClientTimeoutError) as exec_info:
-        async with task_result(
-            bg_task_app,
-            async_client,
-            url,
+        async with periodic_task_result(
+            client,
             task_id,
             task_timeout=timeout,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
@@ -149,11 +147,10 @@ async def test_task_result_task_result_is_an_error(
     task_id = result.json()
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     with pytest.raises(TaskClientResultError) as exec_info:
-        async with task_result(
-            bg_task_app,
-            async_client,
-            url,
+        async with periodic_task_result(
+            client,
             task_id,
             task_timeout=10,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
