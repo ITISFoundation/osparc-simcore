@@ -13,7 +13,7 @@ from fastapi.routing import APIRouter
 from httpx import AsyncClient
 from pydantic.types import PositiveFloat
 from pytest import FixtureRequest
-from servicelib.fastapi import long_running
+from servicelib.fastapi import long_running_tasks
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def router_prefix(request: FixtureRequest) -> str:
 async def bg_task_app(router_prefix: str) -> AsyncIterable[FastAPI]:
     app = FastAPI()
 
-    long_running.server.setup(app, router_prefix=router_prefix)
+    long_running_tasks.server.setup(app, router_prefix=router_prefix)
     yield app
 
 

@@ -20,7 +20,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
-from servicelib.fastapi import long_running as long_running_tasks
+from servicelib.fastapi import long_running_tasks
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

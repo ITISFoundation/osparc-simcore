@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import pytest
 from pydantic import ValidationError
-from servicelib.fastapi.long_running._models import TaskResult
+from servicelib.fastapi.long_running_tasks._models import TaskResult
 
 
 @pytest.mark.parametrize(
