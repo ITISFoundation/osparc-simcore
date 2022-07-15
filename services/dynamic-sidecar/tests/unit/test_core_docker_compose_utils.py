@@ -114,6 +114,7 @@ async def test_docker_compose_workflow(
     assert r.success, r.message
 
 
+@pytest.mark.skip(reason="UNDER DEV")
 async def test_burst_calls_to_docker_compose_config(
     compose_spec_yaml: str,
     mock_environment: EnvVarsDict,
