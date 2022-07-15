@@ -4,26 +4,20 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
-# testing
+
 asgi_lifespan
+codecov
+coverage
+coveralls
+faker
+pylint
 pytest
 pytest-asyncio
+pytest-cov
 pytest-icdiff
 pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
-
-# fixtures
-faker
 respx
-
-# linter tool
-pylint
-
-# code coverage
-codecov
-coverage
-coveralls
-pytest-cov

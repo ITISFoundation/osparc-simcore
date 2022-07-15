@@ -30,6 +30,7 @@ aiofiles
 docker-compose
 fastapi
 httpx
+psutil
 pydantic
 python-magic # file type identification library. See 'magic.from_file(...)'
 PyYAML

@@ -16,7 +16,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pytest import MonkeyPatch
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_envfile
+from pytest_simcore.helpers.utils_envs import (
+    EnvVarsDict,
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from servicelib.json_serialization import json_dumps
 
 logger = logging.getLogger(__name__)
@@ -125,40 +129,45 @@ def mock_environment(
     project_id: ProjectID,
     node_id: NodeID,
     run_id: UUID,
-) -> None:
+) -> EnvVarsDict:
     """Main test environment used to build the application
 
     Override if new configuration for the app is needed.
     """
+    envs = {}
     # envs in Dockerfile
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("SC_BUILD_TARGET", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR", f"{dy_volumes}")
+    envs["SC_BOOT_MODE"] = "production"
+    envs["SC_BUILD_TARGET"] = "production"
+    envs["DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR"] = f"{dy_volumes}"
 
     # envs on container
-    monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
+    envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
 
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_USER", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
+    envs["REGISTRY_AUTH"] = "false"
+    envs["REGISTRY_USER"] = "test"
+    envs["REGISTRY_PW"] = "test"
+    envs["REGISTRY_SSL"] = "false"
 
-    monkeypatch.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
-    monkeypatch.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
-    monkeypatch.setenv("DY_SIDECAR_RUN_ID", f"{run_id}")
-    monkeypatch.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
-    monkeypatch.setenv("DY_SIDECAR_PATH_INPUTS", f"{inputs_dir}")
-    monkeypatch.setenv("DY_SIDECAR_PATH_OUTPUTS", f"{outputs_dir}")
-    monkeypatch.setenv("DY_SIDECAR_STATE_PATHS", json_dumps(state_paths_dirs))
-    monkeypatch.setenv("DY_SIDECAR_STATE_EXCLUDE", json_dumps(state_exclude_dirs))
+    envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
+    envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
+    envs["DY_SIDECAR_RUN_ID"] = f"{run_id}"
+    envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"
+    envs["DY_SIDECAR_PATH_INPUTS"] = f"{inputs_dir}"
+    envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
+    envs["DY_SIDECAR_STATE_PATHS"] = json_dumps(state_paths_dirs)
+    envs["DY_SIDECAR_STATE_EXCLUDE"] = json_dumps(state_exclude_dirs)
 
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    envs["S3_ENDPOINT"] = "endpoint"
+    envs["S3_ACCESS_KEY"] = "access_key"
+    envs["S3_SECRET_KEY"] = "secret_key"
+    envs["S3_BUCKET_NAME"] = "bucket_name"
+    envs["S3_SECURE"] = "false"
 
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    envs["R_CLONE_PROVIDER"] = "MINIO"
+
+    setenvs_from_dict(monkeypatch, envs)
+
+    return envs
 
 
 @pytest.fixture

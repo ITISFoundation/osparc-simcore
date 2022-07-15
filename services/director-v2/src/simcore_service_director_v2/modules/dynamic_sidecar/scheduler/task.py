@@ -365,8 +365,9 @@ class DynamicSidecarsScheduler:
 
                 error_code = create_error_code(e)
                 logger.exception(
-                    "Observation of %s unexpectedly failed",
-                    f"{service_name=}",
+                    "Observation of %s unexpectedly failed [%s]",
+                    f"{service_name=} ",
+                    f"{error_code}",
                     extra={"error_code": error_code},
                 )
                 scheduler_data.dynamic_sidecar.status.update_failing_status(

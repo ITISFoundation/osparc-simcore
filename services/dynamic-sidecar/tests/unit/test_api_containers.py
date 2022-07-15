@@ -36,7 +36,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
-DEFAULT_COMMAND_TIMEOUT = 5.0
+DEFAULT_COMMAND_TIMEOUT = 5
 WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 
@@ -106,7 +106,7 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 async def _docker_ps_a_container_names() -> list[str]:
     command = 'docker ps -a --format "{{.Names}}"'
-    success, stdout = await async_command(command=command, command_timeout=None)
+    success, stdout, *_ = await async_command(command=command, timeout=None)
 
     assert success is True, stdout
     return stdout.split("\n")
@@ -121,11 +121,11 @@ async def _assert_compose_spec_pulled(
         'docker-compose --project-name {project} --file "{file_path}" '
         "up --no-build --detach"
     )
-    success, stdout = await _write_file_and_run_command(
+    success, stdout, *_ = await _write_file_and_run_command(
         settings=settings,
-        file_content=compose_spec,
+        compose_spec_yaml_content=compose_spec,
         command=command,
-        command_timeout=None,
+        terminate_process_on_timeout=None,
     )
 
     assert success is True, stdout

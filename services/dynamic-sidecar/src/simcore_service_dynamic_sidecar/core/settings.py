@@ -32,7 +32,9 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # LOGGING
-    LOG_LEVEL: str = Field(default="WARNING")
+    LOG_LEVEL: str = Field(
+        default="WARNING", env=["DYNAMIC_SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     DYNAMIC_SIDECAR_HOST: str = Field(

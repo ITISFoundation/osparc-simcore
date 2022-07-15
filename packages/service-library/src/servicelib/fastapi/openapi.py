@@ -10,10 +10,13 @@ from fastapi.routing import APIRoute, APIRouter
 
 from ..functools_utils import copy_func
 
-# Some common values for FastAPI(... server=[ ... ]) parameter
-# It will be added to the OpenAPI Specs (OAS).
+# SEE https://swagger.io/docs/specification/api-host-and-base-path/
+_OAS_DEFAULT_SERVER = {
+    "description": "Default server: requests directed to serving url",
+    "url": "/",
+}
 _OAS_DEVELOPMENT_SERVER = {
-    "description": "Development server",
+    "description": "Development server: can configure any base url",
     "url": "http://{host}:{port}",
     "variables": {
         "host": {"default": "127.0.0.1"},
@@ -24,14 +27,14 @@ _OAS_DEVELOPMENT_SERVER = {
 
 def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
     """common OAS options for FastAPI constructor"""
-    servers = None
+    servers = [
+        _OAS_DEFAULT_SERVER,
+    ]
     if is_devel_mode:
         # NOTE: for security, only exposed in devel mode
         # Make sure also that this is NOT used in edge services
         # SEE https://sonarcloud.io/project/security_hotspots?id=ITISFoundation_osparc-simcore&pullRequest=3165&hotspots=AYHPqDfX5LRQZ1Ko6y4-
-        servers = [
-            _OAS_DEVELOPMENT_SERVER,
-        ]
+        servers.append(_OAS_DEVELOPMENT_SERVER)
 
     return dict(
         servers=servers,
