@@ -156,7 +156,7 @@ def test_expected_failure_dynamic_sidecar_settings(
         ('["one==yes"]', ["one==yes"]),
         ('["two!=no"]', ["two!=no"]),
         ('["one==yes", "two!=no"]', ["one==yes", "two!=no"]),
-        ('["     strips.white.spaces   ==  ok "]', ["strips.white.spaces==ok"]),
+        ('["strips.white.spaces==  ok "]', ["strips.white.spaces==  ok"]),
         (
             # Bug from https://github.com/ITISFoundation/osparc-simcore/pull/3190
             '["node.labels.standard-worker==true"]',

@@ -68,7 +68,7 @@ SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
 PlacementConstraintStr = constr(
     strip_whitespace=True,
-    regex=r"^(?!-)(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(!=|==){1}[a-zA-Z0-9_. -]*$",
+    regex=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$",
 )
 
 
