@@ -49,7 +49,9 @@ async def stop_sequential_workers() -> None:
 
 # NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
 # @run_sequentially_in_contextreturn changes the return type of the decorated function to `Any`.
-# Instead we should annotate this decorator with ParamSpec and TypeVar generics. SEE https://github.com/python/mypy/issues/8645
+# Instead we should annotate this decorator with ParamSpec and TypeVar generics.
+# SEE https://peps.python.org/pep-0612/
+#
 def run_sequentially_in_context(
     target_args: Optional[list[str]] = None,
 ) -> Callable:

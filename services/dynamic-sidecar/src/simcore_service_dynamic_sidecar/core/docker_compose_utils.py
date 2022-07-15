@@ -64,7 +64,7 @@ async def docker_compose_config(
         command='docker-compose --file "{file_path}" config',
         process_termination_timeout=timeout,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_up(
@@ -85,7 +85,7 @@ async def docker_compose_up(
         " --no-build --detach",
         process_termination_timeout=timeout,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_restart(
@@ -106,7 +106,7 @@ async def docker_compose_restart(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_down(
@@ -131,7 +131,7 @@ async def docker_compose_down(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_rm(
@@ -153,4 +153,4 @@ async def docker_compose_rm(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore
