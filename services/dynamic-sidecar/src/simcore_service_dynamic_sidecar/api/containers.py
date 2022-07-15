@@ -61,9 +61,6 @@ async def _task_docker_compose_up_and_send_message(
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        # prunes first stopped containers
-        await docker_compose_rm(shared_store.compose_spec, settings)
-
         r = await docker_compose_up(
             shared_store.compose_spec, settings, timeout=command_timeout
         )
