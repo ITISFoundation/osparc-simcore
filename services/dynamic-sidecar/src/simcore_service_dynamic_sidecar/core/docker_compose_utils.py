@@ -1,6 +1,9 @@
 """ Wrapper around docker-compose CLI with pre-defined options
 
 
+docker_compose_* coroutines are implemented such that they can only
+run sequentially by this service
+
 """
 import logging
 from copy import deepcopy
@@ -15,6 +18,7 @@ from .utils import CommandResult, async_command, write_to_tmp_file
 logger = logging.getLogger(__name__)
 
 
+@run_sequentially_in_context()
 async def _write_file_and_spawn_process(
     yaml_content: str,
     *,
@@ -41,7 +45,6 @@ async def _write_file_and_spawn_process(
         return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_config(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
@@ -64,7 +67,6 @@ async def docker_compose_config(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_up(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
@@ -86,7 +88,6 @@ async def docker_compose_up(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_restart(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:
@@ -108,7 +109,6 @@ async def docker_compose_restart(
     return result
 
 
-@run_sequentially_in_context()
 async def docker_compose_down(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: int
 ) -> CommandResult:

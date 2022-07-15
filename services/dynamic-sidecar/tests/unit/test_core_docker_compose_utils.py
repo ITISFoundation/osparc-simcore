@@ -19,6 +19,7 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
+SLEEP_TIME_S = 60
 COMPOSE_SPEC_SAMPLE = {
     "version": "3.8",
     "services": {
@@ -30,7 +31,7 @@ COMPOSE_SPEC_SAMPLE = {
             ],
             "working_dir": "/work",
             "image": "busybox",
-            "command": f"sh -c \"echo 'setup {__name__}'; sleep 60; echo 'teardown {__name__}'\"",
+            "command": f"sh -c \"echo 'setup {__name__}'; sleep {SLEEP_TIME_S}; echo 'teardown {__name__}'\"",
         }
     },
 }
