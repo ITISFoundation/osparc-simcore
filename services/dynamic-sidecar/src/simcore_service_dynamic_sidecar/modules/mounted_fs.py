@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Generator, Iterator
 from uuid import UUID
 
 from fastapi import FastAPI
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 from ..core.docker_utils import get_volume_by_label
 
@@ -121,7 +121,7 @@ class MountedVolumes:
 
 
 def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    settings: DynamicSidecarSettings = app.state.settings
+    settings: ApplicationSettings = app.state.settings
 
     app.state.mounted_volumes = MountedVolumes(
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,

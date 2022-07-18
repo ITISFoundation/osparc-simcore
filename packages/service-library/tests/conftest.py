@@ -5,15 +5,16 @@
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import servicelib
 from faker import Faker
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.simcore_service_library_fixtures",
 ]
 
 
@@ -40,7 +41,7 @@ def osparc_simcore_root_dir(here) -> Path:
 
 
 @pytest.fixture
-def fake_data_dict(faker: Faker) -> Dict[str, Any]:
+def fake_data_dict(faker: Faker) -> dict[str, Any]:
     data = {
         "uuid_as_UUID": faker.uuid4(cast_to=None),
         "uuid_as_str": faker.uuid4(),

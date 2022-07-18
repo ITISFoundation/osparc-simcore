@@ -22,7 +22,7 @@ from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 
-from ..core.settings import DynamicSidecarSettings
+from ..core.settings import ApplicationSettings
 
 log = logging.getLogger(__file__)
 
@@ -65,7 +65,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
     CHANNEL_LOG = "logger"
 
     def __init__(self, app: FastAPI, max_messages_to_send: int = 100) -> None:
-        settings: DynamicSidecarSettings = app.state.settings
+        settings: ApplicationSettings = app.state.settings
 
         assert settings.RABBIT_SETTINGS  # nosec
         self._rabbit_settings: RabbitSettings = settings.RABBIT_SETTINGS
