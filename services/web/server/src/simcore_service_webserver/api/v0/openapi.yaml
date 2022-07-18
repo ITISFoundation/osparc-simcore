@@ -2763,7 +2763,7 @@ paths:
             schema:
               type: object
               properties:
-                service_uuid:
+                service_id:
                   type: string
                   description: the uuid to assign to the service
                 service_key:
