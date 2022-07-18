@@ -40,10 +40,10 @@ WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 @pytest.fixture
 def client(
-    test_client: TestClient,
+    ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers,
-    ensure_run_in_sequence_context_is_empty: None,
+    test_client: TestClient,
 ):
     """creates external volumes and provides a client to dy-sidecar service"""
     return test_client

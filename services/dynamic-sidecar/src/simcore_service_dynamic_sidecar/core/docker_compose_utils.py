@@ -10,16 +10,15 @@ from copy import deepcopy
 from pprint import pformat
 from typing import Optional
 
+from servicelib.async_utils import run_sequentially_in_context
+
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
-
-# from servicelib.async_utils import run_sequentially_in_context
-
 
 logger = logging.getLogger(__name__)
 
 
-# @run_sequentially_in_context()
+@run_sequentially_in_context()
 async def _write_file_and_spawn_process(
     yaml_content: str,
     *,
@@ -65,7 +64,7 @@ async def docker_compose_config(
         command='docker-compose --file "{file_path}" config',
         process_termination_timeout=timeout,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_up(
@@ -86,7 +85,7 @@ async def docker_compose_up(
         " --no-build --detach",
         process_termination_timeout=timeout,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_restart(
@@ -107,7 +106,7 @@ async def docker_compose_restart(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_down(
@@ -132,7 +131,7 @@ async def docker_compose_down(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore
 
 
 async def docker_compose_rm(
@@ -154,4 +153,4 @@ async def docker_compose_rm(
         ),
         process_termination_timeout=None,
     )
-    return result
+    return result  # type: ignore

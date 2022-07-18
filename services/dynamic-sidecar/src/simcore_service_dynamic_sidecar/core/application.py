@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -175,6 +176,9 @@ def create_app():
                 "Removed spawned containers:\n%s",
                 result.message,
             )
+
+        await cancel_sequential_workers()
+
         # FINISHED
         print(APP_FINISHED_BANNER_MSG, flush=True)
 
