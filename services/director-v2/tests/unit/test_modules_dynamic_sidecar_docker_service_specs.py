@@ -143,7 +143,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "inputs_path": "/tmp/inputs",
                         "outputs_path": "/tmp/outputs",
                         "state_exclude": {"/tmp/strip_me/*", "*.py"},
-                        "state_paths": {"/tmp/save_1", "/tmp_save_2"},
+                        "state_paths": ["/tmp/save_1", "/tmp_save_2"],
                     },
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
