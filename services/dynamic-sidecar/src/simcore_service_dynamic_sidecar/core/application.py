@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -21,7 +22,7 @@ from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
-from .settings import DynamicSidecarSettings
+from .settings import ApplicationSettings
 from .utils import login_registry, volumes_fix_permissions
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ class AppState:
     """
 
     _STATES = {
-        "settings": DynamicSidecarSettings,
+        "settings": ApplicationSettings,
         "mounted_volumes": MountedVolumes,
         "shared_store": SharedStore,
     }
@@ -74,8 +75,8 @@ class AppState:
         self._app = initialized_app
 
     @property
-    def settings(self) -> DynamicSidecarSettings:
-        assert isinstance(self._app.state.settings, DynamicSidecarSettings)  # nosec
+    def settings(self) -> ApplicationSettings:
+        assert isinstance(self._app.state.settings, ApplicationSettings)  # nosec
         return self._app.state.settings
 
     @property
@@ -93,7 +94,7 @@ class AppState:
         return self._shared_store.compose_spec
 
 
-def setup_logger(settings: DynamicSidecarSettings):
+def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
@@ -101,7 +102,7 @@ def setup_logger(settings: DynamicSidecarSettings):
 
 def create_base_app() -> FastAPI:
     # settings
-    settings = DynamicSidecarSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
     logger.debug(settings.json(indent=2))
 
@@ -175,6 +176,9 @@ def create_app():
                 "Removed spawned containers:\n%s",
                 result.message,
             )
+
+        await cancel_sequential_workers()
+
         # FINISHED
         print(APP_FINISHED_BANNER_MSG, flush=True)
 
