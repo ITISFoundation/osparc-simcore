@@ -3,13 +3,12 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import socket
 import subprocess
 import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterator, NamedTuple, cast
+from typing import Callable, Iterator, NamedTuple
 
 import pytest
 import requests
@@ -43,17 +42,6 @@ async def example(
 
 
 # FIXTURES ---------------------
-
-
-@pytest.fixture
-def get_unused_port() -> Callable[[], int]:
-    def go() -> int:
-        """Return a port that is unused on the current host."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", 0))
-            return cast(int, s.getsockname()[1])
-
-    return go
 
 
 class ServerInfo(NamedTuple):

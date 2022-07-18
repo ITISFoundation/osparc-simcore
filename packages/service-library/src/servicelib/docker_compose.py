@@ -1,6 +1,5 @@
 import yaml
 
-
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
 # deployed inside the platform
