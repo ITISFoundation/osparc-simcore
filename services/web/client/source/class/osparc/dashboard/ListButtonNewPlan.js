@@ -21,36 +21,18 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.dashboard.ListButtonNew", {
-  extend: osparc.dashboard.ListButtonBase,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._buildLayout();
-  },
+qx.Class.define("osparc.dashboard.ListButtonNewPlan", {
+  extend: osparc.dashboard.ListButtonNew,
 
   members: {
     _buildLayout: function() {
       const title = this.getChildControl("title");
-      title.setValue(this.tr("Empty Study"));
+      title.setValue(this.tr("New Plan"));
 
       const desc = this.getChildControl("description");
-      desc.setValue(this.tr("Start with an empty study").toString());
+      desc.setValue(this.tr("Start a new plan").toString());
 
       this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
-    },
-
-    _onToggleChange: function(e) {
-      this.setValue(false);
-    },
-
-    _shouldApplyFilter: function(data) {
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      return false;
     }
   }
 });
