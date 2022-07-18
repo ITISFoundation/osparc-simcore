@@ -18,6 +18,7 @@ from models_library.services import ServiceKeyVersion
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from servicelib.json_serialization import json_dumps
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
@@ -101,72 +102,70 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
-            "io.simcore.scheduler-data": '{"paths_mapping": {"inputs_path": '
-            '"/tmp/inputs", "outputs_path": '
-            '"/tmp/outputs", "state_paths": '
-            '["/tmp/save_1", "/tmp_save_2"], '
-            '"state_exclude": ["/tmp/strip_me/*", '
-            '"*.py"]}, "compose_spec": '
-            '"{\\"version\\": \\"2.3\\", '
-            '\\"services\\": {\\"rt-web\\": '
-            '{\\"image\\": '
-            '\\"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}\\", '
-            '\\"init\\": true, \\"depends_on\\": '
-            '[\\"s4l-core\\"]}, \\"s4l-core\\": '
-            '{\\"image\\": '
-            '\\"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}\\", '
-            '\\"runtime\\": \\"nvidia\\", '
-            '\\"init\\": true, \\"environment\\": '
-            '[\\"DISPLAY=${DISPLAY}\\"], '
-            '\\"volumes\\": '
-            '[\\"/tmp/.X11-unix:/tmp/.X11-unix\\"]}}}", '
-            '"container_http_entry": "rt-web", '
-            '"restart_policy": '
-            '"on-inputs-downloaded", "key": '
-            '"simcore/services/dynamic/3dviewer", '
-            '"version": "2.4.5", "user_id": 234, '
-            '"project_id": '
-            '"dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe", '
-            '"node_uuid": '
-            '"75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"service_name": '
-            '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"dynamic_sidecar": {'
-            f'"run_id": "{run_id}", '
-            '"status": '
-            '{"current": "ok", "info": ""}, '
-            '"hostname": '
-            '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"port": 1222, "is_available": false, '
-            '"was_compose_spec_submitted": false, '
-            '"containers_inspect": [], '
-            '"was_dynamic_sidecar_started": '
-            'false, "were_services_created": '
-            "false, "
-            '"is_project_network_attached": '
-            "false, "
-            '"service_environment_prepared": '
-            'false, "service_removal_state": '
-            '{"can_remove": false, "can_save": '
-            'null, "was_removed": false}, '
-            '"dynamic_sidecar_id": null, '
-            '"dynamic_sidecar_network_id": null, '
-            '"swarm_network_id": null, '
-            '"swarm_network_name": null}, '
-            '"dynamic_sidecar_network_name": '
-            '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"simcore_traefik_zone": '
-            '"dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"service_port": 65534, '
-            '"service_resources": {"container": {"image": '
-            '"simcore/services/dynamic/jupyter-math:2.0.5", "resources": '
-            '{"CPU": {"limit": 0.1, "reservation": 0.1}, "RAM": '
-            '{"limit": 2147483648, "reservation": 2147483648}}}}, '
-            '"request_dns": null, '
-            '"request_scheme": null, '
-            '"proxy_service_name": '
-            '"dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa", '
-            '"docker_node_id": null}',
+            "io.simcore.scheduler-data": SchedulerData.parse_obj(
+                {
+                    "compose_spec": '{"version": "2.3", "services": {"rt-web": {"image": '
+                    '"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}", '
+                    '"init": true, "depends_on": ["s4l-core"]}, "s4l-core": '
+                    '{"image": '
+                    '"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}", '
+                    '"runtime": "nvidia", "init": true, "environment": '
+                    '["DISPLAY=${DISPLAY}"], "volumes": '
+                    '["/tmp/.X11-unix:/tmp/.X11-unix"]}}}',
+                    "container_http_entry": "rt-web",
+                    "docker_node_id": None,
+                    "dynamic_sidecar": {
+                        "containers_inspect": [],
+                        "dynamic_sidecar_id": None,
+                        "dynamic_sidecar_network_id": None,
+                        "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "is_available": False,
+                        "is_project_network_attached": False,
+                        "port": 1222,
+                        "run_id": f"{run_id}",
+                        "service_environment_prepared": False,
+                        "service_removal_state": {
+                            "can_remove": False,
+                            "can_save": None,
+                            "was_removed": False,
+                        },
+                        "status": {"current": "ok", "info": ""},
+                        "swarm_network_id": None,
+                        "swarm_network_name": None,
+                        "was_compose_spec_submitted": False,
+                        "was_dynamic_sidecar_started": False,
+                        "were_services_created": False,
+                    },
+                    "dynamic_sidecar_network_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "key": "simcore/services/dynamic/3dviewer",
+                    "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "paths_mapping": {
+                        "inputs_path": "/tmp/inputs",
+                        "outputs_path": "/tmp/outputs",
+                        "state_exclude": {"/tmp/strip_me/*", "*.py"},
+                        "state_paths": {"/tmp/save_1", "/tmp_save_2"},
+                    },
+                    "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "request_dns": None,
+                    "request_scheme": None,
+                    "restart_policy": "on-inputs-downloaded",
+                    "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "service_port": 65534,
+                    "service_resources": {
+                        "container": {
+                            "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+                            "resources": {
+                                "CPU": {"limit": 0.1, "reservation": 0.1},
+                                "RAM": {"limit": 2147483648, "reservation": 2147483648},
+                            },
+                        }
+                    },
+                    "simcore_traefik_zone": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "user_id": 234,
+                    "version": "2.4.5",
+                }
+            ).as_label_data(),
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
@@ -190,11 +189,13 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": '["/tmp/strip_me/*", "*.py"]',
-                    "DY_SIDECAR_STATE_PATHS": '["/tmp/save_1", ' '"/tmp_save_2"]',
+                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps({"/tmp/strip_me/*", "*.py"}),
+                    "DY_SIDECAR_STATE_PATHS": json_dumps(
+                        ["/tmp/save_1", "/tmp_save_2"]
+                    ),
                     "DY_SIDECAR_USER_ID": "234",
                     "FORWARD_ENV_DISPLAY": ":0",
-                    "LOG_LEVEL": "DEBUG",
+                    "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
@@ -220,7 +221,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "REGISTRY_URL": "foo.bar.com",
                     "REGISTRY_USER": "test",
                     "R_CLONE_PROVIDER": "MINIO",
-                    "R_CLONE_ENABLED": "True",
+                    "R_CLONE_ENABLED": "False",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
@@ -317,8 +318,6 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
     }
 
 
-# NOTE: this test is flaky because of a set is serialized unsorted
-@pytest.mark.flaky(max_runs=3)
 def test_get_dynamic_proxy_spec(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
@@ -341,8 +340,10 @@ def test_get_dynamic_proxy_spec(
     assert expected_dynamic_sidecar_spec_model.TaskTemplate
     assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec
     assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env
+
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
+
         dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
@@ -352,10 +353,36 @@ def test_get_dynamic_proxy_spec(
             app_settings=minimal_app.state.settings,
         )
 
-        assert dynamic_sidecar_spec == expected_dynamic_sidecar_spec_model
+        # NOTE:
+        exclude_keys = {
+            "Labels": True,
+            "TaskTemplate": {"ContainerSpec": {"Env": True}},
+        }
+
+        assert dynamic_sidecar_spec.dict(
+            exclude=exclude_keys
+        ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
+
+        assert (
+            dynamic_sidecar_spec.Labels.keys()
+            == expected_dynamic_sidecar_spec_model.Labels.keys()
+        )
+
+        assert (
+            dynamic_sidecar_spec.Labels["io.simcore.scheduler-data"]
+            == expected_dynamic_sidecar_spec_model.Labels["io.simcore.scheduler-data"]
+        )
+
+        assert dynamic_sidecar_spec.Labels == expected_dynamic_sidecar_spec_model.Labels
+
         dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
+
+    # check reference after multiple runs
     assert dynamic_sidecar_spec_accumulated is not None
-    assert dynamic_sidecar_spec_accumulated == expected_dynamic_sidecar_spec_model
+    assert (
+        dynamic_sidecar_spec_accumulated.dict()
+        == expected_dynamic_sidecar_spec_model.dict()
+    )
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 

@@ -16,6 +16,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -500,7 +501,7 @@ async def _update_service_spec(
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",
                         method="POST",
-                        data=json.dumps(clean_map(updated_spec)),
+                        data=json_dumps(clean_map(updated_spec)),
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:

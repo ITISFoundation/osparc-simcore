@@ -1,12 +1,12 @@
 # pylint: disable=unsubscriptable-object
 
-import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+from servicelib.json_serialization import json_dumps
 
 from .generics import ListModel
 
@@ -157,7 +157,7 @@ class PathMappingsLabel(BaseModel):
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
+                "state_exclude": {"/tmp/strip_me/*", "*.py"},  # nosec
             }
         }
 
@@ -267,29 +267,29 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     )
                 },
                 # dynamic-service
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.paths-mapping": json.dumps(
+                    "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.Config.schema_extra["example"]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                 },
                 # dynamic-service with compose spec
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.paths-mapping": json.dumps(
+                    "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.Config.schema_extra["example"]
                     ),
-                    "simcore.service.compose-spec": json.dumps(
+                    "simcore.service.compose-spec": json_dumps(
                         {
                             "version": "2.3",
                             "services": {

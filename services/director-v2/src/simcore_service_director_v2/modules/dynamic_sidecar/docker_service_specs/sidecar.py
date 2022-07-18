@@ -133,7 +133,8 @@ def get_dynamic_sidecar_spec(
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
-    for path_to_mount in scheduler_data.paths_mapping.state_paths:
+    # NOTE: keeping sorted makes comparisons easier
+    for path_to_mount in sorted(scheduler_data.paths_mapping.state_paths):
         # for now only enable this with dev features enabled
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
             mounts.append(

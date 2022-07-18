@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from typing import Coroutine, Optional, Union, cast
 from uuid import UUID
@@ -12,6 +11,7 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from servicelib.json_serialization import json_dumps
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -216,7 +216,7 @@ async def stop_dynamic_service(
         logger.error(
             "Service with %s could not be untracked after %s",
             f"{node_uuid=}",
-            f"{json.dumps(retry_state.retry_object.statistics)}",
+            f"{json_dumps(retry_state.retry_object.statistics)}",
         )
 
     async for attempt in AsyncRetrying(
