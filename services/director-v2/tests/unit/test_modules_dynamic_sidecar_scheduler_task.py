@@ -36,23 +36,22 @@ def mock_env(
     docker_swarm: None,
     mock_docker_api: None,
 ) -> None:
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
-    monkeypatch.setenv("DIRECTOR_HOST", "mocked_out")
     monkeypatch.setenv(
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
         f"{SCHEDULER_INTERVAL_SECONDS}",
     )
+
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
-    monkeypatch.setenv("POSTGRES_HOST", "test")
-    monkeypatch.setenv("POSTGRES_USER", "test")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "test")
-    monkeypatch.setenv("POSTGRES_DB", "test")
+
+    monkeypatch.setenv("S3_ENDPOINT", "")
+    monkeypatch.setenv("S3_ACCESS_KEY", "")
+    monkeypatch.setenv("S3_SECRET_KEY", "")
+    monkeypatch.setenv("S3_BUCKET_NAME", "")
+
+    monkeypatch.setenv("POSTGRES_HOST", "")
+    monkeypatch.setenv("POSTGRES_USER", "")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "")
+    monkeypatch.setenv("POSTGRES_DB", "")
 
 
 @pytest.fixture
