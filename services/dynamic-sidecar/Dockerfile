@@ -15,6 +15,7 @@ RUN set -eux && \
   apt-get install -y \
   curl \
   gosu \
+  # required by python-magic
   libmagic1 \
   && \
   rm -rf /var/lib/apt/lists/* && \
@@ -69,8 +70,8 @@ RUN apt-get update &&\
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
-RUN mkdir -p ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
+RUN python -m venv "${VIRTUAL_ENV}" \
+  && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 RUN pip install --upgrade --no-cache-dir \
   pip~=22.0  \
@@ -157,8 +158,8 @@ ENV SC_BUILD_TARGET=development \
 
 WORKDIR /devel
 
-RUN chown -R scu:scu ${VIRTUAL_ENV}
-RUN chown -R scu:scu ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
+RUN chown -R scu:scu "${VIRTUAL_ENV}" \
+  && chown -R scu:scu "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 EXPOSE 8000
 EXPOSE 3000

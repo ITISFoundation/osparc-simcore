@@ -89,8 +89,7 @@ async def list_running_dynamic_services(
         )
     ]
 
-    # FIXME: handle DynamicSidecarNotFoundError. Check other values raise by get_stack ... as well
-    # add exception handler to HTTP
+    # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
     dynamic_sidecar_running_services: list[DynamicServiceOut] = cast(
         list[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
     )
