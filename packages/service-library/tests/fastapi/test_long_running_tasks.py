@@ -130,7 +130,7 @@ async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHtt
 def high_status_poll_interval() -> PositiveFloat:
     # NOTE: polling very fast to capture all the progress updates and to check
     # that duplicate progress messages do not get sent
-    return ITEM_PUBLISH_SLEEP / 3
+    return ITEM_PUBLISH_SLEEP / 5
 
 
 @pytest.fixture
