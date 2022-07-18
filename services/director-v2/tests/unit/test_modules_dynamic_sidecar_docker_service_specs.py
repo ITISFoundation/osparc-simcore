@@ -386,8 +386,6 @@ def test_get_dynamic_proxy_spec(
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-# NOTE: this test is flaky because of a set is serialized unsorted
-@pytest.mark.flaky(max_runs=3)
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
@@ -409,8 +407,9 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         app_settings=minimal_app.state.settings,
     )
     assert dynamic_sidecar_spec
-    assert dynamic_sidecar_spec == AioDockerServiceSpec.parse_obj(
-        expected_dynamic_sidecar_spec
+    assert (
+        dynamic_sidecar_spec.dict()
+        == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
     )
 
     catalog_client = CatalogClient.instance(minimal_app)
