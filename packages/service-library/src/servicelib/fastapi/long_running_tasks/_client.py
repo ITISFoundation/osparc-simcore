@@ -19,17 +19,15 @@ class Client:
     status, result and/or cancel of a long running task.
     """
 
-    def __init__(
-        self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl
-    ) -> None:
+    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl):
         """
         `app`: used byt the `Client` to recover the `ClientConfiguration`
         `async_client`: an AsyncClient instance used by `Client`
         `base_url`: base endpoint where the server is listening on
         """
         self.app = app
-        self.async_client = async_client
-        self.base_url = base_url
+        self._async_client = async_client
+        self._base_url = base_url
 
     @property
     def _client_configuration(self) -> ClientConfiguration:
@@ -38,14 +36,14 @@ class Client:
     def _get_url(self, path: str) -> AnyHttpUrl:
         return parse_obj_as(
             AnyHttpUrl,
-            f"{self.base_url}{self._client_configuration.router_prefix}{path}",
+            f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
 
     async def get_task_status(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
-        result = await self.async_client.get(
+        result = await self._async_client.get(
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
@@ -63,7 +61,7 @@ class Client:
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> Optional[Any]:
         timeout = timeout or self._client_configuration.default_timeout
-        result = await self.async_client.get(
+        result = await self._async_client.get(
             self._get_url(f"/task/{task_id}/result"),
             timeout=timeout,
         )
@@ -84,7 +82,7 @@ class Client:
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> bool:
         timeout = timeout or self._client_configuration.default_timeout
-        result = await self.async_client.delete(
+        result = await self._async_client.delete(
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
