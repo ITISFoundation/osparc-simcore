@@ -188,6 +188,10 @@ class DynamicSidecarsScheduler:
         logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
+        """
+
+        raises DynamicSidecarNotFoundError
+        """
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]

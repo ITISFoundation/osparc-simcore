@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
-    _write_file_and_run_command,
+    docker_compose_down,
 )
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from tenacity import retry
@@ -185,12 +185,4 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         # if no compose-spec is stored skip this operation
         return
 
-    await _write_file_and_run_command(
-        settings=app_state.settings,
-        compose_spec_yaml_content=app_state.compose_spec,
-        command=(
-            'docker-compose --project-name {project} --file "{file_path}" down'
-            " --remove-orphans --timeout 5"
-        ),
-        terminate_process_on_timeout=None,
-    )
+    await docker_compose_down(app_state.compose_spec, app_state.settings, 5)

@@ -269,7 +269,7 @@ def test_create_dynamic_services(
     exp_status_code: int,
     is_legacy: bool,
 ):
-    post_data = DynamicServiceCreate(**service)
+    post_data = DynamicServiceCreate.parse_obj(service)
 
     response = client.post(
         "/v2/dynamic_services",
