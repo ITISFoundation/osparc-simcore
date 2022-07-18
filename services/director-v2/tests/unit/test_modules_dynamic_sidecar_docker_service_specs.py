@@ -44,6 +44,7 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_PORT": "5432",
             "POSTGRES_USER": "test",
+            "R_CLONE_ENABLED": "False",
             "R_CLONE_PROVIDER": "MINIO",
             "RABBIT_HOST": "rabbit",
             "RABBIT_PASSWORD": "adminadmin",
