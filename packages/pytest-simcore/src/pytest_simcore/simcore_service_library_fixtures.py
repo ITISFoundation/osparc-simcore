@@ -1,7 +1,7 @@
 from typing import AsyncIterable
 
 import pytest
-from servicelib.async_utils import stop_sequential_workers
+from servicelib.async_utils import cancel_sequential_workers
 
 
 @pytest.fixture
@@ -14,5 +14,9 @@ async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
     Required when shutting down the application or ending tests
     otherwise errors will occur when closing the loop
     """
+
+    # nothing on-startup
+
     yield
-    await stop_sequential_workers()
+
+    await cancel_sequential_workers()
