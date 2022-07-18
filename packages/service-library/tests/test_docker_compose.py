@@ -1,12 +1,12 @@
 # pylint: disable=redefined-outer-name
 
-from servicelib.docker_compose import (
-    replace_env_vars_in_compose_spec,
-    MATCH_SERVICE_VERSION,
-    MATCH_SIMCORE_REGISTRY,
-)
 import pytest
 import yaml
+from servicelib.docker_compose import (
+    MATCH_SERVICE_VERSION,
+    MATCH_SIMCORE_REGISTRY,
+    replace_env_vars_in_compose_spec,
+)
 
 
 @pytest.fixture()
