@@ -133,6 +133,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createNewStudyBtnClkd());
+      if (this._resourcesContainer.getMode() === "list") {
+        const width = this._resourcesContainer.getBounds().width - 15;
+        newStudyBtn.setWidth(width);
+      }
+      if (osparc.utils.Utils.isProduct("tis")) {
+        this.__replaceNewStudyWithNewPlanButton(mode);
+      }
       return newStudyBtn;
     },
 
@@ -158,7 +165,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 });
             });
             this.__newStudyBtn = newPlanButton;
-            this._resourcesContainer.add(newPlanButton);
+            if (this._resourcesContainer.getMode() === "list") {
+              const width = this._resourcesContainer.getBounds().width - 15;
+              newPlanButton.setWidth(width);
+            }
+            this._resourcesContainer.addAt(newPlanButton, 0);
           }
         });
     },
@@ -189,10 +200,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
       this._resourcesContainer.add(newStudyButton);
 
-      if (osparc.utils.Utils.isProduct("tis")) {
-        this.__replaceNewStudyWithNewPlanButton();
-      }
-
       const loadingStudiesBtn = this._createLoadMoreButton("studiesLoading");
       this._resourcesContainer.add(loadingStudiesBtn);
 
@@ -215,16 +222,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resetResourcesList();
 
         const studyItems = this._resourcesContainer.getChildren();
-        studyItems.forEach((studyItem, i) => {
+        studyItems.forEach(studyItem => {
           if (!osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
             if (studyItem === this.__newStudyBtn) {
               this._resourcesContainer.remove(studyItem);
               const newBtn = this.__newStudyBtn = this.__createNewStudyButton(this._resourcesContainer.getMode());
-              this._resourcesContainer.addAt(newBtn, i);
-              if (this._resourcesContainer.getMode() === "list") {
-                const width = this._resourcesContainer.getBounds().width - 15;
-                newBtn.setWidth(width);
-              }
+              this._resourcesContainer.addAt(newBtn, 0);
             }
 
             if (studyItem === this._loadingResourcesBtn) {
