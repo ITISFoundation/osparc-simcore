@@ -14,7 +14,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable, Dict, Iterator, List
+from typing import AsyncIterator, Callable, Iterator
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -217,20 +217,20 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
+async def mocked_director_v2_api(mocker) -> dict[str, MagicMock]:
     mock = {}
 
     #
     # NOTE: depending on the test, function might have to be patched
-    #  via the director_v2_api or director_v2_core modules
+    #  via the director_v2_api or director_v2_core_dynamic_services modules
     #
     for func_name in (
-        "get_service_state",
-        "get_services",
-        "start_service",
-        "stop_service",
+        "get_dynamic_service_state",
+        "get_dynamic_services",
+        "run_dynamic_service",
+        "stop_dynamic_service",
     ):
-        for mod_name in ("director_v2_api", "director_v2_core"):
+        for mod_name in ("director_v2_api", "director_v2_core_dynamic_services"):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
@@ -243,11 +243,11 @@ async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    client: TestClient, mocked_director_v2_api: Dict
+    client: TestClient, mocked_director_v2_api: dict
 ) -> Callable:
     services = []
 
-    async def create(user_id, project_id) -> Dict:
+    async def create(user_id, project_id) -> dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
@@ -271,8 +271,12 @@ def create_dynamic_service_mock(
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api["director_v2_api.get_services"].return_value = services
-        mocked_director_v2_api["director_v2_core.get_services"].return_value = services
+        mocked_director_v2_api[
+            "director_v2_api.get_dynamic_services"
+        ].return_value = services
+        mocked_director_v2_api[
+            "director_v2_core_dynamic_services.get_dynamic_services"
+        ].return_value = services
         return running_service_dict
 
     return create
@@ -282,7 +286,7 @@ def create_dynamic_service_mock(
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(docker_services, docker_ip, default_app_cfg: Dict) -> Dict:
+def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
@@ -305,7 +309,7 @@ def postgres_service(docker_services, postgres_dsn):
 
 @pytest.fixture(scope="function")
 def postgres_db(
-    postgres_dsn: Dict, postgres_service: str
+    postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
     # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to reduce scope
     url = postgres_service
@@ -385,15 +389,15 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> Dict[str, str]:
+async def primary_group(client, logged_user) -> dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: Dict
-) -> AsyncIterator[List[Dict[str, str]]]:
+    client, logged_user: dict
+) -> AsyncIterator[list[dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
@@ -442,7 +446,7 @@ async def standard_groups(
 
 
 @pytest.fixture
-async def all_group(client, logged_user) -> Dict[str, str]:
+async def all_group(client, logged_user) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 

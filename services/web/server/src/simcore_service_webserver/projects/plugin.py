@@ -23,6 +23,7 @@ from . import (
 from .project_models import setup_projects_model_schema
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
+from .projects_events import setup_project_events
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,9 @@ def setup_projects(app: web.Application) -> bool:
 
     # database API
     setup_projects_db(app)
+
+    # registers event handlers (e.g. on_user_disconnect)
+    setup_project_events(app)
 
     app.router.add_routes(projects_handlers.routes)
     app.router.add_routes(projects_handlers_crud.routes)

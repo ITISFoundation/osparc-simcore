@@ -32,6 +32,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
 from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -45,6 +46,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
+    ServiceState,
 )
 from yarl import URL
 
@@ -379,3 +381,21 @@ def mocked_catalog_service_api(
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(logging.INFO):
         yield caplog
+
+
+@pytest.fixture
+def mock_docker_api(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecars_to_observe",
+        autospec=True,
+        return_value=[],
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.are_all_services_present",
+        autospec=True,
+        return_value=True,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
+        return_value=(ServiceState.PENDING, ""),
+    )
