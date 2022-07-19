@@ -126,13 +126,14 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
 
         # dumps file & upload
         file = tmp_path / Path(file_id).name
-        file.write_text(faker.text())
+        uploaded_content = faker.text()
+        file.write_text(uploaded_content)
 
         async with aiohttp.ClientSession() as session:
             with file.open("rb") as fh:
-                async with session.put(resp_model.data.link, data=fh) as resp_model:
-                    print(resp_model.status)
-                    print(await resp_model.text())
+                async with session.put(resp_model.data.link, data=fh) as r:
+                    assert r.status == 200, await r.text()
+                    print(await r.text())
 
         # entry_exists
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L322
@@ -165,6 +166,13 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
         )
         print(f"{resp_model=}")
         assert resp_model.error is None
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(resp_model.data.link) as r:
+                print(r.status)
+                downloaded_content = await r.text()
+                assert r.status == 200, downloaded_content
+                assert uploaded_content == downloaded_content
 
     finally:
         del api_client
