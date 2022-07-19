@@ -153,7 +153,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
         print(f"{resp_model=}")
         for location in resp_model.data:
             assert location["name"] == location_name
-            assert location["id"]
+            assert location["id"] == location_id
 
         # _get_download_link
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L123
