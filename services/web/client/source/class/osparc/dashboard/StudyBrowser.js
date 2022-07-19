@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("execute", () => this.__createNewStudyBtnClkd());
+      newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked());
       if (this._resourcesContainer.getMode() === "list") {
         const width = this._resourcesContainer.getBounds().width - 15;
         newStudyBtn.setWidth(width);
@@ -151,19 +151,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (templateData) {
             this._resourcesContainer.remove(this.__newStudyBtn);
             const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNewPlan() : new osparc.dashboard.ListButtonNewPlan();
-            newPlanButton.addListener("execute", () => {
-              this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
-              osparc.utils.Study.createStudyFromTemplate(templateData)
-                .then(studyId => {
-                  this._hideLoadingPage();
-                  this.__getStudyAndStart(studyId);
-                })
-                .catch(err => {
-                  this._hideLoadingPage();
-                  osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-                  console.error(err);
-                });
-            });
+            newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(templateData));
             this.__newStudyBtn = newPlanButton;
             if (this._resourcesContainer.getMode() === "list") {
               const width = this._resourcesContainer.getBounds().width - 15;
@@ -377,7 +365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
-    __createNewStudyBtnClkd: function() {
+    __newStudyBtnClicked: function() {
       this.__newStudyBtn.setValue(false);
       const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
       let title = minStudyData.name;
@@ -392,6 +380,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["name"] = title;
       minStudyData["description"] = "";
       this.__createStudy(minStudyData, null);
+    },
+
+    __newPlanBtnClicked: function(templateData) {
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
+      osparc.utils.Study.createStudyFromTemplate(templateData)
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__getStudyAndStart(studyId);
+        })
+        .catch(err => {
+          this._hideLoadingPage();
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
     },
 
     __createStudy: function(minStudyData) {
