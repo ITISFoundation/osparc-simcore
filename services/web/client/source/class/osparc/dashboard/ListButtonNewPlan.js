@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2022 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -14,12 +14,6 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
-
-/**
- * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
- */
 
 qx.Class.define("osparc.dashboard.ListButtonNewPlan", {
   extend: osparc.dashboard.ListButtonNew,
