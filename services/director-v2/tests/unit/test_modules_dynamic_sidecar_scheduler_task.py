@@ -11,6 +11,7 @@ import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
@@ -36,22 +37,23 @@ def mock_env(
     docker_swarm: None,
     mock_docker_api: None,
 ) -> None:
+    disabled_services_envs = {
+        "S3_ENDPOINT": "",
+        "S3_ACCESS_KEY": "",
+        "S3_SECRET_KEY": "",
+        "S3_BUCKET_NAME": "",
+        "POSTGRES_HOST": "",
+        "POSTGRES_USER": "",
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_DB": "",
+    }
+    setenvs_from_dict(monkeypatch, disabled_services_envs)
+
+    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv(
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
         f"{SCHEDULER_INTERVAL_SECONDS}",
     )
-
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-
-    monkeypatch.setenv("S3_ENDPOINT", "")
-    monkeypatch.setenv("S3_ACCESS_KEY", "")
-    monkeypatch.setenv("S3_SECRET_KEY", "")
-    monkeypatch.setenv("S3_BUCKET_NAME", "")
-
-    monkeypatch.setenv("POSTGRES_HOST", "")
-    monkeypatch.setenv("POSTGRES_USER", "")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "")
-    monkeypatch.setenv("POSTGRES_DB", "")
 
 
 @pytest.fixture
