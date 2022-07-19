@@ -5,17 +5,7 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterable,
-    AsyncIterator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, Union
 
 import pytest
 from aiohttp import web
@@ -35,7 +25,6 @@ from models_library.services_resources import (
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib import async_utils
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
@@ -108,11 +97,6 @@ def client(
     )
 
     # teardown here ...
-
-
-@pytest.fixture()
-def ensure_run_in_sequence_context_is_empty():
-    async_utils.sequential_jobs_contexts = {}
 
 
 @pytest.fixture
@@ -207,9 +191,9 @@ async def template_project(
     client,
     fake_project,
     logged_user,
-    all_group: Dict[str, str],
+    all_group: dict[str, str],
     tests_data_dir: Path,
-) -> AsyncIterable[Dict[str, Any]]:
+) -> AsyncIterable[dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
@@ -231,7 +215,7 @@ async def template_project(
 
 @pytest.fixture
 def fake_services():
-    def create_fakes(number_services: int) -> List[Dict]:
+    def create_fakes(number_services: int) -> list[dict]:
         fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
         return fake_services
 
@@ -247,10 +231,10 @@ async def project_db_cleaner(client):
 @pytest.fixture
 async def catalog_subsystem_mock(
     monkeypatch,
-) -> Callable[[Optional[Union[List[Dict], Dict]]], None]:
+) -> Callable[[Optional[Union[list[dict], dict]]], None]:
     services_in_project = []
 
-    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
         for proj in projects or []:
             services_in_project.extend(
                 [
@@ -280,9 +264,9 @@ async def mocked_director_v2(
 def assert_get_same_project_caller() -> Callable:
     async def _assert_it(
         client,
-        project: Dict,
-        expected: Type[web.HTTPException],
-    ) -> Dict:
+        project: dict,
+        expected: type[web.HTTPException],
+    ) -> dict:
         # GET /v0/projects/{project_id} with a project owned by user
         url = client.app.router["get_project"].url_for(project_id=project["uuid"])
         resp = await client.get(url)

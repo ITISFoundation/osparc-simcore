@@ -9,7 +9,7 @@ import time
 from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, NamedTuple, Optional
+from typing import AsyncIterator, NamedTuple, Optional
 
 import aiofiles
 import httpx
@@ -103,7 +103,7 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
 
 
 @asynccontextmanager
-async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
+async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
     """Disposes of file on exit"""
     # pylint: disable=protected-access,stop-iteration-return
     file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"  # type: ignore
@@ -140,10 +140,9 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     proc = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,  # TODO: might want to keep separate?
+        stderr=asyncio.subprocess.STDOUT,
+        # NOTE that stdout/stderr together. Might want to separate them?
     )
-    assert psutil.pid_exists(proc.pid)  # nosec
-
     start = time.time()
 
     try:
@@ -195,13 +194,14 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             command=f"{command}",
             elapsed=time.time() - start,
         )
-
-    return CommandResult(
-        success=proc.returncode == os.EX_OK,
-        message=stdout.decode(),
-        command=f"{command}",
-        elapsed=time.time() - start,
-    )
+    else:
+        # no exceptions
+        return CommandResult(
+            success=proc.returncode == os.EX_OK,
+            message=stdout.decode(),
+            command=f"{command}",
+            elapsed=time.time() - start,
+        )
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:

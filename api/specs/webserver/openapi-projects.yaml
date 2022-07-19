@@ -418,7 +418,7 @@ paths:
       tags:
         - project
       description: Triggers service retrieve
-      operationId: post_retrieve
+      operationId: retrieve_node
       requestBody:
         required: true
         content:
@@ -467,7 +467,7 @@ paths:
       tags:
         - project
       description: Restarts containers started by the dynamic-sidecar
-      operationId: post_restart
+      operationId: restart_node
 
       responses:
         "204":
