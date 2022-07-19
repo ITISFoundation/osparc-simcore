@@ -30,7 +30,6 @@ tags:
   - name: cluster
   - name: catalog
   - name: storage
-  - name: service
   - name: activity
   - name: tag
     description: |
