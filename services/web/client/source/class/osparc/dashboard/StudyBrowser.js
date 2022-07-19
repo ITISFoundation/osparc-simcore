@@ -156,7 +156,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               osparc.utils.Study.createStudyFromTemplate(templateData)
                 .then(studyId => {
                   this._hideLoadingPage();
-                  this.__startStudy(studyId, templateData);
+                  this.__getStudyAndStart(studyId);
                 })
                 .catch(err => {
                   this._hideLoadingPage();
