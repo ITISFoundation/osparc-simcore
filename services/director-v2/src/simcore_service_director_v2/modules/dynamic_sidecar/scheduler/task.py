@@ -353,8 +353,21 @@ class DynamicSidecarsScheduler:
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
 
-        async def observing_single_service(service_name: str) -> None:
+        async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
+
+            # NOTE: ANE: not very readable should be refactored
+            if (
+                scheduler_data.dynamic_sidecar.status.current
+                == DynamicSidecarStatus.FAILING
+            ):
+                # Nothing will be done if there is an error while interacting
+                # with the sidecar.
+                # It makes no sense to continuously occupy resources or create
+                # issues due to high request to components like the `docker damon`
+                # and the `storage service`.
+                return
+
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
                 await _apply_observation_cycle(self.app, self, scheduler_data)
@@ -402,7 +415,7 @@ class DynamicSidecarsScheduler:
                 self._service_observation_task[
                     service_name
                 ] = observation_task = asyncio.create_task(
-                    observing_single_service(service_name),
+                    _observing_single_service(service_name),
                     name=f"observe_{service_name}",
                 )
                 observation_task.add_done_callback(
