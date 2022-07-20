@@ -1,5 +1,8 @@
 """
-This codes originates from this article (https://medium.com/swlh/add-log-decorators-to-your-python-project-84094f832181)
+This codes originates from this article
+    https://medium.com/swlh/add-log-decorators-to-your-python-project-84094f832181
+
+SEE also https://github.com/Delgan/loguru for a future alternative
 """
 import asyncio
 import functools
@@ -65,6 +68,8 @@ class CustomFormatter(logging.Formatter):
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
 DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+
+# TODO: add user_id, error_code
 
 
 def config_all_loggers():
@@ -181,3 +186,10 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
         logger.error("Unhandled exception: %s", f"{exc}", exc_info=True)
         if reraise:
             raise exc from exc
+
+
+@contextmanager
+def log_context(logger: logging.Logger, level: int, msg: str):
+    logger.log(level, "Starting %s", msg)
+    yield
+    logger.log(level, "Completed %s", msg)
