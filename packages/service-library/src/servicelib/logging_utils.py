@@ -191,6 +191,7 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
 @contextmanager
 def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
     # NOTE: keeps same signature as https://docs.python.org/3/library/logging.html#logging.Logger.log
-    logger.log(level, "Starting " + msg, *args, **kwargs)
+    msg = msg.strip()
+    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
-    logger.log(level, "Completed " + msg, *args, **kwargs)
+    logger.log(level, "Finished " + msg, *args, **kwargs)
