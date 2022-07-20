@@ -47,7 +47,7 @@ async def get_dynamic_services(
         app, "GET", backend_url, expected_status=web.HTTPOk
     )
 
-    if services == None:
+    if services is None:
         services = []
     assert isinstance(services, list)  # nosec
     return services
