@@ -171,7 +171,7 @@ async def logout(request: web.Request) -> web.Response:
 
     # Keep log message: https://github.com/ITISFoundation/osparc-simcore/issues/3200
     with log_context(
-        log, logging.INFO, f"logout of {user_id=} for {client_session_id=}"
+        log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
     ):
         await observer.emit(
             "SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app
