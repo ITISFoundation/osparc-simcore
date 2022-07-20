@@ -1,9 +1,9 @@
 import logging
-from typing import Dict
 
 from aiohttp import web
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.logging_utils import log_context
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -66,7 +66,7 @@ async def register(request: web.Request):
 
     await check_registration(email, password, confirm, db, cfg)
 
-    user: Dict = await db.create_user(
+    user: dict = await db.create_user(
         {
             "name": username,
             "email": email,
@@ -150,12 +150,17 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    # user logs in
-    identity = user["email"]
-    response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-
-    await remember(request, response, identity)
-    return response
+    with log_context(
+        log,
+        logging.INFO,
+        "login of user_id=%s with %s",
+        f"{user.get('id')}",
+        f"{email=}",
+    ):
+        identity = user["email"]
+        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        await remember(request, response, identity)
+        return response
 
 
 @login_required
@@ -168,8 +173,16 @@ async def logout(request: web.Request) -> web.Response:
     if request.can_read_body:
         body = await request.json()
         client_session_id = body.get("client_session_id", None)
-    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app)
-    await forget(request, response)
+
+    # Keep log message: https://github.com/ITISFoundation/osparc-simcore/issues/3200
+    with log_context(
+        log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
+    ):
+        await observer.emit(
+            "SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app
+        )
+        await forget(request, response)
+
     return response
 
 
