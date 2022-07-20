@@ -7,7 +7,6 @@ import pytest
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
-from black import assert_equivalent
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -107,13 +106,9 @@ async def test_stop_computation(
     )
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_regression_get_dynamic_services_empty_params(
     mocked_director_v2,
     client,
-    logged_user: dict,
-    user_role: UserRole,
-    expected: ExpectedResponse,
 ):
     list_of_services = await director_v2_api.get_dynamic_services(client.app)
-    assert_equivalent(list_of_services, [])
+    assert list_of_services == []
