@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 
 """
-Keeps compatibility with old services/storage/client-sdk/python client (simcore_service_storage_sdk)
+Tests compatibility of old services/storage/client-sdk/python client ('simcore_service_storage_sdk')
+against current storage OAS
 
 """
 
@@ -17,8 +18,6 @@ from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
-
-## from simcore_service_storage_sdk.rest import ApiException
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -69,16 +68,14 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
     faker: Faker,
 ):
     """
-    This test has calls to 'simcore_service_storage_sdk' used
-    in simcore_sdk.node_ports.filemanage (version 0.3.2)
+    This test reproduces the failure described in https://github.com/ITISFoundation/osparc-simcore/pull/3198
+    where a legacy service could not download data from s3.
 
-
-    Specifically:
-        simcore-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@cfdf4f86d844ebb362f4f39e9c6571d561b72897#subdirectory=packages/simcore-sdk
-
-
+    Here we test the calls from 'simcore_service_storage_sdk' used in simcore_sdk.node_ports.filemanage (v0.3.2)
     SEE https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py
 
+    NOTICE that 'simcore_service_storage_sdk' was automatically built using OAS v0.1.0 despite the fact that at that time
+    the OAS had already change!!!
     """
 
     assert client.app
