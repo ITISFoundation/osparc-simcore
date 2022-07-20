@@ -186,10 +186,13 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
             raise exc from exc
 
 
+un_capitalize = lambda s: s[:1].lower() + s[1:] if s else ""
+
+
 @contextmanager
 def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
-    # NOTE: keeps same signature as https://docs.python.org/3/library/logging.html#logging.Logger.log
-    msg = msg.strip()
+    # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
+    msg = un_capitalize(msg.strip())
     logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
     logger.log(level, "Finished " + msg, *args, **kwargs)
