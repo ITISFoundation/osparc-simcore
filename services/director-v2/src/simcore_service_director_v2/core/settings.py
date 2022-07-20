@@ -67,7 +67,8 @@ ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
 PlacementConstraintStr = constr(
-    strip_whitespace=True, regex=r"^[a-zA-Z0-9. ]*(!=|==){1}[a-zA-Z0-9. ]*$"
+    strip_whitespace=True,
+    regex=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$",
 )
 
 
