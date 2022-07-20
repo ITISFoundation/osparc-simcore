@@ -6,6 +6,9 @@
 Tests compatibility of old services/storage/client-sdk/python client ('simcore_service_storage_sdk')
 against current storage OAS
 
+
+NOTE: this test coverage is intentionally limited to the functions of 'simcore_service_storage_sdk'
+used in simcore_sdk since legacy services are planned to be deprecated.
 """
 
 from pathlib import Path
