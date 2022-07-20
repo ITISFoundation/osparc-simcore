@@ -141,7 +141,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         onUpdate: (source, target) => {
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
-          if (["starting", "pulling", "pending", "connecting"].includes(state)) {
+          if (target.getSource() && target.getSource().includes("circle-notch")) {
             this.self().addClass(this.__icon.getContentElement(), "rotate");
           } else {
             this.self().removeClass(this.__icon.getContentElement(), "rotate");

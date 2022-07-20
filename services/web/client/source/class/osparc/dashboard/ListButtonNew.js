@@ -27,11 +27,11 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
   construct: function() {
     this.base(arguments);
 
-    this.__buildLayout();
+    this._buildLayout();
   },
 
   members: {
-    __buildLayout: function() {
+    _buildLayout: function() {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Empty Study"));
 
