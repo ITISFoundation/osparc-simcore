@@ -150,12 +150,17 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    # user logs in
-    identity = user["email"]
-    response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-
-    await remember(request, response, identity)
-    return response
+    with log_context(
+        log,
+        logging.INFO,
+        "login of user_id=%s with %s",
+        f"{user.get('id')}",
+        f"{email=}",
+    ):
+        identity = user["email"]
+        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        await remember(request, response, identity)
+        return response
 
 
 @login_required

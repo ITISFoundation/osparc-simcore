@@ -69,8 +69,6 @@ class CustomFormatter(logging.Formatter):
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
 DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
-# TODO: add user_id, error_code
-
 
 def config_all_loggers():
     the_manager: logging.Manager = logging.Logger.manager
