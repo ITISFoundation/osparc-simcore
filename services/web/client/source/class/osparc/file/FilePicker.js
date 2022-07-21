@@ -182,13 +182,21 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     buildFileFromStoreInfoView: function(node, form) {
+      const showFields = ["file_name", "file_size", "last_modified"];
       this.self().getOutputFileMetadata(node)
         .then(fileMetadata => {
           for (let [key, value] of Object.entries(fileMetadata)) {
-            const entry = new qx.ui.form.TextField();
-            form.add(entry, key, null, key);
-            if (value) {
-              entry.setValue(value.toString());
+            console.log(key);
+            if (osparc.data.Permissions.getInstance().isTester() || showFields.includes(key)) {
+              const entry = new qx.ui.form.TextField();
+              form.add(entry, key, null, key);
+              if (value) {
+                if (key === "file_size") {
+                  entry.setValue(osparc.utils.Utils.bytesToSize(value));
+                } else {
+                  entry.setValue(value.toString());
+                }
+              }
             }
           }
         });
