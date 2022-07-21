@@ -52,6 +52,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       clickAwayClose: true
     });
 
+    this.__sortBy = "hits";
+
     let catalogLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogLayout);
 
@@ -93,7 +95,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __infoBtn: null,
     __serviceBrowser: null,
     __addBtn: null,
-    __sortByGroup: null,
+    __sortBy: null,
 
     __createFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -116,27 +118,12 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         layout.add(reloadBtn);
       }
 
-      const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-      const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/12");
-      byHitsBtn.sortBy = "hits";
-      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/12");
-      byNameBtn.sortBy = "name";
-      const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
-        allowEmptySelection: false
-      });
-      [
-        byHitsBtn,
-        byNameBtn
-      ].forEach(btn => {
-        containterSortBtns.add(btn);
-        sortByGroup.add(btn);
-        btn.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
-      });
+      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      containterSortBtns.addListener("sortBy", e => {
+        this.__sortBy = e.getData();
+        this.__populateList();
+      }, this);
       layout.add(containterSortBtns);
-
-      sortByGroup.addListener("changeSelection", () => this.__populateList());
 
       return layout;
     },
@@ -243,7 +230,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       });
 
       osparc.utils.Services.addHits(filteredServices);
-      osparc.utils.Services.sortObjectsBasedOn(filteredServices, this.__sortByGroup.getSelection()[0].sortBy);
+      osparc.utils.Services.sortObjectsBasedOn(filteredServices, this.__sortBy);
       const filteredServicesObj = this.__filteredServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
 
       const groupedServicesList = [];
