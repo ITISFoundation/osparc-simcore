@@ -25,10 +25,16 @@
 qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__sortBy = "hits";
+  },
+
   members: {
     __servicesAll: null,
     __servicesLatestList: null,
-    __sortByGroup: null,
+    __sortBy: null,
 
     __reloadService: function(key, version, reload) {
       osparc.store.Store.getInstance().getService(key, version, reload)
@@ -150,7 +156,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
       this.__servicesLatestList = servicesList;
       this._resourcesContainer.removeAll();
-      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortByGroup.getSelection()[0].sortBy);
+      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
       servicesList.forEach(service => {
         service["resourceType"] = "service";
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
@@ -267,29 +273,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         flex: 1
       });
 
-      const containterSortBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
-        marginRight: 8
-      });
-      const byHitsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-numeric-down/14");
-      byHitsBtn.sortBy = "hits";
-      const byNameBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sort-alpha-down/14");
-      byNameBtn.sortBy = "name";
-      const sortByGroup = this.__sortByGroup = new qx.ui.form.RadioGroup().set({
-        allowEmptySelection: false
-      });
-      [
-        byHitsBtn,
-        byNameBtn
-      ].forEach(btn => {
-        containterSortBtns.add(btn);
-        sortByGroup.add(btn);
-        btn.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
-      });
+      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      containterSortBtns.addListener("sortBy", e => {
+        this.__sortBy = e.getData();
+        this._resetResourcesList();
+      }, this);
       this._secondaryBar.add(containterSortBtns);
-
-      sortByGroup.addListener("changeSelection", () => this._resetResourcesList());
     }
   }
 });
