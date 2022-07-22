@@ -61,10 +61,10 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
 # we need to create a new one in order for all the APIs to be
 # detected as before
 #
-containers_router = APIRouter(tags=["containers"])
+containers_router_extension = APIRouter(tags=["containers"])
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/state:restore",
     summary="Restores the state of the dynamic service",
     response_class=Response,
@@ -117,7 +117,7 @@ async def restore_state(
     await send_message(rabbitmq, "Finished state downloading")
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/state:save",
     summary="Stores the state of the dynamic service",
     response_class=Response,
@@ -149,7 +149,7 @@ async def save_state(
     await send_message(rabbitmq, "Finished state saving")
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/ports/inputs:pull",
     summary="Pull input ports data",
     status_code=status.HTTP_200_OK,
@@ -171,7 +171,7 @@ async def pull_input_ports(
     return int(transferred_bytes)
 
 
-@containers_router.patch(
+@containers_router_extension.patch(
     "/containers/directory-watcher",
     summary="Enable/disable directory-watcher event propagation",
     response_class=Response,
@@ -187,7 +187,7 @@ async def toggle_directory_watcher(
         directory_watcher.disable_directory_watcher(app)
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/ports/outputs/dirs",
     summary=(
         "Creates the output directories declared by the docker images's labels. "
@@ -209,7 +209,7 @@ async def create_output_dirs(
             dir_to_create.mkdir(parents=True, exist_ok=True)
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/ports/outputs:pull",
     summary="Pull output ports data",
     status_code=status.HTTP_200_OK,
@@ -231,7 +231,7 @@ async def pull_output_ports(
     return int(transferred_bytes)
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/ports/outputs:push",
     summary="Push output ports data",
     response_class=Response,
@@ -256,7 +256,7 @@ async def push_output_ports(
     await send_message(rabbitmq, "Finished pulling outputs")
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers:restart",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
@@ -311,7 +311,7 @@ async def restarts_containers(
     await rabbitmq.send_event_reload_iframe()
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/{id}/networks:attach",
     summary="attach container to a network, if not already attached",
     response_class=Response,
@@ -352,7 +352,7 @@ async def attach_container_to_network(
         )
 
 
-@containers_router.post(
+@containers_router_extension.post(
     "/containers/{id}/networks:detach",
     summary="detach container from a network, if not already detached",
     response_class=Response,
