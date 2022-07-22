@@ -102,7 +102,7 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     sortObjectsBasedOn: function(servicesArray, basedOn) {
-      if (besedOn === undefined) {
+      if (basedOn === undefined) {
         basedOn = {
           "sort": "hits",
           "order": "down"
