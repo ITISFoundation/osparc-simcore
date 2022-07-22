@@ -56,7 +56,6 @@ async def _task_docker_compose_up_and_send_message(
     rabbitmq: RabbitMQ,
     command_timeout: int,
 ) -> None:
-    # building is a security risk hence is disabled via "--no-build" parameter
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 

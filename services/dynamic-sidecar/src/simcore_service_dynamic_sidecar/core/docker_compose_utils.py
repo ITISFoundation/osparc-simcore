@@ -67,6 +67,23 @@ async def docker_compose_config(
     return result  # type: ignore
 
 
+async def docker_compose_pull(
+    compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
+) -> CommandResult:
+    """
+    Pulls all images required by the service.
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
+    """
+    # NOTE: in the future the progress of pulling should be captured from the stdout
+    result = await _write_file_and_spawn_process(
+        compose_spec_yaml,
+        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
+        process_termination_timeout=timeout,
+    )
+    return result  # type: ignore
+
+
 async def docker_compose_up(
     compose_spec_yaml: str, settings: ApplicationSettings, timeout: Optional[int] = None
 ) -> CommandResult:
@@ -78,7 +95,7 @@ async def docker_compose_up(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
-
+    # building is a security risk hence is disabled via "--no-build" parameter
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
