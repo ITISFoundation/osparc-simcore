@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       clickAwayClose: true
     });
 
-    this.__sortBy = "hits";
+    this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
 
     let catalogLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogLayout);
@@ -118,7 +118,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         layout.add(reloadBtn);
       }
 
-      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      const containterSortBtns = new osparc.component.service.SortServicesButtons(14);
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__populateList();

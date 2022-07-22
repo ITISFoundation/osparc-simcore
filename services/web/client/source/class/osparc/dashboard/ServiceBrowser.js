@@ -28,7 +28,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   construct: function() {
     this.base(arguments);
 
-    this.__sortBy = "hits";
+    this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
   },
 
   members: {
@@ -273,7 +273,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         flex: 1
       });
 
-      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      const containterSortBtns = new osparc.component.service.SortServicesButtons(14);
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this._resetResourcesList();

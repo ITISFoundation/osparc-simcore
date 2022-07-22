@@ -28,41 +28,122 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
 
     this.__iconSize = iconSize;
 
-    const byHitsBtn = new qx.ui.form.ToggleButton(null, this.self().NUMERIC_ICON_DOWN+iconSize);
-    byHitsBtn.sortBy = "hits";
-    const byNameBtn = new qx.ui.form.ToggleButton(null, this.self().ALPHA_ICON_DOWN+iconSize);
-    byNameBtn.sortBy = "name";
-    const sortByGroup = new qx.ui.form.RadioGroup().set({
-      allowEmptySelection: false
+    const hitsBtn = this.__hitsBtn = new qx.ui.form.ToggleButton().set({
+      toolTipText: this.tr("Sort by Hits")
     });
+    hitsBtn.sortBy = "hits";
+    const nameBtn = this.__nameBtn = new qx.ui.form.ToggleButton().set({
+      toolTipText: this.tr("Sort by Name")
+    });
+    nameBtn.sortBy = "name";
     [
-      byHitsBtn,
-      byNameBtn
+      hitsBtn,
+      nameBtn
     ].forEach(btn => {
       this._add(btn);
-      sortByGroup.add(btn);
       btn.getContentElement().setStyles({
         "border-radius": "8px"
       });
+      btn.addListener("tap", () => this.__btnExecuted(btn));
     });
-    sortByGroup.addListener("changeSelection", () => {
-      const sortBy = sortByGroup.getSelection()[0].sortBy;
-      this.fireDataEvent("sortBy", sortBy);
-    });
+
+    this.__hitsBtn.tristate = 1;
+    this.__nameBtn.tristate = 0;
+    this.__updateState();
   },
 
   events: {
-    "sortBy": "qx.event.type.Data" // "hits" or "name"
+    "sortBy": "qx.event.type.Data"
   },
 
   statics: {
     NUMERIC_ICON_DOWN: "@FontAwesome5Solid/sort-numeric-down/",
     NUMERIC_ICON_UP: "@FontAwesome5Solid/sort-numeric-up/",
     ALPHA_ICON_DOWN: "@FontAwesome5Solid/sort-alpha-down/",
-    ALPHA_ICON_UP: "@FontAwesome5Solid/sort-alpha-up/"
+    ALPHA_ICON_UP: "@FontAwesome5Solid/sort-alpha-up/",
+    DefaultSorting: {
+      "sort": "hits",
+      "order": "down"
+    }
   },
 
   members: {
-    __iconSize: null
+    __iconSize: null,
+    __hitsBtn: null,
+    __nameBtn: null,
+
+    __btnExecuted: function(btn) {
+      if (btn === this.__hitsBtn) {
+        this.__hitsBtn.tristate++;
+        if (this.__hitsBtn.tristate === 3) {
+          this.__hitsBtn.tristate = 1;
+        }
+        this.__nameBtn.tristate = 0;
+      } else if (btn === this.__nameBtn) {
+        this.__hitsBtn.tristate = 0;
+        this.__nameBtn.tristate++;
+        if (this.__nameBtn.tristate === 3) {
+          this.__nameBtn.tristate = 1;
+        }
+      }
+      this.__updateState();
+      this.__announceSortChange();
+    },
+
+    __updateState: function() {
+      switch (this.__hitsBtn.tristate) {
+        case 0:
+          this.__hitsBtn.set({
+            value: false,
+            icon: this.self().NUMERIC_ICON_DOWN+this.__iconSize
+          });
+          break;
+        case 1:
+          this.__hitsBtn.set({
+            value: true,
+            icon: this.self().NUMERIC_ICON_DOWN+this.__iconSize
+          });
+          break;
+        case 2:
+          this.__hitsBtn.set({
+            value: true,
+            icon: this.self().NUMERIC_ICON_UP+this.__iconSize
+          });
+          break;
+      }
+
+      switch (this.__nameBtn.tristate) {
+        case 0:
+          this.__nameBtn.set({
+            value: false,
+            icon: this.self().ALPHA_ICON_DOWN+this.__iconSize
+          });
+          break;
+        case 1:
+          this.__nameBtn.set({
+            value: true,
+            icon: this.self().ALPHA_ICON_DOWN+this.__iconSize
+          });
+          break;
+        case 2:
+          this.__nameBtn.set({
+            value: true,
+            icon: this.self().ALPHA_ICON_UP+this.__iconSize
+          });
+          break;
+      }
+    },
+
+    __announceSortChange: function() {
+      const data = {};
+      if (this.__hitsBtn.tristate > 0) {
+        data["sort"] = "hits";
+        data["order"] = this.__hitsBtn.tristate === 1 ? "down" : "up";
+      } else if (this.__nameBtn.tristate > 0) {
+        data["sort"] = "name";
+        data["order"] = this.__nameBtn.tristate === 1 ? "down" : "up";
+      }
+      this.fireDataEvent("sortBy", data);
+    }
   }
 });
