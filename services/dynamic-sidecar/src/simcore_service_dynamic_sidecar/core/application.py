@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
 from servicelib.async_utils import cancel_sequential_workers
+from servicelib.fastapi import long_running_tasks
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -117,6 +118,8 @@ def create_base_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
+
+    long_running_tasks.server.setup(app)
 
     app.include_router(main_router)
     return app
