@@ -9,12 +9,14 @@ running task. The client will take care of recovering the result from it.
 from ._dependencies import get_task_manager
 from ._models import TaskId, TaskProgress, TaskStatus
 from ._server import setup
+from ._errors import TaskAlreadyRunningError
 from ._task import TaskManager, start_task
 
 __all__: tuple[str, ...] = (
     "get_task_manager",
     "setup",
     "start_task",
+    "TaskAlreadyRunningError",
     "TaskId",
     "TaskManager",
     "TaskProgress",

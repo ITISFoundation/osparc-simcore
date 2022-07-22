@@ -3,7 +3,7 @@ from asyncio import Task
 from datetime import datetime
 from typing import Any, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -71,15 +71,6 @@ class TaskStatus(BaseModel):
 class TaskResult(BaseModel):
     result: Optional[Any]
     error: Optional[Any]
-
-    @root_validator
-    @classmethod
-    def expect_error_or_result(cls, values):
-        result = values.get("result")
-        error = values.get("error")
-        if not (bool(result) ^ bool(error)):
-            raise ValueError(f"Please provide either an {result=} or a {error=}")
-        return values
 
 
 class CancelResult(BaseModel):
