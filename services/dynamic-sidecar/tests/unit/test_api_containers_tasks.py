@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 
 import json
+from contextlib import asynccontextmanager, contextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Final, Iterator, Optional
-from contextlib import contextmanager, asynccontextmanager
+
 import pytest
 from _pytest.fixtures import FixtureRequest
 from aiodocker.volumes import DockerVolume
@@ -14,9 +15,9 @@ from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
+    TaskClientResultError,
     TaskId,
     periodic_task_result,
-    TaskClientResultError,
 )
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
