@@ -273,7 +273,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         flex: 1
       });
 
-      const containterSortBtns = new osparc.component.service.SortServicesButtons(14);
+      const containterSortBtns = new osparc.component.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this._resetResourcesList();

@@ -118,7 +118,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         layout.add(reloadBtn);
       }
 
-      const containterSortBtns = new osparc.component.service.SortServicesButtons(14);
+      const containterSortBtns = new osparc.component.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__populateList();

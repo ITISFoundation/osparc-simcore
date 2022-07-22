@@ -18,15 +18,13 @@
 qx.Class.define("osparc.component.service.SortServicesButtons", {
   extend: qx.ui.core.Widget,
 
-  construct: function(iconSize = 14) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(4));
     this.set({
       marginRight: 8
     });
-
-    this.__iconSize = iconSize;
 
     const hitsBtn = this.__hitsBtn = new qx.ui.form.ToggleButton().set({
       toolTipText: this.tr("Sort by Hits")
@@ -57,10 +55,10 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   statics: {
-    NUMERIC_ICON_DOWN: "@FontAwesome5Solid/sort-numeric-down/",
-    NUMERIC_ICON_UP: "@FontAwesome5Solid/sort-numeric-up/",
-    ALPHA_ICON_DOWN: "@FontAwesome5Solid/sort-alpha-down/",
-    ALPHA_ICON_UP: "@FontAwesome5Solid/sort-alpha-up/",
+    NUMERIC_ICON_DOWN: "@FontAwesome5Solid/sort-numeric-down/14",
+    NUMERIC_ICON_UP: "@FontAwesome5Solid/sort-numeric-up/14",
+    ALPHA_ICON_DOWN: "@FontAwesome5Solid/sort-alpha-down/14",
+    ALPHA_ICON_UP: "@FontAwesome5Solid/sort-alpha-up/14",
     DefaultSorting: {
       "sort": "hits",
       "order": "down"
@@ -68,7 +66,6 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   members: {
-    __iconSize: null,
     __hitsBtn: null,
     __nameBtn: null,
 
@@ -95,19 +92,19 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
         case 0:
           this.__hitsBtn.set({
             value: false,
-            icon: this.self().NUMERIC_ICON_DOWN+this.__iconSize
+            icon: this.self().NUMERIC_ICON_DOWN
           });
           break;
         case 1:
           this.__hitsBtn.set({
             value: true,
-            icon: this.self().NUMERIC_ICON_DOWN+this.__iconSize
+            icon: this.self().NUMERIC_ICON_DOWN
           });
           break;
         case 2:
           this.__hitsBtn.set({
             value: true,
-            icon: this.self().NUMERIC_ICON_UP+this.__iconSize
+            icon: this.self().NUMERIC_ICON_UP
           });
           break;
       }
@@ -116,19 +113,19 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
         case 0:
           this.__nameBtn.set({
             value: false,
-            icon: this.self().ALPHA_ICON_DOWN+this.__iconSize
+            icon: this.self().ALPHA_ICON_DOWN
           });
           break;
         case 1:
           this.__nameBtn.set({
             value: true,
-            icon: this.self().ALPHA_ICON_DOWN+this.__iconSize
+            icon: this.self().ALPHA_ICON_DOWN
           });
           break;
         case 2:
           this.__nameBtn.set({
             value: true,
-            icon: this.self().ALPHA_ICON_UP+this.__iconSize
+            icon: this.self().ALPHA_ICON_UP
           });
           break;
       }
