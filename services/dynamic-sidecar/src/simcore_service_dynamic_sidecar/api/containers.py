@@ -20,7 +20,7 @@ from ..core.docker_compose_utils import (
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
+from ..core.settings import ApplicationSettings
 from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
@@ -49,7 +49,7 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
 
 
 async def _task_docker_compose_up_and_send_message(
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     shared_store: SharedStore,
     app: FastAPI,
     application_health: ApplicationHealth,
@@ -61,9 +61,6 @@ async def _task_docker_compose_up_and_send_message(
     assert shared_store.compose_spec  # nosec
 
     with directory_watcher_disabled(app):
-        # prunes first stopped containers
-        await docker_compose_rm(shared_store.compose_spec, settings)
-
         r = await docker_compose_up(
             shared_store.compose_spec, settings, timeout=command_timeout
         )
@@ -130,7 +127,7 @@ async def create_containers(
     validation_timeout: int = Query(
         60, description="docker-compose config timeout (EXPERIMENTAL)"
     ),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
@@ -186,10 +183,10 @@ async def runs_docker_compose_down(
     command_timeout: int = Query(
         10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
     ),
-    settings: DynamicSidecarSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
-) -> Union[str, dict[str, Any]]:
+) -> str:
     """Removes the previously started service
     and returns the docker-compose output"""
 
@@ -221,6 +218,10 @@ async def runs_docker_compose_down(
     assert result.success  # nosec
     shared_store.clear()
 
+    # NOTE: @run_sequentially_in_context decorator on docker_compose* functions
+    # change return type to Any and mypy gets confused! Should use generics
+    # SEE https://github.com/python/mypy/issues/8645
+    assert isinstance(result.message, str)  # nosec
     return result.message
 
 

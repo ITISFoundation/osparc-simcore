@@ -8,7 +8,7 @@ import yaml
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
-from .settings import DynamicSidecarSettings
+from .settings import ApplicationSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -20,7 +20,7 @@ class InvalidComposeSpec(Exception):
 
 
 def _assemble_container_name(
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     service_key: str,
     user_given_container_name: str,
     index: int,
@@ -158,7 +158,7 @@ def parse_compose_spec(compose_file_content: str) -> Any:
 
 
 async def validate_compose_spec(
-    settings: DynamicSidecarSettings,
+    settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
     *,

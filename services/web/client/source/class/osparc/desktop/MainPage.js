@@ -183,10 +183,12 @@ qx.Class.define("osparc.desktop.MainPage", {
         templateBrowser,
         serviceBrowser
       ].forEach(browser => {
-        browser.addListener("startStudy", e => {
-          const startStudyData = e.getData();
-          this.__startStudy(startStudyData);
-        }, this);
+        if (browser) {
+          browser.addListener("startStudy", e => {
+            const startStudyData = e.getData();
+            this.__startStudy(startStudyData);
+          }, this);
+        }
       });
 
       studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadResources(), this);

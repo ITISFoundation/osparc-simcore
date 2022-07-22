@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Mapping, Optional
+from typing import Any, AsyncIterator, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -16,6 +16,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -106,10 +107,21 @@ async def create_network(network_config: dict[str, Any]) -> str:
             )
 
 
-async def create_service_and_get_id(create_service_data: AioDockerServiceSpec) -> str:
+async def create_service_and_get_id(
+    create_service_data: Union[AioDockerServiceSpec, dict[str, Any]]
+) -> str:
+    # NOTE: ideally the argument should always be AioDockerServiceSpec
+    # but for that we need get_dynamic_proxy_spec to return that type
     async with docker_client() as client:
-        service_start_result = await client.services.create(
-            **jsonable_encoder(create_service_data, by_alias=True, exclude_unset=True)
+        kwargs = jsonable_encoder(
+            create_service_data, by_alias=True, exclude_unset=True
+        )
+        service_start_result = await client.services.create(**kwargs)
+
+        log.debug(
+            "Started service %s with\n%s",
+            service_start_result,
+            json.dumps(kwargs, indent=1),
         )
 
     if "ID" not in service_start_result:
@@ -489,7 +501,7 @@ async def _update_service_spec(
                     await client._query_json(  # pylint: disable=protected-access
                         f"services/{service_id}/update",
                         method="POST",
-                        data=json.dumps(clean_map(updated_spec)),
+                        data=json_dumps(clean_map(updated_spec)),
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:

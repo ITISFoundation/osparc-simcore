@@ -114,7 +114,7 @@ async def test_iterators_workflow(
         return f"{project_id}"
 
     mocker.patch(
-        "simcore_service_webserver.director_v2_core.DirectorV2ApiClient.start",
+        "simcore_service_webserver.director_v2_core_computations.ComputationsApi.start",
         side_effect=_mock_start,
     )
     # ----
@@ -247,7 +247,7 @@ async def test_iterators_workflow(
     second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4
-    assert len(set(it.workcopy_project_id for it in second_iterlist)) == len(
+    assert len({it.workcopy_project_id for it in second_iterlist}) == len(
         second_iterlist
     ), "unique"
 

@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 from unittest.mock import MagicMock, call
 
 import pytest
@@ -20,7 +20,7 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
 async def _request_delete_project(
-    client, project: Dict, expected: Type[web.HTTPException]
+    client, project: dict, expected: type[web.HTTPException]
 ) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"/{api_version_prefix}/projects/{project['uuid']}"
@@ -35,11 +35,11 @@ async def _request_delete_project(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_delete_project(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
-    mocked_director_v2_api: Dict[str, MagicMock],
+    mocked_director_v2_api: dict[str, MagicMock],
     catalog_subsystem_mock: Callable,
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
@@ -48,7 +48,9 @@ async def test_delete_project(
 
     # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
-    mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.get_dynamic_services"
+    ].return_value = fakes
 
     await _request_delete_project(client, user_project, expected.no_content)
 
@@ -64,7 +66,9 @@ async def test_delete_project(
         # might have finished, and therefore there is no need to waith
         await tasks[0]
 
-        mocked_director_v2_api["director_v2_core.get_services"].assert_called_once()
+        mocked_director_v2_api[
+            "director_v2_core_dynamic_services.get_dynamic_services"
+        ].assert_called_once()
 
         expected_calls = [
             call(
@@ -74,9 +78,9 @@ async def test_delete_project(
             )
             for service in fakes
         ]
-        mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(
-            expected_calls
-        )
+        mocked_director_v2_api[
+            "director_v2_core_dynamic_services.stop_dynamic_service"
+        ].assert_has_calls(expected_calls)
 
         await assert_get_same_project_caller(client, user_project, web.HTTPNotFound)
 
