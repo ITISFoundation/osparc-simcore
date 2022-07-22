@@ -91,6 +91,29 @@ async def get_file_metadata(request: web.Request):
         # TODO: once all legacy services are gone, remove the try except, it will default to 404
         return {"error": "No result found", "data": {}}
 
+    if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
+        # LEGACY compatiblity with API v0.1.0
+        # SEE models used in sdk in:
+        # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
+        # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_type.py#L34
+        return {
+            "data": {
+                "file_uuid": data.file_uuid,
+                "location_id": data.location_id,
+                "location": data.location,
+                "bucket_name": data.bucket_name,
+                "object_name": data.object_name,
+                "project_id": data.project_id,
+                "project_name": data.project_name,
+                "node_id": data.node_id,
+                "node_name": data.node_name,
+                "file_name": data.file_name,
+                "user_id": data.user_id,
+                "user_name": None,
+            },
+            "error": None,
+        }
+
     return jsonable_encoder(FileMetaDataGet.from_orm(data))
 
 

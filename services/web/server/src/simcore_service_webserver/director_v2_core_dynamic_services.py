@@ -38,12 +38,17 @@ async def get_dynamic_services(
         params["project_id"] = project_id
 
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / "dynamic_services").update_query(**params)
+    if params:  # Update query doesnt work with no params to unwrap
+        backend_url = (settings.base_url / "dynamic_services").update_query(**params)
+    else:
+        backend_url = settings.base_url / "dynamic_services"
 
     services = await request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
     )
 
+    if services is None:
+        services = []
     assert isinstance(services, list)  # nosec
     return services
 
