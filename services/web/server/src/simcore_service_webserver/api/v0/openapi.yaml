@@ -30,7 +30,6 @@ tags:
   - name: cluster
   - name: catalog
   - name: storage
-  - name: service
   - name: activity
   - name: tag
     description: |
@@ -2788,7 +2787,7 @@ paths:
       tags:
         - project
       description: Triggers service retrieve
-      operationId: post_retrieve
+      operationId: retrieve_node
       requestBody:
         required: true
         content:
@@ -2834,7 +2833,7 @@ paths:
       tags:
         - project
       description: Restarts containers started by the dynamic-sidecar
-      operationId: post_restart
+      operationId: restart_node
       responses:
         '204':
           description: Restarts containers started by the dynamic-sidecar

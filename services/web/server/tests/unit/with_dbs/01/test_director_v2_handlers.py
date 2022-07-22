@@ -1,7 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator
 
 import pytest
 from _helpers import ExpectedResponse, standard_role_response
@@ -10,6 +10,7 @@ from aioresponses import aioresponses
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_assert import assert_status
+from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
 
 
@@ -29,7 +30,7 @@ def project_id(faker: Faker) -> ProjectID:
 async def test_start_computation(
     mocked_director_v2,
     client,
-    logged_user: Dict,
+    logged_user: dict,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -53,7 +54,7 @@ async def test_start_computation(
 async def test_start_partial_computation(
     mocked_director_v2,
     client,
-    logged_user: Dict,
+    logged_user: dict,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -79,7 +80,7 @@ async def test_start_partial_computation(
 async def test_get_computation(
     mocked_director_v2,
     client,
-    logged_user: Dict,
+    logged_user: dict,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -93,7 +94,7 @@ async def test_get_computation(
 async def test_stop_computation(
     mocked_director_v2,
     client,
-    logged_user: Dict,
+    logged_user: dict,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -103,3 +104,11 @@ async def test_stop_computation(
     await assert_status(
         rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
+
+
+async def test_regression_get_dynamic_services_empty_params(
+    mocked_director_v2,
+    client,
+):
+    list_of_services = await director_v2_api.get_dynamic_services(client.app)
+    assert list_of_services == []

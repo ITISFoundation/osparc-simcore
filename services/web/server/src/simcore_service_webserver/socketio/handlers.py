@@ -8,10 +8,11 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.logging_utils import log_context
 from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
@@ -31,7 +32,7 @@ log = logging.getLogger(__name__)
 
 
 @register_socketio_handler
-async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
+async def connect(sid: str, environ: dict, app: web.Application) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io
 
     Arguments:
@@ -60,7 +61,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    heart_beat_messages: List[SocketMessageDict] = [
+    heart_beat_messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_HEARTBEAT_EVENT,
             "data": {"interval": emit_interval},
@@ -110,7 +111,7 @@ async def set_user_in_rooms(
         sio.enter_room(sid, f"{group['gid']}")
 
 
-async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
+async def disconnect_other_sockets(sio, sockets: list[str]) -> None:
     log.debug("disconnecting sockets %s", sockets)
     logout_tasks = [
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
@@ -170,13 +171,22 @@ async def disconnect(sid: str, app: web.Application) -> None:
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
         if "user_id" in socketio_session:
+
             user_id = socketio_session["user_id"]
             client_session_id = socketio_session["client_session_id"]
-            with managed_resource(user_id, client_session_id, app) as rt:
-                log.debug("client %s disconnected from room %s", user_id, sid)
-                await rt.remove_socket_id()
-            # signal same user other clients if available
-            await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
+
+            with log_context(
+                log,
+                logging.INFO,
+                "disconnection of %s for %s",
+                f"{user_id=}",
+                f"{client_session_id=}",
+            ):
+                with managed_resource(user_id, client_session_id, app) as rt:
+                    log.debug("client %s disconnected from room %s", user_id, sid)
+                    await rt.remove_socket_id()
+                # signal same user other clients if available
+                await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
 
         else:
             # this should not happen!!

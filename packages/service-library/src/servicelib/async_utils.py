@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections import deque
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Deque, Optional
@@ -32,16 +33,24 @@ class Context:
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
-async def stop_sequential_workers() -> None:
-    """Singlas all workers to close thus avoiding errors on shutdown"""
+async def cancel_sequential_workers() -> None:
+    """Signals all workers to close thus avoiding errors on shutdown"""
     for context in _sequential_jobs_contexts.values():
         await context.in_queue.put(None)
         if context.task is not None:
-            await context.task
+            context.task.cancel()
+            with suppress(asyncio.CancelledError):
+                await context.task
+
     _sequential_jobs_contexts.clear()
     logger.info("All run_sequentially_in_context pending workers stopped")
 
 
+# NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
+# @run_sequentially_in_contextreturn changes the return type of the decorated function to `Any`.
+# Instead we should annotate this decorator with ParamSpec and TypeVar generics.
+# SEE https://peps.python.org/pep-0612/
+#
 def run_sequentially_in_context(
     target_args: Optional[list[str]] = None,
 ) -> Callable:

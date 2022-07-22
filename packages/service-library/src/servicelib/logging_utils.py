@@ -1,5 +1,8 @@
 """
-This codes originates from this article (https://medium.com/swlh/add-log-decorators-to-your-python-project-84094f832181)
+This codes originates from this article
+    https://medium.com/swlh/add-log-decorators-to-your-python-project-84094f832181
+
+SEE also https://github.com/Delgan/loguru for a future alternative
 """
 import asyncio
 import functools
@@ -181,3 +184,15 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
         logger.error("Unhandled exception: %s", f"{exc}", exc_info=True)
         if reraise:
             raise exc from exc
+
+
+un_capitalize = lambda s: s[:1].lower() + s[1:] if s else ""
+
+
+@contextmanager
+def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
+    # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
+    msg = un_capitalize(msg.strip())
+    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
+    yield
+    logger.log(level, "Finished " + msg, *args, **kwargs)

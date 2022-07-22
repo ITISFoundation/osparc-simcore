@@ -5,7 +5,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 from uuid import UUID
 
@@ -29,7 +29,7 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
 from tenacity import AsyncRetrying, stop_after_delay
 
-ProjectDict = Dict[str, Any]
+ProjectDict = dict[str, Any]
 
 # HELPERS
 
@@ -77,7 +77,7 @@ async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
 @pytest.fixture
 def app_cfg(
     default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -198,12 +198,15 @@ async def request_delete_project(
 ) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
     director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
+        autospec=True,
     )
-    director_v2_api_stop_services: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_services",
+    director_v2_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_dynamic_services_in_project",
+        autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        autospec=True,
     )
 
     async def _go(client: TestClient, project_uuid: UUID) -> None:
@@ -219,5 +222,5 @@ async def request_delete_project(
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
         with attempt:
             director_v2_api_delete_pipeline.assert_called()
-            director_v2_api_stop_services.assert_awaited()
+            director_v2_api_stop_dynamic_services_in_project.assert_awaited()
             fire_and_forget_call_to_storage.assert_called()

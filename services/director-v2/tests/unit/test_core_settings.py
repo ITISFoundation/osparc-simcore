@@ -156,7 +156,12 @@ def test_expected_failure_dynamic_sidecar_settings(
         ('["one==yes"]', ["one==yes"]),
         ('["two!=no"]', ["two!=no"]),
         ('["one==yes", "two!=no"]', ["one==yes", "two!=no"]),
-        ('["     strips.white.spaces   ==  ok "]', ["strips.white.spaces   ==  ok"]),
+        ('["strips.white.spaces==  ok "]', ["strips.white.spaces==  ok"]),
+        (
+            # Bug from https://github.com/ITISFoundation/osparc-simcore/pull/3190
+            '["node.labels.standard-worker==true"]',
+            ["node.labels.standard-worker==true"],
+        ),
     ),
 )
 def test_services_custom_constraints(
@@ -169,6 +174,37 @@ def test_services_custom_constraints(
     settings = AppSettings.create_from_envs()
     assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
     assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == expected
+
+
+@pytest.mark.parametrize(
+    "custom_constraints, expected",
+    (
+        # Whitespaces in key are not allowed https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
+        ('["strips.white spaces==ok "]', ["strips.white spaces==ok"]),
+        ('[".starting.trailing.dot.==forbidden"]', [".starting.dot==forbidden"]),
+        ('["double...dot==forbidden"]', ["double..dot==forbidden"]),
+        ('["double--hyphen==forbidden"]', ["double--hyphen==forbidden"]),
+        (
+            '["-starting.trailing.hyphen-==forbidden"]',
+            ["-starting.trailing.hyphen-==forbidden"],
+        ),
+        (
+            # Bug from https://github.com/ITISFoundation/osparc-simcore/pull/
+            # Underscores forbidden
+            '["node.labels.standard_worker==true"]',
+            ["node.labels.standard_worker==true"],
+        ),
+    ),
+)
+def test_services_custom_constraint_failures(
+    custom_constraints: str,
+    expected: list[str],
+    project_env_devel_environment: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    with pytest.raises(Exception) as excinfo:
+        settings = AppSettings.create_from_envs()
 
 
 def test_services_custom_constraints_default_empty_list(

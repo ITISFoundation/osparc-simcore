@@ -1,7 +1,6 @@
-import json
 import logging
 from copy import deepcopy
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
@@ -12,10 +11,11 @@ from models_library.services_resources import (
     ServiceResourcesDict,
 )
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
+from servicelib.json_serialization import json_dumps
 from settings_library.docker_registry import RegistrySettings
 
-EnvKeyEqValueList = List[str]
-EnvVarsMap = Dict[str, Optional[str]]
+EnvKeyEqValueList = list[str]
+EnvVarsMap = dict[str, Optional[str]]
 
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ def _update_paths_mappings(
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
         env_vars[
             "DY_SIDECAR_STATE_PATHS"
-        ] = f"{json.dumps([f'{p}' for p in path_mappings.state_paths])}"
+        ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
 
         service_content["environment"] = _environment_section.export_as_list(env_vars)
 

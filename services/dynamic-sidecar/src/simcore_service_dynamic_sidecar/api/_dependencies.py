@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 
 from ..core.rabbitmq import RabbitMQ
-from ..core.settings import DynamicSidecarSettings
+from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
@@ -26,7 +26,7 @@ def get_application_health(
     return app_state.application_health  # type: ignore
 
 
-def get_settings(app_state: State = Depends(get_app_state)) -> DynamicSidecarSettings:
+def get_settings(app_state: State = Depends(get_app_state)) -> ApplicationSettings:
     return app_state.settings  # type: ignore
 
 

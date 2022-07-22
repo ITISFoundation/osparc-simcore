@@ -6,7 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 import asyncio
 import json
 import logging
-from typing import Any, Coroutine, Dict, List, Optional, Set
+from typing import Any, Coroutine, Optional
 from uuid import UUID
 
 from aiohttp import web
@@ -149,7 +149,7 @@ async def create_projects(request: web.Request):
             source_project = await db.get_template_project(query_params.from_template)
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason="Invalid template uuid {}".format(query_params.from_template)
+                    reason=f"Invalid template uuid {query_params.from_template}"
                 )
 
         if source_project:
@@ -218,7 +218,7 @@ async def create_projects(request: web.Request):
                     new_project, new_project["uuid"], hidden=False
                 )
 
-        await director_v2_api.projects_networks_update(
+        await director_v2_api.update_dynamic_service_networks_in_project(
             request.app, UUID(new_project["uuid"])
         )
 
@@ -295,7 +295,7 @@ async def list_projects(request: web.Request):
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
     async def set_all_project_states(
-        projects: List[Dict[str, Any]], project_types: List[ProjectTypeDB]
+        projects: list[dict[str, Any]], project_types: list[ProjectTypeDB]
     ):
         await logged_gather(
             *[
@@ -311,8 +311,8 @@ async def list_projects(request: web.Request):
             max_concurrency=100,
         )
 
-    user_available_services: List[
-        Dict
+    user_available_services: list[
+        dict
     ] = await catalog.get_services_for_user_in_product(
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
@@ -397,8 +397,8 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: List[
-        Dict
+    user_available_services: list[
+        dict
     ] = await catalog.get_services_for_user_in_product(
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
@@ -545,7 +545,7 @@ async def replace_project(request: web.Request):
             new_project=new_project,
         )
 
-        await director_v2_api.projects_networks_update(
+        await director_v2_api.update_dynamic_service_networks_in_project(
             request.app, path_params.project_id
         )
         await director_v2_api.create_or_update_pipeline(
@@ -599,7 +599,7 @@ async def delete_project(request: web.Request):
             user_id=req_ctx.user_id,
             include_templates=True,
         )
-        project_users: Set[int] = set()
+        project_users: set[int] = set()
         with managed_resource(req_ctx.user_id, None, request.app) as rt:
             project_users = {
                 user_session.user_id

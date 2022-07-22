@@ -21,7 +21,11 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    setup,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
+    setup as api_client_setup,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
@@ -61,7 +65,8 @@ async def dynamic_sidecar_client(
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
-    await setup(app)
+    # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
+    await api_client_setup(app)
     yield get_dynamic_sidecar_client(app)
     await shutdown(app)
 
