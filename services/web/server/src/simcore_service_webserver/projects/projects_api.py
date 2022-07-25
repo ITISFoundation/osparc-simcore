@@ -183,6 +183,8 @@ async def add_project_node(
         user_id,
     )
     node_uuid = service_id if service_id else str(uuid4())
+
+    # ensure the project is up-to-date in the database prior to start any potential service
     project_workbench = project.get("workbench", {})
     assert node_uuid not in project_workbench  # nosec
     project_workbench[node_uuid] = jsonable_encoder(
@@ -202,6 +204,8 @@ async def add_project_node(
         user_id=user_id,
         project_uuid=project["uuid"],
     )
+    # also ensure the project is updated by director-v2 since services
+    # are due to access comp_tasks at some point
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"]
     )
