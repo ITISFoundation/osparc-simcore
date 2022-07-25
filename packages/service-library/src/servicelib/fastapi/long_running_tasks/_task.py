@@ -226,7 +226,10 @@ class TaskManager:
                 task, task_id, reraise_errors=reraise_errors
             )
         except Exception as e:  # pylint:disable=broad-except
-            raise TaskExceptionError(task_id=task_id, exception=e) from e
+            formatted_traceback = "\n".join(traceback.format_tb(e.__traceback__))
+            raise TaskExceptionError(
+                task_id=task_id, exception=e, traceback=formatted_traceback
+            ) from e
 
     async def remove(self, task_id: TaskId, *, reraise_errors: bool = True) -> bool:
         """cancels and removes task"""
