@@ -11,6 +11,8 @@ from servicelib.fastapi.long_running_tasks.server import (
     start_task,
 )
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.utils import logged_gather
+from simcore_sdk.node_data import data_manager
 
 from ..core.docker_compose_utils import (
     docker_compose_down,
@@ -148,6 +150,51 @@ async def _task_runs_docker_compose_down(
     progress.publish(message="done", percent=1)
 
 
+async def _task_restore_state(
+    progress: TaskProgress,
+    settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
+    rabbitmq: RabbitMQ,
+) -> None:
+    progress.publish(message="checking files", percent=0.0)
+    # first check if there are files (no max concurrency here, these are just quick REST calls)
+    existing_files: list[bool] = await logged_gather(
+        *(
+            data_manager.exists(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
+                node_uuid=f"{settings.DY_SIDECAR_NODE_ID}",
+                file_path=path,
+            )
+            for path in mounted_volumes.disk_state_paths()
+        ),
+        reraise=True,
+    )
+
+    progress.publish(message="Downloading state", percent=0.05)
+    await send_message(
+        rabbitmq,
+        f"Downloading state files for {existing_files}...",
+    )
+    await logged_gather(
+        *(
+            data_manager.pull(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                file_or_folder=path,
+            )
+            for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
+            if exists
+        ),
+        max_concurrency=2,  # limit amount of downloads
+        reraise=True,  # this should raise if there is an issue
+    )
+
+    await send_message(rabbitmq, "Finished state downloading")
+    progress.publish(message="state restored", percent=1)
+
+
 # HANDLERS
 
 
@@ -244,6 +291,46 @@ async def runs_docker_compose_down_task(
             shared_store=shared_store,
             settings=settings,
             command_timeout=command_timeout,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks/state:restore",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def restore_state(
+    request: Request,
+    task_manager: TaskManager = Depends(get_task_manager),
+    settings: ApplicationSettings = Depends(get_settings),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+) -> TaskId:
+    """
+    Restores the state of the dynamic service
+
+    When restoring the state:
+    - pull inputs via nodeports
+    - pull all the extra state paths
+    """
+    assert request  # nosec
+
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=_task_restore_state,
+            unique=True,
+            settings=settings,
+            mounted_volumes=mounted_volumes,
+            rabbitmq=rabbitmq,
         )
         return task_id
     except TaskAlreadyRunningError as e:

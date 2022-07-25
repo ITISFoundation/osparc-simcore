@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
@@ -147,6 +148,25 @@ def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
     return httpx_async_client._transport.app.state.shared_store
 
 
+@pytest.fixture
+def mock_data_manager(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.push",
+        autospec=True,
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.exists",
+        autospec=True,
+        return_value=True,
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.pull",
+        autospec=True,
+        return_value=None,
+    )
+
+
 # TESTS
 
 
@@ -163,6 +183,15 @@ async def _get_task_id_create_service_containers(
 
 async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks:down")
+    task_id: TaskId = response.json()
+    assert isinstance(task_id, str)
+    return task_id
+
+
+async def _get_task_id_restore_state(httpx_async_client: AsyncClient) -> TaskId:
+    response = await httpx_async_client.post(
+        f"/{API_VTAG}/containers/tasks/state:restore"
+    )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -270,3 +299,15 @@ async def test_containers_down_missing_spec(
         ) as result:
             assert result is None
     assert 'RuntimeError("No compose-spec was found")' in f"{exec_info.value}"
+
+
+async def test_container_restore_state(
+    httpx_async_client: AsyncClient, client: Client, mock_data_manager: None
+):
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_restore_state(httpx_async_client),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+    ) as result:
+        assert result is None
