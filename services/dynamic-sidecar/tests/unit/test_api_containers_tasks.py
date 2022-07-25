@@ -22,6 +22,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_tasks
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -140,6 +141,12 @@ def client(
     return Client(app=app, async_client=httpx_async_client, base_url=backend_url)
 
 
+@pytest.fixture
+def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
+    # pylint: disable=protected-access
+    return httpx_async_client._transport.app.state.shared_store
+
+
 # TESTS
 
 
@@ -147,20 +154,26 @@ async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient, compose_spec: str
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers_", json={"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers/tasks", json={"docker_compose_yaml": compose_spec}
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def test_create_containers_task(
-    httpx_async_client: AsyncClient, client: Client, compose_spec: str
-) -> None:
-    task_id = await _get_task_id_create_service_containers(
-        httpx_async_client, compose_spec
-    )
+async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> TaskId:
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks:down")
+    task_id: TaskId = response.json()
+    assert isinstance(task_id, str)
+    return task_id
 
+
+async def test_create_containers_task(
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    shared_store: SharedStore,
+) -> None:
     last_progress_message: Optional[tuple[str, float]] = None
 
     async def create_progress(message: str, percent: float) -> None:
@@ -170,12 +183,14 @@ async def test_create_containers_task(
 
     async with periodic_task_result(
         client=client,
-        task_id=task_id,
+        task_id=await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec
+        ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
         progress_callback=create_progress,
     ) as result:
-        assert result is None
+        assert shared_store.container_names == result
 
     assert last_progress_message == ("done", 1)
 
@@ -183,15 +198,16 @@ async def test_create_containers_task(
 async def test_create_containers_task_invalid_yaml_spec(
     httpx_async_client: AsyncClient, client: Client
 ):
-    task_id = await _get_task_id_create_service_containers(httpx_async_client, "")
     with pytest.raises(TaskClientResultError) as exec_info:
         async with periodic_task_result(
             client=client,
-            task_id=task_id,
+            task_id=await _get_task_id_create_service_containers(
+                httpx_async_client, ""
+            ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
-        ) as result:
-            assert result is None
+        ):
+            pass
     assert "raise InvalidComposeSpec" in f"{exec_info.value}"
 
 
@@ -213,3 +229,44 @@ async def test_create_containers_task_unique(
         task_id = await _get_task_id_create_service_containers(httpx_async_client, "")
         async with auto_remove_task(client, task_id):
             pass
+
+
+async def test_containers_down_after_starting(
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    shared_store: SharedStore,
+):
+    # start containers
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec
+        ),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+    ) as result:
+        assert shared_store.container_names == result
+
+    # put down containers
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+    ) as result:
+        assert result is None
+
+
+async def test_containers_down_missing_spec(
+    httpx_async_client: AsyncClient, client: Client
+):
+    with pytest.raises(TaskClientResultError) as exec_info:
+        async with periodic_task_result(
+            client=client,
+            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=FAST_STATUS_POLL,
+        ) as result:
+            assert result is None
+    assert 'RuntimeError("No compose-spec was found")' in f"{exec_info.value}"

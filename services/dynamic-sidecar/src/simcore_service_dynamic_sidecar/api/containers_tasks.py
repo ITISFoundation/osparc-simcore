@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
@@ -10,13 +10,15 @@ from servicelib.fastapi.long_running_tasks.server import (
     get_task_manager,
     start_task,
 )
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_compose_utils import (
+    docker_compose_down,
     docker_compose_pull,
     docker_compose_rm,
     docker_compose_up,
 )
-from ..core.docker_logs import start_log_fetching
+from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
 from ..core.utils import assemble_container_names
@@ -62,7 +64,7 @@ async def _task_create_service_containers(
     rabbitmq: RabbitMQ,
     long_running_compose_timeout: int,
     validation_timeout: int,
-) -> None:
+) -> list[str]:
     progress.publish(message="validating service spec", percent=0)
 
     shared_store.compose_spec = await validate_compose_spec(
@@ -108,12 +110,49 @@ async def _task_create_service_containers(
 
     progress.publish(message="done", percent=1)
 
+    return shared_store.container_names
+
+
+async def _task_runs_docker_compose_down(
+    progress: TaskProgress,
+    app: FastAPI,
+    shared_store: SharedStore,
+    settings: ApplicationSettings,
+    command_timeout: int,
+) -> None:
+    if shared_store.compose_spec is None:
+        raise RuntimeError("No compose-spec was found")
+
+    progress.publish(message="running docker-compose-down", percent=0)
+    result = await docker_compose_down(
+        shared_store.compose_spec,
+        settings,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
+    )
+    if not result.success:
+        logger.warning(
+            "docker-compose down command finished with errors\n%s",
+            result.message,
+        )
+        raise RuntimeError(result.message)
+
+    progress.publish(message="stopping logs", percent=0.9)
+    for container_name in shared_store.container_names:
+        await stop_log_fetching(app, container_name)
+
+    progress.publish(message="removing pending resources", percent=0.95)
+    await docker_compose_rm(shared_store.compose_spec, settings)
+
+    # removing compose-file spec
+    shared_store.clear()
+    progress.publish(message="done", percent=1)
+
 
 # HANDLERS
 
 
 @containers_router_tasks.post(
-    "/containers_",
+    "/containers/tasks",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
@@ -124,7 +163,9 @@ async def _task_create_service_containers(
         },
     },
 )
-async def create_service_containers_task(
+@cancel_on_disconnect
+async def create_service_containers_task(  # pylint: disable=too-many-arguments
+    request: Request,
     containers_create: ContainersCreate,
     task_manager: TaskManager = Depends(get_task_manager),
     long_running_compose_timeout: int = Query(
@@ -148,6 +189,8 @@ async def create_service_containers_task(
 
     NOTE: only one instance of this task can run at a time
     """
+    assert request  # nosec
+
     try:
         task_id = start_task(
             task_manager=task_manager,
@@ -162,6 +205,45 @@ async def create_service_containers_task(
             rabbitmq=rabbitmq,
             long_running_compose_timeout=long_running_compose_timeout,
             validation_timeout=validation_timeout,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks:down",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def runs_docker_compose_down_task(
+    request: Request,
+    command_timeout: int = Query(
+        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
+    ),
+    task_manager: TaskManager = Depends(get_task_manager),
+    settings: ApplicationSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
+    app: FastAPI = Depends(get_application),
+) -> TaskId:
+    """Removes the previously started service
+    and returns the docker-compose output"""
+    assert request  # nosec
+
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=_task_runs_docker_compose_down,
+            unique=True,
+            app=app,
+            shared_store=shared_store,
+            settings=settings,
+            command_timeout=command_timeout,
         )
         return task_id
     except TaskAlreadyRunningError as e:
