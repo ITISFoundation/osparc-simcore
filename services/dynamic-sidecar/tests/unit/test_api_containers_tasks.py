@@ -188,10 +188,17 @@ async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> T
     return task_id
 
 
-async def _get_task_id_restore_state(httpx_async_client: AsyncClient) -> TaskId:
+async def _get_task_id_state_restore(httpx_async_client: AsyncClient) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/tasks/state:restore"
     )
+    task_id: TaskId = response.json()
+    assert isinstance(task_id, str)
+    return task_id
+
+
+async def _get_task_id_state_save(httpx_async_client: AsyncClient) -> TaskId:
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks/state:save")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -306,7 +313,19 @@ async def test_container_restore_state(
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_restore_state(httpx_async_client),
+        task_id=await _get_task_id_state_restore(httpx_async_client),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+    ) as result:
+        assert result is None
+
+
+async def test_container_save_state(
+    httpx_async_client: AsyncClient, client: Client, mock_data_manager: None
+):
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_state_save(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
     ) as result:

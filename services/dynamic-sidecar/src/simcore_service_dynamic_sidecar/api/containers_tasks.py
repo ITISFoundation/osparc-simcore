@@ -1,4 +1,6 @@
 import logging
+from collections import deque
+from typing import Any, Awaitable, Final, Optional
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from pydantic import BaseModel
@@ -53,6 +55,9 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
 
 
 # TASKS
+
+# NOTE: most services have only 1 "working" directory
+CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 
 
 async def _task_create_service_containers(
@@ -187,12 +192,42 @@ async def _task_restore_state(
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
         ),
-        max_concurrency=2,  # limit amount of downloads
+        max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         reraise=True,  # this should raise if there is an issue
     )
 
     await send_message(rabbitmq, "Finished state downloading")
     progress.publish(message="state restored", percent=1)
+
+
+async def _task_save_state(
+    progress: TaskProgress,
+    settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
+    rabbitmq: RabbitMQ,
+) -> None:
+    awaitables: deque[Awaitable[Optional[Any]]] = deque()
+
+    progress.publish(message="starting state save", percent=0.0)
+
+    for state_path in mounted_volumes.disk_state_paths():
+        await send_message(rabbitmq, f"Saving state for {state_path}")
+        awaitables.append(
+            data_manager.push(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                file_or_folder=state_path,
+                r_clone_settings=settings.rclone_settings_for_nodeports,
+                archive_exclude_patterns=mounted_volumes.state_exclude,
+            )
+        )
+
+    progress.publish(message="state save scheduled", percent=0.1)
+    await logged_gather(*awaitables, max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE)
+
+    await send_message(rabbitmq, "Finished state saving")
+    progress.publish(message="finished state save", percent=0.1)
 
 
 # HANDLERS
@@ -307,7 +342,7 @@ async def runs_docker_compose_down_task(
     },
 )
 @cancel_on_disconnect
-async def restore_state(
+async def state_restore_task(
     request: Request,
     task_manager: TaskManager = Depends(get_task_manager),
     settings: ApplicationSettings = Depends(get_settings),
@@ -327,6 +362,40 @@ async def restore_state(
         task_id = start_task(
             task_manager=task_manager,
             handler=_task_restore_state,
+            unique=True,
+            settings=settings,
+            mounted_volumes=mounted_volumes,
+            rabbitmq=rabbitmq,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks/state:save",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def state_save_task(
+    request: Request,
+    task_manager: TaskManager = Depends(get_task_manager),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    settings: ApplicationSettings = Depends(get_settings),
+) -> TaskId:
+    """Stores the state of the dynamic service"""
+    assert request  # nosec
+
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=_task_save_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
