@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
     Owner,
@@ -31,6 +32,7 @@ from models_library.projects_state import (
 )
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
@@ -167,7 +169,7 @@ def get_delete_project_task(
 
 async def add_project_node(
     request: web.Request,
-    project_uuid: str,
+    project: dict[str, Any],
     user_id: int,
     service_key: str,
     service_version: str,
@@ -177,10 +179,33 @@ async def add_project_node(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
-        project_uuid,
+        project["uuid"],
         user_id,
     )
     node_uuid = service_id if service_id else str(uuid4())
+    project_workbench = project.get("workbench", {})
+    assert node_uuid not in project_workbench  # nosec
+    project_workbench[node_uuid] = jsonable_encoder(
+        Node.parse_obj(
+            {
+                "key": service_key,
+                "version": service_version,
+                "label": service_key.split("/")[-1],
+            }
+        ),
+        exclude_unset=True,
+    )
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    await db.replace_user_project(
+        new_project_data=project,
+        user_id=user_id,
+        project_uuid=project["uuid"],
+    )
+    await director_v2_api.create_or_update_pipeline(
+        request.app, user_id, project["uuid"]
+    )
+
     if _is_node_dynamic(service_key):
         service_resources: ServiceResourcesDict = await get_project_node_resources(
             request.app,
@@ -189,11 +214,11 @@ async def add_project_node(
                     f"{node_uuid}": {"key": service_key, "version": service_version}
                 }
             },
-            node_id=UUID(node_uuid),
+            node_id=NodeID(node_uuid),
         )
         await director_v2_api.run_dynamic_service(
             request.app,
-            project_id=project_uuid,
+            project_id=project["uuid"],
             user_id=user_id,
             service_key=service_key,
             service_version=service_version,

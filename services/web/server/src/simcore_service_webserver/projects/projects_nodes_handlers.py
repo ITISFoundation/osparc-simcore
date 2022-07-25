@@ -53,7 +53,7 @@ async def create_node(request: web.Request) -> web.Response:
     try:
         # ensure the project exists
 
-        await projects_api.get_project_for_user(
+        project_data = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -62,7 +62,7 @@ async def create_node(request: web.Request) -> web.Response:
         data = {
             "node_id": await projects_api.add_project_node(
                 request,
-                f"{path_params.project_id}",
+                project_data,
                 req_ctx.user_id,
                 body["service_key"],
                 body["service_version"],
