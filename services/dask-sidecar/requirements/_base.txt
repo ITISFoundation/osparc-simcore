@@ -141,7 +141,7 @@ jupyter-core==4.7.1
     #   jupyter-server
     #   nbconvert
     #   nbformat
-jupyter-server==1.16.0
+jupyter-server==1.18.1
     # via jupyter-server-proxy
 jupyter-server-proxy==3.2.1
     # via -r requirements/_base.in
