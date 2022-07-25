@@ -205,7 +205,7 @@ async def add_project_node(
         project_uuid=project["uuid"],
     )
     # also ensure the project is updated by director-v2 since services
-    # are due to access comp_tasks at some point
+    # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"]
     )
