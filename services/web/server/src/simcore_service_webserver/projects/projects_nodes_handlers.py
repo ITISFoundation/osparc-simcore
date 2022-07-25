@@ -39,8 +39,16 @@ async def create_node(request: web.Request) -> web.Response:
 
     try:
         body = await request.json()
+        for required_key in ["service_key", "service_version"]:
+            if required_key not in body:
+                raise web.HTTPUnprocessableEntity(
+                    reason=f"{required_key} is missing from request body"
+                )
+
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid request body: {exc}"
+        ) from exc
 
     try:
         # ensure the project exists
