@@ -101,12 +101,29 @@ qx.Class.define("osparc.utils.Services", {
       return 0;
     },
 
-    sortObjectsBasedOn: function(servicesArray, basedOn = "name") {
+    sortObjectsBasedOn: function(servicesArray, basedOn) {
+      if (basedOn === undefined) {
+        basedOn = {
+          "sort": "hits",
+          "order": "down"
+        };
+      }
       servicesArray.sort((a, b) => {
-        if (basedOn === "hits" && a[basedOn] !== b[basedOn]) {
-          return b[basedOn] - a[basedOn];
+        if (basedOn.sort === "hits") {
+          if (a[basedOn.sort] !== b[basedOn.sort]) {
+            if (basedOn.order === "down") {
+              return b[basedOn.sort] - a[basedOn.sort];
+            }
+            return a[basedOn.sort] - b[basedOn.sort];
+          }
+          return a["name"].localeCompare(b["name"]);
+        } else if (basedOn.sort === "name") {
+          if (basedOn.order === "down") {
+            return a["name"].localeCompare(b["name"]);
+          }
+          return b["name"].localeCompare(a["name"]);
         }
-        return a["name"].localeCompare(b["name"]);
+        return 0;
       });
     },
 
