@@ -3,7 +3,17 @@
 
 import json
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Final, Iterator, Optional
+from inspect import getmembers, isfunction
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Final,
+    Iterator,
+    Optional,
+)
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -45,18 +55,28 @@ def _get_dynamic_sidecar_network_name() -> str:
 
 
 @contextmanager
-def mock_task(*, task_name: str) -> Iterator[None]:
-    # NOTE: mocking via `mocker: MockerFixture` appears not to works
-    async def _long_running_task(*args, **kwargs) -> None:
+def mock_tasks() -> Iterator[None]:
+    # NOTE: mocking via `mocker: MockerFixture` appears not to work
+    async def _just_log_task(*args, **kwargs) -> None:
         print(f"Called mocked function with {args}, {kwargs}")
 
-    original_task = getattr(containers_tasks, task_name)
+    # searching by name since all start with _task
+    tasks_names = [
+        x[0]
+        for x in getmembers(containers_tasks, isfunction)
+        if x[0].startswith("_task")
+    ]
 
-    setattr(containers_tasks, task_name, _long_running_task)
+    original_tasks: dict[str, Callable] = {}
+
+    for task_name in tasks_names:
+        original_tasks[task_name] = getattr(containers_tasks, task_name)
+        setattr(containers_tasks, task_name, _just_log_task)
 
     yield
 
-    setattr(containers_tasks, task_name, original_task)
+    for task_name, original_task in original_tasks.items():
+        setattr(containers_tasks, task_name, original_task)
 
 
 @asynccontextmanager
@@ -171,7 +191,7 @@ def mock_data_manager(mocker: MockerFixture) -> None:
 
 
 async def _get_task_id_create_service_containers(
-    httpx_async_client: AsyncClient, compose_spec: str
+    httpx_async_client: AsyncClient, compose_spec: str, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/tasks", json={"docker_compose_yaml": compose_spec}
@@ -181,14 +201,18 @@ async def _get_task_id_create_service_containers(
     return task_id
 
 
-async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> TaskId:
+async def _get_task_id_docker_compose_down(
+    httpx_async_client: AsyncClient, *args, **kwargs
+) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks:down")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
 
 
-async def _get_task_id_state_restore(httpx_async_client: AsyncClient) -> TaskId:
+async def _get_task_id_state_restore(
+    httpx_async_client: AsyncClient, *args, **kwargs
+) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/tasks/state:restore"
     )
@@ -197,7 +221,9 @@ async def _get_task_id_state_restore(httpx_async_client: AsyncClient) -> TaskId:
     return task_id
 
 
-async def _get_task_id_state_save(httpx_async_client: AsyncClient) -> TaskId:
+async def _get_task_id_state_save(
+    httpx_async_client: AsyncClient, *args, **kwargs
+) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks/state:save")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -247,22 +273,38 @@ async def test_create_containers_task_invalid_yaml_spec(
     assert "raise InvalidComposeSpec" in f"{exec_info.value}"
 
 
-async def test_create_containers_task_unique(
-    httpx_async_client: AsyncClient, client: Client
+@pytest.mark.parametrize(
+    "get_task_id_callable",
+    [
+        _get_task_id_create_service_containers,
+        _get_task_id_docker_compose_down,
+        _get_task_id_state_restore,
+        _get_task_id_state_save,
+    ],
+)
+async def test_task_is_unique(
+    httpx_async_client: AsyncClient,
+    client: Client,
+    get_task_id_callable: Callable[..., Awaitable],
 ) -> None:
-    with mock_task(task_name="_task_create_service_containers"):
-        task_id = await _get_task_id_create_service_containers(httpx_async_client, "")
+    def _get_awaitable() -> Awaitable:
+        return get_task_id_callable(
+            httpx_async_client=httpx_async_client, compose_spec=""
+        )
+
+    with mock_tasks():
+        task_id = await _get_awaitable()
         async with auto_remove_task(client, task_id):
 
             # cannot create a task while another unique task is running
             with pytest.raises(AssertionError) as exec_info:
-                await _get_task_id_create_service_containers(httpx_async_client, "")
+                await _get_awaitable()
 
             assert "must be unique, found:" in f"{exec_info.value}"
 
         # since the previous task was already removed it is again possible
         # to create a task
-        task_id = await _get_task_id_create_service_containers(httpx_async_client, "")
+        task_id = await _get_awaitable()
         async with auto_remove_task(client, task_id):
             pass
 
