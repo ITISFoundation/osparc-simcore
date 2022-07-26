@@ -64,7 +64,7 @@ def mock_tasks() -> Iterator[None]:
     tasks_names = [
         x[0]
         for x in getmembers(containers_tasks, isfunction)
-        if x[0].startswith("_task")
+        if x[0].startswith("task")
     ]
 
     original_tasks: dict[str, Callable] = {}
