@@ -1,35 +1,26 @@
 import logging
-from collections import deque
-from typing import Any, Awaitable, Final, Optional
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
-from pydantic import BaseModel
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
     TaskId,
     TaskManager,
-    TaskProgress,
     get_task_manager,
     start_task,
 )
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.utils import logged_gather
-from simcore_sdk.node_data import data_manager
 
-from ..core.docker_compose_utils import (
-    docker_compose_down,
-    docker_compose_pull,
-    docker_compose_rm,
-    docker_compose_up,
-)
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
-from ..core.utils import assemble_container_names
-from ..core.validation import validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
-from ..modules.directory_watcher import directory_watcher_disabled
+from ..modules.long_running_tasks import (
+    ContainersCreate,
+    _task_create_service_containers,
+    _task_restore_state,
+    _task_runs_docker_compose_down,
+    _task_save_state,
+)
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
     get_application,
@@ -43,191 +34,6 @@ from ._dependencies import (
 logger = logging.getLogger(__name__)
 
 containers_router_tasks = APIRouter(tags=["containers"])
-
-
-class ContainersCreate(BaseModel):
-    docker_compose_yaml: str
-
-
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.info(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
-
-
-# TASKS
-
-# NOTE: most services have only 1 "working" directory
-CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
-
-
-async def _task_create_service_containers(
-    progress: TaskProgress,
-    settings: ApplicationSettings,
-    containers_create: ContainersCreate,
-    shared_store: SharedStore,
-    mounted_volumes: MountedVolumes,
-    app: FastAPI,
-    application_health: ApplicationHealth,
-    rabbitmq: RabbitMQ,
-    long_running_compose_timeout: int,
-    validation_timeout: int,
-) -> list[str]:
-    progress.publish(message="validating service spec", percent=0)
-
-    shared_store.compose_spec = await validate_compose_spec(
-        settings=settings,
-        compose_file_content=containers_create.docker_compose_yaml,
-        mounted_volumes=mounted_volumes,
-        docker_compose_config_timeout=validation_timeout,
-    )
-    shared_store.container_names = assemble_container_names(shared_store.compose_spec)
-
-    logger.debug("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
-
-    await send_message(rabbitmq, "starting service containers")
-    assert shared_store.compose_spec  # nosec
-
-    with directory_watcher_disabled(app):
-        # removes previous pending containers
-        progress.publish(message="cleanup previous used resources")
-        await docker_compose_rm(shared_store.compose_spec, settings)
-
-        progress.publish(message="pulling images", percent=0.01)
-        await docker_compose_pull(
-            shared_store.compose_spec, settings, timeout=long_running_compose_timeout
-        )
-
-        progress.publish(message="starting service containers", percent=0.90)
-        r = await docker_compose_up(
-            shared_store.compose_spec, settings, timeout=long_running_compose_timeout
-        )
-
-    message = f"Finished docker-compose up with output\n{r.message}"
-
-    if r.success:
-        await send_message(rabbitmq, "service containers started")
-        logger.info(message)
-        for container_name in shared_store.container_names:
-            await start_log_fetching(app, container_name)
-    else:
-        application_health.is_healthy = False
-        application_health.error_message = message
-        logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
-        await send_message(rabbitmq, "could not start service containers")
-
-    progress.publish(message="done", percent=1)
-
-    return shared_store.container_names
-
-
-async def _task_runs_docker_compose_down(
-    progress: TaskProgress,
-    app: FastAPI,
-    shared_store: SharedStore,
-    settings: ApplicationSettings,
-    command_timeout: int,
-) -> None:
-    if shared_store.compose_spec is None:
-        raise RuntimeError("No compose-spec was found")
-
-    progress.publish(message="running docker-compose-down", percent=0)
-    result = await docker_compose_down(
-        shared_store.compose_spec,
-        settings,
-        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
-    )
-    if not result.success:
-        logger.warning(
-            "docker-compose down command finished with errors\n%s",
-            result.message,
-        )
-        raise RuntimeError(result.message)
-
-    progress.publish(message="stopping logs", percent=0.9)
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
-
-    progress.publish(message="removing pending resources", percent=0.95)
-    await docker_compose_rm(shared_store.compose_spec, settings)
-
-    # removing compose-file spec
-    shared_store.clear()
-    progress.publish(message="done", percent=1)
-
-
-async def _task_restore_state(
-    progress: TaskProgress,
-    settings: ApplicationSettings,
-    mounted_volumes: MountedVolumes,
-    rabbitmq: RabbitMQ,
-) -> None:
-    progress.publish(message="checking files", percent=0.0)
-    # first check if there are files (no max concurrency here, these are just quick REST calls)
-    existing_files: list[bool] = await logged_gather(
-        *(
-            data_manager.exists(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
-                node_uuid=f"{settings.DY_SIDECAR_NODE_ID}",
-                file_path=path,
-            )
-            for path in mounted_volumes.disk_state_paths()
-        ),
-        reraise=True,
-    )
-
-    progress.publish(message="Downloading state", percent=0.05)
-    await send_message(
-        rabbitmq,
-        f"Downloading state files for {existing_files}...",
-    )
-    await logged_gather(
-        *(
-            data_manager.pull(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                file_or_folder=path,
-            )
-            for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
-            if exists
-        ),
-        max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
-        reraise=True,  # this should raise if there is an issue
-    )
-
-    await send_message(rabbitmq, "Finished state downloading")
-    progress.publish(message="state restored", percent=1)
-
-
-async def _task_save_state(
-    progress: TaskProgress,
-    settings: ApplicationSettings,
-    mounted_volumes: MountedVolumes,
-    rabbitmq: RabbitMQ,
-) -> None:
-    awaitables: deque[Awaitable[Optional[Any]]] = deque()
-
-    progress.publish(message="starting state save", percent=0.0)
-
-    for state_path in mounted_volumes.disk_state_paths():
-        await send_message(rabbitmq, f"Saving state for {state_path}")
-        awaitables.append(
-            data_manager.push(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                file_or_folder=state_path,
-                r_clone_settings=settings.rclone_settings_for_nodeports,
-                archive_exclude_patterns=mounted_volumes.state_exclude,
-            )
-        )
-
-    progress.publish(message="state save scheduled", percent=0.1)
-    await logged_gather(*awaitables, max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE)
-
-    await send_message(rabbitmq, "Finished state saving")
-    progress.publish(message="finished state save", percent=0.1)
 
 
 # HANDLERS
