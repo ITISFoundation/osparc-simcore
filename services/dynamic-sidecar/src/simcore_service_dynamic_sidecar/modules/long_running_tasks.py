@@ -42,7 +42,7 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
 CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 
 
-async def _task_create_service_containers(
+async def task_create_service_containers(
     progress: TaskProgress,
     settings: ApplicationSettings,
     containers_create: ContainersCreate,
@@ -102,7 +102,7 @@ async def _task_create_service_containers(
     return shared_store.container_names
 
 
-async def _task_runs_docker_compose_down(
+async def task_runs_docker_compose_down(
     progress: TaskProgress,
     app: FastAPI,
     shared_store: SharedStore,
@@ -137,7 +137,7 @@ async def _task_runs_docker_compose_down(
     progress.publish(message="done", percent=1)
 
 
-async def _task_restore_state(
+async def task_restore_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
@@ -182,7 +182,7 @@ async def _task_restore_state(
     progress.publish(message="state restored", percent=1)
 
 
-async def _task_save_state(
+async def task_save_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,

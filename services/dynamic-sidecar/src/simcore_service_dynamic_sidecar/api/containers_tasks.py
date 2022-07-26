@@ -16,10 +16,10 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.long_running_tasks import (
     ContainersCreate,
-    _task_create_service_containers,
-    _task_restore_state,
-    _task_runs_docker_compose_down,
-    _task_save_state,
+    task_create_service_containers,
+    task_restore_state,
+    task_runs_docker_compose_down,
+    task_save_state,
 )
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
@@ -82,7 +82,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     try:
         task_id = start_task(
             task_manager=task_manager,
-            handler=_task_create_service_containers,
+            handler=task_create_service_containers,
             unique=True,
             settings=settings,
             containers_create=containers_create,
@@ -126,7 +126,7 @@ async def runs_docker_compose_down_task(
     try:
         task_id = start_task(
             task_manager=task_manager,
-            handler=_task_runs_docker_compose_down,
+            handler=task_runs_docker_compose_down,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -167,7 +167,7 @@ async def state_restore_task(
     try:
         task_id = start_task(
             task_manager=task_manager,
-            handler=_task_restore_state,
+            handler=task_restore_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -201,7 +201,7 @@ async def state_save_task(
     try:
         task_id = start_task(
             task_manager=task_manager,
-            handler=_task_save_state,
+            handler=task_save_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
