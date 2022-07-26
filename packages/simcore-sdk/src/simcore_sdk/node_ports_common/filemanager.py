@@ -272,6 +272,8 @@ async def _upload_file_to_presigned_links(
             results = await logged_gather(
                 *upload_tasks,
                 log=log,
+                # NOTE: when the file object is already created it cannot be duplicated so
+                # no concurrency is allowed in that case
                 max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
             )
             part_to_etag = [
