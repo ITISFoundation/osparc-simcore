@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from datetime import datetime
 from textwrap import dedent
-from typing import Optional
+from typing import IO, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -73,6 +73,15 @@ async def list_files(
     return list(files_meta)
 
 
+def _get_spooled_file_size(file_io: IO, content_length: Optional[str]) -> int:
+    if content_length:
+        return int(content_length)
+    file_io.seek(0, io.SEEK_END)
+    file_size = file_io.tell()
+    file_io.seek(0)
+    return file_size
+
+
 @router.put("/content", response_model=File)
 async def upload_file(
     file: UploadFile = FileParam(...),
@@ -92,9 +101,10 @@ async def upload_file(
     )
     logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
 
-    await asyncio.get_event_loop().run_in_executor(None, file.file.seek, 0, io.SEEK_END)
-    file_size = await asyncio.get_event_loop().run_in_executor(None, file.file.tell)
-    await file.seek(0)
+    file_size = await asyncio.get_event_loop().run_in_executor(
+        None, _get_spooled_file_size, file.file, content_length
+    )
+
     # upload to S3 using pre-signed link
     _, entity_tag = await storage_upload_file(
         user_id=user_id,
