@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Tuple, Type, Union
+from typing import NamedTuple, Union
 from unittest import mock
 
 from aiohttp import web
@@ -14,23 +14,28 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPOk]]
+    ok: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPOk]]
     created: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPCreated]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPCreated]
     ]
     no_content: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNoContent]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNoContent]
     ]
     not_found: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNotFound]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNotFound]
     ]
     forbidden: Union[
-        Type[web.HTTPUnauthorized],
-        Type[web.HTTPForbidden],
+        type[web.HTTPUnauthorized],
+        type[web.HTTPForbidden],
     ]
-    locked: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[HTTPLocked]]
+    locked: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[HTTPLocked]]
     accepted: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPAccepted]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPAccepted]
+    ]
+    unprocessable: Union[
+        type[web.HTTPUnauthorized],
+        type[web.HTTPForbidden],
+        type[web.HTTPUnprocessableEntity],
     ]
 
     def __str__(self) -> str:
@@ -38,7 +43,7 @@ class ExpectedResponse(NamedTuple):
         return f"{self.__class__.__name__}({items})"
 
 
-def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
+def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:
     return (
         "user_role,expected",
         [
@@ -52,6 +57,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     forbidden=web.HTTPUnauthorized,
                     locked=web.HTTPUnauthorized,
                     accepted=web.HTTPUnauthorized,
+                    unprocessable=web.HTTPUnauthorized,
                 ),
             ),
             (
@@ -64,6 +70,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     forbidden=web.HTTPForbidden,
                     locked=web.HTTPForbidden,
                     accepted=web.HTTPForbidden,
+                    unprocessable=web.HTTPForbidden,
                 ),
             ),
             (
@@ -76,6 +83,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     forbidden=web.HTTPForbidden,
                     locked=HTTPLocked,
                     accepted=web.HTTPAccepted,
+                    unprocessable=web.HTTPUnprocessableEntity,
                 ),
             ),
             (
@@ -88,6 +96,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     forbidden=web.HTTPForbidden,
                     locked=HTTPLocked,
                     accepted=web.HTTPAccepted,
+                    unprocessable=web.HTTPUnprocessableEntity,
                 ),
             ),
         ],

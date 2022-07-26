@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-statements
 
 import asyncio
 import json
@@ -614,7 +615,7 @@ async def test_project_node_lifetime(
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {"service_key": "some/dynamic/key", "service_version": "1.3.4"}
+    body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id = (
@@ -634,7 +635,10 @@ async def test_project_node_lifetime(
     # create a new NOT dynamic node...
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
+    body = {
+        "service_key": "simcore/services/comp/key",
+        "service_version": "1.3.4",
+    }
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id_2 = node_id
