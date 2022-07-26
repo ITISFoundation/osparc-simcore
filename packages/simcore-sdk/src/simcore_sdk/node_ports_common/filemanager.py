@@ -3,8 +3,9 @@ import json
 
 # pylint: disable=too-many-arguments
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Optional
+from typing import IO, AsyncGenerator, Optional, Union
 
 import aiofiles
 from aiohttp import ClientError, ClientPayloadError, ClientSession, web
@@ -52,6 +53,16 @@ _TQDM_FILE_OPTIONS = dict(
     colour="yellow",
     miniters=1,
 )
+
+
+@dataclass(frozen=True)
+class UploadableFileObject:
+    file_object: IO
+    file_name: str
+    file_size: int
+
+
+UploadFile = Union[Path, UploadableFileObject]
 
 
 async def _get_location_id_from_location_name(
@@ -167,54 +178,9 @@ async def _file_chunk_reader(
             yield chunk
 
 
-async def _upload_file_object(
-    session: ClientSession,
-    file_object: IO,
-    file_name: str,
-    part_index: int,
-    file_offset: int,
-    this_file_chunk_size: int,
-    num_parts: int,
-    upload_url: AnyUrl,
-    pbar,
-) -> tuple[int, ETag]:
-    log.debug(
-        "--> uploading %s of %s, [%s]...",
-        f"{this_file_chunk_size=}",
-        f"{file_name=}",
-        f"{part_index+1}/{num_parts}",
-    )
-    response = await session.put(
-        upload_url,
-        data=_file_object_chunk_reader(
-            file_object,
-            offset=file_offset,
-            bytes_to_send=this_file_chunk_size,
-        ),
-        headers={
-            "Content-Length": f"{this_file_chunk_size}",
-        },
-    )
-    response.raise_for_status()
-    pbar.update(this_file_chunk_size)
-    # NOTE: the response from minio does not contain a json body
-    assert response.status == web.HTTPOk.status_code
-    assert response.headers
-    assert "Etag" in response.headers
-    received_e_tag = json.loads(response.headers["Etag"])
-    log.info(
-        "--> completed upload %s of %s, [%s], %s",
-        f"{this_file_chunk_size=}",
-        f"{file_name=}",
-        f"{part_index+1}/{num_parts}",
-        f"{received_e_tag=}",
-    )
-    return (part_index, received_e_tag)
-
-
 async def _upload_file_part(
     session: ClientSession,
-    file: Path,
+    file_to_upload: Union[Path, UploadableFileObject],
     part_index: int,
     file_offset: int,
     this_file_chunk_size: int,
@@ -225,16 +191,23 @@ async def _upload_file_part(
     log.debug(
         "--> uploading %s of %s, [%s]...",
         f"{this_file_chunk_size=}",
-        f"{file=}",
+        f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
     )
-    response = await session.put(
-        upload_url,
-        data=_file_chunk_reader(
-            file,
+    file_uploader = _file_chunk_reader(
+        file_to_upload,  # type: ignore
+        offset=file_offset,
+        bytes_to_send=this_file_chunk_size,
+    )
+    if isinstance(file_to_upload, UploadableFileObject):
+        file_uploader = _file_object_chunk_reader(
+            file_to_upload.file_object,
             offset=file_offset,
             bytes_to_send=this_file_chunk_size,
-        ),
+        )
+    response = await session.put(
+        upload_url,
+        data=file_uploader,
         headers={
             "Content-Length": f"{this_file_chunk_size}",
         },
@@ -249,69 +222,35 @@ async def _upload_file_part(
     log.info(
         "--> completed upload %s of %s, [%s], %s",
         f"{this_file_chunk_size=}",
-        f"{file=}",
+        f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
         f"{received_e_tag=}",
     )
     return (part_index, received_e_tag)
-
-
-async def _upload_file_object_to_presigned_links(
-    session: ClientSession,
-    file_upload_links: FileUploadSchema,
-    file_object: IO,
-    file_name: str,
-    file_size: int,
-) -> list[UploadedPart]:
-    file_chunk_size = int(file_upload_links.chunk_size)
-    num_urls = len(file_upload_links.urls)
-    last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
-    part_to_etag: list[UploadedPart] = []
-    with tqdm(
-        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
-    ) as pbar:
-        for index, upload_url in enumerate(file_upload_links.urls):
-            this_file_chunk_size = (
-                file_chunk_size if (index + 1) < num_urls else last_chunk_size
-            )
-            try:
-                index, e_tag = await _upload_file_object(
-                    session,
-                    file_object,
-                    file_name,
-                    index,
-                    index * file_chunk_size,
-                    this_file_chunk_size,
-                    num_urls,
-                    upload_url,
-                    pbar,
-                )
-                part_to_etag.append(UploadedPart(number=index + 1, e_tag=e_tag))
-
-            except ClientError as exc:
-                raise exceptions.S3TransferError(
-                    f"Could not upload file {file_name}:{exc}"
-                ) from exc
-    log.info(
-        "Uploaded %s, received %s",
-        f"{file_name=}",
-        f"{part_to_etag=}",
-    )
-    return part_to_etag
 
 
 async def _upload_file_to_presigned_links(
-    session: ClientSession, file_upload_links: FileUploadSchema, file: Path
+    session: ClientSession,
+    file_upload_links: FileUploadSchema,
+    file_to_upload: Union[Path, UploadableFileObject],
 ) -> list[UploadedPart]:
-    log.debug("Uploading from %s to %s", f"{file=}", f"{file_upload_links=}")
-    file_size = file.stat().st_size
+    file_size = 0
+    file_name = ""
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    log.debug("Uploading from %s to %s", f"{file_name=}", f"{file_upload_links=}")
 
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm(
-        desc=f"uploading {file}\n", total=file_size, **_TQDM_FILE_OPTIONS
+        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (
@@ -320,7 +259,7 @@ async def _upload_file_to_presigned_links(
             upload_tasks.append(
                 _upload_file_part(
                     session,
-                    file,
+                    file_to_upload,
                     index,
                     index * file_chunk_size,
                     this_file_chunk_size,
@@ -330,19 +269,23 @@ async def _upload_file_to_presigned_links(
                 )
             )
         try:
-            results = await logged_gather(*upload_tasks, log=log, max_concurrency=4)
+            results = await logged_gather(
+                *upload_tasks,
+                log=log,
+                max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
+            )
             part_to_etag = [
                 UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
             ]
             log.info(
                 "Uploaded %s, received %s",
-                f"{file=}",
+                f"{file_name=}",
                 f"{part_to_etag=}",
             )
             return part_to_etag
         except ClientError as exc:
             raise exceptions.S3TransferError(
-                f"Could not upload file {file}:{exc}"
+                f"Could not upload file {file_name}:{exc}"
             ) from exc
 
 
@@ -541,77 +484,28 @@ async def _abort_upload(
             raise
 
 
-async def upload_file_io(
-    *,
-    user_id: UserID,
-    store_id: Optional[LocationID],
-    store_name: Optional[LocationName],
-    s3_object: StorageFileID,
-    file_object: IO,
-    file_name: str,
-    file_size: int,
-    client_session: Optional[ClientSession] = None,
-) -> tuple[LocationID, ETag]:
-    log.debug(
-        "Uploading file object of %s to %s:%s@%s [%s]bytes",
-        f"{file_name=}",
-        f"{store_id=}",
-        f"{store_name=}",
-        f"{s3_object=}",
-        f"{file_size}",
-    )
-    async with ClientSessionContextManager(client_session) as session:
-        upload_links = None
-        try:
-            store_id, upload_links = await get_upload_links_from_s3(
-                user_id=user_id,
-                store_name=store_name,
-                store_id=store_id,
-                s3_object=s3_object,
-                client_session=session,
-                link_type=storage_client.LinkType.PRESIGNED,
-                file_size=ByteSize(file_size),
-            )
-            uploaded_parts = await _upload_file_object_to_presigned_links(
-                session, upload_links, file_object, file_name, file_size
-            )
-            # complete the upload
-            e_tag = await _complete_upload(
-                session,
-                upload_links,
-                uploaded_parts,
-            )
-        except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
-            log.error("The upload failed with an unexpected error:", exc_info=True)
-            if upload_links:
-                # abort the upload correctly, so it can revert back to last version
-                await _abort_upload(session, upload_links, reraise_exceptions=False)
-                log.warning("Upload aborted")
-            raise exceptions.S3TransferError from exc
-        return store_id, e_tag
-
-
 async def upload_file(
     *,
     user_id: UserID,
     store_id: Optional[LocationID],
     store_name: Optional[LocationName],
     s3_object: StorageFileID,
-    local_file_path: Path,
+    file_to_upload: UploadFile,
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> tuple[LocationID, ETag]:
-    """Uploads a file to S3
+    """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
-    :raises exceptions.NodeportsException
     :raises exceptions.S3InvalidPathError
-    :return: stored id
+    :raises exceptions.S3TransferError
+    :raises exceptions.NodeportsException
+    :return: stored id, S3 entity_tag
     """
     log.debug(
         "Uploading %s to %s:%s@%s",
-        f"{local_file_path=}",
+        f"{file_to_upload=}",
         f"{store_id=}",
         f"{store_name=}",
         f"{s3_object=}",
@@ -620,6 +514,7 @@ async def upload_file(
     use_rclone = (
         await r_clone.is_r_clone_available(r_clone_settings)
         and store_id == SIMCORE_LOCATION
+        and isinstance(file_to_upload, Path)
     )
 
     async with ClientSessionContextManager(client_session) as session:
@@ -634,21 +529,27 @@ async def upload_file(
                 link_type=storage_client.LinkType.S3
                 if use_rclone
                 else storage_client.LinkType.PRESIGNED,
-                file_size=ByteSize(local_file_path.stat().st_size),
+                file_size=ByteSize(
+                    file_to_upload.stat().st_size
+                    if isinstance(file_to_upload, Path)
+                    else file_to_upload.file_size
+                ),
             )
             # NOTE: in case of S3 upload, there are no multipart uploads, so this remains empty
             uploaded_parts: list[UploadedPart] = []
             if use_rclone:
                 assert r_clone_settings  # nosec
+                assert isinstance(file_to_upload, Path)  # nosec
                 await r_clone.sync_local_to_s3(
-                    local_file_path,
+                    file_to_upload,
                     r_clone_settings,
                     upload_links,
                 )
             else:
                 uploaded_parts = await _upload_file_to_presigned_links(
-                    session, upload_links, local_file_path
+                    session, upload_links, file_to_upload
                 )
+
             # complete the upload
             e_tag = await _complete_upload(
                 session,

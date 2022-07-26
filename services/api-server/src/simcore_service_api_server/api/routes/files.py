@@ -15,7 +15,8 @@ from fastapi.responses import HTMLResponse
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from simcore_sdk.node_ports_common.filemanager import upload_file_io
+from simcore_sdk.node_ports_common.filemanager import UploadableFileObject
+from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
@@ -95,16 +96,14 @@ async def upload_file(
     file_size = await asyncio.get_event_loop().run_in_executor(None, file.file.tell)
     await file.seek(0)
     # upload to S3 using pre-signed link
-    _, entity_tag = await upload_file_io(
+    _, entity_tag = await storage_upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=parse_obj_as(
             StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
         ),
-        file_object=file.file,
-        file_name=file.filename,
-        file_size=file_size,
+        file_to_upload=UploadableFileObject(file.file, file.filename, file_size),
     )
 
     file_meta.checksum = entity_tag
