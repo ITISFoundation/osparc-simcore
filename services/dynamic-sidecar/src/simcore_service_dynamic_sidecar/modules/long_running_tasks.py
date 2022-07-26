@@ -21,6 +21,7 @@ from ..core.utils import assemble_container_names
 from ..core.validation import validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
+from ..modules import nodeports
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 
@@ -210,3 +211,23 @@ async def task_save_state(
 
     await send_message(rabbitmq, "Finished state saving")
     progress.publish(message="finished state save", percent=0.1)
+
+
+async def task_ports_inputs_pull(
+    progress: TaskProgress,
+    port_keys: Optional[list[str]],
+    mounted_volumes: MountedVolumes,
+    rabbitmq: RabbitMQ,
+) -> int:
+    progress.publish(message="starting inputs pulling", percent=0.0)
+    port_keys = [] if port_keys is None else port_keys
+
+    await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
+    transferred_bytes = await nodeports.download_target_ports(
+        nodeports.PortTypeName.INPUTS,
+        mounted_volumes.disk_inputs_path,
+        port_keys=port_keys,
+    )
+    await send_message(rabbitmq, "Finished pulling inputs")
+    progress.publish(message="finished inputs pulling", percent=1.0)
+    return int(transferred_bytes)

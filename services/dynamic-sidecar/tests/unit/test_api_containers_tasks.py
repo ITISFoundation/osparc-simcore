@@ -24,6 +24,7 @@ from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from requests import request
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
@@ -187,6 +188,30 @@ def mock_data_manager(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture()
+def mock_nodeports(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
+        return_value=42,
+    )
+
+
+@pytest.fixture(
+    params=[
+        [],
+        None,
+        ["single_port"],
+        ["first_port", "second_port"],
+    ]
+)
+def mock_port_keys(request: FixtureRequest) -> list[str]:
+    return request.param
+
+
 # TESTS
 
 
@@ -225,6 +250,17 @@ async def _get_task_id_state_save(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks/state:save")
+    task_id: TaskId = response.json()
+    assert isinstance(task_id, str)
+    return task_id
+
+
+async def _get_task_id_task_ports_inputs_pull(
+    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+) -> TaskId:
+    response = await httpx_async_client.post(
+        f"/{API_VTAG}/containers/tasks/ports/inputs:pull", json=port_keys
+    )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -280,6 +316,7 @@ async def test_create_containers_task_invalid_yaml_spec(
         _get_task_id_docker_compose_down,
         _get_task_id_state_restore,
         _get_task_id_state_save,
+        _get_task_id_task_ports_inputs_pull,
     ],
 )
 async def test_task_is_unique(
@@ -289,7 +326,7 @@ async def test_task_is_unique(
 ) -> None:
     def _get_awaitable() -> Awaitable:
         return get_task_id_callable(
-            httpx_async_client=httpx_async_client, compose_spec=""
+            httpx_async_client=httpx_async_client, compose_spec="", port_keys=None
         )
 
     with mock_tasks():
@@ -372,3 +409,20 @@ async def test_container_save_state(
         status_poll_interval=FAST_STATUS_POLL,
     ) as result:
         assert result is None
+
+
+async def test_container_pull_input_ports(
+    httpx_async_client: AsyncClient,
+    client: Client,
+    mock_port_keys: list[str],
+    mock_nodeports: None,
+):
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_task_ports_inputs_pull(
+            httpx_async_client, mock_port_keys
+        ),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+    ) as result:
+        assert result is 42

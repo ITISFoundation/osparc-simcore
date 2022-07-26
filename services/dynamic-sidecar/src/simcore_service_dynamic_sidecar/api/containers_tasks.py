@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
@@ -17,6 +18,7 @@ from ..models.shared_store import SharedStore
 from ..modules.long_running_tasks import (
     ContainersCreate,
     task_create_service_containers,
+    task_ports_inputs_pull,
     task_restore_state,
     task_runs_docker_compose_down,
     task_save_state,
@@ -204,6 +206,40 @@ async def state_save_task(
             handler=task_save_state,
             unique=True,
             settings=settings,
+            mounted_volumes=mounted_volumes,
+            rabbitmq=rabbitmq,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks/ports/inputs:pull",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def pull_input_ports(
+    request: Request,
+    port_keys: Optional[list[str]] = None,
+    task_manager: TaskManager = Depends(get_task_manager),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> TaskId:
+    """Pull input ports data"""
+    assert request  # nosec
+
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=task_ports_inputs_pull,
+            unique=True,
+            port_keys=port_keys,
             mounted_volumes=mounted_volumes,
             rabbitmq=rabbitmq,
         )
