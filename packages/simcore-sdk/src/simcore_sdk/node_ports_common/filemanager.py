@@ -62,9 +62,6 @@ class UploadableFileObject:
     file_size: int
 
 
-UploadFile = Union[Path, UploadableFileObject]
-
-
 async def _get_location_id_from_location_name(
     user_id: UserID,
     store: LocationName,
@@ -492,7 +489,7 @@ async def upload_file(
     store_id: Optional[LocationID],
     store_name: Optional[LocationName],
     s3_object: StorageFileID,
-    file_to_upload: UploadFile,
+    file_to_upload: Union[Path, UploadableFileObject],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> tuple[LocationID, ETag]:

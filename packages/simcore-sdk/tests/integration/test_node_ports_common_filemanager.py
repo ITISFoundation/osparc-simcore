@@ -91,6 +91,59 @@ async def test_valid_upload_download(
     assert filecmp.cmp(download_file_path, file_path)
 
 
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        _file_size("10Mib"),
+        _file_size("103Mib"),
+    ],
+    ids=byte_size_ids,
+)
+async def test_valid_upload_download_using_file_object(
+    node_ports_config: None,
+    tmpdir: Path,
+    user_id: int,
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    s3_simcore_location: LocationID,
+    file_size: ByteSize,
+    create_file_of_size: Callable[[ByteSize, str], Path],
+    optional_r_clone: Optional[RCloneSettings],
+):
+    file_path = create_file_of_size(file_size, "test.test")
+
+    file_id = create_valid_file_uuid(file_path)
+    with file_path.open("rb") as file_object:
+        store_id, e_tag = await filemanager.upload_file(
+            user_id=user_id,
+            store_id=s3_simcore_location,
+            store_name=None,
+            s3_object=file_id,
+            file_to_upload=filemanager.UploadableFileObject(
+                file_object, file_path.name, file_path.stat().st_size
+            ),
+            r_clone_settings=optional_r_clone,
+        )
+    assert store_id == s3_simcore_location
+    assert e_tag
+    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+        user_id=user_id, store_id=store_id, s3_object=file_id
+    )
+    assert get_store_id == store_id
+    assert get_e_tag == e_tag
+
+    download_folder = Path(tmpdir) / "downloads"
+    download_file_path = await filemanager.download_file_from_s3(
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        store_name=None,
+        s3_object=file_id,
+        local_folder=download_folder,
+    )
+    assert download_file_path.exists()
+    assert download_file_path.name == "test.test"
+    assert filecmp.cmp(download_file_path, file_path)
+
+
 @pytest.fixture
 def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
     mocker.patch(
