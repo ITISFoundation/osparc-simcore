@@ -61,7 +61,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
+from ..errors import EntrypointContainerNotFoundError
 from .abc import DynamicSchedulerEvent
 from .events_utils import (
     all_containers_running,
@@ -99,6 +99,7 @@ RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 POLL_INTERVAL_CREATE_CONTAINERS: Final[PositiveFloat] = 1
 POLL_INTERVAL_REMOVE_CONTAINERS: Final[PositiveFloat] = 1
+POLL_INTERVAL_STATE_SAVE_OUTPUTS_PUSH: Final[PositiveFloat] = 1
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -637,24 +638,37 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
                 try:
                     tasks = [
-                        dynamic_sidecar_client.service_push_output_ports(
-                            dynamic_sidecar_endpoint,
+                        dynamic_sidecar_client.get_task_id_ports_outputs_push(
+                            dynamic_sidecar_endpoint
                         )
                     ]
+
                     # When enabled no longer uploads state via nodeports
                     # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
-                            dynamic_sidecar_client.service_save_state(
-                                dynamic_sidecar_endpoint,
+                            dynamic_sidecar_client.get_task_id_state_save(
+                                dynamic_sidecar_endpoint
                             )
                         )
 
-                    try:
-                        # at most 2 parallel tasks will be running
-                        await logged_gather(*tasks, max_concurrency=2)
-                    except NodeportsDidNotFindNodeError as err:
-                        logger.warning("%s", f"{err}")
+                    task_ids: list[TaskId] = await logged_gather(
+                        *tasks, max_concurrency=2
+                    )
+
+                    async def progress_save_state_outputs_push(
+                        message: str, percent: float, task_id: TaskId
+                    ) -> None:
+                        logger.debug("%s %.2f %s", task_id, percent, message)
+
+                    async with periodic_tasks_results(
+                        client,
+                        task_ids,
+                        task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+                        progress_callback=progress_save_state_outputs_push,
+                        status_poll_interval=POLL_INTERVAL_STATE_SAVE_OUTPUTS_PUSH,
+                    ):
+                        pass
 
                     logger.info("Ports data pushed by dynamic-sidecar")
                 except (BaseClientHTTPError, TaskClientResultError) as e:
