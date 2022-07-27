@@ -19,7 +19,7 @@ from ._thin import ThinDynamicSidecarClient
 logger = logging.getLogger(__name__)
 
 
-class DynamicSidecarClient:
+class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
     def __init__(self, app: FastAPI):
         self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
 
