@@ -41,6 +41,10 @@ will start the api-server in development-mode together with a postgres db initia
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
 - [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud
 
+## Clients
+
+- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-python-client)
+
 ## Acknowledgments
 
   Many of the ideas in this design were taken from the **excellent** work at https://github.com/nsidnev/fastapi-realworld-example-app by *Nik Sidnev* using the **extraordinary** [fastapi](https://fastapi.tiangolo.com/) package by *Sebastian Ramirez*.
