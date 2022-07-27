@@ -306,7 +306,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 dynamic_sidecar_client, dynamic_sidecar_endpoint
             ):
                 tasks: list[Coroutine[Any, Any, Any]] = [
-                    dynamic_sidecar_client.service_pull_output_ports(
+                    dynamic_sidecar_client.get_task_id_ports_outputs_pull(
                         dynamic_sidecar_endpoint
                     )
                 ]
@@ -314,11 +314,30 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 # S3 is used to store state paths
                 if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                     tasks.append(
-                        dynamic_sidecar_client.service_restore_state(
+                        dynamic_sidecar_client.get_task_id_state_restore(
                             dynamic_sidecar_endpoint
                         )
                     )
-                await logged_gather(*tasks)
+
+                task_ids: list[TaskId] = await logged_gather(*tasks, max_concurrency=2)
+                client = Client(
+                    app=app,
+                    async_client=dynamic_sidecar_client.get_async_client(),
+                    base_url=dynamic_sidecar_endpoint,
+                )
+
+                async def progress_state_restore_outputs_pull(
+                    message: str, percent: float, task_id: TaskId
+                ) -> None:
+                    logger.debug("%s %.2f %s", task_id, percent, message)
+
+                async with periodic_tasks_results(
+                    client,
+                    task_ids,
+                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+                    progress_callback=progress_state_restore_outputs_pull,
+                ):
+                    pass
 
                 # inside this directory create the missing dirs, fetch those form the labels
                 director_v0_client: DirectorV0Client = get_director_v0_client(app)
