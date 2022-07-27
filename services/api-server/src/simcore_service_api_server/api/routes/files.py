@@ -73,9 +73,7 @@ async def list_files(
     return list(files_meta)
 
 
-def _get_spooled_file_size(file_io: IO, content_length: Optional[str]) -> int:
-    if content_length:
-        return int(content_length)
+def _get_spooled_file_size(file_io: IO) -> int:
     file_io.seek(0, io.SEEK_END)
     file_size = file_io.tell()
     file_io.seek(0)
@@ -95,14 +93,18 @@ async def upload_file(
     # Next refactor should consider a solution that directly uploads from the client to S3
     # avoiding the data trafic via this service
 
+    file_size = await asyncio.get_event_loop().run_in_executor(
+        None, _get_spooled_file_size, file.file
+    )
     # assign file_id.
     file_meta: File = await File.create_from_uploaded(
-        file, file_size=content_length, created_at=datetime.utcnow().isoformat()
+        file, file_size=file_size, created_at=datetime.utcnow().isoformat()
     )
-    logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
-
-    file_size = await asyncio.get_event_loop().run_in_executor(
-        None, _get_spooled_file_size, file.file, content_length
+    logger.debug(
+        "Assigned id: %s of %s bytes (content-length), real size %s bytes",
+        file_meta,
+        content_length,
+        file_size,
     )
 
     # upload to S3 using pre-signed link
