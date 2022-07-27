@@ -18,6 +18,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
     TaskId,
+    periodic_tasks_results,
     periodic_task_result,
 )
 from servicelib.json_serialization import json_dumps
@@ -408,7 +409,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         )
 
         async def create_containers_progress(
-            message: str, percent: PositiveFloat
+            message: str, percent: PositiveFloat, _: TaskId
         ) -> None:
             # TODO: detect when images are pulling and change the status
             # of the service to pulling
@@ -590,7 +591,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             )
 
             async def remove_containers_progress(
-                message: str, percent: PositiveFloat
+                message: str, percent: PositiveFloat, _: TaskId
             ) -> None:
                 logger.debug("remove_containers_progress %.2f %s", percent, message)
 
