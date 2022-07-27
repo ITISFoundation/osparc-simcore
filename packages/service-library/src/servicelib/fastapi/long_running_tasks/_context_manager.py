@@ -20,8 +20,11 @@ class _ProgressManager:
     """
 
     def __init__(
-        self, update_callback: Optional[Callable[[str, float], Awaitable[None]]]
+        self,
+        task_id: TaskId,
+        update_callback: Optional[Callable[[str, float, TaskId], Awaitable[None]]],
     ) -> None:
+        self._task_id = task_id
         self._callback = update_callback
         self._last_message: Optional[str] = None
         self._last_percent: Optional[float] = None
@@ -42,7 +45,7 @@ class _ProgressManager:
             has_changes = True
 
         if has_changes:
-            await self._callback(self._last_message, self._last_percent)
+            await self._callback(self._last_message, self._last_percent, self._task_id)
 
 
 @asynccontextmanager
@@ -51,7 +54,7 @@ async def periodic_task_result(
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[Callable[[str, float], Awaitable[None]]] = None,
+    progress_callback: Optional[Callable[[str, float, TaskId], Awaitable[None]]] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """
@@ -72,7 +75,7 @@ async def periodic_task_result(
         the expected result
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
-    progress_manager = _ProgressManager(progress_callback)
+    progress_manager = _ProgressManager(task_id, progress_callback)
 
     async def _status_update() -> TaskStatus:
         task_status = await client.get_task_status(task_id)

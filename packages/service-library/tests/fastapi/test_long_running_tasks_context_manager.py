@@ -90,6 +90,11 @@ async def bg_task_app(
         yield app
 
 
+@pytest.fixture
+def mock_task_id() -> TaskId:
+    return parse_obj_as(TaskId, "fake_task_id")
+
+
 # TESTS
 
 
@@ -162,17 +167,18 @@ async def test_task_result_task_result_is_an_error(
 
 
 @pytest.mark.parametrize("repeat", [1, 2, 10])
-async def test_progress_updater(repeat: int) -> None:
+async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     counter = 0
     received = ()
 
-    async def progress_update(message: str, percent: float) -> None:
+    async def progress_update(message: str, percent: float, task_id: TaskId) -> None:
         nonlocal counter
         nonlocal received
         counter += 1
         received = (message, percent)
+        assert task_id == mock_task_id
 
-    progress_updater = _ProgressManager(progress_update)
+    progress_updater = _ProgressManager(mock_task_id, progress_update)
 
     # different from None and the last value only
     # triggers once
