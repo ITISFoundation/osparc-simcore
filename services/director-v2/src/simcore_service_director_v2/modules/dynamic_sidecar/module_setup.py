@@ -1,7 +1,7 @@
 from fastapi import FastAPI
+from servicelib.fastapi import long_running_tasks
 
 from . import api_client, scheduler
-from servicelib.fastapi import long_running_tasks
 
 
 def setup(app: FastAPI) -> None:

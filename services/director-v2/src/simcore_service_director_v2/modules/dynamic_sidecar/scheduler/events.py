@@ -4,7 +4,6 @@ from typing import Any, Coroutine, Final, Optional, cast
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from pydantic import PositiveFloat
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
@@ -14,6 +13,13 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from pydantic import AnyHttpUrl, PositiveFloat
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    TaskClientResultError,
+    TaskId,
+    periodic_task_result,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.utils.dict_utils import nested_update
@@ -64,11 +70,6 @@ from .events_utils import (
     get_director_v0_client,
     parse_containers_inspect,
 )
-from servicelib.fastapi.long_running_tasks.client import (
-    TaskId,
-    periodic_task_result,
-    Client,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 POLL_INTERVAL_CREATE_CONTAINERS: Final[PositiveFloat] = 1
+POLL_INTERVAL_REMOVE_CONTAINERS: Final[PositiveFloat] = 1
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -579,14 +581,39 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
                 app
             )
-            try:
-                await dynamic_sidecar_client.begin_service_destruction(
-                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            dynamic_sidecar_endpoint: AnyHttpUrl = (
+                scheduler_data.dynamic_sidecar.endpoint
+            )
+            client = Client(
+                app=app,
+                async_client=dynamic_sidecar_client.get_async_client(),
+                base_url=scheduler_data.dynamic_sidecar.endpoint,
+            )
+
+            async def remove_containers_progress(
+                message: str, percent: PositiveFloat
+            ) -> None:
+                logger.debug("remove_containers_progress %.2f %s", percent, message)
+
+            task_id: TaskId = (
+                await dynamic_sidecar_client.get_task_id_remove_containers(
+                    dynamic_sidecar_endpoint
                 )
-            except BaseClientHTTPError as e:
+            )
+
+            try:
+                async with periodic_task_result(
+                    client,
+                    task_id,
+                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
+                    progress_callback=remove_containers_progress,
+                    status_poll_interval=POLL_INTERVAL_REMOVE_CONTAINERS,
+                ):
+                    pass
+            except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.warning(
                     (
-                        "Could not contact dynamic-sidecar to begin destruction of "
+                        "There was an issue while removing contains for "
                         "%s\n%s. Will continue service removal!"
                     ),
                     scheduler_data.service_name,
