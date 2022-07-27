@@ -17,13 +17,14 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.long_running_tasks import (
     ContainersCreate,
+    task_containers_restart,
     task_create_service_containers,
     task_ports_inputs_pull,
+    task_ports_outputs_pull,
+    task_ports_outputs_push,
     task_restore_state,
     task_runs_docker_compose_down,
     task_save_state,
-    task_ports_outputs_pull,
-    task_ports_outputs_push,
 )
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
@@ -311,6 +312,47 @@ async def ports_outputs_push_task(
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
             rabbitmq=rabbitmq,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks:restart",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def containers_restart_task(
+    request: Request,
+    command_timeout: int = Query(
+        10, description="docker-compose stop command timeout default"
+    ),
+    task_manager: TaskManager = Depends(get_task_manager),
+    app: FastAPI = Depends(get_application),
+    settings: ApplicationSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+) -> TaskId:
+    """Removes the previously started service
+    and returns the docker-compose output
+    """
+    assert request  # nosec
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=task_containers_restart,
+            unique=True,
+            app=app,
+            settings=settings,
+            shared_store=shared_store,
+            rabbitmq=rabbitmq,
+            command_timeout=command_timeout,
         )
         return task_id
     except TaskAlreadyRunningError as e:

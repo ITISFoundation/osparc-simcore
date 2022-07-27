@@ -11,6 +11,7 @@ from simcore_sdk.node_data import data_manager
 from ..core.docker_compose_utils import (
     docker_compose_down,
     docker_compose_pull,
+    docker_compose_restart,
     docker_compose_rm,
     docker_compose_up,
 )
@@ -268,3 +269,44 @@ async def task_ports_outputs_push(
     )
     await send_message(rabbitmq, "Finished pulling outputs")
     progress.publish(message="finished outputs pushing", percent=1.0)
+
+
+async def task_containers_restart(
+    progress: TaskProgress,
+    app: FastAPI,
+    settings: ApplicationSettings,
+    shared_store: SharedStore,
+    rabbitmq: RabbitMQ,
+    command_timeout: int,
+) -> None:
+    progress.publish(message="starting containers restart", percent=0.0)
+    if shared_store.compose_spec is None:
+        raise RuntimeError("No spec for docker-compose command was found")
+
+    for container_name in shared_store.container_names:
+        await stop_log_fetching(app, container_name)
+
+    progress.publish(message="stopped log fetching", percent=0.1)
+
+    result = await docker_compose_restart(
+        shared_store.compose_spec,
+        settings,
+        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
+    )
+
+    if not result.success:
+        logger.warning(
+            "docker-compose restart finished with errors\n%s", result.message
+        )
+        raise RuntimeError(result.message)
+
+    progress.publish(message="containers restarted", percent=0.8)
+
+    for container_name in shared_store.container_names:
+        await start_log_fetching(app, container_name)
+
+    progress.publish(message="started log fetching", percent=0.9)
+
+    await send_message(rabbitmq, "Service was restarted please reload the UI")
+    await rabbitmq.send_event_reload_iframe()
+    progress.publish(message="started log fetching", percent=1.0)

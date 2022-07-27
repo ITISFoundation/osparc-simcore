@@ -127,7 +127,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContainersCreate"
+                "$ref": "#/components/schemas/simcore_service_dynamic_sidecar__api__containers__ContainersCreate"
               }
             }
           },
@@ -710,6 +710,346 @@
           }
         }
       }
+    },
+    "/v1/containers/tasks": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Create Service Containers Task",
+        "description": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
+        "operationId": "create_service_containers_task_v1_containers_tasks_post",
+        "parameters": [
+          {
+            "description": "docker-compose `up` and `pull` timeout to avoid hanging",
+            "required": false,
+            "schema": {
+              "title": "Long Running Compose Timeout",
+              "type": "integer",
+              "description": "docker-compose `up` and `pull` timeout to avoid hanging",
+              "default": 3600
+            },
+            "name": "long_running_compose_timeout",
+            "in": "query"
+          },
+          {
+            "description": "docker-compose config timeout (EXPERIMENTAL)",
+            "required": false,
+            "schema": {
+              "title": "Validation Timeout",
+              "type": "integer",
+              "description": "docker-compose config timeout (EXPERIMENTAL)",
+              "default": 60
+            },
+            "name": "validation_timeout",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/simcore_service_dynamic_sidecar__modules__long_running_tasks__ContainersCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Cannot validate submitted compose spec"
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks:down": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Runs Docker Compose Down Task",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "runs_docker_compose_down_task_v1_containers_tasks_down_post",
+        "parameters": [
+          {
+            "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "integer",
+              "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
+              "default": 10
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks/state:restore": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "State Restore Task",
+        "description": "Restores the state of the dynamic service\n\nWhen restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
+        "operationId": "state_restore_task_v1_containers_tasks_state_restore_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks/state:save": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "State Save Task",
+        "description": "Stores the state of the dynamic service",
+        "operationId": "state_save_task_v1_containers_tasks_state_save_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks/ports/inputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Ports Inputs Pull Task",
+        "description": "Pull input ports data",
+        "operationId": "ports_inputs_pull_task_v1_containers_tasks_ports_inputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks/ports/outputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Ports Outputs Pull Task",
+        "description": "Pull output ports data",
+        "operationId": "ports_outputs_pull_task_v1_containers_tasks_ports_outputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks/ports/outputs:push": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Ports Outputs Push Task",
+        "description": "Push output ports data",
+        "operationId": "ports_outputs_push_task_v1_containers_tasks_ports_outputs_push_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/tasks:restart": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Containers Restart Task",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "containers_restart_task_v1_containers_tasks_restart_post",
+        "parameters": [
+          {
+            "description": "docker-compose stop command timeout default",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "integer",
+              "description": "docker-compose stop command timeout default",
+              "default": 10
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -749,19 +1089,6 @@
             "items": {
               "type": "string"
             }
-          }
-        }
-      },
-      "ContainersCreate": {
-        "title": "ContainersCreate",
-        "required": [
-          "docker_compose_yaml"
-        ],
-        "type": "object",
-        "properties": {
-          "docker_compose_yaml": {
-            "title": "Docker Compose Yaml",
-            "type": "string"
           }
         }
       },
@@ -1010,6 +1337,32 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "simcore_service_dynamic_sidecar__api__containers__ContainersCreate": {
+        "title": "ContainersCreate",
+        "required": [
+          "docker_compose_yaml"
+        ],
+        "type": "object",
+        "properties": {
+          "docker_compose_yaml": {
+            "title": "Docker Compose Yaml",
+            "type": "string"
+          }
+        }
+      },
+      "simcore_service_dynamic_sidecar__modules__long_running_tasks__ContainersCreate": {
+        "title": "ContainersCreate",
+        "required": [
+          "docker_compose_yaml"
+        ],
+        "type": "object",
+        "properties": {
+          "docker_compose_yaml": {
+            "title": "Docker Compose Yaml",
+            "type": "string"
+          }
+        }
       }
     }
   }
