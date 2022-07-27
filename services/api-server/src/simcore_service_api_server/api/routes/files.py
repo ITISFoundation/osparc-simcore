@@ -81,6 +81,34 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
+@router.put("/stream", response_model=File)
+@cancel_on_disconnect
+async def stream_upload_file(
+    request: Request,
+    file_name: str,
+    file_checksum: str,
+    content_length: str = Header(...),
+    user_id: int = Depends(get_current_user_id),
+):
+    logger.debug(
+        "received file stream upload: %s",
+        f"{file_name=}, {file_checksum=}, {content_length=}",
+    )
+    # assign file_id.
+    file_meta: File = await File.create_from_stream(
+        file_name,
+        file_size=parse_obj_as(int, content_length),
+        content_type="application/bytes",
+        check_sum=file_checksum,
+        created_at=datetime.utcnow().isoformat(),
+    )
+
+    async for chunk in request.stream():
+        logger.warning("received %s", f"{chunk=}")
+
+    return file_meta
+
+
 @router.put("/content", response_model=File)
 @cancel_on_disconnect
 async def upload_file(
