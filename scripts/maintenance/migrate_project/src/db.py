@@ -85,7 +85,7 @@ def _project_summary(project: dict) -> str:
 
 
 def _file_summary(file_meta_data: dict) -> str:
-    return f"FILE: {file_meta_data['file_uuid']}"
+    return f"FILE: {file_meta_data['object_name']}"
 
 
 def get_project_and_files_to_migrate(
@@ -136,9 +136,9 @@ def get_project_and_files_to_migrate(
         )
         for result in files_metadata_cursor:
             file_meta_data = dict(result.items())
-            file_uuid = file_meta_data["file_uuid"]
+            object_name = file_meta_data["object_name"]
 
-            if _meta_data_exists_in_destination(dst_conn, file_uuid):
+            if _meta_data_exists_in_destination(dst_conn, object_name):
                 _red_message(f"SKIPPING, sync for {_file_summary(file_meta_data)}")
                 skipped_files_meta_data.append(file_meta_data)
                 continue
@@ -160,8 +160,8 @@ def get_project_and_files_to_migrate(
             % [x["uuid"] for x in skipped_projects],
         )
         _red_message(
-            "File meta data skipped file_uuid(primary keys) listing: %s"
-            % [x["file_uuid"] for x in skipped_files_meta_data],
+            "File meta data skipped object_name(primary keys) listing: %s"
+            % [x["object_name"] for x in skipped_files_meta_data],
         )
         raise Exception(
             "Could not continue migration, some projects or files already exist."
