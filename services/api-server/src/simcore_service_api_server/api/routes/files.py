@@ -9,11 +9,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from fastapi import File as FileParam
-from fastapi import Header, UploadFile, status
+from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
@@ -81,7 +82,9 @@ def _get_spooled_file_size(file_io: IO) -> int:
 
 
 @router.put("/content", response_model=File)
+@cancel_on_disconnect
 async def upload_file(
+    request: Request,
     file: UploadFile = FileParam(...),
     content_length: Optional[str] = Header(None),
     user_id: int = Depends(get_current_user_id),
@@ -92,6 +95,8 @@ async def upload_file(
     # passby service for all uploaded data which can be a lot.
     # Next refactor should consider a solution that directly uploads from the client to S3
     # avoiding the data trafic via this service
+
+    assert request  # nosec
 
     file_size = await asyncio.get_event_loop().run_in_executor(
         None, _get_spooled_file_size, file.file
