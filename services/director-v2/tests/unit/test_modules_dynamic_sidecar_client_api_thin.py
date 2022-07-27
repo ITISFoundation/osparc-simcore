@@ -382,3 +382,78 @@ async def test_post_containers_networks_detach(
         dynamic_sidecar_endpoint, container_id=container_id, network_id="network_id"
     )
     assert_responses(mock_response, response)
+
+
+# one test for all maybe???
+@pytest.mark.parametrize(
+    "handler_name, mock_endpoint, extra_kwargs",
+    [
+        pytest.param(
+            "post_containers_tasks",
+            "/containers/tasks",
+            dict(compose_spec="some_fake_compose_as_str"),
+            id="post_containers_tasks",
+        ),
+        pytest.param(
+            "post_containers_tasks_down",
+            "/containers/tasks:down",
+            {},
+            id="down",
+        ),
+        pytest.param(
+            "post_containers_tasks_state_restore",
+            "/containers/tasks/state:restore",
+            {},
+            id="state_restore",
+        ),
+        pytest.param(
+            "post_containers_tasks_state_save",
+            "/containers/tasks/state:save",
+            {},
+            id="state_save",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_inputs_pull",
+            "/containers/tasks/ports/inputs:pull",
+            {},
+            id="ports_inputs_pull",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_outputs_pull",
+            "/containers/tasks/ports/outputs:pull",
+            {},
+            id="ports_outputs_pull",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_outputs_push",
+            "/containers/tasks/ports/outputs:push",
+            {},
+            id="ports_outputs_push",
+        ),
+        pytest.param(
+            "post_containers_tasks_restart",
+            "/containers/tasks:restart",
+            {},
+            id="restart",
+        ),
+    ],
+)
+async def test_post_containers_tasks(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+    handler_name: str,
+    mock_endpoint: str,
+    extra_kwargs: dict[str, Any],
+) -> None:
+    mock_response = Response(status.HTTP_202_ACCEPTED, json="mocked_task_id")
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}{mock_endpoint}",
+        mock_response,
+        None,
+    )
+
+    thin_client_handler = getattr(thin_client, handler_name)
+    response = await thin_client_handler(dynamic_sidecar_endpoint, **extra_kwargs)
+    assert_responses(mock_response, response)

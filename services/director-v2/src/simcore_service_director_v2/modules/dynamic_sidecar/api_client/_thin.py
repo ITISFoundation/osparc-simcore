@@ -222,3 +222,74 @@ class ThinDynamicSidecarClient(BaseThinClient):
             json=dict(network_id=network_id),
             timeout=self._attach_detach_network_timeout,
         )
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks")
+        # change introduce in OAS version==1.1.0
+        return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_down(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks:down")
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_state_restore(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks/state:restore")
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_state_save(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks/state:save")
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_ports_inputs_pull(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(
+            dynamic_sidecar_endpoint, "/containers/tasks/ports/inputs:pull"
+        )
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_ports_outputs_pull(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(
+            dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:pull"
+        )
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_ports_outputs_push(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(
+            dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:push"
+        )
+        return await self._client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks_restart(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks:restart")
+        return await self._client.post(url)
