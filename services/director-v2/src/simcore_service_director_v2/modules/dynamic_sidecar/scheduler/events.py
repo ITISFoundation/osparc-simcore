@@ -4,6 +4,7 @@ from typing import Any, Coroutine, Final, Optional, cast
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from pydantic import PositiveFloat
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
@@ -63,6 +64,11 @@ from .events_utils import (
     get_director_v0_client,
     parse_containers_inspect,
 )
+from servicelib.fastapi.long_running_tasks.client import (
+    TaskId,
+    periodic_task_result,
+    Client,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +95,8 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 # - study is being opened (state and outputs are pulled)
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
+
+POLL_INTERVAL_CREATE_CONTAINERS: Final[PositiveFloat] = 1
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -372,6 +380,9 @@ class CreateUserServices(DynamicSchedulerEvent):
             "Getting docker compose spec for service %s", scheduler_data.service_name
         )
 
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
@@ -394,9 +405,30 @@ class CreateUserServices(DynamicSchedulerEvent):
             scheduler_data.service_name,
             compose_spec,
         )
-        await dynamic_sidecar_client.start_service_creation(
+
+        async def create_containers_progress(
+            message: str, percent: PositiveFloat
+        ) -> None:
+            # TODO: detect when images are pulling and change the status
+            # of the service to pulling
+            logger.debug("create_containers_progress %.2f %s", percent, message)
+
+        task_id: TaskId = await dynamic_sidecar_client.get_task_id_create_containers(
             dynamic_sidecar_endpoint, compose_spec
         )
+        client = Client(
+            app=app,
+            async_client=dynamic_sidecar_client.get_async_client(),
+            base_url=dynamic_sidecar_endpoint,
+        )
+        async with periodic_task_result(
+            client,
+            task_id,
+            task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
+            progress_callback=create_containers_progress,
+            status_poll_interval=POLL_INTERVAL_CREATE_CONTAINERS,
+        ):
+            pass
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
@@ -416,10 +448,6 @@ class CreateUserServices(DynamicSchedulerEvent):
                 f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
                 f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
             )
-
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
 
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(
@@ -570,6 +598,11 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             # - it is requested to save the state
             if (
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save
+                # TODO: ANE: this needs a review. I do not remember why it was put in place here!
+                # might want to remove it. Maybe it was to avoid some unexpected situation
+                # but if someone manually removes the proxy, the data will not be saved!
+                # Change to only save is started successfully (containers were started and the
+                # sidecar was marked as ready)
                 and await are_all_services_present(
                     node_uuid=scheduler_data.node_uuid,
                     dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
