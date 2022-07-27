@@ -394,6 +394,7 @@ async def test_create_containers_task_invalid_yaml_spec(
         _get_task_id_task_ports_inputs_pull,
         _get_task_id_task_ports_outputs_pull,
         _get_task_id_task_ports_outputs_push,
+        _get_task_id_task_containers_restart,
     ],
 )
 async def test_task_is_unique(
@@ -403,7 +404,10 @@ async def test_task_is_unique(
 ) -> None:
     def _get_awaitable() -> Awaitable:
         return get_task_id_callable(
-            httpx_async_client=httpx_async_client, compose_spec="", port_keys=None
+            httpx_async_client=httpx_async_client,
+            compose_spec="",
+            port_keys=None,
+            command_timeout=0,
         )
 
     with mock_tasks():
