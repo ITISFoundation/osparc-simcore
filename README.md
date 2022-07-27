@@ -31,9 +31,7 @@ The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline *
 The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
 To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
-
 ## Getting Started
-
 
 This is the common workflow to build and deploy locally:
 
@@ -67,11 +65,10 @@ for operations during development. This is a representation of ``simcore-stack``
 
 ![](docs/img/.stack-simcore-version.yml.png)
 
-
 ### Requirements
 
 To verify current base OS, Docker and Python build versions have a look at:
-- Travis CI [config](.travis.yml)
+
 - GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
 
 To build and run:
@@ -82,23 +79,20 @@ To build and run:
 
 To develop, in addition:
 
-- python 3.6 (this dependency will be deprecated soon)
+- python 3.9
 - nodejs for client part (this dependency will be deprecated soon)
 - swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)
 
 This project works and is developed under **linux (Ubuntu recommended)**.
 
-##### Setting up Other Operating Systems
+#### Setting up Other Operating Systems
 
 When developing on these platforms you are on your own.
 
-In **windows**, it works under [WSL] (windows subsystem for linux). Some details on the setup:
+In **windows**, it works under [WSL2] (windows subsystem for linux **version2**). Some details on the setup:
 
-- [Install](https://chocolatey.org/docs/installation) [chocolatey] package manager
-  - ``choco install docker-for-windows``
-  - ``choco install wsl`` or using [instructions](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
--  Follow **all details** on [how to setup flawlessly](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) docker for windows and [WSL]
+- Follow **all details** on [how to setup WSL2 with docker and ZSH](https://nickymeuleman.netlify.app/blog/linux-on-windows-wsl2-zsh-docker) docker for windows and [WSL2]
 
 In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
 
@@ -107,20 +101,25 @@ In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stack
 Updates are upgraded using a docker container and pip-sync.
 Build and start the container:
 
+```bash
     cd requirements/tools
     make build
     make shell
+```
 
 Once inside the container navigate to the service's requirements directory.
 
 To upgrade all requirements run:
 
+```bash
     make reqs
+```
 
 To upgrade a single requirement named `fastapi`run:
 
+```bash
     make reqs upgrade=fastapi
-
+```
 
 ## Releases
 
@@ -136,11 +135,9 @@ To upgrade a single requirement named `fastapi`run:
 
 Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
 
-
 ## License
 
 This project is licensed under the terms of the [MIT license](LICENSE).
-
 
 ---
 
@@ -151,4 +148,4 @@ This project is licensed under the terms of the [MIT license](LICENSE).
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
 [chocolatey]:https://chocolatey.org/
 [vscode]:https://code.visualstudio.com/
-[WSL]:https://docs.microsoft.com/en-us/windows/wsl/faq
+[WSL2]:https://docs.microsoft.com/en-us/windows/wsl
