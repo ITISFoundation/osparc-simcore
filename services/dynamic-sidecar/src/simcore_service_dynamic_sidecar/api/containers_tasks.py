@@ -22,6 +22,8 @@ from ..modules.long_running_tasks import (
     task_restore_state,
     task_runs_docker_compose_down,
     task_save_state,
+    task_ports_outputs_pull,
+    task_ports_outputs_push,
 )
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import (
@@ -224,7 +226,7 @@ async def state_save_task(
     },
 )
 @cancel_on_disconnect
-async def pull_input_ports(
+async def ports_inputs_pull_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
     task_manager: TaskManager = Depends(get_task_manager),
@@ -238,6 +240,73 @@ async def pull_input_ports(
         task_id = start_task(
             task_manager=task_manager,
             handler=task_ports_inputs_pull,
+            unique=True,
+            port_keys=port_keys,
+            mounted_volumes=mounted_volumes,
+            rabbitmq=rabbitmq,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks/ports/outputs:pull",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def ports_outputs_pull_task(
+    request: Request,
+    port_keys: Optional[list[str]] = None,
+    task_manager: TaskManager = Depends(get_task_manager),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> TaskId:
+    """Pull output ports data"""
+    assert request  # nosec
+
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=task_ports_outputs_pull,
+            unique=True,
+            port_keys=port_keys,
+            mounted_volumes=mounted_volumes,
+            rabbitmq=rabbitmq,
+        )
+        return task_id
+    except TaskAlreadyRunningError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@containers_router_tasks.post(
+    "/containers/tasks/ports/outputs:push",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Could not start a task while another is running"
+        },
+    },
+)
+@cancel_on_disconnect
+async def ports_outputs_push_task(
+    request: Request,
+    port_keys: Optional[list[str]] = None,
+    task_manager: TaskManager = Depends(get_task_manager),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+) -> TaskId:
+    """Push output ports data"""
+    assert request  # nosec
+    try:
+        task_id = start_task(
+            task_manager=task_manager,
+            handler=task_ports_outputs_push,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,

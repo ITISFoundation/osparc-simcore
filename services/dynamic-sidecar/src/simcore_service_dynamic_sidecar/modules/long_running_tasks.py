@@ -231,3 +231,40 @@ async def task_ports_inputs_pull(
     await send_message(rabbitmq, "Finished pulling inputs")
     progress.publish(message="finished inputs pulling", percent=1.0)
     return int(transferred_bytes)
+
+
+async def task_ports_outputs_pull(
+    progress: TaskProgress,
+    port_keys: Optional[list[str]],
+    mounted_volumes: MountedVolumes,
+    rabbitmq: RabbitMQ,
+) -> int:
+    progress.publish(message="starting outputs pulling", percent=0.0)
+    port_keys = [] if port_keys is None else port_keys
+
+    await send_message(rabbitmq, f"Pulling output for {port_keys}")
+    transferred_bytes = await nodeports.download_target_ports(
+        nodeports.PortTypeName.OUTPUTS,
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
+    )
+    await send_message(rabbitmq, "Finished pulling outputs")
+    progress.publish(message="finished outputs pulling", percent=1.0)
+    return int(transferred_bytes)
+
+
+async def task_ports_outputs_push(
+    progress: TaskProgress,
+    port_keys: Optional[list[str]],
+    mounted_volumes: MountedVolumes,
+    rabbitmq: RabbitMQ,
+) -> None:
+    progress.publish(message="starting outputs pushing", percent=0.0)
+    port_keys = [] if port_keys is None else port_keys
+
+    await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
+    await nodeports.upload_outputs(
+        mounted_volumes.disk_outputs_path, port_keys=port_keys
+    )
+    await send_message(rabbitmq, "Finished pulling outputs")
+    progress.publish(message="finished outputs pushing", percent=1.0)
