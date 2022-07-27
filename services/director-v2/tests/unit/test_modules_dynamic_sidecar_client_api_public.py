@@ -481,3 +481,75 @@ async def test_detach_container_from_network(
             )
             == None
         )
+
+
+@pytest.mark.parametrize(
+    "public_handler, thin_handler, extra_kwargs",
+    [
+        pytest.param(
+            "get_task_id_create_containers",
+            "post_containers_tasks",
+            dict(compose_spec="some_fake_spec"),
+            id="create_containers",
+        ),
+        pytest.param(
+            "get_task_id_remove_containers",
+            "post_containers_tasks_down",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_state_restore",
+            "post_containers_tasks_state_restore",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_state_save",
+            "post_containers_tasks_state_save",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_ports_inputs_pull",
+            "post_containers_tasks_ports_inputs_pull",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_ports_outputs_pull",
+            "post_containers_tasks_ports_outputs_pull",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_ports_outputs_push",
+            "post_containers_tasks_ports_outputs_push",
+            {},
+            id="remove_containers",
+        ),
+        pytest.param(
+            "get_task_id_restart",
+            "post_containers_tasks_restart",
+            {},
+            id="remove_containers",
+        ),
+    ],
+)
+async def test_get_task_ids(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    thin_handler: str,
+    public_handler: str,
+    extra_kwargs: dict[str, Any],
+) -> None:
+    mock_task_id = "mock_task_id"
+    with get_patched_client(
+        thin_handler,
+        return_value=Response(status_code=status.HTTP_202_ACCEPTED, json=mock_task_id),
+    ) as client:
+        public_client_method = getattr(client, public_handler)
+        assert (
+            await public_client_method(dynamic_sidecar_endpoint, **extra_kwargs)
+            == mock_task_id
+        )

@@ -6,6 +6,7 @@ from fastapi import FastAPI, status
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from pydantic import AnyHttpUrl
+from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.utils import logged_gather
 
 from ....models.schemas.dynamic_services import SchedulerData
@@ -280,6 +281,68 @@ class DynamicSidecarClient:
                 for container_name in containers_status
             ]
         )
+
+    async def get_task_id_create_containers(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, compose_spec: str
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks(
+            dynamic_sidecar_endpoint, compose_spec=compose_spec
+        )
+        return response.json()
+
+    async def get_task_id_remove_containers(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_down(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_state_restore(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_state_restore(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_state_save(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_state_save(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_ports_inputs_pull(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_ports_inputs_pull(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_ports_outputs_pull(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_ports_outputs_pull(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_ports_outputs_push(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_ports_outputs_push(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
+
+    async def get_task_id_restart(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> TaskId:
+        response = await self.thin_client.post_containers_tasks_restart(
+            dynamic_sidecar_endpoint
+        )
+        return response.json()
 
 
 async def setup(app: FastAPI) -> None:
