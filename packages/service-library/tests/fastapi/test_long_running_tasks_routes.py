@@ -9,7 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.fastapi.long_running_tasks.client import TaskResult, CancelResult
+from servicelib.fastapi.long_running_tasks.client import CancelResult, TaskResult
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,

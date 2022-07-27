@@ -14,8 +14,8 @@ from servicelib.fastapi.long_running_tasks._errors import (
     TaskClientResultError,
     TaskClientTimeoutError,
 )
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_tasks_results
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.client import periodic_task_result, Client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,
@@ -107,13 +107,13 @@ async def test_task_result(
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    async with periodic_task_result(
+    async with periodic_tasks_results(
         client,
-        task_id,
+        [task_id],
         task_timeout=10,
         status_poll_interval=TASK_SLEEP_INTERVAL / 3,
-    ) as result:
-        assert result == 42
+    ) as results:
+        assert results[0] == 42
 
     await _assert_task_removed(async_client, task_id, router_prefix)
 
@@ -129,16 +129,16 @@ async def test_task_result_times_out(
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     timeout = TASK_SLEEP_INTERVAL / 2
     with pytest.raises(TaskClientTimeoutError) as exec_info:
-        async with periodic_task_result(
+        async with periodic_tasks_results(
             client,
-            task_id,
+            [task_id],
             task_timeout=timeout,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
     assert (
         f"{exec_info.value}"
-        == f"Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
+        == f"Timed out after {timeout} seconds while awaiting '{[task_id]}' to complete"
     )
 
     await _assert_task_removed(async_client, task_id, router_prefix)
@@ -154,9 +154,9 @@ async def test_task_result_task_result_is_an_error(
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     with pytest.raises(TaskClientResultError) as exec_info:
-        async with periodic_task_result(
+        async with periodic_tasks_results(
             client,
-            task_id,
+            [task_id],
             task_timeout=10,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
@@ -178,22 +178,22 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
         received = (message, percent)
         assert task_id == mock_task_id
 
-    progress_updater = _ProgressManager(mock_task_id, progress_update)
+    progress_updater = _ProgressManager(progress_update)
 
     # different from None and the last value only
     # triggers once
     for _ in range(repeat):
-        await progress_updater.update(message="")
+        await progress_updater.update(mock_task_id, message="")
         assert counter == 1
         assert received == ("", None)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=0.0)
+        await progress_updater.update(mock_task_id, percent=0.0)
         assert counter == 2
         assert received == ("", 0.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=1.0, message="done")
+        await progress_updater.update(mock_task_id, percent=1.0, message="done")
         assert counter == 3
         assert received == ("done", 1.0)
 
@@ -201,21 +201,21 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     # will not trigger an event
 
     for _ in range(repeat):
-        await progress_updater.update(message=None)
+        await progress_updater.update(mock_task_id, message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=None)
+        await progress_updater.update(mock_task_id, percent=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=None, message=None)
+        await progress_updater.update(mock_task_id, percent=None, message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update()
+        await progress_updater.update(mock_task_id)
         assert counter == 3
         assert received == ("done", 1.0)

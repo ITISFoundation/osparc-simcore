@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from ._dependencies import get_task_manager
 from ._errors import TaskNotCompletedError
-from ._models import TaskId, TaskResult, TaskStatus, CancelResult
+from ._models import CancelResult, TaskId, TaskResult, TaskStatus
 from ._task import TaskManager
 
 router = APIRouter(prefix="/task")
