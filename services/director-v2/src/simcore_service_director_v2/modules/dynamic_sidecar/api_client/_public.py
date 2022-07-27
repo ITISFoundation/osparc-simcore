@@ -3,6 +3,7 @@ from collections import deque
 from typing import Any, Optional
 
 from fastapi import FastAPI, status
+from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from pydantic import AnyHttpUrl
@@ -22,6 +23,9 @@ logger = logging.getLogger(__name__)
 class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
     def __init__(self, app: FastAPI):
         self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
+
+    def get_async_client(self) -> AsyncClient:
+        return self.thin_client.get_async_client()
 
     async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
         """returns True if service is UP and running else False"""

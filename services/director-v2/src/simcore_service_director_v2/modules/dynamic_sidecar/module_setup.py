@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 
 from . import api_client, scheduler
+from servicelib.fastapi import long_running_tasks
 
 
 def setup(app: FastAPI) -> None:
+    long_running_tasks.client.setup(app)
+
     async def on_startup() -> None:
         await api_client.setup(app)
         await scheduler.setup_scheduler(app)

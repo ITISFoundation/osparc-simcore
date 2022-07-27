@@ -21,6 +21,7 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
     - `ClientHttpError` wraps httpx.HttpError errors
     """
 
+    SKIP_METHODS: set[str] = BaseThinClient.SKIP_METHODS | {"get_async_client"}
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
@@ -65,6 +66,9 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
         api_version = "" if no_api_version else f"/{self.API_VERSION}"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
+    def get_async_client(self) -> AsyncClient:
+        return self._client
+
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
@@ -84,6 +88,7 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
     async def post_containers(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
     ) -> Response:
+        # TODO: remove this
         # NOTE: this sometimes takes longer that the default timeout, maybe raise timeout here as well!
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         # change introduce in OAS version==1.1.0

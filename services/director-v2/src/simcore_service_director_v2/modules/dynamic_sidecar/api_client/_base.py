@@ -119,7 +119,7 @@ def expect_status(expected_code: int):
 
 
 class BaseThinClient:
-    SKIP_METHODS: set[str] = {"close"}
+    SKIP_METHODS: set[str] = {"close", "get_async_client"}
 
     def __init__(
         self,
