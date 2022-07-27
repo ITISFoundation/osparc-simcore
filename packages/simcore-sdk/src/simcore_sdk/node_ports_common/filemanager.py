@@ -151,26 +151,26 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
 
 
 async def _file_object_chunk_reader(
-    file_object: IO, *, offset: int, bytes_to_send: int
+    file_object: IO, *, offset: int, total_bytes_to_read: int
 ) -> AsyncGenerator[bytes, None]:
-    chunk_size = CHUNK_SIZE
     await asyncio.get_event_loop().run_in_executor(None, file_object.seek, offset)
     num_read_bytes = 0
     while chunk := await asyncio.get_event_loop().run_in_executor(
-        None, file_object.read, min(chunk_size, bytes_to_send - num_read_bytes)
+        None, file_object.read, min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
     ):
         num_read_bytes += len(chunk)
         yield chunk
 
 
 async def _file_chunk_reader(
-    file: Path, *, offset: int, bytes_to_send: int
+    file: Path, *, offset: int, total_bytes_to_read: int
 ) -> AsyncGenerator[bytes, None]:
-    chunk_size = CHUNK_SIZE
     async with aiofiles.open(file, "rb") as f:
         await f.seek(offset)
         num_read_bytes = 0
-        while chunk := await f.read(min(chunk_size, bytes_to_send - num_read_bytes)):
+        while chunk := await f.read(
+            min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
+        ):
             num_read_bytes += len(chunk)
             yield chunk
 
@@ -180,37 +180,37 @@ async def _upload_file_part(
     file_to_upload: Union[Path, UploadableFileObject],
     part_index: int,
     file_offset: int,
-    this_file_chunk_size: int,
+    file_part_size: int,
     num_parts: int,
     upload_url: AnyUrl,
     pbar,
 ) -> tuple[int, ETag]:
     log.debug(
         "--> uploading %s of %s, [%s]...",
-        f"{this_file_chunk_size=}",
+        f"{file_part_size=} bytes",
         f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
     )
     file_uploader = _file_chunk_reader(
         file_to_upload,  # type: ignore
         offset=file_offset,
-        bytes_to_send=this_file_chunk_size,
+        total_bytes_to_read=file_part_size,
     )
     if isinstance(file_to_upload, UploadableFileObject):
         file_uploader = _file_object_chunk_reader(
             file_to_upload.file_object,
             offset=file_offset,
-            bytes_to_send=this_file_chunk_size,
+            total_bytes_to_read=file_part_size,
         )
     response = await session.put(
         upload_url,
         data=file_uploader,
         headers={
-            "Content-Length": f"{this_file_chunk_size}",
+            "Content-Length": f"{file_part_size}",
         },
     )
     response.raise_for_status()
-    pbar.update(this_file_chunk_size)
+    pbar.update(file_part_size)
     # NOTE: the response from minio does not contain a json body
     assert response.status == web.HTTPOk.status_code
     assert response.headers
@@ -218,7 +218,7 @@ async def _upload_file_part(
     received_e_tag = json.loads(response.headers["Etag"])
     log.info(
         "--> completed upload %s of %s, [%s], %s",
-        f"{this_file_chunk_size=}",
+        f"{file_part_size=}",
         f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
         f"{received_e_tag=}",
