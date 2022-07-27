@@ -89,13 +89,19 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const tabs = [{
         label: this.tr("STUDIES"),
         buildLayout: this.__createStudyBrowser
-      }, {
-        label: this.tr("TEMPLATES"),
-        buildLayout: this.__createTemplateBrowser
-      }, {
-        label: this.tr("SERVICES"),
-        buildLayout: this.__createServiceBrowser
       }];
+      if (!osparc.utils.Utils.isProduct("tis")) {
+        tabs.push({
+          label: this.tr("TEMPLATES"),
+          buildLayout: this.__createTemplateBrowser
+        });
+      }
+      if (!osparc.utils.Utils.isProduct("tis")) {
+        tabs.push({
+          label: this.tr("SERVICES"),
+          buildLayout: this.__createServiceBrowser
+        });
+      }
       if (!osparc.utils.Utils.isProduct("s4l")) {
         tabs.push({
           label: this.tr("DATA"),

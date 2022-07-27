@@ -88,8 +88,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           converter: output => osparc.utils.StatusUI.getIconSource(output),
           onUpdate: (source, target) => {
             const elem = target.getContentElement();
-            const state = source.get(check);
-            if (["busy", "starting", "pulling", "pending", "connecting"].includes(state)) {
+            if (target.getSource() && target.getSource().includes("circle-notch")) {
               osparc.ui.basic.NodeStatusUI.addClass(elem, "rotate");
             } else {
               osparc.ui.basic.NodeStatusUI.removeClass(elem, "rotate");

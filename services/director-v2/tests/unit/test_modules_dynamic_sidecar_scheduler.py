@@ -204,24 +204,6 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 
 
 @pytest.fixture
-def mock_docker_api(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecars_to_observe",
-        autospec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.are_all_services_present",
-        autospec=True,
-        return_value=True,
-    )
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
-        return_value=(ServiceState.PENDING, ""),
-    )
-
-
-@pytest.fixture
 def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",

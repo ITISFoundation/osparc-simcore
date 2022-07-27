@@ -211,6 +211,7 @@ async def random_project_with_files(
     return project, src_projects_list
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_copy_folders_from_valid_project(
     client: TestClient,
     user_id: UserID,

@@ -15,7 +15,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import api_version_prefix as VTAG
-from ..director_v2_core import DirectorServiceError
+from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
@@ -64,7 +64,7 @@ async def open_project(request: web.Request) -> web.Response:
             raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
-        await projects_api.start_project_interactive_services(
+        await projects_api.run_project_dynamic_services(
             request, project, req_ctx.user_id
         )
 

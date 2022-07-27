@@ -8,27 +8,17 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any, AsyncIterable, Optional
+from typing import Any, Optional
 
 import pytest
 from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
     run_sequentially_in_context,
-    stop_sequential_workers,
 )
 
 RETRIES = 10
 DIFFERENT_CONTEXTS_COUNT = 10
-
-
-@pytest.fixture
-async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
-    yield
-    # NOTE
-    # required when shutting down the application or ending tests
-    # otherwise errors will occur when closing the loop
-    await stop_sequential_workers()
 
 
 @pytest.fixture

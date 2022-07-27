@@ -15,7 +15,8 @@ from servicelib.aiohttp.rest_routing import (
 from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
-from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
+from .director_v2_core_computations import ComputationsApi, set_client
+from .director_v2_core_utils import DefaultProjectRunPolicy
 from .rest import setup_rest
 
 log = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ def setup_director_v2(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
-    set_client(app, DirectorV2ApiClient(app))
+    set_client(app, ComputationsApi(app))
 
     # routes at the web-server app
     setup_rest(app)

@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import (
     Owner,
@@ -31,6 +32,7 @@ from models_library.projects_state import (
 )
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
@@ -38,7 +40,6 @@ from servicelib.aiohttp.application_keys import (
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
-from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog_client, director_v2_api, storage_api
@@ -78,6 +79,11 @@ async def validate_project(app: web.Application, project: dict):
     )
 
 
+#
+# GET project -----------------------------------------------------
+#
+
+
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,
@@ -114,93 +120,9 @@ async def get_project_for_user(
     return project
 
 
-# NOTE: Needs refactoring after access-layer in storage. DO NOT USE but keep
-#       here since it documents well the concept
 #
-# async def clone_project(
-#     request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str = ""
-# ) -> Dict:
-#     """Clones both document and data folders of a project
+# DELETE project -----------------------------------------------------
 #
-#     - document
-#         - get new identifiers for project and nodes
-#     - data folders
-#         - folder name composes as project_uuid/node_uuid
-#         - data is deep-copied to new folder corresponding to new identifiers
-#         - managed by storage uservice
-#     """
-#     cloned_project, nodes_map = clone_project_document(project, forced_copy_project_id)
-#
-#     updated_project = await copy_data_folders_from_project(
-#         request.app, project, cloned_project, nodes_map, user_id
-#     )
-#
-#     return updated_project
-
-
-async def start_project_interactive_services(
-    request: web.Request, project: dict, user_id: PositiveInt
-) -> None:
-    # first get the services if they already exist
-    log.debug(
-        "getting running interactive services of project %s for user %s",
-        f"{project['uuid']=}",
-        f"{user_id=}",
-    )
-    running_services = await director_v2_api.get_services(
-        request.app, user_id, project["uuid"]
-    )
-    log.debug(
-        "Currently running services %s for user %s",
-        f"{running_services=}",
-        f"{user_id=}",
-    )
-
-    running_service_uuids = [x["service_uuid"] for x in running_services]
-    # now start them if needed
-    project_needed_services = {
-        service_uuid: service
-        for service_uuid, service in project["workbench"].items()
-        if _is_node_dynamic(service["key"])
-        and service_uuid not in running_service_uuids
-    }
-    log.debug("Starting services: %s", f"{project_needed_services=}")
-
-    unique_project_needed_services = set(project_needed_services.keys())
-    service_resources_result: list[ServiceResourcesDict] = await logged_gather(
-        *[
-            get_project_node_resources(request.app, project=project, node_id=node_uuid)
-            for node_uuid in unique_project_needed_services
-        ],
-        reraise=True,
-    )
-    service_resources_search: dict[str, ServiceResourcesDict] = dict(
-        zip(unique_project_needed_services, service_resources_result)
-    )
-
-    start_service_tasks = [
-        director_v2_api.start_service(
-            request.app,
-            user_id=user_id,
-            project_id=project["uuid"],
-            service_key=service["key"],
-            service_version=service["version"],
-            service_uuid=service_uuid,
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources_search[service_uuid],
-        )
-        for service_uuid, service in project_needed_services.items()
-    ]
-    results = await logged_gather(*start_service_tasks, reraise=True)
-    log.debug("Services start result %s", results)
-    for entry in results:
-        if entry:
-            # if the status is present in the results for the start_service
-            # it means that the API call failed
-            # also it is enforced that the status is different from 200 OK
-            if entry.get("status", 200) != 200:
-                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 async def submit_delete_project_task(
@@ -240,144 +162,14 @@ def get_delete_project_task(
     return None
 
 
-@observe(event="SIGNAL_USER_DISCONNECTED")
-async def user_disconnected(
-    user_id: int, client_session_id: str, app: web.Application
-) -> None:
-    # check if there is a project resource
-    with managed_resource(user_id, client_session_id, app) as rt:
-        list_projects: list[str] = await rt.find(PROJECT_ID_KEY)
-
-    await logged_gather(
-        *[
-            retrieve_and_notify_project_locked_state(
-                user_id, prj, app, notify_only_prj_user=True
-            )
-            for prj in list_projects
-        ]
-    )
-
-
-async def retrieve_and_notify_project_locked_state(
-    user_id: int,
-    project_uuid: str,
-    app: web.Application,
-    notify_only_prj_user: bool = False,
-):
-    project = await get_project_for_user(app, project_uuid, user_id, include_state=True)
-    await notify_project_state_update(
-        app, project, notify_only_user=user_id if notify_only_prj_user else None
-    )
-
-
-@contextlib.asynccontextmanager
-async def lock_with_notification(
-    app: web.Application,
-    project_uuid: str,
-    status: ProjectStatus,
-    user_id: int,
-    user_name: UserNameDict,
-    notify_users: bool = True,
-):
-    try:
-        async with lock_project(
-            app,
-            project_uuid,
-            status,
-            user_id,
-            user_name,
-        ):
-            log.debug(
-                "Project [%s] lock acquired",
-                f"{project_uuid=}",
-            )
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-            yield
-        log.debug(
-            "Project [%s] lock released",
-            f"{project_uuid=}",
-        )
-    except ProjectLockError:
-        # someone else has already the lock?
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        log.error(
-            "Project [%s] already locked in state '%s'. Please check with support.",
-            f"{project_uuid=}",
-            f"{prj_states.locked.status=}",
-        )
-        raise
-    finally:
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
-
-
-async def remove_project_dynamic_services(
-    user_id: int,
-    project_uuid: str,
-    app: web.Application,
-    notify_users: bool = True,
-    user_name: Optional[UserNameDict] = None,
-) -> None:
-    """
-
-    :raises UserNotFoundError:
-    """
-
-    # NOTE: during the closing process, which might take awhile,
-    # the project is locked so no one opens it at the same time
-    log.debug(
-        "removing project interactive services for project [%s] and user [%s]",
-        project_uuid,
-        user_id,
-    )
-    try:
-        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
-
-        # TODO: logic around save_state is not ideal, but it remains with the same logic
-        # as before until it is properly refactored
-        user_role: Optional[UserRole] = None
-        try:
-            user_role = await get_user_role(app, user_id)
-        except UserNotFoundError:
-            user_role = None
-
-        save_state: bool = True
-        if user_role is None or user_role <= UserRole.GUEST:
-            save_state = False
-        # -------------------
-
-        async with lock_with_notification(
-            app,
-            project_uuid,
-            ProjectStatus.CLOSING,
-            user_id,
-            user_name_data,
-            notify_users=notify_users,
-        ):
-            # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(director_v2_api.DirectorServiceError):
-                # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                await director_v2_api.stop_services(
-                    app=app,
-                    user_id=user_id,
-                    project_id=project_uuid,
-                    save_state=save_state,
-                )
-    except ProjectLockError:
-        pass
-
-
-## PROJECT NODES -----------------------------------------------------
+#
+# PROJECT NODES -----------------------------------------------------
+#
 
 
 async def add_project_node(
     request: web.Request,
-    project_uuid: str,
+    project: dict[str, Any],
     user_id: int,
     service_key: str,
     service_version: str,
@@ -387,10 +179,37 @@ async def add_project_node(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
-        project_uuid,
+        project["uuid"],
         user_id,
     )
     node_uuid = service_id if service_id else str(uuid4())
+
+    # ensure the project is up-to-date in the database prior to start any potential service
+    project_workbench = project.get("workbench", {})
+    assert node_uuid not in project_workbench  # nosec
+    project_workbench[node_uuid] = jsonable_encoder(
+        Node.parse_obj(
+            {
+                "key": service_key,
+                "version": service_version,
+                "label": service_key.split("/")[-1],
+            }
+        ),
+        exclude_unset=True,
+    )
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    await db.replace_user_project(
+        new_project_data=project,
+        user_id=user_id,
+        project_uuid=project["uuid"],
+    )
+    # also ensure the project is updated by director-v2 since services
+    # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
+    await director_v2_api.create_or_update_pipeline(
+        request.app, user_id, project["uuid"]
+    )
+
     if _is_node_dynamic(service_key):
         service_resources: ServiceResourcesDict = await get_project_node_resources(
             request.app,
@@ -399,11 +218,11 @@ async def add_project_node(
                     f"{node_uuid}": {"key": service_key, "version": service_version}
                 }
             },
-            node_id=UUID(node_uuid),
+            node_id=NodeID(node_uuid),
         )
-        await director_v2_api.start_service(
+        await director_v2_api.run_dynamic_service(
             request.app,
-            project_id=project_uuid,
+            project_id=project["uuid"],
             user_id=user_id,
             service_key=service_key,
             service_version=service_version,
@@ -422,15 +241,19 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_v2_api.get_services(
+    list_of_services = await director_v2_api.get_dynamic_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
     for service in list_of_services:
         if service["service_uuid"] == node_uuid:
-            log.error("deleting service=%s", service)
+            log.info(
+                "Stopping dynamic %s in prj/node=%s",
+                f"{service}",
+                f"{project_uuid}/{node_uuid}",
+            )
             # no need to save the state of the node when deleting it
-            await director_v2_api.stop_service(
+            await director_v2_api.stop_dynamic_service(
                 request.app,
                 node_uuid,
                 save_state=False,
@@ -564,71 +387,6 @@ async def is_node_id_present_in_any_project_workbench(
     return await db.node_id_exists(node_id)
 
 
-async def notify_project_state_update(
-    app: web.Application,
-    project: dict,
-    notify_only_user: Optional[int] = None,
-) -> None:
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
-            "data": {
-                "project_uuid": project["uuid"],
-                "data": project["state"],
-            },
-        }
-    ]
-
-    if notify_only_user:
-        await send_messages(app, user_id=str(notify_only_user), messages=messages)
-    else:
-        rooms_to_notify = [
-            f"{gid}"
-            for gid, rights in project["accessRights"].items()
-            if rights["read"]
-        ]
-        for room in rooms_to_notify:
-            await send_group_messages(app, room, messages)
-
-
-async def notify_project_node_update(
-    app: web.Application,
-    project: dict,
-    node_id: str,
-    errors: Optional[list[ErrorDict]],
-) -> None:
-    rooms_to_notify = [
-        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
-    ]
-
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-            "data": {
-                "project_id": project["uuid"],
-                "node_id": node_id,
-                # as GET projects/{project_id}/nodes/{node_id}
-                "data": project["workbench"][node_id],
-                # as GET projects/{project_id}/nodes/{node_id}/errors
-                "errors": errors,
-            },
-        }
-    ]
-
-    for room in rooms_to_notify:
-        await send_group_messages(app, room, messages)
-
-
-async def post_trigger_connected_service_retrieve(
-    app: web.Application, **kwargs
-) -> None:
-    await fire_and_forget_task(
-        trigger_connected_service_retrieve(app, **kwargs),
-        task_suffix_name="trigger_connected_service_retrieve",
-        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-
 async def trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
@@ -663,7 +421,19 @@ async def trigger_connected_service_retrieve(
     await logged_gather(*update_tasks)
 
 
-# PROJECT STATE -------------------------------------------------------------------
+async def post_trigger_connected_service_retrieve(
+    app: web.Application, **kwargs
+) -> None:
+    await fire_and_forget_task(
+        trigger_connected_service_retrieve(app, **kwargs),
+        task_suffix_name="trigger_connected_service_retrieve",
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
+
+
+#
+# OPEN PROJECT -------------------------------------------------------------------
+#
 
 
 async def _user_has_another_client_open(
@@ -744,6 +514,11 @@ async def try_open_project_for_user(
         return False
 
 
+#
+# CLOSE PROJECT -------------------------------------------------------------------
+#
+
+
 async def try_close_project_for_user(
     user_id: int,
     project_uuid: str,
@@ -784,6 +559,11 @@ async def try_close_project_for_user(
             project_uuid,
             {user_session.user_id for user_session in user_to_session_ids},
         )
+
+
+#
+#  PROJECT STATE -------------------------------------------------------------------
+#
 
 
 async def _get_project_lock_state(
@@ -924,6 +704,11 @@ async def add_project_states_for_user(
     return project
 
 
+#
+# SERVICE RESOURCES -----------------------------------
+#
+
+
 async def get_project_node_resources(
     app: web.Application, project: dict[str, Any], node_id: NodeID
 ) -> ServiceResourcesDict:
@@ -938,3 +723,247 @@ async def set_project_node_resources(
     app: web.Application, project: dict[str, Any], node_id: NodeID
 ):
     raise NotImplementedError("cannot change resources for now")
+
+
+#
+# PROJECT DYNAMIC SERVICES -----------------------------------------------------
+#
+
+
+async def run_project_dynamic_services(
+    request: web.Request, project: dict, user_id: PositiveInt
+) -> None:
+    # first get the services if they already exist
+    log.debug(
+        "getting running interactive services of project %s for user %s",
+        f"{project['uuid']=}",
+        f"{user_id=}",
+    )
+    running_services = await director_v2_api.get_dynamic_services(
+        request.app, user_id, project["uuid"]
+    )
+    log.debug(
+        "Currently running services %s for user %s",
+        f"{running_services=}",
+        f"{user_id=}",
+    )
+
+    running_service_uuids = [d["service_uuid"] for d in running_services]
+    # now start them if needed
+    project_needed_services = {
+        service_uuid: service
+        for service_uuid, service in project["workbench"].items()
+        if _is_node_dynamic(service["key"])
+        and service_uuid not in running_service_uuids
+    }
+    log.debug("Starting services: %s", f"{project_needed_services=}")
+
+    unique_project_needed_services = set(project_needed_services.keys())
+    service_resources_result: list[ServiceResourcesDict] = await logged_gather(
+        *[
+            get_project_node_resources(request.app, project=project, node_id=node_uuid)
+            for node_uuid in unique_project_needed_services
+        ],
+        reraise=True,
+    )
+    service_resources_search: dict[str, ServiceResourcesDict] = dict(
+        zip(unique_project_needed_services, service_resources_result)
+    )
+
+    start_service_tasks = [
+        director_v2_api.run_dynamic_service(
+            request.app,
+            user_id=user_id,
+            project_id=project["uuid"],
+            service_key=service["key"],
+            service_version=service["version"],
+            service_uuid=service_uuid,
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+            service_resources=service_resources_search[service_uuid],
+        )
+        for service_uuid, service in project_needed_services.items()
+    ]
+    results = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", results)
+    for entry in results:
+        if entry:
+            # if the status is present in the results for the start_service
+            # it means that the API call failed
+            # also it is enforced that the status is different from 200 OK
+            if entry.get("status", 200) != 200:
+                log.error("Error while starting dynamic service %s", f"{entry=}")
+
+
+async def remove_project_dynamic_services(
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_users: bool = True,
+    user_name: Optional[UserNameDict] = None,
+) -> None:
+    """
+
+    :raises UserNotFoundError:
+    """
+
+    # NOTE: during the closing process, which might take awhile,
+    # the project is locked so no one opens it at the same time
+    log.debug(
+        "removing project interactive services for project [%s] and user [%s]",
+        project_uuid,
+        user_id,
+    )
+    try:
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+        # TODO: logic around save_state is not ideal, but it remains with the same logic
+        # as before until it is properly refactored
+        user_role: Optional[UserRole] = None
+        try:
+            user_role = await get_user_role(app, user_id)
+        except UserNotFoundError:
+            user_role = None
+
+        save_state: bool = True
+        if user_role is None or user_role <= UserRole.GUEST:
+            save_state = False
+        # -------------------
+
+        async with lock_with_notification(
+            app,
+            project_uuid,
+            ProjectStatus.CLOSING,
+            user_id,
+            user_name_data,
+            notify_users=notify_users,
+        ):
+            # save the state if the user is not a guest. if we do not know we save in any case.
+            with suppress(director_v2_api.DirectorServiceError):
+                # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+                await director_v2_api.stop_dynamic_services_in_project(
+                    app=app,
+                    user_id=user_id,
+                    project_id=project_uuid,
+                    save_state=save_state,
+                )
+    except ProjectLockError:
+        pass
+
+
+#
+# NOTIFICATIONS & LOCKS -----------------------------------------------------
+#
+
+
+async def notify_project_state_update(
+    app: web.Application,
+    project: dict,
+    notify_only_user: Optional[int] = None,
+) -> None:
+    messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
+            "data": {
+                "project_uuid": project["uuid"],
+                "data": project["state"],
+            },
+        }
+    ]
+
+    if notify_only_user:
+        await send_messages(app, user_id=str(notify_only_user), messages=messages)
+    else:
+        rooms_to_notify = [
+            f"{gid}"
+            for gid, rights in project["accessRights"].items()
+            if rights["read"]
+        ]
+        for room in rooms_to_notify:
+            await send_group_messages(app, room, messages)
+
+
+async def notify_project_node_update(
+    app: web.Application,
+    project: dict,
+    node_id: str,
+    errors: Optional[list[ErrorDict]],
+) -> None:
+    rooms_to_notify = [
+        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    ]
+
+    messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+            "data": {
+                "project_id": project["uuid"],
+                "node_id": node_id,
+                # as GET projects/{project_id}/nodes/{node_id}
+                "data": project["workbench"][node_id],
+                # as GET projects/{project_id}/nodes/{node_id}/errors
+                "errors": errors,
+            },
+        }
+    ]
+
+    for room in rooms_to_notify:
+        await send_group_messages(app, room, messages)
+
+
+async def retrieve_and_notify_project_locked_state(
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_only_prj_user: bool = False,
+):
+    project = await get_project_for_user(app, project_uuid, user_id, include_state=True)
+    await notify_project_state_update(
+        app, project, notify_only_user=user_id if notify_only_prj_user else None
+    )
+
+
+@contextlib.asynccontextmanager
+async def lock_with_notification(
+    app: web.Application,
+    project_uuid: str,
+    status: ProjectStatus,
+    user_id: int,
+    user_name: UserNameDict,
+    notify_users: bool = True,
+):
+    try:
+        async with lock_project(
+            app,
+            project_uuid,
+            status,
+            user_id,
+            user_name,
+        ):
+            log.debug(
+                "Project [%s] lock acquired",
+                f"{project_uuid=}",
+            )
+            if notify_users:
+                await retrieve_and_notify_project_locked_state(
+                    user_id, project_uuid, app
+                )
+            yield
+        log.debug(
+            "Project [%s] lock released",
+            f"{project_uuid=}",
+        )
+    except ProjectLockError:
+        # someone else has already the lock?
+        prj_states: ProjectState = await get_project_states_for_user(
+            user_id, project_uuid, app
+        )
+        log.error(
+            "Project [%s] already locked in state '%s'. Please check with support.",
+            f"{project_uuid=}",
+            f"{prj_states.locked.status=}",
+        )
+        raise
+    finally:
+        if notify_users:
+            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
