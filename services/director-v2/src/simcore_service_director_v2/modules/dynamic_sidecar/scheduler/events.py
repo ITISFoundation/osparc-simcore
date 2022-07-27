@@ -42,7 +42,6 @@ from ..api_client import (
     get_dynamic_sidecar_client,
 )
 from ..docker_api import (
-    are_all_services_present,
     constrain_service_to_node,
     create_network,
     create_service_and_get_id,
@@ -621,22 +620,16 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
 
             # only try to save the status if :
-            # - the dynamic-sidecar has finished booting correctly
             # - it is requested to save the state
+            # - the dynamic-sidecar has finished booting correctly
             if (
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save
-                # TODO: ANE: this needs a review. I do not remember why it was put in place here!
-                # might want to remove it. Maybe it was to avoid some unexpected situation
-                # but if someone manually removes the proxy, the data will not be saved!
-                # Change to only save is started successfully (containers were started and the
-                # sidecar was marked as ready)
-                and await are_all_services_present(
-                    node_uuid=scheduler_data.node_uuid,
-                    dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
-                )
+                and scheduler_data.dynamic_sidecar.were_services_created
             ):
                 dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-                dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+                dynamic_sidecar_endpoint: AnyHttpUrl = (
+                    scheduler_data.dynamic_sidecar.endpoint
+                )
 
                 logger.info(
                     "Calling into dynamic-sidecar to save state and pushing data to nodeports"
@@ -663,7 +656,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         logger.warning("%s", f"{err}")
 
                     logger.info("Ports data pushed by dynamic-sidecar")
-                except BaseClientHTTPError as e:
+                except (BaseClientHTTPError, TaskClientResultError) as e:
                     logger.warning(
                         (
                             "Could not contact dynamic-sidecar to save service "
