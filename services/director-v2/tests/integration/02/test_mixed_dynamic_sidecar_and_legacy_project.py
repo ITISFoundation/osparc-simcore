@@ -5,12 +5,12 @@
 import asyncio
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterable
 
 import aiodocker
 import httpx
 import pytest
-from contextlib import asynccontextmanager
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
@@ -215,7 +215,7 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
-    class_path = f"simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
+    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
     for function_name, return_value in [
         ("get_task_id_ports_outputs_pull", "mock_task_id_1"),
         ("get_task_id_state_restore", "mock_task_id_2"),

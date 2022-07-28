@@ -6,7 +6,7 @@ import asyncio
 import json
 import random
 from inspect import signature
-from typing import Any, AsyncIterable, Iterator, Final
+from typing import Any, AsyncIterable, Final, Iterator
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -20,6 +20,7 @@ from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import docker_compose_up
@@ -27,8 +28,6 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
-from servicelib.fastapi.long_running_tasks.client import TaskId
-
 
 WAIT_FOR_DIRECTORY_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1

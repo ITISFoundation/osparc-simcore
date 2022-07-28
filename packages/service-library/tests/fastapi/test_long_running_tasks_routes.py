@@ -38,7 +38,10 @@ def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) ->
     task_manager: TaskManager = app.state.long_running_task_manager
     assert task_manager
 
-    assert len(task_manager.tasks["test_long_running_tasks_routes.short_task"]) == task_count
+    assert (
+        len(task_manager.tasks["test_long_running_tasks_routes.short_task"])
+        == task_count
+    )
 
 
 async def short_task(
