@@ -190,7 +190,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps({"/tmp/strip_me/*", "*.py"}),
+                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps(["/tmp/strip_me/*", "*.py"]),
                     "DY_SIDECAR_STATE_PATHS": json_dumps(
                         ["/tmp/save_1", "/tmp_save_2"]
                     ),
