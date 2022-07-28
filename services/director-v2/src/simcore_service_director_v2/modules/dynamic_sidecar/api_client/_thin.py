@@ -12,9 +12,7 @@ from ._base import BaseThinClient, expect_status, retry_on_errors
 logger = logging.getLogger(__name__)
 
 
-class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
-    BaseThinClient
-):
+class ThinDynamicSidecarClient(BaseThinClient):
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
@@ -84,55 +82,6 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
         return await self._client.get(url, params=dict(only_status=only_status))
 
     @retry_on_errors
-    @expect_status(status.HTTP_202_ACCEPTED)
-    async def post_containers(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
-    ) -> Response:
-        # TODO: remove this
-        # NOTE: this sometimes takes longer that the default timeout, maybe raise timeout here as well!
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        # change introduce in OAS version==1.1.0
-        return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
-
-    @retry_on_errors
-    @expect_status(status.HTTP_200_OK)
-    async def post_containers_down(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers:down")
-        return await self._client.post(url)
-
-    @retry_on_errors
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_containers_state_save(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:save")
-        return await self._client.post(url, timeout=self._save_restore_timeout)
-
-    @retry_on_errors
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_containers_state_restore(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:restore")
-        return await self._client.post(url, timeout=self._save_restore_timeout)
-
-    @retry_on_errors
-    @expect_status(status.HTTP_200_OK)
-    async def post_containers_ports_inputs_pull(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        *,
-        port_keys: Optional[list[str]] = None,
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
-        port_keys = [] if port_keys is None else port_keys
-        return await self._client.post(
-            url, json=port_keys, timeout=self._save_restore_timeout
-        )
-
-    @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_containers_directory_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
@@ -150,32 +99,6 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
-    async def post_containers_ports_outputs_pull(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        *,
-        port_keys: Optional[list[str]] = None,
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
-        return await self._client.post(
-            url, json=port_keys, timeout=self._save_restore_timeout
-        )
-
-    @retry_on_errors
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_containers_ports_outputs_push(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        *,
-        port_keys: Optional[list[str]] = None,
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
-        return await self._client.post(
-            url, json=port_keys, timeout=self._save_restore_timeout
-        )
-
-    @retry_on_errors
-    @expect_status(status.HTTP_200_OK)
     async def get_containers_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str
     ) -> Response:
@@ -184,14 +107,6 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
             dynamic_sidecar_endpoint, f"/containers/name?filters={filters}"
         )
         return await self._client.get(url=url)
-
-    @retry_on_errors
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_containers_restart(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
-        return await self._client.post(url, timeout=self._restart_containers_timeout)
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)

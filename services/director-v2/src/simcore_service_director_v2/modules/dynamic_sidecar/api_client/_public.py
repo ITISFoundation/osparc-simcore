@@ -13,14 +13,14 @@ from servicelib.utils import logged_gather
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
-from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
+from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
 
 logger = logging.getLogger(__name__)
 
 
-class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
+class DynamicSidecarClient:
     def __init__(self, app: FastAPI):
         self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
 
@@ -61,43 +61,6 @@ class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
             return {}
 
     @log_decorator(logger=logger)
-    async def start_service_creation(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, compose_spec: str
-    ) -> None:
-        response = await self.thin_client.post_containers(
-            dynamic_sidecar_endpoint, compose_spec=compose_spec
-        )
-        logger.info("Spec submit result %s", response.text)
-
-    @log_decorator(logger=logger)
-    async def begin_service_destruction(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
-        """runs docker compose down on the started spec"""
-        response = await self.thin_client.post_containers_down(dynamic_sidecar_endpoint)
-        logger.info("Compose down result %s", response.text)
-
-    @log_decorator(logger=logger)
-    async def service_save_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        await self.thin_client.post_containers_state_save(dynamic_sidecar_endpoint)
-
-    @log_decorator(logger=logger)
-    async def service_restore_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        await self.thin_client.post_containers_state_restore(dynamic_sidecar_endpoint)
-
-    @log_decorator(logger=logger)
-    async def service_pull_input_ports(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
-    ) -> int:
-        port_keys = [] if port_keys is None else port_keys
-        response = await self.thin_client.post_containers_ports_inputs_pull(
-            dynamic_sidecar_endpoint, port_keys=port_keys
-        )
-        return int(response.text)
-
-    @log_decorator(logger=logger)
     async def service_disable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
@@ -122,37 +85,6 @@ class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
         )
 
     @log_decorator(logger=logger)
-    async def service_pull_output_ports(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
-    ) -> int:
-        response = await self.thin_client.post_containers_ports_outputs_pull(
-            dynamic_sidecar_endpoint, port_keys=port_keys
-        )
-        return int(response.text)
-
-    @log_decorator(logger=logger)
-    async def service_push_output_ports(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
-    ) -> None:
-        port_keys = [] if port_keys is None else port_keys
-        try:
-            await self.thin_client.post_containers_ports_outputs_push(
-                dynamic_sidecar_endpoint, port_keys=port_keys
-            )
-        except UnexpectedStatusError as e:
-            if e.response.status_code == status.HTTP_404_NOT_FOUND:
-                json_error = e.response.json()
-                if json_error.get("code") == "dynamic_sidecar.nodeports.node_not_found":
-                    raise NodeportsDidNotFindNodeError(
-                        node_uuid=json_error["node_uuid"]
-                    ) from e
-            raise e
-
-    @log_decorator(logger=logger)
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
     ) -> str:
@@ -171,14 +103,6 @@ class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
             if e.response.status_code == status.HTTP_404_NOT_FOUND:
                 raise EntrypointContainerNotFoundError() from e
             raise e
-
-    @log_decorator(logger=logger)
-    async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        """
-        runs docker-compose stop and docker-compose start in succession
-        resulting in a container restart without loosing state
-        """
-        await self.thin_client.post_containers_restart(dynamic_sidecar_endpoint)
 
     async def _attach_container_to_network(
         self,
