@@ -10,6 +10,7 @@ from ._client import Client
 from ._errors import TaskClientTimeoutError
 from ._models import TaskId, TaskStatus
 
+# NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10
 
 
