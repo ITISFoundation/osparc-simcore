@@ -349,7 +349,7 @@ async def test_create_containers_task(
 ) -> None:
     last_progress_message: Optional[tuple[str, float]] = None
 
-    async def create_progress(message: str, percent: float) -> None:
+    async def create_progress(message: str, percent: float, _: TaskId) -> None:
         nonlocal last_progress_message
         last_progress_message = (message, percent)
         print(message, percent)
