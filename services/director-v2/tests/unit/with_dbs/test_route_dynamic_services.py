@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import urllib.parse
+from contextlib import asynccontextmanager
 from time import sleep
 from typing import Any, AsyncIterator, Final, Iterator, NamedTuple, Optional
 from uuid import UUID
@@ -127,6 +128,7 @@ async def mock_retrieve_features(
     service: dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
+    mocker: MockerFixture,
 ) -> AsyncIterator[Optional[MockRouter]]:
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -155,9 +157,19 @@ async def mock_retrieve_features(
             ] = scheduler_data_from_http_request
 
             respx_mock.post(
-                f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/ports/inputs:pull",
+                f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/tasks/ports/inputs:pull",
                 name="service_pull_input_ports",
-            ).respond(json=42)
+            ).respond(json="mocked_task_id", status_code=status.HTTP_202_ACCEPTED)
+
+            # also patch the long_running_tasks client context mangers handling the above request
+            @asynccontextmanager
+            async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[int]:
+                yield 42
+
+            mocker.patch(
+                "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.periodic_task_result",
+                side_effect=_mocked_context_manger,
+            )
 
             yield respx_mock
 
