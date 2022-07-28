@@ -12,10 +12,8 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import aiodocker
-import faker
 import pytest
 import yaml
-from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from faker import Faker
@@ -23,7 +21,6 @@ from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
-from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import docker_compose_up
@@ -33,9 +30,7 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from servicelib.fastapi.long_running_tasks.client import TaskId
 
-ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
-DEFAULT_COMMAND_TIMEOUT: Final[int] = 5
 WAIT_FOR_DIRECTORY_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
 
@@ -118,23 +113,6 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
     assert len(started_containers) == expected_services_count
 
 
-async def _get_container_timestamps(
-    container_names: list[str],
-) -> dict[str, ContainerTimes]:
-    container_timestamps: dict[str, ContainerTimes] = {}
-    async with aiodocker.Docker() as client:
-        for container_name in container_names:
-            container: DockerContainer = await client.containers.get(container_name)
-            container_inspect: dict[str, Any] = await container.show()
-            container_timestamps[container_name] = ContainerTimes(
-                created=container_inspect["Created"],
-                started_at=container_inspect["State"]["StartedAt"],
-                finished_at=container_inspect["State"]["FinishedAt"],
-            )
-
-    return container_timestamps
-
-
 # FIXTURES
 
 
@@ -214,58 +192,6 @@ def not_started_containers() -> list[str]:
 
 
 @pytest.fixture
-def mock_nodeports(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
-        return_value=None,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
-        return_value=42,
-    )
-
-
-@pytest.fixture
-def missing_node_uuid(faker: faker.Faker) -> str:
-    return faker.uuid4()
-
-
-@pytest.fixture
-def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
-    async def _mocked(*args, **kwargs) -> None:
-        raise NodeNotFound(missing_node_uuid)
-
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
-        side_effect=_mocked,
-    )
-
-
-@pytest.fixture
-def mock_data_manager(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.push",
-        autospec=True,
-        return_value=None,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.exists",
-        autospec=True,
-        return_value=True,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers_extension.data_manager.pull",
-        autospec=True,
-        return_value=None,
-    )
-
-
-@pytest.fixture
-def mock_port_keys() -> list[str]:
-    return ["first_port", "second_port"]
-
-
-@pytest.fixture
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
         "output_port_1": ServiceOutput.parse_obj(
@@ -302,6 +228,34 @@ async def attachable_networks_and_ids(faker: Faker) -> AsyncIterable[dict[str, s
         for network_id in network_names.values():
             network = await client.networks.get(network_id)
             assert await network.delete() is True
+
+
+@pytest.fixture
+def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
+    """raises a DockerError with a random HTTP status which is also returned"""
+    mock_status_code = random.randint(1, 999)
+
+    async def mock_get(*args: str, **kwargs: Any) -> None:
+        raise aiodocker.exceptions.DockerError(
+            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
+        )
+
+    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
+
+    return mock_status_code
+
+
+@pytest.fixture
+def mock_dir_watcher_on_any_event(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[Mock]:
+
+    mock = Mock(return_value=None)
+
+    monkeypatch.setattr(
+        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
+    )
+    yield mock
 
 
 # TESTS
@@ -363,21 +317,6 @@ async def test_containers_get_status(
         return True
 
     assert assert_keys_exist(decoded_response) is True
-
-
-@pytest.fixture
-def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
-    """raises a DockerError with a random HTTP status which is also returned"""
-    mock_status_code = random.randint(1, 999)
-
-    async def mock_get(*args: str, **kwargs: Any) -> None:
-        raise aiodocker.exceptions.DockerError(
-            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
-        )
-
-    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
-
-    return mock_status_code
 
 
 async def test_containers_docker_status_docker_error(
@@ -462,41 +401,6 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
-async def test_container_save_state(client: TestClient, mock_data_manager: None):
-    response = await client.post(f"/{API_VTAG}/containers/state:save")
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""
-
-
-async def test_container_restore_state(client: TestClient, mock_data_manager: None):
-    response = await client.post(f"/{API_VTAG}/containers/state:restore")
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""
-
-
-async def test_container_pull_input_ports(
-    client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-):
-    response = await client.post(
-        f"/{API_VTAG}/containers/ports/inputs:pull", json=mock_port_keys
-    )
-    assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.text == "42"
-
-
-@pytest.fixture
-def mock_dir_watcher_on_any_event(
-    app: FastAPI, monkeypatch: MonkeyPatch
-) -> Iterator[Mock]:
-
-    mock = Mock(return_value=None)
-
-    monkeypatch.setattr(
-        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
-    )
-    yield mock
-
-
 async def test_directory_watcher_disabling(
     client: TestClient,
     mock_dir_watcher_on_any_event: AsyncMock,
@@ -571,42 +475,6 @@ async def test_container_create_outputs_dirs(
     assert mock_dir_watcher_on_any_event.call_count == 2 * len(mock_outputs_labels)
 
 
-async def test_container_pull_output_ports(
-    client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-):
-    response = await client.post(
-        f"/{API_VTAG}/containers/ports/outputs:pull", json=mock_port_keys
-    )
-    assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.text == "42"
-
-
-async def test_container_push_output_ports(
-    client: TestClient, mock_port_keys: list[str], mock_nodeports: None
-):
-    response = await client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
-    )
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""
-
-
-async def test_container_push_output_ports_missing_node(
-    client: TestClient,
-    mock_port_keys: list[str],
-    missing_node_uuid: str,
-    mock_node_missing: None,
-):
-    response = await client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push", json=mock_port_keys
-    )
-    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-    error_detail = response.json()
-    assert error_detail["message"] == f"the node id {missing_node_uuid} was not found"
-    assert error_detail["code"] == "dynamic_sidecar.nodeports.node_not_found"
-    assert error_detail["node_uuid"] == missing_node_uuid
-
-
 def _get_entrypoint_container_name(
     client: TestClient, dynamic_sidecar_network_name: str
 ) -> str:
@@ -653,29 +521,6 @@ async def test_containers_entrypoint_name_containers_not_started(
     assert response.json() == {
         "detail": "No container found for network=entrypoint_container_network"
     }
-
-
-async def test_containers_restart(client: TestClient, compose_spec: str):
-    container_names = await _start_containers(client, compose_spec)
-
-    container_timestamps_before = await _get_container_timestamps(container_names)
-
-    response = await client.post(
-        f"/{API_VTAG}/containers:restart",
-        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
-    )
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""
-
-    container_timestamps_after = await _get_container_timestamps(container_names)
-
-    for container_name in container_names:
-        before: ContainerTimes = container_timestamps_before[container_name]
-        after: ContainerTimes = container_timestamps_after[container_name]
-
-        assert before.created == after.created
-        assert before.started_at < after.started_at
-        assert before.finished_at < after.finished_at
 
 
 async def test_attach_detach_container_to_network(
