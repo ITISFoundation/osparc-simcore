@@ -90,7 +90,7 @@ async def periodic_tasks_results(
             max_concurrency=MAX_CONCURRENCY,
         )
         for task_id, task_status in zip(task_ids, tasks_status):
-            logger.info("Task status %s", task_status.json())
+            logger.debug("Task status %s", task_status.json())
             await progress_manager.update(
                 task_id=task_id,
                 message=task_status.task_progress.message,
@@ -112,6 +112,9 @@ async def periodic_tasks_results(
             *(client.get_task_result(task_id) for task_id in task_ids),
             max_concurrency=MAX_CONCURRENCY,
         )
+        for result, task_id in zip(results, task_ids):
+            logger.debug("Task %s result %s", task_id, result)
+
         yield results
     except asyncio.TimeoutError as e:
         tasks_removed: list[bool] = await logged_gather(
