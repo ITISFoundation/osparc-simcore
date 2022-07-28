@@ -15,3 +15,9 @@ def pytest_addoption(parser):
 
     # DUMMY
     parser.addini("HELLO", "Dummy pytest.ini setting")
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "heavy_load: mark test that uses huge amount of data"
+    )
