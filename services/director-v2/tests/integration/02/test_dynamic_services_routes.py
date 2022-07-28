@@ -27,6 +27,7 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
+from contextlib import asynccontextmanager
 from simcore_service_director_v2.core.settings import AppSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -43,9 +44,9 @@ logger = logging.getLogger(__name__)
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
-    "rabbit",
     "migration",
     "postgres",
+    "rabbit",
     "redis",
 ]
 pytest_simcore_ops_services_selection = [
@@ -205,16 +206,27 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.DynamicSidecarClient"
     )
     for function_name, return_value in [
-        ("service_save_state", None),
-        ("service_restore_state", None),
-        ("service_pull_output_ports", 42),
-        ("service_outputs_create_dirs", None),
-        ("service_push_output_ports", None),
+        ("get_task_id_ports_outputs_pull", "mock_task_id_1"),
+        ("get_task_id_state_restore", "mock_task_id_2"),
+        ("get_task_id_ports_outputs_push", "mock_task_id_4"),
+        ("get_task_id_state_save", "mock_task_id_5"),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
             side_effect=lambda *args, **kwargs: return_value,
+        )
+
+    # also patch the long_running_tasks client context mangers handling the above
+    # requests
+    @asynccontextmanager
+    async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
+        yield
+
+    for method in ["periodic_tasks_results", "periodic_task_result"]:
+        mocker.patch(
+            f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.scheduler.events.{method}",
+            side_effect=_mocked_context_manger,
         )
 
 
