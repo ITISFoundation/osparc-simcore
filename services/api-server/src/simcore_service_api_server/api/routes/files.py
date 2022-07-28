@@ -103,8 +103,15 @@ async def stream_upload_file(
         created_at=datetime.utcnow().isoformat(),
     )
 
+    logger.debug("here we are receiving the call")
+    length_chunk = 0
     async for chunk in request.stream():
-        logger.warning("received %s", f"{chunk=}")
+        logger.warning("received %s bytes", f"{len(chunk)}")
+        logger.debug("%s", chunk)
+        length_chunk += len(chunk)
+    logger.debug(f"{length_chunk=}")
+
+    # logger.debug(await request.body())
 
     return file_meta
 
