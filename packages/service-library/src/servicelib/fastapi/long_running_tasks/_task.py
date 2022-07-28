@@ -184,9 +184,11 @@ class TaskManager:
                 error = TaskExceptionError(
                     task_id=task_id, exception=exception, traceback=formatted_traceback
                 )
+                logger.warning("%s", f"{error}")
                 return TaskResult(result=None, error=f"{error}")
         except CancelledError:
             error = TaskCancelledError(task_id=task_id)
+            logger.warning("Task %s was cancelled", task_id)
             return TaskResult(result=None, error=f"{error}")
 
         return TaskResult(result=tracked_task.task.result(), error=None)

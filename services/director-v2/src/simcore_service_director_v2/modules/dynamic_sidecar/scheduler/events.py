@@ -97,9 +97,7 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
-POLL_INTERVAL_CREATE_CONTAINERS: Final[PositiveFloat] = 1
-POLL_INTERVAL_REMOVE_CONTAINERS: Final[PositiveFloat] = 1
-POLL_INTERVAL_STATE_SAVE_OUTPUTS_PUSH: Final[PositiveFloat] = 1
+STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -448,7 +446,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             task_id,
             task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
             progress_callback=create_containers_progress,
-            status_poll_interval=POLL_INTERVAL_CREATE_CONTAINERS,
+            status_poll_interval=STATUS_POLL_INTERVAL,
         ):
             pass
 
@@ -627,7 +625,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     task_id,
                     task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
                     progress_callback=remove_containers_progress,
-                    status_poll_interval=POLL_INTERVAL_REMOVE_CONTAINERS,
+                    status_poll_interval=STATUS_POLL_INTERVAL,
                 ):
                     pass
             except (BaseClientHTTPError, TaskClientResultError) as e:
@@ -685,7 +683,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         task_ids,
                         task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
                         progress_callback=progress_save_state_outputs_push,
-                        status_poll_interval=POLL_INTERVAL_STATE_SAVE_OUTPUTS_PUSH,
+                        status_poll_interval=STATUS_POLL_INTERVAL,
                     ):
                         pass
 

@@ -16,10 +16,11 @@ import logging
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Final, Optional
 from uuid import UUID
 
 from fastapi import FastAPI
+from pydantic import AnyHttpUrl, PositiveFloat
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
@@ -35,6 +36,11 @@ from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
+)
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    TaskId,
+    periodic_task_result,
 )
 from ..api_client import (
     ClientHttpError,
@@ -55,6 +61,8 @@ from ..errors import (
     GenericDockerError,
 )
 from .events import REGISTERED_EVENTS
+
+STATUS_POLL_INTERVAL: Final[float] = 1
 
 logger = logging.getLogger(__name__)
 
@@ -272,24 +280,63 @@ class DynamicSidecarsScheduler:
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
-
-        transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-            port_keys=port_keys,
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
-            logger.info("Will restart containers")
-            await dynamic_sidecar_client.restart_containers(
-                scheduler_data.dynamic_sidecar.endpoint
-            )
-            logger.info("Containers restarted")
+        client = Client(
+            app=self.app,
+            async_client=dynamic_sidecar_client.get_async_client(),
+            base_url=dynamic_sidecar_endpoint,
+        )
 
-        return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
+        task_id: TaskId = await dynamic_sidecar_client.get_task_id_ports_inputs_pull(
+            dynamic_sidecar_endpoint, port_keys
+        )
+
+        async def inputs_pull_progress(
+            message: str, percent: PositiveFloat, _: TaskId
+        ) -> None:
+            logger.debug("inputs_pull_progress %.2f %s", percent, message)
+
+        async with periodic_task_result(
+            client,
+            task_id,
+            task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            progress_callback=inputs_pull_progress,
+            status_poll_interval=STATUS_POLL_INTERVAL,
+        ) as transferred_bytes:
+
+            assert transferred_bytes  # nosec
+
+            if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
+                logger.info("Will restart containers")
+
+                task_id = await dynamic_sidecar_client.get_task_id_restart(
+                    dynamic_sidecar_endpoint
+                )
+
+                async def restart_progress(
+                    message: str, percent: PositiveFloat, _: TaskId
+                ) -> None:
+                    logger.debug("inputs_pull_progress %.2f %s", percent, message)
+
+                async with periodic_task_result(
+                    client,
+                    task_id,
+                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+                    progress_callback=restart_progress,
+                    status_poll_interval=STATUS_POLL_INTERVAL,
+                ) as transferred_bytes:
+                    pass
+
+                logger.info("Containers restarted")
+
+            return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
     async def attach_project_network(
         self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias
@@ -366,6 +413,21 @@ class DynamicSidecarsScheduler:
                 # It makes no sense to continuously occupy resources or create
                 # issues due to high request to components like the `docker damon`
                 # and the `storage service`.
+
+                # TODO:
+
+                # MIGHT be a better alternative?
+                # - if node was deleted! (you know because in theory you call
+                # remove_node without saving ths state) just cleanup sidecars
+                # and remove from observation cycle [allows users to delete nodes and
+                # still release resources]
+
+                # FOR sure we want this
+                # - if the sidecar is missing (remove the proxy if it exists)
+                # and then remove from observation cycle [allows user to manually
+                # remove failing sidecars and the entire thing to still work afterwards]
+
+                # - cleanup: after removing?
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

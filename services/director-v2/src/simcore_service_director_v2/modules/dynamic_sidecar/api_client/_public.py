@@ -319,26 +319,32 @@ class DynamicSidecarClient:  # pylint: disable=too-many-public-methods
         return response.json()
 
     async def get_task_id_ports_inputs_pull(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> TaskId:
         response = await self.thin_client.post_containers_tasks_ports_inputs_pull(
-            dynamic_sidecar_endpoint
+            dynamic_sidecar_endpoint, port_keys
         )
         return response.json()
 
     async def get_task_id_ports_outputs_pull(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> TaskId:
         response = await self.thin_client.post_containers_tasks_ports_outputs_pull(
-            dynamic_sidecar_endpoint
+            dynamic_sidecar_endpoint, port_keys
         )
         return response.json()
 
     async def get_task_id_ports_outputs_push(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> TaskId:
         response = await self.thin_client.post_containers_tasks_ports_outputs_push(
-            dynamic_sidecar_endpoint
+            dynamic_sidecar_endpoint, port_keys
         )
         return response.json()
 

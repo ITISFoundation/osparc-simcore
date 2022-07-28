@@ -266,32 +266,41 @@ class ThinDynamicSidecarClient(  # pylint: disable=too-many-public-methods
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_inputs_pull(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> Response:
+        port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
             dynamic_sidecar_endpoint, "/containers/tasks/ports/inputs:pull"
         )
-        return await self._client.post(url)
+        return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_pull(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> Response:
+        port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
             dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:pull"
         )
-        return await self._client.post(url)
+        return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_push(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        port_keys: Optional[list[str]] = None,
     ) -> Response:
+        port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
             dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:push"
         )
-        return await self._client.post(url)
+        return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
