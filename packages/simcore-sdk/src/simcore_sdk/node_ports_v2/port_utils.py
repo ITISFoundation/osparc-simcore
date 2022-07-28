@@ -205,7 +205,7 @@ async def push_file_to_store(
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
-        local_file_path=file,
+        file_to_upload=file,
         r_clone_settings=r_clone_settings,
     )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)

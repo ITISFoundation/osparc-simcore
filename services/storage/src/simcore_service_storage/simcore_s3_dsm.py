@@ -189,7 +189,7 @@ class SimcoreS3DataManager(BaseDataManager):
         link_type: LinkType,
         file_size_bytes: ByteSize,
     ) -> UploadLinks:
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn, conn.begin() as transaction:
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, user_id, file_id
             )
@@ -215,6 +215,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
                 else None,
             )
+            # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
+            await transaction.commit()
 
             if link_type == LinkType.PRESIGNED and get_s3_client(self.app).is_multipart(
                 file_size_bytes
@@ -741,22 +743,24 @@ class SimcoreS3DataManager(BaseDataManager):
             await download_to_file_or_raise(session, dc_link, local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
-            async with self.engine.acquire() as conn, conn.begin():
+            async with self.engine.acquire() as conn, conn.begin() as transaction:
                 new_fmd = await self._create_fmd_for_upload(
                     conn,
                     user_id,
                     dst_file_id,
                     upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
                 )
+                # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
+                await transaction.commit()
                 # Uploads local -> S3
                 await get_s3_client(self.app).upload_file(
                     self.simcore_bucket_name, local_file_path, dst_file_id
                 )
                 updated_fmd = await self._update_database_from_storage(conn, new_fmd)
-                file_storage_link["store"] = self.location_id
-                file_storage_link["path"] = new_fmd.file_id
+            file_storage_link["store"] = self.location_id
+            file_storage_link["path"] = new_fmd.file_id
 
-                logger.info("copied %s to %s", f"{source_uuid=}", f"{updated_fmd=}")
+            logger.info("copied %s to %s", f"{source_uuid=}", f"{updated_fmd=}")
 
         return convert_db_to_model(updated_fmd)
 
@@ -765,13 +769,16 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         logger.debug("copying %s to %s", f"{src_fmd=}", f"{dst_file_id=}")
         # copying will happen using aioboto3, therefore multipart might happen
-        async with self.engine.acquire() as conn, conn.begin():
+        # NOTE: connection must be released to ensure database update
+        async with self.engine.acquire() as conn, conn.begin() as transaction:
             new_fmd = await self._create_fmd_for_upload(
                 conn,
                 user_id,
                 dst_file_id,
                 upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
             )
+            # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
+            await transaction.commit()
             await get_s3_client(self.app).copy_file(
                 self.simcore_bucket_name,
                 src_fmd.object_name,

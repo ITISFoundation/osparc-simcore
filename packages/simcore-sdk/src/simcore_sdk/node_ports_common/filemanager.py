@@ -1,9 +1,11 @@
+import asyncio
 import json
 
 # pylint: disable=too-many-arguments
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import IO, AsyncGenerator, Optional, Union
 
 import aiofiles
 from aiohttp import ClientError, ClientPayloadError, ClientSession, web
@@ -51,6 +53,13 @@ _TQDM_FILE_OPTIONS = dict(
     colour="yellow",
     miniters=1,
 )
+
+
+@dataclass(frozen=True)
+class UploadableFileObject:
+    file_object: IO
+    file_name: str
+    file_size: int
 
 
 async def _get_location_id_from_location_name(
@@ -141,45 +150,67 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url) from exc
 
 
-async def _file_part_sender(file: Path, *, offset: int, bytes_to_send: int):
-    chunk_size = CHUNK_SIZE
+async def _file_object_chunk_reader(
+    file_object: IO, *, offset: int, total_bytes_to_read: int
+) -> AsyncGenerator[bytes, None]:
+    await asyncio.get_event_loop().run_in_executor(None, file_object.seek, offset)
+    num_read_bytes = 0
+    while chunk := await asyncio.get_event_loop().run_in_executor(
+        None, file_object.read, min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
+    ):
+        num_read_bytes += len(chunk)
+        yield chunk
+
+
+async def _file_chunk_reader(
+    file: Path, *, offset: int, total_bytes_to_read: int
+) -> AsyncGenerator[bytes, None]:
     async with aiofiles.open(file, "rb") as f:
         await f.seek(offset)
         num_read_bytes = 0
-        while chunk := await f.read(min(chunk_size, bytes_to_send - num_read_bytes)):
+        while chunk := await f.read(
+            min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
+        ):
             num_read_bytes += len(chunk)
             yield chunk
 
 
 async def _upload_file_part(
     session: ClientSession,
-    file: Path,
+    file_to_upload: Union[Path, UploadableFileObject],
     part_index: int,
     file_offset: int,
-    this_file_chunk_size: int,
+    file_part_size: int,
     num_parts: int,
     upload_url: AnyUrl,
     pbar,
 ) -> tuple[int, ETag]:
     log.debug(
         "--> uploading %s of %s, [%s]...",
-        f"{this_file_chunk_size=}",
-        f"{file=}",
+        f"{file_part_size=} bytes",
+        f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
     )
+    file_uploader = _file_chunk_reader(
+        file_to_upload,  # type: ignore
+        offset=file_offset,
+        total_bytes_to_read=file_part_size,
+    )
+    if isinstance(file_to_upload, UploadableFileObject):
+        file_uploader = _file_object_chunk_reader(
+            file_to_upload.file_object,
+            offset=file_offset,
+            total_bytes_to_read=file_part_size,
+        )
     response = await session.put(
         upload_url,
-        data=_file_part_sender(
-            file,
-            offset=file_offset,
-            bytes_to_send=this_file_chunk_size,
-        ),
+        data=file_uploader,
         headers={
-            "Content-Length": f"{this_file_chunk_size}",
+            "Content-Length": f"{file_part_size}",
         },
     )
     response.raise_for_status()
-    pbar.update(this_file_chunk_size)
+    pbar.update(file_part_size)
     # NOTE: the response from minio does not contain a json body
     assert response.status == web.HTTPOk.status_code
     assert response.headers
@@ -187,8 +218,8 @@ async def _upload_file_part(
     received_e_tag = json.loads(response.headers["Etag"])
     log.info(
         "--> completed upload %s of %s, [%s], %s",
-        f"{this_file_chunk_size=}",
-        f"{file=}",
+        f"{file_part_size=}",
+        f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
         f"{received_e_tag=}",
     )
@@ -196,17 +227,27 @@ async def _upload_file_part(
 
 
 async def _upload_file_to_presigned_links(
-    session: ClientSession, file_upload_links: FileUploadSchema, file: Path
+    session: ClientSession,
+    file_upload_links: FileUploadSchema,
+    file_to_upload: Union[Path, UploadableFileObject],
 ) -> list[UploadedPart]:
-    log.debug("Uploading from %s to %s", f"{file=}", f"{file_upload_links=}")
-    file_size = file.stat().st_size
+    file_size = 0
+    file_name = ""
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    log.debug("Uploading from %s to %s", f"{file_name=}", f"{file_upload_links=}")
 
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm(
-        desc=f"uploading {file}\n", total=file_size, **_TQDM_FILE_OPTIONS
+        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (
@@ -215,7 +256,7 @@ async def _upload_file_to_presigned_links(
             upload_tasks.append(
                 _upload_file_part(
                     session,
-                    file,
+                    file_to_upload,
                     index,
                     index * file_chunk_size,
                     this_file_chunk_size,
@@ -225,19 +266,25 @@ async def _upload_file_to_presigned_links(
                 )
             )
         try:
-            results = await logged_gather(*upload_tasks, log=log, max_concurrency=4)
+            results = await logged_gather(
+                *upload_tasks,
+                log=log,
+                # NOTE: when the file object is already created it cannot be duplicated so
+                # no concurrency is allowed in that case
+                max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
+            )
             part_to_etag = [
                 UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
             ]
             log.info(
                 "Uploaded %s, received %s",
-                f"{file=}",
+                f"{file_name=}",
                 f"{part_to_etag=}",
             )
             return part_to_etag
         except ClientError as exc:
             raise exceptions.S3TransferError(
-                f"Could not upload file {file}:{exc}"
+                f"Could not upload file {file_name}:{exc}"
             ) from exc
 
 
@@ -442,21 +489,22 @@ async def upload_file(
     store_id: Optional[LocationID],
     store_name: Optional[LocationName],
     s3_object: StorageFileID,
-    local_file_path: Path,
+    file_to_upload: Union[Path, UploadableFileObject],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> tuple[LocationID, ETag]:
-    """Uploads a file to S3
+    """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
-    :raises exceptions.NodeportsException
     :raises exceptions.S3InvalidPathError
-    :return: stored id
+    :raises exceptions.S3TransferError
+    :raises exceptions.NodeportsException
+    :return: stored id, S3 entity_tag
     """
     log.debug(
         "Uploading %s to %s:%s@%s",
-        f"{local_file_path=}",
+        f"{file_to_upload=}",
         f"{store_id=}",
         f"{store_name=}",
         f"{s3_object=}",
@@ -465,6 +513,7 @@ async def upload_file(
     use_rclone = (
         await r_clone.is_r_clone_available(r_clone_settings)
         and store_id == SIMCORE_LOCATION
+        and isinstance(file_to_upload, Path)
     )
 
     async with ClientSessionContextManager(client_session) as session:
@@ -479,21 +528,27 @@ async def upload_file(
                 link_type=storage_client.LinkType.S3
                 if use_rclone
                 else storage_client.LinkType.PRESIGNED,
-                file_size=ByteSize(local_file_path.stat().st_size),
+                file_size=ByteSize(
+                    file_to_upload.stat().st_size
+                    if isinstance(file_to_upload, Path)
+                    else file_to_upload.file_size
+                ),
             )
             # NOTE: in case of S3 upload, there are no multipart uploads, so this remains empty
             uploaded_parts: list[UploadedPart] = []
             if use_rclone:
                 assert r_clone_settings  # nosec
+                assert isinstance(file_to_upload, Path)  # nosec
                 await r_clone.sync_local_to_s3(
-                    local_file_path,
+                    file_to_upload,
                     r_clone_settings,
                     upload_links,
                 )
             else:
                 uploaded_parts = await _upload_file_to_presigned_links(
-                    session, upload_links, local_file_path
+                    session, upload_links, file_to_upload
                 )
+
             # complete the upload
             e_tag = await _complete_upload(
                 session,

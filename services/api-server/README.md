@@ -14,17 +14,19 @@ Platform's public API server
 [image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/api-server.svg
 <!------------------------->
 
-
 ## Development
 
 Setup environment
+
 ```cmd
 make devenv
 source .venv/bin/activate
 cd services/api-server
 make install-dev
 ```
+
 Then
+
 ```cmd
 make run-devel
 ```
@@ -34,15 +36,15 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/docs: redoc documentation
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
-
-
-
 ## References
 
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
 - [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud
 
+## Clients
 
-## Acknoledgments
+- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-python-client)
+
+## Acknowledgments
 
   Many of the ideas in this design were taken from the **excellent** work at https://github.com/nsidnev/fastapi-realworld-example-app by *Nik Sidnev* using the **extraordinary** [fastapi](https://fastapi.tiangolo.com/) package by *Sebastian Ramirez*.
