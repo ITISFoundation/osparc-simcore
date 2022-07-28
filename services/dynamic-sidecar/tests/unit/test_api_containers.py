@@ -5,7 +5,6 @@
 import asyncio
 import json
 import random
-from collections import namedtuple
 from inspect import signature
 from typing import Any, AsyncIterable, Iterator, Final
 from unittest.mock import AsyncMock, Mock
