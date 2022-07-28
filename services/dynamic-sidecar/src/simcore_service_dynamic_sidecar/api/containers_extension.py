@@ -28,7 +28,6 @@ from ._dependencies import (
     get_settings,
     get_shared_store,
 )
-from .containers import send_message
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +50,11 @@ class AttachContainerToNetworkItem(_BaseNetworkItem):
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
+
+
+async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
+    logger.info(message)
+    await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
 #
