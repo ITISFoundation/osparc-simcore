@@ -18,8 +18,8 @@ from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
     TaskId,
-    periodic_tasks_results,
     periodic_task_result,
+    periodic_tasks_results,
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather

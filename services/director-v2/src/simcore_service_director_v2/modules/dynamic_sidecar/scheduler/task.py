@@ -20,11 +20,16 @@ from typing import Final, Optional
 from uuid import UUID
 
 from fastapi import FastAPI
-from pydantic import AnyHttpUrl, PositiveFloat
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.error_codes import create_error_code
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    TaskId,
+    periodic_task_result,
+)
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -36,11 +41,6 @@ from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
-)
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    TaskId,
-    periodic_task_result,
 )
 from ..api_client import (
     ClientHttpError,
