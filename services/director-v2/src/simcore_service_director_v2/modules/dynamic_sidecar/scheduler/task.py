@@ -310,7 +310,6 @@ class DynamicSidecarsScheduler:
             progress_callback=inputs_pull_progress,
             status_poll_interval=STATUS_POLL_INTERVAL,
         ) as transferred_bytes:
-
             assert transferred_bytes  # nosec
 
             if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
@@ -323,7 +322,7 @@ class DynamicSidecarsScheduler:
                 async def restart_progress(
                     message: str, percent: PositiveFloat, _: TaskId
                 ) -> None:
-                    logger.debug("inputs_pull_progress %.2f %s", percent, message)
+                    logger.debug("restart_progress %.2f %s", percent, message)
 
                 async with periodic_task_result(
                     client,
@@ -331,10 +330,8 @@ class DynamicSidecarsScheduler:
                     task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
                     progress_callback=restart_progress,
                     status_poll_interval=STATUS_POLL_INTERVAL,
-                ) as transferred_bytes:
-                    pass
-
-                logger.info("Containers restarted")
+                ):
+                    logger.info("Containers restarted")
 
             return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
