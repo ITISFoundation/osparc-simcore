@@ -335,7 +335,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                     task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
                     progress_callback=progress_state_restore_outputs_pull,
                 ):
-                    pass
+                    logger.debug("Tasks %s finished", task_ids)
 
                 # inside this directory create the missing dirs, fetch those form the labels
                 director_v0_client: DirectorV0Client = get_director_v0_client(app)
@@ -448,7 +448,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             progress_callback=create_containers_progress,
             status_poll_interval=STATUS_POLL_INTERVAL,
         ):
-            pass
+            logger.debug("Task %s finished", task_id)
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
@@ -627,7 +627,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     progress_callback=remove_containers_progress,
                     status_poll_interval=STATUS_POLL_INTERVAL,
                 ):
-                    pass
+                    logger.debug("Tasks %s finished", task_id)
             except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.warning(
                     (
@@ -685,7 +685,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         progress_callback=progress_save_state_outputs_push,
                         status_poll_interval=STATUS_POLL_INTERVAL,
                     ):
-                        pass
+                        logger.debug("Tasks %s finished", task_ids)
 
                     logger.info("Ports data pushed by dynamic-sidecar")
                 except (BaseClientHTTPError, TaskClientResultError) as e:
