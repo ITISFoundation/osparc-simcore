@@ -97,32 +97,6 @@
         ],
         "summary": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
         "operationId": "create_service_containers_task_v1_containers_post",
-        "parameters": [
-          {
-            "description": "docker-compose `up` and `pull` timeout to avoid hanging",
-            "required": false,
-            "schema": {
-              "title": "Long Running Compose Timeout",
-              "type": "integer",
-              "description": "docker-compose `up` and `pull` timeout to avoid hanging",
-              "default": 3600
-            },
-            "name": "long_running_compose_timeout",
-            "in": "query"
-          },
-          {
-            "description": "docker-compose config timeout (EXPERIMENTAL)",
-            "required": false,
-            "schema": {
-              "title": "Validation Timeout",
-              "type": "integer",
-              "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 60
-            },
-            "name": "validation_timeout",
-            "in": "query"
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -485,20 +459,6 @@
         ],
         "summary": "Removes the previously started service and returns the docker-compose output",
         "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
-        "parameters": [
-          {
-            "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-            "required": false,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "integer",
-              "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-              "default": 10
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -507,16 +467,6 @@
                 "schema": {
                   "title": "Response Runs Docker Compose Down Task V1 Containers Down Post",
                   "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -710,20 +660,6 @@
         ],
         "summary": "Removes the previously started service and returns the docker-compose output",
         "operationId": "containers_restart_task_v1_containers_restart_post",
-        "parameters": [
-          {
-            "description": "docker-compose stop command timeout default",
-            "required": false,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "integer",
-              "description": "docker-compose stop command timeout default",
-              "default": 10
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -732,16 +668,6 @@
                 "schema": {
                   "title": "Response Containers Restart Task V1 Containers Restart Post",
                   "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }

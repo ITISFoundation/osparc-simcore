@@ -2,7 +2,7 @@ import logging
 from textwrap import dedent
 from typing import Optional
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
     TaskId,
@@ -70,12 +70,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     request: Request,
     containers_create: ContainersCreate,
     task_manager: TaskManager = Depends(get_task_manager),
-    long_running_compose_timeout: int = Query(
-        3600, description="docker-compose `up` and `pull` timeout to avoid hanging"
-    ),
-    validation_timeout: int = Query(
-        60, description="docker-compose config timeout (EXPERIMENTAL)"
-    ),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
@@ -97,8 +91,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             app=app,
             application_health=application_health,
             rabbitmq=rabbitmq,
-            long_running_compose_timeout=long_running_compose_timeout,
-            validation_timeout=validation_timeout,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -114,9 +106,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
     request: Request,
-    command_timeout: int = Query(
-        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
-    ),
     task_manager: TaskManager = Depends(get_task_manager),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -132,7 +121,6 @@ async def runs_docker_compose_down_task(
             app=app,
             shared_store=shared_store,
             settings=settings,
-            command_timeout=command_timeout,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -306,9 +294,6 @@ async def ports_outputs_push_task(
 @cancel_on_disconnect
 async def containers_restart_task(
     request: Request,
-    command_timeout: int = Query(
-        10, description="docker-compose stop command timeout default"
-    ),
     task_manager: TaskManager = Depends(get_task_manager),
     app: FastAPI = Depends(get_application),
     settings: ApplicationSettings = Depends(get_settings),
@@ -326,7 +311,6 @@ async def containers_restart_task(
             settings=settings,
             shared_store=shared_store,
             rabbitmq=rabbitmq,
-            command_timeout=command_timeout,
         )
         return task_id
     except TaskAlreadyRunningError as e:

@@ -92,6 +92,7 @@ async def _start_containers(client: TestClient, compose_spec: str) -> list[str]:
 
 
 async def _docker_ps_a_container_names() -> list[str]:
+    # TODO: replace with aiodocker this is legacy by now
     command = 'docker ps -a --format "{{.Names}}"'
     success, stdout, *_ = await async_command(command=command, timeout=None)
 

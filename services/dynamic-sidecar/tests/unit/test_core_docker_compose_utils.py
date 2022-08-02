@@ -59,56 +59,34 @@ async def test_docker_compose_workflow(
     print("compose_spec:\n", compose_spec)
 
     # validates specs
-    r = await docker_compose_config(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    r = await docker_compose_config(compose_spec_yaml, timeout=10)
     _print_result(r)
     assert r.success, r.message
 
     # removes all stopped containers from specs
-    r = await docker_compose_rm(
-        compose_spec_yaml,
-        settings,
-    )
+    r = await docker_compose_rm(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 
     # creates and starts in detached mode
-    r = await docker_compose_up(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    r = await docker_compose_up(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 
     if with_restart:
         # restarts
-        r = await docker_compose_restart(
-            compose_spec_yaml,
-            settings,
-            10,
-        )
+        r = await docker_compose_restart(compose_spec_yaml, settings)
         _print_result(r)
         assert r.success, r.message
 
     # stops and removes
-    r = await docker_compose_down(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    r = await docker_compose_down(compose_spec_yaml, settings)
 
     _print_result(r)
     assert r.success, r.message
 
     # full cleanup
-    r = await docker_compose_rm(
-        compose_spec_yaml,
-        settings,
-    )
+    r = await docker_compose_rm(compose_spec_yaml, settings)
 
     _print_result(r)
     assert r.success, r.message
@@ -119,15 +97,12 @@ async def test_burst_calls_to_docker_compose_config(
     mock_environment: EnvVarsDict,
     ensure_run_in_sequence_context_is_empty: None,
 ):
-    settings = ApplicationSettings.create_from_envs()
-
     CALLS_COUNT = 10  # tried manually with 1E3 but takes too long
     results = await asyncio.gather(
         *(
             docker_compose_config(
                 compose_spec_yaml,
-                settings,
-                100 + i,  # large timeout and emulates change in parameters
+                timeout=100 + i,  # large timeout and emulates change in parameters
             )
             for i in range(CALLS_COUNT)
         ),

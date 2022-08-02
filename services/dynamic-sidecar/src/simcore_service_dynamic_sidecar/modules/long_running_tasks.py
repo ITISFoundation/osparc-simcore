@@ -49,8 +49,6 @@ async def task_create_service_containers(
     app: FastAPI,
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
-    long_running_compose_timeout: int,
-    validation_timeout: int,
 ) -> list[str]:
     progress.publish(message="validating service spec", percent=0)
 
@@ -58,7 +56,6 @@ async def task_create_service_containers(
         settings=settings,
         compose_file_content=containers_create.docker_compose_yaml,
         mounted_volumes=mounted_volumes,
-        docker_compose_config_timeout=validation_timeout,
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
 
@@ -73,14 +70,10 @@ async def task_create_service_containers(
         await docker_compose_rm(shared_store.compose_spec, settings)
 
         progress.publish(message="pulling images", percent=0.01)
-        await docker_compose_pull(
-            shared_store.compose_spec, settings, timeout=long_running_compose_timeout
-        )
+        await docker_compose_pull(shared_store.compose_spec, settings)
 
         progress.publish(message="starting service containers", percent=0.90)
-        r = await docker_compose_up(
-            shared_store.compose_spec, settings, timeout=long_running_compose_timeout
-        )
+        r = await docker_compose_up(shared_store.compose_spec, settings)
 
     message = f"Finished docker-compose up with output\n{r.message}"
 
@@ -105,17 +98,12 @@ async def task_runs_docker_compose_down(
     app: FastAPI,
     shared_store: SharedStore,
     settings: ApplicationSettings,
-    command_timeout: int,
 ) -> None:
     if shared_store.compose_spec is None:
         raise RuntimeError("No compose-spec was found")
 
     progress.publish(message="running docker-compose-down", percent=0)
-    result = await docker_compose_down(
-        shared_store.compose_spec,
-        settings,
-        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
-    )
+    result = await docker_compose_down(shared_store.compose_spec, settings)
     if not result.success:
         logger.warning(
             "docker-compose down command finished with errors\n%s",
@@ -273,7 +261,6 @@ async def task_containers_restart(
     settings: ApplicationSettings,
     shared_store: SharedStore,
     rabbitmq: RabbitMQ,
-    command_timeout: int,
 ) -> None:
     progress.publish(message="starting containers restart", percent=0.0)
     if shared_store.compose_spec is None:
@@ -284,11 +271,7 @@ async def task_containers_restart(
 
     progress.publish(message="stopped log fetching", percent=0.1)
 
-    result = await docker_compose_restart(
-        shared_store.compose_spec,
-        settings,
-        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
-    )
+    result = await docker_compose_restart(shared_store.compose_spec, settings)
 
     if not result.success:
         logger.warning(

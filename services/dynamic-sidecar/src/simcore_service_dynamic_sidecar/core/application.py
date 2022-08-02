@@ -167,12 +167,7 @@ def create_app():
         if docker_compose_yaml := app_state.compose_spec:
             logger.info("Removing spawned containers")
 
-            result = await docker_compose_down(
-                docker_compose_yaml,
-                app.state.settings,
-                # NOTE: in the event of a SIGTERM, there is a limited time to cleanup
-                timeout=app.state.settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
-            )
+            result = await docker_compose_down(docker_compose_yaml, app.state.settings)
 
             logger.log(
                 logging.INFO if result.success else logging.ERROR,
