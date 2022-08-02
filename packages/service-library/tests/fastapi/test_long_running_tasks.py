@@ -13,15 +13,14 @@ import asyncio
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Final, Optional
+from typing import AsyncIterator, Callable, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import Depends, FastAPI, status
-from httpx import AsyncClient, Response
-from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
+from httpx import AsyncClient
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi import long_running_tasks
-from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

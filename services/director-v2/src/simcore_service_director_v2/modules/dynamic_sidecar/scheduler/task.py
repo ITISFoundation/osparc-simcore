@@ -16,7 +16,7 @@ import logging
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Final, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -57,7 +57,6 @@ from ..errors import (
 )
 from .events import REGISTERED_EVENTS
 
-STATUS_POLL_INTERVAL: Final[float] = 1
 
 logger = logging.getLogger(__name__)
 

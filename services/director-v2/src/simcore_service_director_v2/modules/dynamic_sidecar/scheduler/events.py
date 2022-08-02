@@ -91,8 +91,6 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
-STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
-
 
 class CreateSidecars(DynamicSchedulerEvent):
     """Created the dynamic-sidecar and the proxy."""
@@ -289,9 +287,6 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
 
         async def _pull_outputs_and_state():
             async with disabled_directory_watcher(
@@ -330,6 +325,10 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 )
 
                 scheduler_data.dynamic_sidecar.service_environment_prepared = True
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -582,9 +581,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 and scheduler_data.dynamic_sidecar.were_services_created
             ):
                 dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-                dynamic_sidecar_endpoint: AnyHttpUrl = (
-                    scheduler_data.dynamic_sidecar.endpoint
-                )
 
                 logger.info(
                     "Calling into dynamic-sidecar to save state and pushing data to nodeports"
