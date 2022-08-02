@@ -167,7 +167,7 @@ async def mock_retrieve_features(
                 yield 42
 
             mocker.patch(
-                "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.periodic_task_result",
+                "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
                 side_effect=_mocked_context_manger,
             )
 

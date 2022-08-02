@@ -224,7 +224,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         yield
 
     mocker.patch(
-        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.scheduler.events.periodic_task_result",
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client._public.periodic_task_result",
         side_effect=_mocked_context_manger,
     )
 

@@ -234,7 +234,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
         yield
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events.periodic_task_result",
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
         side_effect=_mocked_context_manger,
     )
 
