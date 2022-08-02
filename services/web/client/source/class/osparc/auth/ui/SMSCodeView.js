@@ -63,7 +63,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
 
       this.add(new qx.ui.core.Spacer(null, 20));
       const resendCodeBtn = this.__resendCodeBtn = new qx.ui.form.Button().set({
-        label: this.tr("Resend code"),
+        label: this.tr("Resend code") + ` (60)`,
         enabled: false
       });
       resendLayout.add(resendCodeBtn, {
