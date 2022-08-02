@@ -164,6 +164,11 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
+      smsCode.addListener("done", msg => {
+        login.resetValues();
+        this.fireDataEvent("done", msg);
+      }, this);
+
       register.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
