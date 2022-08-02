@@ -7,7 +7,6 @@ from typing import Any, Union
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
-from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_utils import docker_client
