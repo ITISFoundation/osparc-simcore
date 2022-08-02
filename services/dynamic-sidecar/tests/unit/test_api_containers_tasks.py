@@ -64,8 +64,7 @@ def _get_dynamic_sidecar_network_name() -> str:
 
 
 @contextmanager
-def mock_tasks() -> Iterator[None]:
-    # NOTE: mocking via `mocker: MockerFixture` appears not to work
+def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
     async def _just_log_task(*args, **kwargs) -> None:
         print(f"Called mocked function with {args}, {kwargs}")
 
@@ -76,16 +75,10 @@ def mock_tasks() -> Iterator[None]:
         if x[0].startswith("task")
     ]
 
-    original_tasks: dict[str, Callable] = {}
-
     for task_name in tasks_names:
-        original_tasks[task_name] = getattr(containers_tasks, task_name)
-        setattr(containers_tasks, task_name, _just_log_task)
+        mocker.patch.object(containers_tasks, task_name, new=_just_log_task)
 
-    yield
-
-    for task_name, original_task in original_tasks.items():
-        setattr(containers_tasks, task_name, original_task)
+    yield None
 
 
 @asynccontextmanager
@@ -398,6 +391,7 @@ async def test_create_containers_task_invalid_yaml_spec(
 async def test_task_is_unique(
     httpx_async_client: AsyncClient,
     client: Client,
+    mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
 ) -> None:
     def _get_awaitable() -> Awaitable:
@@ -408,7 +402,7 @@ async def test_task_is_unique(
             command_timeout=0,
         )
 
-    with mock_tasks():
+    with mock_tasks(mocker):
         task_id = await _get_awaitable()
         async with auto_remove_task(client, task_id):
 
