@@ -95,8 +95,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Create Service Containers Task",
-        "description": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
+        "summary": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
         "operationId": "create_service_containers_task_v1_containers_post",
         "parameters": [
           {
@@ -484,8 +483,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Runs Docker Compose Down Task",
-        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "summary": "Removes the previously started service and returns the docker-compose output",
         "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
         "parameters": [
           {
@@ -531,20 +529,19 @@
         "tags": [
           "containers"
         ],
-        "summary": "State Restore Task",
-        "description": "Restores the state of the dynamic service\n\nWhen restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
+        "summary": "Restores the state of the dynamic service\n\nWhen restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
         "operationId": "state_restore_task_v1_containers_state_restore_post",
         "responses": {
           "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response State Restore Task V1 Containers State Restore Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           }
         }
       }
@@ -554,20 +551,19 @@
         "tags": [
           "containers"
         ],
-        "summary": "State Save Task",
-        "description": "Stores the state of the dynamic service",
+        "summary": "Stores the state of the dynamic service",
         "operationId": "state_save_task_v1_containers_state_save_post",
         "responses": {
           "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response State Save Task V1 Containers State Save Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           }
         }
       }
@@ -577,8 +573,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Ports Inputs Pull Task",
-        "description": "Pull input ports data",
+        "summary": "Pull input ports data",
         "operationId": "ports_inputs_pull_task_v1_containers_ports_inputs_pull_post",
         "requestBody": {
           "content": {
@@ -598,12 +593,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           },
           "422": {
             "description": "Validation Error",
@@ -623,8 +618,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Ports Outputs Pull Task",
-        "description": "Pull output ports data",
+        "summary": "Pull output ports data",
         "operationId": "ports_outputs_pull_task_v1_containers_ports_outputs_pull_post",
         "requestBody": {
           "content": {
@@ -644,12 +638,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           },
           "422": {
             "description": "Validation Error",
@@ -669,8 +663,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Ports Outputs Push Task",
-        "description": "Push output ports data",
+        "summary": "Push output ports data",
         "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
         "requestBody": {
           "content": {
@@ -690,12 +683,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           },
           "422": {
             "description": "Validation Error",
@@ -715,8 +708,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Containers Restart Task",
-        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "summary": "Removes the previously started service and returns the docker-compose output",
         "operationId": "containers_restart_task_v1_containers_restart_post",
         "parameters": [
           {
@@ -737,12 +729,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Containers Restart Task V1 Containers Restart Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           },
           "422": {
             "description": "Validation Error",

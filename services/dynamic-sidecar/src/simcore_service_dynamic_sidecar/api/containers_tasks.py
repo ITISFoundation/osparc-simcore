@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-
+from textwrap import dedent
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
@@ -46,7 +46,18 @@ containers_router_tasks = APIRouter(tags=["containers"])
 
 @containers_router_tasks.post(
     "/containers",
+    summary=dedent(
+        """
+    Starts a background task responsible for:
+    - cleaning up resources from previous runs
+    - pulling the images
+    - starting the containers
+
+    NOTE: only one instance of this task can run at a time
+    """
+    ).strip(),
     status_code=status.HTTP_202_ACCEPTED,
+    response_model=TaskId,
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Cannot validate submitted compose spec"
@@ -71,14 +82,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
-    """
-    Starts a background task responsible for:
-    - cleaning up resources from previous runs
-    - pulling the images
-    - starting the containers
-
-    NOTE: only one instance of this task can run at a time
-    """
     assert request  # nosec
 
     try:
@@ -102,7 +105,10 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
 
 @containers_router_tasks.post(
-    "/containers:down", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId
+    "/containers:down",
+    summary="Removes the previously started service and returns the docker-compose output",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
@@ -115,8 +121,6 @@ async def runs_docker_compose_down_task(
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
 ) -> TaskId:
-    """Removes the previously started service
-    and returns the docker-compose output"""
     assert request  # nosec
 
     try:
@@ -136,12 +140,17 @@ async def runs_docker_compose_down_task(
 
 @containers_router_tasks.post(
     "/containers/state:restore",
+    summary=dedent(
+        """
+    Restores the state of the dynamic service
+
+    When restoring the state:
+    - pull inputs via nodeports
+    - pull all the extra state paths
+    """
+    ).strip(),
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def state_restore_task(
@@ -151,13 +160,6 @@ async def state_restore_task(
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> TaskId:
-    """
-    Restores the state of the dynamic service
-
-    When restoring the state:
-    - pull inputs via nodeports
-    - pull all the extra state paths
-    """
     assert request  # nosec
 
     try:
@@ -176,12 +178,9 @@ async def state_restore_task(
 
 @containers_router_tasks.post(
     "/containers/state:save",
+    summary="Stores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def state_save_task(
@@ -191,7 +190,6 @@ async def state_save_task(
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     settings: ApplicationSettings = Depends(get_settings),
 ) -> TaskId:
-    """Stores the state of the dynamic service"""
     assert request  # nosec
 
     try:
@@ -210,12 +208,9 @@ async def state_save_task(
 
 @containers_router_tasks.post(
     "/containers/ports/inputs:pull",
+    summary="Pull input ports data",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def ports_inputs_pull_task(
@@ -225,7 +220,6 @@ async def ports_inputs_pull_task(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
-    """Pull input ports data"""
     assert request  # nosec
 
     try:
@@ -244,12 +238,9 @@ async def ports_inputs_pull_task(
 
 @containers_router_tasks.post(
     "/containers/ports/outputs:pull",
+    summary="Pull output ports data",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def ports_outputs_pull_task(
@@ -259,7 +250,6 @@ async def ports_outputs_pull_task(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
-    """Pull output ports data"""
     assert request  # nosec
 
     try:
@@ -278,12 +268,9 @@ async def ports_outputs_pull_task(
 
 @containers_router_tasks.post(
     "/containers/ports/outputs:push",
+    summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def ports_outputs_push_task(
@@ -293,8 +280,8 @@ async def ports_outputs_push_task(
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
-    """Push output ports data"""
     assert request  # nosec
+
     try:
         task_id = start_task(
             task_manager=task_manager,
@@ -311,12 +298,9 @@ async def ports_outputs_push_task(
 
 @containers_router_tasks.post(
     "/containers:restart",
+    summary="Removes the previously started service and returns the docker-compose output",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    response_model=TaskId,
 )
 @cancel_on_disconnect
 async def containers_restart_task(
@@ -330,10 +314,8 @@ async def containers_restart_task(
     shared_store: SharedStore = Depends(get_shared_store),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> TaskId:
-    """Removes the previously started service
-    and returns the docker-compose output
-    """
     assert request  # nosec
+
     try:
         task_id = start_task(
             task_manager=task_manager,
