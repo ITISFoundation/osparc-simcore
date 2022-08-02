@@ -8,11 +8,11 @@ from pydantic import PositiveFloat
 from ._client import Client
 from ._errors import TaskClientTimeoutError
 from ._models import (
+    ProgressCallback,
     ProgressMessage,
     ProgressPercent,
     TaskId,
     TaskStatus,
-    ProgressCallback,
 )
 
 # NOTE: very short running requests are involved

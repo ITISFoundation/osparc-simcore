@@ -1,7 +1,7 @@
 import logging
 from asyncio import Task
 from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional, Awaitable
+from typing import Any, Awaitable, Callable, Coroutine, Optional
 
 from pydantic import BaseModel, Field
 

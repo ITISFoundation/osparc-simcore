@@ -1,16 +1,47 @@
-from typing import Any, Optional
+import asyncio
+import functools
+import logging
+from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
 from ._errors import GenericClientError, TaskClientResultError
 from ._models import TaskId, TaskResult, TaskStatus
+
+logger = logging.getLevelName(__name__)
 
 
 class ClientConfiguration(BaseModel):
     router_prefix: str
     default_timeout: PositiveFloat
+
+
+def retry_on_http_errors(
+    request_func: Callable[..., Awaitable[Any]]
+) -> Callable[..., Awaitable[Any]]:
+    """
+    Will retry the request on `httpx.HTTPError`.
+    """
+    assert asyncio.iscoroutinefunction(request_func)
+
+    @functools.wraps(request_func)
+    async def request_wrapper(zelf: "Client", *args, **kwargs) -> Any:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(min=1),
+            retry=retry_if_exception_type(HTTPError),
+            reraise=True,
+        ):
+            with attempt:
+                return await request_func(zelf, *args, **kwargs)
+
+    return request_wrapper
 
 
 class Client:
@@ -39,6 +70,7 @@ class Client:
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
 
+    @retry_on_http_errors
     async def get_task_status(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> TaskStatus:
@@ -57,6 +89,7 @@ class Client:
 
         return TaskStatus.parse_obj(result.json())
 
+    @retry_on_http_errors
     async def get_task_result(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> Optional[Any]:
@@ -78,6 +111,7 @@ class Client:
             raise TaskClientResultError(message=task_result.error)
         return task_result.result
 
+    @retry_on_http_errors
     async def cancel_and_delete_task(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> bool:

@@ -7,11 +7,11 @@ from ._context_manager import periodic_task_result
 from ._errors import TaskClientResultError
 from ._models import (
     CancelResult,
+    ProgressCallback,
     ProgressMessage,
     ProgressPercent,
     TaskId,
     TaskResult,
-    ProgressCallback,
 )
 
 __all__: tuple[str, ...] = (
