@@ -150,7 +150,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         # change introduce in OAS version==1.1.0
         return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
 
@@ -159,7 +159,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_down(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks:down")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers:down")
         return await self._client.post(url)
 
     @retry_on_errors
@@ -167,7 +167,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_state_restore(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks/state:restore")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:restore")
         return await self._client.post(url)
 
     @retry_on_errors
@@ -175,7 +175,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_state_save(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks/state:save")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:save")
         return await self._client.post(url)
 
     @retry_on_errors
@@ -187,7 +187,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/tasks/ports/inputs:pull"
+            dynamic_sidecar_endpoint, "/containers/ports/inputs:pull"
         )
         return await self._client.post(url, json=port_keys)
 
@@ -200,7 +200,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:pull"
+            dynamic_sidecar_endpoint, "/containers/ports/outputs:pull"
         )
         return await self._client.post(url, json=port_keys)
 
@@ -213,7 +213,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/tasks/ports/outputs:push"
+            dynamic_sidecar_endpoint, "/containers/ports/outputs:push"
         )
         return await self._client.post(url, json=port_keys)
 
@@ -222,5 +222,5 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_restart(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/tasks:restart")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self._client.post(url)

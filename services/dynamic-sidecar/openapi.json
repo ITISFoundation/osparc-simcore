@@ -90,6 +90,66 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Create Service Containers Task",
+        "description": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
+        "operationId": "create_service_containers_task_v1_containers_post",
+        "parameters": [
+          {
+            "description": "docker-compose `up` and `pull` timeout to avoid hanging",
+            "required": false,
+            "schema": {
+              "title": "Long Running Compose Timeout",
+              "type": "integer",
+              "description": "docker-compose `up` and `pull` timeout to avoid hanging",
+              "default": 3600
+            },
+            "name": "long_running_compose_timeout",
+            "in": "query"
+          },
+          {
+            "description": "docker-compose config timeout (EXPERIMENTAL)",
+            "required": false,
+            "schema": {
+              "title": "Validation Timeout",
+              "type": "integer",
+              "description": "docker-compose config timeout (EXPERIMENTAL)",
+              "default": 60
+            },
+            "name": "validation_timeout",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainersCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Cannot validate submitted compose spec"
+          },
+          "409": {
+            "description": "Could not start a task while another is running"
+          }
+        }
       }
     },
     "/v1/containers/{id}/logs": {
@@ -419,76 +479,14 @@
         }
       }
     },
-    "/v1/containers/tasks": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Create Service Containers Task",
-        "description": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
-        "operationId": "create_service_containers_task_v1_containers_tasks_post",
-        "parameters": [
-          {
-            "description": "docker-compose `up` and `pull` timeout to avoid hanging",
-            "required": false,
-            "schema": {
-              "title": "Long Running Compose Timeout",
-              "type": "integer",
-              "description": "docker-compose `up` and `pull` timeout to avoid hanging",
-              "default": 3600
-            },
-            "name": "long_running_compose_timeout",
-            "in": "query"
-          },
-          {
-            "description": "docker-compose config timeout (EXPERIMENTAL)",
-            "required": false,
-            "schema": {
-              "title": "Validation Timeout",
-              "type": "integer",
-              "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 60
-            },
-            "name": "validation_timeout",
-            "in": "query"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ContainersCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Cannot validate submitted compose spec"
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
-          }
-        }
-      }
-    },
-    "/v1/containers/tasks:down": {
+    "/v1/containers:down": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Runs Docker Compose Down Task",
         "description": "Removes the previously started service\nand returns the docker-compose output",
-        "operationId": "runs_docker_compose_down_task_v1_containers_tasks_down_post",
+        "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
         "parameters": [
           {
             "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
@@ -528,14 +526,14 @@
         }
       }
     },
-    "/v1/containers/tasks/state:restore": {
+    "/v1/containers/state:restore": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "State Restore Task",
         "description": "Restores the state of the dynamic service\n\nWhen restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
-        "operationId": "state_restore_task_v1_containers_tasks_state_restore_post",
+        "operationId": "state_restore_task_v1_containers_state_restore_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -551,14 +549,14 @@
         }
       }
     },
-    "/v1/containers/tasks/state:save": {
+    "/v1/containers/state:save": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "State Save Task",
         "description": "Stores the state of the dynamic service",
-        "operationId": "state_save_task_v1_containers_tasks_state_save_post",
+        "operationId": "state_save_task_v1_containers_state_save_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -574,14 +572,14 @@
         }
       }
     },
-    "/v1/containers/tasks/ports/inputs:pull": {
+    "/v1/containers/ports/inputs:pull": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Ports Inputs Pull Task",
         "description": "Pull input ports data",
-        "operationId": "ports_inputs_pull_task_v1_containers_tasks_ports_inputs_pull_post",
+        "operationId": "ports_inputs_pull_task_v1_containers_ports_inputs_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -620,14 +618,14 @@
         }
       }
     },
-    "/v1/containers/tasks/ports/outputs:pull": {
+    "/v1/containers/ports/outputs:pull": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Ports Outputs Pull Task",
         "description": "Pull output ports data",
-        "operationId": "ports_outputs_pull_task_v1_containers_tasks_ports_outputs_pull_post",
+        "operationId": "ports_outputs_pull_task_v1_containers_ports_outputs_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -666,14 +664,14 @@
         }
       }
     },
-    "/v1/containers/tasks/ports/outputs:push": {
+    "/v1/containers/ports/outputs:push": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Ports Outputs Push Task",
         "description": "Push output ports data",
-        "operationId": "ports_outputs_push_task_v1_containers_tasks_ports_outputs_push_post",
+        "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -712,14 +710,14 @@
         }
       }
     },
-    "/v1/containers/tasks:restart": {
+    "/v1/containers:restart": {
       "post": {
         "tags": [
           "containers"
         ],
         "summary": "Containers Restart Task",
         "description": "Removes the previously started service\nand returns the docker-compose output",
-        "operationId": "containers_restart_task_v1_containers_tasks_restart_post",
+        "operationId": "containers_restart_task_v1_containers_restart_post",
         "parameters": [
           {
             "description": "docker-compose stop command timeout default",

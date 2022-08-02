@@ -58,7 +58,7 @@ async def _assert_disable_directory_watcher(client: TestClient) -> None:
 async def _start_containers(client: TestClient, compose_spec: str) -> list[str]:
     # start containers
     response = await client.post(
-        f"/{API_VTAG}/containers/tasks", json={"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()

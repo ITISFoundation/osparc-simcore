@@ -260,7 +260,7 @@ async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient, compose_spec: str, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks", json={"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -270,7 +270,7 @@ async def _get_task_id_create_service_containers(
 async def _get_task_id_docker_compose_down(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks:down")
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers:down")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -280,7 +280,7 @@ async def _get_task_id_state_restore(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks/state:restore"
+        f"/{API_VTAG}/containers/state:restore"
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -290,7 +290,7 @@ async def _get_task_id_state_restore(
 async def _get_task_id_state_save(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers/tasks/state:save")
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:save")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
@@ -300,7 +300,7 @@ async def _get_task_id_task_ports_inputs_pull(
     httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks/ports/inputs:pull", json=port_keys
+        f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -311,7 +311,7 @@ async def _get_task_id_task_ports_outputs_pull(
     httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks/ports/outputs:pull", json=port_keys
+        f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -322,7 +322,7 @@ async def _get_task_id_task_ports_outputs_push(
     httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks/ports/outputs:push", json=port_keys
+        f"/{API_VTAG}/containers/ports/outputs:push", json=port_keys
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -333,7 +333,7 @@ async def _get_task_id_task_containers_restart(
     httpx_async_client: AsyncClient, command_timeout: int, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/tasks:restart",
+        f"/{API_VTAG}/containers:restart",
         params=dict(command_timeout=command_timeout),
     )
     task_id: TaskId = response.json()

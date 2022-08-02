@@ -45,7 +45,7 @@ containers_router_tasks = APIRouter(tags=["containers"])
 
 
 @containers_router_tasks.post(
-    "/containers/tasks",
+    "/containers",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
@@ -105,7 +105,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
 
 @containers_router_tasks.post(
-    "/containers/tasks:down",
+    "/containers:down",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -144,7 +144,7 @@ async def runs_docker_compose_down_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks/state:restore",
+    "/containers/state:restore",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -184,7 +184,7 @@ async def state_restore_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks/state:save",
+    "/containers/state:save",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -218,7 +218,7 @@ async def state_save_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks/ports/inputs:pull",
+    "/containers/ports/inputs:pull",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -252,7 +252,7 @@ async def ports_inputs_pull_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks/ports/outputs:pull",
+    "/containers/ports/outputs:pull",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -286,7 +286,7 @@ async def ports_outputs_pull_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks/ports/outputs:push",
+    "/containers/ports/outputs:push",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
@@ -319,7 +319,7 @@ async def ports_outputs_push_task(
 
 
 @containers_router_tasks.post(
-    "/containers/tasks:restart",
+    "/containers:restart",
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         status.HTTP_409_CONFLICT: {
