@@ -139,15 +139,15 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Create Service Containers Task V1 Containers Post",
+                  "type": "string"
+                }
               }
             }
           },
           "422": {
             "description": "Cannot validate submitted compose spec"
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           }
         }
       }
@@ -506,12 +506,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post",
+                  "type": "string"
+                }
               }
             }
-          },
-          "409": {
-            "description": "Could not start a task while another is running"
           },
           "422": {
             "description": "Validation Error",

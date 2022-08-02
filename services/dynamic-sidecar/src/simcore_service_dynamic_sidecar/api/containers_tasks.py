@@ -50,10 +50,7 @@ containers_router_tasks = APIRouter(tags=["containers"])
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "description": "Cannot validate submitted compose spec"
-        },
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
+        }
     },
 )
 @cancel_on_disconnect
@@ -105,13 +102,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
 
 @containers_router_tasks.post(
-    "/containers:down",
-    status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Could not start a task while another is running"
-        },
-    },
+    "/containers:down", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId
 )
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
