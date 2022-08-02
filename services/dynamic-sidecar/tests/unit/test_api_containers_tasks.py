@@ -50,7 +50,7 @@ ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at"
 # UTILS
 
 
-def __print_routes(app: FastAPI) -> None:
+def _print_routes(app: FastAPI) -> None:
     endpoints = []
     for route in app.routes:
         if isinstance(route, APIRoute):
@@ -162,7 +162,7 @@ async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
     # this will be in a different process
     client_setup(app)
     async with LifespanManager(app):
-        __print_routes(app)
+        _print_routes(app)
         yield app
 
 
