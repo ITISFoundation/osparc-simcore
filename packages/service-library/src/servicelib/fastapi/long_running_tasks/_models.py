@@ -1,7 +1,7 @@
 import logging
 from asyncio import Task
 from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine, Optional, Awaitable
 
 from pydantic import BaseModel, Field
 
@@ -13,6 +13,7 @@ TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
 ProgressMessage = str
 ProgressPercent = float
+ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
 
 
 class MarkOptions(BaseModel):

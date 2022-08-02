@@ -1,14 +1,19 @@
 import asyncio
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Awaitable, Callable, Final, Optional
+from typing import Any, AsyncIterator, Final, Optional
 
 from pydantic import PositiveFloat
 
-from ...utils import logged_gather
 from ._client import Client
 from ._errors import TaskClientTimeoutError
-from ._models import ProgressMessage, ProgressPercent, TaskId, TaskStatus
+from ._models import (
+    ProgressMessage,
+    ProgressPercent,
+    TaskId,
+    TaskStatus,
+    ProgressCallback,
+)
 
 # NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10
@@ -25,9 +30,7 @@ class _ProgressManager:
 
     def __init__(
         self,
-        update_callback: Optional[
-            Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
-        ],
+        update_callback: Optional[ProgressCallback],
     ) -> None:
         self._callback = update_callback
         self._last_message: Optional[ProgressMessage] = None
@@ -62,9 +65,7 @@ async def periodic_task_result(
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[
-        Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
-    ] = None,
+    progress_callback: Optional[ProgressCallback] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """
