@@ -78,7 +78,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
 
       const smsCode = this.__form.getItems().smsCode;
 
-      if (smsCode.getValue() === "1234") {
+      if (smsCode.getValue() === "8004") {
         this.__validateCodeBtn.setFetching(false);
         this.fireDataEvent("done");
       } else {
