@@ -28,7 +28,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
       this.__form = new qx.ui.form.Form();
 
       const smsCodeDesc = new qx.ui.basic.Label().set({
-        value: this.tr("We just sent a 4-digit code to XXXXX1766")
+        value: this.tr("We just sent a 4-digit code to +41-XXXXX1766")
       });
       this.add(smsCodeDesc);
 
