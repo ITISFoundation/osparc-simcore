@@ -18,7 +18,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
     ProgressPercent,
-    periodic_tasks_results,
+    periodic_task_result,
 )
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
@@ -112,13 +112,13 @@ async def test_task_result(
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    async with periodic_tasks_results(
+    async with periodic_task_result(
         client,
-        [task_id],
+        task_id,
         task_timeout=10,
         status_poll_interval=TASK_SLEEP_INTERVAL / 3,
-    ) as results:
-        assert results[0] == 42
+    ) as result:
+        assert result == 42
 
     await _assert_task_removed(async_client, task_id, router_prefix)
 
@@ -134,16 +134,16 @@ async def test_task_result_times_out(
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     timeout = TASK_SLEEP_INTERVAL / 2
     with pytest.raises(TaskClientTimeoutError) as exec_info:
-        async with periodic_tasks_results(
+        async with periodic_task_result(
             client,
-            [task_id],
+            task_id,
             task_timeout=timeout,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
     assert (
         f"{exec_info.value}"
-        == f"Timed out after {timeout} seconds while awaiting '{[task_id]}' to complete"
+        == f"Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
     )
 
     await _assert_task_removed(async_client, task_id, router_prefix)
@@ -159,9 +159,9 @@ async def test_task_result_task_result_is_an_error(
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     with pytest.raises(TaskClientResultError) as exec_info:
-        async with periodic_tasks_results(
+        async with periodic_task_result(
             client,
-            [task_id],
+            task_id,
             task_timeout=10,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):

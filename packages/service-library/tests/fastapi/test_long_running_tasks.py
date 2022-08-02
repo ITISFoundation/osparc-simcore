@@ -197,14 +197,14 @@ async def test_workflow(
     client = long_running_tasks.client.Client(
         app=client_app, async_client=async_client, base_url=run_server
     )
-    async with long_running_tasks.client.periodic_tasks_results(
+    async with long_running_tasks.client.periodic_task_result(
         client,
-        [task_id],
+        task_id,
         task_timeout=10,
         progress_callback=progress_handler,
         status_poll_interval=high_status_poll_interval,
-    ) as results:
-        string_list = results[0]
+    ) as result:
+        string_list = result
         assert string_list == [f"{x}" for x in range(10)]
 
         assert progress_updates == [
@@ -236,76 +236,12 @@ async def test_error_after_result(
         app=client_app, async_client=async_client, base_url=run_server
     )
     with pytest.raises(RuntimeError):
-        async with long_running_tasks.client.periodic_tasks_results(
+        async with long_running_tasks.client.periodic_task_result(
             client,
-            [task_id],
+            task_id,
             task_timeout=10,
             status_poll_interval=high_status_poll_interval,
-        ) as results:
-            string_list = results[0]
+        ) as result:
+            string_list = result
             assert string_list == [f"{x}" for x in range(10)]
             raise RuntimeError("has no influence")
-
-
-class ExpectedTask(BaseModel):
-    url: str
-    params: Optional[dict[str, Any]]
-    result: Any
-
-    @property
-    def sort_key(self) -> int:
-        return id(self)
-
-
-@pytest.mark.parametrize("sort_reversed", [True, False])
-async def test_workflow_results_order(
-    run_server: AnyHttpUrl,
-    client_app: FastAPI,
-    async_client: AsyncClient,
-    high_status_poll_interval: PositiveFloat,
-    sort_reversed: bool,
-):
-    expected_tasks: list[ExpectedTask] = sorted(
-        [
-            ExpectedTask(
-                url=f"{run_server}/string-list-task",
-                params=None,
-                result=[f"{x}" for x in range(10)],
-            ),
-            ExpectedTask(
-                url=f"{run_server}/waiting-task",
-                params=dict(wait_for=ITEM_PUBLISH_SLEEP * 3),
-                result=ITEM_PUBLISH_SLEEP * 3 + 42,
-            ),
-            ExpectedTask(
-                url=f"{run_server}/waiting-task",
-                params=dict(wait_for=ITEM_PUBLISH_SLEEP * 2),
-                result=ITEM_PUBLISH_SLEEP * 2 + 42,
-            ),
-        ],
-        key=lambda x: x.sort_key,
-        reverse=sort_reversed,
-    )
-    responses: list[Response] = await logged_gather(
-        *(async_client.post(x.url, params=x.params) for x in expected_tasks)
-    )
-
-    tasks_ids = []
-    for response in responses:
-        assert response.status_code == status.HTTP_202_ACCEPTED
-        task_id = parse_obj_as(long_running_tasks.client.TaskId, response.json())
-        assert task_id
-        tasks_ids.append(task_id)
-
-    client = long_running_tasks.client.Client(
-        app=client_app, async_client=async_client, base_url=run_server
-    )
-    async with long_running_tasks.client.periodic_tasks_results(
-        client,
-        tasks_ids,
-        task_timeout=10,
-        status_poll_interval=high_status_poll_interval,
-    ) as results:
-        assert len(results) == len(tasks_ids)
-        for expected_task, result in zip(expected_tasks, results):
-            assert expected_task.result == result

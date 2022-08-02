@@ -35,7 +35,7 @@ class TaskExceptionError(BaseLongRunningError):
 class TaskClientTimeoutError(BaseLongRunningError):
     code: str = "fastapi.client.timed_out_waiting_for_response"
     msg_template: str = (
-        "Timed out after {timeout} seconds while awaiting '{task_ids}' to complete"
+        "Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
     )
 
 
