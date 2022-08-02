@@ -94,12 +94,14 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
 
     __restartTimer: function() {
       let count = 60;
-      setInterval(() => {
+      const refreshIntervalId = setInterval(() => {
         if (count > 0) {
           count--;
+        } else {
+          clearInterval(refreshIntervalId);
         }
         this.__resendCodeBtn.set({
-          label: this.tr("Resend code") + ` (${count})`,
+          label: count > 0 ? this.tr("Resend code") + ` (${count})` : this.tr("Resend code"),
           enabled: count === 0
         });
       }, 1000);
