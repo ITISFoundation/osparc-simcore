@@ -27,10 +27,6 @@ def _raise_if_container_is_missing(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-class ContainersCreate(BaseModel):
-    docker_compose_yaml: str
-
-
 containers_router = APIRouter(tags=["containers"])
 
 
