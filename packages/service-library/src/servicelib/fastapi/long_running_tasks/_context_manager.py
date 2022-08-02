@@ -8,7 +8,7 @@ from pydantic import PositiveFloat
 from ...utils import logged_gather
 from ._client import Client
 from ._errors import TaskClientTimeoutError
-from ._models import TaskId, TaskStatus
+from ._models import ProgressMessage, ProgressPercent, TaskId, TaskStatus
 
 # NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10
@@ -25,18 +25,20 @@ class _ProgressManager:
 
     def __init__(
         self,
-        update_callback: Optional[Callable[[str, float, TaskId], Awaitable[None]]],
+        update_callback: Optional[
+            Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
+        ],
     ) -> None:
         self._callback = update_callback
-        self._last_message: Optional[str] = None
-        self._last_percent: Optional[float] = None
+        self._last_message: Optional[ProgressMessage] = None
+        self._last_percent: Optional[ProgressPercent] = None
 
     async def update(
         self,
         task_id: TaskId,
         *,
-        message: Optional[str] = None,
-        percent: Optional[float] = None,
+        message: Optional[ProgressMessage] = None,
+        percent: Optional[ProgressPercent] = None,
     ) -> None:
         if self._callback is None:
             return
@@ -60,7 +62,9 @@ async def periodic_tasks_results(
     task_ids: list[TaskId],
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[Callable[[str, float, TaskId], Awaitable[None]]] = None,
+    progress_callback: Optional[
+        Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
+    ] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[list[Optional[Any]]]:
     """
@@ -136,7 +140,9 @@ async def periodic_task_result(
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[Callable[[str, float, TaskId], Awaitable[None]]] = None,
+    progress_callback: Optional[
+        Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
+    ] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """

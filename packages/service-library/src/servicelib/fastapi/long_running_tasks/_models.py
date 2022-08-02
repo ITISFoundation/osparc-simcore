@@ -11,6 +11,9 @@ TaskName = str
 TaskId = str
 TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
+ProgressMessage = str
+ProgressPercent = float
+
 
 class MarkOptions(BaseModel):
     unique: bool = False
@@ -22,11 +25,14 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
-    message: str
-    percent: float
+    message: ProgressMessage
+    percent: ProgressPercent
 
     def publish(
-        self, *, message: Optional[str] = None, percent: Optional[float] = None
+        self,
+        *,
+        message: Optional[ProgressMessage] = None,
+        percent: Optional[ProgressPercent] = None,
     ) -> None:
         """`percent` must be between 0.0 and 1.0 otherwise ValueError is raised"""
         if message:

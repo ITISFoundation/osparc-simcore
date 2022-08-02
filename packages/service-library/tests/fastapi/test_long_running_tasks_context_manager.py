@@ -14,7 +14,12 @@ from servicelib.fastapi.long_running_tasks._errors import (
     TaskClientResultError,
     TaskClientTimeoutError,
 )
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_tasks_results
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    ProgressMessage,
+    ProgressPercent,
+    periodic_tasks_results,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
@@ -171,7 +176,9 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     counter = 0
     received = ()
 
-    async def progress_update(message: str, percent: float, task_id: TaskId) -> None:
+    async def progress_update(
+        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+    ) -> None:
         nonlocal counter
         nonlocal received
         counter += 1
