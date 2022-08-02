@@ -118,11 +118,13 @@ qx.Class.define("osparc.auth.LoginPage", {
       const register = new osparc.auth.ui.RegistrationView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
+      const smsCode = new osparc.auth.ui.SMSCodeView();
 
       pages.add(login);
       pages.add(register);
       pages.add(resetRequest);
       pages.add(reset);
+      pages.add(smsCode);
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
@@ -154,6 +156,11 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       login.addListener("toRegister", e => {
         pages.setSelection([register]);
+        login.resetValues();
+      }, this);
+
+      login.addListener("toSMSCode", () => {
+        pages.setSelection([smsCode]);
         login.resetValues();
       }, this);
 
