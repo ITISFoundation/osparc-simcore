@@ -22,9 +22,15 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
   members: {
     __form: null,
     __validateCodeBtn: null,
+    __resendCodeBtn: null,
 
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
+
+      const smsCodeDesc = new qx.ui.basic.Label().set({
+        value: this.tr("We just sent a 4-digit code to XXXXX1766")
+      });
+      this.add(smsCodeDesc);
 
       const smsCode = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type code"),
@@ -34,6 +40,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
       this.addListener("appear", () => {
         smsCode.focus();
         smsCode.activate();
+        this.__restartTimer();
       });
       this.__form.add(smsCode, "", null, "smsCode", null);
 
@@ -43,6 +50,27 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
       });
       validateCodeBtn.addListener("execute", () => this.__validateCode(), this);
       this.add(validateCodeBtn);
+
+      const resendLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+      const resendCodeDesc = new qx.ui.basic.Label().set({
+        value: this.tr("Didn't receive the code?")
+      });
+      resendLayout.add(resendCodeDesc, {
+        flex: 1
+      });
+
+      this.add(new qx.ui.core.Spacer(null, 20));
+      const resendCodeBtn = this.__resendCodeBtn = new qx.ui.form.Button().set({
+        label: this.tr("Resend code"),
+        enabled: false
+      });
+      resendLayout.add(resendCodeBtn, {
+        flex: 1
+      });
+      resendCodeBtn.addListener("execute", () => this.__resendCode(), this);
+      this.add(resendLayout);
     },
 
     __validateCode: function() {
@@ -50,24 +78,35 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
 
       const smsCode = this.__form.getItems().smsCode;
 
-      const successFun = log => {
+      if (smsCode.getValue() === "1234") {
         this.__validateCodeBtn.setFetching(false);
-        this.fireDataEvent("done", log.message);
-      };
-
-      const failFun = msg => {
+        this.fireDataEvent("done");
+      } else {
         this.__validateCodeBtn.setFetching(false);
-        msg = String(msg) || this.tr("Invalid code");
+        const msg = this.tr("Invalid code");
         smsCode.set({
           invalidMessage: msg,
           valid: false
         });
-
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      };
+      }
+    },
 
-      const manager = osparc.auth.Manager.getInstance();
-      manager.login(smsCode.getValue(), smsCode.getValue(), successFun, failFun, this);
+    __restartTimer: function() {
+      let count = 60;
+      setInterval(() => {
+        if (count > 0) {
+          count--;
+        }
+        this.__resendCodeBtn.set({
+          label: this.tr("Resend code") + ` (${count})`,
+          enabled: count === 0
+        });
+      }, 1000);
+    },
+
+    __resendCode: function() {
+      this.__restartTimer();
     }
   }
 });
