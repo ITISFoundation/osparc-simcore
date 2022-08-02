@@ -31,6 +31,13 @@ class LoginSettings(BaseCustomSettings):
             "WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED",
         ],
     )
+    LOGIN_2FA_REQUIRED: bool = Field(
+        ...,
+        env=[
+            "LOGIN_2FA_REQUIRED",
+            "WEBSERVER_LOGIN_2FA_REQUIRED",
+        ],
+    )
 
 
 class LoginOptions(BaseModel):
