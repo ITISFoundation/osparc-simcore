@@ -28,6 +28,9 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 WAIT_FOR_DIRECTORY_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
@@ -63,13 +66,17 @@ async def _start_containers(client: TestClient, compose_spec: str) -> list[str]:
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()
 
-    wait_task_completion = True
-    while wait_task_completion:
-        response = await client.get(f"/task/{task_id}")
-        assert response.status_code == status.HTTP_200_OK
-        task_status = response.json()
-        wait_task_completion = not task_status["done"]
-        await asyncio.sleep(FAST_POLLING_INTERVAL)
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(FAST_POLLING_INTERVAL),
+        stop=stop_after_delay(100 * FAST_POLLING_INTERVAL),
+        reraise=True,
+    ):
+        with attempt:
+            response = await client.get(f"/task/{task_id}")
+            assert response.status_code == status.HTTP_200_OK
+            task_status = response.json()
+            if not task_status["done"]:
+                raise RuntimeError(f"Waiting for task to complete, got: {task_status}")
 
     response = await client.get(f"/task/{task_id}/result")
     assert response.status_code == status.HTTP_200_OK

@@ -33,7 +33,7 @@ def retry_on_http_errors(
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "Client", *args, **kwargs) -> Any:
         async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(3),
+            stop=stop_after_attempt(max_attempt_number=3),
             wait=wait_exponential(min=1),
             retry=retry_if_exception_type(HTTPError),
             reraise=True,
