@@ -42,25 +42,25 @@ def _create_network_aliases(network_name: str) -> list[str]:
     return [f"alias_{i}_{network_name}" for i in range(10)]
 
 
-async def _assert_enable_directory_watcher(client: TestClient) -> None:
-    response = await client.patch(
+async def _assert_enable_directory_watcher(test_client: TestClient) -> None:
+    response = await test_client.patch(
         f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
 
-async def _assert_disable_directory_watcher(client: TestClient) -> None:
-    response = await client.patch(
+async def _assert_disable_directory_watcher(test_client: TestClient) -> None:
+    response = await test_client.patch(
         f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
 
-async def _start_containers(client: TestClient, compose_spec: str) -> list[str]:
+async def _start_containers(test_client: TestClient, compose_spec: str) -> list[str]:
     # start containers
-    response = await client.post(
+    response = await test_client.post(
         f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
@@ -72,19 +72,19 @@ async def _start_containers(client: TestClient, compose_spec: str) -> list[str]:
         reraise=True,
     ):
         with attempt:
-            response = await client.get(f"/task/{task_id}")
+            response = await test_client.get(f"/task/{task_id}")
             assert response.status_code == status.HTTP_200_OK
             task_status = response.json()
             if not task_status["done"]:
                 raise RuntimeError(f"Waiting for task to complete, got: {task_status}")
 
-    response = await client.get(f"/task/{task_id}/result")
+    response = await test_client.get(f"/task/{task_id}/result")
     assert response.status_code == status.HTTP_200_OK
     result_response = response.json()
     assert result_response["error"] is None
     response_containers = result_response["result"]
 
-    shared_store: SharedStore = client.application.state.shared_store
+    shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names
     assert response_containers == container_names
 
@@ -123,7 +123,7 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
 
 
 @pytest.fixture
-def client(
+def test_client(
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers,
@@ -185,11 +185,11 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 
 @pytest.fixture
-async def started_containers(client: TestClient, compose_spec: str) -> list[str]:
-    settings: ApplicationSettings = client.application.state.settings
+async def started_containers(test_client: TestClient, compose_spec: str) -> list[str]:
+    settings: ApplicationSettings = test_client.application.state.settings
     await _assert_compose_spec_pulled(compose_spec, settings)
 
-    return await _start_containers(client, compose_spec)
+    return await _start_containers(test_client, compose_spec)
 
 
 @pytest.fixture
@@ -273,9 +273,9 @@ def test_ensure_api_vtag_is_v1():
 
 async def test_start_same_space_twice(
     compose_spec: str,
-    client: TestClient,
+    test_client: TestClient,
 ):
-    settings = client.application.state.settings
+    settings = test_client.application.state.settings
 
     settings_1 = settings.copy(
         update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deep=True
@@ -289,11 +289,11 @@ async def test_start_same_space_twice(
 
 
 async def test_containers_get(
-    client: TestClient,
+    test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
 ):
-    response = await client.get(f"/{API_VTAG}/containers")
+    response = await test_client.get(f"/{API_VTAG}/containers")
     assert response.status_code == status.HTTP_200_OK, response.text
 
     decoded_response = response.json()
@@ -304,11 +304,11 @@ async def test_containers_get(
 
 
 async def test_containers_get_status(
-    client: TestClient,
+    test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
 ):
-    response = await client.get(
+    response = await test_client.get(
         f"/{API_VTAG}/containers", query_string=dict(only_status=True)
     )
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -326,36 +326,36 @@ async def test_containers_get_status(
 
 
 async def test_containers_docker_status_docker_error(
-    client: TestClient,
+    test_client: TestClient,
     started_containers: list[str],
     mock_aiodocker_containers_get: int,
 ):
-    response = await client.get(f"/{API_VTAG}/containers")
+    response = await test_client.get(f"/{API_VTAG}/containers")
     assert response.status_code == mock_aiodocker_containers_get, response.text
 
 
 async def test_container_inspect_logs_remove(
-    client: TestClient, started_containers: list[str]
+    test_client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
         # get container logs
         # FIXME: slow call?
-        response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == status.HTTP_200_OK, response.text
 
         # inspect container
-        response = await client.get(f"/{API_VTAG}/containers/{container}")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == status.HTTP_200_OK, response.text
         parsed_response = response.json()
         assert parsed_response["Name"] == f"/{container}"
 
 
 async def test_container_logs_with_timestamps(
-    client: TestClient, started_containers: list[str]
+    test_client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
         print("getting logs of container", container, "...")
-        response = await client.get(
+        response = await test_client.get(
             f"/{API_VTAG}/containers/{container}/logs",
             query_string=dict(timestamps=True),
         )
@@ -364,7 +364,7 @@ async def test_container_logs_with_timestamps(
 
 
 async def test_container_missing_container(
-    client: TestClient, not_started_containers: list[str]
+    test_client: TestClient, not_started_containers: list[str]
 ):
     def _expected_error_string(container: str) -> dict[str, str]:
         return dict(
@@ -373,18 +373,18 @@ async def test_container_missing_container(
 
     for container in not_started_containers:
         # get container logs
-        response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
         # inspect container
-        response = await client.get(f"/{API_VTAG}/containers/{container}")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
 
 async def test_container_docker_error(
-    client: TestClient,
+    test_client: TestClient,
     started_containers: list[str],
     mock_aiodocker_containers_get: int,
 ):
@@ -397,22 +397,22 @@ async def test_container_docker_error(
 
     for container in started_containers:
         # get container logs
-        response = await client.get(f"/{API_VTAG}/containers/{container}/logs")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
         assert response.status_code == mock_aiodocker_containers_get, response.text
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
         # inspect container
-        response = await client.get(f"/{API_VTAG}/containers/{container}")
+        response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == mock_aiodocker_containers_get, response.text
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
 async def test_directory_watcher_disabling(
-    client: TestClient,
+    test_client: TestClient,
     mock_dir_watcher_on_any_event: AsyncMock,
 ):
-    assert isinstance(client.application, FastAPI)
-    mounted_volumes = AppState(client.application).mounted_volumes
+    assert isinstance(test_client.application, FastAPI)
+    mounted_volumes = AppState(test_client.application).mounted_volumes
 
     def _create_random_dir_in_inputs() -> int:
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
@@ -429,7 +429,7 @@ async def test_directory_watcher_disabling(
     EVENTS_PER_DIR_CREATION = 2
 
     # by default directory-watcher it is disabled
-    await _assert_enable_directory_watcher(client)
+    await _assert_enable_directory_watcher(test_client)
     assert mock_dir_watcher_on_any_event.call_count == 0
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 1
@@ -437,14 +437,14 @@ async def test_directory_watcher_disabling(
     assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # disable and wait for events should have the same count as before
-    await _assert_disable_directory_watcher(client)
+    await _assert_disable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 2
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
     assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # enable and wait for events
-    await _assert_enable_directory_watcher(client)
+    await _assert_enable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 3
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
@@ -452,22 +452,22 @@ async def test_directory_watcher_disabling(
 
 
 async def test_container_create_outputs_dirs(
-    client: TestClient,
+    test_client: TestClient,
     mock_outputs_labels: dict[str, ServiceOutput],
     mock_dir_watcher_on_any_event: AsyncMock,
 ):
-    assert isinstance(client.application, FastAPI)
-    mounted_volumes = AppState(client.application).mounted_volumes
+    assert isinstance(test_client.application, FastAPI)
+    mounted_volumes = AppState(test_client.application).mounted_volumes
 
     # by default directory-watcher it is disabled
-    await _assert_enable_directory_watcher(client)
+    await _assert_enable_directory_watcher(test_client)
 
     assert mock_dir_watcher_on_any_event.call_count == 0
 
     json_outputs_labels = {
         k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
     }
-    response = await client.post(
+    response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs/dirs",
         json={"outputs_labels": json_outputs_labels},
     )
@@ -482,9 +482,11 @@ async def test_container_create_outputs_dirs(
 
 
 def _get_entrypoint_container_name(
-    client: TestClient, dynamic_sidecar_network_name: str
+    test_client: TestClient, dynamic_sidecar_network_name: str
 ) -> str:
-    parsed_spec = parse_compose_spec(client.application.state.shared_store.compose_spec)
+    parsed_spec = parse_compose_spec(
+        test_client.application.state.shared_store.compose_spec
+    )
     container_name = None
     for service_name, service_details in parsed_spec["services"].items():
         if dynamic_sidecar_network_name in service_details.get("networks", []):
@@ -495,34 +497,38 @@ def _get_entrypoint_container_name(
 
 
 async def test_containers_entrypoint_name_ok(
-    client: TestClient,
+    test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
 ):
     filters = json.dumps({"network": dynamic_sidecar_network_name})
-    response = await client.get(f"/{API_VTAG}/containers/name?filters={filters}")
+    response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json() == _get_entrypoint_container_name(
-        client, dynamic_sidecar_network_name
+        test_client, dynamic_sidecar_network_name
     )
 
 
 async def test_containers_entrypoint_name_containers_not_started(
-    client: TestClient,
+    test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
 ):
     entrypoint_container = _get_entrypoint_container_name(
-        client, dynamic_sidecar_network_name
+        test_client, dynamic_sidecar_network_name
     )
 
     # remove the container from the spec
-    parsed_spec = parse_compose_spec(client.application.state.shared_store.compose_spec)
+    parsed_spec = parse_compose_spec(
+        test_client.application.state.shared_store.compose_spec
+    )
     del parsed_spec["services"][entrypoint_container]
-    client.application.state.shared_store.compose_spec = yaml.safe_dump(parsed_spec)
+    test_client.application.state.shared_store.compose_spec = yaml.safe_dump(
+        parsed_spec
+    )
 
     filters = json.dumps({"network": dynamic_sidecar_network_name})
-    response = await client.get(f"/{API_VTAG}/containers/name?filters={filters}")
+    response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {
         "detail": "No container found for network=entrypoint_container_network"
@@ -531,11 +537,11 @@ async def test_containers_entrypoint_name_containers_not_started(
 
 async def test_attach_detach_container_to_network(
     docker_swarm: None,
-    client: TestClient,
+    test_client: TestClient,
     selected_spec: str,
     attachable_networks_and_ids: dict[str, str],
 ):
-    container_names = await _start_containers(client, selected_spec)
+    container_names = await _start_containers(test_client, selected_spec)
 
     async with aiodocker.Docker() as docker:
         for container_name in container_names:
@@ -544,7 +550,7 @@ async def test_attach_detach_container_to_network(
 
                 # attach network to containers
                 for _ in range(2):  # calling 2 times in a row
-                    response = await client.post(
+                    response = await test_client.post(
                         f"/{API_VTAG}/containers/{container_name}/networks:attach",
                         json={
                             "network_id": network_id,
@@ -563,7 +569,7 @@ async def test_attach_detach_container_to_network(
 
                 # detach network from containers
                 for _ in range(2):  # running twice in a row
-                    response = await client.post(
+                    response = await test_client.post(
                         f"/{API_VTAG}/containers/{container_name}/networks:detach",
                         json={"network_id": network_id},
                     )
