@@ -279,9 +279,7 @@ async def _get_task_id_docker_compose_down(
 async def _get_task_id_state_restore(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/state:restore"
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:restore")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id

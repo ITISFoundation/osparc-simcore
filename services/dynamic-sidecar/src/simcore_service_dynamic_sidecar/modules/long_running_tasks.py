@@ -3,7 +3,6 @@ from collections import deque
 from typing import Any, Awaitable, Final, Optional
 
 from fastapi import FastAPI
-from pydantic import BaseModel
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -21,16 +20,13 @@ from ..core.settings import ApplicationSettings
 from ..core.utils import assemble_container_names
 from ..core.validation import validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
-
-
-class ContainersCreate(BaseModel):
-    docker_compose_yaml: str
 
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:

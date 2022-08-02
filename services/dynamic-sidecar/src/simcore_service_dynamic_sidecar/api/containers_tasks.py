@@ -1,6 +1,7 @@
 import logging
-from typing import Optional
 from textwrap import dedent
+from typing import Optional
+
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
@@ -14,9 +15,9 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules.long_running_tasks import (
-    ContainersCreate,
     task_containers_restart,
     task_create_service_containers,
     task_ports_inputs_pull,
