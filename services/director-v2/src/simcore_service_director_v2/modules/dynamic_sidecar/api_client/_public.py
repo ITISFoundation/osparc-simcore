@@ -1,14 +1,23 @@
 import logging
 from collections import deque
-from typing import Any, Optional
+from functools import cached_property
+from typing import Any, Final, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
-from pydantic import AnyHttpUrl
-from servicelib.fastapi.long_running_tasks.client import TaskId
+from pydantic import AnyHttpUrl, PositiveFloat
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    ProgressCallback,
+    ProgressMessage,
+    ProgressPercent,
+    TaskId,
+    periodic_task_result,
+)
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
@@ -17,15 +26,29 @@ from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
 
+STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
+
 logger = logging.getLogger(__name__)
+
+
+async def _debug_progress_callback(
+    message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+) -> None:
+    logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
 class DynamicSidecarClient:
     def __init__(self, app: FastAPI):
+        self._app = app
         self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
 
-    def get_async_client(self) -> AsyncClient:
-        return self.thin_client.get_async_client()
+    @cached_property
+    def _async_client(self) -> AsyncClient:
+        return self.thin_client._client  # pylint: disable=protected-access
+
+    @cached_property
+    def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
+        return self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
 
     async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
         """returns True if service is UP and running else False"""
@@ -210,73 +233,152 @@ class DynamicSidecarClient:
             ]
         )
 
-    async def get_task_id_create_containers(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, compose_spec: str
-    ) -> TaskId:
+    def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Client:
+        return Client(
+            app=self._app,
+            async_client=self._async_client,
+            base_url=dynamic_sidecar_endpoint,
+        )
+
+    async def _await_for_result(
+        self,
+        task_id: TaskId,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        progress_callback: ProgressCallback,
+        task_timeout: PositiveFloat,
+    ) -> Optional[Any]:
+        async with periodic_task_result(
+            self._get_client(dynamic_sidecar_endpoint),
+            task_id,
+            task_timeout=task_timeout,
+            progress_callback=progress_callback,
+            status_poll_interval=STATUS_POLL_INTERVAL,
+        ) as result:
+            logger.debug("Task %s finished", task_id)
+            return result
+
+    async def create_containers(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        compose_spec: str,
+        progress_callback: ProgressCallback,
+    ) -> None:
         response = await self.thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_remove_containers(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> TaskId:
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
+        )
+
+    async def remove_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self.thin_client.post_containers_tasks_down(
             dynamic_sidecar_endpoint
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_state_restore(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> TaskId:
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
+        )
+
+    async def state_restore(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self.thin_client.post_containers_tasks_state_restore(
             dynamic_sidecar_endpoint
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_state_save(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> TaskId:
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+        )
+
+    async def state_save(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self.thin_client.post_containers_tasks_state_save(
             dynamic_sidecar_endpoint
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_ports_inputs_pull(
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+        )
+
+    async def ports_inputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
-    ) -> TaskId:
+    ) -> int:
         response = await self.thin_client.post_containers_tasks_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_ports_outputs_pull(
+        transferred_bytes = await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+        )
+        assert transferred_bytes  # nosec
+        return transferred_bytes
+
+    async def ports_outputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
-    ) -> TaskId:
+    ) -> None:
         response = await self.thin_client.post_containers_tasks_ports_outputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_ports_outputs_push(
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+        )
+
+    async def ports_outputs_push(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
-    ) -> TaskId:
+    ) -> None:
         response = await self.thin_client.post_containers_tasks_ports_outputs_push(
             dynamic_sidecar_endpoint, port_keys
         )
-        return response.json()
+        task_id: TaskId = response.json()
 
-    async def get_task_id_restart(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> TaskId:
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+        )
+
+    async def containers_restart(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self.thin_client.post_containers_tasks_restart(
             dynamic_sidecar_endpoint
         )
-        return response.json()
+        task_id: TaskId = response.json()
+
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            _debug_progress_callback,
+            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+        )
 
 
 async def setup(app: FastAPI) -> None:

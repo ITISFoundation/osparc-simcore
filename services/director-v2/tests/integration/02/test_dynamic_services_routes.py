@@ -206,10 +206,10 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.DynamicSidecarClient"
     )
     for function_name, return_value in [
-        ("get_task_id_ports_outputs_pull", "mock_task_id_1"),
-        ("get_task_id_state_restore", "mock_task_id_2"),
-        ("get_task_id_ports_outputs_push", "mock_task_id_4"),
-        ("get_task_id_state_save", "mock_task_id_5"),
+        ("ports_outputs_pull", None),
+        ("state_restore", None),
+        ("ports_outputs_push", None),
+        ("state_save", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
@@ -223,11 +223,10 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
     async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
         yield
 
-    for method in ["periodic_tasks_results", "periodic_task_result"]:
-        mocker.patch(
-            f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.scheduler.events.{method}",
-            side_effect=_mocked_context_manger,
-        )
+    mocker.patch(
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.scheduler.events.periodic_task_result",
+        side_effect=_mocked_context_manger,
+    )
 
 
 @pytest.fixture

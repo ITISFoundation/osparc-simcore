@@ -23,13 +23,8 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from pydantic import AnyHttpUrl, PositiveFloat
+from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    TaskId,
-    periodic_task_result,
-)
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -284,56 +279,16 @@ class DynamicSidecarsScheduler:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
 
-        client = Client(
-            app=self.app,
-            async_client=dynamic_sidecar_client.get_async_client(),
-            base_url=dynamic_sidecar_endpoint,
-        )
-
-        task_id: TaskId = await dynamic_sidecar_client.get_task_id_ports_inputs_pull(
+        transferred_bytes = await dynamic_sidecar_client.ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
 
-        async def inputs_pull_progress(
-            message: str, percent: PositiveFloat, _: TaskId
-        ) -> None:
-            logger.debug("inputs_pull_progress %.2f %s", percent, message)
+        if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
+            logger.info("Will restart containers")
+            await dynamic_sidecar_client.containers_restart(dynamic_sidecar_endpoint)
 
-        async with periodic_task_result(
-            client,
-            task_id,
-            task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-            progress_callback=inputs_pull_progress,
-            status_poll_interval=STATUS_POLL_INTERVAL,
-        ) as transferred_bytes:
-            assert transferred_bytes  # nosec
-
-            if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
-                logger.info("Will restart containers")
-
-                task_id = await dynamic_sidecar_client.get_task_id_restart(
-                    dynamic_sidecar_endpoint
-                )
-
-                async def restart_progress(
-                    message: str, percent: PositiveFloat, _: TaskId
-                ) -> None:
-                    logger.debug("restart_progress %.2f %s", percent, message)
-
-                async with periodic_task_result(
-                    client,
-                    task_id,
-                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-                    progress_callback=restart_progress,
-                    status_poll_interval=STATUS_POLL_INTERVAL,
-                ):
-                    logger.info("Containers restarted")
-
-            return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
+        return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
     async def attach_project_network(
         self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias

@@ -217,9 +217,9 @@ async def ensure_services_stopped(
 def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
     for function_name, return_value in [
-        ("get_task_id_ports_outputs_pull", "mock_task_id_1"),
-        ("get_task_id_state_restore", "mock_task_id_2"),
-        ("get_task_id_ports_outputs_push", "mock_task_id_4"),
+        ("ports_outputs_pull", None),
+        ("state_restore", None),
+        ("ports_outputs_push", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
@@ -233,11 +233,10 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
         yield
 
-    for method in ["periodic_tasks_results", "periodic_task_result"]:
-        mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events.{method}",
-            side_effect=_mocked_context_manger,
-        )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events.periodic_task_result",
+        side_effect=_mocked_context_manger,
+    )
 
 
 # TESTS ----------------------------------------------------------------------------------------

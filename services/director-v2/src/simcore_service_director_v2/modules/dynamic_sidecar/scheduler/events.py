@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Coroutine, Final, Optional, cast
+from typing import Any, Final, Optional, cast
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -14,13 +14,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceKeyVersion
 from pydantic import AnyHttpUrl, PositiveFloat
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
-    TaskClientResultError,
-    TaskId,
-    periodic_task_result,
-    periodic_tasks_results,
-)
+from servicelib.fastapi.long_running_tasks.client import TaskClientResultError, TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.utils.dict_utils import nested_update
@@ -303,39 +297,17 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
             async with disabled_directory_watcher(
                 dynamic_sidecar_client, dynamic_sidecar_endpoint
             ):
-                tasks: list[Coroutine[Any, Any, Any]] = [
-                    dynamic_sidecar_client.get_task_id_ports_outputs_pull(
-                        dynamic_sidecar_endpoint
-                    )
+                tasks = [
+                    dynamic_sidecar_client.ports_outputs_pull(dynamic_sidecar_endpoint)
                 ]
                 # When enabled no longer downloads state via nodeports
                 # S3 is used to store state paths
                 if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                     tasks.append(
-                        dynamic_sidecar_client.get_task_id_state_restore(
-                            dynamic_sidecar_endpoint
-                        )
+                        dynamic_sidecar_client.state_restore(dynamic_sidecar_endpoint)
                     )
 
-                task_ids: list[TaskId] = await logged_gather(*tasks, max_concurrency=2)
-                client = Client(
-                    app=app,
-                    async_client=dynamic_sidecar_client.get_async_client(),
-                    base_url=dynamic_sidecar_endpoint,
-                )
-
-                async def progress_state_restore_outputs_pull(
-                    message: str, percent: float, task_id: TaskId
-                ) -> None:
-                    logger.debug("%s %.2f %s", task_id, percent, message)
-
-                async with periodic_tasks_results(
-                    client,
-                    task_ids,
-                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-                    progress_callback=progress_state_restore_outputs_pull,
-                ):
-                    logger.debug("Tasks %s finished", task_ids)
+                await logged_gather(*tasks, max_concurrency=2)
 
                 # inside this directory create the missing dirs, fetch those form the labels
                 director_v0_client: DirectorV0Client = get_director_v0_client(app)
@@ -426,29 +398,16 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec,
         )
 
-        async def create_containers_progress(
-            message: str, percent: PositiveFloat, _: TaskId
+        async def progress_create_containers(
+            message: str, percent: PositiveFloat, task_id: TaskId
         ) -> None:
             # TODO: detect when images are pulling and change the status
             # of the service to pulling
-            logger.debug("create_containers_progress %.2f %s", percent, message)
+            logger.debug("%s: %.2f %s", task_id, percent, message)
 
-        task_id: TaskId = await dynamic_sidecar_client.get_task_id_create_containers(
-            dynamic_sidecar_endpoint, compose_spec
+        await dynamic_sidecar_client.create_containers(
+            dynamic_sidecar_endpoint, compose_spec, progress_create_containers
         )
-        client = Client(
-            app=app,
-            async_client=dynamic_sidecar_client.get_async_client(),
-            base_url=dynamic_sidecar_endpoint,
-        )
-        async with periodic_task_result(
-            client,
-            task_id,
-            task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
-            progress_callback=create_containers_progress,
-            status_poll_interval=STATUS_POLL_INTERVAL,
-        ):
-            logger.debug("Task %s finished", task_id)
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
@@ -602,32 +561,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             dynamic_sidecar_endpoint: AnyHttpUrl = (
                 scheduler_data.dynamic_sidecar.endpoint
             )
-            client = Client(
-                app=app,
-                async_client=dynamic_sidecar_client.get_async_client(),
-                base_url=scheduler_data.dynamic_sidecar.endpoint,
-            )
-
-            async def remove_containers_progress(
-                message: str, percent: PositiveFloat, _: TaskId
-            ) -> None:
-                logger.debug("remove_containers_progress %.2f %s", percent, message)
-
-            task_id: TaskId = (
-                await dynamic_sidecar_client.get_task_id_remove_containers(
-                    dynamic_sidecar_endpoint
-                )
-            )
 
             try:
-                async with periodic_task_result(
-                    client,
-                    task_id,
-                    task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
-                    progress_callback=remove_containers_progress,
-                    status_poll_interval=STATUS_POLL_INTERVAL,
-                ):
-                    logger.debug("Tasks %s finished", task_id)
+                await dynamic_sidecar_client.remove_containers(dynamic_sidecar_endpoint)
             except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.warning(
                     (
@@ -655,7 +591,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
                 try:
                     tasks = [
-                        dynamic_sidecar_client.get_task_id_ports_outputs_push(
+                        dynamic_sidecar_client.ports_outputs_push(
                             dynamic_sidecar_endpoint
                         )
                     ]
@@ -664,28 +600,10 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
-                            dynamic_sidecar_client.get_task_id_state_save(
-                                dynamic_sidecar_endpoint
-                            )
+                            dynamic_sidecar_client.state_save(dynamic_sidecar_endpoint)
                         )
 
-                    task_ids: list[TaskId] = await logged_gather(
-                        *tasks, max_concurrency=2
-                    )
-
-                    async def progress_save_state_outputs_push(
-                        message: str, percent: float, task_id: TaskId
-                    ) -> None:
-                        logger.debug("%s %.2f %s", task_id, percent, message)
-
-                    async with periodic_tasks_results(
-                        client,
-                        task_ids,
-                        task_timeout=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-                        progress_callback=progress_save_state_outputs_push,
-                        status_poll_interval=STATUS_POLL_INTERVAL,
-                    ):
-                        logger.debug("Tasks %s finished", task_ids)
+                    await logged_gather(*tasks, max_concurrency=2)
 
                     logger.info("Ports data pushed by dynamic-sidecar")
                 except (BaseClientHTTPError, TaskClientResultError) as e:

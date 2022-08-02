@@ -64,9 +64,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
         api_version = "" if no_api_version else f"/{self.API_VERSION}"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
-    def get_async_client(self) -> AsyncClient:
-        return self._client
-
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
@@ -186,9 +183,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         port_keys: Optional[list[str]] = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
-        url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/ports/inputs:pull"
-        )
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
         return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
@@ -199,9 +194,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         port_keys: Optional[list[str]] = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
-        url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/ports/outputs:pull"
-        )
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
         return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
@@ -212,9 +205,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         port_keys: Optional[list[str]] = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
-        url = self._get_url(
-            dynamic_sidecar_endpoint, "/containers/ports/outputs:push"
-        )
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
         return await self._client.post(url, json=port_keys)
 
     @retry_on_errors
