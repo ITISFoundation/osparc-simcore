@@ -155,13 +155,19 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      const successFun = function(log) {
+      const loginFun = function(log) {
         this.__loginBtn.setFetching(false);
-        if (osparc.utils.Utils.isProduct("tis")) {
-          this.fireEvent("toSMSCode");
-        } else {
-          this.fireDataEvent("done", log.message);
-        }
+        this.fireDataEvent("done", log.message);
+        // we don't need the form any more, so remove it and mock-navigate-away
+        // and thus tell the password manager to save the content
+        this._formElement.dispose();
+        window.history.replaceState(null, window.document.title, window.location.pathname);
+      };
+
+      const twoFactorAuthFun = log => {
+        this.__loginBtn.setFetching(false);
+        osparc.component.message.FlashMessenger.getInstance().logAs(log.message, "INFO");
+        this.fireDataEvent("toSMSCode");
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._formElement.dispose();
@@ -183,7 +189,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
+      manager.login(email.getValue(), pass.getValue(), loginFun, twoFactorAuthFun, failFun, this);
     },
 
     resetValues: function() {

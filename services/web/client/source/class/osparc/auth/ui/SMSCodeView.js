@@ -19,6 +19,20 @@
 qx.Class.define("osparc.auth.ui.SMSCodeView", {
   extend: osparc.auth.core.BaseAuthPage,
 
+  properties: {
+    userPhoneNumber: {
+      check: "String",
+      init: "+41-XXXXX1766",
+      nullable: false
+    },
+
+    userEmail: {
+      check: "String",
+      init: "maiz@itis.swiss",
+      nullable: false
+    }
+  },
+
   members: {
     __form: null,
     __validateCodeBtn: null,
@@ -28,7 +42,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
       this.__form = new qx.ui.form.Form();
 
       const smsCodeDesc = new qx.ui.basic.Label().set({
-        value: this.tr("We just sent a 4-digit code to +41-XXXXX1766")
+        value: this.tr("We just sent a 4-digit code to ") + this.getUserPhoneNumber()
       });
       this.add(smsCodeDesc);
 
@@ -78,18 +92,29 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
 
       const smsCode = this.__form.getItems().smsCode;
 
-      if (smsCode.getValue() === "8004") {
+      const loginFun = function(log) {
         this.__validateCodeBtn.setFetching(false);
-        this.fireDataEvent("done");
-      } else {
+        this.fireDataEvent("done", log.message);
+        // we don't need the form any more, so remove it and mock-navigate-away
+        // and thus tell the password manager to save the content
+        this._formElement.dispose();
+        window.history.replaceState(null, window.document.title, window.location.pathname);
+      };
+
+      const failFun = msg => {
         this.__validateCodeBtn.setFetching(false);
-        const msg = this.tr("Invalid code");
+        // TODO: can get field info from response here
+        msg = String(msg) || this.tr("Invalid code");
         smsCode.set({
           invalidMessage: msg,
           valid: false
         });
+
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      }
+      };
+
+      const manager = osparc.auth.Manager.getInstance();
+      manager.validateCode(this.getUserEmail(), smsCode.getValue(), loginFun, failFun, this);
     },
 
     __restartTimer: function() {

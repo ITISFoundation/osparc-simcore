@@ -73,7 +73,7 @@ qx.Class.define("osparc.auth.Manager", {
       });
     },
 
-    login: function(email, password, successCbk, failCbk, context) {
+    login: function(email, password, loginCbk, twoFactoAuthCbk, failCbk, context) {
       const params = {
         data: {
           email,
@@ -82,10 +82,34 @@ qx.Class.define("osparc.auth.Manager", {
       };
       osparc.data.Resources.fetch("auth", "postLogin", params)
         .then(data => {
+          // FIXME OM: check status is 202
+          if ("message" in data && data.message.includes("SMS")) {
+            twoFactoAuthCbk.call(context, data);
+          } else {
+            osparc.data.Resources.getOne("profile", {}, null, false)
+              .then(profile => {
+                this.__loginUser(profile);
+                loginCbk.call(context, data);
+              })
+              .catch(err => failCbk.call(context, err.message));
+          }
+        })
+        .catch(err => failCbk.call(context, err.message));
+    },
+
+    validateCode: function(email, code, loginCbk, failCbk, context) {
+      const params = {
+        data: {
+          email,
+          code
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postValidationCode", params)
+        .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
               this.__loginUser(profile);
-              successCbk.call(context, data);
+              loginCbk.call(context, data);
             })
             .catch(err => failCbk.call(context, err.message));
         })
