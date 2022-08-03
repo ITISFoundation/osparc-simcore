@@ -527,7 +527,7 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     )
 
 
-async def test_is_dynamic_sidecar_missing(
+async def test_is_dynamic_sidecar_stack_missing(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
@@ -535,7 +535,7 @@ async def test_is_dynamic_sidecar_missing(
     docker_swarm: None,
 ):
 
-    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == True
@@ -545,7 +545,7 @@ async def test_is_dynamic_sidecar_missing(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == False

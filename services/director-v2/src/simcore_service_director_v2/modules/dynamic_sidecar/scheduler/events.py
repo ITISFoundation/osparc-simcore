@@ -43,7 +43,7 @@ from ..docker_api import (
     get_projects_networks_containers,
     get_service_placement,
     get_swarm_network,
-    is_dynamic_sidecar_missing,
+    is_dynamic_sidecar_stack_missing,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
     try_to_remove_network,
@@ -97,12 +97,12 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
-        # the call to is_dynamic_sidecar_missing is expensive
+        # the call to is_dynamic_sidecar_stack_missing is expensive
         # if the dynamic sidecar was started skip
         if scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started:
             return False
 
-        return await is_dynamic_sidecar_missing(
+        return await is_dynamic_sidecar_stack_missing(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
         )

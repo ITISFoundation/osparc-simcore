@@ -362,7 +362,7 @@ class DynamicSidecarsScheduler:
                 # Nothing will be done if there is an error while interacting
                 # with the sidecar.
                 # It makes no sense to continuously occupy resources or create
-                # issues due to high request to components like the `docker damon`
+                # issues due to high request to components like the `docker daemon`
                 # and the `storage service`.
 
                 # TODO:
@@ -379,6 +379,9 @@ class DynamicSidecarsScheduler:
                 # remove failing sidecars and the entire thing to still work afterwards]
 
                 # - cleanup: after removing?
+
+                # check if sidecar is missing how and how soon
+
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
