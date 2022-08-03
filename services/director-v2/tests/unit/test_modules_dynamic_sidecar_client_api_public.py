@@ -129,9 +129,8 @@ async def test_is_healthy_times_out(
 ) -> None:
     assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
     for i, log_message in enumerate(caplog_info_level.messages):
-        assert log_message.startswith(
-            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-        )
+        assert log_message.startswith("Unexpected error")
+        assert log_message.endswith(f"(attempt [{i+1}/{retry_count}])")
 
 
 @pytest.mark.parametrize(
