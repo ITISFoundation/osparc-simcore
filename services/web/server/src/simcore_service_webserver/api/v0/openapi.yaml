@@ -256,6 +256,40 @@ paths:
                   error:
                     nullable: true
                     default: null
+        '202':
+          description: Second factor authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/validate-code:
+    post:
+      summary: user enters 2 factor authentication code
+      tags:
+        - authentication
+      operationId: auth_validate_2fa_code
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                code:
+                  type: string
+              example:
+                email: foo@mymail.com
+                code: my code
+      responses:
+        '200':
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/logout:
