@@ -22,6 +22,18 @@ LoginForm:
     email: foo@mymail.com
     password: 'my secret'
 
+Login2FAForm:
+  type: object
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    code:
+      type: string
+  example:
+    email: foo@mymail.com
+    code: 'my code'
+
 
 ChangeEmailForm:
   type: object

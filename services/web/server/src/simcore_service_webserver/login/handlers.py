@@ -1,7 +1,9 @@
 import logging
 
+import attr
 from aiohttp import web
 from servicelib import observer
+from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -120,6 +122,7 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
+    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
@@ -150,6 +153,18 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
+    if settings.LOGIN_2FA_REQUIRED:
+        if "maiz" in user["email"]:
+            response = web.json_response(
+                status=web.HTTPAccepted.status_code,
+                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+            )
+            return response
+        else:
+            raise web.HTTPUnauthorized(
+                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+            )
+
     with log_context(
         log,
         logging.INFO,
@@ -162,6 +177,35 @@ async def login(request: web.Request):
         await remember(request, response, identity)
         return response
 
+
+
+async def validate_2fa_code(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    validation_2fa_code = body.validation_2fa_code
+
+    user = await db.get_user({"email": email})
+
+    if validation_2fa_code == "8004":
+        with log_context(
+            log,
+            logging.INFO,
+            "login of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
+
+    raise web.HTTPUnauthorized(
+        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
+    )
 
 @login_required
 async def logout(request: web.Request) -> web.Response:

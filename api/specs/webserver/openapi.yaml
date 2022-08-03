@@ -78,6 +78,9 @@ paths:
   /auth/login:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1login"
 
+  /auth/validate-code:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1validate-code"
+
   /auth/logout:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1logout"
 
