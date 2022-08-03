@@ -160,10 +160,10 @@ async def login(request: web.Request):
                 data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
             )
             return response
-        else:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
-            )
+        #else:
+        #    raise web.HTTPUnauthorized(
+        #        reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+        #    )
 
     with log_context(
         log,
