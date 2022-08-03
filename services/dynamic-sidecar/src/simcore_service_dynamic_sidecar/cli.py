@@ -1,23 +1,22 @@
+import asyncio
 import json
 import logging
-from fastapi import FastAPI
-
 
 import typer
+from fastapi import FastAPI
+from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from settings_library.utils_cli import create_settings_command
 from simcore_service_dynamic_sidecar.core.application import create_base_app
+from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
-    task_save_state,
     task_ports_outputs_push,
+    task_save_state,
 )
-from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     MountedVolumes,
     setup_mounted_fs,
 )
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
-import asyncio
 
 from ._meta import PROJECT_NAME
 from .core.settings import ApplicationSettings
