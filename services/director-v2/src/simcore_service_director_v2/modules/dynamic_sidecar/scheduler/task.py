@@ -47,6 +47,8 @@ from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -56,7 +58,6 @@ from ..errors import (
     GenericDockerError,
 )
 from .events import REGISTERED_EVENTS
-
 
 logger = logging.getLogger(__name__)
 
@@ -341,7 +342,7 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        await dynamic_sidecar_client.restart_containers(
+        await dynamic_sidecar_client.containers_restart(
             scheduler_data.dynamic_sidecar.endpoint
         )
 
@@ -353,35 +354,45 @@ class DynamicSidecarsScheduler:
 
         async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            )
 
-            # NOTE: ANE: not very readable should be refactored
-            if (
+            observation_cycle_raised_error = (
                 scheduler_data.dynamic_sidecar.status.current
                 == DynamicSidecarStatus.FAILING
-            ):
-                # Nothing will be done if there is an error while interacting
-                # with the sidecar.
+            )
+            if observation_cycle_raised_error:
+                # `Observation cycle is skipped` after an error while
+                # interacting with the sidecar.
                 # It makes no sense to continuously occupy resources or create
                 # issues due to high request to components like the `docker daemon`
                 # and the `storage service`.
 
-                # TODO:
+                failed_while_saving_state_and_outputs = (
+                    scheduler_data.dynamic_sidecar.service_removal_state.can_save
+                    and scheduler_data.dynamic_sidecar.were_services_created
+                )
+                if failed_while_saving_state_and_outputs:
+                    # Since user data is important and must be saved, take no further
+                    # action and wait for manual intervention from support.
+                    return
 
-                # MIGHT be a better alternative?
-                # - if node was deleted! (you know because in theory you call
-                # remove_node without saving ths state) just cleanup sidecars
-                # and remove from observation cycle [allows users to delete nodes and
-                # still release resources]
+                # For every other situation we assume the sidecar is no longer required
+                # and we clean up the environment as soon as possible.
+                # Cleanup all resources related to the dynamic-sidecar.
+                await remove_dynamic_sidecar_stack(
+                    scheduler_data.node_uuid, dynamic_sidecar_settings
+                )
+                await remove_dynamic_sidecar_network(
+                    scheduler_data.dynamic_sidecar_network_name
+                )
+                await self.finish_service_removal(scheduler_data.node_uuid)
 
-                # FOR sure we want this
-                # - if the sidecar is missing (remove the proxy if it exists)
-                # and then remove from observation cycle [allows user to manually
-                # remove failing sidecars and the entire thing to still work afterwards]
-
-                # - cleanup: after removing?
-
-                # check if sidecar is missing how and how soon
-
+                logger.warning(
+                    "Removed %s service after error, no state saving was required.",
+                    scheduler_data.node_uuid,
+                )
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

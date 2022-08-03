@@ -538,7 +538,7 @@ async def test_is_dynamic_sidecar_stack_missing(
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
         node_uuid, dynamic_sidecar_settings
     )
-    assert services_are_missing == True
+    assert services_are_missing is True
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
@@ -548,7 +548,7 @@ async def test_is_dynamic_sidecar_stack_missing(
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
         node_uuid, dynamic_sidecar_settings
     )
-    assert services_are_missing == False
+    assert services_are_missing is False
 
 
 async def test_are_all_services_present(
@@ -561,7 +561,7 @@ async def test_are_all_services_present(
     services_are_missing = await docker_api.are_all_services_present(
         node_uuid, dynamic_sidecar_settings
     )
-    assert services_are_missing == False
+    assert services_are_missing is False
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
@@ -571,7 +571,7 @@ async def test_are_all_services_present(
     services_are_missing = await docker_api.are_all_services_present(
         node_uuid, dynamic_sidecar_settings
     )
-    assert services_are_missing == True
+    assert services_are_missing is True
 
 
 async def test_remove_dynamic_sidecar_stack(
