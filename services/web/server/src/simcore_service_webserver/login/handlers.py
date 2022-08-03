@@ -165,28 +165,6 @@ async def login(request: web.Request):
         #        reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
         #    )
 
-    return await _login(user)
-
-
-async def validate_2fa_code(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
-
-    email = body.email
-    code = body.code
-
-    if code == "8004":
-        user = await db.get_user({"email": email})
-        return await _login(user)
-
-    raise web.HTTPUnauthorized(
-        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
-    )
-
-
-async def _login(user):
     with log_context(
         log,
         logging.INFO,
@@ -198,6 +176,36 @@ async def _login(user):
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
+
+
+async def validate_2fa_code(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    code = body.code
+    print("validate_2fa_code", email, code)
+
+    if code == "8004":
+        user = await db.get_user({"email": email})
+        print("user", user)
+        with log_context(
+            log,
+            logging.INFO,
+            "login of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
+
+    raise web.HTTPUnauthorized(
+        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
+    )
 
 
 @login_required
