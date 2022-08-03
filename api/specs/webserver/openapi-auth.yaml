@@ -40,7 +40,7 @@ paths:
               schema:
                 $ref: "./components/schemas/log_message.yaml#/LogMessageEnveloped"
         "202":
-          description: Second factor authentication required
+          description: Accepted, but 2 Factor Authentication required
           content:
             application/json:
               schema:
@@ -50,7 +50,7 @@ paths:
 
   /auth/validate-code:
     post:
-      summary: user enters 2 factor authentication code
+      summary: user enters 2 Factor Authentication code
       tags:
         - authentication
       operationId: auth_validate_2fa_code
