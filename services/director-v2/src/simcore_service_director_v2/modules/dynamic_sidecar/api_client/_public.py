@@ -275,7 +275,7 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
         )
 
-    async def remove_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+    async def stop_service(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self._thin_client.post_containers_tasks_down(
             dynamic_sidecar_endpoint
         )
