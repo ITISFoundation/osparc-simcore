@@ -590,7 +590,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
                 try:
                     tasks = [
-                        dynamic_sidecar_client.ports_outputs_push(
+                        dynamic_sidecar_client.push_service_output_ports(
                             dynamic_sidecar_endpoint
                         )
                     ]

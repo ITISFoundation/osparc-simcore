@@ -219,7 +219,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     for function_name, return_value in [
         ("pull_service_output_ports", None),
         ("restore_service_state", None),
-        ("ports_outputs_push", None),
+        ("push_service_output_ports", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
