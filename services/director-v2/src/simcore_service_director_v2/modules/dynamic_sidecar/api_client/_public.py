@@ -288,7 +288,7 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
         )
 
-    async def state_restore(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+    async def restore_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self._thin_client.post_containers_tasks_state_restore(
             dynamic_sidecar_endpoint
         )

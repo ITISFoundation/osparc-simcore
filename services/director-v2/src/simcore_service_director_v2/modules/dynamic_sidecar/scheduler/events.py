@@ -299,7 +299,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 # S3 is used to store state paths
                 if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                     tasks.append(
-                        dynamic_sidecar_client.state_restore(dynamic_sidecar_endpoint)
+                        dynamic_sidecar_client.restore_service_state(dynamic_sidecar_endpoint)
                     )
 
                 await logged_gather(*tasks, max_concurrency=2)

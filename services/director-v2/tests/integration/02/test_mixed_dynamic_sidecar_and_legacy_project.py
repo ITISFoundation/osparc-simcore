@@ -218,7 +218,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
     for function_name, return_value in [
         ("pull_service_output_ports", None),
-        ("state_restore", None),
+        ("restore_service_state", None),
         ("ports_outputs_push", None),
     ]:
         mocker.patch(
