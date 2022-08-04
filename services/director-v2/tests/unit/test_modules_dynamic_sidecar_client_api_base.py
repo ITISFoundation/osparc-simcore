@@ -81,9 +81,8 @@ async def test_retry_on_errors(
     # check if the right amount of messages was captured by the logs
     assert len(caplog_info_level.messages) == retry_count
     for i, log_message in enumerate(caplog_info_level.messages):
-        assert log_message.startswith(
-            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-        )
+        assert log_message.startswith("Unexpected error")
+        assert log_message.endswith(f"(attempt [{i+1}/{retry_count}])")
 
 
 @pytest.mark.parametrize("error_class", [ConnectError, PoolTimeout])
@@ -112,17 +111,15 @@ async def test_retry_on_errors_by_error_type(
     assert len(caplog_info_level.messages) == log_count
 
     if error_class == PoolTimeout:
-        for i, retry_message in enumerate(caplog_info_level.messages[:-1]):
-            assert retry_message.startswith(
-                f"[{i+1}/{retry_count}]Retry. Unexpected PoolTimeout"
-            )
+        for i, log_message in enumerate(caplog_info_level.messages[:-1]):
+            assert log_message.startswith("Unexpected error")
+            assert log_message.endswith(f"(attempt [{i+1}/{retry_count}])")
         connections_message = caplog_info_level.messages[-1]
         assert connections_message == "Requests while event 'POOL TIMEOUT': []"
     else:
         for i, log_message in enumerate(caplog_info_level.messages):
-            assert log_message.startswith(
-                f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-            )
+            assert log_message.startswith("Unexpected error")
+            assert log_message.endswith(f"(attempt [{i+1}/{retry_count}])")
 
 
 async def test_retry_on_errors_raises_client_http_error() -> None:
