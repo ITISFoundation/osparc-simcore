@@ -217,9 +217,9 @@ async def ensure_services_stopped(
 def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
     for function_name, return_value in [
-        ("ports_outputs_pull", None),
-        ("state_restore", None),
-        ("ports_outputs_push", None),
+        ("pull_service_output_ports", None),
+        ("restore_service_state", None),
+        ("push_service_output_ports", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",

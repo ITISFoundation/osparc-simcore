@@ -287,19 +287,26 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
 
         async def _pull_outputs_and_state():
             async with disabled_directory_watcher(
                 dynamic_sidecar_client, dynamic_sidecar_endpoint
             ):
                 tasks = [
-                    dynamic_sidecar_client.ports_outputs_pull(dynamic_sidecar_endpoint)
+                    dynamic_sidecar_client.pull_service_output_ports(
+                        dynamic_sidecar_endpoint
+                    )
                 ]
                 # When enabled no longer downloads state via nodeports
                 # S3 is used to store state paths
                 if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                     tasks.append(
-                        dynamic_sidecar_client.state_restore(dynamic_sidecar_endpoint)
+                        dynamic_sidecar_client.restore_service_state(
+                            dynamic_sidecar_endpoint
+                        )
                     )
 
                 await logged_gather(*tasks, max_concurrency=2)
@@ -325,10 +332,6 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 )
 
                 scheduler_data.dynamic_sidecar.service_environment_prepared = True
-
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -562,7 +565,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             )
 
             try:
-                await dynamic_sidecar_client.remove_containers(dynamic_sidecar_endpoint)
+                await dynamic_sidecar_client.stop_service(dynamic_sidecar_endpoint)
             except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.warning(
                     (
@@ -587,7 +590,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 )
                 try:
                     tasks = [
-                        dynamic_sidecar_client.ports_outputs_push(
+                        dynamic_sidecar_client.push_service_output_ports(
                             dynamic_sidecar_endpoint
                         )
                     ]
@@ -596,7 +599,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
-                            dynamic_sidecar_client.state_save(dynamic_sidecar_endpoint)
+                            dynamic_sidecar_client.save_service_state(dynamic_sidecar_endpoint)
                         )
 
                     await logged_gather(*tasks, max_concurrency=2)

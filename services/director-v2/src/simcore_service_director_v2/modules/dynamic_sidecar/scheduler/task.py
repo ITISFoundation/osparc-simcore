@@ -280,7 +280,7 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        transferred_bytes = await dynamic_sidecar_client.ports_inputs_pull(
+        transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
             dynamic_sidecar_endpoint, port_keys
         )
 

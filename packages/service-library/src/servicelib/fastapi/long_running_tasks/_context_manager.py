@@ -111,7 +111,7 @@ async def periodic_task_result(
 
         result: Optional[Any] = await client.get_task_result(task_id)
 
-        logger.debug("Task %s result %s", task_id, result)
+        logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result
     except asyncio.TimeoutError as e:

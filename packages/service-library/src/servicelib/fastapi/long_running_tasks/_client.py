@@ -5,21 +5,75 @@ from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
 from ._errors import GenericClientError, TaskClientResultError
-from ._models import TaskId, TaskResult, TaskStatus
+from ._models import ClientConfiguration, TaskId, TaskResult, TaskStatus
 
-logger = logging.getLevelName(__name__)
+logger = logging.getLogger(__name__)
 
 
-class ClientConfiguration(BaseModel):
-    router_prefix: str
-    default_timeout: PositiveFloat
+def _before_sleep_log(
+    request_function: Callable[..., Awaitable[Any]],
+    args: Any,
+    kwargs: dict[str, Any],
+    *,
+    exc_info: bool = False,
+) -> Callable[[RetryCallState], None]:
+    """Before call strategy that logs to some logger the attempt."""
+
+    def log_it(retry_state: "RetryCallState") -> None:
+        if retry_state.outcome.failed:
+            ex = retry_state.outcome.exception()
+            verb, value = "raised", f"{ex.__class__.__name__}: {ex}"
+
+            if exc_info:
+                local_exc_info = retry_state.outcome.exception()
+            else:
+                local_exc_info = False
+        else:
+            verb, value = "returned", retry_state.outcome.result()
+            local_exc_info = False  # exc_info does not apply when no exception
+
+        logger.warning(
+            "Retrying '%s %s %s' in %s seconds as it %s %s.",
+            request_function.__name__,
+            f"{args=}",
+            f"{kwargs=}",
+            retry_state.next_action.sleep,
+            verb,
+            value,
+            exc_info=local_exc_info,
+        )
+
+    return log_it
+
+
+def _after_log(
+    request_function: Callable[..., Awaitable[Any]],
+    args: Any,
+    kwargs: dict[str, Any],
+    *,
+    sec_format: str = "%0.3f",
+) -> Callable[[RetryCallState], None]:
+    """After call strategy that logs to some logger the finished attempt."""
+
+    def log_it(retry_state: RetryCallState) -> None:
+        logger.error(
+            "Failed call to '%s %s %s' after %s(s), this was the %s time calling it.",
+            request_function.__name__,
+            f"{args=}",
+            f"{kwargs=}",
+            sec_format % retry_state.seconds_since_start,
+            retry_state.attempt_number,
+        )
+
+    return log_it
 
 
 def retry_on_http_errors(
@@ -36,6 +90,8 @@ def retry_on_http_errors(
             stop=stop_after_attempt(max_attempt_number=3),
             wait=wait_exponential(min=1),
             retry=retry_if_exception_type(HTTPError),
+            before_sleep=_before_sleep_log(request_func, args, kwargs),
+            after=_after_log(request_func, args, kwargs),
             reraise=True,
         ):
             with attempt:

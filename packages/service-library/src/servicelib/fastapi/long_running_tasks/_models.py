@@ -3,7 +3,7 @@ from asyncio import Task
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveFloat, confloat
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ TaskId = str
 TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
 ProgressMessage = str
-ProgressPercent = float
+ProgressPercent = confloat(ge=0.0, le=1.0)
 ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
 
 
@@ -82,3 +82,8 @@ class TaskResult(BaseModel):
 
 class CancelResult(BaseModel):
     task_removed: bool
+
+
+class ClientConfiguration(BaseModel):
+    router_prefix: str
+    default_timeout: PositiveFloat

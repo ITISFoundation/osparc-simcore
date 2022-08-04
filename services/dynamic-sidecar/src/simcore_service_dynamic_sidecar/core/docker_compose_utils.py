@@ -65,9 +65,6 @@ async def docker_compose_config(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_convert/)
     [SEE compose-file](https://docs.docker.com/compose/compose-file/)
     """
-    # TODO: should replace this one with the aiodocker version,
-    # can easily get progress out of it and report it back to the UI
-
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command='docker-compose --file "{file_path}" config',
@@ -84,7 +81,8 @@ async def docker_compose_pull(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
     """
-    # NOTE: in the future the progress of pulling should be captured from the stdout
+    # TODO: should replace this one with the aiodocker version,
+    # can easily get progress out of it and report it back to the UI
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',

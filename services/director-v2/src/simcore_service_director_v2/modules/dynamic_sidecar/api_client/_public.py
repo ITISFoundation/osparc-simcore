@@ -40,11 +40,11 @@ async def _debug_progress_callback(
 class DynamicSidecarClient:
     def __init__(self, app: FastAPI):
         self._app = app
-        self.thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
+        self._thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
 
     @cached_property
     def _async_client(self) -> AsyncClient:
-        return self.thin_client._client  # pylint: disable=protected-access
+        return self._thin_client.client
 
     @cached_property
     def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
@@ -54,7 +54,7 @@ class DynamicSidecarClient:
         """returns True if service is UP and running else False"""
         try:
             # this request uses a very short timeout
-            response = await self.thin_client.get_health(dynamic_sidecar_endpoint)
+            response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
             return response.json()["is_healthy"]
         except BaseClientHTTPError:
             return False
@@ -66,7 +66,7 @@ class DynamicSidecarClient:
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
-        response = await self.thin_client.get_containers(
+        response = await self._thin_client.get_containers(
             dynamic_sidecar_endpoint, only_status=False
         )
         return response.json()
@@ -76,7 +76,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, dict[str, str]]:
         try:
-            response = await self.thin_client.get_containers(
+            response = await self._thin_client.get_containers(
                 dynamic_sidecar_endpoint, only_status=True
             )
             return response.json()
@@ -87,7 +87,7 @@ class DynamicSidecarClient:
     async def service_disable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self.thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_directory_watcher(
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
@@ -95,7 +95,7 @@ class DynamicSidecarClient:
     async def service_enable_dir_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self.thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_directory_watcher(
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
@@ -103,7 +103,7 @@ class DynamicSidecarClient:
     async def service_outputs_create_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
     ) -> None:
-        await self.thin_client.post_containers_ports_outputs_dirs(
+        await self._thin_client.post_containers_ports_outputs_dirs(
             dynamic_sidecar_endpoint, outputs_labels=outputs_labels
         )
 
@@ -117,7 +117,7 @@ class DynamicSidecarClient:
         might still be starting.
         """
         try:
-            response = await self.thin_client.get_containers_name(
+            response = await self._thin_client.get_containers_name(
                 dynamic_sidecar_endpoint,
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             )
@@ -135,7 +135,7 @@ class DynamicSidecarClient:
         network_aliases: list[str],
     ) -> None:
         """attaches a container to a network if not already attached"""
-        await self.thin_client.post_containers_networks_attach(
+        await self._thin_client.post_containers_networks_attach(
             dynamic_sidecar_endpoint,
             container_id=container_id,
             network_id=network_id,
@@ -146,7 +146,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: AnyHttpUrl, container_id: str, network_id: str
     ) -> None:
         """detaches a container from a network if not already detached"""
-        await self.thin_client.post_containers_networks_detach(
+        await self._thin_client.post_containers_networks_detach(
             dynamic_sidecar_endpoint, container_id=container_id, network_id=network_id
         )
 
@@ -263,7 +263,7 @@ class DynamicSidecarClient:
         compose_spec: str,
         progress_callback: ProgressCallback,
     ) -> None:
-        response = await self.thin_client.post_containers_tasks(
+        response = await self._thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
         task_id: TaskId = response.json()
@@ -275,8 +275,8 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
         )
 
-    async def remove_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        response = await self.thin_client.post_containers_tasks_down(
+    async def stop_service(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        response = await self._thin_client.post_containers_tasks_down(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
@@ -288,8 +288,8 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
         )
 
-    async def state_restore(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        response = await self.thin_client.post_containers_tasks_state_restore(
+    async def restore_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        response = await self._thin_client.post_containers_tasks_state_restore(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
@@ -301,8 +301,8 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
         )
 
-    async def state_save(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        response = await self.thin_client.post_containers_tasks_state_save(
+    async def save_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        response = await self._thin_client.post_containers_tasks_state_save(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
@@ -314,12 +314,12 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
         )
 
-    async def ports_inputs_pull(
+    async def pull_service_input_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
     ) -> int:
-        response = await self.thin_client.post_containers_tasks_ports_inputs_pull(
+        response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
         task_id: TaskId = response.json()
@@ -333,12 +333,12 @@ class DynamicSidecarClient:
         assert transferred_bytes  # nosec
         return transferred_bytes
 
-    async def ports_outputs_pull(
+    async def pull_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
     ) -> None:
-        response = await self.thin_client.post_containers_tasks_ports_outputs_pull(
+        response = await self._thin_client.post_containers_tasks_ports_outputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
         task_id: TaskId = response.json()
@@ -350,12 +350,12 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
         )
 
-    async def ports_outputs_push(
+    async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
     ) -> None:
-        response = await self.thin_client.post_containers_tasks_ports_outputs_push(
+        response = await self._thin_client.post_containers_tasks_ports_outputs_push(
             dynamic_sidecar_endpoint, port_keys
         )
         task_id: TaskId = response.json()
@@ -368,7 +368,7 @@ class DynamicSidecarClient:
         )
 
     async def containers_restart(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        response = await self.thin_client.post_containers_tasks_restart(
+        response = await self._thin_client.post_containers_tasks_restart(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
@@ -390,7 +390,7 @@ async def shutdown(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client closing...")
     client: Optional[DynamicSidecarClient]
     if client := app.state.dynamic_sidecar_api_client:
-        await client.thin_client.close()
+        await client._thin_client.close()  # pylint: disable=protected-access
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:

@@ -27,7 +27,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        self._client = AsyncClient(
+        self.client = AsyncClient(
             timeout=Timeout(
                 settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
                 connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
@@ -68,7 +68,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
-        return await self._client.get(url, timeout=self._health_request_timeout)
+        return await self.client.get(url, timeout=self._health_request_timeout)
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
@@ -76,7 +76,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        return await self._client.get(url, params=dict(only_status=only_status))
+        return await self.client.get(url, params=dict(only_status=only_status))
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -84,7 +84,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/directory-watcher")
-        return await self._client.patch(url, json=dict(is_enabled=is_enabled))
+        return await self.client.patch(url, json=dict(is_enabled=is_enabled))
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -92,7 +92,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs/dirs")
-        return await self._client.post(url, json=dict(outputs_labels=outputs_labels))
+        return await self.client.post(url, json=dict(outputs_labels=outputs_labels))
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
@@ -103,7 +103,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         url = self._get_url(
             dynamic_sidecar_endpoint, f"/containers/name?filters={filters}"
         )
-        return await self._client.get(url=url)
+        return await self.client.get(url=url)
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -118,7 +118,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         url = self._get_url(
             dynamic_sidecar_endpoint, f"/containers/{container_id}/networks:attach"
         )
-        return await self._client.post(
+        return await self.client.post(
             url,
             json=dict(network_id=network_id, network_aliases=network_aliases),
             timeout=self._attach_detach_network_timeout,
@@ -136,7 +136,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         url = self._get_url(
             dynamic_sidecar_endpoint, f"/containers/{container_id}/networks:detach"
         )
-        return await self._client.post(
+        return await self.client.post(
             url,
             json=dict(network_id=network_id),
             timeout=self._attach_detach_network_timeout,
@@ -149,7 +149,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         # change introduce in OAS version==1.1.0
-        return await self._client.post(url, json={"docker_compose_yaml": compose_spec})
+        return await self.client.post(url, json={"docker_compose_yaml": compose_spec})
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -157,7 +157,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:down")
-        return await self._client.post(url)
+        return await self.client.post(url)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -165,7 +165,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:restore")
-        return await self._client.post(url)
+        return await self.client.post(url)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -173,7 +173,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:save")
-        return await self._client.post(url)
+        return await self.client.post(url)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -184,7 +184,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
-        return await self._client.post(url, json=port_keys)
+        return await self.client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -195,7 +195,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
-        return await self._client.post(url, json=port_keys)
+        return await self.client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -206,7 +206,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
-        return await self._client.post(url, json=port_keys)
+        return await self.client.post(url, json=port_keys)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
@@ -214,4 +214,4 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
-        return await self._client.post(url)
+        return await self.client.post(url)
