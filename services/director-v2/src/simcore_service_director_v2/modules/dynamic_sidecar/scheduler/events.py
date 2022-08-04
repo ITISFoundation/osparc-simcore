@@ -599,7 +599,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
-                            dynamic_sidecar_client.state_save(dynamic_sidecar_endpoint)
+                            dynamic_sidecar_client.save_service_state(dynamic_sidecar_endpoint)
                         )
 
                     await logged_gather(*tasks, max_concurrency=2)

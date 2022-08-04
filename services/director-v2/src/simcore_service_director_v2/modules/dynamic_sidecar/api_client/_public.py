@@ -301,7 +301,7 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
         )
 
-    async def state_save(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+    async def save_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self._thin_client.post_containers_tasks_state_save(
             dynamic_sidecar_endpoint
         )
