@@ -5,21 +5,16 @@ from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
 from ._errors import GenericClientError, TaskClientResultError
-from ._models import TaskId, TaskResult, TaskStatus
+from ._models import ClientConfiguration, TaskId, TaskResult, TaskStatus
 
 logger = logging.getLevelName(__name__)
-
-
-class ClientConfiguration(BaseModel):
-    router_prefix: str
-    default_timeout: PositiveFloat
 
 
 def retry_on_http_errors(
