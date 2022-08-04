@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
+from ..requests_decorators import cancel_on_disconnect
 from ._dependencies import get_task_manager
 from ._errors import TaskNotCompletedError
 from ._models import CancelResult, TaskId, TaskResult, TaskStatus
@@ -14,10 +15,13 @@ router = APIRouter(prefix="/task")
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def get_task_status(
+    request: Request,
     task_id: TaskId,
     task_manager: TaskManager = Depends(get_task_manager),
 ) -> TaskStatus:
+    assert request  # nosec
     return task_manager.get_status(task_id=task_id)
 
 
@@ -30,10 +34,14 @@ async def get_task_status(
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def get_task_result(
+    request: Request,
     task_id: TaskId,
     task_manager: TaskManager = Depends(get_task_manager),
 ) -> TaskResult:
+    assert request  # nosec
+
     remove_task = True
 
     try:
@@ -54,8 +62,11 @@ async def get_task_result(
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def cancel_and_delete_task(
+    request: Request,
     task_id: TaskId,
     task_manager: TaskManager = Depends(get_task_manager),
 ) -> CancelResult:
+    assert request  # nosec
     return CancelResult(task_removed=await task_manager.remove(task_id))
