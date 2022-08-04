@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import asyncio
 import re
@@ -10,6 +11,7 @@ import pytest
 import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
@@ -96,8 +98,13 @@ class ACounter:
         self.count += 1
 
 
+@pytest.fixture(params=[True, False])
+def error_raised_by_saving_state(request: FixtureRequest) -> bool:
+    return request.param  # type: ignore
+
+
 @pytest.fixture
-def mocked_dynamic_scheduler_events() -> ACounter:
+def mocked_dynamic_scheduler_events(error_raised_by_saving_state: bool) -> ACounter:
     counter = ACounter()
 
     class AlwaysTriggersDynamicSchedulerEvent(DynamicSchedulerEvent):
@@ -110,6 +117,10 @@ def mocked_dynamic_scheduler_events() -> ACounter:
         @classmethod
         async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
             counter.increment()
+            if error_raised_by_saving_state:
+                # emulate the error was generated while saving the state
+                scheduler_data.dynamic_sidecar.service_removal_state.can_save = True
+                scheduler_data.dynamic_sidecar.were_services_created = True
             raise RuntimeError("Failed as planned")
 
     test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [
@@ -132,14 +143,23 @@ async def test_skip_observation_cycle_after_error(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: ACounter,
+    error_raised_by_saving_state: bool,
 ):
+
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
     await scheduler.add_service(scheduler_data)
+    # check it is being tracked
+    assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
     # only expect the event to be triggered once, when it raised
     # an error and no longer trigger again
     assert mocked_dynamic_scheduler_events.count == 1
+    # check it is no longer being tracked
+    if error_raised_by_saving_state:
+        assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
+    else:
+        assert scheduler_data.node_uuid not in scheduler._inverse_search_mapping
