@@ -38,16 +38,12 @@ def _log_retry(log: Logger, max_retries: int) -> Callable[[RetryCallState], None
         assert retry_state.outcome  # nosec
         e = retry_state.outcome.exception()
         assert isinstance(e, HTTPError)  # nosec
-        assert e._request  # nosec
-
-        log.info(
-            "[%s/%s]Retry. Unexpected %s while requesting '%s %s': %s",
+        log.error(
+            "Unexpected error with '%s': %s, (attempt [%s/%s])",
+            f"{e.request=}",
+            f"{e=}",
             retry_state.attempt_number,
             max_retries,
-            e.__class__.__name__,
-            e._request.method,
-            e._request.url,
-            f"{e=}",
         )
 
     return log_it
