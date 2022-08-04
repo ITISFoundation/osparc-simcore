@@ -293,7 +293,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 dynamic_sidecar_client, dynamic_sidecar_endpoint
             ):
                 tasks = [
-                    dynamic_sidecar_client.ports_outputs_pull(dynamic_sidecar_endpoint)
+                    dynamic_sidecar_client.pull_service_output_ports(dynamic_sidecar_endpoint)
                 ]
                 # When enabled no longer downloads state via nodeports
                 # S3 is used to store state paths

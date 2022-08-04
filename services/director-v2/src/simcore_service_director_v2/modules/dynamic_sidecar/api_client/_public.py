@@ -333,7 +333,7 @@ class DynamicSidecarClient:
         assert transferred_bytes  # nosec
         return transferred_bytes
 
-    async def ports_outputs_pull(
+    async def pull_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
