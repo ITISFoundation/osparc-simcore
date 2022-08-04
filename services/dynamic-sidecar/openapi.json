@@ -95,7 +95,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Starts a background task responsible for:\n- cleaning up resources from previous runs\n- pulling the images\n- starting the containers\n\nNOTE: only one instance of this task can run at a time",
+        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- pulling the needed images\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
         "operationId": "create_service_containers_task_v1_containers_post",
         "requestBody": {
           "content": {
@@ -119,8 +119,18 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
-            "description": "Cannot validate submitted compose spec"
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -457,7 +467,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Removes the previously started service and returns the docker-compose output",
+        "summary": "Remove the previously started containers",
         "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
         "responses": {
           "202": {
@@ -470,6 +480,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -479,7 +492,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Restores the state of the dynamic service\n\nWhen restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
+        "summary": "Restores the state of the dynamic service",
         "operationId": "state_restore_task_v1_containers_state_restore_post",
         "responses": {
           "202": {
@@ -492,6 +505,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -514,6 +530,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -549,6 +568,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           },
           "422": {
             "description": "Validation Error",
@@ -595,6 +617,9 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -640,6 +665,9 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -658,7 +686,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Removes the previously started service and returns the docker-compose output",
+        "summary": "Restarts previously started containers",
         "operationId": "containers_restart_task_v1_containers_restart_post",
         "responses": {
           "202": {
@@ -671,6 +699,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           }
         }
       }

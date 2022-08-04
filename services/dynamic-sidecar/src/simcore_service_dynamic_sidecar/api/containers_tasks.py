@@ -49,19 +49,20 @@ containers_router_tasks = APIRouter(tags=["containers"])
     "/containers",
     summary=dedent(
         """
-    Starts a background task responsible for:
-    - cleaning up resources from previous runs
-    - pulling the images
-    - starting the containers
+        Starts the containers as defined in ContainerCreate by:
+        - cleaning up resources from previous runs if any
+        - pulling the needed images
+        - starting the containers
 
-    NOTE: only one instance of this task can run at a time
-    """
+        Progress may be obtained through URL
+        Process may be cancelled through URL
+        """
     ).strip(),
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Cannot validate submitted compose spec"
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
         }
     },
 )
@@ -99,9 +100,14 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
 @containers_router_tasks.post(
     "/containers:down",
-    summary="Removes the previously started service and returns the docker-compose output",
+    summary="Remove the previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
@@ -129,17 +135,14 @@ async def runs_docker_compose_down_task(
 
 @containers_router_tasks.post(
     "/containers/state:restore",
-    summary=dedent(
-        """
-    Restores the state of the dynamic service
-
-    When restoring the state:
-    - pull inputs via nodeports
-    - pull all the extra state paths
-    """
-    ).strip(),
+    summary="Restores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def state_restore_task(
@@ -170,6 +173,11 @@ async def state_restore_task(
     summary="Stores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def state_save_task(
@@ -200,6 +208,11 @@ async def state_save_task(
     summary="Pull input ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def ports_inputs_pull_task(
@@ -230,6 +243,11 @@ async def ports_inputs_pull_task(
     summary="Pull output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def ports_outputs_pull_task(
@@ -260,6 +278,11 @@ async def ports_outputs_pull_task(
     summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def ports_outputs_push_task(
@@ -287,9 +310,14 @@ async def ports_outputs_push_task(
 
 @containers_router_tasks.post(
     "/containers:restart",
-    summary="Removes the previously started service and returns the docker-compose output",
+    summary="Restarts previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 @cancel_on_disconnect
 async def containers_restart_task(
