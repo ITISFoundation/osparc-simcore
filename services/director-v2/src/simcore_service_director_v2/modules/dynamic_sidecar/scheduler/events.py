@@ -569,8 +569,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.warning(
                     (
-                        "There was an issue while removing contains for "
-                        "%s\n%s. Will continue service removal!"
+                        "Could not remove service containers for "
+                        "%s\n%s. Will continue to save the data from the service!"
                     ),
                     scheduler_data.service_name,
                     f"{e}",
@@ -599,17 +599,19 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     # It uses rclone mounted volumes for this task.
                     if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                         tasks.append(
-                            dynamic_sidecar_client.save_service_state(dynamic_sidecar_endpoint)
+                            dynamic_sidecar_client.save_service_state(
+                                dynamic_sidecar_endpoint
+                            )
                         )
 
                     await logged_gather(*tasks, max_concurrency=2)
 
                     logger.info("Ports data pushed by dynamic-sidecar")
                 except (BaseClientHTTPError, TaskClientResultError) as e:
-                    logger.warning(
+                    logger.error(
                         (
                             "Could not contact dynamic-sidecar to save service "
-                            "state and upload outputs %s\n%s"
+                            "state or upload outputs %s\n%s"
                         ),
                         scheduler_data.service_name,
                         f"{e}",
