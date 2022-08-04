@@ -57,7 +57,6 @@ from ..errors import (
 )
 from .events import REGISTERED_EVENTS
 
-
 logger = logging.getLogger(__name__)
 
 
