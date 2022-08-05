@@ -135,7 +135,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "swarm_network_name": None,
                         "was_compose_spec_submitted": False,
                         "was_dynamic_sidecar_started": False,
-                        "were_services_created": False,
+                        "were_containers_created": False,
                     },
                     "dynamic_sidecar_network_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "key": "simcore/services/dynamic/3dviewer",

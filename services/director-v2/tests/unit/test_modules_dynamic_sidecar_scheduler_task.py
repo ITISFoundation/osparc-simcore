@@ -120,7 +120,7 @@ def mocked_dynamic_scheduler_events(error_raised_by_saving_state: bool) -> ACoun
             if error_raised_by_saving_state:
                 # emulate the error was generated while saving the state
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = True
-                scheduler_data.dynamic_sidecar.were_services_created = True
+                scheduler_data.dynamic_sidecar.were_containers_created = True
             raise RuntimeError("Failed as planned")
 
     test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [

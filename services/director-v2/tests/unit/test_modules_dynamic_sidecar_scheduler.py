@@ -289,7 +289,7 @@ async def test_scheduler_removes_partially_started_services(
     await manually_trigger_scheduler()
     await scheduler.add_service(scheduler_data)
 
-    scheduler_data.dynamic_sidecar.were_services_created = True
+    scheduler_data.dynamic_sidecar.were_containers_created = True
     await manually_trigger_scheduler()
 
 

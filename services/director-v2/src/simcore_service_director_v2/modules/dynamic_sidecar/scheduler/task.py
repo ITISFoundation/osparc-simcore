@@ -76,7 +76,7 @@ async def _apply_observation_cycle(
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skiped most times
-        scheduler_data.dynamic_sidecar.were_services_created
+        scheduler_data.dynamic_sidecar.were_containers_created
         and not await are_all_services_present(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
@@ -358,20 +358,20 @@ class DynamicSidecarsScheduler:
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
             )
 
-            observation_cycle_raised_error = (
+            if (
                 scheduler_data.dynamic_sidecar.status.current
                 == DynamicSidecarStatus.FAILING
-            )
-            if observation_cycle_raised_error:
-                # `Observation cycle is skipped` after an error while
-                # interacting with the sidecar.
-                # It makes no sense to continuously occupy resources or create
-                # issues due to high request to components like the `docker daemon`
-                # and the `storage service`.
+            ):
+                # potential use-cases:
+                # 1. service failed on start -> it can be removed safely
+                # 2. service must be deleted -> it can be removed safely
+                # 3. service started and failed while running (either
+                #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
+                # 4. service started, and failed on closing -> it cannot be removed safely
 
                 failed_while_saving_state_and_outputs = (
                     scheduler_data.dynamic_sidecar.service_removal_state.can_save
-                    and scheduler_data.dynamic_sidecar.were_services_created
+                    and scheduler_data.dynamic_sidecar.were_containers_created
                 )
                 if failed_while_saving_state_and_outputs:
                     # Since user data is important and must be saved, take no further

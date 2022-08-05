@@ -33,7 +33,7 @@
             }
         ],
         "was_dynamic_sidecar_started": true,
-        "were_services_created": false,
+        "were_containers_created": false,
         "is_project_network_attached": false,
         "service_environment_prepared": false,
         "service_removal_state": {

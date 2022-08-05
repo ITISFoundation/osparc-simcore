@@ -395,7 +395,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
         logger.debug(
-            "Starting service %s with compose-specs:\n%s",
+            "Starting containers %s with compose-specs:\n%s",
             scheduler_data.service_name,
             compose_spec,
         )
@@ -474,7 +474,7 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         # no need for the id any longer
         await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
-        scheduler_data.dynamic_sidecar.were_services_created = True
+        scheduler_data.dynamic_sidecar.were_containers_created = True
 
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
@@ -490,7 +490,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
-            scheduler_data.dynamic_sidecar.were_services_created
+            scheduler_data.dynamic_sidecar.were_containers_created
             and scheduler_data.dynamic_sidecar.is_project_network_attached == False
             and all_containers_running(
                 scheduler_data.dynamic_sidecar.containers_inspect
@@ -581,7 +581,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             # - the dynamic-sidecar has finished booting correctly
             if (
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save
-                and scheduler_data.dynamic_sidecar.were_services_created
+                and scheduler_data.dynamic_sidecar.were_containers_created
             ):
                 dynamic_sidecar_client = get_dynamic_sidecar_client(app)
 
