@@ -5,15 +5,15 @@ from typing import Any, AsyncIterator, Final, Optional
 
 from pydantic import PositiveFloat
 
-from ._client import Client
-from ._errors import TaskClientTimeoutError
-from ._models import (
+from ...long_running_tasks._errors import TaskClientTimeoutError
+from ...long_running_tasks._models import (
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
     TaskId,
     TaskStatus,
 )
+from ._client import Client
 
 # NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10

@@ -12,8 +12,13 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ._errors import GenericClientError, TaskClientResultError
-from ._models import ClientConfiguration, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._errors import GenericClientError, TaskClientResultError
+from ...long_running_tasks._models import (
+    ClientConfiguration,
+    TaskId,
+    TaskResult,
+    TaskStatus,
+)
 
 logger = logging.getLogger(__name__)
 
