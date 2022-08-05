@@ -374,12 +374,12 @@ class DynamicSidecarsScheduler:
                     and scheduler_data.dynamic_sidecar.were_containers_created
                 )
                 if failed_while_saving_state_and_outputs:
+                    # use-cases: 3, 4
                     # Since user data is important and must be saved, take no further
                     # action and wait for manual intervention from support.
                     return
 
-                # For every other situation we assume the sidecar is no longer required
-                # and we clean up the environment as soon as possible.
+                # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
                 await remove_dynamic_sidecar_stack(
                     scheduler_data.node_uuid, dynamic_sidecar_settings
@@ -390,7 +390,8 @@ class DynamicSidecarsScheduler:
                 await self.finish_service_removal(scheduler_data.node_uuid)
 
                 logger.warning(
-                    "Removed %s service after error, no state saving was required.",
+                    "cleaned up %s service after error without saving "
+                    "any data (it was not required).",
                     scheduler_data.node_uuid,
                 )
                 return
