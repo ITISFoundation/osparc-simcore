@@ -60,8 +60,8 @@ async def task_create_service_containers(
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
 
-    # it is useful to see what compose spec was used to start the containers
-    logger.warning("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+    # This "info" message should be visible on production deployments
+    logger.warning("INFO: Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
