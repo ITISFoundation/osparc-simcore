@@ -112,6 +112,22 @@ async def docker_compose_up(
     return result  # type: ignore
 
 
+async def docker_compose_start(
+    compose_spec_yaml: str, settings: ApplicationSettings
+) -> CommandResult:
+    """
+    Starts, existing containers
+
+    [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_start/)
+    """
+    result = await _write_file_and_spawn_process(
+        compose_spec_yaml,
+        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
+        process_termination_timeout=None,
+    )
+    return result  # type: ignore
+
+
 async def docker_compose_restart(
     compose_spec_yaml: str, settings: ApplicationSettings
 ) -> CommandResult:
