@@ -27,7 +27,7 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
-from .validation_codes import add_validation_code, get_validation_code
+from .validation_codes import add_validation_code, get_validation_code, delete_validation_code
 
 log = logging.getLogger(__name__)
 
@@ -195,6 +195,7 @@ async def validate_2fa_code(request: web.Request):
 
     v_code = await get_validation_code(request.app, email)
     if code == v_code:
+        await delete_validation_code(request.app, email)
         user = await db.get_user({"email": email})
         with log_context(
             log,

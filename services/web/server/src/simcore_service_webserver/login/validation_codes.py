@@ -24,6 +24,7 @@ async def add_validation_code(
     app: web.Application,
     user_email: str
 ):
+    logger.info("add_validation_code %s", user_email)
     redis_client = get_redis_validation_code_client(app)
     timeout = 60
     hash_key = user_email
@@ -36,17 +37,17 @@ async def get_validation_code(
     app: web.Application,
     user_email: str
 ) -> Optional[str]:
+    logger.info("get_validation_code %s", user_email)
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     return await redis_client.get(hash_key)
 
 
-async def remove_validation_code(
+async def delete_validation_code(
     app: web.Application,
     user_email: str
 ):
-    print("remove_validation_code in", user_email)
-    logger.info("remove_validation_code %s", user_email)
+    logger.info("delete_validation_code %s", user_email)
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     await redis_client.delete(hash_key)
