@@ -144,27 +144,24 @@ async def _new_project(
     primary_group: dict[str, str],
     *,
     project: Optional[dict] = None,
-    from_template: Optional[dict] = None,
     from_study: Optional[dict] = None,
 ) -> dict:
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == f"{API_PREFIX}/projects"
-    if from_template:
-        url = url.with_query(from_template=from_template["uuid"])
     if from_study:
         url = url.with_query(from_study=from_study["uuid"])
 
     # Pre-defined fields imposed by required properties in schema
     project_data = {}
     expected_data = {}
-    from_other_study = from_template or from_study
-    if from_other_study:
+    if from_study:
         # access rights are replaced
-        expected_data = deepcopy(from_other_study)
+        expected_data = deepcopy(from_study)
         expected_data["accessRights"] = {}
+        expected_data["name"] = f"{from_study['name']} (Copy)"
 
-    if not from_other_study or project:
+    if not from_study or project:
         project_data = {
             "uuid": "0000000-invalid-uuid",
             "name": "Minimal name",
@@ -189,9 +186,9 @@ async def _new_project(
             if (
                 key in OVERRIDABLE_DOCUMENT_KEYS
                 and not project_data[key]
-                and from_other_study
+                and from_study
             ):
-                expected_data[key] = from_other_study[key]
+                expected_data[key] = from_study[key]
 
     resp = await client.post(url, json=project_data)
 
@@ -226,14 +223,14 @@ async def _new_project(
             "creationDate",
             "lastChangeDate",
             "accessRights",
-            "workbench" if from_other_study else None,
-            "ui" if from_other_study else None,
-            "name" if from_study else None,
+            "workbench" if from_study else None,
+            "ui" if from_study else None,
         ]
 
         for key in new_project.keys():
             if key not in modified_fields:
                 assert expected_data[key] == new_project[key]
+
     return new_project
 
 
@@ -365,7 +362,7 @@ async def test_new_project_from_template(
         expected.created,
         logged_user,
         primary_group,
-        from_template=template_project,
+        from_study=template_project,
     )
 
     if new_project:
@@ -443,7 +440,7 @@ async def test_new_project_from_template_with_body(
         logged_user,
         primary_group,
         project=predefined,
-        from_template=template_project,
+        from_study=template_project,
     )
 
     if project:
