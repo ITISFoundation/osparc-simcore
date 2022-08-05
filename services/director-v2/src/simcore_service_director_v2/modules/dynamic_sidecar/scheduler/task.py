@@ -286,7 +286,7 @@ class DynamicSidecarsScheduler:
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
             logger.info("Will restart containers")
-            await dynamic_sidecar_client.containers_restart(dynamic_sidecar_endpoint)
+            await dynamic_sidecar_client.restart_containers(dynamic_sidecar_endpoint)
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
@@ -342,7 +342,7 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        await dynamic_sidecar_client.containers_restart(
+        await dynamic_sidecar_client.restart_containers(
             scheduler_data.dynamic_sidecar.endpoint
         )
 
