@@ -9,7 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.fastapi.long_running_tasks.client import TaskResult, CancelResult
+from servicelib.fastapi.long_running_tasks.client import CancelResult, TaskResult
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,
@@ -38,7 +38,10 @@ def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) ->
     task_manager: TaskManager = app.state.long_running_task_manager
     assert task_manager
 
-    assert len(task_manager.tasks["test_long_running_tasks_routes.short_task"]) == task_count
+    assert (
+        len(task_manager.tasks["test_long_running_tasks_routes.short_task"])
+        == task_count
+    )
 
 
 async def short_task(

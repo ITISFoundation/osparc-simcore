@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
@@ -272,22 +273,18 @@ class DynamicSidecarsScheduler:
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
 
-        transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-            port_keys=port_keys,
+        transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
+            dynamic_sidecar_endpoint, port_keys
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
             logger.info("Will restart containers")
-            await dynamic_sidecar_client.restart_containers(
-                scheduler_data.dynamic_sidecar.endpoint
-            )
-            logger.info("Containers restarted")
+            await dynamic_sidecar_client.containers_restart(dynamic_sidecar_endpoint)
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
@@ -366,6 +363,21 @@ class DynamicSidecarsScheduler:
                 # It makes no sense to continuously occupy resources or create
                 # issues due to high request to components like the `docker damon`
                 # and the `storage service`.
+
+                # TODO:
+
+                # MIGHT be a better alternative?
+                # - if node was deleted! (you know because in theory you call
+                # remove_node without saving ths state) just cleanup sidecars
+                # and remove from observation cycle [allows users to delete nodes and
+                # still release resources]
+
+                # FOR sure we want this
+                # - if the sidecar is missing (remove the proxy if it exists)
+                # and then remove from observation cycle [allows user to manually
+                # remove failing sidecars and the entire thing to still work afterwards]
+
+                # - cleanup: after removing?
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

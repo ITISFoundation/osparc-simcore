@@ -1,15 +1,19 @@
 import logging
 from asyncio import Task
 from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Awaitable, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, PositiveFloat, confloat
 
 logger = logging.getLogger(__name__)
 
 TaskName = str
 TaskId = str
 TaskType = Callable[..., Coroutine[Any, Any, Any]]
+
+ProgressMessage = str
+ProgressPercent = confloat(ge=0.0, le=1.0)
+ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
 
 
 class MarkOptions(BaseModel):
@@ -22,11 +26,14 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
-    message: str
-    percent: float
+    message: ProgressMessage
+    percent: ProgressPercent
 
     def publish(
-        self, *, message: Optional[str] = None, percent: Optional[float] = None
+        self,
+        *,
+        message: Optional[ProgressMessage] = None,
+        percent: Optional[ProgressPercent] = None,
     ) -> None:
         """`percent` must be between 0.0 and 1.0 otherwise ValueError is raised"""
         if message:
@@ -72,15 +79,11 @@ class TaskResult(BaseModel):
     result: Optional[Any]
     error: Optional[Any]
 
-    @root_validator
-    @classmethod
-    def expect_error_or_result(cls, values):
-        result = values.get("result")
-        error = values.get("error")
-        if not (bool(result) ^ bool(error)):
-            raise ValueError(f"Please provide either an {result=} or a {error=}")
-        return values
-
 
 class CancelResult(BaseModel):
     task_removed: bool
+
+
+class ClientConfiguration(BaseModel):
+    router_prefix: str
+    default_timeout: PositiveFloat

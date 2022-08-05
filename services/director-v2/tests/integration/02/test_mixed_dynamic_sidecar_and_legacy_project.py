@@ -5,7 +5,8 @@
 import asyncio
 import logging
 import os
-from typing import Any, AsyncIterable, Callable, Iterable
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterable
 
 import aiodocker
 import httpx
@@ -214,15 +215,28 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
-    for method_name, return_value in [
-        ("service_restore_state", None),
-        ("service_pull_output_ports", 42),
-        ("service_push_output_ports", None),
+    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
+    for function_name, return_value in [
+        ("pull_service_output_ports", None),
+        ("restore_service_state", None),
+        ("push_service_output_ports", None),
     ]:
         mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient.{method_name}",
-            return_value=return_value,
+            f"{class_path}.{function_name}",
+            # pylint: disable=cell-var-from-loop
+            side_effect=lambda *args, **kwargs: return_value,
         )
+
+    # also patch the long_running_tasks client context mangers handling the above
+    # requests
+    @asynccontextmanager
+    async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
+        yield
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
+        side_effect=_mocked_context_manger,
+    )
 
 
 # TESTS ----------------------------------------------------------------------------------------
