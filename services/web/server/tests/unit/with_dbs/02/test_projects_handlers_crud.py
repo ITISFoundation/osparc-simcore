@@ -7,7 +7,7 @@
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
@@ -47,11 +47,11 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: Type[web.HTTPException],
-    query_parameters: Optional[Dict] = None,
+    expected: type[web.HTTPException],
+    query_parameters: Optional[dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
-) -> Tuple[List[Dict], Dict[str, Any], Dict[str, Any]]:
+) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
     # GET /v0/projects
@@ -119,9 +119,9 @@ async def _list_projects(
 
 async def _assert_get_same_project(
     client,
-    project: Dict,
-    expected: Type[web.HTTPException],
-) -> Dict:
+    project: dict,
+    expected: type[web.HTTPException],
+) -> dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -139,28 +139,32 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: Type[web.HTTPException],
-    logged_user: Dict[str, str],
-    primary_group: Dict[str, str],
+    expected_response: type[web.HTTPException],
+    logged_user: dict[str, str],
+    primary_group: dict[str, str],
     *,
-    project: Optional[Dict] = None,
-    from_template: Optional[Dict] = None,
-) -> Dict:
+    project: Optional[dict] = None,
+    from_template: Optional[dict] = None,
+    from_study: Optional[dict] = None,
+) -> dict:
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == f"{API_PREFIX}/projects"
     if from_template:
         url = url.with_query(from_template=from_template["uuid"])
+    if from_study:
+        url = url.with_query(from_study=from_study["uuid"])
 
     # Pre-defined fields imposed by required properties in schema
     project_data = {}
     expected_data = {}
-    if from_template:
+    from_other_study = from_template or from_study
+    if from_other_study:
         # access rights are replaced
-        expected_data = deepcopy(from_template)
+        expected_data = deepcopy(from_other_study)
         expected_data["accessRights"] = {}
 
-    if not from_template or project:
+    if not from_other_study or project:
         project_data = {
             "uuid": "0000000-invalid-uuid",
             "name": "Minimal name",
@@ -185,9 +189,9 @@ async def _new_project(
             if (
                 key in OVERRIDABLE_DOCUMENT_KEYS
                 and not project_data[key]
-                and from_template
+                and from_other_study
             ):
-                expected_data[key] = from_template[key]
+                expected_data[key] = from_other_study[key]
 
     resp = await client.post(url, json=project_data)
 
@@ -222,8 +226,9 @@ async def _new_project(
             "creationDate",
             "lastChangeDate",
             "accessRights",
-            "workbench" if from_template else None,
-            "ui" if from_template else None,
+            "workbench" if from_other_study else None,
+            "ui" if from_other_study else None,
+            "name" if from_study else None,
         ]
 
         for key in new_project.keys():
@@ -233,8 +238,8 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: Type[web.HTTPException]
-) -> Dict:
+    client, project_update: dict, expected: type[web.HTTPException]
+) -> dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
         project_id=project_update["uuid"]
@@ -259,11 +264,11 @@ async def _replace_project(
 )
 async def test_list_projects(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
-    template_project: Dict[str, Any],
-    expected: Type[web.HTTPException],
-    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    template_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
     director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
@@ -349,7 +354,7 @@ async def test_new_project(
 async def test_new_project_from_template(
     client,
     logged_user,
-    primary_group: Dict[str, str],
+    primary_group: dict[str, str],
     template_project,
     expected,
     storage_subsystem_mock,
@@ -369,15 +374,45 @@ async def test_new_project_from_template(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_new_project_from_other_study(
+    client,
+    logged_user,
+    primary_group: dict[str, str],
+    user_project,
+    expected,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
+    project_db_cleaner,
+):
+    catalog_subsystem_mock([user_project])
+    new_project = await _new_project(
+        client,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
+
+    if new_project:
+        # check uuid replacement
+        assert new_project["name"].endswith("(Copy)")
+        for node_name in new_project["workbench"]:
+            try:
+                uuidlib.UUID(node_name)
+            except ValueError:
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
 
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template_with_body(
     client,
     logged_user,
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
     template_project,
     expected,
     storage_subsystem_mock,
@@ -424,16 +459,16 @@ async def test_new_project_from_template_with_body(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
 
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_template_from_project(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
-    all_group: Dict[str, str],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    all_group: dict[str, str],
+    user_project: dict[str, Any],
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
     catalog_subsystem_mock: Callable,
@@ -480,7 +515,7 @@ async def test_new_template_from_project(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
 
     # do the same with a body
     predefined = {
@@ -535,7 +570,7 @@ async def test_new_template_from_project(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
 
 
 # PUT --------

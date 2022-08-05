@@ -93,6 +93,10 @@ class _ProjectCreateParams(BaseModel):
         None,
         description="Option to create a project from existing template: from_template={template_uuid}",
     )
+    from_study: Optional[UUIDStr] = Field(
+        None,
+        description="Option to create a project from an existing study: from_study={study_uuid}",
+    )
     as_template: Optional[UUIDStr] = Field(
         None,
         description="Option to create a template from existing project: as_template={study_uuid}",
@@ -151,6 +155,14 @@ async def create_projects(request: web.Request):
                 raise web.HTTPNotFound(
                     reason=f"Invalid template uuid {query_params.from_template}"
                 )
+        elif query_params.from_study:  # copy from study
+            source_project = await db.get_user_project(
+                user_id=req_ctx.user_id, project_uuid=query_params.from_study
+            )
+            if not source_project:
+                raise web.HTTPNotFound(
+                    reason=f"Invalid source study uuid {query_params.from_study}"
+                )
 
         if source_project:
             # clone template as user project
@@ -159,9 +171,11 @@ async def create_projects(request: web.Request):
                 forced_copy_project_id=None,
                 clean_output_data=(query_params.copy_data == False),
             )
-            if query_params.from_template:
-                # remove template access rights
+            if query_params.from_template or query_params.from_study:
+                # remove template/study access rights
                 new_project["accessRights"] = {}
+            if query_params.from_study:
+                new_project["name"] = f"{source_project['name']} (Copy)"
             # the project is to be hidden until the data is copied
             query_params.hidden = query_params.copy_data
             clone_data_coro = (
