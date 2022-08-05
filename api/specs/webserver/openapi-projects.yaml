@@ -51,16 +51,11 @@ paths:
       summary: Create new project
       operationId: create_projects
       parameters:
-        - name: from_template
-          in: query
-          schema:
-            type: string
-          description: "Option to create a project from existing template: from_template={template_uuid}"
         - name: from_study
           in: query
           schema:
             type: string
-          description: "Option to create a project from an existing study: from_study={study_uuid}"
+          description: "Option to create a project from existing template or study: from={study_uuid}"
         - name: as_template
           in: query
           schema:

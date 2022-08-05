@@ -89,13 +89,9 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    from_template: Optional[UUIDStr] = Field(
-        None,
-        description="Option to create a project from existing template: from_template={template_uuid}",
-    )
     from_study: Optional[UUIDStr] = Field(
         None,
-        description="Option to create a project from an existing study: from_study={study_uuid}",
+        description="Option to create a project from existing template or study: from={study_uuid}",
     )
     as_template: Optional[UUIDStr] = Field(
         None,
@@ -149,19 +145,16 @@ async def create_projects(request: web.Request):
                 user_id=req_ctx.user_id,
                 include_templates=False,
             )
-        elif query_params.from_template:  # create from template
-            source_project = await db.get_template_project(query_params.from_template)
-            if not source_project:
-                raise web.HTTPNotFound(
-                    reason=f"Invalid template uuid {query_params.from_template}"
-                )
         elif query_params.from_study:  # copy from study
-            source_project = await db.get_user_project(
-                user_id=req_ctx.user_id, project_uuid=query_params.from_study
+            source_project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=query_params.from_study,
+                user_id=req_ctx.user_id,
+                include_templates=True,
             )
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason=f"Invalid source study uuid {query_params.from_study}"
+                    reason=f"Could not find source study uuid: {query_params.from_study}"
                 )
 
         if source_project:
@@ -171,10 +164,9 @@ async def create_projects(request: web.Request):
                 forced_copy_project_id=None,
                 clean_output_data=(query_params.copy_data == False),
             )
-            if query_params.from_template or query_params.from_study:
+            if query_params.from_study:
                 # remove template/study access rights
                 new_project["accessRights"] = {}
-            if query_params.from_study:
                 new_project["name"] = f"{source_project['name']} (Copy)"
             # the project is to be hidden until the data is copied
             query_params.hidden = query_params.copy_data
