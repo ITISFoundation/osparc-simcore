@@ -401,7 +401,7 @@ async def test_new_project_from_other_study(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
 @pytest.mark.parametrize(*standard_role_response())
