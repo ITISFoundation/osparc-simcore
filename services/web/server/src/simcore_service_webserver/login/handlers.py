@@ -27,6 +27,7 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
+from .validation_codes import add_validation_code, get_validation_code
 
 log = logging.getLogger(__name__)
 
@@ -155,11 +156,16 @@ async def login(request: web.Request):
 
     if settings.LOGIN_2FA_REQUIRED:
         if "maiz" in user["email"]:
-            response = web.json_response(
-                status=web.HTTPAccepted.status_code,
-                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
-            )
-            return response
+            try:
+                code = await add_validation_code(request.app, user["email"])
+                print("code", code)
+                response = web.json_response(
+                    status=web.HTTPAccepted.status_code,
+                    data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+                )
+                return response
+            except Exception as e:
+                raise e
         #else:
         #    raise web.HTTPUnauthorized(
         #        reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
@@ -186,11 +192,10 @@ async def validate_2fa_code(request: web.Request):
 
     email = body.email
     code = body.code
-    print("validate_2fa_code", email, code)
 
-    if code == "8004":
+    v_code = await get_validation_code(request.app, email)
+    if code == v_code:
         user = await db.get_user({"email": email})
-        print("user", user)
         with log_context(
             log,
             logging.INFO,

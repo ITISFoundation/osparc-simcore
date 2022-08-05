@@ -26,6 +26,10 @@ class RedisSettings(BaseCustomSettings):
     REDIS_LOCKS_DB: int = Field(
         default=1, description="This redis table is used to put locks"
     )
+    REDIS_VALIDATION_CODES_DB: int = Field(
+        default=2,
+        description="This redis table is used to store SMS validation codes"
+    )
 
     @cached_property
     def dsn_resources(self) -> str:
@@ -51,4 +55,17 @@ class RedisSettings(BaseCustomSettings):
             host=self.REDIS_HOST,
             port=f"{self.REDIS_PORT}",
             path=f"/{self.REDIS_LOCKS_DB}",
+        )
+
+    @cached_property
+    def dsn_validation_codes(self) -> str:
+        return RedisDsn.build(
+            scheme="redis",
+            user=self.REDIS_USER or None,
+            password=self.REDIS_PASSWORD.get_secret_value()
+            if self.REDIS_PASSWORD
+            else None,
+            host=self.REDIS_HOST,
+            port=f"{self.REDIS_PORT}",
+            path=f"/{self.REDIS_VALIDATION_CODES_DB}",
         )
