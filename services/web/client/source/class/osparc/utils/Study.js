@@ -181,7 +181,7 @@ qx.Class.define("osparc.utils.Study", {
               },
               data: minStudyData
             };
-            osparc.data.Resources.fetch("studies", "postFromTemplate", params)
+            osparc.data.Resources.fetch("studies", "postFromStudy", params)
               .then(studyData => resolve(studyData["uuid"]))
               .catch(err => reject(err));
           });

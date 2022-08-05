@@ -6,7 +6,7 @@
 import asyncio
 from copy import deepcopy
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 
 import pytest
 from _helpers import ExpectedResponse, standard_role_response
@@ -46,11 +46,11 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: Type[web.HTTPException],
-    query_parameters: Optional[Dict] = None,
+    expected: type[web.HTTPException],
+    query_parameters: Optional[dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
-) -> Tuple[List[Dict], Dict[str, Any], Dict[str, Any]]:
+) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
     # GET /v0/projects
@@ -118,28 +118,29 @@ async def _list_projects(
 
 async def _new_project(
     client,
-    expected_response: Type[web.HTTPException],
-    logged_user: Dict[str, str],
-    primary_group: Dict[str, str],
+    expected_response: type[web.HTTPException],
+    logged_user: dict[str, str],
+    primary_group: dict[str, str],
     *,
-    project: Optional[Dict] = None,
-    from_template: Optional[Dict] = None,
-) -> Dict:
+    project: Optional[dict] = None,
+    from_study: Optional[dict] = None,
+) -> dict:
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == f"{API_PREFIX}/projects"
-    if from_template:
-        url = url.with_query(from_template=from_template["uuid"])
+    if from_study:
+        url = url.with_query(from_study=from_study["uuid"])
 
     # Pre-defined fields imposed by required properties in schema
     project_data = {}
     expected_data = {}
-    if from_template:
+    if from_study:
         # access rights are replaced
-        expected_data = deepcopy(from_template)
+        expected_data = deepcopy(from_study)
         expected_data["accessRights"] = {}
+        expected_data["name"] = f"{from_study['name']} (Copy)"
 
-    if not from_template or project:
+    if not from_study or project:
         project_data = {
             "uuid": "0000000-invalid-uuid",
             "name": "Minimal name",
@@ -164,9 +165,9 @@ async def _new_project(
             if (
                 key in OVERRIDABLE_DOCUMENT_KEYS
                 and not project_data[key]
-                and from_template
+                and from_study
             ):
-                expected_data[key] = from_template[key]
+                expected_data[key] = from_study[key]
 
     resp = await client.post(url, json=project_data)
 
@@ -201,8 +202,8 @@ async def _new_project(
             "creationDate",
             "lastChangeDate",
             "accessRights",
-            "workbench" if from_template else None,
-            "ui" if from_template else None,
+            "workbench" if from_study else None,
+            "ui" if from_study else None,
         ]
 
         for key in new_project.keys():
@@ -211,7 +212,7 @@ async def _new_project(
     return new_project
 
 
-def standard_user_role() -> Tuple[str, Tuple[UserRole, ExpectedResponse]]:
+def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     all_roles = standard_role_response()
 
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
@@ -231,11 +232,11 @@ def standard_user_role() -> Tuple[str, Tuple[UserRole, ExpectedResponse]]:
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_invalid_pagination_parameters(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
@@ -255,11 +256,11 @@ async def test_list_projects_with_invalid_pagination_parameters(
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
