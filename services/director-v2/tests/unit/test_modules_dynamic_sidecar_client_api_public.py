@@ -127,9 +127,15 @@ async def test_is_healthy_times_out(
     retry_count: int,
 ) -> None:
     assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
-    for i, log_message in enumerate(caplog_info_level.messages):
+    # check if the right amount of messages was captured by the logs
+    unexpected_counter = 1
+    for log_message in caplog_info_level.messages:
+        if log_message.startswith("Retrying"):
+            assert "as it raised" in log_message
+            continue
         assert log_message.startswith("Unexpected error")
-        assert log_message.endswith(f"(attempt [{i+1}/{retry_count}])")
+        assert log_message.endswith(f"(attempt [{unexpected_counter}/{retry_count}])")
+        unexpected_counter += 1
 
 
 @pytest.mark.parametrize(
