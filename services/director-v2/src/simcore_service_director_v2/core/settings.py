@@ -155,7 +155,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
-        "WARNING",
+        "INFO",
         description="log level of the dynamic sidecar"
         "If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
         env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"],
