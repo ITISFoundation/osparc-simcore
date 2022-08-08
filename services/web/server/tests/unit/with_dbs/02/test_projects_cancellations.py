@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 import asyncio
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
@@ -35,8 +35,8 @@ async def slow_storage_subsystem_mock(
     return storage_subsystem_mock
 
 
-def standard_user_role_response() -> Tuple[
-    str, List[Tuple[UserRole, ExpectedResponse]]
+def standard_user_role_response() -> tuple[
+    str, list[tuple[UserRole, ExpectedResponse]]
 ]:
     all_roles = standard_role_response()
     return (
@@ -52,10 +52,10 @@ def standard_user_role_response() -> Tuple[
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_from_template_and_disconnecting_does_not_create_project(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    template_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    template_project: dict[str, Any],
     expected: ExpectedResponse,
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
@@ -68,7 +68,7 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
     # POST /v0/projects
     create_url = client.app.router["create_projects"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
-    create_url = create_url.with_query(from_template=template_project["uuid"])
+    create_url = create_url.with_query(from_study=template_project["uuid"])
     with pytest.raises(asyncio.TimeoutError):
         await client.post(f"{create_url}", json={}, timeout=A_VERY_SHORT_TIMEOUT)
 
@@ -95,10 +95,10 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_as_template_and_disconnecting_does_not_create_project(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    user_project: dict[str, Any],
     expected: ExpectedResponse,
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
@@ -137,10 +137,10 @@ async def test_creating_new_project_as_template_and_disconnecting_does_not_creat
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_from_template_without_copying_data_creates_skeleton(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    template_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    template_project: dict[str, Any],
     expected: ExpectedResponse,
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
@@ -153,7 +153,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     create_url = client.app.router["create_projects"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(
-        from_template=template_project["uuid"], copy_data="false"
+        from_study=template_project["uuid"], copy_data="false"
     )
     # this should go fast, let's have a timeout
     await client.post(f"{create_url}", json={}, timeout=2)
@@ -184,10 +184,10 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_as_template_without_copying_data_creates_skeleton(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    user_project: dict[str, Any],
     expected: ExpectedResponse,
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,

@@ -5,7 +5,7 @@
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any
 
 import jsonschema
 import pytest
@@ -17,11 +17,12 @@ from simcore_service_webserver.projects.projects_nodes_utils import (
 from simcore_service_webserver.projects.projects_utils import (
     any_node_inputs_changed,
     clone_project_document,
+    default_copy_project_name,
 )
 
 
 @pytest.fixture
-def project_schema(project_schema_file: Path) -> Dict[str, Any]:
+def project_schema(project_schema_file: Path) -> dict[str, Any]:
     with open(project_schema_file) as fh:
         schema = json.load(fh)
     return schema
@@ -41,7 +42,7 @@ def project_schema(project_schema_file: Path) -> Dict[str, Any]:
 )
 def test_clone_project_document(
     test_data_file_name: str,
-    project_schema: Dict[str, Any],
+    project_schema: dict[str, Any],
     tests_data_dir: Path,
 ):
     original_project: ProjectDict = json.loads(
@@ -81,7 +82,7 @@ def test_clone_project_document(
     ],
 )
 async def test_project_get_depending_nodes(
-    fake_project: ProjectDict, node_uuid: str, expected_dependencies: Set[str]
+    fake_project: ProjectDict, node_uuid: str, expected_dependencies: set[str]
 ):
     set_of_depending_nodes = await project_get_depending_nodes(fake_project, node_uuid)
     assert set_of_depending_nodes == expected_dependencies
@@ -125,3 +126,22 @@ def test_any_node_inputs_changed(fake_project: ProjectDict):
     # add new node w/o a link
     fake_node["inputs"].pop("initfile")
     assert not any_node_inputs_changed(updated_project, current_project)
+
+
+@pytest.mark.parametrize(
+    "original_name, expected_copy_suffix",
+    [
+        ("", " (Copy)"),
+        ("whatever is whatever", "whatever is whatever (Copy)"),
+        ("(Copy)", "(Copy) (Copy)"),
+        (
+            "some project cool name with 123 numbers (Copy)",
+            "some project cool name with 123 numbers (Copy)(1)",
+        ),
+        (" (Copy)(2)", " (Copy)(3)"),
+        (" (Copy)(456)", " (Copy)(457)"),
+    ],
+)
+def test_default_copy_project_name(original_name: str, expected_copy_suffix: str):
+    received_name = default_copy_project_name(original_name)
+    assert received_name == expected_copy_suffix

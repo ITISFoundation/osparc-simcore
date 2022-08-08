@@ -115,9 +115,9 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects"
           },
-          postFromTemplate: {
+          postFromStudy: {
             method: "POST",
-            url: statics.API + "/projects?from_template={templateId}"
+            url: statics.API + "/projects?from_study={templateId}"
           },
           put: {
             method: "PUT",
