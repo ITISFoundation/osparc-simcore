@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.info(message)
+    logger.debug(message)
     await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
@@ -60,8 +60,7 @@ async def task_create_service_containers(
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
 
-    # This "info" message should be visible on production deployments
-    logger.warning("INFO: Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+    logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
@@ -84,7 +83,7 @@ async def task_create_service_containers(
 
     if r.success:
         await send_message(rabbitmq, "service containers started")
-        logger.info(message)
+        logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:

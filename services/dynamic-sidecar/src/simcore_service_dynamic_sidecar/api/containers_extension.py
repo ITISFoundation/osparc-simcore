@@ -38,7 +38,7 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
 
 
 async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.info(message)
+    logger.debug(message)
     await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
@@ -114,7 +114,7 @@ async def attach_container_to_network(
         }
 
         if item.network_id in attached_network_ids:
-            logger.info(
+            logger.debug(
                 "Container %s already attached to network %s",
                 container_id,
                 item.network_id,
@@ -152,7 +152,7 @@ async def detach_container_from_network(
         }
 
         if item.network_id not in attached_network_ids:
-            logger.info(
+            logger.debug(
                 "Container %s already detached from network %s",
                 container_id,
                 item.network_id,

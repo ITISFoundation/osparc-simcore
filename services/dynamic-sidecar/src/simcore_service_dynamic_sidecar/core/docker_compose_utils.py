@@ -42,14 +42,14 @@ async def _write_file_and_spawn_process(
     async with write_to_tmp_file(yaml_content) as file_path:
         cmd = command.format(file_path=file_path)
 
-        logger.info("Runs %s ...\n%s", cmd, yaml_content)
+        logger.debug("Runs %s ...\n%s", cmd, yaml_content)
 
         result = await async_command(
             command=cmd,
             timeout=process_termination_timeout,
         )
 
-        logger.info("Done %s", pformat(deepcopy(result._asdict())))
+        logger.debug("Done %s", pformat(deepcopy(result._asdict())))
         return result
 
 

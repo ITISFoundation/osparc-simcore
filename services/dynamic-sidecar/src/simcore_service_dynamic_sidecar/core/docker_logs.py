@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def _logs_fetcher_worker(
     container_name: str, dispatch_log: Callable[..., Coroutine[Any, Any, None]]
 ) -> None:
-    logger.info("Started log fetching for container %s", container_name)
+    logger.debug("Started log fetching for container %s", container_name)
 
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
@@ -64,7 +64,7 @@ class BackgroundLogFetcher:
             name=f"rabbitmq_log_processor_tasks/{container_name}",
         )
 
-        logger.info("Subscribed to fetch logs from '%s'", container_name)
+        logger.debug("Subscribed to fetch logs from '%s'", container_name)
 
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
