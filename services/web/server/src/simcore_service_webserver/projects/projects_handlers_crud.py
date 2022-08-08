@@ -45,6 +45,7 @@ from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
     any_node_inputs_changed,
     clone_project_document,
+    default_copy_project_name,
     get_project_unavailable_services,
     project_uses_available_services,
 )
@@ -167,7 +168,7 @@ async def create_projects(request: web.Request):
             if query_params.from_study:
                 # remove template/study access rights
                 new_project["accessRights"] = {}
-                new_project["name"] = f"{source_project['name']} (Copy)"
+                new_project["name"] = default_copy_project_name(source_project["name"])
             # the project is to be hidden until the data is copied
             query_params.hidden = query_params.copy_data
             clone_data_coro = (
