@@ -280,7 +280,7 @@ def start_task(
     NOTE: the first progress update will be (message='', percent=0.0)
     NOTE: the `handler` name must be unique in the module, otherwise when using
         the unique parameter is True, it will not be able to distinguish between
-        the them.
+        them.
     """
 
     # NOTE: Composing the task_name out of the handler's module and it's name
