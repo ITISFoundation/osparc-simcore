@@ -91,7 +91,7 @@ class ProjectPathParams(BaseModel):
 class _ProjectCreateParams(BaseModel):
     from_study: Optional[UUIDStr] = Field(
         None,
-        description="Option to create a project from existing template or study: from={study_uuid}",
+        description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
     as_template: Optional[UUIDStr] = Field(
         None,
