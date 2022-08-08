@@ -41,13 +41,14 @@ def _before_sleep_log(
             local_exc_info = False  # exc_info does not apply when no exception
 
         logger.warning(
-            "Retrying '%s %s %s' in %s seconds as it %s %s.",
+            "Retrying '%s %s %s' in %s seconds as it %s %s. %s",
             request_function.__name__,
             f"{args=}",
             f"{kwargs=}",
             retry_state.next_action.sleep,
             verb,
             value,
+            retry_state.retry_object.statistics,
             exc_info=local_exc_info,
         )
 

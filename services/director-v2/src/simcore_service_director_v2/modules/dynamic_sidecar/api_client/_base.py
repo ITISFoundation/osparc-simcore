@@ -9,7 +9,7 @@ from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
-from tenacity.before import before_log
+from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -31,7 +31,7 @@ def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
     )
 
 
-def _log_retry(log: Logger, max_retries: int) -> Callable[[RetryCallState], None]:
+def _after_log(log: Logger, max_retries: int) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         # pylint: disable=protected-access
 
@@ -70,8 +70,8 @@ def retry_on_errors(
                 stop=stop_after_attempt(zelf._request_max_retries),
                 wait=wait_exponential(min=1),
                 retry=retry_if_exception_type(RETRY_ERRORS),
-                before=before_log(logger, logging.DEBUG),
-                after=_log_retry(logger, zelf._request_max_retries),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
+                after=_after_log(logger, zelf._request_max_retries),
                 reraise=True,
             ):
                 with attempt:

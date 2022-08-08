@@ -12,6 +12,7 @@ from ..core.docker_compose_utils import (
     docker_compose_pull,
     docker_compose_restart,
     docker_compose_rm,
+    docker_compose_start,
     docker_compose_up,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
@@ -59,7 +60,8 @@ async def task_create_service_containers(
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
 
-    logger.debug("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+    # This "info" message should be visible on production deployments
+    logger.warning("INFO: Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
@@ -72,10 +74,13 @@ async def task_create_service_containers(
         progress.publish(message="pulling images", percent=0.01)
         await docker_compose_pull(shared_store.compose_spec, settings)
 
-        progress.publish(message="starting service containers", percent=0.90)
-        r = await docker_compose_up(shared_store.compose_spec, settings)
+        progress.publish(message="creating and starting containers", percent=0.90)
+        await docker_compose_up(shared_store.compose_spec, settings)
 
-    message = f"Finished docker-compose up with output\n{r.message}"
+        progress.publish(message="ensure containers are started", percent=0.95)
+        r = await docker_compose_start(shared_store.compose_spec, settings)
+
+    message = f"Finished docker-compose start with output\n{r.message}"
 
     if r.success:
         await send_message(rabbitmq, "service containers started")

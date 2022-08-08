@@ -12,8 +12,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_config,
     docker_compose_down,
+    docker_compose_pull,
     docker_compose_restart,
     docker_compose_rm,
+    docker_compose_start,
     docker_compose_up,
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
@@ -68,8 +70,18 @@ async def test_docker_compose_workflow(
     _print_result(r)
     assert r.success, r.message
 
+    # pulls containers before starting them
+    r = await docker_compose_pull(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success, r.message
+
     # creates and starts in detached mode
     r = await docker_compose_up(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success, r.message
+
+    # tries to start containers which were not able to start
+    r = await docker_compose_start(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 
@@ -120,3 +132,28 @@ async def test_burst_calls_to_docker_compose_config(
     failed = [r for r in results if not r.success]
 
     assert len(success) == CALLS_COUNT and not failed
+
+
+async def test_docker_start_fails_if_containers_are_not_present(
+    compose_spec_yaml: str,
+    mock_environment: EnvVarsDict,
+    ensure_run_in_sequence_context_is_empty: None,
+):
+    settings = ApplicationSettings.create_from_envs()
+
+    def _print_result(r: CommandResult):
+        assert r.elapsed and r.elapsed > 0
+        print(f"{r.command:*^100}", "\nELAPSED:", r.elapsed)
+
+    compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
+    print("compose_spec:\n", compose_spec)
+
+    # validates specs
+    r = await docker_compose_config(compose_spec_yaml, timeout=10)
+    _print_result(r)
+    assert r.success, r.message
+
+    # fails when containers are missing
+    r = await docker_compose_start(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success is False, r.message

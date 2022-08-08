@@ -135,7 +135,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "swarm_network_name": None,
                         "was_compose_spec_submitted": False,
                         "was_dynamic_sidecar_started": False,
-                        "were_services_created": False,
+                        "were_containers_created": False,
                     },
                     "dynamic_sidecar_network_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "key": "simcore/services/dynamic/3dviewer",
@@ -143,7 +143,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "paths_mapping": {
                         "inputs_path": "/tmp/inputs",
                         "outputs_path": "/tmp/outputs",
-                        "state_exclude": {"/tmp/strip_me/*", "*.py"},
+                        "state_exclude": ["/tmp/strip_me/*", "*.py"],
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],
                     },
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
