@@ -278,23 +278,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         font: "text-14"
       });
 
-      const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog(), this);
-      menu.add(newGHIssueBtn);
-
-      if (osparc.utils.Utils.isInZ43()) {
-        const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog(), this);
-        menu.add(newFogbugzIssueBtn);
-      }
-
-      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
-      feedbackAnonBtn.addListener("execute", () => {
-        if (this.__serverStatics.feedbackFormUrl) {
-          window.open(this.__serverStatics.feedbackFormUrl);
-        }
-      });
-      menu.add(feedbackAnonBtn);
+      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
 
       const feedbackBtn = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
         toolTipText: this.tr("Give us feedback")
