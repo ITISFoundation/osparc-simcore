@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import asyncio
+from dataclasses import dataclass
 import re
 from typing import Final, Iterator
 
@@ -10,6 +12,7 @@ import pytest
 import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
@@ -96,8 +99,42 @@ class ACounter:
         self.count += 1
 
 
+@pytest.fixture(params=[True, False])
+def error_raised_by_saving_state(request: FixtureRequest) -> bool:
+    return request.param  # type: ignore
+
+
+@dataclass
+class UseCase:
+    can_save: bool
+    were_containers_created: bool
+    outcome_service_removed: bool
+
+
+@pytest.fixture(
+    params=[
+        UseCase(
+            can_save=False, were_containers_created=False, outcome_service_removed=True
+        ),
+        UseCase(
+            can_save=False, were_containers_created=True, outcome_service_removed=True
+        ),
+        UseCase(
+            can_save=True, were_containers_created=False, outcome_service_removed=True
+        ),
+        UseCase(
+            can_save=True, were_containers_created=True, outcome_service_removed=False
+        ),
+    ]
+)
+def use_case(request) -> UseCase:
+    return request.param  # type: ignore
+
+
 @pytest.fixture
-def mocked_dynamic_scheduler_events() -> ACounter:
+def mocked_dynamic_scheduler_events(
+    error_raised_by_saving_state: bool, use_case: UseCase
+) -> ACounter:
     counter = ACounter()
 
     class AlwaysTriggersDynamicSchedulerEvent(DynamicSchedulerEvent):
@@ -110,6 +147,14 @@ def mocked_dynamic_scheduler_events() -> ACounter:
         @classmethod
         async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
             counter.increment()
+            if error_raised_by_saving_state:
+                # emulate the error was generated while saving the state
+                scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
+                    use_case.can_save
+                )
+                scheduler_data.dynamic_sidecar.were_containers_created = (
+                    use_case.were_containers_created
+                )
             raise RuntimeError("Failed as planned")
 
     test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [
@@ -132,14 +177,27 @@ async def test_skip_observation_cycle_after_error(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: ACounter,
+    error_raised_by_saving_state: bool,
+    use_case: UseCase,
 ):
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
     await scheduler.add_service(scheduler_data)
+    # check it is being tracked
+    assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
     # only expect the event to be triggered once, when it raised
     # an error and no longer trigger again
     assert mocked_dynamic_scheduler_events.count == 1
+
+    # check if service was properly removed or is still kept for manual interventions
+    if error_raised_by_saving_state:
+        if use_case.outcome_service_removed:
+            assert scheduler_data.node_uuid not in scheduler._inverse_search_mapping
+        else:
+            assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
+    else:
+        assert scheduler_data.node_uuid not in scheduler._inverse_search_mapping

@@ -46,6 +46,6 @@ class GenericClientError(BaseLongRunningError):
     )
 
 
-class TaskClientResultError(GenericClientError):
+class TaskClientResultError(BaseLongRunningError):
     code: str = "fastapi.client.task_raised_error"
     msg_template: str = "{message}"

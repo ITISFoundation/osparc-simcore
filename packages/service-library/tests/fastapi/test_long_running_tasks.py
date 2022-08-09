@@ -42,7 +42,7 @@ def create_mock_app() -> FastAPI:
     def health() -> None:
         """used to check if application is ready"""
 
-    @mock_server_app.post("/string-list-task")
+    @mock_server_app.post("/string-list-task", status_code=status.HTTP_202_ACCEPTED)
     async def create_string_list_task(
         task_manager: long_running_tasks.server.TaskManager = Depends(
             long_running_tasks.server.get_task_manager
@@ -68,6 +68,29 @@ def create_mock_app() -> FastAPI:
         )
         return task_id
 
+    @mock_server_app.post("/waiting-task", status_code=status.HTTP_202_ACCEPTED)
+    async def create_waiting_task(
+        wait_for: float,
+        task_manager: long_running_tasks.server.TaskManager = Depends(
+            long_running_tasks.server.get_task_manager
+        ),
+    ) -> long_running_tasks.server.TaskId:
+        async def _waiting_task(
+            task_progress: long_running_tasks.server.TaskProgress,
+            wait_for: PositiveFloat,
+        ) -> float:
+            task_progress.publish(message="started sleeping", percent=0.0)
+            await asyncio.sleep(wait_for)
+            task_progress.publish(message="finished sleeping", percent=1.0)
+            return 42 + wait_for
+
+        task_id = long_running_tasks.server.start_task(
+            task_manager=task_manager,
+            handler=_waiting_task,
+            wait_for=wait_for,
+        )
+        return task_id
+
     return mock_server_app
 
 
@@ -79,7 +102,7 @@ async def _wait_server_ready(address: AnyHttpUrl) -> None:
         with attempt:
             print(f"Checking if server running at: {address}")
             response = await client.get(address, timeout=0.1)
-            if response.status_code == status.HTTP_200_OK:
+            if response.status_code == status.HTTP_202_ACCEPTED:
                 return
 
 
@@ -158,12 +181,16 @@ async def test_workflow(
     high_status_poll_interval: PositiveFloat,
 ) -> None:
     result = await async_client.post(f"{run_server}/string-list-task")
-    assert result.status_code == status.HTTP_200_OK
+    assert result.status_code == status.HTTP_202_ACCEPTED
     task_id = result.json()
 
     progress_updates = []
 
-    async def progress_handler(message: str, percent: float) -> None:
+    async def progress_handler(
+        message: long_running_tasks.client.ProgressMessage,
+        percent: long_running_tasks.client.ProgressPercent,
+        _: long_running_tasks.client.TaskId,
+    ) -> None:
         progress_updates.append((message, percent))
 
     client = long_running_tasks.client.Client(
@@ -175,7 +202,8 @@ async def test_workflow(
         task_timeout=10,
         progress_callback=progress_handler,
         status_poll_interval=high_status_poll_interval,
-    ) as string_list:
+    ) as result:
+        string_list = result
         assert string_list == [f"{x}" for x in range(10)]
 
         assert progress_updates == [
@@ -200,7 +228,7 @@ async def test_error_after_result(
     high_status_poll_interval: PositiveFloat,
 ) -> None:
     result = await async_client.post(f"{run_server}/string-list-task")
-    assert result.status_code == status.HTTP_200_OK
+    assert result.status_code == status.HTTP_202_ACCEPTED
     task_id = result.json()
 
     client = long_running_tasks.client.Client(
@@ -212,6 +240,7 @@ async def test_error_after_result(
             task_id,
             task_timeout=10,
             status_poll_interval=high_status_poll_interval,
-        ) as string_list:
+        ) as result:
+            string_list = result
             assert string_list == [f"{x}" for x in range(10)]
             raise RuntimeError("has no influence")

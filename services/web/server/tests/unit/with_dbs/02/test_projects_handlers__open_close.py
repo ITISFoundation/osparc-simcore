@@ -68,7 +68,7 @@ async def _list_projects(
     client,
     expected: type[web.HTTPException],
     query_parameters: Optional[dict] = None,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -87,23 +87,24 @@ async def _new_project(
     primary_group: dict[str, str],
     *,
     project: Optional[dict] = None,
-    from_template: Optional[dict] = None,
+    from_study: Optional[dict] = None,
 ) -> dict:
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == f"{API_PREFIX}/projects"
-    if from_template:
-        url = url.with_query(from_template=from_template["uuid"])
+    if from_study:
+        url = url.with_query(from_study=from_study["uuid"])
 
     # Pre-defined fields imposed by required properties in schema
     project_data = {}
     expected_data = {}
-    if from_template:
+    if from_study:
         # access rights are replaced
-        expected_data = deepcopy(from_template)
+        expected_data = deepcopy(from_study)
         expected_data["accessRights"] = {}
+        expected_data["name"] = f"{from_study['name']} (Copy)"
 
-    if not from_template or project:
+    if not from_study or project:
         project_data = {
             "uuid": "0000000-invalid-uuid",
             "name": "Minimal name",
@@ -128,9 +129,9 @@ async def _new_project(
             if (
                 key in OVERRIDABLE_DOCUMENT_KEYS
                 and not project_data[key]
-                and from_template
+                and from_study
             ):
-                expected_data[key] = from_template[key]
+                expected_data[key] = from_study[key]
 
     resp = await client.post(url, json=project_data)
 
@@ -165,8 +166,8 @@ async def _new_project(
             "creationDate",
             "lastChangeDate",
             "accessRights",
-            "workbench" if from_template else None,
-            "ui" if from_template else None,
+            "workbench" if from_study else None,
+            "ui" if from_study else None,
         ]
 
         for key in new_project.keys():
@@ -231,6 +232,8 @@ async def _open_project(
     else:
         data, error = await assert_status(resp, expected)
         return data, error
+
+    raise AssertionError("could not open project")
 
 
 async def _close_project(
@@ -1016,6 +1019,7 @@ async def test_open_shared_project_at_same_time(
                 project_status = ProjectState(**data.pop("state"))
                 assert data == shared_project
                 assert project_status.locked.value
+                assert project_status.locked.owner
                 assert project_status.locked.owner.first_name in [
                     c["user"]["name"] for c in clients
                 ]
@@ -1048,6 +1052,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
         client,
         client_session_id,
     )
+    assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
     await assert_status(

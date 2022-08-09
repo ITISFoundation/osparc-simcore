@@ -95,34 +95,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "Run docker-compose up",
-        "operationId": "create_containers_v1_containers_post",
-        "parameters": [
-          {
-            "description": "docker-compose up command timeout run as a background",
-            "required": false,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "integer",
-              "description": "docker-compose up command timeout run as a background",
-              "default": 3600
-            },
-            "name": "command_timeout",
-            "in": "query"
-          },
-          {
-            "description": "docker-compose config timeout (EXPERIMENTAL)",
-            "required": false,
-            "schema": {
-              "title": "Validation Timeout",
-              "type": "integer",
-              "description": "docker-compose config timeout (EXPERIMENTAL)",
-              "default": 60
-            },
-            "name": "validation_timeout",
-            "in": "query"
-          }
-        ],
+        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- pulling the needed images\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
+        "operationId": "create_service_containers_task_v1_containers_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -139,59 +113,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Create Containers V1 Containers Post",
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Cannot validate submitted compose spec"
-          }
-        }
-      }
-    },
-    "/v1/containers:down": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Runs Docker Compose Down",
-        "description": "Removes the previously started service\nand returns the docker-compose output",
-        "operationId": "runs_docker_compose_down_v1_containers_down_post",
-        "parameters": [
-          {
-            "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-            "required": false,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "integer",
-              "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
-              "default": 10
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "text/plain": {
-                "schema": {
+                  "title": "Response Create Service Containers Task V1 Containers Post",
                   "type": "string"
                 }
               }
             }
           },
-          "404": {
-            "description": "No compose spec found"
+          "409": {
+            "description": "Task already running, cannot start a new one"
           },
           "422": {
-            "description": "Error while shutting down containers"
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -365,77 +304,6 @@
         }
       }
     },
-    "/v1/containers/state:restore": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Restores the state of the dynamic service",
-        "description": "When restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
-        "operationId": "restore_state_v1_containers_state_restore_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
-    "/v1/containers/state:save": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Stores the state of the dynamic service",
-        "operationId": "save_state_v1_containers_state_save_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
-    "/v1/containers/ports/inputs:pull": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Pull input ports data",
-        "operationId": "pull_input_ports_v1_containers_ports_inputs_pull_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Port Keys",
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/containers/directory-watcher": {
       "patch": {
         "tags": [
@@ -500,123 +368,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/v1/containers/ports/outputs:pull": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Pull output ports data",
-        "operationId": "pull_output_ports_v1_containers_ports_outputs_pull_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Port Keys",
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/containers/ports/outputs:push": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Push output ports data",
-        "operationId": "push_output_ports_v1_containers_ports_outputs_push_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Port Keys",
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "404": {
-            "description": "Could not find node_uuid in the database"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/containers:restart": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Restarts Containers",
-        "description": "Removes the previously started service\nand returns the docker-compose output",
-        "operationId": "restarts_containers_v1_containers_restart_post",
-        "parameters": [
-          {
-            "description": "docker-compose stop command timeout default",
-            "required": false,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "integer",
-              "description": "docker-compose stop command timeout default",
-              "default": 10
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "404": {
-            "description": "Container does not exist"
-          },
-          "422": {
-            "description": "Error while running docker-compose command"
           }
         }
       }
@@ -707,6 +458,250 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/containers:down": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Remove the previously started containers",
+        "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          }
+        }
+      }
+    },
+    "/v1/containers/state:restore": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restores the state of the dynamic service",
+        "operationId": "state_restore_task_v1_containers_state_restore_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response State Restore Task V1 Containers State Restore Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          }
+        }
+      }
+    },
+    "/v1/containers/state:save": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "state_save_task_v1_containers_state_save_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response State Save Task V1 Containers State Save Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/inputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull input ports data",
+        "operationId": "ports_inputs_pull_task_v1_containers_ports_inputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull output ports data",
+        "operationId": "ports_outputs_pull_task_v1_containers_ports_outputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:push": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Push output ports data",
+        "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:restart": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restarts previously started containers",
+        "operationId": "containers_restart_task_v1_containers_restart_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Containers Restart Task V1 Containers Restart Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           }
         }
       }

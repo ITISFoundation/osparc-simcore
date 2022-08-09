@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
@@ -46,6 +47,8 @@ from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -73,7 +76,7 @@ async def _apply_observation_cycle(
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skiped most times
-        scheduler_data.dynamic_sidecar.were_services_created
+        scheduler_data.dynamic_sidecar.were_containers_created
         and not await are_all_services_present(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
@@ -272,22 +275,18 @@ class DynamicSidecarsScheduler:
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
 
-        transferred_bytes = await dynamic_sidecar_client.service_pull_input_ports(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-            port_keys=port_keys,
+        transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
+            dynamic_sidecar_endpoint, port_keys
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
             logger.info("Will restart containers")
-            await dynamic_sidecar_client.restart_containers(
-                scheduler_data.dynamic_sidecar.endpoint
-            )
-            logger.info("Containers restarted")
+            await dynamic_sidecar_client.restart_containers(dynamic_sidecar_endpoint)
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
@@ -355,17 +354,46 @@ class DynamicSidecarsScheduler:
 
         async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            )
 
-            # NOTE: ANE: not very readable should be refactored
             if (
                 scheduler_data.dynamic_sidecar.status.current
                 == DynamicSidecarStatus.FAILING
             ):
-                # Nothing will be done if there is an error while interacting
-                # with the sidecar.
-                # It makes no sense to continuously occupy resources or create
-                # issues due to high request to components like the `docker damon`
-                # and the `storage service`.
+                # potential use-cases:
+                # 1. service failed on start -> it can be removed safely
+                # 2. service must be deleted -> it can be removed safely
+                # 3. service started and failed while running (either
+                #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
+                # 4. service started, and failed on closing -> it cannot be removed safely
+
+                failed_while_saving_state_and_outputs = (
+                    scheduler_data.dynamic_sidecar.service_removal_state.can_save
+                    and scheduler_data.dynamic_sidecar.were_containers_created
+                )
+                if failed_while_saving_state_and_outputs:
+                    # use-cases: 3, 4
+                    # Since user data is important and must be saved, take no further
+                    # action and wait for manual intervention from support.
+                    return
+
+                # use-cases: 1, 2
+                # Cleanup all resources related to the dynamic-sidecar.
+                await remove_dynamic_sidecar_stack(
+                    scheduler_data.node_uuid, dynamic_sidecar_settings
+                )
+                await remove_dynamic_sidecar_network(
+                    scheduler_data.dynamic_sidecar_network_name
+                )
+                await self.finish_service_removal(scheduler_data.node_uuid)
+
+                logger.warning(
+                    "cleaned up %s service after error without saving "
+                    "any data (it was not required).",
+                    scheduler_data.node_uuid,
+                )
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

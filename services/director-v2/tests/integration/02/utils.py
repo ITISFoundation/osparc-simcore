@@ -33,6 +33,7 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
+PROXY_BOOT_TIME = 30
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
@@ -478,6 +479,9 @@ async def assert_services_reply_200(
     director_v2_client: httpx.AsyncClient,
     workbench: dict[str, Node],
 ) -> None:
+    print("Giving dy-proxies some time to start")
+    await asyncio.sleep(PROXY_BOOT_TIME)
+
     for service_uuid, node_data in workbench.items():
         service_data = await get_service_data(
             director_v2_client=director_v2_client,

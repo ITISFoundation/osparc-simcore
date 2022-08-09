@@ -189,7 +189,7 @@ class DynamicSidecar(BaseModel):
     )
 
     was_dynamic_sidecar_started: bool = False
-    were_services_created: bool = Field(
+    were_containers_created: bool = Field(
         False,
         description=(
             "when True no longer will the Docker api "

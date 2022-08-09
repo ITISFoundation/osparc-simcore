@@ -3,6 +3,7 @@
 --constraint _base.txt
 
 
+asgi_lifespan
 async-asgi-testclient
 faker
 pytest
