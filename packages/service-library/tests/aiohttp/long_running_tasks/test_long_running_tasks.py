@@ -11,8 +11,6 @@ How these tests works:
 
 import asyncio
 import json
-import sys
-from pathlib import Path
 from typing import Callable, Final
 
 import pytest
@@ -32,9 +30,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-CURRENT_DIR = CURRENT_FILE.parent
-
 TASKS_ROUTER_PREFIX: Final[str] = "/futures"
 
 
@@ -46,6 +41,7 @@ def app() -> web.Application:
     class _LongTaskQueryParams(BaseModel):
         num_strings: int
         sleep_time: float
+        fail: bool = False
 
     @routes.post("/long_running_task:start")
     async def generate_list_strings(request: web.Request):
@@ -57,6 +53,7 @@ def app() -> web.Application:
             task_progress: long_running_tasks.server.TaskProgress,
             num_strings: int,
             sleep_time: float,
+            fail: bool,
         ) -> list[str]:
             task_progress.publish(message="starting", percent=0)
             generated_strings = []
@@ -66,6 +63,9 @@ def app() -> web.Application:
                 task_progress.publish(
                     message="generated item", percent=index / num_strings
                 )
+                if fail:
+                    raise RuntimeError("We were asked to fail!!")
+
             task_progress.publish(message="finished", percent=1)
             return generated_strings
 
@@ -74,6 +74,7 @@ def app() -> web.Application:
             _string_list_task,
             num_strings=query_params.num_strings,
             sleep_time=query_params.sleep_time,
+            fail=query_params.fail,
         )
         return web.json_response(
             data={"data": task_id},
@@ -155,6 +156,40 @@ async def test_workflow(client: TestClient):
     assert task_result
     assert task_result.result == [f"{x}" for x in range(10)]
     assert not task_result.error
+
+
+async def test_failing_task_returns_error(client: TestClient):
+    url = URL("/long_running_task:start").with_query(
+        num_strings=12, sleep_time=0.1, fail=f"{True}"
+    )
+    result = await client.post(f"{url}")
+    data, error = await assert_status(result, web.HTTPAccepted)
+    assert data
+    assert not error
+    task_id = parse_obj_as(long_running_tasks.server.TaskId, data)
+    # wait for it to finish
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+            data, error = await assert_status(result, web.HTTPOk)
+            assert data
+            assert not error
+            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+            assert task_status
+            assert task_status.done
+    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    data, error = await assert_status(result, web.HTTPOk)
+    assert data
+    assert not error
+    task_result = long_running_tasks.server.TaskResult.parse_obj(data)
+    assert task_result
+    assert not task_result.result
+    assert task_result.error
 
 
 async def test_get_results_before_tasks_finishes_returns_404(client: TestClient):
