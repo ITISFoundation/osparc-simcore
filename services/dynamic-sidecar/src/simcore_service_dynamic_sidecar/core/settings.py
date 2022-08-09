@@ -49,7 +49,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ...,
         description=(
             "To avoid collisions when scheduling on the same node, this "
-            "will be compsoed by the project_uuid and node_uuid."
+            "will be composed by the project_uuid and node_uuid."
         ),
     )
 
