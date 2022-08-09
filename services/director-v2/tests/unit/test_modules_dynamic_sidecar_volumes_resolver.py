@@ -1,10 +1,12 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 from uuid import UUID
 
+import aiodocker
 import pytest
 from faker import Faker
 from simcore_service_director_v2.models.schemas.constants import (
@@ -99,3 +101,28 @@ def test_expected_paths(
             source=f"{compose_namespace}{name_from_path}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )
+
+
+async def assert_creation_and_removal(volume_name: str) -> None:
+    print(f"Ensure creation and removal of len={len(volume_name)} {volume_name=}")
+    async with aiodocker.Docker() as client:
+        named_volume = await client.volumes.create({"Name": volume_name})
+        await named_volume.delete()
+
+
+async def test_volumes_unique_name_max_length_can_be_created(
+    faker: Faker, docker_swarm: None
+):
+    a_uuid = faker.uuid4()
+    volume_name_len_255 = (a_uuid * 100)[:255]
+    await assert_creation_and_removal(volume_name_len_255)
+
+
+async def test_unique_name_creation_and_removal(faker: Faker):
+    unique_volume_name = DynamicSidecarVolumesPathsResolver.unique_name(
+        path=Path("/some/random/path/to/a/workspace/folder"),
+        node_uuid=faker.uuid4(cast_to=None),
+        run_id=faker.uuid4(cast_to=None),
+    )
+
+    await assert_creation_and_removal(unique_volume_name)
