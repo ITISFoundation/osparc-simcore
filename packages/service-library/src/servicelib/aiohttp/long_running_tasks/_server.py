@@ -31,7 +31,14 @@ def setup(
 
     async def on_startup(app: web.Application) -> AsyncGenerator[None, None]:
         # add routing paths
-        app.router.add_routes(routes)
+        for route in routes:
+            app.router.add_route(
+                route.method,  # type: ignore
+                f"{router_prefix}{route.path}",  # type: ignore
+                route.handler,  # type: ignore
+                **route.kwargs,  # type: ignore
+            )
+        # app.router.add_routes(routes)
 
         # add components to state
         app[

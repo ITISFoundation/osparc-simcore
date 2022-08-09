@@ -6,7 +6,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 
 from ...json_serialization import json_dumps
 from ...long_running_tasks._errors import TaskNotCompletedError
-from ...long_running_tasks._models import CancelResult, TaskId
+from ...long_running_tasks._models import CancelResult, TaskId, TaskResult, TaskStatus
 from ._dependencies import get_task_manager
 
 log = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ async def get_task_status(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     log.debug("getting task status: %s", f"{path_params.task_id=}")
     task_manager = get_task_manager(request.app)
-    task_status = task_manager.get_status(task_id=path_params.task_id)
+    task_status: TaskStatus = task_manager.get_status(task_id=path_params.task_id)
     return web.json_response({"data": task_status}, dumps=json_dumps)
 
 
@@ -33,7 +33,7 @@ async def get_task_result(request: web.Request) -> web.Response:
     remove_task = True
 
     try:
-        task_result = task_manager.get_result(task_id=path_params.task_id)
+        task_result: TaskResult = task_manager.get_result(task_id=path_params.task_id)
     except TaskNotCompletedError:
         remove_task = False
         raise
