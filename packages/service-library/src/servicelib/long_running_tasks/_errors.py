@@ -4,6 +4,8 @@ from pydantic.errors import PydanticErrorMixin
 class BaseLongRunningError(PydanticErrorMixin, Exception):
     """base exception for this module"""
 
+    code: str = "long_running_task.base_long_running_error"
+
 
 class TaskAlreadyRunningError(BaseLongRunningError):
     code: str = "long_running_task.task_already_running"
