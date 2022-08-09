@@ -22,8 +22,11 @@ from pydantic import PositiveFloat
 # TESTS
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
-from servicelib.aiohttp.rest_middlewares import envelope_middleware_factory
 from servicelib.json_serialization import json_dumps
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
@@ -107,35 +110,36 @@ def app() -> web.Application:
     routes = web.RouteTableDef()
 
     @routes.post("/long_running_task:start")
-    async def run_something_long(request: web.Request) -> web.Response:
+    async def generate_list_strings(request: web.Request):
         task_manager = long_running_tasks.server.get_task_manager(request.app)
         assert task_manager, "task manager is not initiated!"
 
         async def _string_list_task(
-            task_progress: long_running_tasks.server.TaskProgress, items: int
+            task_progress: long_running_tasks.server.TaskProgress, num_strings: int
         ) -> list[str]:
             task_progress.publish(message="starting", percent=0)
             generated_strings = []
-            for x in range(items):
-                string = f"{x}"
-                generated_strings.append(string)
-                percent = x / items
+            for index in range(num_strings):
+                generated_strings.append(f"{index}")
                 await asyncio.sleep(ITEM_PUBLISH_SLEEP)
-                task_progress.publish(message="generated item", percent=percent)
+                task_progress.publish(
+                    message="generated item", percent=index / num_strings
+                )
             task_progress.publish(message="finished", percent=1)
             return generated_strings
 
         task_id = long_running_tasks.server.start_task(
-            task_manager, _string_list_task, items=10
+            task_manager, _string_list_task, num_strings=10
         )
         return web.json_response(
-            data=task_id, status=web.HTTPAccepted.status_code, dumps=json_dumps
+            data={"data": task_id},
+            status=web.HTTPAccepted.status_code,
+            dumps=json_dumps,
         )
 
     app.add_routes(routes)
-
     long_running_tasks.server.setup(app)
-    app.middlewares.append(envelope_middleware_factory(""))
+
     return app
 
 
@@ -158,9 +162,26 @@ async def test_workflow(
 ) -> None:
     result = await client.post(f"/long_running_task:start")
     data, error = await assert_status(result, web.HTTPAccepted)
-    task_id = result.json()
+    task_id = data
 
-    progress_updates = []
+    # get progress updates
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            result = await client.get(f"{task_id}")
+            data, error = await assert_status(result, web.HTTPOk)
+            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+            assert task_status
+            assert task_status.done, "task incomplete"
+
+    import pdb
+
+    pdb.set_trace()
+    # progress_updates = []
 
     # async def progress_handler(
     #     message: long_running_tasks.client.ProgressMessage,
