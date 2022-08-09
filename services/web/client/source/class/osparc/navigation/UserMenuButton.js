@@ -173,22 +173,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     __addManualsToMenu: function() {
       const menu = this.getMenu();
-      const manuals = [];
-      if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
-        manuals.push({
-          label: this.tr("User Manual"),
-          icon: "@FontAwesome5Solid/book/22",
-          url: this.__serverStatics.manualMainUrl
-        });
-      }
-
-      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
-        manuals.push({
-          label: this.tr("Z43 Manual"),
-          icon: "@FontAwesome5Solid/book-medical/22",
-          url: this.__serverStatics.manualExtraUrl
-        });
-      }
+      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
 
       manuals.forEach(manual => {
         const manualBtn = new qx.ui.menu.Button(manual.label);

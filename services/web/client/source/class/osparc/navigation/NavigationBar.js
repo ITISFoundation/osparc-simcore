@@ -245,22 +245,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createManualMenuBtn: function() {
-      const manuals = [];
-      if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
-        manuals.push({
-          label: this.tr("User Manual"),
-          icon: "@FontAwesome5Solid/book/22",
-          url: this.__serverStatics.manualMainUrl
-        });
-      }
-
-      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
-        manuals.push({
-          label: this.tr("Z43 Manual"),
-          icon: "@FontAwesome5Solid/book-medical/22",
-          url: this.__serverStatics.manualExtraUrl
-        });
-      }
+      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
 
       let control = new qx.ui.core.Widget();
       if (manuals.length === 1) {
