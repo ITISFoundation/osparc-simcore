@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import logging
 import sys
 from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
@@ -11,6 +12,7 @@ import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.utils import clean_filters
+from aiodocker.volumes import DockerVolume
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -42,6 +44,7 @@ from tenacity.wait import wait_fixed
 
 MAX_INT64 = sys.maxsize
 
+logger = logging.getLogger(__name__)
 
 # FIXTURES
 pytest_simcore_core_services_selection = [
@@ -774,13 +777,17 @@ async def test_regression_update_service_update_out_of_sequence(
         )
 
 
-async def test_constrain_service_to_node(
-    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
-):
+@pytest.fixture
+async def target_node_id(docker: aiodocker.Docker) -> str:
     # get a node's ID
     docker_nodes = await docker.nodes.list()
     target_node_id = docker_nodes[0]["ID"]
+    return target_node_id
 
+
+async def test_constrain_service_to_node(
+    docker: aiodocker.Docker, mock_service: str, target_node_id: str, docker_swarm: None
+):
     await docker_api.constrain_service_to_node(mock_service, node_id=target_node_id)
 
     # check constraint was added
@@ -793,3 +800,48 @@ async def test_constrain_service_to_node(
     label, value = node_id_constraint.split("==")
     assert label.strip() == "node.id"
     assert value.strip() == target_node_id
+
+
+@pytest.fixture
+async def named_volume(docker: aiodocker.Docker, faker: Faker) -> AsyncIterator[str]:
+    named_volume: DockerVolume = await docker.volumes.create(
+        {"Name": f"named-volume-{faker.uuid4()}"}
+    )
+    yield named_volume.name
+    # remove volume if still present
+    try:
+        await named_volume.delete()
+    except aiodocker.DockerError:
+        pass
+
+
+async def is_volume_present(docker: aiodocker.Docker, volume_name: str) -> bool:
+    docker_volume = DockerVolume(docker, volume_name)
+    try:
+        await docker_volume.show()
+        return True
+    except aiodocker.DockerError as e:
+        assert e.message == f"get {volume_name}: no such volume"
+        return False
+
+
+async def test_remove_volume_from_node_ok(
+    docker: aiodocker.Docker, named_volume: str, target_node_id: str, docker_swarm: None
+):
+    assert await is_volume_present(docker, named_volume) is True
+    await docker_api.remove_volume_from_node(
+        volume_name=named_volume, node_id=target_node_id
+    )
+    assert await is_volume_present(docker, named_volume) is False
+
+
+async def test_remove_volume_from_node_no_volume_found(
+    docker: aiodocker.Docker, target_node_id: str, docker_swarm: None
+):
+    missing_volume_name = "nope-i-am-fake-and-do-not-exist"
+    assert await is_volume_present(docker, missing_volume_name) is False
+    volume_removal_result = await docker_api.remove_volume_from_node(
+        volume_name=missing_volume_name, node_id=target_node_id
+    )
+    assert volume_removal_result is False
+    assert await is_volume_present(docker, missing_volume_name) is False

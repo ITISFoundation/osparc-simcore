@@ -5,8 +5,9 @@ import asyncio
 import json
 import logging
 import time
+from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Mapping, Optional, Union
+from typing import Any, AsyncIterator, Final, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -21,7 +22,7 @@ from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential
+from tenacity.wait import wait_exponential, wait_fixed
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import (
@@ -30,6 +31,7 @@ from ...models.schemas.constants import (
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from ...utils.dict_utils import get_leaf_key_paths, nested_update
+from .docker_service_specs.volume_remover import spec_volume_removal_service
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -38,6 +40,10 @@ NO_PENDING_OVERWRITE = {
     ServiceState.COMPLETE,
     ServiceState.RUNNING,
 }
+
+# give the service enough time to pull the image if missing
+# execute the command to remove the volume and exit
+VOLUME_REMOVAL_SERVICE_TIMEOUT_S: Final[int] = 90
 
 log = logging.getLogger(__name__)
 
@@ -539,3 +545,78 @@ async def constrain_service_to_node(service_name: str, node_id: str) -> None:
         },
     )
     log.info("Constraining service %s to node %s", service_name, node_id)
+
+
+FINISHED_STATES: set[str] = {
+    "complete",  # The task exited without an error code.
+    "failed",  # The task exited with an error code.
+    "shutdown",  # Docker requested the task to shut down.
+    "rejected",  # The worker node rejected the task.
+    "orphaned",  # The node was down for too long.
+    "remove",  # The task is not terminal but the associated service was removed or scaled down.
+}
+
+
+async def remove_volume_from_node(volume_name: str, node_id: str) -> bool:
+    async with docker_client() as client:
+        # when running docker-dind make sure to use the same image as the
+        # underlying docker-engine.
+        # The docker should be the same version across the entire cluster,
+        # so it is safe to assume the local docker engine version will be
+        # the same as the one on the targeted node.
+        version_request = await client._query_json(  # pylint: disable=protected-access
+            "version", versioned_api=False
+        )
+        docker_version = version_request["Version"]
+
+        # starts service which removes the volume
+        service_spec = spec_volume_removal_service(
+            node_id=node_id, volume_name=volume_name, docker_version=docker_version
+        )
+
+        volume_removal_service = await client.services.create(
+            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
+        )
+        service_id = volume_removal_service["ID"]
+
+        try:
+            async for attempt in AsyncRetrying(
+                stop=stop_after_delay(VOLUME_REMOVAL_SERVICE_TIMEOUT_S),
+                wait=wait_fixed(0.5),
+                retry=retry_if_exception_type(_RetryError),
+                reraise=True,
+            ):
+                with attempt:
+                    tasks = await client.tasks.list(filters={"service": service_id})
+                    if len(tasks) != 1:
+                        raise DynamicSidecarError(
+                            f"Expected 1 task for service {service_id}, found {tasks=}"
+                        )
+
+                    task = tasks[0]
+                    task_status = task["Status"]
+                    logger.debug("Service %s, %s", service_id, f"{task_status=}")
+                    task_tate = task_status["State"]
+                    if task_tate not in FINISHED_STATES:
+                        raise _RetryError(f"Waiting for task to finish: {task_status=}")
+
+                    if not (
+                        task_tate == "completed"
+                        and task_status["ContainerStatus"]["ExitCode"] == 0
+                    ):
+                        # recover logs from command for a simpler debugging
+                        container_id = task_status["ContainerStatus"]["ContainerID"]
+                        container = await client.containers.get(container_id)
+                        container_logs = await container.log(stdout=True, stderr=True)
+                        logger.warning(
+                            "Service %s, %s output: %s",
+                            service_id,
+                            f"{task_status=}",
+                            "\n".join(container_logs),
+                        )
+                        return False
+        finally:
+            # NOTE: services are crated and never removed
+            await client.services.delete(service_id)
+
+        return True
