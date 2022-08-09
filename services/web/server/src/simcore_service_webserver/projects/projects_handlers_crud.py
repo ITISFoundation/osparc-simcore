@@ -45,6 +45,7 @@ from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
     any_node_inputs_changed,
     clone_project_document,
+    default_copy_project_name,
     get_project_unavailable_services,
     project_uses_available_services,
 )
@@ -89,9 +90,9 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    from_template: Optional[UUIDStr] = Field(
+    from_study: Optional[UUIDStr] = Field(
         None,
-        description="Option to create a project from existing template: from_template={template_uuid}",
+        description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
     as_template: Optional[UUIDStr] = Field(
         None,
@@ -145,11 +146,16 @@ async def create_projects(request: web.Request):
                 user_id=req_ctx.user_id,
                 include_templates=False,
             )
-        elif query_params.from_template:  # create from template
-            source_project = await db.get_template_project(query_params.from_template)
+        elif query_params.from_study:  # copy from study
+            source_project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=query_params.from_study,
+                user_id=req_ctx.user_id,
+                include_templates=True,
+            )
             if not source_project:
                 raise web.HTTPNotFound(
-                    reason=f"Invalid template uuid {query_params.from_template}"
+                    reason=f"Could not find source study uuid: {query_params.from_study}"
                 )
 
         if source_project:
@@ -159,9 +165,10 @@ async def create_projects(request: web.Request):
                 forced_copy_project_id=None,
                 clean_output_data=(query_params.copy_data == False),
             )
-            if query_params.from_template:
-                # remove template access rights
+            if query_params.from_study:
+                # remove template/study access rights
                 new_project["accessRights"] = {}
+                new_project["name"] = default_copy_project_name(source_project["name"])
             # the project is to be hidden until the data is copied
             query_params.hidden = query_params.copy_data
             clone_data_coro = (

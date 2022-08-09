@@ -58,7 +58,7 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
 async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
-    logger.info("uploading data to simcore...")
+    logger.debug("uploading data to simcore...")
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
@@ -75,7 +75,7 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
     for port in (await PORTS.outputs).values():
-        logger.info("Checking port %s", port.key)
+        logger.debug("Checking port %s", port.key)
         if port_keys and port.key not in port_keys:
             continue
         logger.debug(
@@ -144,7 +144,7 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
 
 
 async def dispatch_update_for_directory(directory_path: Path) -> None:
-    logger.info("Uploading data for directory %s", directory_path)
+    logger.debug("Uploading data for directory %s", directory_path)
     # TODO: how to figure out from directory_path which is the correct target to upload
     await upload_outputs(directory_path, [])
 
@@ -159,14 +159,14 @@ def _is_zip_file(file_path: Path) -> bool:
 
 async def _get_data_from_port(port: Port) -> tuple[Port, Optional[ItemConcreteValue]]:
     tag = f"[{port.key}] "
-    logger.info("%s transfer started for %s", tag, port.key)
+    logger.debug("%s transfer started for %s", tag, port.key)
     start_time = time.perf_counter()
     ret = await port.get()
     elapsed_time = time.perf_counter() - start_time
-    logger.info("%s transfer completed (=%s) in %3.2fs", tag, ret, elapsed_time)
+    logger.debug("%s transfer completed (=%s) in %3.2fs", tag, ret, elapsed_time)
     if isinstance(ret, Path):
         size_mb = ret.stat().st_size / 1024 / 1024
-        logger.info(
+        logger.debug(
             "%s %s: data size: %sMB, transfer rate %sMB/s",
             tag,
             ret.name,
@@ -189,7 +189,7 @@ async def _download_files(
     results: list[tuple[Port, ItemConcreteValue]] = cast(
         list[tuple[Port, ItemConcreteValue]], await logged_gather(*download_tasks)
     )
-    logger.info("completed download %s", results)
+    logger.debug("completed download %s", results)
     for port, value in results:
 
         data[port.key] = {"key": port.key, "value": value}
@@ -203,7 +203,7 @@ async def _download_files(
             if not downloaded_file or not downloaded_file.exists():
                 # the link may be empty
                 # remove files all files from disk when disconnecting port
-                logger.info("removing contents of dir %s", dest_path)
+                logger.debug("removing contents of dir %s", dest_path)
                 await remove_directory(
                     dest_path, only_children=True, ignore_errors=True
                 )
@@ -212,7 +212,7 @@ async def _download_files(
             transferred_bytes = transferred_bytes + downloaded_file.stat().st_size
 
             # in case of valid file, it is either uncompressed and/or moved to the final directory
-            logger.info("creating directory %s", dest_path)
+            logger.debug("creating directory %s", dest_path)
             dest_path.mkdir(exist_ok=True, parents=True)
             data[port.key] = {"key": port.key, "value": str(dest_path)}
 
@@ -220,16 +220,16 @@ async def _download_files(
 
             if _is_zip_file(downloaded_file):
                 # unzip updated data to dest_path
-                logger.info("unzipping %s", downloaded_file)
+                logger.debug("unzipping %s", downloaded_file)
                 unarchived: set[Path] = await unarchive_dir(
                     archive_to_extract=downloaded_file, destination_folder=dest_path
                 )
 
                 dest_folder.prune(exclude=unarchived)
 
-                logger.info("all unzipped in %s", dest_path)
+                logger.debug("all unzipped in %s", dest_path)
             else:
-                logger.info("moving %s", downloaded_file)
+                logger.debug("moving %s", downloaded_file)
                 dest_path = dest_path / Path(downloaded_file).name
                 await async_on_threadpool(
                     # pylint: disable=cell-var-from-loop
@@ -240,7 +240,7 @@ async def _download_files(
                 # makes sure previously downloaded files are removed
                 dest_folder.prune(exclude={dest_path})
 
-                logger.info("all moved to %s", dest_path)
+                logger.debug("all moved to %s", dest_path)
         else:
             transferred_bytes = transferred_bytes + sys.getsizeof(value)
 
@@ -251,7 +251,7 @@ async def _download_files(
 async def download_target_ports(
     port_type_name: PortTypeName, target_path: Path, port_keys: list[str]
 ) -> ByteSize:
-    logger.info("retrieving data from simcore...")
+    logger.debug("retrieving data from simcore...")
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
@@ -266,12 +266,12 @@ async def download_target_ports(
     download_tasks: deque[Coroutine[Any, int, Any]] = deque()
     for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
-        logger.info("Checking node %s", port_value.key)
+        logger.debug("Checking node %s", port_value.key)
         if port_keys and port_value.key not in port_keys:
             continue
         # collect coroutines
         download_tasks.append(_get_data_from_port(port_value))
-    logger.info("retrieving %s data", len(download_tasks))
+    logger.debug("retrieving %s data", len(download_tasks))
 
     data, transferred_bytes = await _download_files(target_path, download_tasks)
 

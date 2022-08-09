@@ -2,9 +2,9 @@ from typing import Any
 
 import pytest
 from simcore_service_webserver.projects.projects_utils import (
+    NodeDict,
     find_changed_node_keys,
     get_frontend_node_outputs_changes,
-    NodeDict,
 )
 
 

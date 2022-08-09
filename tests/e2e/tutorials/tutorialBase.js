@@ -90,7 +90,7 @@ class TutorialBase {
             })
           console.log('Flash message', messages)
           setTimeout(waitForFlash, 0)
-        }).catch(() => {})
+        }).catch(() => { })
       }
       setTimeout(waitForFlash, 0)
 
@@ -204,13 +204,13 @@ class TutorialBase {
 
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
-    this.__responsesQueue.addResponseListener("projects?from_template=");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
       const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
-      await this.__responsesQueue.waitUntilResponse("projects?from_template=");
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
@@ -358,7 +358,7 @@ class TutorialBase {
     await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true, checkFileNames=true) {
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
     try {
       await this.openNodeFiles(nodePos);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -378,7 +378,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error("Results don't match", err);
-      throw(err)
+      throw (err)
     }
     finally {
       await this.takeScreenshot("checkNodeOutputs_after");
@@ -416,7 +416,7 @@ class TutorialBase {
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy(studyId, timeout=5000) {
+  async removeStudy(studyId, timeout = 5000) {
     await this.waitFor(timeout, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
@@ -445,7 +445,7 @@ class TutorialBase {
 
   async fetchRemoveStudy(studyId) {
     console.log(`Removing study ${studyId}`)
-    await this.__page.evaluate(async function(studyId) {
+    await this.__page.evaluate(async function (studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
           "studyId": studyId

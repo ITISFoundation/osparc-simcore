@@ -185,4 +185,4 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         # if no compose-spec is stored skip this operation
         return
 
-    await docker_compose_down(app_state.compose_spec, app_state.settings, 5)
+    await docker_compose_down(app_state.compose_spec, app_state.settings)

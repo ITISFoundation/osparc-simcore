@@ -1,13 +1,22 @@
 import asyncio
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Final, Optional
 
 from pydantic import PositiveFloat
 
 from ._client import Client
 from ._errors import TaskClientTimeoutError
-from ._models import TaskId, TaskStatus
+from ._models import (
+    ProgressCallback,
+    ProgressMessage,
+    ProgressPercent,
+    TaskId,
+    TaskStatus,
+)
+
+# NOTE: very short running requests are involved
+MAX_CONCURRENCY: Final[int] = 10
 
 
 class _ProgressManager:
@@ -20,14 +29,19 @@ class _ProgressManager:
     """
 
     def __init__(
-        self, update_callback: Optional[Callable[[str, float], Awaitable[None]]]
+        self,
+        update_callback: Optional[ProgressCallback],
     ) -> None:
         self._callback = update_callback
-        self._last_message: Optional[str] = None
-        self._last_percent: Optional[float] = None
+        self._last_message: Optional[ProgressMessage] = None
+        self._last_percent: Optional[ProgressPercent] = None
 
     async def update(
-        self, *, message: Optional[str] = None, percent: Optional[float] = None
+        self,
+        task_id: TaskId,
+        *,
+        message: Optional[ProgressMessage] = None,
+        percent: Optional[ProgressPercent] = None,
     ) -> None:
         if self._callback is None:
             return
@@ -42,7 +56,7 @@ class _ProgressManager:
             has_changes = True
 
         if has_changes:
-            await self._callback(self._last_message, self._last_percent)
+            await self._callback(self._last_message, self._last_percent, task_id)
 
 
 @asynccontextmanager
@@ -51,7 +65,7 @@ async def periodic_task_result(
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[Callable[[str, float], Awaitable[None]]] = None,
+    progress_callback: Optional[ProgressCallback] = None,
     status_poll_interval: PositiveFloat = 5,
 ) -> AsyncIterator[Optional[Any]]:
     """
@@ -60,6 +74,7 @@ async def periodic_task_result(
 
     Parameters:
     - `client`: an instance of `long_running_tasks.client.Client`
+    - `task_id`: a task_id to monitor and recover result from
     - `task_timeout`: when this expires the task will be cancelled and
         removed form the server
     - `progress` optional: user defined awaitable with two positional arguments:
@@ -72,12 +87,14 @@ async def periodic_task_result(
         the expected result
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
+
     progress_manager = _ProgressManager(progress_callback)
 
     async def _status_update() -> TaskStatus:
-        task_status = await client.get_task_status(task_id)
-        logger.info("Task status %s", task_status.json())
+        task_status: TaskStatus = await client.get_task_status(task_id)
+        logger.debug("Task status %s", task_status.json())
         await progress_manager.update(
+            task_id=task_id,
             message=task_status.task_progress.message,
             percent=task_status.task_progress.percent,
         )
@@ -93,9 +110,12 @@ async def periodic_task_result(
         await asyncio.wait_for(_wait_task_completion(), timeout=task_timeout)
 
         result: Optional[Any] = await client.get_task_result(task_id)
+
+        logger.debug("%s, %s", f"{task_id=}", f"{result=}")
+
         yield result
     except asyncio.TimeoutError as e:
-        task_removed = await client.cancel_and_delete_task(task_id)
+        task_removed: bool = await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,
             timeout=task_timeout,

@@ -74,11 +74,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=3000, description="ptsvd remote debugger starting port"
     )
 
-    DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT: PositiveInt = Field(
-        default=15,
-        description="used during shutdown when containers swapend will be removed",
-    )
-
     DY_SIDECAR_PATH_INPUTS: Path = Field(
         ..., description="path where to expect the inputs folder"
     )
