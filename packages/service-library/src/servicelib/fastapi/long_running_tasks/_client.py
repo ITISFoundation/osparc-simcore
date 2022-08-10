@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import warnings
 from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
@@ -182,6 +183,16 @@ class Client:
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
+
+        if result.status_code == status.HTTP_200_NO_CONTENT:
+            warnings.warn(
+                "returning a 200 when cancelling a task has been deprecated with PR#3236"
+                "and will be removed after 11.2022"
+                "please do close your studies at least once before that date, so that the dy-sidecar"
+                "get replaced",
+                category=DeprecationWarning,
+            )
+            return
 
         if result.status_code not in (
             status.HTTP_204_NO_CONTENT,
