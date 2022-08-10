@@ -27,6 +27,26 @@ async def _await_task(task: Task):
     await task
 
 
+def _mark_task_to_remove_if_required(
+    task_id: TaskId,
+    tasks_to_remove: list[TaskId],
+    tracked_task: TrackedTask,
+    utc_now: datetime,
+    stale_timeout_s: float,
+) -> None:
+
+    if tracked_task.last_status_check is None:
+        # the task just added or never received a poll request
+        elapsed_from_start = (utc_now - tracked_task.started).seconds
+        if elapsed_from_start > stale_timeout_s:
+            tasks_to_remove.append(task_id)
+    else:
+        # the task status was already queried by the client
+        elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
+        if elapsed_from_last_poll > stale_timeout_s:
+            tasks_to_remove.append(task_id)
+
+
 class TaskManager:
     def __init__(
         self,
@@ -60,33 +80,18 @@ class TaskManager:
         # Since we own the client, we assume (for now) this
         # will not be the case.
 
-        def _mark_task_to_remove_if_required(
-            tasks_to_remove: list[TaskId], tracked_task: TrackedTask, utc_now: datetime
-        ) -> None:
-
-            if tracked_task.last_status_check is None:
-                # the task just added or never received a poll request
-                elapsed_from_start = (utc_now - tracked_task.started).seconds
-                if elapsed_from_start > self.stale_task_detect_timeout_s:
-                    tasks_to_remove.append(task_id)
-            else:
-                # the task status was already queried by the client
-                elapsed_from_last_poll = (
-                    utc_now - tracked_task.last_status_check
-                ).seconds
-                if elapsed_from_last_poll > self.stale_task_detect_timeout_s:
-                    tasks_to_remove.append(task_id)
-
-        while True:
-            await asyncio.sleep(self.stale_task_check_interval_s)
-
+        while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
             utc_now = datetime.utcnow()
 
             tasks_to_remove: list[TaskId] = []
             for tasks in self.tasks.values():
                 for task_id, tracked_task in tasks.items():
                     _mark_task_to_remove_if_required(
-                        tasks_to_remove, tracked_task, utc_now
+                        task_id,
+                        tasks_to_remove,
+                        tracked_task,
+                        utc_now,
+                        self.stale_task_detect_timeout_s,
                     )
 
             # finally remove tasks and warn
