@@ -120,6 +120,46 @@ async def register(request: web.Request):
     return response
 
 
+
+async def send_sms_code(phone_number, code):
+    def sender():
+        account_sid = os.environ['TWILIO_ACCOUNT_SID']
+        auth_token = os.environ['TWILIO_AUTH_TOKEN']
+        messaging_service_sid = os.environ['TWILIO_MESSAGING_SID']
+        client = Client(account_sid, auth_token)
+        message = client.messages.create(
+            messaging_service_sid=messaging_service_sid,
+            to=phone_number,
+            body="Dear TI Planning Tool user, your verification code is " + code,
+        )
+        print(message.sid)
+
+    await asyncio.get_event_loop().run_in_executor(None, sender)
+
+
+async def verify_2fa_phone(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    phone_number = body.phone
+
+    if settings.LOGIN_2FA_REQUIRED:
+        try:
+            code = await add_validation_code(request.app, email)
+            print("code", code)
+            await send_sms_code(phone_number, code)
+            response = web.json_response(
+                status=web.HTTPAccepted.status_code,
+                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+            )
+            return response
+        except Exception as e:
+            raise web.HTTPUnauthorized(
+                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+            )
+
+
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -155,21 +195,18 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
-        if "maiz" in user["email"]:
-            try:
-                code = await add_validation_code(request.app, user["email"])
-                print("code", code)
-                response = web.json_response(
-                    status=web.HTTPAccepted.status_code,
-                    data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
-                )
-                return response
-            except Exception as e:
-                raise e
-        #else:
-        #    raise web.HTTPUnauthorized(
-        #        reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
-        #    )
+        try:
+            code = await add_validation_code(request.app, user["email"])
+            print("code", code)
+            response = web.json_response(
+                status=web.HTTPAccepted.status_code,
+                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+            )
+            return response
+        except Exception as e:
+            raise web.HTTPUnauthorized(
+                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+            )
 
     with log_context(
         log,
@@ -182,6 +219,36 @@ async def login(request: web.Request):
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
+
+
+async def validate_2fa_register(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    code = body.code
+
+    v_code = await get_validation_code(request.app, email)
+    if code == v_code:
+        await delete_validation_code(request.app, email)
+        user = await db.get_user({"email": email})
+        with log_context(
+            log,
+            logging.INFO,
+            "login of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
+
+    raise web.HTTPUnauthorized(
+        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
+    )
 
 
 async def validate_2fa_login(request: web.Request):
