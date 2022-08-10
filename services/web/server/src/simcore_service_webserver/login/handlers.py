@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -128,14 +129,11 @@ async def send_sms_code(phone_number, code):
         account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
         auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
         messaging_service_sid = os.environ.get("TWILIO_MESSAGING_SID")
-        print(account_sid)
-        print(auth_token)
-        print(messaging_service_sid)
         client = Client(account_sid, auth_token)
         message = client.messages.create(
             messaging_service_sid=messaging_service_sid,
             to=phone_number,
-            body="Dear TI Planning Tool user, your verification code is " + code,
+            body="Dear TI Planning Tool user, your verification code is {}".format(code),
         )
         print(message.sid)
 
