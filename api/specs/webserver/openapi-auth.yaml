@@ -21,6 +21,27 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /auth/validate-code-register:
+    post:
+      summary: user enters 2 Factor Authentication code when registering
+      tags:
+        - authentication
+      operationId: auth_validate_2fa_register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schemas/auth.yaml#/Login2FAForm"
+      responses:
+        "200":
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/log_message.yaml#/LogMessageEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /auth/login:
     post:
       summary: user logs in
@@ -48,12 +69,12 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /auth/validate-code:
+  /auth/validate-code-login:
     post:
-      summary: user enters 2 Factor Authentication code
+      summary: user enters 2 Factor Authentication code when login in
       tags:
         - authentication
-      operationId: auth_validate_2fa_code
+      operationId: auth_validate_2fa_login
       requestBody:
         content:
           application/json:
