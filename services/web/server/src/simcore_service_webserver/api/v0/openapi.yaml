@@ -210,12 +210,6 @@ paths:
         - authentication
       operationId: auth_verify_2fa_phone
       requestBody:
-        '202':
-          description: 'Accepted, SMS sent'
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         content:
           application/json:
             schema:
@@ -231,6 +225,13 @@ paths:
               example:
                 email: foo@mymail.com
                 phone: '+41123456789'
+      responses:
+        '202':
+          description: 'Accepted, SMS sent'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-register:
