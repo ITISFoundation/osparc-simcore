@@ -3,10 +3,13 @@
 """
 import logging
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 
 from ._meta import WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
@@ -59,6 +62,7 @@ def create_application() -> web.Application:
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     #
     setup_remote_debugging(app)
+    setup_long_running_tasks(app)
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
@@ -121,7 +125,7 @@ def create_application() -> web.Application:
     return app
 
 
-def run_service(app: web.Application, config: Dict[str, Any]):
+def run_service(app: web.Application, config: dict[str, Any]):
     web.run_app(
         app,
         host=config["main"]["host"],
