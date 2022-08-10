@@ -216,7 +216,7 @@ paths:
               $ref: '#/paths/~1auth~1validate-code-login/post/requestBody/content/application~1json/schema'
       responses:
         '200':
-          description: Succesfully logged in
+          description: Succesfully validated
           content:
             application/json:
               schema:
