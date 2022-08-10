@@ -183,9 +183,9 @@ class Client:
             timeout=timeout,
         )
 
-        if (
-            result.status_code != status.HTTP_204_NO_CONTENT
-            and result.status_code != status.HTTP_404_NOT_FOUND
+        if result.status_code not in (
+            status.HTTP_204_NO_CONTENT,
+            status.HTTP_404_NOT_FOUND,
         ):
             raise GenericClientError(
                 action="cancelling_and_removing_task",
