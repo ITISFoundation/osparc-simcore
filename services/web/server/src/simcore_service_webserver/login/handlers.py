@@ -126,6 +126,11 @@ async def register(request: web.Request):
 
 async def send_sms_code(phone_number, code):
     def sender():
+        log.info(
+            "sending sms code %s to %s",
+            code,
+            phone_number,
+        )
         account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
         auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
         messaging_service_sid = os.environ.get("TWILIO_MESSAGING_SID")
@@ -135,7 +140,10 @@ async def send_sms_code(phone_number, code):
             to=phone_number,
             body="Dear TI Planning Tool user, your verification code is {}".format(code),
         )
-        print(message.sid)
+        log.info(
+            "message id %s",
+            message.sid,
+        )
 
     await asyncio.get_event_loop().run_in_executor(None, sender)
 
