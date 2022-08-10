@@ -27,7 +27,7 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 def _assert_not_found(response: Response, task_id: TaskId) -> None:
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {
-        "code": "fastapi.long_running.task_not_found",
+        "code": "long_running_task.task_not_found",
         "message": f"No task with {task_id} found",
     }
 
@@ -161,7 +161,7 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
     assert result_resp.status_code == status.HTTP_400_BAD_REQUEST
     assert result_resp.json() == {
-        "code": "fastapi.long_running.task_not_completed",
+        "code": "long_running_task.task_not_completed",
         "message": f"Task {task_id} has not finished yet",
     }
     assert_expected_tasks(async_client, 1)

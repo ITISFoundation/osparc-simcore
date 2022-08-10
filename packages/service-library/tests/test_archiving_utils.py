@@ -11,8 +11,8 @@ import random
 import secrets
 import string
 import tempfile
-from collections import namedtuple
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -381,7 +381,12 @@ ALL_ITEMS_SET: set[Path] = {
     Path("d1/sd1/f2.txt"),
 }
 
-TestCase = namedtuple("TestCase", "exclude_patterns, expected_result")
+
+@dataclass(frozen=True)
+class ExcludeParams:
+    exclude_patterns: set[str]
+    expected_result: set[Path]
+
 
 # + /exclude_patterns_validation_dir
 #  + empty
@@ -392,51 +397,50 @@ TestCase = namedtuple("TestCase", "exclude_patterns, expected_result")
 #    - f1
 #   - f1
 @pytest.mark.parametrize(
-    "exclude_patterns, expected_result",
+    "params",
     [
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"/d1*"},
             expected_result=EMPTY_SET,
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"/d1/sd1*"},
             expected_result={
                 Path("d1/f2.txt"),
                 Path("d1/f1"),
             },
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"d1*"},
             expected_result=EMPTY_SET,
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"*d1*"},
             expected_result=EMPTY_SET,
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"*.txt"},
             expected_result={
                 Path("d1/f1"),
                 Path("d1/sd1/f1"),
             },
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"/absolute/path/does/not/exist*"},
             expected_result=ALL_ITEMS_SET,
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"/../../this/is/ignored*"},
             expected_result=ALL_ITEMS_SET,
         ),
-        TestCase(
+        ExcludeParams(
             exclude_patterns={"*relative/path/does/not/exist"},
             expected_result=ALL_ITEMS_SET,
         ),
     ],
 )
 async def test_archive_unarchive_check_exclude(
-    exclude_patterns: set[str],
-    expected_result: set[Path],
+    params: ExcludeParams,
     exclude_patterns_validation_dir: Path,
     tmp_path: Path,
 ):
@@ -451,7 +455,7 @@ async def test_archive_unarchive_check_exclude(
     # make exclude_patterns work relative to test directory
     exclude_patterns = {
         f"{exclude_patterns_validation_dir}/{x.strip('/') if x.startswith('/') else x}"
-        for x in exclude_patterns
+        for x in params.exclude_patterns
     }
 
     await archive_dir(
@@ -469,5 +473,5 @@ async def test_archive_unarchive_check_exclude(
     relative_unarchived_paths = {x.relative_to(temp_dir_two) for x in unarchived_paths}
 
     assert (
-        relative_unarchived_paths == expected_result
+        relative_unarchived_paths == params.expected_result
     ), f"Exclude rules: {exclude_patterns=}"
