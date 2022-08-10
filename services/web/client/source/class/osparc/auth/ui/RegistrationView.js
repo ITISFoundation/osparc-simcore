@@ -190,6 +190,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         if (valid) {
           this.__submit({
             email: email.getValue(),
+            phone: phoneNumber.getValue() ? phoneNumber.getValue() : "",
             password: pass1.getValue(),
             confirm: pass2.getValue(),
             invitation: invitation.getValue() ? invitation.getValue() : ""
