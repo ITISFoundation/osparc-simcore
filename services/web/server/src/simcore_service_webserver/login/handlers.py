@@ -6,6 +6,7 @@ from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
+from twilio.rest import Client
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -139,6 +140,8 @@ async def send_sms_code(phone_number, code):
 
 async def verify_2fa_phone(request: web.Request):
     _, _, body = await extract_and_validate(request)
+
+    settings: LoginSettings = get_plugin_settings(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email

@@ -81,7 +81,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
               if (isValid) {
                 phoneNumber.setEnabled(false);
                 console.log("send SMS", phoneNumber);
-                osparc.auth.Manager.getInstance().verifyPhoneNumber(email.getValue(), phoneNumber)
+                osparc.auth.Manager.getInstance().verifyPhoneNumber(email.getValue(), phoneNumber.getValue())
                   .then(() => {
                     validationCode.setEnabled(true);
                   });
