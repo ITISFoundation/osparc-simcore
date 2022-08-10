@@ -22,7 +22,7 @@ CURRENT_DIR = CURRENT_FILE.parent
 
 mock_app = FastAPI(title="Disconnect example")
 
-MESSAGE_ON_HANDLER_CANCELLATION = f"Exiting on cancellation @ {__name__}"
+MESSAGE_ON_HANDLER_CANCELLATION = f"Request was cancelled!!"
 
 
 @mock_app.get("/example")
