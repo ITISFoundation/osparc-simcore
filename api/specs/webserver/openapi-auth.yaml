@@ -32,6 +32,7 @@ paths:
           application/json:
             schema:
               $ref: "./components/schemas/auth.yaml#/Verify2FAPhone"
+      responses:
         "202":
           description: Accepted, SMS sent
           content:
