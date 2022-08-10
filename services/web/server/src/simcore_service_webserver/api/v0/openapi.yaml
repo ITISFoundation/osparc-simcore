@@ -203,6 +203,36 @@ paths:
                 $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/verify-phone-number:
+    post:
+      summary: user tries to verify phone number for 2 Factor Authentication when registering
+      tags:
+        - authentication
+      operationId: auth_verify_2fa_phone
+      requestBody:
+        '202':
+          description: 'Accepted, SMS sent'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - phone
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+              example:
+                email: foo@mymail.com
+                phone: '+41123456789'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-register:
     post:
       summary: user enters 2 Factor Authentication code when registering
@@ -298,6 +328,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - email
+                - code
               properties:
                 email:
                   type: string
