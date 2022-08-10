@@ -233,18 +233,15 @@ class TaskManager:
                 task_id=task_id, exception=e, traceback=formatted_traceback
             ) from e
 
-    async def remove(self, task_id: TaskId, *, reraise_errors: bool = True) -> bool:
+    async def remove(self, task_id: TaskId, *, reraise_errors: bool = True) -> None:
         """cancels and removes task"""
-        for tasks in self.tasks.values():
-            if task_id in tasks:
-                try:
-                    await self._cancel_tracked_task(
-                        tasks[task_id].task, task_id, reraise_errors=reraise_errors
-                    )
-                finally:
-                    del tasks[task_id]
-                return True
-        return False
+        tracked_task = self._get_tracked_task(task_id)
+        try:
+            await self._cancel_tracked_task(
+                tracked_task.task, task_id, reraise_errors=reraise_errors
+            )
+        finally:
+            del self.tasks[tracked_task.task_name][task_id]
 
     async def close(self) -> None:
         """

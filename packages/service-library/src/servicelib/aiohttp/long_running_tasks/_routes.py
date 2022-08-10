@@ -5,8 +5,7 @@ from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from ...json_serialization import json_dumps
-from ...long_running_tasks._errors import TaskNotCompletedError
-from ...long_running_tasks._models import CancelResult, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
 from ._dependencies import get_task_manager
 
 log = logging.getLogger(__name__)
@@ -30,17 +29,11 @@ async def get_task_status(request: web.Request) -> web.Response:
 async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     task_manager = get_task_manager(request.app)
-    remove_task = True
 
-    try:
-        task_result: TaskResult = task_manager.get_result(task_id=path_params.task_id)
-    except TaskNotCompletedError:
-        remove_task = False
-        raise
-    finally:
-        if remove_task:
-            await task_manager.remove(path_params.task_id, reraise_errors=False)
-
+    task_result: TaskResult = task_manager.get_result(task_id=path_params.task_id)
+    # NOTE: we do not reraise here, in case the result returned an error,
+    # but we still want to remove the task
+    await task_manager.remove(path_params.task_id, reraise_errors=False)
     return web.json_response({"data": task_result}, dumps=json_dumps)
 
 
@@ -48,7 +41,5 @@ async def get_task_result(request: web.Request) -> web.Response:
 async def cancel_and_delete_task(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     task_manager = get_task_manager(request.app)
-    cancel_result = CancelResult(
-        task_removed=await task_manager.remove(path_params.task_id)
-    )
-    return web.json_response({"data": cancel_result}, dumps=json_dumps)
+    await task_manager.remove(path_params.task_id)
+    raise web.HTTPNoContent(content_type="application/json")

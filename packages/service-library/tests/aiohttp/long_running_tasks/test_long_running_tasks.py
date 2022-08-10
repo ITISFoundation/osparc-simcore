@@ -214,11 +214,9 @@ async def test_cancel_workflow(client: TestClient):
 
     # cancel the task
     result = await client.delete(f"{TASKS_ROUTER_PREFIX}/{task_id}")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
+    data, error = await assert_status(result, web.HTTPNoContent)
+    assert not data
     assert not error
-    cancel_result = long_running_tasks.server.CancelResult.parse_obj(data)
-    assert cancel_result.task_removed
 
     # it should be gone, so no status
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
@@ -227,9 +225,6 @@ async def test_cancel_workflow(client: TestClient):
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
     await assert_status(result, web.HTTPNotFound)
 
-    # try cancelling again TODO: SAN -> ANE this is weird. is there any reason for this behavior?
+    # try cancelling again
     result = await client.delete(f"{TASKS_ROUTER_PREFIX}/{task_id}")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
-    cancel_result = long_running_tasks.server.CancelResult.parse_obj(data)
-    assert not cancel_result.task_removed
+    await assert_status(result, web.HTTPNotFound)
