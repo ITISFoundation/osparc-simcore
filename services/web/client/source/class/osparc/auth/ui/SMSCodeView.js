@@ -114,7 +114,7 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.validateCode(this.getUserEmail(), smsCode.getValue(), loginFun, failFun, this);
+      manager.validateCodeLogin(this.getUserEmail(), smsCode.getValue(), loginFun, failFun, this);
     },
 
     __restartTimer: function() {
