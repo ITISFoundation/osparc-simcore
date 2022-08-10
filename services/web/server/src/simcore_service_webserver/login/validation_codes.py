@@ -2,7 +2,7 @@ from asyncio.log import logger
 from typing import Optional
 from pydantic import BaseModel, Field
 
-import random
+from random import randint
 import redis
 from aiohttp import web
 from redis.asyncio.lock import Lock
@@ -28,7 +28,7 @@ async def add_validation_code(
     redis_client = get_redis_validation_code_client(app)
     timeout = 60
     hash_key = user_email
-    sms_code = 8004
+    sms_code = randint(1000, 9999)
     await redis_client.set(hash_key, sms_code, ex=timeout)
     return sms_code
 
