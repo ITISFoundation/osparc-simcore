@@ -59,11 +59,15 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         required: true,
         placeholder: this.tr("Type your phone number")
       });
+      const verifyPhoneBtn = new qx.ui.form.Button(this.tr("Verify"));
       const validationCode = new qx.ui.form.TextField().set({
-        width: 70,
+        width: 50,
         enabled: false,
         required: true,
         placeholder: this.tr("Type code")
+      });
+      const validateCodeBtn = new qx.ui.form.Button(this.tr("Validate")).set({
+        enabled: false
       });
       osparc.data.Resources.getOne("config")
         .then(config => {
@@ -72,20 +76,31 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
             phoneValidationLayout.add(phoneNumber, {
               flex: 1
             });
-            const validatePhoneBtn = new qx.ui.form.Button(this.tr("Verify"));
-            phoneValidationLayout.add(validatePhoneBtn);
+            phoneValidationLayout.add(verifyPhoneBtn);
             phoneValidationLayout.add(validationCode);
+            phoneValidationLayout.add(validateCodeBtn);
 
-            validatePhoneBtn.addListener("execute", () => {
+            verifyPhoneBtn.addListener("execute", () => {
               const isValid = osparc.auth.core.Utils.phoneNumberValidator(phoneNumber.getValue(), phoneNumber);
               if (isValid) {
                 phoneNumber.setEnabled(false);
-                console.log("send SMS", phoneNumber);
                 osparc.auth.Manager.getInstance().verifyPhoneNumber(email.getValue(), phoneNumber.getValue())
-                  .then(() => {
+                  .then(data => {
+                    osparc.component.message.FlashMessenger.getInstance().info(data.message);
                     validationCode.setEnabled(true);
+                    validateCodeBtn.setEnabled(true);
+                  })
+                  .catch(err => {
+                    osparc.component.message.FlashMessenger.getInstance().error(err.message);
                   });
               }
+            });
+
+            validateCodeBtn.addListener("execute", () => {
+              osparc.auth.Manager.getInstance().validateCodeBtn(email.getValue(), validationCode.getValue())
+                .then(() => {
+                  console.log("yey");
+                });
             });
           }
         });
