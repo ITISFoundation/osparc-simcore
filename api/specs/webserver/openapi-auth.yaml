@@ -21,6 +21,26 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /auth/verify-phone-number:
+    post:
+      summary: user tries to verify phone number when registering
+      tags:
+        - authentication
+      operationId: auth_verify_2fa_phone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schemas/auth.yaml#/Verify2FAPhone"
+        "202":
+          description: Accepted, SMS sent
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/log_message.yaml#/LogMessageEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /auth/validate-code-register:
     post:
       summary: user enters 2 Factor Authentication code when registering
@@ -34,7 +54,7 @@ paths:
               $ref: "./components/schemas/auth.yaml#/Login2FAForm"
       responses:
         "200":
-          description: Succesfully logged in
+          description: Succesfully validated
           content:
             application/json:
               schema:

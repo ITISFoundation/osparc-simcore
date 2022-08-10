@@ -22,6 +22,19 @@ LoginForm:
     email: foo@mymail.com
     password: 'my secret'
 
+Verify2FAPhone:
+  type: object
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    phone:
+      type: string
+      #FIXME: format: phone number https://en.wikipedia.org/wiki/E.164
+  example:
+    email: foo@mymail.com
+    phone: '+41123456789'
+
 Login2FAForm:
   type: object
   properties:
