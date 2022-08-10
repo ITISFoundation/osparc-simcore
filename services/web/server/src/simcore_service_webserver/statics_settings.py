@@ -78,6 +78,7 @@ class FrontEndAppSettings(BaseCustomSettings):
     # urls to manuals
     WEBSERVER_MANUAL_MAIN_URL: Optional[HttpUrl] = None
     WEBSERVER_MANUAL_EXTRA_URL: Optional[HttpUrl] = None
+    WEBSERVER_MANUAL_TI_URL: Optional[HttpUrl] = None
 
     # extra feedback url
     WEBSERVER_FEEDBACK_FORM_URL: Optional[HttpUrl] = None
