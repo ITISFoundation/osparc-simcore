@@ -22,8 +22,12 @@ LoginForm:
     email: foo@mymail.com
     password: 'my secret'
 
+
 Verify2FAPhone:
   type: object
+  required:
+    - email
+    - phone
   properties:
     email:
       type: string
@@ -35,8 +39,12 @@ Verify2FAPhone:
     email: foo@mymail.com
     phone: '+41123456789'
 
+
 Login2FAForm:
   type: object
+  required:
+    - email
+    - code
   properties:
     email:
       type: string
