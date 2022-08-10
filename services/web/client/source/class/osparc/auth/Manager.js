@@ -58,11 +58,7 @@ qx.Class.define("osparc.auth.Manager", {
           phone: phoneNumber
         }
       };
-      osparc.data.Resources.fetch("auth", "postVerifyPhoneNumber", params)
-        .then(data => {
-          console.log(data);
-        })
-        .catch(err => console.error(err.message));
+      return osparc.data.Resources.fetch("auth", "postVerifyPhoneNumber", params)
     },
 
     validateCodeRegister: function(email, code) {
