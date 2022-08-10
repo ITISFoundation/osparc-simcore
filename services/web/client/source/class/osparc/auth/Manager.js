@@ -44,6 +44,40 @@ qx.Class.define("osparc.auth.Manager", {
   */
 
   members: {
+    register: function(userData) {
+      const params = {
+        data: userData
+      };
+      return osparc.data.Resources.fetch("auth", "postRegister", params);
+    },
+
+    verifyPhoneNumber: function(email, phoneNumber) {
+      const params = {
+        data: {
+          email,
+          phone: phoneNumber
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postVerifyPhoneNumber", params)
+        .then(data => {
+          console.log(data);
+        })
+        .catch(err => console.error(err.message));
+    },
+
+    validateCodeRegister: function(email, code) {
+      const params = {
+        data: {
+          email,
+          code
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params)
+        .then(data => {
+          console.log(data);
+        })
+        .catch(err => console.error(err.message));
+    },
 
     isLoggedIn: function() {
       // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
@@ -97,14 +131,14 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
-    validateCode: function(email, code, loginCbk, failCbk, context) {
+    validateCodeLogin: function(email, code, loginCbk, failCbk, context) {
       const params = {
         data: {
           email,
           code
         }
       };
-      osparc.data.Resources.fetch("auth", "postValidationCode", params)
+      osparc.data.Resources.fetch("auth", "postValidationCodeLogin", params)
         .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
@@ -128,13 +162,6 @@ qx.Class.define("osparc.auth.Manager", {
         })
         .catch(error => console.log("already logged out"))
         .finally(this.__logoutUser());
-    },
-
-    register: function(userData) {
-      const params = {
-        data: userData
-      };
-      return osparc.data.Resources.fetch("auth", "postRegister", params);
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
