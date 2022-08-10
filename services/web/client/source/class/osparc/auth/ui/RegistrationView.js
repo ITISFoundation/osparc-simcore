@@ -104,12 +104,13 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
                 restartVerifyTimer();
                 osparc.auth.Manager.getInstance().verifyPhoneNumber(email.getValue(), phoneNumber.getValue())
                   .then(data => {
-                    osparc.component.message.FlashMessenger.getInstance().info(data.message);
+                    osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
                     validationCode.setEnabled(true);
                     validateCodeBtn.setEnabled(true);
                   })
                   .catch(err => {
-                    osparc.component.message.FlashMessenger.getInstance().error(err.message);
+                    osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+                    phoneNumber.setEnabled(true);
                   });
               }
             });
@@ -118,9 +119,14 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
               validateCodeBtn.setFetching(true);
               osparc.auth.Manager.getInstance().validateCodeRegister(email.getValue(), validationCode.getValue())
                 .then(data => {
-                  osparc.component.message.FlashMessenger.getInstance().info(data.message);
+                  osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
+                  validateCodeBtn.setFetching(false);
+                  validationCode.setEnabled(false);
+                  validateCodeBtn.setEnabled(false);
+                  validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
                 })
-                .finally(() => {
+                .catch(err => {
+                  osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
                   validateCodeBtn.setFetching(false);
                 });
             });
