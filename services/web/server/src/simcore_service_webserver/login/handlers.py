@@ -170,7 +170,7 @@ async def verify_2fa_phone(request: web.Request):
         except Exception as e:
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
-            )
+            ) from e
 
 
 async def login(request: web.Request):
@@ -219,7 +219,7 @@ async def login(request: web.Request):
         except Exception as e:
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
-            )
+            ) from e
 
     with log_context(
         log,
@@ -237,7 +237,6 @@ async def login(request: web.Request):
 async def validate_2fa_register(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
