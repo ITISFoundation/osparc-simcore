@@ -184,7 +184,7 @@ class Client:
             timeout=timeout,
         )
 
-        if result.status_code == status.HTTP_200_NO_CONTENT:
+        if result.status_code == status.HTTP_200_OK:
             warnings.warn(
                 "returning a 200 when cancelling a task has been deprecated with PR#3236"
                 "and will be removed after 11.2022"
