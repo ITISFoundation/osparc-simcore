@@ -182,7 +182,11 @@ class Client:
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
-        if result.status_code != status.HTTP_204_NO_CONTENT:
+
+        if (
+            result.status_code != status.HTTP_204_NO_CONTENT
+            and result.status_code != status.HTTP_404_NOT_FOUND
+        ):
             raise GenericClientError(
                 action="cancelling_and_removing_task",
                 task_id=task_id,
