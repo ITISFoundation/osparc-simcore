@@ -18,6 +18,11 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from servicelib.aiohttp.long_running_tasks.server import (
+    TaskProgress,
+    get_task_manager,
+    start_task,
+)
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -116,10 +121,20 @@ class _ProjectCreateParams(BaseModel):
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
+    task_manager = get_task_manager(request.app)
+    task_id = start_task(task_manager, _create_projects, request=request)
+    return web.json_response(
+        data={"data": task_id}, status=web.HTTPAccepted.status_code, dumps=json_dumps
+    )
+
+
+# @routes.post(f"/{VTAG}/projects", name="create_projects")
+# @login_required
+# @permission_required("project.create")
+# @permission_required("services.pipeline.*")  # due to update_pipeline_db
+async def _create_projects(task_progress: TaskProgress, request: web.Request):
     """
 
-    :raises web.HTTPBadRequest
-    :raises web.HTTPNotFound
     :raises web.HTTPBadRequest
     :raises web.HTTPNotFound
     :raises web.HTTPUnauthorized
@@ -127,7 +142,7 @@ async def create_projects(request: web.Request):
     """
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
-
+    task_progress.publish(message="starting", percent=0)
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
@@ -262,6 +277,8 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(
             text=json.dumps(new_project), content_type=MIMETYPE_APPLICATION_JSON
         )
+    finally:
+        task_progress.publish(message="finished", percent=1)
 
 
 #
