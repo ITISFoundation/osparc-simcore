@@ -45,12 +45,10 @@ qx.Class.define("osparc.auth.core.Utils", {
     phoneNumberValidator: function(phoneNumber, item) {
       const regEx = /^\+[1-9]\d{4,14}$/;
       const isValid = regEx.test(phoneNumber);
-      if (!isValid) {
-        item.set({
-          invalidMessage: qx.locale.Manager.tr("Invalid phone number. Please, [+][country code][phone number plus area code]"),
-          valid: false
-        });
-      }
+      item.set({
+        invalidMessage: isValid ? "" : qx.locale.Manager.tr("Invalid phone number. Please, [+][country code][phone number plus area code]"),
+        valid: isValid
+      });
       return isValid;
     },
 
