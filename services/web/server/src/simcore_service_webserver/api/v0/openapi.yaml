@@ -178,6 +178,9 @@ paths:
               properties:
                 email:
                   type: string
+                phone:
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
                 password:
                   type: string
                 confirm:
