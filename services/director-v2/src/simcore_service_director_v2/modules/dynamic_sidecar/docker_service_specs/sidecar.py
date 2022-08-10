@@ -126,7 +126,6 @@ def get_dynamic_sidecar_spec(
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
                 run_id=scheduler_data.dynamic_sidecar.run_id,
@@ -139,7 +138,6 @@ def get_dynamic_sidecar_spec(
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                    compose_namespace=compose_namespace,
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
@@ -151,7 +149,6 @@ def get_dynamic_sidecar_spec(
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                    compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
                     run_id=scheduler_data.dynamic_sidecar.run_id,

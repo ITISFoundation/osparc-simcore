@@ -8,6 +8,7 @@ from models_library.projects_nodes_io import NodeID
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
+from ...models.schemas.constants import DY_SIDECAR_NAMED_VOLUME_PREFIX
 from .errors import DynamicSidecarError
 
 
@@ -82,28 +83,46 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
-    def source(cls, compose_namespace: str, path: Path) -> str:
-        return f"{compose_namespace}{cls._volume_name(path)}"
+    def source(cls, path: Path, node_uuid: NodeID, run_id: UUID) -> str:
+        """
+        Put together a uniquely identified name for the volume being mounted.
+        The most important requirement is that it is guaranteed to be unique
+        between runs and
+
+        Example:
+        Given:
+        - path="/this/is/a/data/folder"
+        - node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9"
+        - run_id="17f5b46d-505c-489e-9818-f6d294c892d9"
+
+        The below name will be generated:
+        `dyv_17f5b46d-505c-489e-9818-f6d294c892d9_this_is_a_data_folder_17f5b46d-505c-489e-9818-f6d294c892d9`
+        """
+        # NOTE: volume name is capped at 255 characters
+        # NOTE: it is OK for parts of the node_uuid or of the volume name to be
+        # removed. This unique_name is only used for volume removal. The
+        # dynamic-sidecar uses the labels to correctly identify the volume.
+        # NOTE: issues can occur when the paths of the mounted outputs, inputs
+        # and state folders are very long and share the same subdirectory path
+        # Generally this should not be an issue.
+        full_unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}{cls._volume_name(path)}_{node_uuid}"
+        return full_unique_name[:255]
 
     @classmethod
     def mount_entry(
-        cls,
-        swarm_stack_name: str,
-        compose_namespace: str,
-        path: Path,
-        node_uuid: NodeID,
-        run_id: UUID,
+        cls, swarm_stack_name: str, path: Path, node_uuid: NodeID, run_id: UUID
     ) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
         """
         return {
+            "Source": cls.source(path, node_uuid, run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(compose_namespace, path),
+                    "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
@@ -115,7 +134,6 @@ class DynamicSidecarVolumesPathsResolver:
     def mount_r_clone(
         cls,
         swarm_stack_name: str,
-        compose_namespace: str,
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
@@ -123,11 +141,12 @@ class DynamicSidecarVolumesPathsResolver:
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
+            "Source": cls.source(path, node_uuid, run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(compose_namespace, path),
+                    "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,

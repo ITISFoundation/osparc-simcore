@@ -12,7 +12,6 @@ from models_library.services_resources import (
 
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 
-
 # NOTE: below `retry` function is inspired by
 # https://gist.github.com/sj26/88e1c6584397bb7c13bd11108a579746
 SH_SCRIPT_REMOVE_VOLUMES = """
