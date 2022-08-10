@@ -68,7 +68,7 @@ qx.Class.define("osparc.auth.Manager", {
           code
         }
       };
-      osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params);
+      return osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params);
     },
 
     isLoggedIn: function() {
