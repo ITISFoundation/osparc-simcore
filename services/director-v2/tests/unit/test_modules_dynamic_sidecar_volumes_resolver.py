@@ -9,18 +9,11 @@ from uuid import UUID
 import aiodocker
 import pytest
 from faker import Faker
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.volumes_resolver import (
     DynamicSidecarVolumesPathsResolver,
 )
 
-
 # FIXTURES
-@pytest.fixture
-def compose_namespace(faker: Faker) -> str:
-    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{faker.uuid4()}"
 
 
 @pytest.fixture(scope="session")
@@ -49,6 +42,7 @@ def expected_volume_config(
 ) -> Callable[[str, str], Dict[str, Any]]:
     def _callable(source: str, target: str) -> Dict[str, Any]:
         return {
+            "Source": source,
             "Target": target,
             "Type": "volume",
             "VolumeOptions": {
@@ -69,7 +63,6 @@ def expected_volume_config(
 
 def test_expected_paths(
     swarm_stack_name: str,
-    compose_namespace: str,
     node_uuid: UUID,
     state_paths: List[Path],
     expected_volume_config: Callable[[str, str], Dict[str, Any]],
@@ -79,26 +72,26 @@ def test_expected_paths(
 
     inputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        swarm_stack_name, compose_namespace, inputs_path, node_uuid, run_id
+        swarm_stack_name, inputs_path, node_uuid, run_id
     ) == expected_volume_config(
-        source=f"{compose_namespace}{f'{inputs_path}'.replace('/', '_')}",
+        source=f"dyv_{run_id}{f'{inputs_path}'.replace('/', '_')}_{node_uuid}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
 
     outputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        swarm_stack_name, compose_namespace, outputs_path, node_uuid, run_id
+        swarm_stack_name, outputs_path, node_uuid, run_id
     ) == expected_volume_config(
-        source=f"{compose_namespace}{f'{outputs_path}'.replace('/', '_')}",
+        source=f"dyv_{run_id}{f'{outputs_path}'.replace('/', '_')}_{node_uuid}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
 
     for path in state_paths:
         name_from_path = f"{path}".replace(os.sep, "_")
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
-            swarm_stack_name, compose_namespace, path, node_uuid, run_id
+            swarm_stack_name, path, node_uuid, run_id
         ) == expected_volume_config(
-            source=f"{compose_namespace}{name_from_path}",
+            source=f"dyv_{run_id}{name_from_path}_{node_uuid}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )
 
@@ -119,7 +112,7 @@ async def test_volumes_unique_name_max_length_can_be_created(
 
 
 async def test_unique_name_creation_and_removal(faker: Faker):
-    unique_volume_name = DynamicSidecarVolumesPathsResolver.unique_name(
+    unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path("/some/random/path/to/a/workspace/folder"),
         node_uuid=faker.uuid4(cast_to=None),
         run_id=faker.uuid4(cast_to=None),
