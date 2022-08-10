@@ -175,6 +175,10 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
     assert delete_resp.status_code == status.HTTP_204_NO_CONTENT
     assert_expected_tasks(async_client, 0)
 
+    # cancelling again shall return a not found error
+    delete_resp = await async_client.delete(f"{router_prefix}/task/{task_id}")
+    _assert_not_found(delete_resp, task_id)
+
     # ensure task does not exist any longer
     status_resp = await async_client.get(f"{router_prefix}/task/{task_id}")
     _assert_not_found(status_resp, task_id)
