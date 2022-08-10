@@ -1,4 +1,5 @@
 import logging
+import os
 
 import attr
 from aiohttp import web
@@ -127,6 +128,9 @@ async def send_sms_code(phone_number, code):
         account_sid = os.environ['TWILIO_ACCOUNT_SID']
         auth_token = os.environ['TWILIO_AUTH_TOKEN']
         messaging_service_sid = os.environ['TWILIO_MESSAGING_SID']
+        print(account_sid)
+        print(auth_token)
+        print(messaging_service_sid)
         client = Client(account_sid, auth_token)
         message = client.messages.create(
             messaging_service_sid=messaging_service_sid,
