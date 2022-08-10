@@ -7,7 +7,7 @@ import logging
 import time
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Final, Mapping, Optional, Union
+from typing import Any, AsyncIterator, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -41,9 +41,16 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
-# give the service enough time to pull the image if missing
-# execute the command to remove the volume and exit
-VOLUME_REMOVAL_SERVICE_TIMEOUT_S: Final[int] = 90
+
+# below are considered
+SERVICE_FINISHED_STATES: set[str] = {
+    "complete",
+    "failed",
+    "shutdown",
+    "rejected",
+    "orphaned",
+    "remove",
+}
 
 log = logging.getLogger(__name__)
 
@@ -537,27 +544,32 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             )
 
 
-async def constrain_service_to_node(service_name: str, node_id: str) -> None:
+async def constrain_service_to_node(service_name: str, docker_node_id: str) -> None:
     await _update_service_spec(
         service_name,
         update_in_service_spec={
-            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
+            "TaskTemplate": {
+                "Placement": {"Constraints": [f"node.id == {docker_node_id}"]}
+            }
         },
     )
-    log.info("Constraining service %s to node %s", service_name, node_id)
+    log.info("Constraining service %s to node %s", service_name, docker_node_id)
 
 
-FINISHED_STATES: set[str] = {
-    "complete",  # The task exited without an error code.
-    "failed",  # The task exited with an error code.
-    "shutdown",  # Docker requested the task to shut down.
-    "rejected",  # The worker node rejected the task.
-    "orphaned",  # The node was down for too long.
-    "remove",  # The task is not terminal but the associated service was removed or scaled down.
-}
+async def remove_volumes_from_node(
+    volume_names: list[str],
+    docker_node_id: str,
+    *,
+    volume_removal_attempts: int = 15,
+    sleep_between_attempts_s: int = 2,
+) -> bool:
+    """
+    Runs a service at target docker node which will remove all volumes
+    in the volumes_names list.
+    """
 
-
-async def remove_volume_from_node(volume_name: str, node_id: str) -> bool:
+    # give the service enough time to pull the image if missing
+    # execute the command to remove the volume and exit
     async with docker_client() as client:
         # when running docker-dind make sure to use the same image as the
         # underlying docker-engine.
@@ -569,51 +581,63 @@ async def remove_volume_from_node(volume_name: str, node_id: str) -> bool:
         )
         docker_version = version_request["Version"]
 
-        # starts service which removes the volume
         service_spec = spec_volume_removal_service(
-            node_id=node_id, volume_name=volume_name, docker_version=docker_version
+            docker_node_id=docker_node_id,
+            volume_names=volume_names,
+            docker_version=docker_version,
+            volume_removal_attempts=volume_removal_attempts,
+            sleep_between_attempts_s=sleep_between_attempts_s,
         )
 
         volume_removal_service = await client.services.create(
             **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
         )
-        service_id = volume_removal_service["ID"]
 
+        # compute timeout for the service based on the amount of attempts
+        # required to remove each individual volume in the worst case scenario
+        # when all volumes are do not exit.
+        volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s
+        service_timeout_s = volume_removal_timeout_s * len(volume_names)
+
+        service_id = volume_removal_service["ID"]
         try:
             async for attempt in AsyncRetrying(
-                stop=stop_after_delay(VOLUME_REMOVAL_SERVICE_TIMEOUT_S),
+                stop=stop_after_delay(service_timeout_s),
                 wait=wait_fixed(0.5),
                 retry=retry_if_exception_type(_RetryError),
                 reraise=True,
             ):
                 with attempt:
                     tasks = await client.tasks.list(filters={"service": service_id})
+                    # it does not find a task for this service WTF
                     if len(tasks) != 1:
-                        raise DynamicSidecarError(
+                        raise _RetryError(
                             f"Expected 1 task for service {service_id}, found {tasks=}"
                         )
 
                     task = tasks[0]
                     task_status = task["Status"]
                     logger.debug("Service %s, %s", service_id, f"{task_status=}")
-                    task_tate = task_status["State"]
-                    if task_tate not in FINISHED_STATES:
+                    task_state = task_status["State"]
+                    if task_state not in SERVICE_FINISHED_STATES:
                         raise _RetryError(f"Waiting for task to finish: {task_status=}")
 
                     if not (
-                        task_tate == "completed"
+                        task_state == "complete"
                         and task_status["ContainerStatus"]["ExitCode"] == 0
                     ):
                         # recover logs from command for a simpler debugging
                         container_id = task_status["ContainerStatus"]["ContainerID"]
                         container = await client.containers.get(container_id)
                         container_logs = await container.log(stdout=True, stderr=True)
-                        logger.warning(
+                        logger.error(
                             "Service %s, %s output: %s",
                             service_id,
                             f"{task_status=}",
                             "\n".join(container_logs),
                         )
+                        # ANE -> SAN: above implies the following: volumes which cannot be removed will remain
+                        # in the system and maybe we should garbage collect them from the nodes somehow
                         return False
         finally:
             # NOTE: services are crated and never removed

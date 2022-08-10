@@ -788,7 +788,9 @@ async def target_node_id(docker: aiodocker.Docker) -> str:
 async def test_constrain_service_to_node(
     docker: aiodocker.Docker, mock_service: str, target_node_id: str, docker_swarm: None
 ):
-    await docker_api.constrain_service_to_node(mock_service, node_id=target_node_id)
+    await docker_api.constrain_service_to_node(
+        mock_service, docker_node_id=target_node_id
+    )
 
     # check constraint was added
     service_inspect = await docker.services.inspect(mock_service)
@@ -803,16 +805,26 @@ async def test_constrain_service_to_node(
 
 
 @pytest.fixture
-async def named_volume(docker: aiodocker.Docker, faker: Faker) -> AsyncIterator[str]:
-    named_volume: DockerVolume = await docker.volumes.create(
-        {"Name": f"named-volume-{faker.uuid4()}"}
-    )
-    yield named_volume.name
+async def named_volumes(
+    docker: aiodocker.Docker, faker: Faker
+) -> AsyncIterator[list[str]]:
+    named_volumes: list[DockerVolume] = []
+    volume_names: list[str] = []
+    for _ in range(10):
+        named_volume: DockerVolume = await docker.volumes.create(
+            {"Name": f"named-volume-{faker.uuid4()}"}
+        )
+        volume_names.append(named_volume.name)
+        named_volumes.append(named_volume)
+
+    yield volume_names
+
     # remove volume if still present
-    try:
-        await named_volume.delete()
-    except aiodocker.DockerError:
-        pass
+    for named_volume in named_volumes:
+        try:
+            await named_volume.delete()
+        except aiodocker.DockerError:
+            pass
 
 
 async def is_volume_present(docker: aiodocker.Docker, volume_name: str) -> bool:
@@ -826,22 +838,42 @@ async def is_volume_present(docker: aiodocker.Docker, volume_name: str) -> bool:
 
 
 async def test_remove_volume_from_node_ok(
-    docker: aiodocker.Docker, named_volume: str, target_node_id: str, docker_swarm: None
+    docker_swarm: None,
+    docker: aiodocker.Docker,
+    named_volumes: list[str],
+    target_node_id: str,
 ):
-    assert await is_volume_present(docker, named_volume) is True
-    await docker_api.remove_volume_from_node(
-        volume_name=named_volume, node_id=target_node_id
+    for named_volume in named_volumes:
+        assert await is_volume_present(docker, named_volume) is True
+
+    volume_removal_result = await docker_api.remove_volumes_from_node(
+        volume_names=named_volumes, docker_node_id=target_node_id
     )
-    assert await is_volume_present(docker, named_volume) is False
+    assert volume_removal_result is True
+
+    for named_volume in named_volumes:
+        assert await is_volume_present(docker, named_volume) is False
 
 
 async def test_remove_volume_from_node_no_volume_found(
-    docker: aiodocker.Docker, target_node_id: str, docker_swarm: None
+    docker_swarm: None,
+    docker: aiodocker.Docker,
+    named_volumes: list[str],
+    target_node_id: str,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
     assert await is_volume_present(docker, missing_volume_name) is False
-    volume_removal_result = await docker_api.remove_volume_from_node(
-        volume_name=missing_volume_name, node_id=target_node_id
+
+    # put the missing one in the middle of the sequence
+    volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
+
+    volume_removal_result = await docker_api.remove_volumes_from_node(
+        volume_names=volumes_to_remove,
+        docker_node_id=target_node_id,
+        volume_removal_attempts=2,
+        sleep_between_attempts_s=1,
     )
     assert volume_removal_result is False
     assert await is_volume_present(docker, missing_volume_name) is False
+    for named_volume in named_volumes:
+        assert await is_volume_present(docker, named_volume) is False
