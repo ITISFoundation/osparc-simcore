@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request, status
 
-from ...long_running_tasks._errors import TaskNotCompletedError
-from ...long_running_tasks._models import CancelResult, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
 from ...long_running_tasks._task import TaskManager
 from ..requests_decorators import cancel_on_disconnect
 from ._dependencies import get_task_manager
@@ -42,22 +41,17 @@ async def get_task_result(
 ) -> TaskResult:
     assert request  # nosec
 
-    remove_task = True
-
-    try:
-        task_result = task_manager.get_result(task_id=task_id)
-    except TaskNotCompletedError:
-        remove_task = False
-        raise
-    finally:
-        if remove_task:
-            await task_manager.remove(task_id, reraise_errors=False)
+    task_result = task_manager.get_result(task_id=task_id)
+    await task_manager.remove(task_id, reraise_errors=False)
 
     return task_result
 
 
 @router.delete(
     "/{task_id}",
+    summary="Cancel and deletes a task",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
@@ -67,6 +61,6 @@ async def cancel_and_delete_task(
     request: Request,
     task_id: TaskId,
     task_manager: TaskManager = Depends(get_task_manager),
-) -> CancelResult:
+) -> None:
     assert request  # nosec
-    return CancelResult(task_removed=await task_manager.remove(task_id))
+    await task_manager.remove(task_id)

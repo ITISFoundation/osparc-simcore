@@ -176,20 +176,19 @@ class Client:
     @retry_on_http_errors
     async def cancel_and_delete_task(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
-    ) -> bool:
+    ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
-        if result.status_code != status.HTTP_200_OK:
+        if result.status_code != status.HTTP_204_NO_CONTENT:
             raise GenericClientError(
                 action="cancelling_and_removing_task",
                 task_id=task_id,
                 status=result.status_code,
                 body=result.text,
             )
-        return result.json()
 
 
 def setup(
