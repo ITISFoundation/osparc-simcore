@@ -23,7 +23,7 @@ paths:
 
   /auth/verify-phone-number:
     post:
-      summary: user tries to verify phone number when registering
+      summary: user tries to verify phone number for 2 Factor Authentication when registering
       tags:
         - authentication
       operationId: auth_verify_2fa_phone
