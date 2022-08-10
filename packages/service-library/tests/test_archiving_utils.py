@@ -19,7 +19,8 @@ from typing import Iterable, Optional
 import pytest
 from faker import Faker
 from servicelib.archiving_utils import archive_dir, unarchive_dir
-from test_utils import print_tree
+
+from .test_utils import print_tree
 
 # FIXTURES
 
