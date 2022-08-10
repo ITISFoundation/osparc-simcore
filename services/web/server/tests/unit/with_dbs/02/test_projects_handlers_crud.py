@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 
+import json
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
@@ -16,12 +17,17 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_handlers_crud import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
 from simcore_service_webserver.utils import now_str, to_datetime
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 API_PREFIX = "/" + api_version_prefix
@@ -192,7 +198,36 @@ async def _new_project(
 
     resp = await client.post(url, json=project_data)
 
-    new_project, error = await assert_status(resp, expected_response)
+    new_project_task_id, error = await assert_status(resp, expected_response)
+    if error:
+        assert not new_project_task_id
+        return {}
+    assert new_project_task_id
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            result = await client.get(f"{new_project_task_id}")
+            data, error = await assert_status(result, web.HTTPOk)
+            assert data
+            assert not error
+            task_status = TaskStatus.parse_obj(data)
+            assert task_status
+            print(f"<-- received task status: {task_status.json(indent=2)}")
+            assert task_status.done, "task incomplete"
+            print(
+                f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+            )
+    result = await client.get(f"{new_project_task_id}/result")
+    data, error = await assert_status(result, web.HTTPOk)
+    assert data
+    assert not error
+    task_result = TaskResult.parse_obj(data)
+
     if not error:
         # has project state
         assert not ProjectState(
@@ -388,7 +423,7 @@ async def test_new_project_from_other_study(
     catalog_subsystem_mock([user_project])
     new_project = await _new_project(
         client,
-        expected.created,
+        expected.accepted,
         logged_user,
         primary_group,
         from_study=user_project,
@@ -401,7 +436,7 @@ async def test_new_project_from_other_study(
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
-                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+                pytest.fail(f"Invalid uuid in workbench node {node_name}")
 
 
 @pytest.mark.parametrize(*standard_role_response())
