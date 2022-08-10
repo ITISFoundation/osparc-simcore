@@ -246,18 +246,8 @@ async def validate_2fa_register(request: web.Request):
     v_code = await get_validation_code(request.app, email)
     if code == v_code:
         await delete_validation_code(request.app, email)
-        user = await db.get_user({"email": email})
-        with log_context(
-            log,
-            logging.INFO,
-            "login of user_id=%s with %s",
-            f"{user.get('id')}",
-            f"{email=}",
-        ):
-            identity = user["email"]
-            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-            await remember(request, response, identity)
-            return response
+        response = flash_response(cfg.MSG_VERIFY_PHONE_NUMBER, "INFO")
+        return response
 
     raise web.HTTPUnauthorized(
         reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
