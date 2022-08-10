@@ -38,8 +38,9 @@ def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
 
     handlers_map = {
         "auth_register": login_handlers.register,
+        "auth_validate_2fa_register": login_handlers.validate_2fa_login,
         "auth_login": login_handlers.login,
-        "auth_validate_2fa_code": login_handlers.validate_2fa_code,
+        "auth_validate_2fa_login": login_handlers.validate_2fa_login,
         "auth_logout": login_handlers.logout,
         "auth_reset_password": login_handlers.reset_password,
         "auth_reset_password_allowed": login_handlers.reset_password_allowed,

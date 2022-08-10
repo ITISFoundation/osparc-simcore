@@ -184,7 +184,7 @@ async def login(request: web.Request):
         return response
 
 
-async def validate_2fa_code(request: web.Request):
+async def validate_2fa_login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)

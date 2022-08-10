@@ -549,7 +549,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           postValidationCode: {
             method: "POST",
-            url: statics.API + "/auth/validate-code"
+            url: statics.API + "/auth/validate-code-login"
           },
           postLogout: {
             method: "POST",
