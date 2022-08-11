@@ -360,7 +360,7 @@ def test_get_dynamic_proxy_spec(
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
 
-        # NOTE: some falkyness here
+        # NOTE: some flakiness here
         # state_exclude is a set and does not preserve order
         # when dumping to json it gets converted to a list
         dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
