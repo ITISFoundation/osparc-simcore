@@ -188,6 +188,11 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       });
 
+      registerSMSMCode.addListener("done", msg => {
+        login.resetValues();
+        this.fireDataEvent("done", msg);
+      }, this);
+
       [resetRequest, reset].forEach(srcPage => {
         srcPage.addListener("done", msg => {
           pages.setSelection([login]);
