@@ -8,7 +8,7 @@ aiodebug==2.3.0
     # via -r requirements/_base.in
 aiofiles==0.8.0
     # via -r requirements/_base.in
-pydantic==1.9.1
+pydantic==1.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
