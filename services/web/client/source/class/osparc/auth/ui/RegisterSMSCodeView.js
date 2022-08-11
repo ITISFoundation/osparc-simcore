@@ -109,61 +109,13 @@ qx.Class.define("osparc.auth.ui.RegisterSMSCodeView", {
             validationCode.setEnabled(false);
             validateCodeBtn.setEnabled(false);
             validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
+            this.fireDataEvent("done", data.message);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
             validateCodeBtn.setFetching(false);
           });
       });
-    },
-
-    __validateCode: function() {
-      this.__validateCodeBtn.setFetching(true);
-
-      const smsCode = this.__form.getItems().smsCode;
-
-      const loginFun = function(log) {
-        this.__validateCodeBtn.setFetching(false);
-        this.fireDataEvent("done", log.message);
-        // we don't need the form any more, so remove it and mock-navigate-away
-        // and thus tell the password manager to save the content
-        this._formElement.dispose();
-        window.history.replaceState(null, window.document.title, window.location.pathname);
-      };
-
-      const failFun = msg => {
-        this.__validateCodeBtn.setFetching(false);
-        // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Invalid code");
-        smsCode.set({
-          invalidMessage: msg,
-          valid: false
-        });
-
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      };
-
-      const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeLogin(this.getUserEmail(), smsCode.getValue(), loginFun, failFun, this);
-    },
-
-    __restartTimer: function() {
-      let count = 60;
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        this.__resendCodeBtn.set({
-          label: count > 0 ? this.tr("Resend code") + ` (${count})` : this.tr("Resend code"),
-          enabled: count === 0
-        });
-      }, 1000);
-    },
-
-    __resendCode: function() {
-      this.__restartTimer();
     }
   }
 });
