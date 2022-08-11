@@ -52,7 +52,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/Login2FAForm"
+              $ref: "./components/schemas/auth.yaml#/Validate2FAPhone"
       responses:
         "200":
           description: Succesfully validated

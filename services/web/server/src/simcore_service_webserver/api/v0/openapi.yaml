@@ -178,9 +178,6 @@ paths:
               properties:
                 email:
                   type: string
-                phone:
-                  type: string
-                  description: 'Phone number E.164, needed on the deployments with 2FA'
                 password:
                   type: string
                 confirm:
@@ -225,6 +222,7 @@ paths:
                   type: string
                 phone:
                   type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
               example:
                 email: foo@mymail.com
                 phone: '+41123456789'
@@ -247,7 +245,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1auth~1validate-code-login/post/requestBody/content/application~1json/schema'
+              type: object
+              required:
+                - email
+                - phone
+                - code
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
+                code:
+                  type: string
+              example:
+                email: foo@mymail.com
+                phone: '+41123456789'
+                code: '1234'
       responses:
         '200':
           description: Succesfully validated
@@ -342,7 +356,7 @@ paths:
                   type: string
               example:
                 email: foo@mymail.com
-                code: my code
+                code: '1234'
       responses:
         '200':
           description: Succesfully logged in
