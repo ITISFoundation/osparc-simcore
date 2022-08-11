@@ -99,9 +99,9 @@ class _ProjectCreateParams(BaseModel):
         None,
         description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
-    as_template: Optional[UUIDStr] = Field(
-        None,
-        description="Option to create a template from existing project: as_template={study_uuid}",
+    as_template: bool = Field(
+        False,
+        description="Option to create a template from existing project: as_template=true",
     )
     copy_data: bool = Field(
         True,
@@ -147,7 +147,7 @@ async def _create_projects(
     app: web.Application,
     query_params: _ProjectCreateParams,
     user_id: UserID,
-    predefined_project: Optional[dict[str, Any]],
+    predefined_project: Optional[ProjectDict],
 ):
     """
 
@@ -167,14 +167,7 @@ async def _create_projects(
 
         clone_data_coro: Optional[Coroutine] = None
         source_project: Optional[ProjectDict] = None
-        if query_params.as_template:  # create template from
-            source_project = await projects_api.get_project_for_user(
-                app,
-                project_uuid=query_params.as_template,
-                user_id=user_id,
-                include_templates=False,
-            )
-        elif query_params.from_study:  # copy from study
+        if query_params.from_study:  # copy from study
             source_project = await projects_api.get_project_for_user(
                 app,
                 project_uuid=query_params.from_study,
@@ -226,26 +219,24 @@ async def _create_projects(
         new_project = await db.add_project(
             new_project,
             user_id,
-            force_as_template=query_params.as_template is not None,
+            force_as_template=query_params.as_template,
             hidden=query_params.hidden,
         )
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
-            if query_params.as_template:
-                # we need to lock the original study while copying the data
-                async with projects_api.lock_with_notification(
-                    app,
-                    source_project["uuid"],
-                    ProjectStatus.CLONING,
-                    user_id,
-                    await get_user_name(app, user_id),
-                ):
+            # we need to lock the original study while copying the data
+            async with projects_api.lock_with_notification(
+                app,
+                source_project["uuid"],
+                ProjectStatus.CLONING,
+                user_id,
+                await get_user_name(app, user_id),
+            ):
 
-                    await clone_data_coro
-            else:
                 await clone_data_coro
+
             # unhide the project if needed since it is now complete
             if not new_project_was_hidden_before_data_was_copied:
                 await db.update_project_without_checking_permissions(
@@ -265,7 +256,7 @@ async def _create_projects(
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
-            is_template=query_params.as_template is not None,
+            is_template=query_params.as_template,
             app=app,
         )
 

@@ -111,7 +111,9 @@ async def test_creating_new_project_as_template_and_disconnecting_does_not_creat
     # POST /v0/projects
     create_url = client.app.router["create_projects"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
-    create_url = create_url.with_query(as_template=user_project["uuid"])
+    create_url = create_url.with_query(
+        from_study=user_project["uuid"], as_template="true"
+    )
     with pytest.raises(asyncio.TimeoutError):
         await client.post(f"{create_url}", json={}, timeout=A_VERY_SHORT_TIMEOUT)
 
@@ -200,7 +202,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     create_url = client.app.router["create_projects"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(
-        as_template=user_project["uuid"], copy_data="false"
+        from_study=user_project["uuid"], as_template="true", copy_data="false"
     )
     # this should go fast, let's have a timeout
     await client.post(f"{create_url}", json={}, timeout=2)

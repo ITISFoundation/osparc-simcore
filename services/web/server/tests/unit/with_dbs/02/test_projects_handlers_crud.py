@@ -512,11 +512,11 @@ async def test_new_template_from_project(
     project_db_cleaner: None,
 ):
     assert client.app
-    # POST /v0/projects?as_template={project_id}
+    # POST /v0/projects?from_study={project_id}&as_template=true
     url = (
         client.app.router["create_projects"]
         .url_for()
-        .with_query(as_template=user_project["uuid"])
+        .with_query(from_study=user_project["uuid"], as_template="true")
     )
 
     resp = await client.post(f"{url}")
