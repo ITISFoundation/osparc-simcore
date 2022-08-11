@@ -12,7 +12,8 @@ from servicelib.archiving_utils import (
     is_leaf_path,
     unarchive_dir,
 )
-from test_utils import print_tree  # pylint:disable=no-name-in-module
+
+from .test_utils import print_tree
 
 
 @pytest.fixture
@@ -83,17 +84,17 @@ def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):
     so it can be reused when code is moved into the new sidecar
     """
 
-    expected_paths = set(p.relative_to(new_state_dir) for p in new_state_dir.rglob("*"))
+    expected_paths = {p.relative_to(new_state_dir) for p in new_state_dir.rglob("*")}
 
     # --------
     # 1) evaluate leafs to prune in paths tree
 
-    old_paths = set(p for p in state_dir.rglob("*") if is_leaf_path(p))
-    new_paths = set(
+    old_paths = {p for p in state_dir.rglob("*") if is_leaf_path(p)}
+    new_paths = {
         state_dir / p.relative_to(new_state_dir)
         for p in new_state_dir.rglob("*")
         if is_leaf_path(p)
-    )
+    }
     to_delete = old_paths.difference(new_paths)
 
     # 2) override leafs from new_state_dir -> state_dir
@@ -113,7 +114,7 @@ def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):
             p.rmdir()
 
     # -------
-    got_paths = set(p.relative_to(state_dir) for p in state_dir.rglob("*"))
+    got_paths = {p.relative_to(state_dir) for p in state_dir.rglob("*")}
 
     assert expected_paths == got_paths
     assert old_paths != got_paths
@@ -133,11 +134,11 @@ async def test_override_and_prune_from_archive(
     compress: bool,
 ):
     download_file = tmp_path / "download.zip"
-    expected_paths = set(
+    expected_paths = {
         p.relative_to(new_state_dir)
         for p in new_state_dir.rglob("*")
         if is_leaf_path(p)
-    )
+    }
 
     # archive new_state_dir -> download.zip
     await archive_dir(
@@ -156,9 +157,9 @@ async def test_override_and_prune_from_archive(
 
     folder.prune(unarchived)
 
-    after_relpaths = set(
+    after_relpaths = {
         p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)
-    )
+    }
 
     assert after_relpaths != folder.before_relpaths
-    assert after_relpaths == set(p.relative_to(state_dir) for p in unarchived)
+    assert after_relpaths == {p.relative_to(state_dir) for p in unarchived}

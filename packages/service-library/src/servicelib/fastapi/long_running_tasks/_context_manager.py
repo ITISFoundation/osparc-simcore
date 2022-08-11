@@ -5,15 +5,15 @@ from typing import Any, AsyncIterator, Final, Optional
 
 from pydantic import PositiveFloat
 
-from ._client import Client
-from ._errors import TaskClientTimeoutError
-from ._models import (
+from ...long_running_tasks._errors import TaskClientTimeoutError
+from ...long_running_tasks._models import (
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
     TaskId,
     TaskStatus,
 )
+from ._client import Client
 
 # NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10
@@ -115,10 +115,9 @@ async def periodic_task_result(
 
         yield result
     except asyncio.TimeoutError as e:
-        task_removed: bool = await client.cancel_and_delete_task(task_id)
+        await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,
             timeout=task_timeout,
             exception=e,
-            task_removed=task_removed,
         ) from e
