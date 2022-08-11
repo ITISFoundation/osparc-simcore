@@ -213,6 +213,14 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
+        case "2fa-verify": {
+          // Route: /#/2fa-verify?email={email}
+          if (urlFragment.params && urlFragment.params.email) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+          }
+          break;
+        }
         case "reset-password": {
           // Route: /#/reset-password/?code={resetCode}
           if (urlFragment.params && urlFragment.params.code) {

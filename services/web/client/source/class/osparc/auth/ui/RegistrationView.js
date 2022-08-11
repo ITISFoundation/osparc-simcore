@@ -52,88 +52,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      const phoneValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-        visibility: "excluded"
-      });
-      const phoneNumber = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Type your phone number")
-      });
-      const verifyPhoneBtn = new qx.ui.form.Button(this.tr("Verify"));
-      const validationCode = new qx.ui.form.TextField().set({
-        width: 50,
-        enabled: false,
-        required: true,
-        placeholder: this.tr("Code")
-      });
-      const validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
-        enabled: false
-      });
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if (config["login_2fa_required"]) {
-            phoneValidationLayout.show();
-            phoneValidationLayout.add(phoneNumber, {
-              flex: 1
-            });
-            phoneValidationLayout.add(verifyPhoneBtn);
-            phoneValidationLayout.add(validationCode);
-            phoneValidationLayout.add(validateCodeBtn);
-
-            const restartVerifyTimer = () => {
-              let count = 60;
-              const refreshIntervalId = setInterval(() => {
-                if (count > 0) {
-                  count--;
-                } else {
-                  clearInterval(refreshIntervalId);
-                }
-                verifyPhoneBtn.set({
-                  label: count > 0 ? this.tr("Verify") + ` (${count})` : this.tr("Verify"),
-                  enabled: count === 0
-                });
-              }, 1000);
-            };
-            verifyPhoneBtn.addListener("execute", () => {
-              const isValid = osparc.auth.core.Utils.phoneNumberValidator(phoneNumber.getValue(), phoneNumber);
-              if (isValid) {
-                phoneNumber.setEnabled(false);
-                verifyPhoneBtn.set({
-                  label: this.tr("Verify") + ` (60)`
-                });
-                restartVerifyTimer();
-                osparc.auth.Manager.getInstance().verifyPhoneNumber(email.getValue(), phoneNumber.getValue())
-                  .then(data => {
-                    osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
-                    validationCode.setEnabled(true);
-                    validateCodeBtn.setEnabled(true);
-                  })
-                  .catch(err => {
-                    osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
-                    phoneNumber.setEnabled(true);
-                  });
-              }
-            });
-
-            validateCodeBtn.addListener("execute", () => {
-              validateCodeBtn.setFetching(true);
-              osparc.auth.Manager.getInstance().validateCodeRegister(email.getValue(), validationCode.getValue())
-                .then(data => {
-                  osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
-                  validateCodeBtn.setFetching(false);
-                  validationCode.setEnabled(false);
-                  validateCodeBtn.setEnabled(false);
-                  validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
-                })
-                .catch(err => {
-                  osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
-                  validateCodeBtn.setFetching(false);
-                });
-            });
-          }
-        });
-      this.add(phoneValidationLayout);
-
       const pass1 = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Type a password")
@@ -174,11 +92,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         flex:1
       });
 
-      const resetBtn = new qx.ui.form.Button(this.tr("Reset"));
-      grp.add(resetBtn, {
-        flex:1
-      });
-
       const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
       grp.add(cancelBtn, {
         flex:1
@@ -190,18 +103,11 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         if (valid) {
           this.__submit({
             email: email.getValue(),
-            phone: phoneNumber.getValue() ? phoneNumber.getValue() : "",
             password: pass1.getValue(),
             confirm: pass2.getValue(),
             invitation: invitation.getValue() ? invitation.getValue() : ""
           });
         }
-      }, this);
-
-      resetBtn.addListener("execute", () => {
-        phoneNumber.setEnabled(true);
-        validationCode.setEnabled(false);
-        this.resetValues();
       }, this);
 
       cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
