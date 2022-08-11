@@ -40,9 +40,9 @@ def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) ->
 
     assert (
         len(
-            task_manager.tasks[
+            task_manager.get_task_group(
                 "tests.fastapi.long_running_tasks.test_long_running_tasks_routes.short_task"
-            ]
+            )
         )
         == task_count
     )
@@ -77,7 +77,7 @@ def user_routes() -> APIRouter:
         task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager=task_manager,
             handler=short_task,
             raise_when_finished=raise_when_finished,
             total_sleep=TASK_SLEEP_INTERVAL,

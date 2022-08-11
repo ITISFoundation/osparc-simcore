@@ -47,9 +47,12 @@ def _mark_task_to_remove_if_required(
             tasks_to_remove.append(task_id)
 
 
+TrackedTaskGroupDict = dict[TaskId, TrackedTask]
+
+
 class TasksManager:
     """
-    Manages monitoring of execution and retrieval of a collection of tasks (as TrackedTask)
+    Monitors execution and results retrieval of a collection of asyncio.Tasks
     """
 
     def __init__(
@@ -57,7 +60,8 @@ class TasksManager:
         stale_task_check_interval_s: PositiveFloat,
         stale_task_detect_timeout_s: PositiveFloat,
     ):
-        self.tasks: dict[TaskName, dict[TaskId, TrackedTask]] = {}
+        # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
+        self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
 
         self._cancel_task_timeout_s: PositiveFloat = 1.0
 
@@ -66,6 +70,9 @@ class TasksManager:
         self._stale_tasks_monitor_task: Task = asyncio.create_task(
             self._stale_tasks_monitor_worker()
         )
+
+    def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
+        return self._tasks_groups[task_name]
 
     async def _stale_tasks_monitor_worker(self) -> None:
         """
@@ -88,7 +95,7 @@ class TasksManager:
             utc_now = datetime.utcnow()
 
             tasks_to_remove: list[TaskId] = []
-            for tasks in self.tasks.values():
+            for tasks in self._tasks_groups.values():
                 for task_id, tracked_task in tasks.items():
                     _mark_task_to_remove_if_required(
                         task_id,
@@ -118,10 +125,10 @@ class TasksManager:
 
     def is_task_running(self, task_name: TaskName) -> bool:
         """returns True if a task named `task_name` is running"""
-        if task_name not in self.tasks:
+        if task_name not in self._tasks_groups:
             return False
 
-        managed_tasks_ids = list(self.tasks[task_name].keys())
+        managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
     def add_task(
@@ -129,23 +136,21 @@ class TasksManager:
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
-        if task_name not in self.tasks:
-            self.tasks[task_name] = {}
+        if task_name not in self._tasks_groups:
+            self._tasks_groups[task_name] = {}
 
-        tracked_task = TrackedTask.parse_obj(
-            dict(
-                task_id=task_id,
-                task=task,
-                task_name=task_name,
-                task_progress=task_progress,
-            )
+        tracked_task = TrackedTask(
+            task_id=task_id,
+            task=task,
+            task_name=task_name,
+            task_progress=task_progress,
         )
-        self.tasks[task_name][task_id] = tracked_task
+        self._tasks_groups[task_name][task_id] = tracked_task
 
         return tracked_task
 
     def _get_tracked_task(self, task_id: TaskId) -> TrackedTask:
-        for tasks in self.tasks.values():
+        for tasks in self._tasks_groups.values():
             if task_id in tasks:
                 tracked_task = tasks[task_id]
                 return tracked_task
@@ -252,7 +257,7 @@ class TasksManager:
                 tracked_task.task, task_id, reraise_errors=reraise_errors
             )
         finally:
-            del self.tasks[tracked_task.task_name][task_id]
+            del self._tasks_groups[tracked_task.task_name][task_id]
 
     async def close(self) -> None:
         """
@@ -260,7 +265,7 @@ class TasksManager:
         """
         task_ids_to_remove: deque[TaskId] = deque()
 
-        for tasks_dict in self.tasks.values():
+        for tasks_dict in self._tasks_groups.values():
             for tracked_task in tasks_dict.values():
                 task_ids_to_remove.append(tracked_task.task_id)
 
@@ -274,7 +279,7 @@ class TasksManager:
 
 
 def start_task(
-    task_manager: TasksManager,
+    tasks_manager: TasksManager,
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
@@ -282,6 +287,7 @@ def start_task(
 ) -> TaskId:
     """
     Creates a task from a given callable to an async function.
+
     A task will be created out of it by injecting a `TaskProgress` as the first
     positional argument and adding all `kwargs` as named parameters.
 
@@ -298,17 +304,17 @@ def start_task(
     task_name = f"{handler_module_name}.{handler.__name__}"
 
     # only one unique task can be running
-    if unique and task_manager.is_task_running(task_name):
-        managed_tasks_ids = list(task_manager.tasks[task_name].keys())
+    if unique and tasks_manager.is_task_running(task_name):
+        managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
         assert len(managed_tasks_ids) == 1  # nosec
-        managed_task = task_manager.tasks[task_name][managed_tasks_ids[0]]
+        managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_progress = TaskProgress.create()
     awaitable = handler(task_progress, **kwargs)
     task = asyncio.create_task(awaitable)
 
-    tracked_task = task_manager.add_task(
+    tracked_task = tasks_manager.add_task(
         task_name=task_name, task=task, task_progress=task_progress
     )
     return tracked_task.task_id

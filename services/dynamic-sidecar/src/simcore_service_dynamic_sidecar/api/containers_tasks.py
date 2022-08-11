@@ -70,7 +70,7 @@ containers_router_tasks = APIRouter(tags=["containers"])
 async def create_service_containers_task(  # pylint: disable=too-many-arguments
     request: Request,
     containers_create: ContainersCreate,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
@@ -82,7 +82,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_create_service_containers,
             unique=True,
             settings=settings,
@@ -112,7 +112,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
     request: Request,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
@@ -121,7 +121,7 @@ async def runs_docker_compose_down_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_runs_docker_compose_down,
             unique=True,
             app=app,
@@ -147,7 +147,7 @@ async def runs_docker_compose_down_task(
 @cancel_on_disconnect
 async def state_restore_task(
     request: Request,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     settings: ApplicationSettings = Depends(get_settings),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
@@ -156,7 +156,7 @@ async def state_restore_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_restore_state,
             unique=True,
             settings=settings,
@@ -182,7 +182,7 @@ async def state_restore_task(
 @cancel_on_disconnect
 async def state_save_task(
     request: Request,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     settings: ApplicationSettings = Depends(get_settings),
@@ -191,7 +191,7 @@ async def state_save_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_save_state,
             unique=True,
             settings=settings,
@@ -218,7 +218,7 @@ async def state_save_task(
 async def ports_inputs_pull_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
@@ -226,7 +226,7 @@ async def ports_inputs_pull_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_ports_inputs_pull,
             unique=True,
             port_keys=port_keys,
@@ -253,7 +253,7 @@ async def ports_inputs_pull_task(
 async def ports_outputs_pull_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
@@ -261,7 +261,7 @@ async def ports_outputs_pull_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_ports_outputs_pull,
             unique=True,
             port_keys=port_keys,
@@ -288,7 +288,7 @@ async def ports_outputs_pull_task(
 async def ports_outputs_push_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
@@ -296,7 +296,7 @@ async def ports_outputs_push_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_ports_outputs_push,
             unique=True,
             port_keys=port_keys,
@@ -322,7 +322,7 @@ async def ports_outputs_push_task(
 @cancel_on_disconnect
 async def containers_restart_task(
     request: Request,
-    task_manager: TasksManager = Depends(get_tasks_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
     app: FastAPI = Depends(get_application),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -332,7 +332,7 @@ async def containers_restart_task(
 
     try:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager,
             handler=task_containers_restart,
             unique=True,
             app=app,

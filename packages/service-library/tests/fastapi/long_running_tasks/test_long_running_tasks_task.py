@@ -71,7 +71,7 @@ def user_routes() -> APIRouter:
         task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager=task_manager,
             handler=a_background_task,
             raise_when_finished=raise_when_finished,
             total_sleep=2,
@@ -104,12 +104,12 @@ async def test_unique_task_already_running(task_manager: TasksManager) -> None:
     async def unique_task(task_progress: TaskProgress) -> None:
         await asyncio.sleep(1)
 
-    start_task(task_manager=task_manager, handler=unique_task, unique=True)
+    start_task(tasks_manager=task_manager, handler=unique_task, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
     for _ in range(5):
         with pytest.raises(TaskAlreadyRunningError) as exec_info:
-            start_task(task_manager=task_manager, handler=unique_task, unique=True)
+            start_task(tasks_manager=task_manager, handler=unique_task, unique=True)
         assert f"{exec_info.value}".startswith(
             "tests.fastapi.long_running_tasks.test_long_running_tasks_task.unique_task must be unique, found:"
         )
@@ -120,7 +120,7 @@ async def test_start_multiple_not_unique_tasks(task_manager: TasksManager) -> No
         await asyncio.sleep(1)
 
     for _ in range(5):
-        start_task(task_manager=task_manager, handler=not_unique_task)
+        start_task(tasks_manager=task_manager, handler=not_unique_task)
 
 
 def test_get_task_id() -> None:
@@ -129,7 +129,7 @@ def test_get_task_id() -> None:
 
 async def test_get_status(task_manager: TasksManager) -> None:
     task_id = start_task(
-        task_manager=task_manager,
+        tasks_manager=task_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
@@ -149,7 +149,7 @@ async def test_get_status_missing(task_manager: TasksManager) -> None:
 
 
 async def test_get_result(task_manager: TasksManager) -> None:
-    task_id = start_task(task_manager=task_manager, handler=fast_background_task)
+    task_id = start_task(tasks_manager=task_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
     result = task_manager.get_task_result(task_id)
     assert result == TaskResult(result=42, error=None)
@@ -162,7 +162,7 @@ async def test_get_result_missing(task_manager: TasksManager) -> None:
 
 
 async def test_get_result_finished_with_error(task_manager: TasksManager) -> None:
-    task_id = start_task(task_manager=task_manager, handler=failing_background_task)
+    task_id = start_task(tasks_manager=task_manager, handler=failing_background_task)
 
     can_continue = True
     while can_continue:
@@ -184,7 +184,7 @@ async def test_get_result_task_was_cancelled_multiple_times(
     task_manager: TasksManager,
 ) -> None:
     task_id = start_task(
-        task_manager=task_manager,
+        tasks_manager=task_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
@@ -199,7 +199,7 @@ async def test_get_result_task_was_cancelled_multiple_times(
 
 async def test_remove_ok(task_manager: TasksManager) -> None:
     task_id = start_task(
-        task_manager=task_manager,
+        tasks_manager=task_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
@@ -290,7 +290,7 @@ async def test_stall_task_is_tracked(
 ) -> None:
     task = asyncio.create_task(task_to_track(expected_task_result))
     tracked_task = stall_task_manager.add_task(TASK_NAME, task, TaskProgress.create())
-    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+    assert len(stall_task_manager.get_task_group(TASK_NAME)) == 1
 
     async with poll_status(stall_task_manager, tracked_task.task_id):
         # let some time pass
@@ -300,7 +300,7 @@ async def test_stall_task_is_tracked(
             tracked_task.task_id
         )
         assert task_status.done is is_done
-    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+    assert len(stall_task_manager.get_task_group(TASK_NAME)) == 1
 
 
 @pytest.mark.parametrize(
@@ -316,10 +316,10 @@ async def test_stall_task_not_tracked(
 ) -> None:
     task = asyncio.create_task(task_to_track(expected_task_result))
     tracked_task = stall_task_manager.add_task(TASK_NAME, task, TaskProgress.create())
-    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+    assert len(stall_task_manager.get_task_group(TASK_NAME)) == 1
     # expected task still running
     await asyncio.sleep(TASK_CHECK_INTERVAL)
-    assert len(stall_task_manager.tasks[TASK_NAME]) == 1
+    assert len(stall_task_manager.get_task_group(TASK_NAME)) == 1
 
     # let task remove itself
     await asyncio.sleep(TASK_CHECK_INTERVAL * 2)
@@ -328,4 +328,4 @@ async def test_stall_task_not_tracked(
     with pytest.raises(TaskNotFoundError):
         stall_task_manager.get_task_status(tracked_task.task_id)
     # expect this to have been removed
-    assert len(stall_task_manager.tasks[TASK_NAME]) == 0
+    assert len(stall_task_manager.get_task_group(TASK_NAME)) == 0

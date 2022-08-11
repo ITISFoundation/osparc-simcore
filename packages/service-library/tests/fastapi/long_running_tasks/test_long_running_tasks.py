@@ -64,7 +64,7 @@ def create_mock_app() -> FastAPI:
 
         # NOTE: TaskProgress is injected by start_task
         task_id = long_running_tasks.server.start_task(
-            task_manager=task_manager, handler=_string_list_task, items=10
+            tasks_manager=task_manager, handler=_string_list_task, items=10
         )
         return task_id
 
@@ -85,7 +85,7 @@ def create_mock_app() -> FastAPI:
             return 42 + wait_for
 
         task_id = long_running_tasks.server.start_task(
-            task_manager=task_manager,
+            tasks_manager=task_manager,
             handler=_waiting_task,
             wait_for=wait_for,
         )
