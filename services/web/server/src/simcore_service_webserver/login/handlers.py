@@ -76,7 +76,6 @@ async def register(request: web.Request):
         {
             "name": username,
             "email": email,
-            "phone_number": phone,
             "password_hash": encrypt_password(password),
             "status": (
                 CONFIRMATION_PENDING
