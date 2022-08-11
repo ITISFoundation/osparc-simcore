@@ -23,7 +23,8 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
     userPhoneNumber: {
       check: "String",
       init: "+41-XXXXXXXXX",
-      nullable: false
+      nullable: false,
+      event: "changeUserPhoneNumber"
     },
 
     userEmail: {
@@ -41,8 +42,9 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      const smsCodeDesc = new qx.ui.basic.Label().set({
-        value: this.tr("We just sent a 4-digit code to ") + this.getUserPhoneNumber()
+      const smsCodeDesc = new qx.ui.basic.Label();
+      this.bind("userPhoneNumber", smsCodeDesc, "value", {
+        converter: pNumber => this.tr("We just sent a 4-digit code to ") + pNumber
       });
       this.add(smsCodeDesc);
 

@@ -166,9 +166,18 @@ async def verify_2fa_phone(request: web.Request):
             code = await add_validation_code(request.app, email)
             print("code", code)
             await send_sms_code(phone_number, code)
+            list_of_indexes = [3, 4, 5, 6, 7, 8, 9] # keep first 3 and last 2
+            new_character = 'X'
+            phone_number = user["phone_number"]
+            for i in list_of_indexes:
+                phone_number = phone_number[:i] + new_character + phone_number[i+1:]
+            data = attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"))
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
-                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+                data={
+                    "data": data,
+                    "error": None
+                }
             )
             return response
         except Exception as e:
@@ -217,9 +226,18 @@ async def login(request: web.Request):
             code = await add_validation_code(request.app, user["email"])
             print("code", code)
             await send_sms_code(user["phone_number"], code)
+            list_of_indexes = [3, 4, 5, 6, 7, 8, 9] # keep first 3 and last 2
+            new_character = 'X'
+            phone_number = user["phone_number"]
+            for i in list_of_indexes:
+                phone_number = phone_number[:i] + new_character + phone_number[i+1:]
+            data = attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"))
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
-                data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
+                data={
+                    "data": data,
+                    "error": None
+                }
             )
             return response
         except Exception as e:

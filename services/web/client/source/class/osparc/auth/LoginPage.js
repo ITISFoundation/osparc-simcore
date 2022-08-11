@@ -159,9 +159,12 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
-      login.addListener("toSMSCode", () => {
+      login.addListener("toSMSCode", e => {
+        const msg = e.getData();
+        const startIdx = msg.indexOf("+");
         smsCode.set({
-          userEmail: login.getEmail()
+          userEmail: login.getEmail(),
+          userPhoneNumber: msg.substring(startIdx, msg.length)
         });
         pages.setSelection([smsCode]);
         login.resetValues();
