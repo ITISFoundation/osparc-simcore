@@ -175,7 +175,7 @@ async def _new_project(
     if not error:
         # has project state
         assert not ProjectState(
-            **new_project.pop("state")
+            **new_project.get("state", {})
         ).locked.value, "Newly created projects should be unlocked"
 
         # updated fields
@@ -204,6 +204,7 @@ async def _new_project(
             "accessRights",
             "workbench" if from_study else None,
             "ui" if from_study else None,
+            "state",
         ]
 
         for key in new_project.keys():
@@ -270,7 +271,7 @@ async def test_list_projects_with_pagination(
     # let's create a few projects here
     created_projects = await asyncio.gather(
         *[
-            _new_project(client, expected.created, logged_user, primary_group)
+            _new_project(client, expected.accepted, logged_user, primary_group)
             for i in range(NUM_PROJECTS)
         ]
     )
