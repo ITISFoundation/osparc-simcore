@@ -121,18 +121,34 @@ class _ProjectCreateParams(BaseModel):
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
+    # get request params
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
+    predefined_project = await request.json() if request.can_read_body else None
+    if query_params.as_template:  # create template from
+        await check_permission(request, "project.template.create")
+
     task_manager = get_task_manager(request.app)
-    task_id = start_task(task_manager, _create_projects, request=request)
+    task_id = start_task(
+        task_manager,
+        _create_projects,
+        app=request.app,
+        query_params=query_params,
+        user_id=req_ctx.user_id,
+        predefined_project=predefined_project,
+    )
     return web.json_response(
         data={"data": task_id}, status=web.HTTPAccepted.status_code, dumps=json_dumps
     )
 
 
-# @routes.post(f"/{VTAG}/projects", name="create_projects")
-# @login_required
-# @permission_required("project.create")
-# @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def _create_projects(task_progress: TaskProgress, request: web.Request):
+async def _create_projects(
+    task_progress: TaskProgress,
+    app: web.Application,
+    query_params: _ProjectCreateParams,
+    user_id: UserID,
+    predefined_project: Optional[dict[str, Any]],
+):
     """
 
     :raises web.HTTPBadRequest
@@ -143,9 +159,7 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
     task_progress.publish(message="starting", percent=0)
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = {}
     try:
@@ -154,18 +168,17 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
         clone_data_coro: Optional[Coroutine] = None
         source_project: Optional[ProjectDict] = None
         if query_params.as_template:  # create template from
-            await check_permission(request, "project.template.create")
             source_project = await projects_api.get_project_for_user(
-                request.app,
+                app,
                 project_uuid=query_params.as_template,
-                user_id=req_ctx.user_id,
+                user_id=user_id,
                 include_templates=False,
             )
         elif query_params.from_study:  # copy from study
             source_project = await projects_api.get_project_for_user(
-                request.app,
+                app,
                 project_uuid=query_params.from_study,
-                user_id=req_ctx.user_id,
+                user_id=user_id,
                 include_templates=True,
             )
             if not source_project:
@@ -188,7 +201,7 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
             query_params.hidden = query_params.copy_data
             clone_data_coro = (
                 copy_data_folders_from_project(
-                    request.app, source_project, new_project, nodes_map, req_ctx.user_id
+                    app, source_project, new_project, nodes_map, user_id
                 )
                 if query_params.copy_data
                 else None
@@ -196,24 +209,23 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
-        if request.can_read_body:
-            predefined = await request.json()
+        if predefined_project:
             if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
-                    non_null_value = predefined.get(key)
+                    non_null_value = predefined_project.get(key)
                     if non_null_value:
                         new_project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
-                new_project = predefined
+                new_project = predefined_project
 
         # re-validate data
-        await projects_api.validate_project(request.app, new_project)
+        await projects_api.validate_project(app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
             new_project,
-            req_ctx.user_id,
+            user_id,
             force_as_template=query_params.as_template is not None,
             hidden=query_params.hidden,
         )
@@ -224,11 +236,11 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
             if query_params.as_template:
                 # we need to lock the original study while copying the data
                 async with projects_api.lock_with_notification(
-                    request.app,
+                    app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,
-                    req_ctx.user_id,
-                    await get_user_name(request.app, req_ctx.user_id),
+                    user_id,
+                    await get_user_name(app, user_id),
                 ):
 
                     await clone_data_coro
@@ -241,20 +253,20 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
                 )
 
         await director_v2_api.update_dynamic_service_networks_in_project(
-            request.app, UUID(new_project["uuid"])
+            app, UUID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            request.app, req_ctx.user_id, new_project["uuid"]
+            app, user_id, new_project["uuid"]
         )
 
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=req_ctx.user_id,
+            user_id=user_id,
             project=new_project,
             is_template=query_params.as_template is not None,
-            app=request.app,
+            app=app,
         )
 
     except JsonSchemaValidationError as exc:
@@ -266,17 +278,16 @@ async def _create_projects(task_progress: TaskProgress, request: web.Request):
     except asyncio.CancelledError:
         log.warning(
             "cancelled creation of project for user '%s', cleaning up",
-            f"{req_ctx.user_id=}",
+            f"{user_id=}",
         )
-        await projects_api.submit_delete_project_task(
-            request.app, new_project["uuid"], req_ctx.user_id
-        )
+        await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
         raise
     else:
         log.debug("project created successfuly")
-        raise web.HTTPCreated(
-            text=json.dumps(new_project), content_type=MIMETYPE_APPLICATION_JSON
-        )
+        return new_project
+        # return web.HTTPCreated(
+        #     text=json.dumps(new_project), content_type=MIMETYPE_APPLICATION_JSON
+        # )
     finally:
         task_progress.publish(message="finished", percent=1)
 

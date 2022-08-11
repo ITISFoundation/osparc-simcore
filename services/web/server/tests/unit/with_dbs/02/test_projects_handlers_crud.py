@@ -197,8 +197,8 @@ async def _new_project(
                 expected_data[key] = from_study[key]
 
     resp = await client.post(url, json=project_data)
-
     new_project_task_id, error = await assert_status(resp, expected_response)
+    print(f"--> created project response: {resp=}")
     if error:
         assert not new_project_task_id
         return {}
@@ -211,23 +211,28 @@ async def _new_project(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
+            print(f"--> waiting for creation {attempt.retry_state.attempt_number}...")
             result = await client.get(f"{new_project_task_id}")
             data, error = await assert_status(result, web.HTTPOk)
             assert data
             assert not error
             task_status = TaskStatus.parse_obj(data)
             assert task_status
-            print(f"<-- received task status: {task_status.json(indent=2)}")
+            print(f"<-- status: {task_status.json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
-                f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
             )
+    print(f"--> getting project creation result...")
     result = await client.get(f"{new_project_task_id}/result")
     data, error = await assert_status(result, web.HTTPOk)
     assert data
     assert not error
     task_result = TaskResult.parse_obj(data)
-
+    print(f"<-- result: {task_result.json(indent=2)}")
+    assert not task_result.error
+    assert task_result.result
+    new_project = task_result.result
     if not error:
         # has project state
         assert not ProjectState(
