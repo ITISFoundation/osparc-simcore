@@ -1,6 +1,7 @@
 from contextlib import suppress
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -13,7 +14,7 @@ from ...utils.db import DB_TO_RUNNING_STATE
 
 
 class CompRunsAtDB(BaseModel):
-    run_id: PositiveInt
+    run_id: UUID
     project_uuid: ProjectID
     user_id: UserID
     cluster_id: Optional[ClusterID]
