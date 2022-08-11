@@ -45,9 +45,6 @@ from ..docker_api import (
     get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
-    remove_dynamic_sidecar_network,
-    remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
@@ -58,15 +55,15 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import EntrypointContainerNotFoundError
-from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
-from .abc import DynamicSchedulerEvent
-from .events_utils import (
+from ._utils import (
     all_containers_running,
+    cleanup_sidecar_stack_and_resources,
     disabled_directory_watcher,
     fetch_repo_outside_of_request,
     get_director_v0_client,
     parse_containers_inspect,
 )
+from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
 
@@ -650,33 +647,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         else:
             await _remove_containers_save_state_and_outputs()
 
-        # remove the 2 services
-        await remove_dynamic_sidecar_stack(
-            node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-        )
-        # remove network
-        await remove_dynamic_sidecar_network(
-            scheduler_data.dynamic_sidecar_network_name
-        )
-
-        # Remove volumes from nodes
-        unique_volume_names = [
-            DynamicSidecarVolumesPathsResolver.source(
-                path=volume_path,
-                node_uuid=scheduler_data.node_uuid,
-                run_id=scheduler_data.dynamic_sidecar.run_id,
-            )
-            for volume_path in [
-                scheduler_data.paths_mapping.inputs_path,
-                scheduler_data.paths_mapping.outputs_path,
-            ]
-            + scheduler_data.paths_mapping.state_paths
-        ]
-        assert scheduler_data.docker_node_id  # nosec
-        await remove_volumes_from_node(
-            volume_names=unique_volume_names,
-            docker_node_id=scheduler_data.docker_node_id,
+        await cleanup_sidecar_stack_and_resources(
+            dynamic_sidecar_settings, scheduler_data
         )
 
         logger.debug(

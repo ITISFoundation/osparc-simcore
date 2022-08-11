@@ -6,11 +6,21 @@ from fastapi import FastAPI
 from pydantic import AnyHttpUrl
 
 from ....api.dependencies.database import get_base_repository
+from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DockerContainerInspect
-from ....models.schemas.dynamic_services.scheduler import DockerStatus
-from ....modules.db.repositories import BaseRepository
-from ....modules.director_v0 import DirectorV0Client
+from ....models.schemas.dynamic_services.scheduler import DockerStatus, SchedulerData
+from ...db.repositories import BaseRepository
+from ...director_v0 import DirectorV0Client
 from ..api_client import DynamicSidecarClient
+from ..docker_api import (
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
+    remove_volumes_from_node,
+)
+from ..volumes_resolver import (
+    DY_SIDECAR_SHARED_STORE_PATH,
+    DynamicSidecarVolumesPathsResolver,
+)
 
 
 @asynccontextmanager
@@ -61,4 +71,36 @@ def parse_containers_inspect(
 def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
     return len(containers_inspect) > 0 and all(
         (x.status == DockerStatus.RUNNING for x in containers_inspect)
+    )
+
+
+async def cleanup_sidecar_stack_and_resources(
+    dynamic_sidecar_settings: DynamicSidecarSettings, scheduler_data: SchedulerData
+) -> None:
+    # remove the 2 services
+    await remove_dynamic_sidecar_stack(
+        node_uuid=scheduler_data.node_uuid,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+    )
+    # remove network
+    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
+
+    # Remove all dy-sidecar associated volumes from node
+    unique_volume_names = [
+        DynamicSidecarVolumesPathsResolver.source(
+            path=volume_path,
+            node_uuid=scheduler_data.node_uuid,
+            run_id=scheduler_data.dynamic_sidecar.run_id,
+        )
+        for volume_path in [
+            DynamicSidecarVolumesPathsResolver.target(DY_SIDECAR_SHARED_STORE_PATH),
+            scheduler_data.paths_mapping.inputs_path,
+            scheduler_data.paths_mapping.outputs_path,
+        ]
+        + scheduler_data.paths_mapping.state_paths
+    ]
+    assert scheduler_data.docker_node_id  # nosec
+    await remove_volumes_from_node(
+        volume_names=unique_volume_names,
+        docker_node_id=scheduler_data.docker_node_id,
     )

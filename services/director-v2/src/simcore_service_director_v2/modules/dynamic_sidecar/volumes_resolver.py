@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 from models_library.projects import ProjectID
@@ -11,13 +11,15 @@ from ...core.settings import RCloneSettings
 from ...models.schemas.constants import DY_SIDECAR_NAMED_VOLUME_PREFIX
 from .errors import DynamicSidecarError
 
+DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
+
 
 def _get_s3_volume_driver_config(
     r_clone_settings: RCloneSettings,
     project_id: ProjectID,
     node_uuid: NodeID,
     storage_directory_name: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     assert "/" not in storage_directory_name  # no sec
     driver_config = {
         "Name": "rclone",
@@ -111,7 +113,7 @@ class DynamicSidecarVolumesPathsResolver:
     @classmethod
     def mount_entry(
         cls, swarm_stack_name: str, path: Path, node_uuid: NodeID, run_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
@@ -131,6 +133,26 @@ class DynamicSidecarVolumesPathsResolver:
         }
 
     @classmethod
+    def mount_shared_store(
+        cls, swarm_stack_name: str, node_uuid: NodeID, run_id: UUID
+    ) -> dict[str, Any]:
+        return {
+            "Source": cls.source(DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id),
+            "Target": cls.target(DY_SIDECAR_SHARED_STORE_PATH),
+            "Type": "volume",
+            "VolumeOptions": {
+                "Labels": {
+                    "source": cls.source(
+                        DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id
+                    ),
+                    "run_id": f"{run_id}",
+                    "uuid": f"{node_uuid}",
+                    "swarm_stack_name": swarm_stack_name,
+                }
+            },
+        }
+
+    @classmethod
     def mount_r_clone(
         cls,
         swarm_stack_name: str,
@@ -139,7 +161,7 @@ class DynamicSidecarVolumesPathsResolver:
         node_uuid: NodeID,
         run_id: UUID,
         r_clone_settings: RCloneSettings,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "Source": cls.source(path, node_uuid, run_id),
             "Target": cls.target(path),

@@ -47,9 +47,6 @@ from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
-    remove_dynamic_sidecar_network,
-    remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -58,7 +55,7 @@ from ..errors import (
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
-from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
+from ._utils import cleanup_sidecar_stack_and_resources
 from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
@@ -382,31 +379,8 @@ class DynamicSidecarsScheduler:
                     return
 
                 # use-cases: 1, 2
-                # Cleanup all resources related to the dynamic-sidecar.
-                await remove_dynamic_sidecar_stack(
-                    scheduler_data.node_uuid, dynamic_sidecar_settings
-                )
-                await remove_dynamic_sidecar_network(
-                    scheduler_data.dynamic_sidecar_network_name
-                )
-
-                # Remove volumes from nodes
-                unique_volume_names = [
-                    DynamicSidecarVolumesPathsResolver.source(
-                        path=volume_path,
-                        node_uuid=scheduler_data.node_uuid,
-                        run_id=scheduler_data.dynamic_sidecar.run_id,
-                    )
-                    for volume_path in [
-                        scheduler_data.paths_mapping.inputs_path,
-                        scheduler_data.paths_mapping.outputs_path,
-                    ]
-                    + scheduler_data.paths_mapping.state_paths
-                ]
-                assert scheduler_data.docker_node_id  # nosec
-                await remove_volumes_from_node(
-                    volume_names=unique_volume_names,
-                    docker_node_id=scheduler_data.docker_node_id,
+                await cleanup_sidecar_stack_and_resources(
+                    dynamic_sidecar_settings, scheduler_data
                 )
 
                 await self.finish_service_removal(scheduler_data.node_uuid)
