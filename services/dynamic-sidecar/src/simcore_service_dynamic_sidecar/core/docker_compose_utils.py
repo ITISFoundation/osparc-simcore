@@ -11,11 +11,19 @@ from pprint import pformat
 from typing import Optional
 
 from servicelib.async_utils import run_sequentially_in_context
+from settings_library.basic_types import LogLevel
 
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)
+
+
+def _docker_compose_options_from_settings(settings: ApplicationSettings) -> str:
+    options = []
+    if settings.LOG_LEVEL == LogLevel.DEBUG:
+        options.append("--verbose")
+    return " ".join(options)
 
 
 def _pad_docker_command_timeout(
@@ -85,7 +93,7 @@ async def docker_compose_pull(
     # can easily get progress out of it and report it back to the UI
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
+        command=f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
         process_termination_timeout=None,
     )
     return result  # type: ignore
@@ -105,7 +113,7 @@ async def docker_compose_up(
     # building is a security risk hence is disabled via "--no-build" parameter
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
+        command=f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
         " --no-build --detach",
         process_termination_timeout=None,
     )
@@ -122,7 +130,7 @@ async def docker_compose_start(
     """
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
+        command=f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
         process_termination_timeout=None,
     )
     return result  # type: ignore
@@ -141,7 +149,7 @@ async def docker_compose_restart(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
+            f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
             f" --timeout {default_compose_restart_timeout}"
         ),
         process_termination_timeout=_pad_docker_command_timeout(
@@ -168,7 +176,7 @@ async def docker_compose_down(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
+            f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
             f" --volumes --remove-orphans --timeout {default_compose_down_timeout}"
         ),
         process_termination_timeout=_pad_docker_command_timeout(
@@ -192,7 +200,7 @@ async def docker_compose_rm(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
+            f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
             " --force -v"
         ),
         process_termination_timeout=None,
