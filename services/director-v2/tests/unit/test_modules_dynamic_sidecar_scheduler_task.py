@@ -20,7 +20,7 @@ from respx.router import MockRouter
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import task
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
@@ -174,7 +174,7 @@ def mocked_dynamic_scheduler_events(
 
 @pytest.fixture
 def mock_remove_calls(mocker: MockerFixture) -> None:
-    mocker.patch.object(task, "remove_volumes_from_node")
+    mocker.patch.object(_utils, "remove_volumes_from_node")
 
 
 # TESTS
