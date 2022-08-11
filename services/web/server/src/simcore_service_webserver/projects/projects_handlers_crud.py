@@ -137,11 +137,19 @@ async def create_projects(request: web.Request):
         user_id=req_ctx.user_id,
         predefined_project=predefined_project,
     )
+    status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
+    result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
     return web.json_response(
-        data={"data": task_id},
+        data={
+            "data": {
+                "task_id": task_id,
+                "status_href": f"{status_url}",
+                "result_href": f"{result_url}",
+            }
+        },
         status=web.HTTPAccepted.status_code,
         dumps=json_dumps,
-        headers={"Location": f"/tasks/{task_id}"},
+        headers={"Location": f"{status_url}"},
     )
 
 
@@ -161,7 +169,6 @@ async def _create_projects(
     """
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
-    task_progress.publish(message="starting", percent=0)
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = {}
@@ -279,8 +286,6 @@ async def _create_projects(
     else:
         log.debug("project created successfuly")
         return new_project
-    finally:
-        task_progress.publish(message="finished", percent=1)
 
 
 #
