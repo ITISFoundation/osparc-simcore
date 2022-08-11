@@ -151,12 +151,15 @@ async def _new_project(
     *,
     project: Optional[dict] = None,
     from_study: Optional[dict] = None,
+    as_template: Optional[bool] = None,
 ) -> dict:
     # POST /v0/projects
-    url = client.app.router["create_projects"].url_for()
+    url: URL = client.app.router["create_projects"].url_for()
     assert str(url) == f"{API_PREFIX}/projects"
     if from_study:
-        url = url.with_query(from_study=from_study["uuid"])
+        url = url.update_query(from_study=from_study["uuid"])
+    if as_template:
+        url = url.update_query(as_template=f"{as_template}")
 
     # Pre-defined fields imposed by required properties in schema
     project_data = {}
@@ -165,7 +168,8 @@ async def _new_project(
         # access rights are replaced
         expected_data = deepcopy(from_study)
         expected_data["accessRights"] = {}
-        expected_data["name"] = f"{from_study['name']} (Copy)"
+        if not as_template:
+            expected_data["name"] = f"{from_study['name']} (Copy)"
 
     if not from_study or project:
         project_data = {
@@ -240,7 +244,7 @@ async def _new_project(
     if not error:
         # has project state
         assert not ProjectState(
-            **new_project.pop("state")
+            **new_project.get("state")
         ).locked.value, "Newly created projects should be unlocked"
 
         # updated fields
@@ -269,6 +273,7 @@ async def _new_project(
             "accessRights",
             "workbench" if from_study else None,
             "ui" if from_study else None,
+            "state",
         ]
 
         for key in new_project.keys():
@@ -387,7 +392,7 @@ async def test_new_project(
     project_db_cleaner,
 ):
     new_project = await _new_project(
-        client, expected.created, logged_user, primary_group
+        client, expected.accepted, logged_user, primary_group
     )
 
 
@@ -403,7 +408,7 @@ async def test_new_project_from_template(
 ):
     new_project = await _new_project(
         client,
-        expected.created,
+        expected.accepted,
         logged_user,
         primary_group,
         from_study=template_project,
@@ -480,7 +485,7 @@ async def test_new_project_from_template_with_body(
     }
     project = await _new_project(
         client,
-        expected.created,
+        expected.accepted,
         logged_user,
         primary_group,
         project=predefined,
@@ -516,18 +521,17 @@ async def test_new_template_from_project(
     project_db_cleaner: None,
 ):
     assert client.app
-    # POST /v0/projects?from_study={project_id}&as_template=true
-    url = (
-        client.app.router["create_projects"]
-        .url_for()
-        .with_query(from_study=user_project["uuid"], as_template="true")
+    new_template_prj = await _new_project(
+        client,
+        expected.accepted,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+        as_template=True,
     )
 
-    resp = await client.post(f"{url}")
-    data, error = await assert_status(resp, expected.created)
-
-    if not error:
-        template_project = data
+    if new_template_prj:
+        template_project = new_template_prj
         catalog_subsystem_mock([template_project])
 
         templates, *_ = await _list_projects(client, web.HTTPOk, {"type": "template"})
@@ -574,12 +578,18 @@ async def test_new_template_from_project(
         "tags": [],
         "classifiers": [],
     }
+    new_template_prj = await _new_project(
+        client,
+        expected.accepted,
+        logged_user,
+        primary_group,
+        project=predefined,
+        from_study=user_project,
+        as_template=True,
+    )
 
-    resp = await client.post(f"{url}", json=predefined)
-    data, error = await assert_status(resp, expected.created)
-
-    if not error:
-        template_project = data
+    if new_template_prj:
+        template_project = new_template_prj
 
         # uses predefined
         assert template_project["name"] == predefined["name"]

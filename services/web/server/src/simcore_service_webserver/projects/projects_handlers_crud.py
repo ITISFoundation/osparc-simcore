@@ -199,9 +199,13 @@ async def _create_projects(
             if query_params.from_study:
                 # remove template/study access rights
                 new_project["accessRights"] = {}
-                new_project["name"] = default_copy_project_name(source_project["name"])
+                if not query_params.as_template:
+                    new_project["name"] = default_copy_project_name(
+                        source_project["name"]
+                    )
             # the project is to be hidden until the data is copied
             query_params.hidden = query_params.copy_data
+            # TODO: this should be made long running as well
             clone_data_coro = (
                 copy_data_folders_from_project(
                     app, source_project, new_project, nodes_map, user_id
@@ -236,16 +240,23 @@ async def _create_projects(
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
-            # we need to lock the original study while copying the data
-            async with projects_api.lock_with_notification(
-                app,
-                source_project["uuid"],
-                ProjectStatus.CLONING,
-                user_id,
-                await get_user_name(app, user_id),
+            if (
+                await db.get_project_type(source_project["uuid"])
+                == ProjectTypeDB.TEMPLATE
             ):
-
+                # no locks for templates
                 await clone_data_coro
+            else:
+                # we need to lock the original study while copying the data
+                async with projects_api.lock_with_notification(
+                    app,
+                    source_project["uuid"],
+                    ProjectStatus.CLONING,
+                    user_id,
+                    await get_user_name(app, user_id),
+                ):
+
+                    await clone_data_coro
 
             # unhide the project if needed since it is now complete
             if not new_project_was_hidden_before_data_was_copied:
@@ -273,7 +284,7 @@ async def _create_projects(
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason="Project not found") from exc
+        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
