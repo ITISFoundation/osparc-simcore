@@ -11,12 +11,12 @@ from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_config,
+    docker_compose_create,
     docker_compose_down,
     docker_compose_pull,
     docker_compose_restart,
     docker_compose_rm,
     docker_compose_start,
-    docker_compose_up,
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import CommandResult
@@ -75,8 +75,8 @@ async def test_docker_compose_workflow(
     _print_result(r)
     assert r.success, r.message
 
-    # creates and starts in detached mode
-    r = await docker_compose_up(compose_spec_yaml, settings)
+    # creates containers
+    r = await docker_compose_create(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 

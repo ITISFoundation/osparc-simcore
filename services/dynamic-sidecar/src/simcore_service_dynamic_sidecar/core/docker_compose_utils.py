@@ -99,7 +99,7 @@ async def docker_compose_pull(
     return result  # type: ignore
 
 
-async def docker_compose_up(
+async def docker_compose_create(
     compose_spec_yaml: str, settings: ApplicationSettings
 ) -> CommandResult:
     """
