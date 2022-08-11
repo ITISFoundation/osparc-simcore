@@ -80,10 +80,6 @@ class TaskResult(BaseModel):
     error: Optional[Any]
 
 
-class CancelResult(BaseModel):
-    task_removed: bool
-
-
 class ClientConfiguration(BaseModel):
     router_prefix: str
     default_timeout: PositiveFloat

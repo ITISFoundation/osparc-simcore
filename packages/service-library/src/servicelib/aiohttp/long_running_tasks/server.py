@@ -1,9 +1,9 @@
 """
 Extension helping to deal with the long running tasks.
 Sets up all the infrastructure required to define long running tasks
-in a FastAPI application.
+in a AIOHTTP application.
 The server only has to return a `TaskId` in the handler creating the long
-running task. The client will take care of recovering the result from it.
+running task.
 """
 
 from ...long_running_tasks._task import (
@@ -18,7 +18,6 @@ from ...long_running_tasks._task import (
 )
 from ._dependencies import get_task_manager
 from ._server import setup
-
 
 __all__: tuple[str, ...] = (
     "get_task_manager",

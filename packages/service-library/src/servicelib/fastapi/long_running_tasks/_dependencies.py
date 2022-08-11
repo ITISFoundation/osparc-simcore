@@ -1,6 +1,6 @@
 from fastapi import Request
 
-from ._task import TaskManager
+from ...long_running_tasks._task import TaskManager
 
 
 def get_task_manager(request: Request) -> TaskManager:

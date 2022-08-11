@@ -9,7 +9,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient, Response
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.fastapi.long_running_tasks.client import CancelResult, TaskResult
+from servicelib.fastapi.long_running_tasks.client import TaskResult
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskManager,
@@ -27,7 +27,7 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 def _assert_not_found(response: Response, task_id: TaskId) -> None:
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {
-        "code": "fastapi.long_running.task_not_found",
+        "code": "long_running_task.task_not_found",
         "message": f"No task with {task_id} found",
     }
 
@@ -39,7 +39,11 @@ def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) ->
     assert task_manager
 
     assert (
-        len(task_manager.tasks["test_long_running_tasks_routes.short_task"])
+        len(
+            task_manager.tasks[
+                "tests.fastapi.long_running_tasks.test_long_running_tasks_routes.short_task"
+            ]
+        )
         == task_count
     )
 
@@ -161,16 +165,19 @@ async def test_delete_workflow(async_client: AsyncClient, router_prefix: str) ->
     result_resp = await async_client.get(f"{router_prefix}/task/{task_id}/result")
     assert result_resp.status_code == status.HTTP_400_BAD_REQUEST
     assert result_resp.json() == {
-        "code": "fastapi.long_running.task_not_completed",
+        "code": "long_running_task.task_not_completed",
         "message": f"Task {task_id} has not finished yet",
     }
     assert_expected_tasks(async_client, 1)
 
     # cancel and remove the task
     delete_resp = await async_client.delete(f"{router_prefix}/task/{task_id}")
-    assert delete_resp.status_code == status.HTTP_200_OK
-    assert CancelResult.parse_obj(delete_resp.json()).task_removed is True
+    assert delete_resp.status_code == status.HTTP_204_NO_CONTENT
     assert_expected_tasks(async_client, 0)
+
+    # cancelling again shall return a not found error
+    delete_resp = await async_client.delete(f"{router_prefix}/task/{task_id}")
+    _assert_not_found(delete_resp, task_id)
 
     # ensure task does not exist any longer
     status_resp = await async_client.get(f"{router_prefix}/task/{task_id}")
