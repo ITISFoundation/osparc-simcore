@@ -55,7 +55,6 @@ def app() -> web.Application:
             sleep_time: float,
             fail: bool,
         ) -> list[str]:
-            task_progress.publish(message="starting", percent=0)
             generated_strings = []
             for index in range(num_strings):
                 generated_strings.append(f"{index}")
@@ -66,7 +65,6 @@ def app() -> web.Application:
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
 
-            task_progress.publish(message="finished", percent=1)
             return generated_strings
 
         task_id = long_running_tasks.server.start_task(

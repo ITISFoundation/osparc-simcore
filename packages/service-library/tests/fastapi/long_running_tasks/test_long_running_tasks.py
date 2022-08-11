@@ -51,7 +51,6 @@ def create_mock_app() -> FastAPI:
         async def _string_list_task(
             task_progress: long_running_tasks.server.TaskProgress, items: int
         ) -> list[str]:
-            task_progress.publish(message="starting", percent=0)
             generated_strings = []
             for x in range(items):
                 string = f"{x}"
@@ -59,7 +58,6 @@ def create_mock_app() -> FastAPI:
                 percent = x / items
                 await asyncio.sleep(ITEM_PUBLISH_SLEEP)
                 task_progress.publish(message="generated item", percent=percent)
-            task_progress.publish(message="finished", percent=1)
             return generated_strings
 
         # NOTE: TaskProgress is injected by start_task
