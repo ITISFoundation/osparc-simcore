@@ -58,7 +58,7 @@ class TrackedTask(BaseModel):
 
     started: datetime = Field(default_factory=datetime.utcnow)
     last_status_check: Optional[datetime] = Field(
-        None,
+        default=None,
         description=(
             "used to detect when if the task is not actively "
             "polled by the client who created it"
