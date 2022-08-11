@@ -80,7 +80,7 @@ def client(
     # setup app
 
     assert setup_settings(app)
-    setup_long_running_tasks(app)
+    setup_long_running_tasks(app, router_prefix="/tasks")
     setup_db(app)
     setup_session(app)
     setup_security(app)
