@@ -138,7 +138,10 @@ async def create_projects(request: web.Request):
         predefined_project=predefined_project,
     )
     return web.json_response(
-        data={"data": task_id}, status=web.HTTPAccepted.status_code, dumps=json_dumps
+        data={"data": task_id},
+        status=web.HTTPAccepted.status_code,
+        dumps=json_dumps,
+        headers={"Location": f"/tasks/{task_id}"},
     )
 
 
@@ -276,9 +279,6 @@ async def _create_projects(
     else:
         log.debug("project created successfuly")
         return new_project
-        # return web.HTTPCreated(
-        #     text=json.dumps(new_project), content_type=MIMETYPE_APPLICATION_JSON
-        # )
     finally:
         task_progress.publish(message="finished", percent=1)
 

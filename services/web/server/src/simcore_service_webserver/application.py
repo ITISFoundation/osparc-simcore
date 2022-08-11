@@ -62,7 +62,7 @@ def create_application() -> web.Application:
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     #
     setup_remote_debugging(app)
-    setup_long_running_tasks(app)
+    setup_long_running_tasks(app, router_prefix="/tasks")
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
