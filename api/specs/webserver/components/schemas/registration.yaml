@@ -17,9 +17,6 @@ RegistrationType:
       type: string
       #FIXME:  'error': {'logs': [], 'errors': [{'code': 'OpenAPISchemaError', 'message': 'Unsupported email format unmarshalling', 'resource': None, 'field': None}], 'status': 400}}
       #format: email
-    phone:
-      type: string
-      description: "Phone number E.164, needed on the deployments with 2FA"
     password:
       type: string
       # TODO:   File "/home/crespo/devp/osparc-simcore/.venv/lib/python3.6/site-packages/openapi_core/schema/schemas/models.py", line 182, in _unmarshal_string

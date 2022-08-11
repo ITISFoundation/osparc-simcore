@@ -70,9 +70,6 @@ async def register(request: web.Request):
         invitation = body.invitation if hasattr(body, "invitation") else None
         await check_invitation(invitation, db, cfg)
 
-    if settings.LOGIN_2FA_REQUIRED:
-        phone = body.phone if hasattr(body, "phone") else None
-
     await check_registration(email, password, confirm, db, cfg)
 
     user: dict = await db.create_user(
@@ -185,6 +182,31 @@ async def verify_2fa_phone(request: web.Request):
             ) from e
 
 
+async def validate_2fa_register(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    phone_number = body.phone
+    code = body.code
+
+    if settings.LOGIN_2FA_REQUIRED:
+        v_code = await get_validation_code(request.app, email)
+        if code == v_code:
+            await delete_validation_code(request.app, email)
+            user = await db.get_user({"email": email})
+            await db.update_user(user, {"phone_number": phone_number})
+            response = flash_response(cfg.MSG_VERIFY_PHONE_NUMBER, "INFO")
+            return response
+
+    raise web.HTTPUnauthorized(
+        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
+    )
+
+
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -255,25 +277,6 @@ async def login(request: web.Request):
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
-
-
-async def validate_2fa_register(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
-    cfg: LoginOptions = get_plugin_options(request.app)
-
-    email = body.email
-    code = body.code
-
-    v_code = await get_validation_code(request.app, email)
-    if code == v_code:
-        await delete_validation_code(request.app, email)
-        response = flash_response(cfg.MSG_VERIFY_PHONE_NUMBER, "INFO")
-        return response
-
-    raise web.HTTPUnauthorized(
-        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
-    )
 
 
 async def validate_2fa_login(request: web.Request):
