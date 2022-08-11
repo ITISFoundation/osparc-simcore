@@ -20,8 +20,6 @@ anyio==3.5.0
     #   watchgod
 asgiref==3.5.0
     # via uvicorn
-async-asgi-testclient==1.4.11
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 attrs==20.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -110,8 +108,6 @@ jsonschema==3.2.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-multidict==6.0.2
-    # via async-asgi-testclient
 opentracing==2.4.0
     # via
     #   fastapi-contrib
@@ -171,9 +167,7 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
 requests==2.27.1
-    # via
-    #   async-asgi-testclient
-    #   pennsieve
+    # via pennsieve
 rfc3986==1.5.0
     # via httpx
 rsa==4.9
