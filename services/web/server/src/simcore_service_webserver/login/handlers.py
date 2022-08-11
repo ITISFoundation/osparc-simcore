@@ -70,12 +70,16 @@ async def register(request: web.Request):
         invitation = body.invitation if hasattr(body, "invitation") else None
         await check_invitation(invitation, db, cfg)
 
+    if settings.LOGIN_2FA_REQUIRED:
+        phone = body.phone if hasattr(body, "phone") else None
+
     await check_registration(email, password, confirm, db, cfg)
 
     user: dict = await db.create_user(
         {
             "name": username,
             "email": email,
+            "phone_number": phone,
             "password_hash": encrypt_password(password),
             "status": (
                 CONFIRMATION_PENDING
@@ -208,9 +212,11 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
+        assert user["phone_number"], "db corrupted. Phone number needed"  # nosec
         try:
             code = await add_validation_code(request.app, user["email"])
             print("code", code)
+            await send_sms_code(user["phone_number"], code)
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
                 data={"data": attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT, "INFO")), "error": None}
