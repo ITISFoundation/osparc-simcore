@@ -244,6 +244,19 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "Type": "bind",
                     },
                     {
+                        "Source": f"dyv_{run_id}_shared-store_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Target": "/dy-volumes/shared-store",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "run_id": f"{run_id}",
+                                "source": f"dyv_{run_id}_shared-store_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "swarm_stack_name": "test_swarm_name",
+                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                            }
+                        },
+                    },
+                    {
                         "Target": "/dy-volumes/tmp/inputs",
                         "Source": f"dyv_{run_id}_tmp_inputs_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                         "Type": "volume",
