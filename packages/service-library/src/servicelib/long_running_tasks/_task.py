@@ -303,7 +303,7 @@ def start_task(
     async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
         task_progress.publish(message="starting", percent=0)
         try:
-            await handler(task_progress, **kwargs)
+            return await handler(task_progress, **kwargs)
         finally:
             # TODO: change that signature. it actually does not publish anything
             # and it can raise if percent is <0 or >1!! -> simplify
