@@ -11,6 +11,7 @@ from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from simcore_service_dynamic_sidecar.core.application import AppState
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     MountedVolumes,
     _name_from_full_path,
@@ -29,6 +30,12 @@ def _replace_slashes(path: Path) -> str:
 @pytest.fixture
 def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
+
+
+@pytest.fixture
+def app(app: FastAPI) -> FastAPI:
+    app.state.shared_store = SharedStore()  # emulate on_startup event
+    return app
 
 
 @pytest.fixture

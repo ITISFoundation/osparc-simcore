@@ -123,7 +123,7 @@ async def task_runs_docker_compose_down(
     await docker_compose_rm(shared_store.compose_spec, settings)
 
     # removing compose-file spec
-    shared_store.clear()
+    await shared_store.clear()
     progress.publish(message="done", percent=1)
 
 
