@@ -9,6 +9,7 @@ from uuid import UUID
 import pytest
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     MountedVolumes,
@@ -54,8 +55,8 @@ async def test_expected_paths_and_volumes(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: list[Path],
-    compose_namespace: str,
     run_id: UUID,
+    node_id: NodeID,
 ):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
@@ -87,15 +88,15 @@ async def test_expected_paths_and_volumes(
     # check volume mount point
     assert (
         mounted_volumes.volume_name_outputs
-        == f"{compose_namespace}{_replace_slashes(outputs_dir)}"
+        == f"dyv_{run_id}{_replace_slashes(outputs_dir)}_{node_id}"
     )
     assert (
         mounted_volumes.volume_name_inputs
-        == f"{compose_namespace}{_replace_slashes(inputs_dir)}"
+        == f"dyv_{run_id}{_replace_slashes(inputs_dir)}_{node_id}"
     )
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
-        f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs
+        f"dyv_{run_id}{_replace_slashes(x)}_{node_id}" for x in state_paths_dirs
     }
 
     def _get_container_mount(mount_path: str) -> str:

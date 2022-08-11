@@ -1,13 +1,16 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import AsyncGenerator, Generator, Iterator
+from typing import AsyncGenerator, Final, Generator, Iterator
 from uuid import UUID
 
 from fastapi import FastAPI
+from models_library.projects_nodes import NodeID
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 from ..core.docker_utils import get_volume_by_label
+
+DOCKER_VOLUME_PREFIX: Final[str] = "dyv"
 
 
 def _ensure_path(path: Path) -> Path:
@@ -34,6 +37,8 @@ class MountedVolumes:
 
     def __init__(
         self,
+        run_id: UUID,
+        node_id: NodeID,
         inputs_path: Path,
         outputs_path: Path,
         state_paths: list[Path],
@@ -41,6 +46,8 @@ class MountedVolumes:
         compose_namespace: str,
         dy_volumes: Path,
     ) -> None:
+        self.run_id: UUID = run_id
+        self.node_id: NodeID = node_id
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: list[Path] = state_paths
@@ -53,15 +60,15 @@ class MountedVolumes:
     @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
-        return f"{self.compose_namespace}{_name_from_full_path(self.inputs_path)}"
+        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(self.inputs_path)}_{self.node_id}"
 
     @cached_property
     def volume_name_outputs(self) -> str:
-        return f"{self.compose_namespace}{_name_from_full_path(self.outputs_path)}"
+        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(self.outputs_path)}_{self.node_id}"
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
         for state_path in self.state_paths:
-            yield f"{self.compose_namespace}{_name_from_full_path(state_path)}"
+            yield f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(state_path)}_{self.node_id}"
 
     @cached_property
     def disk_inputs_path(self) -> Path:
@@ -124,6 +131,8 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
     settings: ApplicationSettings = app.state.settings
 
     app.state.mounted_volumes = MountedVolumes(
+        run_id=settings.DY_SIDECAR_RUN_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
