@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.auth.ui.SMSCodeView", {
+qx.Class.define("osparc.auth.ui.LoginSMSCodeView", {
   extend: osparc.auth.core.BaseAuthPage,
 
   properties: {

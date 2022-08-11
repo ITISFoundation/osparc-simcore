@@ -116,15 +116,17 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const login = new osparc.auth.ui.LoginView();
       const register = new osparc.auth.ui.RegistrationView();
+      const registerSMSMCode = new osparc.auth.ui.RegisterSMSCodeView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
-      const smsCode = new osparc.auth.ui.SMSCodeView();
+      const loginSMSCode = new osparc.auth.ui.LoginSMSCodeView();
 
       pages.add(login);
       pages.add(register);
+      pages.add(registerSMSMCode);
       pages.add(resetRequest);
       pages.add(reset);
-      pages.add(smsCode);
+      pages.add(loginSMSCode);
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
@@ -136,6 +138,12 @@ qx.Class.define("osparc.auth.LoginPage", {
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
           pages.setSelection([register]);
+        } else if (urlFragment.nav[0] === "2fa-verify") {
+          const email = osparc.auth.core.Utils.findParameterInFragment("email");
+          registerSMSMCode.set({
+            userEmail: email
+          });
+          pages.setSelection([registerSMSMCode]);
         } else if (urlFragment.nav[0] === "reset-password") {
           pages.setSelection([reset]);
         }
@@ -162,15 +170,15 @@ qx.Class.define("osparc.auth.LoginPage", {
       login.addListener("toSMSCode", e => {
         const msg = e.getData();
         const startIdx = msg.indexOf("+");
-        smsCode.set({
+        loginSMSCode.set({
           userEmail: login.getEmail(),
           userPhoneNumber: msg.substring(startIdx, msg.length)
         });
-        pages.setSelection([smsCode]);
+        pages.setSelection([loginSMSCode]);
         login.resetValues();
       }, this);
 
-      smsCode.addListener("done", msg => {
+      loginSMSCode.addListener("done", msg => {
         login.resetValues();
         this.fireDataEvent("done", msg);
       }, this);

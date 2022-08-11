@@ -62,7 +62,7 @@ qx.Class.define("osparc.auth.core.Utils", {
       const params = window.location.hash.substr(1).split(";");
       params.forEach(function(item) {
         const tmp = item.split("=");
-        if (tmp[0] === parameterName) {
+        if (tmp[0].includes(parameterName)) {
           result = decodeURIComponent(tmp[1]);
         }
       });
