@@ -15,7 +15,7 @@ aiosignal==1.2.0
     #   aiohttp
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.11.5
+astroid==2.11.7
     # via pylint
 async-timeout==4.0.2
     # via
@@ -135,7 +135,7 @@ py==1.11.0
     #   pytest-forked
 pycparser==2.21
     # via cffi
-pylint==2.13.8
+pylint==2.14.5
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -215,7 +215,9 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-typing-extensions==4.2.0
+tomlkit==0.11.3
+    # via pylint
+typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
