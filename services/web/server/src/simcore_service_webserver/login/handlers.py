@@ -506,6 +506,7 @@ async def email_confirmation(request: web.Request):
     """
     params, _, _ = await extract_and_validate(request)
 
+    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
@@ -522,8 +523,8 @@ async def email_confirmation(request: web.Request):
             await db.update_user(user, {"status": ACTIVE})
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
-            if cfg.LOGIN_2FA_REQUIRED:
-                redirect_url = redirect_url.with_fragment(f"/2fa?email={user['email']}")
+            if settings.LOGIN_2FA_REQUIRED:
+                redirect_url = redirect_url.with_fragment(f"2fa-verify?email={user['email']}")
             else:
                 redirect_url = redirect_url.with_fragment("?registered=true")
 
