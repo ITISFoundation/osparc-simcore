@@ -102,7 +102,7 @@ qx.Class.define("osparc.auth.ui.RegisterSMSCodeView", {
 
       validateCodeBtn.addListener("execute", () => {
         validateCodeBtn.setFetching(true);
-        osparc.auth.Manager.getInstance().validateCodeRegister(this.getUserEmail(), validationCode.getValue())
+        osparc.auth.Manager.getInstance().validateCodeRegister(this.getUserEmail(), phoneNumber.getValue(), validationCode.getValue())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
             validateCodeBtn.setFetching(false);
