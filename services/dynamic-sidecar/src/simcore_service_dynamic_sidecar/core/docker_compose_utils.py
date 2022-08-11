@@ -67,7 +67,7 @@ async def docker_compose_config(
     """
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command='docker-compose --file "{file_path}" config',
+        command='docker-compose --verbose --file "{file_path}" config',
         process_termination_timeout=timeout,
     )
     return result  # type: ignore
@@ -85,7 +85,7 @@ async def docker_compose_pull(
     # can easily get progress out of it and report it back to the UI
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
+        command=f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
         process_termination_timeout=None,
     )
     return result  # type: ignore
@@ -105,7 +105,7 @@ async def docker_compose_up(
     # building is a security risk hence is disabled via "--no-build" parameter
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
+        command=f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
         " --no-build --detach",
         process_termination_timeout=None,
     )
@@ -122,7 +122,7 @@ async def docker_compose_start(
     """
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
+        command=f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
         process_termination_timeout=None,
     )
     return result  # type: ignore
@@ -141,7 +141,7 @@ async def docker_compose_restart(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
+            f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
             f" --timeout {default_compose_restart_timeout}"
         ),
         process_termination_timeout=_pad_docker_command_timeout(
@@ -168,7 +168,7 @@ async def docker_compose_down(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
+            f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
             f" --volumes --remove-orphans --timeout {default_compose_down_timeout}"
         ),
         process_termination_timeout=_pad_docker_command_timeout(
@@ -192,7 +192,7 @@ async def docker_compose_rm(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'docker-compose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
+            f'docker-compose --verbose --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
             " --force -v"
         ),
         process_termination_timeout=None,
