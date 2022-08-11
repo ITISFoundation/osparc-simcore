@@ -4,7 +4,7 @@
 
 
 asgi_lifespan
-async-asgi-testclient
+async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) below]
 faker
 pytest
 pytest-asyncio
@@ -13,3 +13,21 @@ pytest-mock
 types-aiofiles # missing mypy stubs
 types-pkg_resources # missing mypy stubs
 types-PyYAML # missing mypy stubs
+
+
+
+# NOTE: What test client to use for fastapi-based apps?
+#
+# fastapi comes with a default test client: fatapi.testclient.TestClient (SEE https://fastapi.tiangolo.com/tutorial/testing/)
+# which is essentially an indirection to starlette.testclient (SEE https://www.starlette.io/testclient/)
+#
+# the limitation of that client is that it is fd synchronous.
+#
+# There are two options in place:
+# a) fastapi recommends to use httpx and create your own AsyncTestClient: https://fastapi.tiangolo.com/advanced/async-tests/
+#   PROS: can use respx to mock responses, used to httpx API
+#   CONS: do it yourself, does not include app member out-of-the-box
+# b) use generic Async ASGI TestClient library:  https://github.com/vinissimus/async-asgi-testclient
+#   PROS: generic closed solution, has 'app' member , requests-like API (i.e. equivalent to starletter TESTClient)
+#   CONS: basically does not have the PROS from a), adds extra deps to 'requests' lib.
+#
