@@ -1,4 +1,5 @@
 import json
+import re
 from asyncio.log import logger
 from uuid import uuid4
 
@@ -11,6 +12,28 @@ from models_library.services_resources import (
 )
 
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
+
+
+class DockerVersion(str):
+    """
+    Extracts `XX.XX.XX` where X is a range [0-9] from
+    a given docker version
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_docker_version
+
+    @classmethod
+    def validate_docker_version(cls, docker_version: str) -> str:
+        try:
+            search_result = re.search(r"^\d\d.\d\d.\d\d", docker_version)
+            return search_result.group()
+        except AttributeError:
+            raise ValueError(  # pylint: disable=raise-missing-from
+                f"{docker_version} appears not to be a valid docker version"
+            )
+
 
 # NOTE: below `retry` function is inspired by
 # https://gist.github.com/sj26/88e1c6584397bb7c13bd11108a579746
@@ -55,7 +78,7 @@ fi
 def spec_volume_removal_service(
     docker_node_id: str,
     volume_names: list[str],
-    docker_version: str,
+    docker_version: DockerVersion,
     *,
     volume_removal_attempts: int,
     sleep_between_attempts_s: int,

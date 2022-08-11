@@ -17,6 +17,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -31,7 +32,10 @@ from ...models.schemas.constants import (
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from ...utils.dict_utils import get_leaf_key_paths, nested_update
-from .docker_service_specs.volume_remover import spec_volume_removal_service
+from .docker_service_specs.volume_remover import (
+    DockerVersion,
+    spec_volume_removal_service,
+)
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -579,7 +583,10 @@ async def remove_volumes_from_node(
         version_request = await client._query_json(  # pylint: disable=protected-access
             "version", versioned_api=False
         )
-        docker_version = version_request["Version"]
+
+        docker_version: DockerVersion = parse_obj_as(
+            DockerVersion, version_request["Version"]
+        )
 
         service_spec = spec_volume_removal_service(
             docker_node_id=docker_node_id,
