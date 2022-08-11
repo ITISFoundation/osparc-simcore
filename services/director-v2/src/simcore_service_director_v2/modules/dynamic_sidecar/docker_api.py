@@ -640,7 +640,8 @@ async def remove_volumes_from_node(
                         # in the system and maybe we should garbage collect them from the nodes somehow
                         return False
         finally:
-            # NOTE: services are crated and never removed
+            # NOTE: created services can never be auto removed
+            # it is let to the user to remove them
             await client.services.delete(service_id)
 
         return True

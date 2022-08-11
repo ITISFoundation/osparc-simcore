@@ -93,7 +93,7 @@ async def cleanup_sidecar_stack_and_resources(
             run_id=scheduler_data.dynamic_sidecar.run_id,
         )
         for volume_path in [
-            DynamicSidecarVolumesPathsResolver.target(DY_SIDECAR_SHARED_STORE_PATH),
+            DY_SIDECAR_SHARED_STORE_PATH,
             scheduler_data.paths_mapping.inputs_path,
             scheduler_data.paths_mapping.outputs_path,
         ]
