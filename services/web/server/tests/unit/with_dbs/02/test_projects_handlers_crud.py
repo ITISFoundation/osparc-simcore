@@ -197,13 +197,17 @@ async def _new_project(
                 expected_data[key] = from_study[key]
 
     resp = await client.post(url, json=project_data)
-    new_project_task_id, error = await assert_status(resp, expected_response)
-    print(f"--> created project response: {resp=}")
+    print(f"<-- created project response: {resp=}")
+    data, error = await assert_status(resp, expected_response)
     if error:
-        assert not new_project_task_id
+        assert not data
         return {}
-    assert new_project_task_id
-
+    assert data
+    assert all(x in data for x in ["task_id", "status_href", "result_href"])
+    assert "Location" in resp.headers
+    status_url = resp.headers.get("location")
+    assert status_url == data["status_href"]
+    result_url = data["result_href"]
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(60),
@@ -212,7 +216,7 @@ async def _new_project(
     ):
         with attempt:
             print(f"--> waiting for creation {attempt.retry_state.attempt_number}...")
-            result = await client.get(f"{new_project_task_id}")
+            result = await client.get(f"{status_url}")
             data, error = await assert_status(result, web.HTTPOk)
             assert data
             assert not error
@@ -224,7 +228,7 @@ async def _new_project(
                 f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
             )
     print(f"--> getting project creation result...")
-    result = await client.get(f"{new_project_task_id}/result")
+    result = await client.get(f"{result_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert data
     assert not error
