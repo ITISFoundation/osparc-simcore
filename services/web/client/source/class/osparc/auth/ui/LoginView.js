@@ -145,6 +145,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       return grp;
     },
 
+    getEmail: function() {
+      const email = this.__form.getItems().email;
+      return email.getValue();
+    },
+
     __login: function() {
       if (!this.__form.validate()) {
         return;

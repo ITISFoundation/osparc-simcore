@@ -22,13 +22,13 @@ qx.Class.define("osparc.auth.ui.SMSCodeView", {
   properties: {
     userPhoneNumber: {
       check: "String",
-      init: "+41-XXXXX1766",
+      init: "+41-XXXXXXXXX",
       nullable: false
     },
 
     userEmail: {
       check: "String",
-      init: "maiz@itis.swiss",
+      init: "foo@mymail.com",
       nullable: false
     }
   },
