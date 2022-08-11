@@ -2,20 +2,17 @@
 Provides a convenient way to return the result given a TaskId.
 """
 
-from ._client import Client, setup
-from ._context_manager import periodic_task_result
-from ._errors import TaskClientResultError
-from ._models import (
-    CancelResult,
+from ...long_running_tasks._errors import TaskClientResultError
+from ...long_running_tasks._models import (
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
-    TaskId,
-    TaskResult,
 )
+from ...long_running_tasks._task import TaskId, TaskResult
+from ._client import Client, setup
+from ._context_manager import periodic_task_result
 
 __all__: tuple[str, ...] = (
-    "CancelResult",
     "Client",
     "periodic_task_result",
     "ProgressCallback",

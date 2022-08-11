@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import warnings
 from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
@@ -12,8 +13,13 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ._errors import GenericClientError, TaskClientResultError
-from ._models import ClientConfiguration, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._errors import GenericClientError, TaskClientResultError
+from ...long_running_tasks._models import (
+    ClientConfiguration,
+    TaskId,
+    TaskResult,
+    TaskStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -171,20 +177,33 @@ class Client:
     @retry_on_http_errors
     async def cancel_and_delete_task(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
-    ) -> bool:
+    ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
-        if result.status_code != status.HTTP_200_OK:
+
+        if result.status_code == status.HTTP_200_OK:
+            warnings.warn(
+                "returning a 200 when cancelling a task has been deprecated with PR#3236"
+                "and will be removed after 11.2022"
+                "please do close your studies at least once before that date, so that the dy-sidecar"
+                "get replaced",
+                category=DeprecationWarning,
+            )
+            return
+
+        if result.status_code not in (
+            status.HTTP_204_NO_CONTENT,
+            status.HTTP_404_NOT_FOUND,
+        ):
             raise GenericClientError(
                 action="cancelling_and_removing_task",
                 task_id=task_id,
                 status=result.status_code,
                 body=result.text,
             )
-        return result.json()
 
 
 def setup(
