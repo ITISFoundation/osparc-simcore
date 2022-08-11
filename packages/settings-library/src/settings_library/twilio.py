@@ -7,7 +7,7 @@ from pydantic import Field
 from .base import BaseCustomSettings
 
 
-class Twilio(BaseCustomSettings):
+class TwilioSettings(BaseCustomSettings):
     # SEE https://www.twilio.com/docs/sms/quickstart/python
     TWILIO_ACCOUNT_SID: str
     TWILIO_AUTH_TOKEN: str
