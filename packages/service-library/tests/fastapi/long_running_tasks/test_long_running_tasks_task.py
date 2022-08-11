@@ -1,5 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 
 import asyncio
 from asyncio import Task
@@ -13,10 +16,10 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
-    TaskManager,
     TaskProgress,
+    TasksManager,
     TaskStatus,
-    get_task_manager,
+    get_tasks_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.fastapi.long_running_tasks.server import start_task
@@ -64,7 +67,8 @@ def user_routes() -> APIRouter:
 
     @router.post("/api/create", status_code=status.HTTP_202_ACCEPTED)
     async def create_task_user_defined_route(
-        raise_when_finished: bool, task_manager: TaskManager = Depends(get_task_manager)
+        raise_when_finished: bool,
+        task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
         task_id = start_task(
             task_manager=task_manager,
@@ -89,14 +93,14 @@ async def bg_task_app(user_routes: APIRouter) -> AsyncIterable[FastAPI]:
 
 
 @pytest.fixture
-def task_manager(bg_task_app: FastAPI) -> TaskManager:
+def task_manager(bg_task_app: FastAPI) -> TasksManager:
     return bg_task_app.state.long_running_task_manager
 
 
 # TESTS
 
 
-async def test_unique_task_already_running(task_manager: TaskManager) -> None:
+async def test_unique_task_already_running(task_manager: TasksManager) -> None:
     async def unique_task(task_progress: TaskProgress) -> None:
         await asyncio.sleep(1)
 
@@ -111,7 +115,7 @@ async def test_unique_task_already_running(task_manager: TaskManager) -> None:
         )
 
 
-async def test_start_multiple_not_unique_tasks(task_manager: TaskManager) -> None:
+async def test_start_multiple_not_unique_tasks(task_manager: TasksManager) -> None:
     async def not_unique_task(task_progress: TaskProgress) -> None:
         await asyncio.sleep(1)
 
@@ -120,17 +124,17 @@ async def test_start_multiple_not_unique_tasks(task_manager: TaskManager) -> Non
 
 
 def test_get_task_id() -> None:
-    assert TaskManager.get_task_id("") != TaskManager.get_task_id("")
+    assert TasksManager._create_task_id("") != TasksManager._create_task_id("")
 
 
-async def test_get_status(task_manager: TaskManager) -> None:
+async def test_get_status(task_manager: TasksManager) -> None:
     task_id = start_task(
         task_manager=task_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
     )
-    task_status = task_manager.get_status(task_id)
+    task_status = task_manager.get_task_status(task_id)
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_progress.message == ""
     assert task_status.task_progress.percent == 0.0
@@ -138,38 +142,38 @@ async def test_get_status(task_manager: TaskManager) -> None:
     assert isinstance(task_status.started, datetime)
 
 
-async def test_get_status_missing(task_manager: TaskManager) -> None:
+async def test_get_status_missing(task_manager: TasksManager) -> None:
     with pytest.raises(TaskNotFoundError) as exec_info:
-        task_manager.get_status("missing_task_id")
+        task_manager.get_task_status("missing_task_id")
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
-async def test_get_result(task_manager: TaskManager) -> None:
+async def test_get_result(task_manager: TasksManager) -> None:
     task_id = start_task(task_manager=task_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
-    result = task_manager.get_result(task_id)
+    result = task_manager.get_task_result(task_id)
     assert result == TaskResult(result=42, error=None)
 
 
-async def test_get_result_missing(task_manager: TaskManager) -> None:
+async def test_get_result_missing(task_manager: TasksManager) -> None:
     with pytest.raises(TaskNotFoundError) as exec_info:
-        task_manager.get_result("missing_task_id")
+        task_manager.get_task_result("missing_task_id")
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
-async def test_get_result_finished_with_error(task_manager: TaskManager) -> None:
+async def test_get_result_finished_with_error(task_manager: TasksManager) -> None:
     task_id = start_task(task_manager=task_manager, handler=failing_background_task)
 
     can_continue = True
     while can_continue:
         try:
-            task_manager.get_result(task_id)
+            task_manager.get_task_result(task_id)
         except TaskNotCompletedError:
             can_continue = False
 
         await asyncio.sleep(0.1)
 
-    task_result = task_manager.get_result(task_id)
+    task_result = task_manager.get_task_result(task_id)
     assert task_result.result is None
     assert task_result.error is not None
     assert task_result.error.startswith(f"Task {task_id} finished with exception:")
@@ -177,7 +181,7 @@ async def test_get_result_finished_with_error(task_manager: TaskManager) -> None
 
 
 async def test_get_result_task_was_cancelled_multiple_times(
-    task_manager: TaskManager,
+    task_manager: TasksManager,
 ) -> None:
     task_id = start_task(
         task_manager=task_manager,
@@ -188,12 +192,12 @@ async def test_get_result_task_was_cancelled_multiple_times(
     for _ in range(5):
         await task_manager.cancel_task(task_id)
 
-    task_result = task_manager.get_result(task_id)
+    task_result = task_manager.get_task_result(task_id)
     assert task_result.result is None
     assert task_result.error == f"Task {task_id} was cancelled before completing"
 
 
-async def test_remove_ok(task_manager: TaskManager) -> None:
+async def test_remove_ok(task_manager: TasksManager) -> None:
     task_id = start_task(
         task_manager=task_manager,
         handler=a_background_task,
@@ -202,7 +206,7 @@ async def test_remove_ok(task_manager: TaskManager) -> None:
     )
     # pylint: disable=protected-access
     assert task_manager._get_tracked_task(task_id)
-    await task_manager.remove(task_id)
+    await task_manager.remove_task(task_id)
     with pytest.raises(TaskNotFoundError):
         assert task_manager._get_tracked_task(task_id)
 
@@ -238,8 +242,8 @@ TASK_NAME = task_to_track.__name__
 
 
 @pytest.fixture
-async def stall_task_manager() -> AsyncIterable[TaskManager]:
-    task_manager = TaskManager(
+async def stall_task_manager() -> AsyncIterable[TasksManager]:
+    task_manager = TasksManager(
         stale_task_check_interval_s=TASK_CHECK_INTERVAL,
         stale_task_detect_timeout_s=TASK_DETECT_TIMEOUT,
     )
@@ -251,13 +255,13 @@ async def stall_task_manager() -> AsyncIterable[TaskManager]:
 
 @asynccontextmanager
 async def poll_status(
-    task_manager: TaskManager, task_id: TaskId
+    task_manager: TasksManager, task_id: TaskId
 ) -> AsyncIterator[None]:
     continue_progress_check = True
 
     async def progress_checker() -> None:
         while continue_progress_check:
-            task_status = task_manager.get_status(task_id)
+            task_status = task_manager.get_task_status(task_id)
             print(f"POLLING STATUS------> {task_status=}")
             await asyncio.sleep(STATUS_POLL_INTERVAL)
 
@@ -280,19 +284,21 @@ async def poll_status(
     ],
 )
 async def test_stall_task_is_tracked(
-    stall_task_manager: TaskManager,
+    stall_task_manager: TasksManager,
     expected_task_result: ExpectedTaskResult,
     is_done: bool,
 ) -> None:
     task = asyncio.create_task(task_to_track(expected_task_result))
-    tracked_task = stall_task_manager.add(TASK_NAME, task, TaskProgress.create())
+    tracked_task = stall_task_manager.add_task(TASK_NAME, task, TaskProgress.create())
     assert len(stall_task_manager.tasks[TASK_NAME]) == 1
 
     async with poll_status(stall_task_manager, tracked_task.task_id):
         # let some time pass
         await asyncio.sleep(STATUS_POLL_INTERVAL)
 
-        task_status: TaskStatus = stall_task_manager.get_status(tracked_task.task_id)
+        task_status: TaskStatus = stall_task_manager.get_task_status(
+            tracked_task.task_id
+        )
         assert task_status.done is is_done
     assert len(stall_task_manager.tasks[TASK_NAME]) == 1
 
@@ -306,10 +312,10 @@ async def test_stall_task_is_tracked(
     ],
 )
 async def test_stall_task_not_tracked(
-    stall_task_manager: TaskManager, expected_task_result: ExpectedTaskResult
+    stall_task_manager: TasksManager, expected_task_result: ExpectedTaskResult
 ) -> None:
     task = asyncio.create_task(task_to_track(expected_task_result))
-    tracked_task = stall_task_manager.add(TASK_NAME, task, TaskProgress.create())
+    tracked_task = stall_task_manager.add_task(TASK_NAME, task, TaskProgress.create())
     assert len(stall_task_manager.tasks[TASK_NAME]) == 1
     # expected task still running
     await asyncio.sleep(TASK_CHECK_INTERVAL)
@@ -320,6 +326,6 @@ async def test_stall_task_not_tracked(
 
     # task will no longer be found
     with pytest.raises(TaskNotFoundError):
-        stall_task_manager.get_status(tracked_task.task_id)
+        stall_task_manager.get_task_status(tracked_task.task_id)
     # expect this to have been removed
     assert len(stall_task_manager.tasks[TASK_NAME]) == 0

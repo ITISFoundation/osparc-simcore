@@ -44,8 +44,8 @@ def create_mock_app() -> FastAPI:
 
     @mock_server_app.post("/string-list-task", status_code=status.HTTP_202_ACCEPTED)
     async def create_string_list_task(
-        task_manager: long_running_tasks.server.TaskManager = Depends(
-            long_running_tasks.server.get_task_manager
+        task_manager: long_running_tasks.server.TasksManager = Depends(
+            long_running_tasks.server.get_tasks_manager
         ),
     ) -> long_running_tasks.server.TaskId:
         async def _string_list_task(
@@ -71,8 +71,8 @@ def create_mock_app() -> FastAPI:
     @mock_server_app.post("/waiting-task", status_code=status.HTTP_202_ACCEPTED)
     async def create_waiting_task(
         wait_for: float,
-        task_manager: long_running_tasks.server.TaskManager = Depends(
-            long_running_tasks.server.get_task_manager
+        task_manager: long_running_tasks.server.TasksManager = Depends(
+            long_running_tasks.server.get_tasks_manager
         ),
     ) -> long_running_tasks.server.TaskId:
         async def _waiting_task(

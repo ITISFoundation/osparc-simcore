@@ -6,7 +6,8 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 
 from ...json_serialization import json_dumps
 from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
-from ._dependencies import get_task_manager
+from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ._dependencies import get_tasks_manager
 
 log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
@@ -20,26 +21,26 @@ class _PathParam(BaseModel):
 async def get_task_status(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     log.debug("getting task status: %s", f"{path_params.task_id=}")
-    task_manager = get_task_manager(request.app)
-    task_status: TaskStatus = task_manager.get_status(task_id=path_params.task_id)
+    task_manager = get_tasks_manager(request.app)
+    task_status: TaskStatus = task_manager.get_task_status(task_id=path_params.task_id)
     return web.json_response({"data": task_status}, dumps=json_dumps)
 
 
 @routes.get("/{task_id}/result", name="get_task_result")
 async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
-    task_manager = get_task_manager(request.app)
+    task_manager = get_tasks_manager(request.app)
 
-    task_result: TaskResult = task_manager.get_result(task_id=path_params.task_id)
+    task_result: TaskResult = task_manager.get_task_result(task_id=path_params.task_id)
     # NOTE: we do not reraise here, in case the result returned an error,
     # but we still want to remove the task
-    await task_manager.remove(path_params.task_id, reraise_errors=False)
+    await task_manager.remove_task(path_params.task_id, reraise_errors=False)
     return web.json_response({"data": task_result}, dumps=json_dumps)
 
 
 @routes.delete("/{task_id}", name="cancel_and_delete_task")
 async def cancel_and_delete_task(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
-    task_manager = get_task_manager(request.app)
-    await task_manager.remove(path_params.task_id)
-    raise web.HTTPNoContent(content_type="application/json")
+    task_manager = get_tasks_manager(request.app)
+    await task_manager.remove_task(path_params.task_id)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
