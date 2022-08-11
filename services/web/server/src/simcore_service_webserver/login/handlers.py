@@ -522,7 +522,10 @@ async def email_confirmation(request: web.Request):
             await db.update_user(user, {"status": ACTIVE})
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
-            redirect_url = redirect_url.with_fragment("?registered=true")
+            if cfg.LOGIN_2FA_REQUIRED:
+                redirect_url = redirect_url.with_fragment(f"/2fa?email={user['email']}")
+            else:
+                redirect_url = redirect_url.with_fragment("?registered=true")
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({"id": confirmation["user_id"]})
