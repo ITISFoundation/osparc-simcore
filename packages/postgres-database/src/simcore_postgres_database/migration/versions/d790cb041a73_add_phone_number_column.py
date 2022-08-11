@@ -1,4 +1,4 @@
-"""add upload_id
+"""add phone_number
 
 Revision ID: d790cb041a73
 Revises: d349f2769a73
