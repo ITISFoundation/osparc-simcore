@@ -114,7 +114,7 @@ async def docker_compose_up(
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
-        " --no-build --detach",
+        " --no-build --no-start",
         process_termination_timeout=None,
     )
     return result  # type: ignore
