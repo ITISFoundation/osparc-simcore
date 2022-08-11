@@ -42,9 +42,7 @@ asgi-lifespan==1.0.1
 astroid==2.11.5
     # via pylint
 async-asgi-testclient==1.4.11
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
