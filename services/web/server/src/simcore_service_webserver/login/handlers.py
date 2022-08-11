@@ -1,6 +1,4 @@
-import asyncio
 import logging
-import os
 
 import attr
 from aiohttp import web
@@ -8,17 +6,22 @@ from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
-from twilio.rest import Client
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils_rate_limiting import global_rate_limit_route
-from .confirmation import (
+from ._2fa import send_sms_code
+from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
     validate_confirmation_code,
+)
+from ._validation_codes import (
+    add_validation_code,
+    delete_validation_code,
+    get_validation_code,
 )
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
@@ -30,7 +33,6 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
-from .validation_codes import add_validation_code, get_validation_code, delete_validation_code
 
 log = logging.getLogger(__name__)
 
@@ -123,31 +125,6 @@ async def register(request: web.Request):
     return response
 
 
-
-async def send_sms_code(phone_number, code):
-    def sender():
-        log.info(
-            "sending sms code %s to %s",
-            code,
-            phone_number,
-        )
-        account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-        auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-        messaging_service_sid = os.environ.get("TWILIO_MESSAGING_SID")
-        client = Client(account_sid, auth_token)
-        message = client.messages.create(
-            messaging_service_sid=messaging_service_sid,
-            to=phone_number,
-            body="Dear TI Planning Tool user, your verification code is {}".format(code),
-        )
-        log.info(
-            "message id %s",
-            message.sid,
-        )
-
-    await asyncio.get_event_loop().run_in_executor(None, sender)
-
-
 async def verify_2fa_phone(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -160,24 +137,25 @@ async def verify_2fa_phone(request: web.Request):
     if settings.LOGIN_2FA_REQUIRED:
         try:
             code = await add_validation_code(request.app, email)
-            print("code", code)
+            log.debug("%s", f"{code=}")
             await send_sms_code(phone_number, code)
-            list_of_indexes = [3, 4, 5, 6, 7, 8, 9] # keep first 3 and last 2
-            new_character = 'X'
+            list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
+            new_character = "X"
             for i in list_of_indexes:
-                phone_number = phone_number[:i] + new_character + phone_number[i+1:]
-            data = attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"))
+                phone_number = phone_number[:i] + new_character + phone_number[i + 1 :]
+            data = attr.asdict(
+                LogMessageType(
+                    cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"
+                )
+            )
             response = web.json_response(
-                status=web.HTTPAccepted.status_code,
-                data={
-                    "data": data,
-                    "error": None
-                }
+                status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
             )
             return response
         except Exception as e:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
+                content_type="application/json",
             ) from e
 
 
@@ -256,23 +234,24 @@ async def login(request: web.Request):
             code = await add_validation_code(request.app, user["email"])
             print("code", code)
             await send_sms_code(user["phone_number"], code)
-            list_of_indexes = [3, 4, 5, 6, 7, 8, 9] # keep first 3 and last 2
-            new_character = 'X'
+            list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
+            new_character = "X"
             phone_number = user["phone_number"]
             for i in list_of_indexes:
-                phone_number = phone_number[:i] + new_character + phone_number[i+1:]
-            data = attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"))
+                phone_number = phone_number[:i] + new_character + phone_number[i + 1 :]
+            data = attr.asdict(
+                LogMessageType(
+                    cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"
+                )
+            )
             response = web.json_response(
-                status=web.HTTPAccepted.status_code,
-                data={
-                    "data": data,
-                    "error": None
-                }
+                status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
             )
             return response
         except Exception as e:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR, content_type="application/json"
+                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
+                content_type="application/json",
             ) from e
 
     with log_context(
@@ -536,7 +515,9 @@ async def email_confirmation(request: web.Request):
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
             if settings.LOGIN_2FA_REQUIRED:
-                redirect_url = redirect_url.with_fragment(f"2fa-verify?email={user['email']}")
+                redirect_url = redirect_url.with_fragment(
+                    f"2fa-verify?email={user['email']}"
+                )
             else:
                 redirect_url = redirect_url.with_fragment("?registered=true")
 
