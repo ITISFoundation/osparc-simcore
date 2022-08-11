@@ -8,12 +8,12 @@ from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
 
 from ..core.docker_compose_utils import (
+    docker_compose_create,
     docker_compose_down,
     docker_compose_pull,
     docker_compose_restart,
     docker_compose_rm,
     docker_compose_start,
-    docker_compose_up,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.rabbitmq import RabbitMQ
@@ -74,7 +74,7 @@ async def task_create_service_containers(
         await docker_compose_pull(shared_store.compose_spec, settings)
 
         progress.publish(message="creating and starting containers", percent=0.90)
-        await docker_compose_up(shared_store.compose_spec, settings)
+        await docker_compose_create(shared_store.compose_spec, settings)
 
         progress.publish(message="ensure containers are started", percent=0.95)
         r = await docker_compose_start(shared_store.compose_spec, settings)
