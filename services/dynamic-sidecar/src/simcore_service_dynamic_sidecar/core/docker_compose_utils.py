@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _pad_docker_command_timeout(
-    docker_command_timeout: Optional[int], *, padding: int = 2
+    docker_command_timeout: Optional[int], *, padding: int = 10
 ) -> Optional[int]:
     if docker_command_timeout is None:
         return None
