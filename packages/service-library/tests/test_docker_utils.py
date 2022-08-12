@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from servicelib.docker import to_datetime
+from servicelib.docker_utils import to_datetime
 
 
 @pytest.mark.parametrize(

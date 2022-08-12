@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import parse_obj_as
-from servicelib.docker import to_datetime
+from servicelib.docker_utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

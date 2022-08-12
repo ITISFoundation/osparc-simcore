@@ -31,7 +31,7 @@ from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
-from servicelib.docker import to_datetime
+from servicelib.docker_utils import to_datetime
 from settings_library.s3 import S3Settings
 
 from ..boot_mode import BootMode
