@@ -26,8 +26,8 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
-    message: ProgressMessage
-    percent: ProgressPercent
+    message: ProgressMessage = Field(default="")
+    percent: ProgressPercent = Field(default=0.0)
 
     def publish(
         self,
@@ -58,7 +58,7 @@ class TrackedTask(BaseModel):
 
     started: datetime = Field(default_factory=datetime.utcnow)
     last_status_check: Optional[datetime] = Field(
-        None,
+        default=None,
         description=(
             "used to detect when if the task is not actively "
             "polled by the client who created it"
