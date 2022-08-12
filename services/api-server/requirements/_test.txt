@@ -110,7 +110,7 @@ ecdsa==0.17.0
     #   moto
     #   python-jose
     #   sshpubkeys
-faker==13.11.1
+faker==13.15.1
     # via -r requirements/_test.in
 flask==2.1.2
     # via
