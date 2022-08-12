@@ -99,7 +99,6 @@ class DynamicSidecarVolumesPathsResolver:
         )
         dyv_17f5b46d-505c-489e-9818-f6d294c892d9_this_is_a_data_folder_17f5b46d-505c-489e-9818-f6d294c892d9
         """
-        # NOTE: this name is only used when removing the volume.
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
         # If this becomes on issue, inverting the `volume_name`, appended after
