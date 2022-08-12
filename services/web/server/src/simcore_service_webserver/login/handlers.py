@@ -33,6 +33,11 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
+from .validation_codes import (
+    add_validation_code,
+    delete_validation_code,
+    get_validation_code,
+)
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +142,7 @@ async def verify_2fa_phone(request: web.Request):
     if settings.LOGIN_2FA_REQUIRED:
         try:
             code = await add_validation_code(request.app, email)
-            log.debug("%s", f"{code=}")
+            print("code", code)
             await send_sms_code(phone_number, code)
             list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
             new_character = "X"
@@ -229,6 +234,19 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
+        if not user["phone_number"]:
+            response = web.json_response(
+                status=web.HTTPAccepted.status_code,
+                data={
+                    "data": {
+                        "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
+                        "reason": "PHONE_NUMBER_REQUIRED",
+                    },
+                    "error": None,
+                },
+            )
+            return response
+
         assert user["phone_number"], "db corrupted. Phone number needed"  # nosec
         try:
             code = await add_validation_code(request.app, user["email"])
@@ -239,13 +257,15 @@ async def login(request: web.Request):
             phone_number = user["phone_number"]
             for i in list_of_indexes:
                 phone_number = phone_number[:i] + new_character + phone_number[i + 1 :]
-            data = attr.asdict(
-                LogMessageType(
-                    cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"
-                )
-            )
             response = web.json_response(
-                status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
+                status=web.HTTPAccepted.status_code,
+                data={
+                    "data": {
+                        "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
+                        "reason": cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number,
+                    },
+                    "error": None,
+                },
             )
             return response
         except Exception as e:
@@ -265,6 +285,32 @@ async def login(request: web.Request):
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
+
+
+async def validate_2fa_login(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    code = body.code
+
+    v_code = await get_validation_code(request.app, email)
+    if code == v_code:
+        await delete_validation_code(request.app, email)
+        user = await db.get_user({"email": email})
+        with log_context(
+            log,
+            logging.INFO,
+            "login of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
 
 
 async def validate_2fa_login(request: web.Request):
