@@ -6,6 +6,7 @@ from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -22,11 +23,6 @@ from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
     validate_confirmation_code,
-)
-from ._validation_codes import (
-    add_validation_code,
-    delete_validation_code,
-    get_validation_code,
 )
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
@@ -171,7 +167,7 @@ async def register_phone(request: web.Request):
         except Exception as e:
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
-                content_type="application/json",
+                content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
 
 
@@ -206,7 +202,7 @@ async def phone_confirmation(request: web.Request):
                 return response
 
     raise web.HTTPUnauthorized(
-        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type="application/json"
+        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
@@ -223,22 +219,22 @@ async def login(request: web.Request):
     user = await db.get_user({"email": email})
     if not user:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_UNKNOWN_EMAIL, content_type="application/json"
+            reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if user["status"] == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type="application/json"
+            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type="application/json"
+            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if user["status"] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type="application/json"
+            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
@@ -282,7 +278,7 @@ async def login(request: web.Request):
         except Exception as e:
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
-                content_type="application/json",
+                content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
 
     with log_context(
@@ -378,17 +374,18 @@ async def reset_password(request: web.Request):
     try:
         if not user:
             raise web.HTTPUnprocessableEntity(
-                reason=cfg.MSG_UNKNOWN_EMAIL, content_type="application/json"
+                reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
         if user["status"] == BANNED:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_USER_BANNED, content_type="application/json"
+                reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
             )  # 401
 
         if user["status"] == CONFIRMATION_PENDING:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_ACTIVATION_REQUIRED, content_type="application/json"
+                reason=cfg.MSG_ACTIVATION_REQUIRED,
+                content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
 
         assert user["status"] == ACTIVE  # nosec
@@ -396,7 +393,8 @@ async def reset_password(request: web.Request):
 
         if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_OFTEN_RESET_PASSWORD, content_type="application/json"
+                reason=cfg.MSG_OFTEN_RESET_PASSWORD,
+                content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
     except web.HTTPError as err:
         # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
@@ -499,12 +497,12 @@ async def change_password(request: web.Request):
 
     if not check_password(cur_password, user["password_hash"]):
         raise web.HTTPUnprocessableEntity(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type="application/json"
+            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     if new_password != confirm:
         raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
+            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )  # 409
 
     await db.update_user(user, {"password_hash": encrypt_password(new_password)})
@@ -582,7 +580,7 @@ async def reset_password_allowed(request: web.Request):
 
     if password != confirm:
         raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
+            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )  # 409
 
     confirmation = await validate_confirmation_code(code, db, cfg)
@@ -599,5 +597,5 @@ async def reset_password_allowed(request: web.Request):
 
     raise web.HTTPUnauthorized(
         reason="Cannot reset password. Invalid token or user",
-        content_type="application/json",
+        content_type=MIMETYPE_APPLICATION_JSON,
     )  # 401
