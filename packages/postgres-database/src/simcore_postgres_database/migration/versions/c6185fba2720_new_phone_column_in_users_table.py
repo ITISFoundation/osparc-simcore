@@ -16,12 +16,10 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column("users", sa.Column("phone_number", sa.String(), nullable=True))
-    op.create_unique_constraint(
-        "user_phone_number_unique_constraint", "users", ["phone_number"]
-    )
+    op.add_column("users", sa.Column("phone", sa.String(), nullable=True))
+    op.create_unique_constraint("user_phone_unique_constraint", "users", ["phone"])
 
 
 def downgrade():
-    op.drop_constraint("user_phone_number_unique_constraint", "users", type_="unique")
-    op.drop_column("users", "phone_number")
+    op.drop_constraint("user_phone_unique_constraint", "users", type_="unique")
+    op.drop_column("users", "phone")
