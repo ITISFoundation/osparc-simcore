@@ -1,12 +1,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import os
+
 import pytest
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.cli import main
 from typer.testing import CliRunner
-import os
 
 # FIXTURES
 
