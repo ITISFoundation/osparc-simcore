@@ -154,7 +154,7 @@ async def create_projects(request: web.Request):
     )
 
 
-async def _init_project_from_query(
+async def _init_project_from_request(
     app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
 ) -> tuple[ProjectDict, Optional[Awaitable[None]]]:
     if not query_params.from_study:
@@ -179,14 +179,14 @@ async def _init_project_from_query(
     # the project is to be hidden until the data is copied
     query_params.hidden = query_params.copy_data
     # TODO: this should be made long running as well
-    clone_data_coro = (
+    clone_data_task = (
         copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
         )
         if query_params.copy_data
         else None
     )
-    return new_project, clone_data_coro
+    return new_project, clone_data_task
 
 
 async def _copy_files_from_source_project(
@@ -195,18 +195,21 @@ async def _copy_files_from_source_project(
     query_params: _ProjectCreateParams,
     new_project: ProjectDict,
     user_id: UserID,
-    clone_data_coro: Awaitable[None],
+    clone_data_task: Optional[Awaitable[None]],
     new_project_was_hidden_before_data_was_copied: bool,
 ):
-    if not query_params.from_study or not query_params.copy_data:
+    if not all([clone_data_task, query_params.from_study, query_params.copy_data]):
         return
-    need_lock_source_project: bool = (
+    assert clone_data_task  # nosec
+    assert query_params.from_study  # nosec
+
+    needs_lock_source_project: bool = (
         await db.get_project_type(parse_obj_as(ProjectID, query_params.from_study))
         != ProjectTypeDB.TEMPLATE
     )
 
     async with AsyncExitStack() as stack:
-        if need_lock_source_project:
+        if needs_lock_source_project:
             await stack.enter_async_context(
                 projects_api.lock_with_notification(
                     app,
@@ -216,7 +219,7 @@ async def _copy_files_from_source_project(
                     await get_user_name(app, user_id),
                 )
             )
-        await clone_data_coro
+        await clone_data_task
 
     # unhide the project if needed since it is now complete
     if not new_project_was_hidden_before_data_was_copied:
@@ -246,7 +249,7 @@ async def _create_projects(
         task_progress.publish(message="cloning project scaffold", percent=0)
         new_project_was_hidden_before_data_was_copied = query_params.hidden
 
-        new_project, clone_data_coro = await _init_project_from_query(
+        new_project, clone_data_task = await _init_project_from_request(
             app, query_params, user_id
         )
 
@@ -275,17 +278,16 @@ async def _create_projects(
         )
 
         # copies the project's DATA IF cloned
-        if clone_data_coro:
-            task_progress.publish(message="copying project data", percent=0.2)
-            await _copy_files_from_source_project(
-                app,
-                db,
-                query_params,
-                new_project,
-                user_id,
-                clone_data_coro,
-                new_project_was_hidden_before_data_was_copied,
-            )
+        task_progress.publish(message="copying project data", percent=0.2)
+        await _copy_files_from_source_project(
+            app,
+            db,
+            query_params,
+            new_project,
+            user_id,
+            clone_data_task,
+            new_project_was_hidden_before_data_was_copied,
+        )
 
         # update the network information in director-v2
         task_progress.publish(message="updating project network", percent=0.8)
@@ -308,6 +310,9 @@ async def _create_projects(
             app=app,
         )
 
+        log.debug("project created successfuly")
+        return new_project
+
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
@@ -321,9 +326,6 @@ async def _create_projects(
         )
         await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
         raise
-    else:
-        log.debug("project created successfuly")
-        return new_project
 
 
 #
