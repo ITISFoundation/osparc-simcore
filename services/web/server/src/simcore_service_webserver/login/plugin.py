@@ -65,7 +65,7 @@ def _setup_login_options(app: web.Application):
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LOGIN",
-    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
+    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db", "redis")],
     logger=log,
 )
 def setup_login(app: web.Application):

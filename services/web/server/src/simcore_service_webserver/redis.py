@@ -62,6 +62,8 @@ async def setup_redis_client(app: web.Application):
         assert client  # nosec
         return client
 
+    # TODO: simplify client creation by parametrization
+
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(
         redis_settings.dsn_resources
     )
@@ -75,7 +77,9 @@ async def setup_redis_client(app: web.Application):
 
     app[
         APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY
-    ] = client_validation_code_db = await _create_client(redis_settings.dsn_validation_codes)
+    ] = client_validation_code_db = await _create_client(
+        redis_settings.dsn_validation_codes
+    )
     assert client_validation_code_db  # nosec
 
     yield
@@ -83,26 +87,35 @@ async def setup_redis_client(app: web.Application):
     if client is not app[APP_CLIENT_REDIS_CLIENT_KEY]:
         log.critical("Invalid redis client in app")
         await client.close(close_connection_pool=True)
+
     if client_lock_db is not app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]:
         log.critical("Invalid redis client for lock db in app")
         await client_lock_db.close(close_connection_pool=True)
-    if client_validation_code_db is not app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]:
+
+    if (
+        client_validation_code_db
+        is not app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]
+    ):
         log.critical("Invalid redis client for validation code db in app")
         await client_validation_code_db.close(close_connection_pool=True)
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
-    client = app[APP_CLIENT_REDIS_CLIENT_KEY]
-    assert client is not None, "redis plugin was not init"  # nosec
-    return client
+    redis_client = app[APP_CLIENT_REDIS_CLIENT_KEY]
+    assert redis_client is not None, "redis plugin was not init"  # nosec
+    return redis_client
 
 
 def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
+    redis_client = app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
+    assert redis_client is not None, "redis plugin was not init"  # nosec
+    return redis_client
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]
+    redis_client = app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]
+    assert redis_client is not None, "redis plugin was not init"  # nosec
+    return redis_client
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------
