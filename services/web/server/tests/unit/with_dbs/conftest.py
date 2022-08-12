@@ -10,11 +10,12 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import json
 import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable, Iterator
+from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -29,9 +30,12 @@ from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from models_library.projects_state import ProjectState
+from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
@@ -42,6 +46,16 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.projects_handlers_crud import (
+    OVERRIDABLE_DOCUMENT_KEYS,
+)
+from simcore_service_webserver.utils import now_str, to_datetime
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -316,14 +330,18 @@ def postgres_db(
 
     # Configures db and initializes tables
     kwargs = postgres_dsn.copy()
+    assert pg_cli.discover.callback
     pg_cli.discover.callback(**kwargs)
+    assert pg_cli.upgrade.callback
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
 
     yield engine
 
+    assert pg_cli.downgrade.callback
     pg_cli.downgrade.callback("base")
+    assert pg_cli.clean.callback
     pg_cli.clean.callback()
 
     orm.metadata.drop_all(engine)
@@ -473,3 +491,167 @@ def _is_postgres_responsive(url):
     except sa.exc.OperationalError:
         return False
     return True
+
+
+def _minimal_project() -> ProjectDict:
+    return {
+        "uuid": "0000000-invalid-uuid",
+        "name": "Minimal name",
+        "description": "this description should not change",
+        "prjOwner": "me but I will be removed anyway",
+        "creationDate": now_str(),
+        "lastChangeDate": now_str(),
+        "thumbnail": "",
+        "accessRights": {},
+        "workbench": {},
+        "tags": [],
+        "classifiers": [],
+        "ui": {},
+        "dev": {},
+        "quality": {},
+    }
+
+
+@pytest.fixture
+def create_project() -> Callable[..., Awaitable[ProjectDict]]:
+    """this fixture allows to create projects through the webserver interface
+
+    Returns:
+        Callable[..., Awaitable[ProjectDict]]: _description_
+    """
+
+    async def _creator(
+        client,
+        expected_response: type[web.HTTPException],
+        logged_user: dict[str, str],
+        primary_group: dict[str, str],
+        *,
+        project: Optional[dict] = None,
+        from_study: Optional[dict] = None,
+        as_template: Optional[bool] = None,
+    ) -> ProjectDict:
+        # Pre-defined fields imposed by required properties in schema
+        project_data = {}
+        expected_data = {}
+        if from_study:
+            # access rights are replaced
+            expected_data = deepcopy(from_study)
+            expected_data["accessRights"] = {}
+            if not as_template:
+                expected_data["name"] = f"{from_study['name']} (Copy)"
+        if not from_study or project:
+            project_data = _minimal_project()
+            if project:
+                project_data.update(project)
+            for key in project_data:
+                expected_data[key] = project_data[key]
+                if (
+                    key in OVERRIDABLE_DOCUMENT_KEYS
+                    and not project_data[key]
+                    and from_study
+                ):
+                    expected_data[key] = from_study[key]
+
+        # POST /v0/projects -> returns 202
+        url: URL = client.app.router["create_projects"].url_for()
+        if from_study:
+            url = url.update_query(from_study=from_study["uuid"])
+        if as_template:
+            url = url.update_query(as_template=f"{as_template}")
+        resp = await client.post(url, json=project_data)
+        print(f"<-- created project response: {resp=}")
+        data, error = await assert_status(resp, expected_response)
+        if error:
+            assert not data
+            return {}
+        assert data
+        assert all(x in data for x in ["task_id", "status_href", "result_href"])
+        assert "Location" in resp.headers
+        status_url = resp.headers.get("location")
+        assert status_url == data["status_href"]
+        result_url = data["result_href"]
+
+        # get status GET /{task_id}
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(60),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                print(
+                    f"--> waiting for creation {attempt.retry_state.attempt_number}..."
+                )
+                result = await client.get(f"{status_url}")
+                data, error = await assert_status(result, web.HTTPOk)
+                assert data
+                assert not error
+                task_status = TaskStatus.parse_obj(data)
+                assert task_status
+                print(f"<-- status: {task_status.json(indent=2)}")
+                assert task_status.done, "task incomplete"
+                print(
+                    f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                )
+
+        # get result GET /{task_id}/result
+        print(f"--> getting project creation result...")
+        result = await client.get(f"{result_url}")
+        data, error = await assert_status(result, web.HTTPOk)
+        assert data
+        assert not error
+        task_result = TaskResult.parse_obj(data)
+        print(f"<-- result: {task_result.json(indent=2)}")
+        assert not task_result.error
+        assert task_result.result
+        new_project = task_result.result
+
+        # now check returned is as expected
+        if new_project:
+            # has project state
+            assert not ProjectState(
+                **new_project.get("state", {})
+            ).locked.value, "Newly created projects should be unlocked"
+
+            # updated fields
+            assert expected_data["uuid"] != new_project["uuid"]
+            assert (
+                new_project["prjOwner"] == logged_user["email"]
+            )  # the project owner is assigned the user id e-mail
+            assert to_datetime(expected_data["creationDate"]) < to_datetime(
+                new_project["creationDate"]
+            )
+            assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(
+                new_project["lastChangeDate"]
+            )
+            # the access rights are set to use the logged user primary group + whatever was inside the project
+            expected_data["accessRights"].update(
+                {
+                    str(primary_group["gid"]): {
+                        "read": True,
+                        "write": True,
+                        "delete": True,
+                    }
+                }
+            )
+            assert new_project["accessRights"] == expected_data["accessRights"]
+
+            # invariant fields
+            modified_fields = [
+                "uuid",
+                "prjOwner",
+                "creationDate",
+                "lastChangeDate",
+                "accessRights",
+                "workbench" if from_study else None,
+                "ui" if from_study else None,
+                "state",
+            ]
+
+            for key in new_project.keys():
+                if key not in modified_fields:
+                    assert expected_data[key] == new_project[key]
+
+        return new_project
+
+    return _creator
