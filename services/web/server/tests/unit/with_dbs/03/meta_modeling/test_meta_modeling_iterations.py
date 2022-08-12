@@ -66,7 +66,7 @@ async def test_iterators_workflow(
     mocker,
     faker: Faker,
     director_v2_service_mock: None,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     #
     # NOTE: all TODOs below shall be addressed in next version of the iterator
@@ -90,7 +90,7 @@ async def test_iterators_workflow(
         return_value=None,
     )
     # ----
-    project_data = await create_project(
+    project_data = await request_create_project(
         client,
         web.HTTPAccepted,
         logged_user,

@@ -227,12 +227,12 @@ async def test_share_project(
     catalog_subsystem_mock,
     share_rights: dict,
     project_db_cleaner,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     # Use-case: the user shares some projects with a group
 
     # create a few projects
-    new_project = await create_project(
+    new_project = await request_create_project(
         client,
         expected.accepted,
         logged_user,

@@ -158,13 +158,13 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
     catalog_subsystem_mock([template_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
-    await create_project(
+    await request_create_project(
         client,
         expected.accepted,
         logged_user,
@@ -207,13 +207,13 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
     catalog_subsystem_mock([user_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
-    await create_project(
+    await request_create_project(
         client,
         expected.accepted,
         logged_user,
