@@ -116,14 +116,14 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const login = new osparc.auth.ui.LoginView();
       const register = new osparc.auth.ui.RegistrationView();
-      const registerSMSMCode = new osparc.auth.ui.RegisterSMSCodeView();
+      const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
       const loginSMSCode = new osparc.auth.ui.LoginSMSCodeView();
 
       pages.add(login);
       pages.add(register);
-      pages.add(registerSMSMCode);
+      pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
       pages.add(loginSMSCode);
@@ -140,10 +140,10 @@ qx.Class.define("osparc.auth.LoginPage", {
           pages.setSelection([register]);
         } else if (urlFragment.nav[0] === "2fa-verify") {
           const email = osparc.auth.core.Utils.findParameterInFragment("email");
-          registerSMSMCode.set({
+          verifyPhoneNumber.set({
             userEmail: email
           });
-          pages.setSelection([registerSMSMCode]);
+          pages.setSelection([verifyPhoneNumber]);
         } else if (urlFragment.nav[0] === "reset-password") {
           pages.setSelection([reset]);
         }
@@ -188,7 +188,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       });
 
-      registerSMSMCode.addListener("done", msg => {
+      verifyPhoneNumber.addListener("done", msg => {
         login.resetValues();
         this.fireDataEvent("done", msg);
       }, this);
