@@ -6,6 +6,7 @@ import asyncio
 import json
 import random
 from inspect import signature
+from pathlib import Path
 from typing import Any, AsyncIterable, Final, Iterator
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -132,6 +133,7 @@ def app(app: FastAPI) -> FastAPI:
 
 @pytest.fixture
 def test_client(
+    ensure_shared_store_dir: Path,
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers,
