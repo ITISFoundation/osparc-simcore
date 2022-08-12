@@ -182,14 +182,14 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const twoFactorAuthCbk = log => {
         this.__loginBtn.setFetching(false);
         osparc.component.message.FlashMessenger.getInstance().logAs(log, "INFO");
-        this.fireDataEvent("toSMSCode", msg);
+        this.fireDataEvent("toSMSCode", log);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._formElement.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      const failFun = function(msg) {
+      const failFun = msg => {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Typed an invalid email or password");
