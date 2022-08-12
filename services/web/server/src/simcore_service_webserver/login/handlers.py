@@ -60,6 +60,12 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 
 
 async def register(request: web.Request):
+    """
+    Starts user's registration by providing an email, password and
+    invitation code (required by configuration).
+
+    An email with a link to 'email_confirmation' is sent to complete registration
+    """
     _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)

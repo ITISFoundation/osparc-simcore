@@ -2,18 +2,10 @@ from asyncio.log import logger
 from random import randint
 from typing import Optional
 
-import redis
 from aiohttp import web
 from pydantic import BaseModel, Field
-from redis.asyncio.lock import Lock
 
 from ..redis import get_redis_validation_code_client
-
-REDIS_VALIDATION_CODE_KEY: str = "sms_validation_codes:{}"
-
-ValidationCodeLockError = redis.exceptions.LockError
-
-ValidationCodeLock = Lock
 
 
 class ValidationCode(BaseModel):
@@ -25,7 +17,7 @@ async def add_validation_code(app: web.Application, user_email: str):
     redis_client = get_redis_validation_code_client(app)
     timeout = 60
     hash_key = user_email
-    sms_code = randint(1000, 9999)
+    sms_code = randint(1000, 9999)  # TODO: security!
     await redis_client.set(hash_key, sms_code, ex=timeout)
     return sms_code
 
