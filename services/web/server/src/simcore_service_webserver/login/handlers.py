@@ -12,7 +12,12 @@ from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa import send_sms_code
+from ._2fa import (
+    add_validation_code,
+    delete_validation_code,
+    get_validation_code,
+    send_sms_code,
+)
 from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
@@ -33,11 +38,6 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
-from .validation_codes import (
-    add_validation_code,
-    delete_validation_code,
-    get_validation_code,
-)
 
 log = logging.getLogger(__name__)
 
