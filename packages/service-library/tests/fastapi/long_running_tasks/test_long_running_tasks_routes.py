@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
+# pylint: disable=unused-argument
 
 import asyncio
 from typing import AsyncIterable, Final
