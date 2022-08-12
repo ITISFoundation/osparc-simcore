@@ -73,6 +73,13 @@ users = sa.Table(
     sa.Column("id", sa.BigInteger, nullable=False),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("email", sa.String, nullable=False),
+    sa.Column(
+        "phone_number",
+        sa.String,
+        nullable=True,  # since 2FA can be configured optional
+        unique=True,  # cannot use same phone for two users
+        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
+    ),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
         "primary_gid",
