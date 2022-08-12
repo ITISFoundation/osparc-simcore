@@ -18,7 +18,7 @@ class RedisSettings(BaseCustomSettings):
     REDIS_USER: Optional[str] = None
     REDIS_PASSWORD: Optional[SecretStr] = None
 
-    # db
+    # redis databases (db)
     REDIS_RESOURCES_DB: int = Field(
         default=0,
         description="typical redis DB have 16 'tables', for convenience we use this table for user resources",
@@ -27,45 +27,31 @@ class RedisSettings(BaseCustomSettings):
         default=1, description="This redis table is used to put locks"
     )
     REDIS_VALIDATION_CODES_DB: int = Field(
-        default=2,
-        description="This redis table is used to store SMS validation codes"
+        default=2, description="This redis table is used to store SMS validation codes"
     )
+
+    # TODO: ensure different DB and consecutive?
+
+    def _build_redis_dsn(self, db_index: int):
+        return RedisDsn.build(
+            scheme="redis",
+            user=self.REDIS_USER or None,
+            password=self.REDIS_PASSWORD.get_secret_value()
+            if self.REDIS_PASSWORD
+            else None,
+            host=self.REDIS_HOST,
+            port=f"{self.REDIS_PORT}",
+            path=f"/{db_index}",
+        )
 
     @cached_property
     def dsn_resources(self) -> str:
-        return RedisDsn.build(
-            scheme="redis",
-            user=self.REDIS_USER or None,
-            password=self.REDIS_PASSWORD.get_secret_value()
-            if self.REDIS_PASSWORD
-            else None,
-            host=self.REDIS_HOST,
-            port=f"{self.REDIS_PORT}",
-            path=f"/{self.REDIS_RESOURCES_DB}",
-        )
+        return self._build_redis_dsn(self.REDIS_RESOURCES_DB)
 
     @cached_property
     def dsn_locks(self) -> str:
-        return RedisDsn.build(
-            scheme="redis",
-            user=self.REDIS_USER or None,
-            password=self.REDIS_PASSWORD.get_secret_value()
-            if self.REDIS_PASSWORD
-            else None,
-            host=self.REDIS_HOST,
-            port=f"{self.REDIS_PORT}",
-            path=f"/{self.REDIS_LOCKS_DB}",
-        )
+        return self._build_redis_dsn(self.REDIS_LOCKS_DB)
 
     @cached_property
     def dsn_validation_codes(self) -> str:
-        return RedisDsn.build(
-            scheme="redis",
-            user=self.REDIS_USER or None,
-            password=self.REDIS_PASSWORD.get_secret_value()
-            if self.REDIS_PASSWORD
-            else None,
-            host=self.REDIS_HOST,
-            port=f"{self.REDIS_PORT}",
-            path=f"/{self.REDIS_VALIDATION_CODES_DB}",
-        )
+        return self._build_redis_dsn(self.REDIS_VALIDATION_CODES_DB)
