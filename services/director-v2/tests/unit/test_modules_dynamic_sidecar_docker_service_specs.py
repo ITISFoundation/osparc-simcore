@@ -249,10 +249,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
                                 "source": f"dyv_{run_id}_shared-store_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
@@ -262,10 +264,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
                                 "source": f"dyv_{run_id}_tmp_inputs_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
@@ -275,10 +279,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
                                 "source": f"dyv_{run_id}_tmp_outputs_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
@@ -288,10 +294,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
                                 "source": f"dyv_{run_id}_tmp_save_1_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
@@ -301,10 +309,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
                                 "source": f"dyv_{run_id}_tmp_save_2_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },

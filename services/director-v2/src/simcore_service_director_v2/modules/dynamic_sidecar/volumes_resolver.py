@@ -5,6 +5,7 @@ from typing import Any
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
+from models_library.users import UserID
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
@@ -108,7 +109,13 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def mount_entry(
-        cls, swarm_stack_name: str, path: Path, node_uuid: NodeID, run_id: RunID
+        cls,
+        swarm_stack_name: str,
+        path: Path,
+        node_uuid: NodeID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
     ) -> dict[str, Any]:
         """
         mounts local directories form the host where the service
@@ -122,7 +129,9 @@ class DynamicSidecarVolumesPathsResolver:
                 "Labels": {
                     "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
+                    "project_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 }
             },
@@ -130,7 +139,12 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def mount_shared_store(
-        cls, swarm_stack_name: str, node_uuid: NodeID, run_id: RunID
+        cls,
+        swarm_stack_name: str,
+        node_uuid: NodeID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
     ) -> dict[str, Any]:
         return {
             "Source": cls.source(DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id),
@@ -142,7 +156,9 @@ class DynamicSidecarVolumesPathsResolver:
                         DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id
                     ),
                     "run_id": f"{run_id}",
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
+                    "project_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 }
             },
@@ -153,9 +169,10 @@ class DynamicSidecarVolumesPathsResolver:
         cls,
         swarm_stack_name: str,
         path: Path,
-        project_id: ProjectID,
         node_uuid: NodeID,
         run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
         r_clone_settings: RCloneSettings,
     ) -> dict[str, Any]:
         return {
@@ -166,7 +183,9 @@ class DynamicSidecarVolumesPathsResolver:
                 "Labels": {
                     "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
+                    "project_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 },
                 "DriverConfig": _get_s3_volume_driver_config(

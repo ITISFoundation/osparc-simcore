@@ -9,7 +9,9 @@ from uuid import UUID
 import aiodocker
 import pytest
 from faker import Faker
+from models_library.projects import ProjectID
 from models_library.services import RunID
+from models_library.users import UserID
 from simcore_service_director_v2.modules.dynamic_sidecar.volumes_resolver import (
     DynamicSidecarVolumesPathsResolver,
 )
@@ -38,8 +40,22 @@ def run_id(faker: Faker) -> UUID:
 
 
 @pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def user_id() -> UserID:
+    return 42
+
+
+@pytest.fixture
 def expected_volume_config(
-    swarm_stack_name: str, node_uuid: UUID, run_id: RunID
+    swarm_stack_name: str,
+    node_uuid: UUID,
+    run_id: RunID,
+    project_id: ProjectID,
+    user_id: UserID,
 ) -> Callable[[str, str], Dict[str, Any]]:
     def _callable(source: str, target: str) -> Dict[str, Any]:
         return {
@@ -50,8 +66,10 @@ def expected_volume_config(
                 "Labels": {
                     "source": source,
                     "run_id": f"{run_id}",
+                    "project_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
                 }
             },
         }
@@ -68,12 +86,14 @@ def test_expected_paths(
     state_paths: List[Path],
     expected_volume_config: Callable[[str, str], Dict[str, Any]],
     run_id: RunID,
+    project_id: ProjectID,
+    user_id: UserID,
 ) -> None:
     fake = Faker()
 
     inputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        swarm_stack_name, inputs_path, node_uuid, run_id
+        swarm_stack_name, inputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
         source=f"dyv_{run_id}{f'{inputs_path}'.replace('/', '_')}_{node_uuid}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
@@ -81,7 +101,7 @@ def test_expected_paths(
 
     outputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        swarm_stack_name, outputs_path, node_uuid, run_id
+        swarm_stack_name, outputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
         source=f"dyv_{run_id}{f'{outputs_path}'.replace('/', '_')}_{node_uuid}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
@@ -90,7 +110,7 @@ def test_expected_paths(
     for path in state_paths:
         name_from_path = f"{path}".replace(os.sep, "_")
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
-            swarm_stack_name, path, node_uuid, run_id
+            swarm_stack_name, path, node_uuid, run_id, project_id, user_id
         ) == expected_volume_config(
             source=f"dyv_{run_id}{name_from_path}_{node_uuid}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),

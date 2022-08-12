@@ -111,6 +111,8 @@ def get_dynamic_sidecar_spec(
             swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
             node_uuid=scheduler_data.node_uuid,
             run_id=scheduler_data.dynamic_sidecar.run_id,
+            project_id=scheduler_data.project_id,
+            user_id=scheduler_data.user_id,
         ),
     ]
 
@@ -134,6 +136,8 @@ def get_dynamic_sidecar_spec(
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
                 run_id=scheduler_data.dynamic_sidecar.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -144,9 +148,10 @@ def get_dynamic_sidecar_spec(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                     path=path_to_mount,
-                    project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
                     run_id=scheduler_data.dynamic_sidecar.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
                     r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
@@ -157,6 +162,8 @@ def get_dynamic_sidecar_spec(
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
                     run_id=scheduler_data.dynamic_sidecar.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
                 )
             )
 
