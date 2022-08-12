@@ -62,8 +62,6 @@ anyio==3.6.1
     #   watchgod
 asgiref==3.5.2
     # via uvicorn
-async-asgi-testclient==1.4.11
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -228,7 +226,6 @@ msgpack==1.0.3
 multidict==6.0.2
     # via
     #   aiohttp
-    #   async-asgi-testclient
     #   yarl
 networkx==2.5.1
     # via -r requirements/_base.in
@@ -337,9 +334,7 @@ pyyaml==5.4.1
 redis==4.3.4
     # via -r requirements/_base.in
 requests==2.27.1
-    # via
-    #   async-asgi-testclient
-    #   fastapi
+    # via fastapi
 rfc3986==1.4.0
     # via httpx
 six==1.15.0

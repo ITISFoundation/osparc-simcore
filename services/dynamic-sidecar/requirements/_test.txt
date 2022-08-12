@@ -7,9 +7,7 @@
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 async-asgi-testclient==1.4.11
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
