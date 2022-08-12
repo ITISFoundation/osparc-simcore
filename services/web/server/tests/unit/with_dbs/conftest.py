@@ -516,6 +516,8 @@ def _minimal_project() -> ProjectDict:
 def create_project() -> Callable[..., Awaitable[ProjectDict]]:
     """this fixture allows to create projects through the webserver interface
 
+        NOTE: a next iteration should take care of cleaning up created projects
+
     Returns:
         Callable[..., Awaitable[ProjectDict]]: _description_
     """
