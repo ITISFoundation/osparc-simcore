@@ -15,6 +15,7 @@ import simcore_service_dynamic_sidecar
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.services import RunID
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import (
@@ -136,7 +137,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: UUID,
+    run_id: RunID,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 

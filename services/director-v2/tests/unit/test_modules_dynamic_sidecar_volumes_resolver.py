@@ -9,6 +9,7 @@ from uuid import UUID
 import aiodocker
 import pytest
 from faker import Faker
+from models_library.services import RunID
 from simcore_service_director_v2.modules.dynamic_sidecar.volumes_resolver import (
     DynamicSidecarVolumesPathsResolver,
 )
@@ -38,7 +39,7 @@ def run_id(faker: Faker) -> UUID:
 
 @pytest.fixture
 def expected_volume_config(
-    swarm_stack_name: str, node_uuid: UUID, run_id: UUID
+    swarm_stack_name: str, node_uuid: UUID, run_id: RunID
 ) -> Callable[[str, str], Dict[str, Any]]:
     def _callable(source: str, target: str) -> Dict[str, Any]:
         return {
@@ -66,7 +67,7 @@ def test_expected_paths(
     node_uuid: UUID,
     state_paths: List[Path],
     expected_volume_config: Callable[[str, str], Dict[str, Any]],
-    run_id: UUID,
+    run_id: RunID,
 ) -> None:
     fake = Faker()
 

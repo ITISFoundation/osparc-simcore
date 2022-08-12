@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import RunID
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
@@ -85,7 +85,7 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
-    def source(cls, path: Path, node_uuid: NodeID, run_id: UUID) -> str:
+    def source(cls, path: Path, node_uuid: NodeID, run_id: RunID) -> str:
         """
         Guarantees that the volume name is unique between runs while also
         taking into consideration the limit for the volume name's length
@@ -109,7 +109,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def mount_entry(
-        cls, swarm_stack_name: str, path: Path, node_uuid: NodeID, run_id: UUID
+        cls, swarm_stack_name: str, path: Path, node_uuid: NodeID, run_id: RunID
     ) -> dict[str, Any]:
         """
         mounts local directories form the host where the service
@@ -131,7 +131,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def mount_shared_store(
-        cls, swarm_stack_name: str, node_uuid: NodeID, run_id: UUID
+        cls, swarm_stack_name: str, node_uuid: NodeID, run_id: RunID
     ) -> dict[str, Any]:
         return {
             "Source": cls.source(DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id),
@@ -156,7 +156,7 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
-        run_id: UUID,
+        run_id: RunID,
         r_clone_settings: RCloneSettings,
     ) -> dict[str, Any]:
         return {
