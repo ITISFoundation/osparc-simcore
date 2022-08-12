@@ -150,12 +150,14 @@ async def verify_2fa_phone(request: web.Request):
             code = await add_validation_code(request.app, email)
             print("code", code)
             await send_sms_code(phone, code)
-            list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
-            new_character = "X"
-            for i in list_of_indexes:
-                phone = phone[:i] + new_character + phone[i + 1 :]
+
+            # keep first 3 and last 2
+            masked_phone = phone[:3] + len(phone[3:-2]) * "X" + phone[-2:]
+
             data = attr.asdict(
-                LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone, "INFO")
+                LogMessageType(
+                    cfg.MSG_VALIDATION_CODE_SENT + " to " + masked_phone, "INFO"
+                )
             )
             response = web.json_response(
                 status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
