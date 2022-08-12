@@ -49,7 +49,6 @@ NO_PENDING_OVERWRITE = {
 }
 
 
-# below are considered
 SERVICE_FINISHED_STATES: set[str] = {
     "complete",
     "failed",
@@ -572,29 +571,26 @@ async def remove_volumes_from_node(
     sleep_between_attempts_s: int = 2,
 ) -> bool:
     """
-    Runs a service at target docker node which will remove all volumes
-    in the volumes_names list.
+    Starts a service at target docker node which will remove
+    all entries in the `volumes_names` list.
     """
 
-    # give the service enough time to pull the image if missing
-    # execute the command to remove the volume and exit
     async with docker_client() as client:
-        # when running docker-dind make sure to use the same image as the
+        # When running docker-dind makes sure to use the same image as the
         # underlying docker-engine.
-        # The docker should be the same version across the entire cluster,
-        # so it is safe to assume the local docker engine version will be
+        # Will start a container with the same version across the entire cluster.
+        # It is safe to assume the local docker engine version will be
         # the same as the one on the targeted node.
         version_request = await client._query_json(  # pylint: disable=protected-access
             "version", versioned_api=False
         )
-
         docker_version: DockerVersion = parse_obj_as(
             DockerVersion, version_request["Version"]
         )
 
-        # compute timeout for the service based on the amount of attempts
-        # required to remove each individual volume in the worst case scenario
-        # when all volumes are do not exit.
+        # Timeout for the runtime of the service is calculated based on the amount
+        # of attempts required to remove each individual volume,
+        # in the worst case scenario when all volumes are do not exit.
         volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s
         service_timeout_s = volume_removal_timeout_s * len(volume_names)
 
@@ -622,8 +618,11 @@ async def remove_volumes_from_node(
             ):
                 with attempt:
                     tasks = await client.tasks.list(filters={"service": service_id})
-                    # it does not find a task for this service WTF
+                    # NOTE: the service will have at most 1 task, since there is no restart
+                    # policy present
                     if len(tasks) != 1:
+                        # Sometimes swarm did not mange to create a task after the service
+                        # is created. In that case a retry is triggered
                         raise _RetryError(
                             f"Expected 1 task for service {service_id}, found {tasks=}"
                         )
@@ -649,12 +648,13 @@ async def remove_volumes_from_node(
                             f"{task_status=}",
                             "\n".join(container_logs),
                         )
-                        # ANE -> SAN: above implies the following: volumes which cannot be removed will remain
-                        # in the system and maybe we should garbage collect them from the nodes somehow
+                        # NOTE: above implies the volumes will remain in the system and
+                        # have to be manually removed.
                         return False
         finally:
-            # NOTE: created services can never be auto removed
-            # it is let to the user to remove them
+            # NOTE: services created in swarm need to be removed, there is no way
+            # to instruct swarm to remove a service after it's created
+            # container/task finished
             await client.services.delete(service_id)
 
         return True
@@ -664,9 +664,9 @@ async def remove_pending_volume_removal_services(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> None:
     """
-    returns: a list of volume removal services ids which are running
-    for longer than their intended duration (service_timeout_s
-    label).
+    Removes all pending volume removal services. Such a service
+    will be considered pending if it is running for longer than its
+    intended duration (defined in the `service_timeout_s` label).
     """
     service_filters = {
         "label": [

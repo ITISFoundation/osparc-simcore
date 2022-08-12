@@ -87,11 +87,15 @@ def spec_volume_removal_service(
     service_timeout_s: int,
 ) -> AioDockerServiceSpec:
     """
-    Starts service `docker:{docker_version}-dind` to the:
-    above bash script which for each volume name attempts
-    to remove it by retrying a few times
+    Generates a service spec for with base image
+    `docker:{docker_version}-dind` running the above bash script.
 
-    NOTE: expect the container to exit with code 0,
+    The bash script will attempt to remove each individual volume
+    a few times before giving up.
+    The script will exit with error if it is not capable of
+    removing the volume.
+
+    NOTE: expect the container of the service to exit with code 0,
     otherwise there was an error.
     NOTE: the bash script will exit 1 if it cannot find a
     volume to remove.

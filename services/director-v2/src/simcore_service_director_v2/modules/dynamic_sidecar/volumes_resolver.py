@@ -87,26 +87,23 @@ class DynamicSidecarVolumesPathsResolver:
     @classmethod
     def source(cls, path: Path, node_uuid: NodeID, run_id: UUID) -> str:
         """
-        Put together a uniquely identified name for the volume being mounted.
-        The most important requirement is that it is guaranteed to be unique
-        between runs and
+        Guarantees that the volume name is unique between runs while also
+        taking into consideration the limit for the volume name's length
+        (255 characters).
 
         Example:
-        Given:
-        - path="/this/is/a/data/folder"
-        - node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9"
-        - run_id="17f5b46d-505c-489e-9818-f6d294c892d9"
-
-        The below name will be generated:
-        `dyv_17f5b46d-505c-489e-9818-f6d294c892d9_this_is_a_data_folder_17f5b46d-505c-489e-9818-f6d294c892d9`
+        >>> source(
+            path="/this/is/a/data/folder",
+            node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9",
+            run_id="17f5b46d-505c-489e-9818-f6d294c892d9"
+        )
+        dyv_17f5b46d-505c-489e-9818-f6d294c892d9_this_is_a_data_folder_17f5b46d-505c-489e-9818-f6d294c892d9
         """
-        # NOTE: volume name is capped at 255 characters
-        # NOTE: it is OK for parts of the node_uuid or of the volume name to be
-        # removed. This unique_name is only used for volume removal. The
-        # dynamic-sidecar uses the labels to correctly identify the volume.
+        # NOTE: this name is only used when removing the volume.
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
-        # and state folders are very long and share the same subdirectory path
-        # Generally this should not be an issue.
+        # and state folders are very long and share the same subdirectory path.
+        # If this becomes on issue, inverting the `volume_name`, appended after
+        # the `run_id` will avoid collisions.
         full_unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}{cls._volume_name(path)}_{node_uuid}"
         return full_unique_name[:255]
 

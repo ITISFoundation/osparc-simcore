@@ -362,7 +362,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     )
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_S: PositiveFloat = Field(
-        30 * MINS, description=""
+        30 * MINS,
+        description="used to check at regular intervals for pending "
+        "volume removal services and remove them if they timed out",
     )
 
 
