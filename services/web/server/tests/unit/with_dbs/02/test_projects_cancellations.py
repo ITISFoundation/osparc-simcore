@@ -50,6 +50,11 @@ def standard_user_role_response() -> tuple[
     )
 
 
+@pytest.mark.skip(
+    reason="since long running tasks are now used for copying, this is no longer an issue."
+    "If the timeout is really super short, then the background task should be properly cancelled."
+    "this should be tested now"
+)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_from_template_and_disconnecting_does_not_create_project(
     client: TestClient,
@@ -93,6 +98,11 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
+@pytest.mark.skip(
+    reason="since long running tasks are now used for copying, this is no longer an issue."
+    "If the timeout is really super short, then the background task should be properly cancelled."
+    "this should be tested now"
+)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_as_template_and_disconnecting_does_not_create_project(
     client: TestClient,
