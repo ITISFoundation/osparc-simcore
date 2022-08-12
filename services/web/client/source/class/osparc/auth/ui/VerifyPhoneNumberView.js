@@ -78,7 +78,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       phoneNumberVerifyLayout.add(phoneNumber, {
         flex: 1
       });
-      const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Verify")).set({
+      const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
         minWidth: 80
       });
       phoneNumberVerifyLayout.add(verifyPhoneNumberBtn);
@@ -112,7 +112,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       if (isValid) {
         this.__phoneNumberTF.setEnabled(false);
         this.__verifyPhoneNumberBtn.setEnabled(false);
-        this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Verify"));
+        this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__phoneNumberTF.getValue())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
