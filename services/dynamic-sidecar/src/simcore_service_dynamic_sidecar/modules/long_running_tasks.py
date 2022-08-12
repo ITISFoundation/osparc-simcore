@@ -59,6 +59,7 @@ async def task_create_service_containers(
         mounted_volumes=mounted_volumes,
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
+    await shared_store.persist_to_disk()
 
     logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
