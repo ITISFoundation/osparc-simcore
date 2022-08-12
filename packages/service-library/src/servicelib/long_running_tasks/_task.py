@@ -180,8 +180,6 @@ class TaskManager:
         if not tracked_task.task.done():
             raise TaskNotCompletedError(task_id=task_id)
 
-        return tracked_task.task.result()
-
         try:
             exception = tracked_task.task.exception()
             if exception is not None:
