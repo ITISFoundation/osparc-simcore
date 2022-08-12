@@ -377,6 +377,24 @@ def test_get_dynamic_proxy_spec(
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
 
+        # NOTE: some flakiness here
+        # state_exclude is a set and does not preserve order
+        # when dumping to json it gets converted to a list
+        dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ] = sorted(
+            dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+                "DY_SIDECAR_STATE_EXCLUDE"
+            ]
+        )
+        expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ] = sorted(
+            expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+                "DY_SIDECAR_STATE_EXCLUDE"
+            ]
+        )
+
         assert dynamic_sidecar_spec.dict(
             exclude=exclude_keys
         ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
