@@ -11,7 +11,12 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response
 from pydantic import ValidationError
+from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
 from starlette import status
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
@@ -106,6 +111,7 @@ class AuthSession:
     # TODO: error handling!
 
     async def create_project(self, project: NewProjectIn):
+        # POST /projects --> 202
         resp = await self.client.post(
             "/projects",
             params={"hidden": True},
@@ -114,9 +120,32 @@ class AuthSession:
             ),  ## FIXME: REEAAAALY HACKY!
             cookies=self.session_cookies,
         )
-
         data: Optional[JSON] = self._process(resp)
-        return Project.parse_obj(data)
+        assert data  # nosec
+        assert isinstance(data, dict)
+        status_url = data["status_href"]
+        result_url = data["result_href"]
+        # GET task status now until done
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.5),
+            stop=stop_after_delay(60),
+            reraise=True,
+            before_sleep=before_sleep_log(logger, logging.INFO),
+        ):
+            with attempt:
+                resp = await self.client.get(
+                    status_url,
+                    cookies=self.session_cookies,
+                )
+                data: Optional[JSON] = self._process(resp)
+                task_status = TaskStatus.parse_obj(data)
+                if not task_status.done:
+                    raise ValueError
+        resp = await self.client.get(f"{result_url}")
+        data: Optional[JSON] = self._process(resp)
+        task_result = TaskResult.parse_obj(data)
+
+        return Project.parse_obj(task_result.result)
 
     async def get_project(self, project_id: UUID) -> Project:
         resp = await self.client.get(
