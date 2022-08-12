@@ -279,7 +279,7 @@ async def login(request: web.Request):
                 data={
                     "data": {
                         "code": "SMS_CODE_REQUIRED", # this string is used by the frontend
-                        "reason": cfg.MSG_VALIDATION_CODE_SENT
+                        "reason": cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number
                     },
                     "error": None
                 }

@@ -138,12 +138,6 @@ qx.Class.define("osparc.auth.LoginPage", {
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
           pages.setSelection([register]);
-        } else if (urlFragment.nav[0] === "2fa-verify") {
-          const email = osparc.auth.core.Utils.findParameterInFragment("email");
-          verifyPhoneNumber.set({
-            userEmail: email
-          });
-          pages.setSelection([verifyPhoneNumber]);
         } else if (urlFragment.nav[0] === "reset-password") {
           pages.setSelection([reset]);
         }
@@ -164,6 +158,14 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       login.addListener("toRegister", e => {
         pages.setSelection([register]);
+        login.resetValues();
+      }, this);
+
+      login.addListener("toVerifyPhone", e => {
+        verifyPhoneNumber.set({
+          userEmail: e.getData()
+        });
+        pages.setSelection([verifyPhoneNumber]);
         login.resetValues();
       }, this);
 

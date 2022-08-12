@@ -27,6 +27,23 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     }
   },
 
+  statics: {
+    restartResendTimer: function(button, buttonText) {
+      let count = 60;
+      const refreshIntervalId = setInterval(() => {
+        if (count > 0) {
+          count--;
+        } else {
+          clearInterval(refreshIntervalId);
+        }
+        button.set({
+          label: count > 0 ? buttonText + ` (${count})` : buttonText,
+          enabled: count === 0
+        });
+      }, 1000);
+    }
+  },
+
   members: {
     __phoneNumberTF: null,
     __verifyPhoneNumberBtn: null,
@@ -47,7 +64,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
       this.add(verificationInfoTitle);
       const verificationInfoDesc = new qx.ui.basic.Label().set({
-        value: this.tr("We will send you a text message to your mobile phone to authenticate you each time you log in.")
+        value: this.tr("We will send you a text message to your mobile phone to authenticate you each time you log in."),
+        rich: true,
+        wrap: true
       });
       this.add(verificationInfoDesc);
 
@@ -88,27 +107,12 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.__validateCodeBtn.addListener("execute", () => this.__validateCodeRegister());
     },
 
-    restartResendTimer: function(button, buttonText) {
-      let count = 60;
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        button.set({
-          label: count > 0 ? buttonText + ` (${count})` : buttonText,
-          enabled: count === 0
-        });
-      }, 1000);
-    },
-
     __verifyPhoneNumber: function() {
       const isValid = osparc.auth.core.Utils.phoneNumberValidator(this.__phoneNumberTF.getValue(), this.__phoneNumberTF);
       if (isValid) {
         this.__phoneNumberTF.setEnabled(false);
         this.__verifyPhoneNumberBtn.setEnabled(false);
-        this.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Verify"));
+        this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Verify"));
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__phoneNumberTF.getValue())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
@@ -124,19 +128,29 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __validateCodeRegister: function() {
       this.__validateCodeBtn.setFetching(true);
-      osparc.auth.Manager.getInstance().validateCodeRegister(this.getUserEmail(), this.__phoneNumberTF.getValue(), this.__validateCodeTF.getValue())
-        .then(data => {
-          osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
-          this.__validateCodeBtn.setFetching(false);
-          this.__validateCodeTF.setEnabled(false);
-          this.__validateCodeBtn.setEnabled(false);
-          this.__validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
-          this.fireDataEvent("done", data.message);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
-          this.__validateCodeBtn.setFetching(false);
+
+      const loginFun = log => {
+        osparc.component.message.FlashMessenger.logAs(log.message, "INFO");
+        this.__validateCodeBtn.setFetching(false);
+        this.__validateCodeTF.setEnabled(false);
+        this.__validateCodeBtn.setEnabled(false);
+        this.__validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
+        this.fireDataEvent("done", log.message);
+      };
+
+      const failFun = msg => {
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        this.__validateCodeBtn.setFetching(false);
+        // TODO: can get field info from response here
+        msg = String(msg) || this.tr("Invalid code");
+        this.__validateCodeTF.set({
+          invalidMessage: msg,
+          valid: false
         });
+      };
+
+      const manager = osparc.auth.Manager.getInstance();
+      manager.validateCodeRegister(this.getUserEmail(), this.__phoneNumberTF.getValue(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
     }
   }
 });
