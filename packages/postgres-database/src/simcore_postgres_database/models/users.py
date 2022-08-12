@@ -77,7 +77,6 @@ users = sa.Table(
         "phone_number",
         sa.String,
         nullable=True,  # since 2FA can be configured optional
-        unique=True,  # cannot use same phone for two users
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
     ),
     sa.Column("password_hash", sa.String, nullable=False),
@@ -110,6 +109,11 @@ users = sa.Table(
     #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
+    sa.UniqueConstraint(
+        "phone_number",
+        name="user_phone_number_unique_constraint",
+        # cannot use same phone for two users
+    ),
 )
 
 # ------------------------ TRIGGERS
