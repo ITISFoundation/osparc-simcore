@@ -250,6 +250,11 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
+    if settings.LOGIN_2FA_REQUIRED and not user["phone_number"]:
+        redirect_url = URL(cfg.LOGIN_REDIRECT)
+        redirect_url = redirect_url.with_fragment(f"2fa-verify?email={user['email']}")
+        raise web.HTTPFound(location=redirect_url)
+
     if settings.LOGIN_2FA_REQUIRED:
         assert user["phone_number"], "db corrupted. Phone number needed"  # nosec
         try:
@@ -535,10 +540,7 @@ async def email_confirmation(request: web.Request):
             await db.update_user(user, {"status": ACTIVE})
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
-            if settings.LOGIN_2FA_REQUIRED:
-                redirect_url = redirect_url.with_fragment(f"2fa-verify?email={user['email']}")
-            else:
-                redirect_url = redirect_url.with_fragment("?registered=true")
+            redirect_url = redirect_url.with_fragment("?registered=true")
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({"id": confirmation["user_id"]})
