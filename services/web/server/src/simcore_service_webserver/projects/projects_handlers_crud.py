@@ -6,7 +6,8 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 import asyncio
 import json
 import logging
-from typing import Any, Coroutine, Optional
+from contextlib import AsyncExitStack
+from typing import Any, Awaitable, Optional
 from uuid import UUID
 
 from aiohttp import web
@@ -17,7 +18,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     get_task_manager,
@@ -153,6 +154,77 @@ async def create_projects(request: web.Request):
     )
 
 
+async def _init_project_from_query(
+    app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
+) -> tuple[ProjectDict, Optional[Awaitable[None]]]:
+    if not query_params.from_study:
+        return {}, None
+    source_project = await projects_api.get_project_for_user(
+        app,
+        project_uuid=query_params.from_study,
+        user_id=user_id,
+        include_templates=True,
+    )
+
+    # clone template as user project
+    new_project, nodes_map = clone_project_document(
+        source_project,
+        forced_copy_project_id=None,
+        clean_output_data=(query_params.copy_data == False),
+    )
+    # remove template/study access rights
+    new_project["accessRights"] = {}
+    if not query_params.as_template:
+        new_project["name"] = default_copy_project_name(source_project["name"])
+    # the project is to be hidden until the data is copied
+    query_params.hidden = query_params.copy_data
+    # TODO: this should be made long running as well
+    clone_data_coro = (
+        copy_data_folders_from_project(
+            app, source_project, new_project, nodes_map, user_id
+        )
+        if query_params.copy_data
+        else None
+    )
+    return new_project, clone_data_coro
+
+
+async def _copy_files_from_source_project(
+    app: web.Application,
+    db: ProjectDBAPI,
+    query_params: _ProjectCreateParams,
+    new_project: ProjectDict,
+    user_id: UserID,
+    clone_data_coro: Awaitable[None],
+    new_project_was_hidden_before_data_was_copied: bool,
+):
+    if not query_params.from_study or not query_params.copy_data:
+        return
+    need_lock_source_project: bool = (
+        await db.get_project_type(parse_obj_as(ProjectID, query_params.from_study))
+        != ProjectTypeDB.TEMPLATE
+    )
+
+    async with AsyncExitStack() as stack:
+        if need_lock_source_project:
+            await stack.enter_async_context(
+                projects_api.lock_with_notification(
+                    app,
+                    query_params.from_study,
+                    ProjectStatus.CLONING,
+                    user_id,
+                    await get_user_name(app, user_id),
+                )
+            )
+        await clone_data_coro
+
+    # unhide the project if needed since it is now complete
+    if not new_project_was_hidden_before_data_was_copied:
+        await db.update_project_without_checking_permissions(
+            new_project, new_project["uuid"], hidden=False
+        )
+
+
 async def _create_projects(
     task_progress: TaskProgress,
     app: web.Application,
@@ -167,8 +239,6 @@ async def _create_projects(
     :raises web.HTTPUnauthorized
     :raises web.HTTPCreated
     """
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = {}
@@ -176,45 +246,9 @@ async def _create_projects(
         task_progress.publish(message="cloning project scaffold", percent=0)
         new_project_was_hidden_before_data_was_copied = query_params.hidden
 
-        clone_data_coro: Optional[Coroutine] = None
-        source_project: Optional[ProjectDict] = None
-        if query_params.from_study:  # copy from study
-            source_project = await projects_api.get_project_for_user(
-                app,
-                project_uuid=query_params.from_study,
-                user_id=user_id,
-                include_templates=True,
-            )
-            if not source_project:
-                raise web.HTTPNotFound(
-                    reason=f"Could not find source study uuid: {query_params.from_study}"
-                )
-
-        if source_project:
-            # clone template as user project
-            new_project, nodes_map = clone_project_document(
-                source_project,
-                forced_copy_project_id=None,
-                clean_output_data=(query_params.copy_data == False),
-            )
-            if query_params.from_study:
-                # remove template/study access rights
-                new_project["accessRights"] = {}
-                if not query_params.as_template:
-                    new_project["name"] = default_copy_project_name(
-                        source_project["name"]
-                    )
-            # the project is to be hidden until the data is copied
-            query_params.hidden = query_params.copy_data
-            # TODO: this should be made long running as well
-            clone_data_coro = (
-                copy_data_folders_from_project(
-                    app, source_project, new_project, nodes_map, user_id
-                )
-                if query_params.copy_data
-                else None
-            )
-            # FIXME: parameterized inputs should get defaults provided by service
+        new_project, clone_data_coro = await _init_project_from_query(
+            app, query_params, user_id
+        )
 
         # overrides with body
         if predefined_project:
@@ -243,30 +277,17 @@ async def _create_projects(
         # copies the project's DATA IF cloned
         if clone_data_coro:
             task_progress.publish(message="copying project data", percent=0.2)
-            assert source_project  # nosec
-            if (
-                await db.get_project_type(source_project["uuid"])
-                == ProjectTypeDB.TEMPLATE
-            ):
-                # no locks for templates
-                await clone_data_coro
-            else:
-                # we need to lock the original study while copying the data
-                async with projects_api.lock_with_notification(
-                    app,
-                    source_project["uuid"],
-                    ProjectStatus.CLONING,
-                    user_id,
-                    await get_user_name(app, user_id),
-                ):
+            await _copy_files_from_source_project(
+                app,
+                db,
+                query_params,
+                new_project,
+                user_id,
+                clone_data_coro,
+                new_project_was_hidden_before_data_was_copied,
+            )
 
-                    await clone_data_coro
-
-            # unhide the project if needed since it is now complete
-            if not new_project_was_hidden_before_data_was_copied:
-                await db.update_project_without_checking_permissions(
-                    new_project, new_project["uuid"], hidden=False
-                )
+        # update the network information in director-v2
         task_progress.publish(message="updating project network", percent=0.8)
         await director_v2_api.update_dynamic_service_networks_in_project(
             app, UUID(new_project["uuid"])
