@@ -249,11 +249,3 @@ async def test_registration_with_invitation(
 
         if is_invitation_required and has_valid_invitation:
             assert not await db.get_confirmation(confirmation)
-
-
-async def test_registration_2fa(
-    client: TestClient,
-):
-
-    # cannot be 2FA active and
-    raise NotImplementedError
