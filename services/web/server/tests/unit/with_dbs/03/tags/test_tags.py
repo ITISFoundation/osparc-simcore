@@ -5,6 +5,13 @@
 
 import pytest
 from aiohttp import web
+from models_library.projects_state import (
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    ProjectStatus,
+    RunningState,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from simcore_service_webserver.db_models import UserRole
@@ -30,10 +37,14 @@ async def test_tags_to_studies(
         resp = await client.put(url)
         data, _ = await assert_status(resp, expected)
         # Tag is included in response
-        assert added_tag.get("id") in data.get("tags")
+        assert added_tag["id"] in data["tags"]
 
     # check the tags are in
     user_project["tags"] = [tag["id"] for tag in added_tags]
+    user_project["state"] = ProjectState(
+        locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        state=ProjectRunningState(value=RunningState.UNKNOWN),
+    )
     data = await assert_get_same_project(client, user_project, expected)
 
     # Delete tag0
