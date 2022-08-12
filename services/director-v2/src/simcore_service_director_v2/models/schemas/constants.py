@@ -21,8 +21,3 @@ DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
 
 REGEX_DY_SERVICE_SIDECAR = rf"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
 REGEX_DY_SERVICE_PROXY = rf"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
-
-
-# TODO:
-# - finish to review changes before asking for review
-# - add a service collection task try and see where to put it
