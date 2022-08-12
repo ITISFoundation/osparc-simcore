@@ -208,7 +208,7 @@ types-aiobotocore==2.3.3
     # via -r requirements/_base.in
 types-aiobotocore-s3==2.3.3
     # via types-aiobotocore
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   aiodebug
     #   aioitertools
