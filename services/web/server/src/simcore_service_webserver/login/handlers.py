@@ -250,12 +250,20 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    if settings.LOGIN_2FA_REQUIRED and not user["phone_number"]:
-        redirect_url = URL(cfg.LOGIN_REDIRECT)
-        redirect_url = redirect_url.with_fragment(f"2fa-verify?email={user['email']}")
-        raise web.HTTPFound(location=redirect_url)
-
     if settings.LOGIN_2FA_REQUIRED:
+        if not user["phone_number"]:
+            response = web.json_response(
+                status=web.HTTPAccepted.status_code,
+                data={
+                    "data": {
+                        "code": "PHONE_NUMBER_REQUIRED", # this string is used by the frontend
+                        "reason": "PHONE_NUMBER_REQUIRED"
+                    },
+                    "error": None
+                }
+            )
+            return response
+
         assert user["phone_number"], "db corrupted. Phone number needed"  # nosec
         try:
             code = await add_validation_code(request.app, user["email"])
@@ -266,11 +274,13 @@ async def login(request: web.Request):
             phone_number = user["phone_number"]
             for i in list_of_indexes:
                 phone_number = phone_number[:i] + new_character + phone_number[i+1:]
-            data = attr.asdict(LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"))
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
                 data={
-                    "data": data,
+                    "data": {
+                        "code": "SMS_CODE_REQUIRED", # this string is used by the frontend
+                        "reason": "SMS_CODE_REQUIRED"
+                    },
                     "error": None
                 }
             )
