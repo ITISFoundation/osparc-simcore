@@ -290,7 +290,7 @@ tornado==6.1
     #   bokeh
 traitlets==5.3.0
     # via dask-gateway-server
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   aioitertools
