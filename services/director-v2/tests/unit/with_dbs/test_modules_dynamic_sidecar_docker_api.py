@@ -38,6 +38,13 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_api._core import (
+    _update_service_spec,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_api._utils import (
+    _RetryError,
+    docker_client,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     DockerVersion,
     spec_volume_removal_service,
@@ -402,7 +409,7 @@ async def test_failed_docker_client_request(docker_swarm: None):
     missing_network_name = "this_network_cannot_be_found"
 
     with pytest.raises(GenericDockerError) as execinfo:
-        async with docker_api.docker_client() as client:
+        async with docker_client() as client:
             await client.networks.get(missing_network_name)
     assert (
         str(execinfo.value)
@@ -771,11 +778,11 @@ async def test_regression_update_service_update_out_of_sequence(
     # NOTE: checks that the docker engine replies with
     # `rpc error: code = Unknown desc = update out of sequence`
     # the error is captured and raised as `docker_api._RetryError`
-    with pytest.raises(docker_api._RetryError):
+    with pytest.raises(_RetryError):
         # starting concurrent updates will trigger the error
         await asyncio.gather(
             *[
-                docker_api._update_service_spec(
+                _update_service_spec(
                     service_name=mock_service,
                     update_in_service_spec={},
                     stop_delay=3,

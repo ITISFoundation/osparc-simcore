@@ -1,0 +1,24 @@
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+import aiodocker
+
+from ..errors import GenericDockerError
+
+
+class _RetryError(Exception):
+    pass
+
+
+@asynccontextmanager
+async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
+    client = None
+    try:
+        client = aiodocker.Docker()
+        yield client
+    except aiodocker.exceptions.DockerError as e:
+        message = "Unexpected error from docker client"
+        raise GenericDockerError(message, e) from e
+    finally:
+        if client is not None:
+            await client.close()

@@ -1,14 +1,8 @@
-# wraps all calls to underlying docker engine
-
-
 import asyncio
 import json
 import logging
 import time
-from asyncio.log import logger
-from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Any, AsyncIterator, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -18,29 +12,23 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
-from servicelib.docker import to_datetime
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
+from tenacity.wait import wait_exponential
 
-from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.constants import (
+from ....core.settings import DynamicSidecarSettings
+from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
-from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
-from ...utils.dict_utils import get_leaf_key_paths, nested_update
-from .docker_service_specs.volume_remover import (
-    DockerVersion,
-    spec_volume_removal_service,
-)
-from .docker_states import TASK_STATES_RUNNING, extract_task_state
-from .errors import DynamicSidecarError, GenericDockerError
+from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ....utils.dict_utils import get_leaf_key_paths, nested_update
+from ..docker_states import TASK_STATES_RUNNING, extract_task_state
+from ..errors import DynamicSidecarError, GenericDockerError
+from ._utils import _RetryError, docker_client
 
 NO_PENDING_OVERWRITE = {
     ServiceState.FAILED,
@@ -49,34 +37,7 @@ NO_PENDING_OVERWRITE = {
 }
 
 
-SERVICE_FINISHED_STATES: set[str] = {
-    "complete",
-    "failed",
-    "shutdown",
-    "rejected",
-    "orphaned",
-    "remove",
-}
-
 log = logging.getLogger(__name__)
-
-
-class _RetryError(Exception):
-    pass
-
-
-@asynccontextmanager
-async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
-    client = None
-    try:
-        client = aiodocker.Docker()
-        yield client
-    except aiodocker.exceptions.DockerError as e:
-        message = "Unexpected error from docker client"
-        raise GenericDockerError(message, e) from e
-    finally:
-        if client is not None:
-            await client.close()
 
 
 async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
@@ -560,132 +521,3 @@ async def constrain_service_to_node(service_name: str, docker_node_id: str) -> N
         },
     )
     log.info("Constraining service %s to node %s", service_name, docker_node_id)
-
-
-async def remove_volumes_from_node(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    volume_names: list[str],
-    docker_node_id: str,
-    *,
-    volume_removal_attempts: int = 15,
-    sleep_between_attempts_s: int = 2,
-) -> bool:
-    """
-    Starts a service at target docker node which will remove
-    all entries in the `volumes_names` list.
-    """
-
-    async with docker_client() as client:
-        # When running docker-dind makes sure to use the same image as the
-        # underlying docker-engine.
-        # Will start a container with the same version across the entire cluster.
-        # It is safe to assume the local docker engine version will be
-        # the same as the one on the targeted node.
-        version_request = await client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-        docker_version: DockerVersion = parse_obj_as(
-            DockerVersion, version_request["Version"]
-        )
-
-        # Timeout for the runtime of the service is calculated based on the amount
-        # of attempts required to remove each individual volume,
-        # in the worst case scenario when all volumes are do not exit.
-        volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s
-        service_timeout_s = volume_removal_timeout_s * len(volume_names)
-
-        service_spec = spec_volume_removal_service(
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            docker_node_id=docker_node_id,
-            volume_names=volume_names,
-            docker_version=docker_version,
-            volume_removal_attempts=volume_removal_attempts,
-            sleep_between_attempts_s=sleep_between_attempts_s,
-            service_timeout_s=service_timeout_s,
-        )
-
-        volume_removal_service = await client.services.create(
-            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
-        )
-
-        service_id = volume_removal_service["ID"]
-        try:
-            async for attempt in AsyncRetrying(
-                stop=stop_after_delay(service_timeout_s),
-                wait=wait_fixed(0.5),
-                retry=retry_if_exception_type(_RetryError),
-                reraise=True,
-            ):
-                with attempt:
-                    tasks = await client.tasks.list(filters={"service": service_id})
-                    # NOTE: the service will have at most 1 task, since there is no restart
-                    # policy present
-                    if len(tasks) != 1:
-                        # Sometimes swarm did not mange to create a task after the service
-                        # is created. In that case a retry is triggered
-                        raise _RetryError(
-                            f"Expected 1 task for service {service_id}, found {tasks=}"
-                        )
-
-                    task = tasks[0]
-                    task_status = task["Status"]
-                    logger.debug("Service %s, %s", service_id, f"{task_status=}")
-                    task_state = task_status["State"]
-                    if task_state not in SERVICE_FINISHED_STATES:
-                        raise _RetryError(f"Waiting for task to finish: {task_status=}")
-
-                    if not (
-                        task_state == "complete"
-                        and task_status["ContainerStatus"]["ExitCode"] == 0
-                    ):
-                        # recover logs from command for a simpler debugging
-                        container_id = task_status["ContainerStatus"]["ContainerID"]
-                        container = await client.containers.get(container_id)
-                        container_logs = await container.log(stdout=True, stderr=True)
-                        logger.error(
-                            "Service %s, %s output: %s",
-                            service_id,
-                            f"{task_status=}",
-                            "\n".join(container_logs),
-                        )
-                        # NOTE: above implies the volumes will remain in the system and
-                        # have to be manually removed.
-                        return False
-        finally:
-            # NOTE: services created in swarm need to be removed, there is no way
-            # to instruct swarm to remove a service after it's created
-            # container/task finished
-            await client.services.delete(service_id)
-
-        return True
-
-
-async def remove_pending_volume_removal_services(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> None:
-    """
-    Removes all pending volume removal services. Such a service
-    will be considered pending if it is running for longer than its
-    intended duration (defined in the `service_timeout_s` label).
-    """
-    service_filters = {
-        "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-        ],
-        "name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"],
-    }
-    async with docker_client() as client:
-        volume_removal_services = await client.services.list(filters=service_filters)
-
-        for volume_removal_service in volume_removal_services:
-            service_timeout_s = int(
-                volume_removal_service["Spec"]["Labels"]["service_timeout_s"]
-            )
-            created_at = to_datetime(volume_removal_services[0]["CreatedAt"])
-            time_diff = datetime.utcnow() - created_at
-            service_timed_out = time_diff.seconds > (service_timeout_s * 10)
-            if service_timed_out:
-                service_id = volume_removal_service["ID"]
-                service_name = volume_removal_service["Spec"]["Name"]
-                logger.debug("Removing pending volume removal service %s", service_name)
-                await client.services.delete(service_id)
