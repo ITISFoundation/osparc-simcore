@@ -180,6 +180,8 @@ class TaskManager:
         if not tracked_task.task.done():
             raise TaskNotCompletedError(task_id=task_id)
 
+        return tracked_task.task.result()
+
         try:
             exception = tracked_task.task.exception()
             if exception is not None:
@@ -301,13 +303,13 @@ def start_task(
     task_progress = TaskProgress.create()
 
     async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
-        task_progress.publish(message="starting", percent=0)
+        progress.publish(message="starting", percent=0)
         try:
-            return await handler(task_progress, **kwargs)
+            return await handler(progress, **kwargs)
         finally:
             # TODO: change that signature. it actually does not publish anything
             # and it can raise if percent is <0 or >1!! -> simplify
-            task_progress.publish(message="finished", percent=1)
+            progress.publish(message="finished", percent=1)
 
     task = asyncio.create_task(
         _progress_task(task_progress, handler), name=f"{__name__}.{task_name}"
