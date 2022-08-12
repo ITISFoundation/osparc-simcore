@@ -164,14 +164,16 @@ async def test_list_projects_with_pagination(
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
 
     NUM_PROJECTS = 90
     # let's create a few projects here
     created_projects = await asyncio.gather(
         *[
-            create_project(client, expected.accepted, logged_user, primary_group)
+            request_create_project(
+                client, expected.accepted, logged_user, primary_group
+            )
             for i in range(NUM_PROJECTS)
         ]
     )

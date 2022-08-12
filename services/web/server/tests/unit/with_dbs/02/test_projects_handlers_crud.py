@@ -242,9 +242,9 @@ async def test_new_project(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    new_project = await create_project(
+    new_project = await request_create_project(
         client, expected.accepted, logged_user, primary_group
     )
 
@@ -258,9 +258,9 @@ async def test_new_project_from_template(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    new_project = await create_project(
+    new_project = await request_create_project(
         client,
         expected.accepted,
         logged_user,
@@ -287,10 +287,10 @@ async def test_new_project_from_other_study(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     project_db_cleaner,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     catalog_subsystem_mock([user_project])
-    new_project = await create_project(
+    new_project = await request_create_project(
         client,
         expected.accepted,
         logged_user,
@@ -318,7 +318,7 @@ async def test_new_project_from_template_with_body(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     predefined = {
         "uuid": "",
@@ -339,7 +339,7 @@ async def test_new_project_from_template_with_body(
         "tags": [],
         "classifiers": [],
     }
-    project = await create_project(
+    project = await request_create_project(
         client,
         expected.accepted,
         logged_user,
@@ -375,10 +375,10 @@ async def test_new_template_from_project(
     storage_subsystem_mock: MockedStorageSubsystem,
     catalog_subsystem_mock: Callable,
     project_db_cleaner: None,
-    create_project: Callable[..., Awaitable[ProjectDict]],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
-    new_template_prj = await create_project(
+    new_template_prj = await request_create_project(
         client,
         expected.accepted,
         logged_user,
@@ -435,7 +435,7 @@ async def test_new_template_from_project(
         "tags": [],
         "classifiers": [],
     }
-    new_template_prj = await create_project(
+    new_template_prj = await request_create_project(
         client,
         expected.accepted,
         logged_user,
