@@ -25,7 +25,7 @@
  *       studyData
  *     }
  *   }
- *   osparc.data.Resources.fetch("studies", "post", params)
+ *   osparc.data.Resources.fetch("studies", "postNewStudy", params)
  *     .then(study => {
  *       // study contains the new updated study
  *       // This code will execute if the call succeeds
@@ -90,6 +90,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
+          // OM: update
           postToTemplate: {
             method: "POST",
             url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}"
@@ -102,6 +103,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}:close"
           },
+          // OM: update
           duplicate: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:duplicate"
@@ -111,10 +113,12 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/state"
           },
-          post: {
+          // OM: update
+          postNewStudy: {
             method: "POST",
             url: statics.API + "/projects"
           },
+          // OM: update
           postFromStudy: {
             method: "POST",
             url: statics.API + "/projects?from_study={templateId}"
