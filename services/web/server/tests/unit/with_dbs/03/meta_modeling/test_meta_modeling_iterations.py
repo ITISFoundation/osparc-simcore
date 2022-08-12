@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 from http import HTTPStatus
+from typing import Awaitable, Callable
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -59,10 +60,13 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
 @pytest.mark.acceptance_test
 async def test_iterators_workflow(
     client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group,
     context_with_logged_user: None,
     mocker,
     faker: Faker,
     director_v2_service_mock: None,
+    create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     #
     # NOTE: all TODOs below shall be addressed in next version of the iterator
@@ -86,13 +90,20 @@ async def test_iterators_workflow(
         return_value=None,
     )
     # ----
+    project_data = await create_project(
+        client,
+        web.HTTPAccepted,
+        logged_user,
+        primary_group,
+        project=NEW_PROJECT.request_payload,
+    )
 
-    assert NEW_PROJECT.request_desc == "POST /v0/projects"
-    resp = await client.post("/v0/projects", json=NEW_PROJECT.request_payload)
-    assert resp.status == NEW_PROJECT.status_code, await resp.text()
-    body = await resp.json()
+    # assert NEW_PROJECT.request_desc == "POST /v0/projects"q
+    # resp = await client.post("/v0/projects", json=NEW_PROJECT.request_payload)
+    # assert resp.status == NEW_PROJECT.status_code, await resp.text()
+    # body = await resp.json()
 
-    project_data: ProjectDict = body["data"]
+    # project_data: ProjectDict = body["data"]
     project_uuid = project_data["uuid"]
 
     # CREATE meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
