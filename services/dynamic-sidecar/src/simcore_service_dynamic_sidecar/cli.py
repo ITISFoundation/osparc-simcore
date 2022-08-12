@@ -65,7 +65,7 @@ def state_list_dirs():
             state_path_content = list(state_path.glob("*"))
             typer.echo(f"Entries in {state_path}: {state_path_content}")
 
-    asyncio.get_event_loop().run_until_complete(_async_state_list_dirs())
+    asyncio.run(_async_state_list_dirs())
 
 
 @main.command()
@@ -83,7 +83,7 @@ def state_save():
             TaskProgress.create(), settings, mounted_volumes, rabbitmq
         )
 
-    asyncio.get_event_loop().run_until_complete(_async_save_state())
+    asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
 
 
@@ -101,7 +101,7 @@ def outputs_push():
             TaskProgress.create(), None, mounted_volumes, rabbitmq
         )
 
-    asyncio.get_event_loop().run_until_complete(_async_outputs_push())
+    asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")
 
 
