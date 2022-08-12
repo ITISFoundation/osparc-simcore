@@ -1,13 +1,13 @@
 import logging
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict, List
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
 
 from ..security_api import check_permission
@@ -17,8 +17,8 @@ from .utils import get_random_string
 log = logging.getLogger(__name__)
 
 
-def generate_api_credentials() -> Dict[str, str]:
-    credentials: Dict = dict.fromkeys(("api_key", "api_secret"), "")
+def generate_api_credentials() -> dict[str, str]:
+    credentials: dict = dict.fromkeys(("api_key", "api_secret"), "")
     for name in deepcopy(credentials):
         value = get_random_string(20)
         credentials[name] = str(uuidlib.uuid5(uuidlib.NAMESPACE_DNS, value))
@@ -41,7 +41,7 @@ class CRUD:
             ).where(orm.api_keys.c.user_id == self.userid)
 
             res: ResultProxy = await conn.execute(stmt)
-            rows: List[RowProxy] = await res.fetchall()
+            rows: list[RowProxy] = await res.fetchall()
             return [row.get(0) for row in rows] if rows else []
 
     async def create(self, name: str, *, api_key: str, api_secret: str):
@@ -123,4 +123,4 @@ async def delete_api_key(request: web.Request):
             "Failed to delete API key %d. Ignoring error", display_name, exc_info=err
         )
 
-    raise web.HTTPNoContent
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
