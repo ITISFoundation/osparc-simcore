@@ -26,8 +26,8 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
-    message: ProgressMessage
-    percent: ProgressPercent
+    message: ProgressMessage = Field(default="")
+    percent: ProgressPercent = Field(default=0.0)
 
     def publish(
         self,

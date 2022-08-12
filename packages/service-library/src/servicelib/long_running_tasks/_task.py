@@ -310,7 +310,7 @@ def start_task(
         managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    task_progress = TaskProgress.create()
+    task_progress = TaskProgress()
     awaitable = handler(task_progress, **kwargs)
     task = asyncio.create_task(awaitable)
 
