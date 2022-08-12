@@ -1,11 +1,12 @@
 from datetime import timedelta
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 from aiohttp import web
 from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.twilio import TwilioSettings
 
 from .._constants import APP_SETTINGS_KEY
 
@@ -24,6 +25,7 @@ class LoginSettings(BaseCustomSettings):
             "WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
         ],
     )
+
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
         ...,
         env=[
@@ -31,13 +33,18 @@ class LoginSettings(BaseCustomSettings):
             "WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED",
         ],
     )
-    LOGIN_2FA_REQUIRED: bool = Field(
-        ...,
-        env=[
-            "LOGIN_2FA_REQUIRED",
-            "WEBSERVER_LOGIN_2FA_REQUIRED",
-        ],
+
+    LOGIN_TWILIO: Optional[TwilioSettings] = Field(
+        auto_default_from_env=True,
+        description="Twilio service settings. Used to send SMS for 2FA",
     )
+
+    LOGIN_2FA_REQUIRED: bool = Field(
+        default=False,
+        description="Enforces two-factor-authentication for all user's during login",
+    )
+
+    # TODO: if LOGIN_2FA_REQUIRED then LOGIN_TWILIO != NULL
 
 
 class LoginOptions(BaseModel):
@@ -45,7 +52,7 @@ class LoginOptions(BaseModel):
 
     THEME: str = "templates/osparc.io"
     COMMON_THEME: str = "templates/common"
-    PASSWORD_LEN: Tuple[PositiveInt, PositiveInt] = (6, 30)
+    PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
 
@@ -73,7 +80,9 @@ class LoginOptions(BaseModel):
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
     MSG_VALIDATION_CODE_SENT: str = "SMS code sent"
-    MSG_VALIDATION_CODE_SEND_ERROR: str = "There was a problem sending the validation code"
+    MSG_VALIDATION_CODE_SEND_ERROR: str = (
+        "There was a problem sending the validation code"
+    )
     MSG_VALIDATION_CODE_ERROR: str = "Invalid validation code"
     MSG_VERIFY_PHONE_NUMBER: str = "Phone number succesfully verified"
     MSG_ACTIVATED: str = "Your account is activated"

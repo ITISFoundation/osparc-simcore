@@ -7,7 +7,8 @@ from twilio.rest import Client
 log = logging.getLogger(__name__)
 
 
-async def send_sms_code(phone_number, code):
+async def send_sms_code(phone_number: str, code: str):
+    # SEE https://www.twilio.com/docs/sms/quickstart/python
     def sender():
         log.info(
             "sending sms code to %s",
