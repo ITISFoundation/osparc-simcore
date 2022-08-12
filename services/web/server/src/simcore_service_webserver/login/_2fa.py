@@ -33,7 +33,7 @@ class ValidationCode(BaseModel):
 #
 
 
-async def _generage_2fa_code() -> str:
+def _generage_2fa_code() -> str:
     return f"{1000 + secrets.randbelow(8999)}"  # code between [1000, 9999)
 
 
@@ -45,9 +45,8 @@ async def set_2fa_code(
     timeout: int = 60,
 ) -> str:
     redis_client = get_redis_validation_code_client(app)
-    hash_key = user_email
-    code = _generage_2fa_code()
-    await redis_client.set(hash_key, code, ex=timeout)
+    hash_key, code = user_email, _generage_2fa_code()
+    await redis_client.set(hash_key, value=code, ex=timeout)
     return code
 
 

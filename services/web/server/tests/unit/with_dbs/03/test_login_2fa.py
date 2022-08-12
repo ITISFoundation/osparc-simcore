@@ -2,12 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 from unittest.mock import Mock
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
@@ -48,17 +47,6 @@ def app_cfg(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
-    web_server: TestServer,
-) -> TestClient:
-
-    cli = event_loop.run_until_complete(aiohttp_client(web_server))
-    return cli
-
-
-@pytest.fixture
 def cfg(client: TestClient) -> LoginOptions:
     assert client.app
     cfg = get_plugin_options(client.app)
@@ -86,7 +74,8 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
 # TESTS ---------------------------------------------------------------------------
 
 
-async def test_it(
+@pytest.mark.acceptance_test
+async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,
     capsys,
@@ -200,4 +189,4 @@ async def test_it(
     user = await db.get_user({"email": EMAIL})
     assert user["email"] == EMAIL
     assert user["phone"] == PHONE
-    assert user["status"] == UserStatus.ACTIVE
+    assert user["status"] == UserStatus.ACTIVE.value
