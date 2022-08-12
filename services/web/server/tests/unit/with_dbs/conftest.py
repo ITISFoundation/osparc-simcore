@@ -531,6 +531,7 @@ def create_project() -> Callable[..., Awaitable[ProjectDict]]:
         project: Optional[dict] = None,
         from_study: Optional[dict] = None,
         as_template: Optional[bool] = None,
+        copy_data: Optional[bool] = None,
     ) -> ProjectDict:
         # Pre-defined fields imposed by required properties in schema
         project_data = {}
@@ -560,6 +561,8 @@ def create_project() -> Callable[..., Awaitable[ProjectDict]]:
             url = url.update_query(from_study=from_study["uuid"])
         if as_template:
             url = url.update_query(as_template=f"{as_template}")
+        if copy_data is not None:
+            url = url.update_query(copy_data=f"{copy_data}")
         resp = await client.post(url, json=project_data)
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_response)

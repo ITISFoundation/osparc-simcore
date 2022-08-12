@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 import asyncio
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
+from simcore_service_webserver.projects.project_models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -147,18 +148,20 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
+    create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
     catalog_subsystem_mock([template_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
-    assert str(create_url) == f"{API_PREFIX}/projects"
-    create_url = create_url.with_query(
-        from_study=template_project["uuid"], copy_data="false"
+    await create_project(
+        client,
+        expected.accepted,
+        logged_user,
+        primary_group,
+        from_study=template_project,
+        copy_data=False,
     )
-    # this should go fast, let's have a timeout
-    await client.post(f"{create_url}", json={}, timeout=2)
 
     slow_storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()
 
@@ -194,18 +197,21 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
+    create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
     catalog_subsystem_mock([user_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
-    assert str(create_url) == f"{API_PREFIX}/projects"
-    create_url = create_url.with_query(
-        from_study=user_project["uuid"], as_template="true", copy_data="false"
+    await create_project(
+        client,
+        expected.accepted,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+        copy_data=False,
+        as_template=True,
     )
-    # this should go fast, let's have a timeout
-    await client.post(f"{create_url}", json={}, timeout=2)
 
     slow_storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()
 
