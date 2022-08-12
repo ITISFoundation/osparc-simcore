@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.utils_login import parse_link
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
@@ -78,10 +79,8 @@ def db(client: TestClient) -> AsyncpgStorage:
 def mocked_twilio_service(mocker) -> dict[str, Mock]:
     mocks = {}
 
-    mocks["send_sms_code"] = (
-        mocker.patch(
-            "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
-        ),
+    mocks["send_sms_code"] = mocker.patch(
+        "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
     )
     return mocks
 
@@ -89,6 +88,7 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
 async def test_it(
     client: TestClient,
     db: AsyncpgStorage,
+    capsys,
     mocked_twilio_service: dict[str, Mock],
 ):
 
@@ -96,7 +96,7 @@ async def test_it(
 
     # 1. submit
     url = client.app.router["auth_register"].url_for()
-    r = await client.post(
+    rsp = await client.post(
         url,
         json={
             "email": EMAIL,
@@ -104,40 +104,52 @@ async def test_it(
             "confirm": PASSWORD,
         },
     )
-    await assert_status(r, web.HTTPOk)
-    # TODO: check email was sent
-    # TODO: use email link
+    await assert_status(rsp, web.HTTPOk)
+
+    # check email was sent
+    def _get_confirmation_link_from_email():
+        out, _ = capsys.readouterr()
+        link = parse_link(out)
+        assert "/auth/confirmation/" in str(link)
+        return link
+
+    url = _get_confirmation_link_from_email()
 
     # 2. confirmation
-    r = await client.get(url)
-    await assert_status(r, web.HTTPOk)
+    rsp = await client.get(url)
+    assert rsp.status == web.HTTPOk.status_code
 
-    # TODO: check email+password registered
+    # check email+password registered
+    user = await db.get_user({"email": EMAIL})
+    assert user["status"] == UserStatus.ACTIVE.name
+    assert user["phone"] is None
 
     # register phone --------------------------------------------------
 
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
-    r = await client.post(
+    rsp = await client.post(
         url,
         json={
             "email": EMAIL,
             "phone": PHONE,
         },
     )
-    await assert_status(r, web.HTTPOk)
+    await assert_status(rsp, web.HTTPAccepted)
 
-    # TODO: check code generated
-    # TODO: check sms sent
-    # TODO: get code sent by SMS
-    # TODO: check phone still NOT in db (TODO: should be in database and unconfirmed)
+    # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code"].called
-    phone_number, received_code = mocked_twilio_service["send_sms_code"].call_args
-    assert phone_number == PHONE
+    phone, received_code = mocked_twilio_service["send_sms_code"].call_args.args
+    assert phone == PHONE
+
+    # check phone still NOT in db (TODO: should be in database and unconfirmed)
+    user = await db.get_user({"email": EMAIL})
+    assert user["status"] == UserStatus.ACTIVE.name
+    assert user["phone"] is None
 
     # 2. confirmation
     url = client.app.router["auth_validate_2fa_register"].url_for()
-    r = await client.post(
+    rsp = await client.post(
         url,
         json={
             "email": EMAIL,
@@ -145,16 +157,17 @@ async def test_it(
             "code": received_code,
         },
     )
-    await assert_status(r, web.HTTPOk)
-    # TODO: check user has phone confirmed
+    await assert_status(rsp, web.HTTPOk)
+    # check user has phone confirmed
     user = await db.get_user({"email": EMAIL})
+    assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] == PHONE
 
     # login ---------------------------------------------------------
 
     # 1. check email/password then send SMS
     url = client.app.router["auth_login"].url_for()
-    r = await client.post(
+    rsp = await client.post(
         url,
         json={
             "email": EMAIL,
@@ -162,25 +175,24 @@ async def test_it(
             "confirm": PASSWORD,
         },
     )
-    data, _ = await assert_status(r, web.HTTPAccepted)
+    data, _ = await assert_status(rsp, web.HTTPAccepted)
 
     assert data["code"] == "SMS_CODE_REQUIRED"
 
     # assert SMS was sent
-    assert mocked_twilio_service["send_sms_code"].called
-    phone_number, received_code = mocked_twilio_service["send_sms_code"].call_args
-    assert phone_number == PHONE
+    phone, received_code = mocked_twilio_service["send_sms_code"].call_args.args
+    assert phone == PHONE
 
     # 2. check SMS code
     url = client.app.router["auth_validate_2fa_login"].url_for()
-    r = await client.post(
+    rsp = await client.post(
         url,
         json={
             "email": EMAIL,
             "code": received_code,
         },
     )
-    await assert_status(r, web.HTTPOk)
+    await assert_status(rsp, web.HTTPOk)
 
     # assert users is successfully registered
     user = await db.get_user({"email": EMAIL})
