@@ -143,21 +143,19 @@ async def verify_2fa_phone(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
-    phone_number = body.phone
+    phone = body.phone  # TODO: validate this is a phone?
 
     if settings.LOGIN_2FA_REQUIRED:
         try:
             code = await add_validation_code(request.app, email)
             print("code", code)
-            await send_sms_code(phone_number, code)
+            await send_sms_code(phone, code)
             list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
             new_character = "X"
             for i in list_of_indexes:
-                phone_number = phone_number[:i] + new_character + phone_number[i + 1 :]
+                phone = phone[:i] + new_character + phone[i + 1 :]
             data = attr.asdict(
-                LogMessageType(
-                    cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number, "INFO"
-                )
+                LogMessageType(cfg.MSG_VALIDATION_CODE_SENT + " to " + phone, "INFO")
             )
             response = web.json_response(
                 status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
@@ -178,7 +176,7 @@ async def validate_2fa_register(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
-    phone_number = body.phone
+    phone = body.phone
     code = body.code
 
     if settings.LOGIN_2FA_REQUIRED:
@@ -186,7 +184,7 @@ async def validate_2fa_register(request: web.Request):
         if code == v_code:
             await delete_validation_code(request.app, email)
             user = await db.get_user({"email": email})
-            await db.update_user(user, {"phone_number": phone_number})
+            await db.update_user(user, {"phone": phone})
             # log in user
             with log_context(
                 log,
@@ -240,7 +238,7 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
-        if not user["phone_number"]:
+        if not user["phone"]:
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
                 data={
@@ -253,22 +251,22 @@ async def login(request: web.Request):
             )
             return response
 
-        assert user["phone_number"], "db corrupted. Phone number needed"  # nosec
+        assert user["phone"], "db corrupted. Phone number needed"  # nosec
         try:
             code = await add_validation_code(request.app, user["email"])
             print("code", code)
-            await send_sms_code(user["phone_number"], code)
+            await send_sms_code(user["phone"], code)
             list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
             new_character = "X"
-            phone_number = user["phone_number"]
+            phone = user["phone"]
             for i in list_of_indexes:
-                phone_number = phone_number[:i] + new_character + phone_number[i + 1 :]
+                phone = phone[:i] + new_character + phone[i + 1 :]
             response = web.json_response(
                 status=web.HTTPAccepted.status_code,
                 data={
                     "data": {
                         "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
-                        "reason": cfg.MSG_VALIDATION_CODE_SENT + " to " + phone_number,
+                        "reason": cfg.MSG_VALIDATION_CODE_SENT + " to " + phone,
                     },
                     "error": None,
                 },
