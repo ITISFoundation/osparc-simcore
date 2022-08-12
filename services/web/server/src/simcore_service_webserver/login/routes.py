@@ -5,7 +5,6 @@
 
 import logging
 from pprint import pformat
-from typing import List
 
 from aiohttp import web
 from servicelib.aiohttp import openapi
@@ -20,7 +19,7 @@ from . import handlers as login_handlers
 log = logging.getLogger(__name__)
 
 
-def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
+def create_routes(specs: openapi.Spec) -> list[web.RouteDef]:
     """Creates routes mapping operators_id with handler functions
 
     :param specs: validated oas
@@ -38,10 +37,10 @@ def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
 
     handlers_map = {
         "auth_register": login_handlers.register,
-        "auth_verify_2fa_phone": login_handlers.verify_2fa_phone,
-        "auth_validate_2fa_register": login_handlers.validate_2fa_register,
+        "auth_verify_2fa_phone": login_handlers.register_phone,
+        "auth_validate_2fa_register": login_handlers.phone_confirmation,
         "auth_login": login_handlers.login,
-        "auth_validate_2fa_login": login_handlers.validate_2fa_login,
+        "auth_validate_2fa_login": login_handlers.login_2fa,
         "auth_logout": login_handlers.logout,
         "auth_reset_password": login_handlers.reset_password,
         "auth_reset_password_allowed": login_handlers.reset_password_allowed,

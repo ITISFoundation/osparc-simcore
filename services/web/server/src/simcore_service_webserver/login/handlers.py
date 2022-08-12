@@ -136,7 +136,12 @@ async def register(request: web.Request):
     return response
 
 
-async def verify_2fa_phone(request: web.Request):
+async def register_phone(request: web.Request):
+    """
+    Submits phone registration
+    - sends a code
+    - registration is completed requesting to 'phone_confirmation' route with the code received
+    """
     _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)
@@ -170,7 +175,7 @@ async def verify_2fa_phone(request: web.Request):
             ) from e
 
 
-async def validate_2fa_register(request: web.Request):
+async def phone_confirmation(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)
@@ -293,7 +298,13 @@ async def login(request: web.Request):
         return response
 
 
-async def validate_2fa_login(request: web.Request):
+async def login_2fa(request: web.Request):
+    """2FA login
+
+    NOTE that validation code is not generated
+    until the email/password of the standard login (handler above) is not
+    completed
+    """
     _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -503,7 +514,8 @@ async def change_password(request: web.Request):
 
 
 async def email_confirmation(request: web.Request):
-    """Handled access from a link sent to user by email
+    """Handles email confirmation by checking a code passed as query parameter
+
     Retrieves confirmation key and redirects back to some location front-end
 
     * registration, change-email:
