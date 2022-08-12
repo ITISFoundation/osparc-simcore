@@ -7,6 +7,7 @@ import logging
 import time
 from asyncio.log import logger
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, AsyncIterator, Mapping, Optional, Union
 
 import aiodocker
@@ -18,6 +19,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_obj_as
+from servicelib.docker import to_datetime
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -29,6 +31,7 @@ from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from ...utils.dict_utils import get_leaf_key_paths, nested_update
@@ -561,6 +564,7 @@ async def constrain_service_to_node(service_name: str, docker_node_id: str) -> N
 
 
 async def remove_volumes_from_node(
+    dynamic_sidecar_settings: DynamicSidecarSettings,
     volume_names: list[str],
     docker_node_id: str,
     *,
@@ -588,23 +592,25 @@ async def remove_volumes_from_node(
             DockerVersion, version_request["Version"]
         )
 
-        service_spec = spec_volume_removal_service(
-            docker_node_id=docker_node_id,
-            volume_names=volume_names,
-            docker_version=docker_version,
-            volume_removal_attempts=volume_removal_attempts,
-            sleep_between_attempts_s=sleep_between_attempts_s,
-        )
-
-        volume_removal_service = await client.services.create(
-            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
-        )
-
         # compute timeout for the service based on the amount of attempts
         # required to remove each individual volume in the worst case scenario
         # when all volumes are do not exit.
         volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s
         service_timeout_s = volume_removal_timeout_s * len(volume_names)
+
+        service_spec = spec_volume_removal_service(
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            docker_node_id=docker_node_id,
+            volume_names=volume_names,
+            docker_version=docker_version,
+            volume_removal_attempts=volume_removal_attempts,
+            sleep_between_attempts_s=sleep_between_attempts_s,
+            service_timeout_s=service_timeout_s,
+        )
+
+        volume_removal_service = await client.services.create(
+            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
+        )
 
         service_id = volume_removal_service["ID"]
         try:
@@ -652,3 +658,34 @@ async def remove_volumes_from_node(
             await client.services.delete(service_id)
 
         return True
+
+
+async def remove_pending_volume_removal_services(
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+) -> None:
+    """
+    returns: a list of volume removal services ids which are running
+    for longer than their intended duration (service_timeout_s
+    label).
+    """
+    service_filters = {
+        "label": [
+            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+        ],
+        "name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"],
+    }
+    async with docker_client() as client:
+        volume_removal_services = await client.services.list(filters=service_filters)
+
+        for volume_removal_service in volume_removal_services:
+            service_timeout_s = int(
+                volume_removal_service["Spec"]["Labels"]["service_timeout_s"]
+            )
+            created_at = to_datetime(volume_removal_services[0]["CreatedAt"])
+            time_diff = datetime.utcnow() - created_at
+            service_timed_out = time_diff.seconds > (service_timeout_s * 10)
+            if service_timed_out:
+                service_id = volume_removal_service["ID"]
+                service_name = volume_removal_service["Spec"]["Name"]
+                logger.debug("Removing pending volume removal service %s", service_name)
+                await client.services.delete(service_id)

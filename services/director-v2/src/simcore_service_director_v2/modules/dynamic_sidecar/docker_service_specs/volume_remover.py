@@ -11,6 +11,7 @@ from models_library.services_resources import (
     MEMORY_250MB,
 )
 
+from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 
 
@@ -76,12 +77,14 @@ fi
 
 
 def spec_volume_removal_service(
+    dynamic_sidecar_settings: DynamicSidecarSettings,
     docker_node_id: str,
     volume_names: list[str],
     docker_version: DockerVersion,
     *,
     volume_removal_attempts: int,
     sleep_between_attempts_s: int,
+    service_timeout_s: int,
 ) -> AioDockerServiceSpec:
     """
     Starts service `docker:{docker_version}-dind` to the:
@@ -96,8 +99,6 @@ def spec_volume_removal_service(
     remain in the system.
     """
 
-    # computing timeouts based on the attempts required to remove
-
     volume_names_seq = " ".join(volume_names)
     formatted_command = SH_SCRIPT_REMOVE_VOLUMES.format(
         volume_names_seq=volume_names_seq,
@@ -110,6 +111,10 @@ def spec_volume_removal_service(
     create_service_params = {
         "labels": {
             "volume_names": json.dumps(volume_names),
+            "volume_removal_attempts": f"{volume_removal_attempts}",
+            "sleep_between_attempts_s": f"{sleep_between_attempts_s}",
+            "service_timeout_s": f"{service_timeout_s}",
+            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
         },
         "name": f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{uuid4()}",
         "task_template": {

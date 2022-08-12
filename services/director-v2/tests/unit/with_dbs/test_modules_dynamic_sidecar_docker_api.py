@@ -10,19 +10,23 @@ from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
+from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from faker import Faker
+from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
@@ -34,6 +38,10 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DockerVersion,
+    spec_volume_removal_service,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     GenericDockerError,
@@ -842,12 +850,15 @@ async def test_remove_volume_from_node_ok(
     docker: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     for named_volume in named_volumes:
         assert await is_volume_present(docker, named_volume) is True
 
     volume_removal_result = await docker_api.remove_volumes_from_node(
-        volume_names=named_volumes, docker_node_id=target_node_id
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        volume_names=named_volumes,
+        docker_node_id=target_node_id,
     )
     assert volume_removal_result is True
 
@@ -860,6 +871,7 @@ async def test_remove_volume_from_node_no_volume_found(
     docker: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
     assert await is_volume_present(docker, missing_volume_name) is False
@@ -868,6 +880,7 @@ async def test_remove_volume_from_node_no_volume_found(
     volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
 
     volume_removal_result = await docker_api.remove_volumes_from_node(
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=volumes_to_remove,
         docker_node_id=target_node_id,
         volume_removal_attempts=2,
@@ -877,3 +890,101 @@ async def test_remove_volume_from_node_no_volume_found(
     assert await is_volume_present(docker, missing_volume_name) is False
     for named_volume in named_volumes:
         assert await is_volume_present(docker, named_volume) is False
+
+
+@pytest.fixture
+def volume_removal_services_names(faker: Faker) -> set[str]:
+    return {f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{faker.uuid4()}" for _ in range(10)}
+
+
+@pytest.fixture
+async def docker_version(docker: aiodocker.Docker) -> DockerVersion:
+    version_request = await docker._query_json(  # pylint: disable=protected-access
+        "version", versioned_api=False
+    )
+    return parse_obj_as(DockerVersion, version_request["Version"])
+
+
+@pytest.fixture(params=[0, 2])
+def service_timeout_s(request: FixtureRequest) -> int:
+    return request.param  # type: ignore
+
+
+@pytest.fixture
+async def ensure_fake_volume_removal_services(
+    docker: aiodocker.Docker,
+    docker_version: DockerVersion,
+    target_node_id: str,
+    volume_removal_services_names: list[str],
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    service_timeout_s: int,
+    docker_swarm: None,
+) -> AsyncIterator[None]:
+    started_services_ids: list[str] = []
+
+    for service_name in volume_removal_services_names:
+        service_spec = spec_volume_removal_service(
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            docker_node_id=target_node_id,
+            volume_names=[],
+            docker_version=docker_version,
+            volume_removal_attempts=0,
+            sleep_between_attempts_s=0,
+            service_timeout_s=service_timeout_s,
+        )
+
+        # replace values
+        service_spec.Name = service_name
+        # use very long sleep command
+        service_spec.TaskTemplate.ContainerSpec.Command = ["sh", "-c", "sleep 3600"]
+
+        started_service = await docker.services.create(
+            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
+        )
+        started_services_ids.append(started_service["ID"])
+
+    yield None
+
+    for service_id in started_services_ids:
+        try:
+            await docker.services.delete(service_id)
+        except aiodocker.exceptions.DockerError as e:
+            assert e.message == f"service {service_id} not found"
+
+
+async def _get_pending_services(docker: aiodocker.Docker) -> list[str]:
+    service_filters = {"name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"]}
+    return [
+        x["Spec"]["Name"] for x in await docker.services.list(filters=service_filters)
+    ]
+
+
+async def test_get_volume_removal_services(
+    ensure_fake_volume_removal_services: None,
+    docker: aiodocker.Docker,
+    volume_removal_services_names: set[str],
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    service_timeout_s: int,
+):
+    # services will be detected as timed out after 1 second
+    sleep_for = 1.01
+    await asyncio.sleep(sleep_for)
+
+    pending_service_names = await _get_pending_services(docker)
+    assert len(pending_service_names) == len(volume_removal_services_names)
+
+    # check services are present before removing timed out services
+    for service_name in pending_service_names:
+        assert service_name in volume_removal_services_names
+
+    await docker_api.remove_pending_volume_removal_services(dynamic_sidecar_settings)
+
+    # check that timed out services have been removed
+    pending_service_names = await _get_pending_services(docker)
+    services_have_timed_out = sleep_for > service_timeout_s
+    if services_have_timed_out:
+        assert len(pending_service_names) == 0
+    else:
+        assert len(pending_service_names) == len(volume_removal_services_names)
+        for service_name in pending_service_names:
+            assert service_name in volume_removal_services_names

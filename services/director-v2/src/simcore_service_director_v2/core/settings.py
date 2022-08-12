@@ -361,6 +361,10 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         5.0, description="interval at which the scheduler cycle is repeated"
     )
 
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_S: PositiveFloat = Field(
+        30 * MINS, description=""
+    )
+
 
 class DynamicServicesSettings(BaseCustomSettings):
     # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module

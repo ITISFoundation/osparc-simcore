@@ -101,6 +101,7 @@ async def cleanup_sidecar_stack_and_resources(
     ]
     assert scheduler_data.docker_node_id  # nosec
     await remove_volumes_from_node(
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=unique_volume_names,
         docker_node_id=scheduler_data.docker_node_id,
     )
