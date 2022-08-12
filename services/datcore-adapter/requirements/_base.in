@@ -16,7 +16,7 @@ aiofiles
 fastapi
 fastapi-pagination
 httpx[http2]
-pennsieve # NOTE: prevents from upgrading repo requirements/constraint on 'rsa'. Waiting for https://github.com/Pennsieve/pennsieve-python/pull/15
+pennsieve
 pydantic[email]
 python-multipart # for fastapi multipart uploads
 uvicorn[standard]

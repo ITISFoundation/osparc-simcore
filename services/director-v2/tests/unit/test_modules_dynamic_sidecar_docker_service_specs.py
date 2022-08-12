@@ -190,7 +190,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps(["/tmp/strip_me/*", "*.py"]),
+                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps({"*.py", "/tmp/strip_me/*"}),
                     "DY_SIDECAR_STATE_PATHS": json_dumps(
                         ["/tmp/save_1", "/tmp_save_2"]
                     ),
@@ -359,6 +359,24 @@ def test_get_dynamic_proxy_spec(
             "Labels": True,
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
+
+        # NOTE: some flakiness here
+        # state_exclude is a set and does not preserve order
+        # when dumping to json it gets converted to a list
+        dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ] = sorted(
+            dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+                "DY_SIDECAR_STATE_EXCLUDE"
+            ]
+        )
+        expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ] = sorted(
+            expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+                "DY_SIDECAR_STATE_EXCLUDE"
+            ]
+        )
 
         assert dynamic_sidecar_spec.dict(
             exclude=exclude_keys

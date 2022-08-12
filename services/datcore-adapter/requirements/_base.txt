@@ -87,6 +87,7 @@ httpx==0.23.0
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
 hyperframe==6.0.1
     # via h2
@@ -111,7 +112,7 @@ opentracing==2.4.0
     # via
     #   fastapi-contrib
     #   jaeger-client
-pennsieve==6.1.2
+pennsieve==6.2.0
     # via -r requirements/_base.in
 protobuf==3.20.0
     # via pennsieve
@@ -169,8 +170,13 @@ requests==2.27.1
     # via pennsieve
 rfc3986==1.5.0
     # via httpx
-rsa==4.0
+rsa==4.9
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   pennsieve
     #   python-jose
 s3transfer==0.5.2
@@ -204,6 +210,10 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
+tqdm==4.64.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.4.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.1.1
@@ -220,7 +230,9 @@ urllib3==1.26.9
     #   botocore
     #   requests
 uvicorn==0.17.6
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
 uvloop==0.16.0
     # via uvicorn
 watchgod==0.8.2

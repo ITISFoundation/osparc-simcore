@@ -23,7 +23,9 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
-from simcore_service_dynamic_sidecar.core.docker_compose_utils import docker_compose_up
+from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
+    docker_compose_create,
+)
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
@@ -103,7 +105,7 @@ async def _docker_ps_a_container_names() -> list[str]:
 async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSettings):
     """ensures all containers inside compose_spec are pulled"""
 
-    result = await docker_compose_up(compose_spec, settings)
+    result = await docker_compose_create(compose_spec, settings)
 
     assert result.success is True, result.message
 

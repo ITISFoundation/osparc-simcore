@@ -128,7 +128,9 @@ guard-%:
 	@if [ "${${*}}" = "" ]; then echo "Environment variable $* not set"; exit 1; fi
 
 
-.PHONY: update-report
-update-report: ## generates an update-report to be pasteed in the PR
-	@python check_changes.py --changed-reqs > upgrade-report.ignore.md
-	@python check_changes.py >> upgrade-report.ignore.md
+.PHONY: report
+report: ## generates a report of updated requirements that shall be pasted in the PR
+	@python check_changes.py --changed-reqs > report.ignore.md
+	@python check_changes.py >> report.ignore.md
+	@cat report.ignore.md
+	@echo SEE $(shell realpath report.ignore.md)
