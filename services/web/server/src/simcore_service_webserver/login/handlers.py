@@ -13,12 +13,7 @@ from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa import (
-    add_validation_code,
-    delete_validation_code,
-    get_validation_code,
-    send_sms_code,
-)
+from ._2fa import delete_2fa_code, get_2fa_code, send_sms_code, set_2fa_code
 from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
@@ -148,7 +143,7 @@ async def register_phone(request: web.Request):
 
     if settings.LOGIN_2FA_REQUIRED:
         try:
-            code = await add_validation_code(request.app, email)
+            code = await set_2fa_code(request.app, email)
             print("code", code)
             await send_sms_code(phone, code)
 
@@ -183,9 +178,9 @@ async def phone_confirmation(request: web.Request):
     code = body.code
 
     if settings.LOGIN_2FA_REQUIRED:
-        v_code = await get_validation_code(request.app, email)
+        v_code = await get_2fa_code(request.app, email)
         if code == v_code:
-            await delete_validation_code(request.app, email)
+            await delete_2fa_code(request.app, email)
             user = await db.get_user({"email": email})
             await db.update_user(user, {"phone": phone})
             # log in user
@@ -256,7 +251,7 @@ async def login(request: web.Request):
 
         assert user["phone"], "db corrupted. Phone number needed"  # nosec
         try:
-            code = await add_validation_code(request.app, user["email"])
+            code = await set_2fa_code(request.app, user["email"])
             print("code", code)
             await send_sms_code(user["phone"], code)
             list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
@@ -309,9 +304,9 @@ async def login_2fa(request: web.Request):
     email = body.email
     code = body.code
 
-    v_code = await get_validation_code(request.app, email)
+    v_code = await get_2fa_code(request.app, email)
     if code == v_code:
-        await delete_validation_code(request.app, email)
+        await delete_2fa_code(request.app, email)
         user = await db.get_user({"email": email})
         with log_context(
             log,

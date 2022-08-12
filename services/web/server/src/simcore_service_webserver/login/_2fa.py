@@ -33,30 +33,33 @@ class ValidationCode(BaseModel):
 #
 
 
-async def _generage_code() -> int:
-    return 1000 + secrets.randbelow(8999)  # code between [1000, 9999)
+async def _generage_2fa_code() -> str:
+    return f"{1000 + secrets.randbelow(8999)}"  # code between [1000, 9999)
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def add_validation_code(
-    app: web.Application, user_email: str, *, timeout: int = 60
-):
+async def set_2fa_code(
+    app: web.Application,
+    user_email: str,
+    *,
+    timeout: int = 60,
+) -> str:
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
-    code = _generage_code()
+    code = _generage_2fa_code()
     await redis_client.set(hash_key, code, ex=timeout)
     return code
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def get_validation_code(app: web.Application, user_email: str) -> Optional[str]:
+async def get_2fa_code(app: web.Application, user_email: str) -> Optional[str]:
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     return await redis_client.get(hash_key)
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def delete_validation_code(app: web.Application, user_email: str) -> None:
+async def delete_2fa_code(app: web.Application, user_email: str) -> None:
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     await redis_client.delete(hash_key)
