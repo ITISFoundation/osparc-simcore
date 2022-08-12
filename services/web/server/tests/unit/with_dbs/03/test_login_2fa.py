@@ -39,7 +39,7 @@ def app_cfg(
     }
 
     # enable 2FA (via environs)
-    monkeypatch.setenv("LOGIN_2FA_REQUIRED", True)
+    monkeypatch.setenv("LOGIN_2FA_REQUIRED", "true")
     for key, value in env_devel_dict.items():
         if key.startswith("TWILIO_"):
             monkeypatch.setenv(key, value)
@@ -60,6 +60,7 @@ def client(
 
 @pytest.fixture
 def cfg(client: TestClient) -> LoginOptions:
+    assert client.app
     cfg = get_plugin_options(client.app)
     assert cfg
     return cfg
@@ -67,22 +68,22 @@ def cfg(client: TestClient) -> LoginOptions:
 
 @pytest.fixture
 def db(client: TestClient) -> AsyncpgStorage:
+    assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
 
 
-# TESTS ---------------------------------------------------------------------------
-
-
 @pytest.fixture
 def mocked_twilio_service(mocker) -> dict[str, Mock]:
-    mocks = {}
+    return {
+        "send_sms_code": mocker.patch(
+            "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
+        )
+    }
 
-    mocks["send_sms_code"] = mocker.patch(
-        "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
-    )
-    return mocks
+
+# TESTS ---------------------------------------------------------------------------
 
 
 async def test_it(
@@ -91,6 +92,7 @@ async def test_it(
     capsys,
     mocked_twilio_service: dict[str, Mock],
 ):
+    assert client.app
 
     # register email+password -----------------------
 
