@@ -2,11 +2,11 @@ import asyncio
 import inspect
 import logging
 import traceback
-from asyncio import CancelledError, Task
+from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -18,7 +18,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -178,34 +178,23 @@ class TasksManager:
             )
         )
 
-    def get_task_result(self, task_id: TaskId) -> TaskResult:
+    def get_task_result(self, task_id: TaskId) -> Any:
         """
         returns: the result of the task
 
         raises TaskNotFoundError if the task cannot be found
+        raises TaskCancelledError if the task was cancelled
         """
         tracked_task = self._get_tracked_task(task_id)
 
-        if not tracked_task.task.done():
-            raise TaskNotCompletedError(task_id=task_id)
-
         try:
-            exception = tracked_task.task.exception()
-            if exception is not None:
-                formatted_traceback = "\n".join(
-                    traceback.format_tb(exception.__traceback__)
-                )
-                error = TaskExceptionError(
-                    task_id=task_id, exception=exception, traceback=formatted_traceback
-                )
-                logger.warning("%s", f"{error}")
-                return TaskResult(result=None, error=f"{error}")
-        except CancelledError:
-            error = TaskCancelledError(task_id=task_id)
-            logger.warning("Task %s was cancelled", task_id)
-            return TaskResult(result=None, error=f"{error}")
-
-        return TaskResult(result=tracked_task.task.result(), error=None)
+            return tracked_task.task.result()
+        except InvalidStateError as exc:
+            # the task is not ready
+            raise TaskNotCompletedError(task_id=task_id) from exc
+        except CancelledError as exc:
+            # the task was cancelled
+            raise TaskCancelledError(task_id=task_id) from exc
 
     async def cancel_task(self, task_id: TaskId) -> None:
         """

@@ -149,13 +149,10 @@ async def test_workflow(client: TestClient):
     assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
-    assert not error
-    task_result = long_running_tasks.server.TaskResult.parse_obj(data)
+    task_result, error = await assert_status(result, web.HTTPOk)
     assert task_result
-    assert task_result.result == [f"{x}" for x in range(10)]
-    assert not task_result.error
+    assert not error
+    assert task_result == [f"{x}" for x in range(10)]
 
 
 async def test_failing_task_returns_error(client: TestClient):
@@ -183,13 +180,13 @@ async def test_failing_task_returns_error(client: TestClient):
             assert task_status
             assert task_status.done
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
-    assert not error
-    task_result = long_running_tasks.server.TaskResult.parse_obj(data)
-    assert task_result
-    assert not task_result.result
-    assert task_result.error
+    data, error = await assert_status(result, web.HTTPInternalServerError)
+    assert not data
+    assert error
+    assert "errors" in error
+    assert len(error["errors"]) == 1
+    assert error["errors"][0]["code"] == "RuntimeError"
+    assert error["errors"][0]["message"] == "We were asked to fail!!"
 
 
 async def test_get_results_before_tasks_finishes_returns_404(client: TestClient):

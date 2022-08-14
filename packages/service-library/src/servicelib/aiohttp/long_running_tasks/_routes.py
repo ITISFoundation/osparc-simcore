@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from ...json_serialization import json_dumps
-from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._models import TaskId, TaskStatus
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_tasks_manager
 
@@ -31,11 +31,11 @@ async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
 
-    task_result: TaskResult = tasks_manager.get_task_result(task_id=path_params.task_id)
+    task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
     # NOTE: we do not reraise here, in case the result returned an error,
     # but we still want to remove the task
     await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
-    return web.json_response({"data": task_result}, dumps=json_dumps)
+    return task_result
 
 
 @routes.delete("/{task_id}", name="cancel_and_delete_task")
