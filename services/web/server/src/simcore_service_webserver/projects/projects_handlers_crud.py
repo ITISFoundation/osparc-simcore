@@ -21,7 +21,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
-    get_task_manager,
+    get_tasks_manager,
     start_task,
 )
 from servicelib.aiohttp.requests_validation import (
@@ -129,7 +129,7 @@ async def create_projects(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    task_manager = get_task_manager(request.app)
+    task_manager = get_tasks_manager(request.app)
     task_id = start_task(
         task_manager,
         _create_projects,
