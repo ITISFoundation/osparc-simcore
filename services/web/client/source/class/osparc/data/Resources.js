@@ -25,7 +25,7 @@
  *       studyData
  *     }
  *   }
- *   osparc.data.Resources.fetch("studies", "postNewStudy", params)
+ *   osparc.data.Resources.fetch("studies", "getOne", params)
  *     .then(study => {
  *       // study contains the new updated study
  *       // This code will execute if the call succeeds
@@ -113,7 +113,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/state"
           },
-          // OM: update
           postNewStudy: {
             method: "POST",
             url: statics.API + "/projects"
