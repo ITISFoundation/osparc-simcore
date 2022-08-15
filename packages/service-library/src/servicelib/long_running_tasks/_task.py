@@ -184,6 +184,7 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         raises TaskCancelledError if the task was cancelled
+        raises TaskNotCompletedError if the task is not completed
         """
         tracked_task = self._get_tracked_task(task_id)
 
