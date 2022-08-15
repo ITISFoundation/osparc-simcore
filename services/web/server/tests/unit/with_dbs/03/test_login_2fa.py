@@ -10,6 +10,7 @@ from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
@@ -21,7 +22,6 @@ EMAIL, PASSWORD, PHONE = "tester@test.com", "password", "+12345678912"
 @pytest.fixture
 def app_cfg(
     app_cfg: ConfigDict,
-    env_devel_dict: dict[str, str],
     monkeypatch: MonkeyPatch,
 ) -> ConfigDict:
     # overrides app_cfg.
@@ -39,9 +39,14 @@ def app_cfg(
 
     # enable 2FA (via environs)
     monkeypatch.setenv("LOGIN_2FA_REQUIRED", "true")
-    for key, value in env_devel_dict.items():
-        if key.startswith("TWILIO_"):
-            monkeypatch.setenv(key, value)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "TWILIO_ACCOUNT_SID": "fake-account",
+            "TWILIO_AUTH_TOKEN": "fake-token",
+            "TWILIO_MESSAGING_SID": "x" * 34,
+        },
+    )
 
     return app_cfg
 
