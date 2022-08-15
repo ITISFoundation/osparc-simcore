@@ -10,6 +10,10 @@ from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ._constarts import (
+    SERVICE_RESTART_DELAY_BETWEEN_RESTARTS_S,
+    SERVICE_RESTART_MAX_ATTEMPTS,
+)
 
 
 def get_dynamic_proxy_spec(
@@ -109,8 +113,8 @@ def get_dynamic_proxy_spec(
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 100,
+                "Delay": SERVICE_RESTART_DELAY_BETWEEN_RESTARTS_S,
+                "MaxAttempts": SERVICE_RESTART_MAX_ATTEMPTS,
             },
         },
     }
