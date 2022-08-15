@@ -55,7 +55,6 @@ def app() -> web.Application:
             sleep_time: float,
             fail: bool,
         ) -> list[str]:
-            task_progress.publish(message="starting", percent=0)
             generated_strings = []
             for index in range(num_strings):
                 generated_strings.append(f"{index}")
@@ -66,7 +65,6 @@ def app() -> web.Application:
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
 
-            task_progress.publish(message="finished", percent=1)
             return generated_strings
 
         task_id = long_running_tasks.server.start_task(
@@ -103,7 +101,9 @@ def client(
 
 
 async def test_workflow(client: TestClient):
-    url = URL("/long_running_task:start").with_query(num_strings=10, sleep_time=0.2)
+    url = URL("/long_running_task:start").with_query(
+        num_strings=10, sleep_time=f"{0.2}"
+    )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
     assert data
@@ -160,7 +160,7 @@ async def test_workflow(client: TestClient):
 
 async def test_failing_task_returns_error(client: TestClient):
     url = URL("/long_running_task:start").with_query(
-        num_strings=12, sleep_time=0.1, fail=f"{True}"
+        num_strings=12, sleep_time=f"{0.1}", fail=f"{True}"
     )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
@@ -193,7 +193,9 @@ async def test_failing_task_returns_error(client: TestClient):
 
 
 async def test_get_results_before_tasks_finishes_returns_404(client: TestClient):
-    url = URL("/long_running_task:start").with_query(num_strings=10, sleep_time=0.2)
+    url = URL("/long_running_task:start").with_query(
+        num_strings=10, sleep_time=f"{0.2}"
+    )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
     assert data
@@ -205,7 +207,9 @@ async def test_get_results_before_tasks_finishes_returns_404(client: TestClient)
 
 
 async def test_cancel_workflow(client: TestClient):
-    url = URL("/long_running_task:start").with_query(num_strings=10, sleep_time=0.2)
+    url = URL("/long_running_task:start").with_query(
+        num_strings=10, sleep_time=f"{0.2}"
+    )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
     assert data

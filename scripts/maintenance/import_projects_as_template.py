@@ -4,7 +4,6 @@ import asyncio
 import os
 from contextlib import suppress
 from pathlib import Path
-from pprint import pformat
 from typing import Optional
 
 import typer
@@ -98,7 +97,9 @@ async def publish_as_template(client: AsyncClient, project_uuid: str) -> str:
         fg=typer.colors.YELLOW,
     )
     r = await client.post(
-        path, params={"as_template": project_uuid}, json=modified_project
+        path,
+        params={"from_study": project_uuid, "as_template": "true"},
+        json=modified_project,
     )
     r.raise_for_status()
     typer.secho(

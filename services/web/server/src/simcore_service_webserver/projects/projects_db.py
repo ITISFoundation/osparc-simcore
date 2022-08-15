@@ -854,6 +854,16 @@ class ProjectDBAPI:
             )
             await conn.execute(stmt)
 
+    async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([projects.c.type]).where(projects.c.uuid == f"{project_uuid}")
+            )
+            row = await result.first()
+            if row:
+                return row[projects.c.type]
+        raise ProjectNotFoundError(project_uuid=project_uuid)
+
 
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
