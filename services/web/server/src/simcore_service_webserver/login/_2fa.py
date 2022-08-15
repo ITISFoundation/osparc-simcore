@@ -29,8 +29,9 @@ class ValidationCode(BaseModel):
 
 #
 # REDIS:
-#  generation, storage of secret codes
+#  is used for generation and storage of secret codes
 #
+# SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
 def _generage_2fa_code() -> str:
@@ -42,16 +43,18 @@ async def set_2fa_code(
     app: web.Application,
     user_email: str,
     *,
-    timeout: int = 60,
+    expiration_time: int = 60,
 ) -> str:
+    """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
     redis_client = get_redis_validation_code_client(app)
     hash_key, code = user_email, _generage_2fa_code()
-    await redis_client.set(hash_key, value=code, ex=timeout)
+    await redis_client.set(hash_key, value=code, ex=expiration_time)
     return code
 
 
 @log_decorator(log, level=logging.DEBUG)
 async def get_2fa_code(app: web.Application, user_email: str) -> Optional[str]:
+    """Returns 2FA code for user or None if it does not exist (e.g. expired or never set)"""
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     return await redis_client.get(hash_key)

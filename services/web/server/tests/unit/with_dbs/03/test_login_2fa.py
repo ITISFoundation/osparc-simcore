@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 from unittest.mock import Mock
 
 import pytest
@@ -13,6 +14,11 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link
 from simcore_service_webserver.db_models import UserStatus
+from simcore_service_webserver.login._2fa import (
+    delete_2fa_code,
+    get_2fa_code,
+    set_2fa_code,
+)
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
@@ -77,6 +83,28 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
 
 
 # TESTS ---------------------------------------------------------------------------
+
+
+async def test_2fa_code_operations(
+    client: TestClient, mocked_twilio_service: dict[str, Mock]
+):
+    assert client.app
+
+    # get/delete an entry that does not exist
+    assert await get_2fa_code(client.app, "invalid@bar.com") is None
+    await delete_2fa_code(client.app, "invalid@bar.com")
+
+    # set/get/delete
+    email = "foo@bar.com"
+    code = await set_2fa_code(client.app, email)
+    assert await get_2fa_code(client.app, email) == code
+    await delete_2fa_code(client.app, email)
+
+    # expired
+    email = "expired@bar.com"
+    code = await set_2fa_code(client.app, email, expiration_time=1)
+    await asyncio.sleep(1.5)
+    assert await get_2fa_code(client.app, email) is None
 
 
 @pytest.mark.acceptance_test
