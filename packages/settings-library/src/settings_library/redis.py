@@ -30,8 +30,6 @@ class RedisSettings(BaseCustomSettings):
         default=2, description="This redis table is used to store SMS validation codes"
     )
 
-    # TODO: ensure different DB and consecutive?
-
     def _build_redis_dsn(self, db_index: int):
         return RedisDsn.build(
             scheme="redis",

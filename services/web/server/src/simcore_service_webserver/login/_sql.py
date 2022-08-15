@@ -1,6 +1,6 @@
 from logging import getLogger
 
-# FIXME: Possible SQL injection vector through string-based query construction.
+# TODO: Possible SQL injection vector through string-based query construction.
 
 log = getLogger(__name__)
 LOG_TPL = "%s <--%s"

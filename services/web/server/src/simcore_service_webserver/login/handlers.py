@@ -148,7 +148,7 @@ async def register_phone(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
-    phone = body.phone  # TODO: validate this is a phone?
+    phone = body.phone
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
