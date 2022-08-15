@@ -46,12 +46,6 @@ CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 _MINUTE: Final[int] = 60
 
 
-class _RetryAgain(Exception):
-    def __init__(self, command_result: CommandResult) -> None:
-        self.command_result = command_result
-        super().__init__(f"Command failed, details: {command_result}")
-
-
 @retry(
     wait=wait_random_exponential(),
     stop=stop_after_delay(5 * _MINUTE),
