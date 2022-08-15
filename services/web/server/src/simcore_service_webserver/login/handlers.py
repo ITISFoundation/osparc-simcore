@@ -6,6 +6,7 @@ from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -143,6 +144,7 @@ async def register_phone(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
@@ -155,6 +157,13 @@ async def register_phone(request: web.Request):
         )
 
     try:
+
+        if await db.get_user({"phone": phone}):
+            raise web.HTTPUnauthorized(
+                reason="Invalid phone number: one phone number per account allowed",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
         code = await set_2fa_code(request.app, email)
         await send_sms_code(phone, code, settings.LOGIN_TWILIO)
 
@@ -197,10 +206,19 @@ async def phone_confirmation(request: web.Request):
     expected_code = await get_2fa_code(request.app, email)
     if code is not None and code == expected_code:
         await delete_2fa_code(request.app, email)
-        user = await db.get_user({"email": email})
-        await db.update_user(user, {"phone": phone})
 
-        # log in user
+        # db
+        try:
+            user = await db.get_user({"email": email})
+            await db.update_user(user, {"phone": phone})
+
+        except UniqueViolation as err:
+            raise web.HTTPUnauthorized(
+                reason="Invalid phone number",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from err
+
+        # login
         with log_context(
             log,
             logging.INFO,
