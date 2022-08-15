@@ -195,6 +195,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
+          this.getChildControl("right-items").add(control);
           this._add(control);
           break;
         case "manual":

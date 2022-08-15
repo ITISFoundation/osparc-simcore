@@ -105,7 +105,9 @@ qx.Class.define("osparc.data.Resources", {
           // OM: update
           duplicate: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}:duplicate"
+            // url: statics.API + "/projects/{studyId}:duplicate"
+            // supports copy_data
+            url: statics.API + "/projects?from_study={studyId}"
           },
           state: {
             useCache: false,
@@ -117,7 +119,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects"
           },
           // OM: update
-          postFromStudy: {
+          postNewStudyFromTemplate: {
             method: "POST",
             url: statics.API + "/projects?from_study={templateId}"
           },

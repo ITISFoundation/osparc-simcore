@@ -94,7 +94,7 @@ qx.Class.define("osparc.data.PollTask", {
       return fetch(this.getResultHref())
         .then(res => res.json())
         .then(result => {
-          if (result && "data" in result && "result" in result["data"]) {
+          if (result && "data" in result && "result" in result["data"] && result["data"]["result"]) {
             return result["data"]["result"];
           }
           throw new Error("Missing result");

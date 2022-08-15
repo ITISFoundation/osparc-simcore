@@ -651,18 +651,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         url: {
           "studyId": studyData["uuid"]
-        },
-        data: osparc.utils.Utils.getClientSessionID()
+        }
       };
       osparc.data.Resources.fetch("studies", "duplicate", params)
-        .then(duplicatedStudyData => {
-          this.reloadStudy(duplicatedStudyData["uuid"]);
+        .then(taskData => {
+          if ("status_href" in taskData) {
+            const pollTasks = osparc.data.PollTasks.getInstance();
+            const interval = 1000;
+            const task = pollTasks.createTask(taskData, interval);
+            task.addListener("changeDone", e => {
+              if (e.getData()) {
+                task.fetchResult()
+                  .then(duplicatedStudyData => {
+                    this.reloadStudy(duplicatedStudyData["uuid"]);
+                    duplicateTask.stop();
+                    this._resourcesContainer.remove(duplicatingStudyCard);
+                  });
+              }
+            }, this);
+          } else {
+            console.error("Status missing");
+          }
         })
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-        })
-        .finally(() => {
           duplicateTask.stop();
           this._resourcesContainer.remove(duplicatingStudyCard);
         });
