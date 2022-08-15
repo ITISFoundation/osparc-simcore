@@ -240,7 +240,12 @@ class TasksManager:
         self, task_id: TaskId, *, reraise_errors: bool = True
     ) -> None:
         """cancels and removes task"""
-        tracked_task = self._get_tracked_task(task_id)
+        try:
+            tracked_task = self._get_tracked_task(task_id)
+        except TaskNotFoundError:
+            if reraise_errors:
+                raise
+            return
         try:
             await self._cancel_tracked_task(
                 tracked_task.task, task_id, reraise_errors=reraise_errors

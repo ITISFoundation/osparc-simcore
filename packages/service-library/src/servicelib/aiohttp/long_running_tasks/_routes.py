@@ -31,9 +31,9 @@ async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
 
+    # NOTE: this might raise an exception that will be catached by the _error_handlers
+    # in case it did not raise, then we remove the task from the manager
     task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
-    # NOTE: we do not reraise here, in case the result returned an error,
-    # but we still want to remove the task
     await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
     return task_result
 
