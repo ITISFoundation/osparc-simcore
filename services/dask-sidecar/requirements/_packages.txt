@@ -154,7 +154,7 @@ tornado==6.1
     #   distributed
 tqdm==4.64.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   aiodebug

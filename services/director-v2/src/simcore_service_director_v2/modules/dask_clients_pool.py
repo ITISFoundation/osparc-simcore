@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Dict, Optional
+from typing import AsyncIterator, Optional
 
 from fastapi import FastAPI
 from models_library.clusters import Cluster, ClusterID
@@ -24,7 +24,7 @@ class DaskClientsPool:
     app: FastAPI
     settings: ComputationalBackendSettings
     _client_acquisition_lock: asyncio.Lock = field(init=False)
-    _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
+    _cluster_to_client_map: dict[ClusterID, DaskClient] = field(default_factory=dict)
     _task_handlers: Optional[TaskHandlers] = None
 
     def __post_init__(self):
@@ -44,7 +44,7 @@ class DaskClientsPool:
     def instance(app: FastAPI) -> "DaskClientsPool":
         if not hasattr(app.state, "dask_clients_pool"):
             raise ConfigurationError(
-                "Dask clients pool is " "not available. Please check the configuration."
+                "Dask clients pool is not available. Please check the configuration."
             )
         return app.state.dask_clients_pool
 

@@ -253,6 +253,7 @@ async def create_projects(request: web.Request):
             "cancelled creation of project for user '%s', cleaning up",
             f"{req_ctx.user_id=}",
         )
+        # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
         await projects_api.submit_delete_project_task(
             request.app, new_project["uuid"], req_ctx.user_id
         )
