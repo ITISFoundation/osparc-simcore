@@ -161,48 +161,21 @@ qx.Class.define("osparc.utils.Study", {
       });
     },
 
-    createStudyAndWait: function(params, interval = 1000) {
+    createStudyAndWait: function(params) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "postNewStudy", params)
-          .then(resp => {
-            if ("status_href" in resp) {
-              resolve(this.pollTaskState(resp), interval);
+          .then(taskData => {
+            if ("status_href" in taskData) {
+              const pollTasks = osparc.data.PollTasks.getInstance();
+              const interval = 1000;
+              const task = pollTasks.createTask(taskData, interval);
+              task.addListener("changeDone", e => {
+                if (e.getData()) {
+                  resolve(task.fetchResult());
+                }
+              }, this);
             } else {
               reject("Status missing");
-            }
-          })
-          .catch(err => reject(err));
-      });
-    },
-
-    pollTaskState: function(task, interval) {
-      return new Promise((resolve, reject) => {
-        fetch(task["status_href"])
-          .then(resp => {
-            if (resp.status === 200) {
-              return resp.json();
-            }
-            reject("Status call failed");
-            return null;
-          })
-          .then(data => {
-            if (data === null || !("data" in data)) {
-              reject("Data missing in Status response");
-            }
-            const response = data["data"];
-            if (response["done"] === true) {
-              fetch(task["result_href"])
-                .then(res => res.json())
-                .then(result => {
-                  if (result && "data" in result && "result" in result["data"]) {
-                    resolve(result["data"]["result"]);
-                  } else {
-                    reject("Missing result");
-                  }
-                })
-                .catch(err => reject(err));
-            } else {
-              setTimeout(this.pollTaskState(task["status_href"]), interval);
             }
           })
           .catch(err => reject(err));
