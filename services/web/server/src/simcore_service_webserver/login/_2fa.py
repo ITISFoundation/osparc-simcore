@@ -99,7 +99,11 @@ async def send_sms_code(phone_number: str, code: str, settings: TwilioSettings):
 # HELPERS
 #
 
+_FROM, _TO = 3, -1
+
 
 def mask_phone_number(phn: str) -> str:
-    assert len(phn) > 10  # nosec
-    return phn[:3] + len(phn[3:-2]) * "X" + phn[-2:]
+    assert len(phn) > 5  # nosec
+    # SEE https://github.com/pydantic/pydantic/issues/1551
+    # SEE https://en.wikipedia.org/wiki/E.164
+    return phn[:_FROM] + len(phn[_FROM:_TO]) * "X" + phn[_TO:]

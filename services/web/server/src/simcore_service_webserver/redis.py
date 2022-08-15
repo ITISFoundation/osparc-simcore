@@ -72,13 +72,13 @@ async def setup_redis_client(app: web.Application):
     }
 
     for app_key, dsn in REDIS_DSN_MAP.items():
-        assert not app[app_key]  # nosec
+        assert app.get(app_key) is None  # nosec
         app[app_key] = await _create_client(dsn)
 
     yield
 
     for app_key in REDIS_DSN_MAP.keys():
-        if redis_client := app[app_key]:
+        if redis_client := app.get(app_key):
             redis_client.close(close_connection_pool=True)
 
 
