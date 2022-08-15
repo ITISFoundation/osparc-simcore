@@ -57,7 +57,7 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
-    async def create_confirmation(self, user, action, data=None) -> asyncpg.Record:
+    async def create_confirmation(self, user, action, data=None) -> ConfirmationDict:
         async with self.pool.acquire() as conn:
             while True:
                 code = get_random_string(30)
@@ -80,7 +80,7 @@ class AsyncpgStorage:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
             return confirmation
 
-    async def delete_confirmation(self, confirmation):
+    async def delete_confirmation(self, confirmation: ConfirmationDict):
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
 

@@ -31,7 +31,7 @@ from .settings import (
     get_plugin_options,
     get_plugin_settings,
 )
-from .storage import AsyncpgStorage, get_plugin_storage
+from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
 from .utils import flash_response, get_client_ip, render_and_send_mail, themed
 
 log = logging.getLogger(__name__)
@@ -98,13 +98,15 @@ async def register(request: web.Request):
     await auto_add_user_to_groups(request.app, user["id"])
 
     if not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
+        assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
         # user is logged in
         identity = body.email
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
 
-    confirmation_ = await db.create_confirmation(user, REGISTRATION)
+    confirmation_: ConfirmationDict = await db.create_confirmation(user, REGISTRATION)
     link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
@@ -157,6 +159,7 @@ async def register_phone(request: web.Request):
                 status=web.HTTPAccepted.status_code,
             )
             return response
+
         except Exception as e:
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
