@@ -82,22 +82,22 @@ async def setup_redis_client(app: web.Application):
             redis_client.close(close_connection_pool=True)
 
 
-def get_redis_client(app: web.Application) -> aioredis.Redis:
-    redis_client = app[APP_CLIENT_REDIS_CLIENT_KEY]
-    assert redis_client is not None, "redis plugin was not init"  # nosec
+def _get_redis_client(app: web.Application, app_key: str) -> aioredis.Redis:
+    redis_client = app[app_key]
+    assert redis_client is not None, f"redis plugin was not init for {app_key}"  # nosec
     return redis_client
+
+
+def get_redis_client(app: web.Application) -> aioredis.Redis:
+    return _get_redis_client(app, APP_CLIENT_REDIS_CLIENT_KEY)
 
 
 def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    redis_client = app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
-    assert redis_client is not None, "redis plugin was not init"  # nosec
-    return redis_client
+    return _get_redis_client(app, APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY)
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
-    redis_client = app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]
-    assert redis_client is not None, "redis plugin was not init"  # nosec
-    return redis_client
+    return _get_redis_client(app, APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY)
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------
