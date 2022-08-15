@@ -402,14 +402,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         data: minStudyData
       };
-      osparc.data.Resources.fetch("studies", "postNewStudy", params)
+      osparc.utils.Study.createStudyAndWait(params)
         .then(studyData => {
           this._hideLoadingPage();
           this.__startStudy(studyData);
         })
-        .catch(err => {
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     },
 
     __startStudy: function(studyData, pageContext) {

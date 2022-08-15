@@ -17,6 +17,8 @@
 
 /**
  * Collection of methods for studies
+ *
+ * @ignore(fetch)
  */
 
 qx.Class.define("osparc.utils.Study", {
@@ -156,6 +158,54 @@ qx.Class.define("osparc.utils.Study", {
             osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             console.error(err);
           });
+      });
+    },
+
+    createStudyAndWait: function(params, interval = 1000) {
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "postNewStudy", params)
+          .then(resp => {
+            if ("status_href" in resp) {
+              resolve(this.pollTaskState(resp), interval);
+            } else {
+              reject("Status missing");
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
+    pollTaskState: function(task, interval) {
+      return new Promise((resolve, reject) => {
+        fetch(task["status_href"])
+          .then(resp => {
+            if (resp.status === 200) {
+              return resp.json();
+            }
+            reject("Status call failed");
+            return null;
+          })
+          .then(data => {
+            if (data === null || !("data" in data)) {
+              reject("Data missing in Status response");
+            }
+            const response = data["data"];
+            if (response["done"] === true) {
+              fetch(task["result_href"])
+                .then(res => res.json())
+                .then(result => {
+                  if (result && "data" in result && "result" in result["data"]) {
+                    resolve(result["data"]["result"]);
+                  } else {
+                    reject("Missing result");
+                  }
+                })
+                .catch(err => reject(err));
+            } else {
+              setTimeout(this.pollTaskState(task["status_href"]), interval);
+            }
+          })
+          .catch(err => reject(err));
       });
     },
 
