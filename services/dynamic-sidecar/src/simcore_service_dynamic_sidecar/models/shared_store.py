@@ -23,6 +23,10 @@ class SharedStore(BaseModel):
         description="stores the container names from the compose_spec",
     )
 
+    # NOTE: setting up getter and setter does not work.
+    def set_shared_store_dir(self, shared_store_dir: Path) -> None:
+        self._shared_store_dir = shared_store_dir
+
     async def clear(self):
         self.compose_spec = None
         self.container_names = []
@@ -41,7 +45,7 @@ class SharedStore(BaseModel):
         else:
             obj = cls()
 
-        obj._shared_store_dir = shared_store_dir  # pylint: disable=protected-access
+        obj.set_shared_store_dir(shared_store_dir)
         return obj
 
     async def persist_to_disk(self) -> None:
