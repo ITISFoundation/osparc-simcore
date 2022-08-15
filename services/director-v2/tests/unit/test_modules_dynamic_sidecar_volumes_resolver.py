@@ -66,7 +66,7 @@ def expected_volume_config(
                 "Labels": {
                     "source": source,
                     "run_id": f"{run_id}",
-                    "project_id": f"{project_id}",
+                    "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                     "node_uuid": f"{node_uuid}",
@@ -95,7 +95,7 @@ def test_expected_paths(
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, inputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
-        source=f"dyv_{run_id}{f'{inputs_path}'.replace('/', '_')}_{node_uuid}",
+        source=f"dyv_{run_id}_{f'{inputs_path}'.replace('/', '_')[::-1]}{node_uuid}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
 
@@ -103,16 +103,16 @@ def test_expected_paths(
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, outputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
-        source=f"dyv_{run_id}{f'{outputs_path}'.replace('/', '_')}_{node_uuid}",
+        source=f"dyv_{run_id}_{f'{outputs_path}'.replace('/', '_')[::-1]}{node_uuid}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
 
     for path in state_paths:
-        name_from_path = f"{path}".replace(os.sep, "_")
+        name_from_path = f"{path}".replace(os.sep, "_")[::-1]
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
             swarm_stack_name, path, node_uuid, run_id, project_id, user_id
         ) == expected_volume_config(
-            source=f"dyv_{run_id}{name_from_path}_{node_uuid}",
+            source=f"dyv_{run_id}_{name_from_path}{node_uuid}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )
 

@@ -96,15 +96,15 @@ class DynamicSidecarVolumesPathsResolver:
         >>> source(
             path="/this/is/a/data/folder",
             node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9",
-            run_id="17f5b46d-505c-489e-9818-f6d294c892d9"
+            run_id="a5d2a8bd-eaef-4d7b-8dd9-1ae4e408f3c3"
         )
-        dyv_17f5b46d-505c-489e-9818-f6d294c892d9_this_is_a_data_folder_17f5b46d-505c-489e-9818-f6d294c892d9
+        dyv_a5d2a8bd-eaef-4d7b-8dd9-1ae4e408f3c3_redlof_atad_a_si_siht_17f5b46d-505c-489e-9818-f6d294c892d9
         """
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
-        # If this becomes on issue, inverting the `volume_name`, appended after
-        # the `run_id` will avoid collisions.
-        full_unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}{cls._volume_name(path)}_{node_uuid}"
+        # Reversing volume name to prevent these issues from happening.
+        reversed_volume_name = cls._volume_name(path)[::-1]
+        full_unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}_{reversed_volume_name}{node_uuid}"
         return full_unique_name[:255]
 
     @classmethod
@@ -130,7 +130,7 @@ class DynamicSidecarVolumesPathsResolver:
                     "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
                     "node_uuid": f"{node_uuid}",
-                    "project_id": f"{project_id}",
+                    "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 }
@@ -157,7 +157,7 @@ class DynamicSidecarVolumesPathsResolver:
                     ),
                     "run_id": f"{run_id}",
                     "node_uuid": f"{node_uuid}",
-                    "project_id": f"{project_id}",
+                    "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 }
@@ -184,7 +184,7 @@ class DynamicSidecarVolumesPathsResolver:
                     "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
                     "node_uuid": f"{node_uuid}",
-                    "project_id": f"{project_id}",
+                    "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 },
