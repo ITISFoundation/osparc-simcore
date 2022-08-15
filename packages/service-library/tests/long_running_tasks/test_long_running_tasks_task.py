@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import AsyncIterator, Final
 
 import pytest
-from fastapi import status
 from servicelib.long_running_tasks._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
