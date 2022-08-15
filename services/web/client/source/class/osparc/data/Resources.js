@@ -90,7 +90,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
-          // OM: update
           postToTemplate: {
             method: "POST",
             url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}"
