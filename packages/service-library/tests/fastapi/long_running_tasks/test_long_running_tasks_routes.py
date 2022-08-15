@@ -12,9 +12,9 @@ from pydantic import PositiveFloat, PositiveInt
 from servicelib.fastapi.long_running_tasks.client import TaskResult
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
-    TaskManager,
     TaskProgress,
-    get_task_manager,
+    TasksManager,
+    get_tasks_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.fastapi.long_running_tasks.server import start_task
@@ -35,14 +35,14 @@ def _assert_not_found(response: Response, task_id: TaskId) -> None:
 def assert_expected_tasks(async_client: AsyncClient, task_count: PositiveInt) -> None:
     app: FastAPI = async_client._transport.app
     assert app
-    task_manager: TaskManager = app.state.long_running_task_manager
+    task_manager: TasksManager = app.state.long_running_task_manager
     assert task_manager
 
     assert (
         len(
-            task_manager.tasks[
+            task_manager.get_task_group(
                 "tests.fastapi.long_running_tasks.test_long_running_tasks_routes.short_task"
-            ]
+            )
         )
         == task_count
     )
@@ -73,10 +73,11 @@ def user_routes() -> APIRouter:
 
     @router.post("/api/create", status_code=status.HTTP_202_ACCEPTED)
     async def create_task_user_defined_route(
-        raise_when_finished: bool, task_manager: TaskManager = Depends(get_task_manager)
+        raise_when_finished: bool,
+        task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
         task_id = start_task(
-            task_manager=task_manager,
+            tasks_manager=task_manager,
             handler=short_task,
             raise_when_finished=raise_when_finished,
             total_sleep=TASK_SLEEP_INTERVAL,
