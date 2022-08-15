@@ -12,6 +12,7 @@ from yarl import URL
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
+from ..utils import HOUR, MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import (
     delete_2fa_code,
@@ -135,6 +136,7 @@ async def register(request: web.Request):
     return response
 
 
+@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 async def register_phone(request: web.Request):
     """
     Submits phone registration
@@ -186,6 +188,7 @@ async def register_phone(request: web.Request):
         ) from e
 
 
+@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 async def phone_confirmation(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -384,7 +387,7 @@ async def logout(request: web.Request) -> web.Response:
     return response
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=3600)
+@global_rate_limit_route(number_of_requests=5, interval_seconds=HOUR)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists

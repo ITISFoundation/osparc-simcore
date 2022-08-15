@@ -79,7 +79,7 @@ async def setup_redis_client(app: web.Application):
 
     for app_key in REDIS_DSN_MAP.keys():
         if redis_client := app.get(app_key):
-            redis_client.close(close_connection_pool=True)
+            await redis_client.close(close_connection_pool=True)
 
 
 def _get_redis_client(app: web.Application, app_key: str) -> aioredis.Redis:
