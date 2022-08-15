@@ -21,47 +21,58 @@ def test_login_with_invitation(monkeypatch: MonkeyPatch):
     assert settings
 
 
-def test_settings_logging_with_2fa(monkeypatch: MonkeyPatch):
+@pytest.fixture
+def twilio_config(monkeypatch: MonkeyPatch) -> dict[str, str]:
 
     TWILO_CONFIG = {
         "TWILIO_ACCOUNT_SID": "fake-account",
         "TWILIO_AUTH_TOKEN": "fake-token",
         "TWILIO_MESSAGING_SID": "x" * 34,
     }
-    # NOTE: apparently some session-based fixtures is settings these envs
+    # NOTE: enforces DELETE-ENV since apparently some session-based fixtures are settings these envs
     for key in TWILO_CONFIG.keys():
         monkeypatch.delenv(key, raising=False)
+    return TWILO_CONFIG
 
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {
-                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-                "LOGIN_2FA_REQUIRED": "1",
-                **TWILO_CONFIG,
-            },
-        )
+
+def test_login_settings_with_2fa(
+    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_2FA_REQUIRED": "1",
+            **twilio_config,
+        },
+    )
+    assert LoginSettings.create_from_envs()
+
+
+def test_login_settings_fails_with_2fa_but_wo_twilio(
+    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+):
+    # cannot enable 2fa w/o twilio settings
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_2FA_REQUIRED": "1",
+        },
+    )
+    with pytest.raises(ValidationError) as exc_info:
         LoginSettings.create_from_envs()
 
-    # cannot enable 2fa w/o twilio settings
-    with monkeypatch.context() as patch:
+    errors: list[ErrorDict] = exc_info.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
-        setenvs_from_dict(
-            patch,
-            {
-                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-                "LOGIN_2FA_REQUIRED": "1",
-            },
-        )
-        with pytest.raises(ValidationError) as exc_info:
-            LoginSettings.create_from_envs()
 
-        errors: list[ErrorDict] = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
-
+def test_login_settings_fails_with_2fa_but_wo_confirmed_email(
+    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+):
     # cannot enable 2fa w/o email confirmation
     with monkeypatch.context() as patch:
         setenvs_from_dict(
@@ -70,7 +81,7 @@ def test_settings_logging_with_2fa(monkeypatch: MonkeyPatch):
                 "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "0",
                 "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
                 "LOGIN_2FA_REQUIRED": "1",
-                **TWILO_CONFIG,
+                **twilio_config,
             },
         )
 
