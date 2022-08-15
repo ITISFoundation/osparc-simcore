@@ -402,7 +402,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         data: minStudyData
       };
-      osparc.utils.Study.createStudyAndWait(params)
+      osparc.utils.Study.createStudyAndPoll(params)
         .then(studyData => {
           this._hideLoadingPage();
           this.__startStudy(studyData);

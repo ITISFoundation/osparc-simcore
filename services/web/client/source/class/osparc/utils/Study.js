@@ -17,8 +17,6 @@
 
 /**
  * Collection of methods for studies
- *
- * @ignore(fetch)
  */
 
 qx.Class.define("osparc.utils.Study", {
@@ -161,7 +159,7 @@ qx.Class.define("osparc.utils.Study", {
       });
     },
 
-    createStudyAndWait: function(params) {
+    createStudyAndPoll: function(params) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "postNewStudy", params)
           .then(taskData => {
