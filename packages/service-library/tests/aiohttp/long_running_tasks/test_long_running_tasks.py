@@ -45,7 +45,7 @@ def app() -> web.Application:
 
     @routes.post("/long_running_task:start")
     async def generate_list_strings(request: web.Request):
-        task_manager = long_running_tasks.server.get_task_manager(request.app)
+        task_manager = long_running_tasks.server.get_tasks_manager(request.app)
         query_params = parse_request_query_parameters_as(_LongTaskQueryParams, request)
         assert task_manager, "task manager is not initiated!"
 

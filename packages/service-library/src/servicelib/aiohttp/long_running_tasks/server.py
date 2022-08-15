@@ -5,29 +5,30 @@ in a AIOHTTP application.
 The server only has to return a `TaskId` in the handler creating the long
 running task.
 """
-
 from ...long_running_tasks._task import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskId,
-    TaskManager,
     TaskProgress,
     TaskResult,
+    TasksManager,
     TaskStatus,
     start_task,
 )
-from ._dependencies import get_task_manager
+from ._dependencies import get_tasks_manager
 from ._server import setup
 
 __all__: tuple[str, ...] = (
-    "get_task_manager",
+    "get_tasks_manager",
     "setup",
     "start_task",
     "TaskAlreadyRunningError",
     "TaskCancelledError",
     "TaskId",
-    "TaskManager",
+    "TasksManager",
     "TaskProgress",
     "TaskResult",
     "TaskStatus",
 )
+
+# nopycln: file

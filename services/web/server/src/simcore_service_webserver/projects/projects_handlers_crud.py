@@ -21,7 +21,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
-    get_task_manager,
+    get_tasks_manager,
     start_task,
 )
 from servicelib.aiohttp.requests_validation import (
@@ -125,46 +125,32 @@ async def create_projects(request: web.Request):
     # get request params
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
-    predefined_project = await request.json() if request.can_read_body else None
-    if query_params.as_template:  # create template from
-        await check_permission(request, "project.template.create")
 
-    task_manager = get_task_manager(request.app)
-    task_id = start_task(
-        task_manager,
-        _create_projects,
-        app=request.app,
-        query_params=query_params,
-        user_id=req_ctx.user_id,
-        predefined_project=predefined_project,
-    )
-    status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-    result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-    return web.json_response(
-        data={
-            "data": {
-                "task_id": task_id,
-                "status_href": f"{status_url}",
-                "result_href": f"{result_url}",
-            }
-        },
-        status=web.HTTPAccepted.status_code,
-        dumps=json_dumps,
-        headers={"Location": f"{status_url}"},
-    )
+    new_project = {}
+    try:
+        new_project_was_hidden_before_data_was_copied = query_params.hidden
 
-
-async def _init_project_from_request(
-    app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
-) -> tuple[ProjectDict, Optional[Awaitable[None]]]:
-    if not query_params.from_study:
-        return {}, None
-    source_project = await projects_api.get_project_for_user(
-        app,
-        project_uuid=query_params.from_study,
-        user_id=user_id,
-        include_templates=True,
-    )
+        clone_data_coro: Optional[Coroutine] = None
+        source_project: Optional[ProjectDict] = None
+        if query_params.as_template:  # create template from
+            await check_permission(request, "project.template.create")
+            source_project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=query_params.as_template,
+                user_id=req_ctx.user_id,
+                include_templates=False,
+            )
+        elif query_params.from_study:  # copy from study
+            source_project = await projects_api.get_project_for_user(
+                request.app,
+                project_uuid=query_params.from_study,
+                user_id=req_ctx.user_id,
+                include_templates=True,
+            )
+            if not source_project:
+                raise web.HTTPNotFound(
+                    reason=f"Could not find source study uuid: {query_params.from_study}"
+                )
 
     # clone template as user project
     new_project, nodes_map = clone_project_document(
@@ -324,7 +310,9 @@ async def _create_projects(
             "cancelled creation of project for user '%s', cleaning up",
             f"{user_id=}",
         )
-        await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
+        await projects_api.submit_delete_project_task(
+            request.app, new_project["uuid"], req_ctx.user_id
+        )
         raise
 
 

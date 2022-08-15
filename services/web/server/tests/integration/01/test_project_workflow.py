@@ -20,6 +20,9 @@ from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
@@ -73,6 +76,7 @@ def client(
     setup_db(app)
     setup_session(app)
     setup_security(app)
+    setup_long_running_tasks(app, router_prefix="/tasks")
     setup_rest(app)
     setup_login(app)
     setup_resource_manager(app)
@@ -202,6 +206,8 @@ async def test_workflow(
     assert not projects
 
     # creation
+    for invalid_key in ["uuid", "creationDate", "lastChangeDate"]:
+        fake_project.pop(invalid_key)
     await request_create_project(
         client,
         web.HTTPAccepted,

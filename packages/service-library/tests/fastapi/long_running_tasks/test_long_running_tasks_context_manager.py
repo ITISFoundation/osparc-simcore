@@ -19,9 +19,9 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
-    TaskManager,
     TaskProgress,
-    get_task_manager,
+    TasksManager,
+    get_tasks_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.fastapi.long_running_tasks.server import start_task
@@ -61,16 +61,16 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        task_manager: TaskManager = Depends(get_task_manager),
+        tasks_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manager, handler=a_test_task)
+        task_id = start_task(tasks_manager, handler=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        task_manager: TaskManager = Depends(get_task_manager),
+        task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manager, handler=a_failing_test_task)
+        task_id = start_task(task_manager, handler=a_failing_test_task)
         return task_id
 
     return router
