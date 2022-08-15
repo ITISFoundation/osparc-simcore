@@ -45,3 +45,4 @@ __all__: tuple[str, ...] = (
     "try_to_remove_network",
     "update_scheduler_data_label",
 )
+# nopycln: file
