@@ -41,17 +41,6 @@ qx.Class.define("osparc.auth.core.Utils", {
       return isValid;
     },
 
-    // https://en.wikipedia.org/wiki/E.164 '^\+[1-9]\d{4,14}$'
-    phoneNumberValidator: function(phoneNumber, item) {
-      const regEx = /^\+[1-9]\d{4,14}$/;
-      const isValid = regEx.test(phoneNumber);
-      item.set({
-        invalidMessage: isValid ? "" : qx.locale.Manager.tr("Invalid phone number. Please, [+][country code][phone number plus area code]"),
-        valid: isValid
-      });
-      return isValid;
-    },
-
     /** Finds parameters in the fragment
      *
      * Expected fragment format as https://osparc.io#page=reset-password;code=123546
@@ -62,7 +51,7 @@ qx.Class.define("osparc.auth.core.Utils", {
       const params = window.location.hash.substr(1).split(";");
       params.forEach(function(item) {
         const tmp = item.split("=");
-        if (tmp[0].includes(parameterName)) {
+        if (tmp[0] === parameterName) {
           result = decodeURIComponent(tmp[1]);
         }
       });

@@ -543,29 +543,17 @@ qx.Class.define("osparc.data.Resources", {
       "auth": {
         useCache: false,
         endpoints: {
-          postRegister: {
-            method: "POST",
-            url: statics.API + "/auth/register"
-          },
-          postVerifyPhoneNumber: {
-            method: "POST",
-            url: statics.API + "/auth/verify-phone-number"
-          },
-          postValidationCodeRegister: {
-            method: "POST",
-            url: statics.API + "/auth/validate-code-register"
-          },
           postLogin: {
             method: "POST",
             url: statics.API + "/auth/login"
           },
-          postValidationCodeLogin: {
-            method: "POST",
-            url: statics.API + "/auth/validate-code-login"
-          },
           postLogout: {
             method: "POST",
             url: statics.API + "/auth/logout"
+          },
+          postRegister: {
+            method: "POST",
+            url: statics.API + "/auth/register"
           },
           postRequestResetPassword: {
             method: "POST",

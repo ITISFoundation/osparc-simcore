@@ -81,7 +81,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(pass1, pass2));
 
       // submit & cancel buttons
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
       const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
         center: true,
@@ -93,6 +93,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       });
 
       const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      osparc.utils.Utils.setIdToWidget(cancelBtn, "registrationCancelBtn");
       grp.add(cancelBtn, {
         flex:1
       });

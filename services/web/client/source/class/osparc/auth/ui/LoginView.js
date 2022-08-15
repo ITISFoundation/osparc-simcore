@@ -38,9 +38,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
   events: {
     "toRegister": "qx.event.type.Event",
-    "toReset": "qx.event.type.Event",
-    "toVerifyPhone": "qx.event.type.Data",
-    "toSMSCode": "qx.event.type.Data"
+    "toReset": "qx.event.type.Event"
   },
 
   /*
@@ -146,11 +144,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       return grp;
     },
 
-    getEmail: function() {
-      const email = this.__form.getItems().email;
-      return email.getValue();
-    },
-
     __login: function() {
       if (!this.__form.validate()) {
         return;
@@ -161,7 +154,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      const loginFun = function(log) {
+      const successFun = function(log) {
         this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
@@ -170,26 +163,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      const verifyPhoneCbk = () => {
-        this.__loginBtn.setFetching(false);
-        this.fireDataEvent("toVerifyPhone", email.getValue());
-        // we don't need the form any more, so remove it and mock-navigate-away
-        // and thus tell the password manager to save the content
-        this._formElement.dispose();
-        window.history.replaceState(null, window.document.title, window.location.pathname);
-      };
-
-      const twoFactorAuthCbk = log => {
-        this.__loginBtn.setFetching(false);
-        osparc.component.message.FlashMessenger.getInstance().logAs(log, "INFO");
-        this.fireDataEvent("toSMSCode", log);
-        // we don't need the form any more, so remove it and mock-navigate-away
-        // and thus tell the password manager to save the content
-        this._formElement.dispose();
-        window.history.replaceState(null, window.document.title, window.location.pathname);
-      };
-
-      const failFun = msg => {
+      const failFun = function(msg) {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Typed an invalid email or password");
@@ -204,7 +178,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.login(email.getValue(), pass.getValue(), loginFun, verifyPhoneCbk, twoFactorAuthCbk, failFun, this);
+      manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
     },
 
     resetValues: function() {
