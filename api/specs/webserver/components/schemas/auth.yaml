@@ -23,6 +23,62 @@ LoginForm:
     password: 'my secret'
 
 
+Verify2FAPhone:
+  type: object
+  required:
+    - email
+    - phone
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    phone:
+      type: string
+      description: "Phone number E.164, needed on the deployments with 2FA"
+      #FIXME: format: phone number https://en.wikipedia.org/wiki/E.164
+  example:
+    email: foo@mymail.com
+    phone: '+41123456789'
+
+
+Validate2FAPhone:
+  type: object
+  required:
+    - email
+    - phone
+    - code
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    phone:
+      type: string
+      description: "Phone number E.164, needed on the deployments with 2FA"
+      #FIXME: format: phone number https://en.wikipedia.org/wiki/E.164
+    code:
+      type: string
+  example:
+    email: foo@mymail.com
+    phone: '+41123456789'
+    code: '1234'
+
+
+Login2FAForm:
+  type: object
+  required:
+    - email
+    - code
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    code:
+      type: string
+  example:
+    email: foo@mymail.com
+    code: '1234'
+
+
 ChangeEmailForm:
   type: object
   required:
