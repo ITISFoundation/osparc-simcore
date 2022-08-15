@@ -35,7 +35,13 @@ from .settings import (
     get_plugin_settings,
 )
 from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
-from .utils import flash_response, get_client_ip, render_and_send_mail, themed
+from .utils import (
+    envelope_response,
+    flash_response,
+    get_client_ip,
+    render_and_send_mail,
+    themed,
+)
 
 log = logging.getLogger(__name__)
 
@@ -206,8 +212,7 @@ async def phone_confirmation(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    expected_code = await get_2fa_code(request.app, email)
-    if code is not None and code == expected_code:
+    if (expected := await get_2fa_code(request.app, email)) and code == expected:
         await delete_2fa_code(request.app, email)
 
         # db
@@ -234,6 +239,7 @@ async def phone_confirmation(request: web.Request):
             await remember(request, response, identity)
             return response
 
+    #
     raise web.HTTPUnauthorized(
         reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -275,36 +281,30 @@ async def login(request: web.Request):
 
     if settings.LOGIN_2FA_REQUIRED:
         if not user["phone"]:
-            response = web.json_response(
+            rsp = envelope_response(
                 {
-                    "data": {
-                        "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
-                        "reason": "PHONE_NUMBER_REQUIRED",
-                    },
-                    "error": None,
+                    "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
+                    "reason": "PHONE_NUMBER_REQUIRED",
                 },
                 status=web.HTTPAccepted.status_code,
             )
-            return response
+            return rsp
 
         assert user["phone"]  # nosec
         try:
             code = await set_2fa_code(request.app, user["email"])
             await send_sms_code(user["phone"], code, settings.LOGIN_TWILIO)
 
-            response = web.json_response(
+            rsp = envelope_response(
                 {
-                    "data": {
-                        "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
-                        "reason": cfg.MSG_2FA_CODE_SENT.format(
-                            phone_number=mask_phone_number(user["phone"])
-                        ),
-                    },
-                    "error": None,
+                    "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
+                    "reason": cfg.MSG_2FA_CODE_SENT.format(
+                        phone_number=mask_phone_number(user["phone"])
+                    ),
                 },
                 status=web.HTTPAccepted.status_code,
             )
-            return response
+            return rsp
 
         except Exception as e:
             error_code = create_error_code(e)
@@ -327,9 +327,9 @@ async def login(request: web.Request):
         f"{email=}",
     ):
         identity = user["email"]
-        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-        await remember(request, response, identity)
-        return response
+        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        await remember(request, rsp, identity)
+        return rsp
 
 
 async def login_2fa(request: web.Request):

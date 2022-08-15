@@ -108,13 +108,28 @@ def themed(dirname, template):
     return resources.get_path(join(dirname, template))
 
 
-def flash_response(msg: str, level: str = "INFO", *, status: int = 200) -> web.Response:
-    response = web.json_response(
-        data={"data": attr.asdict(LogMessageType(msg, level)), "error": None},
+def flash_response(
+    message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
+) -> web.Response:
+    rsp = envelope_response(
+        attr.asdict(LogMessageType(message, level)),
+        status=status,
+    )
+    return rsp
+
+
+def envelope_response(
+    data: Any, *, status: int = web.HTTPOk.status_code
+) -> web.Response:
+    rsp = web.json_response(
+        {
+            "data": data,
+            "error": None,
+        },
         dumps=json_dumps,
         status=status,
     )
-    return response
+    return rsp
 
 
 async def send_mail(app: web.Application, msg: MIMEText):
