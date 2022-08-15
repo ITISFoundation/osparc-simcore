@@ -146,7 +146,7 @@ qx.Class.define("osparc.utils.Study", {
                   const params = {
                     data: minStudyData
                   };
-                  osparc.data.Resources.fetch("studies", "post", params)
+                  osparc.data.Resources.fetch("studies", "postNewStudy", params)
                     .then(studyData => resolve(studyData["uuid"]))
                     .catch(err => reject(err));
                 });
