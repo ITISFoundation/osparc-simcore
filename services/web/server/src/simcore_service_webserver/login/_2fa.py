@@ -9,7 +9,6 @@ Currently includes two parts:
 
 import asyncio
 import logging
-import os
 import secrets
 from typing import Optional
 
@@ -19,6 +18,7 @@ from servicelib.logging_utils import log_decorator
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
+from .settings import TwilioSettings
 
 log = logging.getLogger(__name__)
 
@@ -71,21 +71,16 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def send_sms_code(phone_number: str, code: str):
+async def send_sms_code(phone_number: str, code: str, settings: TwilioSettings):
     # SEE https://www.twilio.com/docs/sms/quickstart/python
     def sender():
         log.info(
-            "sending sms code to %s",
+            "Sending sms code to %s",
             f"{phone_number=}",
         )
-
-        account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-        auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-        messaging_service_sid = os.environ.get("TWILIO_MESSAGING_SID")
-
-        client = Client(account_sid, auth_token)
+        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         message = client.messages.create(
-            messaging_service_sid=messaging_service_sid,
+            messaging_service_sid=settings.TWILIO_MESSAGING_SID,
             to=phone_number,
             body="Dear TI Planning Tool user, your verification code is {}".format(
                 code

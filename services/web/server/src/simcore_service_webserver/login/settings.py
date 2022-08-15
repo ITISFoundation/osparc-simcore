@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Literal, Optional
 
 from aiohttp import web
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
@@ -44,7 +44,22 @@ class LoginSettings(BaseCustomSettings):
         description="Enforces two-factor-authentication for all user's during login",
     )
 
-    # TODO: if LOGIN_2FA_REQUIRED then LOGIN_TWILIO != NULL
+    @validator("LOGIN_2FA_REQUIRED")
+    @classmethod
+    def login_2fa_needs_email_registration(cls, v, values):
+        # NOTE: this constraint ensures that a phone is registered in current workflow
+        if v and not values.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
+            raise ValueError("Cannot enable 2FA w/o email confirmation")
+        return v
+
+    @validator("LOGIN_2FA_REQUIRED")
+    @classmethod
+    def login_2fa_needs_sms_service(cls, v, values):
+        if v and values.get("LOGIN_TWILIO") is None:
+            raise ValueError(
+                "Cannot enable 2FA w/o twilio settings which is used to send SMS"
+            )
+        return v
 
 
 class LoginOptions(BaseModel):

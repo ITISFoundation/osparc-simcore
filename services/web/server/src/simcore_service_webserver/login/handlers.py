@@ -148,7 +148,7 @@ async def register_phone(request: web.Request):
     if settings.LOGIN_2FA_REQUIRED:
         try:
             code = await set_2fa_code(request.app, email)
-            await send_sms_code(phone, code)
+            await send_sms_code(phone, code, settings.LOGIN_TWILIO)
 
             response = flash_response(
                 cfg.MSG_VALIDATION_CODE_SENT.format(
@@ -250,7 +250,7 @@ async def login(request: web.Request):
         assert user["phone"]  # nosec
         try:
             code = await set_2fa_code(request.app, user["email"])
-            await send_sms_code(user["phone"], code)
+            await send_sms_code(user["phone"], code, settings.LOGIN_TWILIO)
 
             response = web.json_response(
                 {
