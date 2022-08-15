@@ -509,7 +509,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
 
         logger.debug(
             "dynamic-sidecars cleanup pending volume removal services every %s seconds",
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_S,
+            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
         )
         while True:
             logger.debug("Removing pending volume removal services...")
@@ -525,7 +525,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                 )
 
             await asyncio.sleep(
-                settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_S
+                settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S
             )
 
     async def start(self) -> None:

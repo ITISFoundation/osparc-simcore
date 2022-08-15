@@ -361,10 +361,12 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         5.0, description="interval at which the scheduler cycle is repeated"
     )
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_S: PositiveFloat = Field(
-        30 * MINS,
-        description="used to check at regular intervals for pending "
-        "volume removal services and remove them if they timed out",
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
+        Field(
+            30 * MINS,
+            description="interval at which cleaning of unused dy-sidecar "
+            "docker volume removal services is used",
+        )
     )
 
 
