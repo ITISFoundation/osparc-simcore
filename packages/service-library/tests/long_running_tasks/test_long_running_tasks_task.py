@@ -9,26 +9,27 @@ from asyncio import Task
 from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
-from typing import AsyncIterable, AsyncIterator, Optional
+from typing import AsyncIterable, AsyncIterator, Final, Optional
 
 import pytest
-from asgi_lifespan import LifespanManager
-from fastapi import APIRouter, Depends, FastAPI, status
-from servicelib.fastapi.long_running_tasks.server import (
-    TaskId,
-    TaskProgress,
-    TasksManager,
-    TaskStatus,
-    get_tasks_manager,
-)
-from servicelib.fastapi.long_running_tasks.server import setup as setup_server
-from servicelib.fastapi.long_running_tasks.server import start_task
+from fastapi import status
 from servicelib.long_running_tasks._errors import (
     TaskAlreadyRunningError,
+    TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import TaskResult
+from servicelib.long_running_tasks._models import (
+    TaskId,
+    TaskProgress,
+    TaskResult,
+    TaskStatus,
+)
+from servicelib.long_running_tasks._task import TasksManager, start_task
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 # UTILS
 
@@ -58,46 +59,48 @@ async def failing_background_task(task_progress: TaskProgress) -> None:
     raise RuntimeError("failing asap")
 
 
-# FIXTURES
+TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 
 
 @pytest.fixture
-def user_routes() -> APIRouter:
-    router = APIRouter()
-
-    @router.post("/api/create", status_code=status.HTTP_202_ACCEPTED)
-    async def create_task_user_defined_route(
-        raise_when_finished: bool,
-        tasks_manager: TasksManager = Depends(get_tasks_manager),
-    ) -> TaskId:
-        task_id = start_task(
-            tasks_manager=tasks_manager,
-            handler=a_background_task,
-            raise_when_finished=raise_when_finished,
-            total_sleep=2,
-        )
-        return task_id
-
-    return router
+async def tasks_manager() -> AsyncIterator[TasksManager]:
+    tasks_manager = TasksManager(
+        stale_task_check_interval_s=TEST_CHECK_STALE_INTERVAL_S,
+        stale_task_detect_timeout_s=TEST_CHECK_STALE_INTERVAL_S,
+    )
+    yield tasks_manager
+    await tasks_manager.close()
 
 
-@pytest.fixture
-async def bg_task_app(user_routes: APIRouter) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
-
-    app.include_router(user_routes)
-
-    setup_server(app)
-    async with LifespanManager(app):
-        yield app
-
-
-@pytest.fixture
-def tasks_manager(bg_task_app: FastAPI) -> TasksManager:
-    return bg_task_app.state.long_running_task_manager
+async def test_unchecked_task_is_auto_removed(tasks_manager: TasksManager):
+    task_id = start_task(
+        tasks_manager,
+        a_background_task,
+        raise_when_finished=False,
+        total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
+    )
+    await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_status(task_id)
 
 
-# TESTS
+async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
+    task_id = start_task(
+        tasks_manager,
+        a_background_task,
+        raise_when_finished=False,
+        total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
+    )
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_fixed(TEST_CHECK_STALE_INTERVAL_S / 10.0),
+        stop=stop_after_delay(60),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            status = tasks_manager.get_task_status(task_id)
+            assert status.done, f"task {task_id} not complete"
+    tasks_manager.get_task_result(task_id)
 
 
 async def test_unique_task_already_running(tasks_manager: TasksManager) -> None:
@@ -110,9 +113,6 @@ async def test_unique_task_already_running(tasks_manager: TasksManager) -> None:
     for _ in range(5):
         with pytest.raises(TaskAlreadyRunningError) as exec_info:
             start_task(tasks_manager=tasks_manager, handler=unique_task, unique=True)
-        assert f"{exec_info.value}".startswith(
-            "tests.fastapi.long_running_tasks.test_long_running_tasks_task.unique_task must be unique, found:"
-        )
 
 
 async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager) -> None:
@@ -152,6 +152,13 @@ async def test_get_result(tasks_manager: TasksManager) -> None:
     task_id = start_task(tasks_manager=tasks_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
     result = tasks_manager.get_task_result(task_id)
+    assert result == 42
+
+
+async def test_get_result_old(tasks_manager: TasksManager) -> None:
+    task_id = start_task(tasks_manager=tasks_manager, handler=fast_background_task)
+    await asyncio.sleep(0.1)
+    result = tasks_manager.get_task_result_old(task_id)
     assert result == TaskResult(result=42, error=None)
 
 
@@ -173,7 +180,23 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager) -> No
 
         await asyncio.sleep(0.1)
 
-    task_result = tasks_manager.get_task_result(task_id)
+    with pytest.raises(RuntimeError, match="failing asap"):
+        tasks_manager.get_task_result(task_id)
+
+
+async def test_get_result_old_finished_with_error(tasks_manager: TasksManager) -> None:
+    task_id = start_task(tasks_manager=tasks_manager, handler=failing_background_task)
+
+    can_continue = True
+    while can_continue:
+        try:
+            tasks_manager.get_task_result(task_id)
+        except TaskNotCompletedError:
+            can_continue = False
+
+        await asyncio.sleep(0.1)
+
+    task_result = tasks_manager.get_task_result_old(task_id)
     assert task_result.result is None
     assert task_result.error is not None
     assert task_result.error.startswith(f"Task {task_id} finished with exception:")
@@ -192,7 +215,25 @@ async def test_get_result_task_was_cancelled_multiple_times(
     for _ in range(5):
         await tasks_manager.cancel_task(task_id)
 
-    task_result = tasks_manager.get_task_result(task_id)
+    with pytest.raises(
+        TaskCancelledError, match=f"Task {task_id} was cancelled before completing"
+    ):
+        tasks_manager.get_task_result(task_id)
+
+
+async def test_get_result_old_task_was_cancelled_multiple_times(
+    tasks_manager: TasksManager,
+) -> None:
+    task_id = start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+    )
+    for _ in range(5):
+        await tasks_manager.cancel_task(task_id)
+
+    task_result = tasks_manager.get_task_result_old(task_id)
     assert task_result.result is None
     assert task_result.error == f"Task {task_id} was cancelled before completing"
 

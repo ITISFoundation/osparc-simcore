@@ -41,7 +41,7 @@ async def get_task_result(
 ) -> TaskResult:
     assert request  # nosec
 
-    task_result = task_manager.get_task_result(task_id=task_id)
+    task_result = task_manager.get_task_result_old(task_id=task_id)
     await task_manager.remove_task(task_id, reraise_errors=False)
 
     return task_result

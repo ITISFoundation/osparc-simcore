@@ -34,6 +34,7 @@ async def get_task_result(request: web.Request) -> web.Response:
     # NOTE: this might raise an exception that will be catached by the _error_handlers
     # in case it did not raise, then we remove the task from the manager
     task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
+    # NOTE: this will fail if the task failed for some reason....
     await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
     return task_result
 

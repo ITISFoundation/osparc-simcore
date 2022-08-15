@@ -18,7 +18,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskProgress, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,8 @@ class TasksManager:
         self.stale_task_check_interval_s = stale_task_check_interval_s
         self.stale_task_detect_timeout_s = stale_task_detect_timeout_s
         self._stale_tasks_monitor_task: Task = asyncio.create_task(
-            self._stale_tasks_monitor_worker()
+            self._stale_tasks_monitor_worker(),
+            name=f"{__name__}.stale_task_monitor_worker",
         )
 
     def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
@@ -196,6 +197,35 @@ class TasksManager:
         except CancelledError as exc:
             # the task was cancelled
             raise TaskCancelledError(task_id=task_id) from exc
+
+    def get_task_result_old(self, task_id: TaskId) -> TaskResult:
+        """
+        returns: the result of the task
+
+        raises TaskNotFoundError if the task cannot be found
+        """
+        tracked_task = self._get_tracked_task(task_id)
+
+        if not tracked_task.task.done():
+            raise TaskNotCompletedError(task_id=task_id)
+
+        try:
+            exception = tracked_task.task.exception()
+            if exception is not None:
+                formatted_traceback = "\n".join(
+                    traceback.format_tb(exception.__traceback__)
+                )
+                error = TaskExceptionError(
+                    task_id=task_id, exception=exception, traceback=formatted_traceback
+                )
+                logger.warning("%s", f"{error}")
+                return TaskResult(result=None, error=f"{error}")
+        except CancelledError:
+            error = TaskCancelledError(task_id=task_id)
+            logger.warning("Task %s was cancelled", task_id)
+            return TaskResult(result=None, error=f"{error}")
+
+        return TaskResult(result=tracked_task.task.result(), error=None)
 
     async def cancel_task(self, task_id: TaskId) -> None:
         """
