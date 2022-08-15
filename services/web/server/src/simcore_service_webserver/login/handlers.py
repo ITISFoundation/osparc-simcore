@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
@@ -147,24 +148,33 @@ async def register_phone(request: web.Request):
     email = body.email
     phone = body.phone  # TODO: validate this is a phone?
 
-    if settings.LOGIN_2FA_REQUIRED:
-        try:
-            code = await set_2fa_code(request.app, email)
-            await send_sms_code(phone, code, settings.LOGIN_TWILIO)
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
-            response = flash_response(
-                cfg.MSG_VALIDATION_CODE_SENT.format(
-                    phone_number=mask_phone_number(phone)
-                ),
-                status=web.HTTPAccepted.status_code,
-            )
-            return response
+    try:
+        code = await set_2fa_code(request.app, email)
+        await send_sms_code(phone, code, settings.LOGIN_TWILIO)
 
-        except Exception as e:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
-                content_type=MIMETYPE_APPLICATION_JSON,
-            ) from e
+        response = flash_response(
+            cfg.MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(phone)),
+            status=web.HTTPAccepted.status_code,
+        )
+        return response
+
+    except Exception as e:
+        error_code = create_error_code(e)
+        log.exception(
+            "Phone registration unexpectedly failed [%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise web.HTTPServiceUnavailable(
+            reason=f"Currently cannot register phone, please try again later ({error_code})",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from e
 
 
 async def phone_confirmation(request: web.Request):
@@ -178,27 +188,33 @@ async def phone_confirmation(request: web.Request):
     phone = body.phone
     code = body.code
 
-    if settings.LOGIN_2FA_REQUIRED:
-        v_code = await get_2fa_code(request.app, email)
-        if code == v_code:
-            await delete_2fa_code(request.app, email)
-            user = await db.get_user({"email": email})
-            await db.update_user(user, {"phone": phone})
-            # log in user
-            with log_context(
-                log,
-                logging.INFO,
-                "login of user_id=%s with %s",
-                f"{user.get('id')}",
-                f"{email=}",
-            ):
-                identity = user["email"]
-                response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-                await remember(request, response, identity)
-                return response
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+    expected_code = await get_2fa_code(request.app, email)
+    if code is not None and code == expected_code:
+        await delete_2fa_code(request.app, email)
+        user = await db.get_user({"email": email})
+        await db.update_user(user, {"phone": phone})
+
+        # log in user
+        with log_context(
+            log,
+            logging.INFO,
+            "login of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
 
     raise web.HTTPUnauthorized(
-        reason=cfg.MSG_VALIDATION_CODE_ERROR, content_type=MIMETYPE_APPLICATION_JSON
+        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
@@ -259,7 +275,7 @@ async def login(request: web.Request):
                 {
                     "data": {
                         "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
-                        "reason": cfg.MSG_VALIDATION_CODE_SENT.format(
+                        "reason": cfg.MSG_2FA_CODE_SENT.format(
                             phone_number=mask_phone_number(user["phone"])
                         ),
                     },
@@ -268,12 +284,20 @@ async def login(request: web.Request):
                 status=web.HTTPAccepted.status_code,
             )
             return response
+
         except Exception as e:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_VALIDATION_CODE_SEND_ERROR,
+            error_code = create_error_code(e)
+            log.exception(
+                "2FA login unexpectedly failed [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise web.HTTPServiceUnavailable(
+                reason=f"Currently we cannot validate 2FA code, please try again later ({error_code})",
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
 
+    # LOGIN -----------
     with log_context(
         log,
         logging.INFO,

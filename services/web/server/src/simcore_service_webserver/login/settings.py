@@ -94,12 +94,7 @@ class LoginOptions(BaseModel):
     # TODO: translation?
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
-    MSG_VALIDATION_CODE_SENT: str = "SMS code sent to {phone_number}"
-    MSG_VALIDATION_CODE_SEND_ERROR: str = (
-        "There was a problem sending the validation code"
-    )
-    MSG_VALIDATION_CODE_ERROR: str = "Invalid validation code"
-    MSG_VERIFY_PHONE_NUMBER: str = "Phone number succesfully verified"
+    MSG_2FA_CODE_SENT: str = "Code sent by SMS to {phone_number}"
     MSG_ACTIVATED: str = "Your account is activated"
     MSG_UNKNOWN_EMAIL: str = "This email is not registered"
     MSG_WRONG_PASSWORD: str = "Wrong password"
