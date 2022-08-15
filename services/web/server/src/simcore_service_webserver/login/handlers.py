@@ -222,7 +222,7 @@ async def phone_confirmation(request: web.Request):
         with log_context(
             log,
             logging.INFO,
-            "login of user_id=%s with %s",
+            "login after phone_confirmation of user_id=%s with %s",
             f"{user.get('id')}",
             f"{email=}",
         ):
@@ -351,7 +351,7 @@ async def login_2fa(request: web.Request):
         with log_context(
             log,
             logging.INFO,
-            "login of user_id=%s with %s",
+            "login_2fa of user_id=%s with %s",
             f"{user.get('id')}",
             f"{email=}",
         ):
