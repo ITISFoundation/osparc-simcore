@@ -1,9 +1,7 @@
 import logging
 
-import attr
 from aiohttp import web
 from servicelib import observer
-from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -13,7 +11,13 @@ from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa import delete_2fa_code, get_2fa_code, send_sms_code, set_2fa_code
+from ._2fa import (
+    delete_2fa_code,
+    get_2fa_code,
+    mask_phone_number,
+    send_sms_code,
+    set_2fa_code,
+)
 from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
@@ -144,19 +148,13 @@ async def register_phone(request: web.Request):
     if settings.LOGIN_2FA_REQUIRED:
         try:
             code = await set_2fa_code(request.app, email)
-            print("code", code)
             await send_sms_code(phone, code)
 
-            # keep first 3 and last 2
-            masked_phone = phone[:3] + len(phone[3:-2]) * "X" + phone[-2:]
-
-            data = attr.asdict(
-                LogMessageType(
-                    cfg.MSG_VALIDATION_CODE_SENT + " to " + masked_phone, "INFO"
-                )
-            )
-            response = web.json_response(
-                status=web.HTTPAccepted.status_code, data={"data": data, "error": None}
+            response = flash_response(
+                cfg.MSG_VALIDATION_CODE_SENT.format(
+                    phone_number=mask_phone_number(phone)
+                ),
+                status=web.HTTPAccepted.status_code,
             )
             return response
         except Exception as e:
@@ -238,36 +236,33 @@ async def login(request: web.Request):
     if settings.LOGIN_2FA_REQUIRED:
         if not user["phone"]:
             response = web.json_response(
-                status=web.HTTPAccepted.status_code,
-                data={
+                {
                     "data": {
                         "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
                         "reason": "PHONE_NUMBER_REQUIRED",
                     },
                     "error": None,
                 },
+                status=web.HTTPAccepted.status_code,
             )
             return response
 
-        assert user["phone"], "db corrupted. Phone number needed"  # nosec
+        assert user["phone"]  # nosec
         try:
             code = await set_2fa_code(request.app, user["email"])
-            print("code", code)
             await send_sms_code(user["phone"], code)
-            list_of_indexes = [3, 4, 5, 6, 7, 8, 9]  # keep first 3 and last 2
-            new_character = "X"
-            phone = user["phone"]
-            for i in list_of_indexes:
-                phone = phone[:i] + new_character + phone[i + 1 :]
+
             response = web.json_response(
-                status=web.HTTPAccepted.status_code,
-                data={
+                {
                     "data": {
                         "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
-                        "reason": cfg.MSG_VALIDATION_CODE_SENT + " to " + phone,
+                        "reason": cfg.MSG_VALIDATION_CODE_SENT.format(
+                            phone_number=mask_phone_number(user["phone"])
+                        ),
                     },
                     "error": None,
                 },
+                status=web.HTTPAccepted.status_code,
             )
             return response
         except Exception as e:
@@ -304,9 +299,9 @@ async def login_2fa(request: web.Request):
     email = body.email
     code = body.code
 
-    v_code = await get_2fa_code(request.app, email)
-    if code == v_code:
+    if code == await get_2fa_code(request.app, email):
         await delete_2fa_code(request.app, email)
+
         user = await db.get_user({"email": email})
         with log_context(
             log,

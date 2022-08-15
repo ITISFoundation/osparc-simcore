@@ -70,6 +70,7 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 #
 
 
+@log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(phone_number: str, code: str):
     # SEE https://www.twilio.com/docs/sms/quickstart/python
     def sender():
@@ -97,3 +98,13 @@ async def send_sms_code(phone_number: str, code: str):
         )
 
     await asyncio.get_event_loop().run_in_executor(None, sender)
+
+
+#
+# HELPERS
+#
+
+
+def mask_phone_number(phn: str) -> str:
+    assert len(phn) > 10  # nosec
+    return phn[:3] + len(phn[3:-2]) * "X" + phn[-2:]

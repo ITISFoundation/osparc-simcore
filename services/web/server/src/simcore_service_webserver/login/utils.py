@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 from pprint import pformat
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional
 
 import aiosmtplib
 import attr
@@ -64,7 +64,7 @@ async def compose_multipart_mail(
     recipient: str,
     subject: str,
     body: str,
-    attachments: List[Tuple[str, bytearray]],
+    attachments: list[tuple[str, bytearray]],
 ) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -91,7 +91,7 @@ async def render_and_send_mail(
     to: str,
     template: str,
     context: Mapping[str, Any],
-    attachments: Optional[List[Tuple[str, bytearray]]] = None,
+    attachments: Optional[list[tuple[str, bytearray]]] = None,
 ):
     page = render_string(f"{template}", request, context)
     subject, body = page.split("\n", 1)
@@ -108,10 +108,11 @@ def themed(dirname, template):
     return resources.get_path(join(dirname, template))
 
 
-def flash_response(msg: str, level: str = "INFO") -> web.Response:
+def flash_response(msg: str, level: str = "INFO", *, status: int = 200) -> web.Response:
     response = web.json_response(
         data={"data": attr.asdict(LogMessageType(msg, level)), "error": None},
         dumps=json_dumps,
+        status=status,
     )
     return response
 

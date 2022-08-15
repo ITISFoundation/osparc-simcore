@@ -79,7 +79,7 @@ class LoginOptions(BaseModel):
     # TODO: translation?
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
-    MSG_VALIDATION_CODE_SENT: str = "SMS code sent"
+    MSG_VALIDATION_CODE_SENT: str = "SMS code sent to {phone_number}"
     MSG_VALIDATION_CODE_SEND_ERROR: str = (
         "There was a problem sending the validation code"
     )
