@@ -544,6 +544,7 @@ async def email_confirmation(request: web.Request):
                     f"2fa-verify?email={user['email']}"
                 )
             else:
+                # NOTE: temp necessary for backwards compatibility
                 redirect_url = redirect_url.with_fragment("?registered=true")
 
         elif action == CHANGE_EMAIL:
