@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
 from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
@@ -134,7 +135,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         #  if 'return web.HTTPNoContent()' then 'await response.json()' raises ContentTypeError
         #  if 'raise web.HTTPNoContent()' then 'await response.json() == None'
         #
-        raise web.HTTPNoContent()
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except DirectorServiceError as exc:
         return create_error_response(
