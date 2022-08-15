@@ -6,10 +6,6 @@ import aiodocker
 from ..errors import GenericDockerError
 
 
-class _RetryError(Exception):
-    pass
-
-
 @asynccontextmanager
 async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
     client = None

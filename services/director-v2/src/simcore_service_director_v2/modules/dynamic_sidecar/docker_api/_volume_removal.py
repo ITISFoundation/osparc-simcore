@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi.encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from servicelib.docker_utils import to_datetime
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -15,7 +16,7 @@ from ..docker_service_specs.volume_remover import (
     DockerVersion,
     spec_volume_removal_service,
 )
-from ._utils import _RetryError, docker_client
+from ._utils import docker_client
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ async def remove_volumes_from_node(
             async for attempt in AsyncRetrying(
                 stop=stop_after_delay(service_timeout_s),
                 wait=wait_fixed(0.5),
-                retry=retry_if_exception_type(_RetryError),
+                retry=retry_if_exception_type(TryAgain),
                 reraise=True,
             ):
                 with attempt:
@@ -90,7 +91,7 @@ async def remove_volumes_from_node(
                     if len(tasks) != 1:
                         # Sometimes swarm did not mange to create a task after the service
                         # is created. In that case a retry is triggered
-                        raise _RetryError(
+                        raise TryAgain(
                             f"Expected 1 task for service {service_id}, found {tasks=}"
                         )
 
@@ -99,7 +100,7 @@ async def remove_volumes_from_node(
                     log.debug("Service %s, %s", service_id, f"{task_status=}")
                     task_state = task_status["State"]
                     if task_state not in SERVICE_FINISHED_STATES:
-                        raise _RetryError(f"Waiting for task to finish: {task_status=}")
+                        raise TryAgain(f"Waiting for task to finish: {task_status=}")
 
                     if not (
                         task_state == "complete"

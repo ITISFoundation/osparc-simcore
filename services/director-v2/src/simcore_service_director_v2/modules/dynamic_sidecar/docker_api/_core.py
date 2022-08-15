@@ -14,6 +14,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -28,7 +29,7 @@ from ....models.schemas.dynamic_services import SchedulerData, ServiceState, Ser
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DynamicSidecarError, GenericDockerError
-from ._utils import _RetryError, docker_client
+from ._utils import docker_client
 
 NO_PENDING_OVERWRITE = {
     ServiceState.FAILED,
@@ -461,7 +462,7 @@ async def _update_service_spec(
             # waits exponentially to a max of `stop_delay` seconds
             stop=stop_after_delay(stop_delay),
             wait=wait_exponential(min=1),
-            retry=retry_if_exception_type(_RetryError),
+            retry=retry_if_exception_type(TryAgain),
             reraise=True,
         ):
             with attempt:
@@ -489,7 +490,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise _RetryError() from e
+                        raise TryAgain() from e
                     raise e
 
 
