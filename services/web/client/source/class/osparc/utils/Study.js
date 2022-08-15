@@ -203,7 +203,22 @@ qx.Class.define("osparc.utils.Study", {
               data: minStudyData
             };
             osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params)
-              .then(studyData => resolve(studyData["uuid"]))
+              .then(taskData => {
+                if ("status_href" in taskData) {
+                  const pollTasks = osparc.data.PollTasks.getInstance();
+                  const interval = 1000;
+                  const task = pollTasks.createTask(taskData, interval);
+                  task.addListener("changeDone", e => {
+                    if (e.getData()) {
+                      task.fetchResult()
+                        .then(studyData => resolve(studyData["uuid"]))
+                        .catch(err => reject(err));
+                    }
+                  }, this);
+                } else {
+                  reject("Status missing");
+                }
+              })
               .catch(err => reject(err));
           });
       });
