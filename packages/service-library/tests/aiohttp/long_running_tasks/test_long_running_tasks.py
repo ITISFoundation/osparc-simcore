@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 """
 Showcases/tests an example of long running tasks.
 
@@ -7,7 +9,6 @@ How these tests works:
 
 """
 
-# pylint: disable=redefined-outer-name
 
 import asyncio
 import json
@@ -54,7 +55,7 @@ def app() -> web.Application:
             num_strings: int,
             sleep_time: float,
             fail: bool,
-        ) -> list[str]:
+        ):
             task_progress.publish(message="starting", percent=0)
             generated_strings = []
             for index in range(num_strings):
@@ -67,7 +68,10 @@ def app() -> web.Application:
                     raise RuntimeError("We were asked to fail!!")
 
             task_progress.publish(message="finished", percent=1)
-            return generated_strings
+            # NOTE: this code is used just for the sake of not returning the default 200
+            return web.json_response(
+                data={"data": generated_strings}, status=web.HTTPCreated.status_code
+            )
 
         task_id = long_running_tasks.server.start_task(
             task_manager,
@@ -149,10 +153,13 @@ async def test_workflow(client: TestClient):
     assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
-    task_result, error = await assert_status(result, web.HTTPOk)
+    task_result, error = await assert_status(result, web.HTTPCreated)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]
+    # getting the result again should raise a 404
+    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    await assert_status(result, web.HTTPNotFound)
 
 
 async def test_failing_task_returns_error(client: TestClient):
