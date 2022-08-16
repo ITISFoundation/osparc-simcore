@@ -211,6 +211,7 @@ async def test_workflow(
     await request_create_project(
         client,
         web.HTTPAccepted,
+        web.HTTPCreated,
         logged_user,
         primary_group,
         project=fake_project,

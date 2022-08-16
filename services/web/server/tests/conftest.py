@@ -192,7 +192,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
     async def _creator(
         client: TestClient,
-        expected_response: type[web.HTTPException],
+        expected_accepted_response: type[web.HTTPException],
+        expected_creation_response: type[web.HTTPException],
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
@@ -223,7 +224,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 ):
                     expected_data[key] = from_study[key]
 
-        # POST /v0/projects -> returns 202
+        # POST /v0/projects -> returns 202 or denied access
         assert client.app
         url: URL = client.app.router["create_projects"].url_for()
         if from_study:
@@ -234,7 +235,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             url = url.update_query(copy_data=f"{copy_data}")
         resp = await client.post(f"{url}", json=project_data)
         print(f"<-- created project response: {resp=}")
-        data, error = await assert_status(resp, expected_response)
+        data, error = await assert_status(resp, expected_accepted_response)
         if error:
             assert not data
             return {}
@@ -271,7 +272,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         # get result GET /{task_id}/result
         print(f"--> getting project creation result...")
         result = await client.get(f"{result_url}")
-        data, error = await assert_status(result, web.HTTPCreated)
+        data, error = await assert_status(result, expected_creation_response)
         assert data
         assert not error
         print(f"<-- result: {data}")

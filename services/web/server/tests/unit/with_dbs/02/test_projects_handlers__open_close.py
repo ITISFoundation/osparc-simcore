@@ -235,6 +235,7 @@ async def test_share_project(
     new_project = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         project={"accessRights": {str(all_group["gid"]): share_rights}},

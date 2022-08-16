@@ -167,6 +167,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         from_study=template_project,
@@ -216,6 +217,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         from_study=user_project,
