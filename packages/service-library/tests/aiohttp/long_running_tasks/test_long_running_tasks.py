@@ -32,6 +32,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 TASKS_ROUTER_PREFIX: Final[str] = "/futures"
+LONG_RUNNING_TASK_ENTRYPOINT: Final[str] = "long_running_task"
 
 
 async def _string_list_task(
@@ -64,7 +65,7 @@ def server_routes() -> web.RouteTableDef:
         sleep_time: float
         fail: bool = False
 
-    @routes.post("/long_running_task:start")
+    @routes.post("/long_running_task:start", name=LONG_RUNNING_TASK_ENTRYPOINT)
     async def generate_list_strings(request: web.Request):
         task_manager = long_running_tasks.server.get_tasks_manager(request.app)
         query_params = parse_request_query_parameters_as(_LongTaskQueryParams, request)
@@ -110,9 +111,13 @@ def client(
 
 
 async def test_workflow(client: TestClient):
-    url = URL("/long_running_task:start").with_query(
-        num_strings=10, sleep_time=f"{0.2}"
+    assert client.app
+    url = (
+        client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=0.2)
     )
+
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
     assert data
@@ -168,8 +173,11 @@ async def test_workflow(client: TestClient):
 
 
 async def test_failing_task_returns_error(client: TestClient):
-    url = URL("/long_running_task:start").with_query(
-        num_strings=12, sleep_time=f"{0.1}", fail=f"{True}"
+    assert client.app
+    url = (
+        client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=12, sleep_time=0.1, fail="true")
     )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
@@ -202,8 +210,11 @@ async def test_failing_task_returns_error(client: TestClient):
 
 
 async def test_get_results_before_tasks_finishes_returns_404(client: TestClient):
-    url = URL("/long_running_task:start").with_query(
-        num_strings=10, sleep_time=f"{0.2}"
+    assert client.app
+    url = (
+        client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=0.2)
     )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
@@ -216,8 +227,11 @@ async def test_get_results_before_tasks_finishes_returns_404(client: TestClient)
 
 
 async def test_cancel_workflow(client: TestClient):
-    url = URL("/long_running_task:start").with_query(
-        num_strings=10, sleep_time=f"{0.2}"
+    assert client.app
+    url = (
+        client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=0.2)
     )
     result = await client.post(f"{url}")
     data, error = await assert_status(result, web.HTTPAccepted)
