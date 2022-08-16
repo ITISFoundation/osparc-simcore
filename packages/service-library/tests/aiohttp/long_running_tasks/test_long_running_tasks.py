@@ -236,3 +236,11 @@ async def test_cancel_workflow(client: TestClient):
     # try cancelling again
     result = await client.delete(f"{TASKS_ROUTER_PREFIX}/{task_id}")
     await assert_status(result, web.HTTPNotFound)
+
+
+async def test_list_tasks(client: TestClient):
+    url = URL(f"{TASKS_ROUTER_PREFIX}")
+    result = await client.get(f"{url}")
+    data, error = await assert_status(result, web.HTTPOk)
+    assert not error
+    assert data == []

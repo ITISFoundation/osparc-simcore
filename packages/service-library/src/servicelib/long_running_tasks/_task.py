@@ -132,6 +132,12 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
+    def list_task_ids(self) -> list[TaskId]:
+        task_ids = []
+        for task_group in self._tasks_groups.values():
+            task_ids.extend([task_id for task_id in task_group.values()])
+        return task_ids
+
     def add_task(
         self, task_name: TaskName, task: Task, task_progress: TaskProgress
     ) -> TrackedTask:
