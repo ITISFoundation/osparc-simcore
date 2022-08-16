@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import logging
@@ -13,8 +14,10 @@ from httpx import AsyncClient, Response
 from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_not_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -123,29 +126,26 @@ class AuthSession:
         data: Optional[JSON] = self._process(resp)
         assert data  # nosec
         assert isinstance(data, dict)
-        status_url = data["status_href"]
-        result_url = data["result_href"]
+        status_url = data["status_href"].lstrip(f"/{self.vtag}")
+        result_url = data["result_href"].lstrip(f"/{self.vtag}")
         # GET task status now until done
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.5),
             stop=stop_after_delay(60),
             reraise=True,
             before_sleep=before_sleep_log(logger, logging.INFO),
+            retry=retry_if_not_exception_type(asyncio.CancelledError),
         ):
             with attempt:
-                resp = await self.client.get(
+                data: Optional[JSON] = await self.get(
                     status_url,
-                    cookies=self.session_cookies,
                 )
-                data: Optional[JSON] = self._process(resp)
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
-                    raise ValueError
-        resp = await self.client.get(
+                    raise TryAgain
+        data: Optional[JSON] = await self.get(
             f"{result_url}",
-            cookies=self.session_cookies,
         )
-        data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
