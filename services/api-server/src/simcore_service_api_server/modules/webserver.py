@@ -11,7 +11,7 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response
 from pydantic import ValidationError
-from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
+from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -143,9 +143,7 @@ class AuthSession:
                     raise ValueError
         resp = await self.client.get(f"{result_url}")
         data: Optional[JSON] = self._process(resp)
-        task_result = TaskResult.parse_obj(data)
-
-        return Project.parse_obj(task_result.result)
+        return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
         resp = await self.client.get(

@@ -19,7 +19,7 @@ from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
-from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
+from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
@@ -271,14 +271,11 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         # get result GET /{task_id}/result
         print(f"--> getting project creation result...")
         result = await client.get(f"{result_url}")
-        data, error = await assert_status(result, web.HTTPOk)
+        data, error = await assert_status(result, web.HTTPCreated)
         assert data
         assert not error
-        task_result = TaskResult.parse_obj(data)
-        print(f"<-- result: {task_result.json(indent=2)}")
-        assert not task_result.error
-        assert task_result.result
-        new_project = task_result.result
+        print(f"<-- result: {data}")
+        new_project = data
 
         # now check returned is as expected
         if new_project:

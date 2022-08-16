@@ -311,7 +311,10 @@ async def _create_projects(
         )
 
         log.debug("project created successfuly")
-        return new_project
+        raise web.HTTPCreated(
+            text=json_dumps({"data": new_project}),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
