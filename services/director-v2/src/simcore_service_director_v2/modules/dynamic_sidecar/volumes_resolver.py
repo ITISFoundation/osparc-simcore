@@ -94,11 +94,11 @@ class DynamicSidecarVolumesPathsResolver:
 
         Example:
         >>> source(
-            path="/this/is/a/data/folder",
+            path="/home/user/a-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-home-path/workspace",
             node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9",
             run_id="a5d2a8bd-eaef-4d7b-8dd9-1ae4e408f3c3"
         )
-        dyv_a5d2a8bd-eaef-4d7b-8dd9-1ae4e408f3c3_redlof_atad_a_si_siht_17f5b46d-505c-489e-9818-f6d294c892d9
+        dyv_f728b4fa-4248-4e3a-8a5d-2f346baa9455_ecapskrow_htap-emoh-gnol-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-a_resu_emoh_e3e70682-c209-4cac-a29f-6fb
         """
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.

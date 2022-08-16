@@ -140,3 +140,19 @@ async def test_unique_name_creation_and_removal(faker: Faker):
     )
 
     await assert_creation_and_removal(unique_volume_name)
+
+
+def test_volumes_get_truncated_as_expected(faker: Faker):
+    node_uuid = faker.uuid4(cast_to=None)
+    run_id = faker.uuid4(cast_to=None)
+    assert node_uuid != run_id
+    unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
+        path=Path(
+            f"/home/user/a-{'-'.join(['very' for _ in range(30)])}-long-home-path/workspace"
+        ),
+        node_uuid=node_uuid,
+        run_id=run_id,
+    )
+    assert len(unique_volume_name) == 255
+    assert f"{run_id}" in unique_volume_name
+    assert f"{node_uuid}" not in unique_volume_name
