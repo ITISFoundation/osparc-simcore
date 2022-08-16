@@ -6,5 +6,5 @@ _DELAY_NS: Final[int] = 1 * _GIGA
 DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS = {
     "Condition": "on-failure",
     "MaxAttempts": 100,
-    "Delay": 1 * _DELAY_NS,
+    "Delay": _DELAY_NS,
 }
