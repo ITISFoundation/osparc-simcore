@@ -1,8 +1,10 @@
-import asyncio
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+
+import asyncio
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer

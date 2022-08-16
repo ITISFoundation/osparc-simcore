@@ -3,14 +3,25 @@ import logging
 from aiohttp import web
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
+from ..utils import HOUR, MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
-from .confirmation import (
+from ._2fa import (
+    delete_2fa_code,
+    get_2fa_code,
+    mask_phone_number,
+    send_sms_code,
+    set_2fa_code,
+)
+from ._confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
     validate_confirmation_code,
@@ -23,8 +34,14 @@ from .settings import (
     get_plugin_options,
     get_plugin_settings,
 )
-from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import flash_response, get_client_ip, render_and_send_mail, themed
+from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
+from .utils import (
+    envelope_response,
+    flash_response,
+    get_client_ip,
+    render_and_send_mail,
+    themed,
+)
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +64,12 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 
 
 async def register(request: web.Request):
+    """
+    Starts user's registration by providing an email, password and
+    invitation code (required by configuration).
+
+    An email with a link to 'email_confirmation' is sent to complete registration
+    """
     _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)
@@ -84,13 +107,15 @@ async def register(request: web.Request):
     await auto_add_user_to_groups(request.app, user["id"])
 
     if not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
+        assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
         # user is logged in
         identity = body.email
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
 
-    confirmation_ = await db.create_confirmation(user, REGISTRATION)
+    confirmation_: ConfirmationDict = await db.create_confirmation(user, REGISTRATION)
     link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
@@ -117,9 +142,113 @@ async def register(request: web.Request):
     return response
 
 
+@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+async def register_phone(request: web.Request):
+    """
+    Submits phone registration
+    - sends a code
+    - registration is completed requesting to 'phone_confirmation' route with the code received
+    """
+    _, _, body = await extract_and_validate(request)
+
+    settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    phone = body.phone
+
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+    try:
+
+        if await db.get_user({"phone": phone}):
+            raise web.HTTPUnauthorized(
+                reason="Invalid phone number: one phone number per account allowed",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
+        code = await set_2fa_code(request.app, email)
+        await send_sms_code(phone, code, settings.LOGIN_TWILIO)
+
+        response = flash_response(
+            cfg.MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(phone)),
+            status=web.HTTPAccepted.status_code,
+        )
+        return response
+
+    except Exception as e:
+        error_code = create_error_code(e)
+        log.exception(
+            "Phone registration unexpectedly failed [%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise web.HTTPServiceUnavailable(
+            reason=f"Currently cannot register phone, please try again later ({error_code})",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from e
+
+
+@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+async def phone_confirmation(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    phone = body.phone
+    code = body.code
+
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+    if (expected := await get_2fa_code(request.app, email)) and code == expected:
+        await delete_2fa_code(request.app, email)
+
+        # db
+        try:
+            user = await db.get_user({"email": email})
+            await db.update_user(user, {"phone": phone})
+
+        except UniqueViolation as err:
+            raise web.HTTPUnauthorized(
+                reason="Invalid phone number",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from err
+
+        # login
+        with log_context(
+            log,
+            logging.INFO,
+            "login after phone_confirmation of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
+
+    #
+    raise web.HTTPUnauthorized(
+        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
+    )
+
+
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
+    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
@@ -129,27 +258,67 @@ async def login(request: web.Request):
     user = await db.get_user({"email": email})
     if not user:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_UNKNOWN_EMAIL, content_type="application/json"
+            reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if user["status"] == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type="application/json"
+            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type="application/json"
+            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if user["status"] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type="application/json"
+            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
+    if settings.LOGIN_2FA_REQUIRED:
+        if not user["phone"]:
+            rsp = envelope_response(
+                {
+                    "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
+                    "reason": "PHONE_NUMBER_REQUIRED",
+                },
+                status=web.HTTPAccepted.status_code,
+            )
+            return rsp
+
+        assert user["phone"]  # nosec
+        try:
+            code = await set_2fa_code(request.app, user["email"])
+            await send_sms_code(user["phone"], code, settings.LOGIN_TWILIO)
+
+            rsp = envelope_response(
+                {
+                    "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
+                    "reason": cfg.MSG_2FA_CODE_SENT.format(
+                        phone_number=mask_phone_number(user["phone"])
+                    ),
+                },
+                status=web.HTTPAccepted.status_code,
+            )
+            return rsp
+
+        except Exception as e:
+            error_code = create_error_code(e)
+            log.exception(
+                "2FA login unexpectedly failed [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise web.HTTPServiceUnavailable(
+                reason=f"Currently we cannot validate 2FA code, please try again later ({error_code})",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from e
+
+    # LOGIN -----------
     with log_context(
         log,
         logging.INFO,
@@ -158,9 +327,41 @@ async def login(request: web.Request):
         f"{email=}",
     ):
         identity = user["email"]
-        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-        await remember(request, response, identity)
-        return response
+        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        await remember(request, rsp, identity)
+        return rsp
+
+
+async def login_2fa(request: web.Request):
+    """2FA login
+
+    NOTE that validation code is not generated
+    until the email/password of the standard login (handler above) is not
+    completed
+    """
+    _, _, body = await extract_and_validate(request)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    code = body.code
+
+    if code == await get_2fa_code(request.app, email):
+        await delete_2fa_code(request.app, email)
+
+        user = await db.get_user({"email": email})
+        with log_context(
+            log,
+            logging.INFO,
+            "login_2fa of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
 
 
 @login_required
@@ -186,7 +387,7 @@ async def logout(request: web.Request) -> web.Response:
     return response
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=3600)
+@global_rate_limit_route(number_of_requests=5, interval_seconds=HOUR)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -211,17 +412,18 @@ async def reset_password(request: web.Request):
     try:
         if not user:
             raise web.HTTPUnprocessableEntity(
-                reason=cfg.MSG_UNKNOWN_EMAIL, content_type="application/json"
+                reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
         if user["status"] == BANNED:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_USER_BANNED, content_type="application/json"
+                reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
             )  # 401
 
         if user["status"] == CONFIRMATION_PENDING:
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_ACTIVATION_REQUIRED, content_type="application/json"
+                reason=cfg.MSG_ACTIVATION_REQUIRED,
+                content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
 
         assert user["status"] == ACTIVE  # nosec
@@ -229,7 +431,8 @@ async def reset_password(request: web.Request):
 
         if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_OFTEN_RESET_PASSWORD, content_type="application/json"
+                reason=cfg.MSG_OFTEN_RESET_PASSWORD,
+                content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
     except web.HTTPError as err:
         # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
@@ -332,12 +535,12 @@ async def change_password(request: web.Request):
 
     if not check_password(cur_password, user["password_hash"]):
         raise web.HTTPUnprocessableEntity(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type="application/json"
+            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     if new_password != confirm:
         raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
+            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )  # 409
 
     await db.update_user(user, {"password_hash": encrypt_password(new_password)})
@@ -347,7 +550,8 @@ async def change_password(request: web.Request):
 
 
 async def email_confirmation(request: web.Request):
-    """Handled access from a link sent to user by email
+    """Handles email confirmation by checking a code passed as query parameter
+
     Retrieves confirmation key and redirects back to some location front-end
 
     * registration, change-email:
@@ -408,7 +612,7 @@ async def reset_password_allowed(request: web.Request):
 
     if password != confirm:
         raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
+            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )  # 409
 
     confirmation = await validate_confirmation_code(code, db, cfg)
@@ -425,5 +629,5 @@ async def reset_password_allowed(request: web.Request):
 
     raise web.HTTPUnauthorized(
         reason="Cannot reset password. Invalid token or user",
-        content_type="application/json",
+        content_type=MIMETYPE_APPLICATION_JSON,
     )  # 401

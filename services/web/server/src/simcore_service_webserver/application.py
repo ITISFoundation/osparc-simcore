@@ -67,6 +67,7 @@ def create_application() -> web.Application:
     setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
     setup_statics(app)
     setup_db(app)
+    setup_redis(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
@@ -86,7 +87,6 @@ def create_application() -> web.Application:
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
-    setup_redis(app)
 
     # resource management
     setup_resource_manager(app)
