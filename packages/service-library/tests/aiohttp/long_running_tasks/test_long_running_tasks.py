@@ -55,7 +55,7 @@ def app() -> web.Application:
             num_strings: int,
             sleep_time: float,
             fail: bool,
-        ) -> list[str]:
+        ) -> web.Response:
             generated_strings = []
             for index in range(num_strings):
                 generated_strings.append(f"{index}")
@@ -66,7 +66,10 @@ def app() -> web.Application:
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
 
-            return generated_strings
+            # NOTE: this code is used just for the sake of not returning the default 200
+            return web.json_response(
+                data={"data": generated_strings}, status=web.HTTPCreated.status_code
+            )
 
         task_id = long_running_tasks.server.start_task(
             task_manager,
