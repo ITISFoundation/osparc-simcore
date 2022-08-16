@@ -258,8 +258,31 @@ async def test_cancel_workflow(client: TestClient):
 
 
 async def test_list_tasks(client: TestClient):
-    url = URL(f"{TASKS_ROUTER_PREFIX}")
-    result = await client.get(f"{url}")
+    # initially empty
+    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    result = await client.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
     assert data == []
+
+    assert client.app
+    url = (
+        client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=0.2)
+    )
+    result = await client.post(f"{url}")
+
+    # now start a few tasks
+    NUM_TASKS = 9
+    results = await asyncio.gather(*(client.post(f"{url}") for _ in range(NUM_TASKS)))
+    await asyncio.gather(
+        *(assert_status(result, web.HTTPAccepted) for result in results)
+    )
+
+    #
+    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    result = await client.get(f"{list_url}")
+    data, error = await assert_status(result, web.HTTPOk)
+    assert not error
+    assert len(data) == NUM_TASKS
