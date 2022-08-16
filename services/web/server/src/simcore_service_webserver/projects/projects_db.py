@@ -242,12 +242,15 @@ class ProjectDBAPI:
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id)
-                kargs["access_rights"].update(
+                kargs.setdefault("access_rights", {}).update(
                     _create_project_access_rights(
                         primary_gid, ProjectAccessRights.OWNER
                     )
                 )
-
+            # ensure we have the minimal amount of data here
+            kargs.setdefault("name", "New Study")
+            kargs.setdefault("description", "")
+            kargs.setdefault("workbench", {})
             # must be valid uuid
             try:
                 uuidlib.UUID(str(kargs.get("uuid")))
