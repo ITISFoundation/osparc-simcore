@@ -264,9 +264,9 @@ async def _create_projects(
                 # TODO: take skeleton and fill instead
                 new_project = predefined_project
 
-        # re-validate data
-        task_progress.publish(message="validating project scaffold", percent=0.1)
-        await projects_api.validate_project(app, new_project)
+            # re-validate data
+            task_progress.publish(message="validating project scaffold", percent=0.1)
+            await projects_api.validate_project(app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
         task_progress.publish(message="storing project scaffold", percent=0.15)
