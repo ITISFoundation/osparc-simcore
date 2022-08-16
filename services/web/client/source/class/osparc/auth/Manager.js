@@ -44,6 +44,61 @@ qx.Class.define("osparc.auth.Manager", {
   */
 
   members: {
+    register: function(userData) {
+      const params = {
+        data: userData
+      };
+      return osparc.data.Resources.fetch("auth", "postRegister", params);
+    },
+
+    verifyPhoneNumber: function(email, phoneNumber) {
+      const params = {
+        data: {
+          email,
+          phone: phoneNumber
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "postVerifyPhoneNumber", params);
+    },
+
+    validateCodeRegister: function(email, phone, code, loginCbk, failCbk, context) {
+      const params = {
+        data: {
+          email,
+          phone,
+          code
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params)
+        .then(data => {
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(profile => {
+              this.__loginUser(profile);
+              loginCbk.call(context, data);
+            })
+            .catch(err => failCbk.call(context, err.message));
+        })
+        .catch(err => failCbk.call(context, err.message));
+    },
+
+    validateCodeLogin: function(email, code, loginCbk, failCbk, context) {
+      const params = {
+        data: {
+          email,
+          code
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postValidationCodeLogin", params)
+        .then(data => {
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(profile => {
+              this.__loginUser(profile);
+              loginCbk.call(context, data);
+            })
+            .catch(err => failCbk.call(context, err.message));
+        })
+        .catch(err => failCbk.call(context, err.message));
+    },
 
     isLoggedIn: function() {
       // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
@@ -73,23 +128,35 @@ qx.Class.define("osparc.auth.Manager", {
       });
     },
 
-    login: function(email, password, successCbk, failCbk, context) {
+    login: function(email, password, loginCbk, verifyPhoneCbk, twoFactorAuthCbk, failCbk, context) {
       const params = {
-        data: {
-          email,
-          password
-        }
+        email,
+        password
       };
-      osparc.data.Resources.fetch("auth", "postLogin", params)
-        .then(data => {
+      const url = osparc.data.Resources.resources["auth"].endpoints["postLogin"].url;
+      const xhr = new XMLHttpRequest();
+      xhr.onload = () => {
+        if (xhr.status === 202) {
+          const resp = JSON.parse(xhr.responseText);
+          const data = resp.data;
+          if (data["code"] === "PHONE_NUMBER_REQUIRED") {
+            verifyPhoneCbk.call(context);
+          } else if (data["code"] === "SMS_CODE_REQUIRED") {
+            twoFactorAuthCbk.call(context, data["reason"]);
+          }
+        } else if (xhr.status === 200) {
+          const resp = JSON.parse(xhr.responseText);
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
               this.__loginUser(profile);
-              successCbk.call(context, data);
+              loginCbk.call(context, resp.data);
             })
             .catch(err => failCbk.call(context, err.message));
-        })
-        .catch(err => failCbk.call(context, err.message));
+        }
+      };
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(JSON.stringify(params));
     },
 
     logout: function() {
@@ -104,13 +171,6 @@ qx.Class.define("osparc.auth.Manager", {
         })
         .catch(error => console.log("already logged out"))
         .finally(this.__logoutUser());
-    },
-
-    register: function(userData) {
-      const params = {
-        data: userData
-      };
-      return osparc.data.Resources.fetch("auth", "postRegister", params);
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
