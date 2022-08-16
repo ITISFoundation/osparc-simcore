@@ -6,14 +6,14 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 from aiohttp import web
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
 from ..db_models import UserStatus
-from .confirmation import (
+from ._confirmation import (
     ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
@@ -71,7 +71,7 @@ async def check_registration(
     log.debug("Registration data validated")
 
 
-async def create_invitation(host: Dict, guest: str, db: AsyncpgStorage):
+async def create_invitation(host: dict, guest: str, db: AsyncpgStorage):
     """Creates an invitation token for a guest to register in the platform
 
         Creates and injects an invitation token in the confirmation table associated
@@ -148,4 +148,4 @@ def get_invitation_url(
         origin = URL()
 
     # https://some-web-url.io/#/registration/?invitation={code}
-    return origin.with_fragment("/registration/?invitation={}".format(code))
+    return origin.with_fragment(f"/registration/?invitation={code}")

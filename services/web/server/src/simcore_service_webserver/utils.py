@@ -10,7 +10,7 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import orjson
 from models_library.basic_types import SHA1Str
@@ -54,6 +54,11 @@ def gravatar_hash(email: str) -> str:
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
+SECOND: int = 1
+MINUTE: int = 60 * SECOND  # secs
+HOUR: int = 60 * MINUTE  # secs
+DAY: int = 24 * HOUR  # sec
+
 
 def now() -> datetime:
     return datetime.utcnow()
@@ -86,7 +91,7 @@ def to_datetime(snapshot: str) -> datetime:
 #   - https://tech.gadventures.com/hunting-for-memory-leaks-in-asyncio-applications-3614182efaf7
 
 
-def get_task_info(task: asyncio.Task) -> Dict:
+def get_task_info(task: asyncio.Task) -> dict:
     def _format_frame(f):
         keys = ["f_code", "f_lineno"]
         return OrderedDict([(k, str(getattr(f, k))) for k in keys])
@@ -112,7 +117,7 @@ def get_task_info(task: asyncio.Task) -> Dict:
     return info
 
 
-def get_tracemalloc_info(top=10) -> List[str]:
+def get_tracemalloc_info(top=10) -> list[str]:
     # Set PYTHONTRACEMALLOC=1 to start tracing
     #
     #

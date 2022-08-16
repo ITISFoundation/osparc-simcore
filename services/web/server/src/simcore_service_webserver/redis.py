@@ -35,11 +35,14 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 # EVENTS --------------------------------------------------------------------------
 async def setup_redis_client(app: web.Application):
+    """
+
+    raises builtin ConnectionError
+    """
     redis_settings: RedisSettings = get_plugin_settings(app)
 
     async def _create_client(address: str) -> aioredis.Redis:
-        client: Optional[aioredis.Redis] = None
-
+        """raises ConnectionError if fails"""
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(1 * _MINUTE),
             wait=wait_fixed(_WAIT_SECS),
@@ -59,19 +62,18 @@ async def setup_redis_client(app: web.Application):
                     f"{client=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-        assert client  # nosec
-        return client
+            assert client  # nosec
+            return client
 
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(
-        redis_settings.dsn_resources
-    )
-    assert client  # nosec
+    REDIS_DSN_MAP = {
+        APP_CLIENT_REDIS_CLIENT_KEY: redis_settings.dsn_resources,
+        APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY: redis_settings.dsn_locks,
+        APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY: redis_settings.dsn_validation_codes,
+    }
 
-    # create a client for it as well
-    app[
-        APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
-    ] = client_lock_db = await _create_client(redis_settings.dsn_locks)
-    assert client_lock_db  # nosec
+    for app_key, dsn in REDIS_DSN_MAP.items():
+        assert app.get(app_key) is None  # nosec
+        app[app_key] = await _create_client(dsn)
 
     app[
         APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY
@@ -80,25 +82,27 @@ async def setup_redis_client(app: web.Application):
 
     yield
 
-    if client is not app[APP_CLIENT_REDIS_CLIENT_KEY]:
-        log.critical("Invalid redis client in app")
-        await client.close(close_connection_pool=True)
-    if client_lock_db is not app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]:
-        log.critical("Invalid redis client for lock db in app")
-        await client_lock_db.close(close_connection_pool=True)
-    if client_validation_code_db is not app[APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY]:
-        log.critical("Invalid redis client for validation code db in app")
-        await client_validation_code_db.close(close_connection_pool=True)
+    for app_key in REDIS_DSN_MAP.keys():
+        if redis_client := app.get(app_key):
+            await redis_client.close(close_connection_pool=True)
+
+
+def _get_redis_client(app: web.Application, app_key: str) -> aioredis.Redis:
+    redis_client = app[app_key]
+    assert redis_client is not None, f"redis plugin was not init for {app_key}"  # nosec
+    return redis_client
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
-    client = app[APP_CLIENT_REDIS_CLIENT_KEY]
-    assert client is not None, "redis plugin was not init"  # nosec
-    return client
+    return _get_redis_client(app, APP_CLIENT_REDIS_CLIENT_KEY)
 
 
 def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
+    return _get_redis_client(app, APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY)
+
+
+def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
+    return _get_redis_client(app, APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY)
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:

@@ -296,12 +296,25 @@ def ops_docker_compose_file(
     return docker_compose_path
 
 
+def _save_docker_logs_to_folder(failed_test_directory: Path):
+    try:
+        save_docker_infos(failed_test_directory)
+    except OSError as exc:
+        if exc.errno == 36:  # OSError [Errno 36] File name too long
+            short_name = f"{failed_test_directory.name[:5]}_{hash(failed_test_directory.name)}_{failed_test_directory.name[-5:]}"
+            failed_test_directory = failed_test_directory.parent / short_name
+
+            save_docker_infos(failed_test_directory)
+        else:
+            raise
+
+
 @pytest.hookimpl()
 def pytest_exception_interact(node, call, report):
     # get the node root dir (guaranteed to exist)
     root_directory: Path = Path(node.config.rootdir)
     failed_test_directory = root_directory / "test_failures" / node.name
-    save_docker_infos(failed_test_directory)
+    _save_docker_logs_to_folder(failed_test_directory)
 
 
 @pytest.hookimpl()
@@ -309,7 +322,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
     if exitstatus == ExitCode.TESTS_FAILED:
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
-        save_docker_infos(failed_test_directory)
+        _save_docker_logs_to_folder(failed_test_directory)
 
 
 # HELPERS ---------------------------------------------
