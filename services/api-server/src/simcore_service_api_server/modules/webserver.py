@@ -141,7 +141,10 @@ class AuthSession:
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
                     raise ValueError
-        resp = await self.client.get(f"{result_url}")
+        resp = await self.client.get(
+            f"{result_url}",
+            cookies=self.session_cookies,
+        )
         data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
