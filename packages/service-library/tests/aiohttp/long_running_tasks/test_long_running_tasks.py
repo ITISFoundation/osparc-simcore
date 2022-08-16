@@ -271,10 +271,9 @@ async def test_list_tasks(client: TestClient):
         .url_for()
         .update_query(num_strings=10, sleep_time=0.2)
     )
-    result = await client.post(f"{url}")
 
     # now start a few tasks
-    NUM_TASKS = 9
+    NUM_TASKS = 10
     results = await asyncio.gather(*(client.post(f"{url}") for _ in range(NUM_TASKS)))
     await asyncio.gather(
         *(assert_status(result, web.HTTPAccepted) for result in results)
