@@ -65,7 +65,6 @@ def app() -> web.Application:
                 )
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
-
             return generated_strings
 
         task_id = long_running_tasks.server.start_task(
