@@ -511,22 +511,21 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
             "dynamic-sidecars cleanup pending volume removal services every %s seconds",
             settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
         )
-        while True:
+        while await asyncio.sleep(
+            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
+            True,
+        ):
             logger.debug("Removing pending volume removal services...")
 
             try:
                 await remove_pending_volume_removal_services(dynamic_sidecar_settings)
-            except asyncio.CancelledError:  # pragma: no cover
+            except asyncio.CancelledError:
                 logger.info("Stopped pending volume removal services task")
                 raise
             except Exception:  # pylint: disable=broad-except
                 logger.exception(
                     "Unexpected error while cleaning up pending volume removal services"
                 )
-
-            await asyncio.sleep(
-                settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S
-            )
 
     async def start(self) -> None:
         # run as a background task
