@@ -12,10 +12,7 @@ from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namespace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
-from ._constarts import (
-    SERVICE_RESTART_DELAY_BETWEEN_RESTARTS_S,
-    SERVICE_RESTART_MAX_ATTEMPTS,
-)
+from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 from .settings import update_service_params_from_settings
 
 log = logging.getLogger(__name__)
@@ -245,11 +242,7 @@ def get_dynamic_sidecar_spec(
                     app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
                 )
             },
-            "RestartPolicy": {
-                "Condition": "on-failure",
-                "Delay": SERVICE_RESTART_DELAY_BETWEEN_RESTARTS_S,
-                "MaxAttempts": SERVICE_RESTART_MAX_ATTEMPTS,
-            },
+            "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
             "Resources": {
                 "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
