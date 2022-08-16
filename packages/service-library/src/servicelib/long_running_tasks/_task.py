@@ -2,11 +2,11 @@ import asyncio
 import inspect
 import logging
 import traceback
-from asyncio import CancelledError, Task
+from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -68,7 +68,8 @@ class TasksManager:
         self.stale_task_check_interval_s = stale_task_check_interval_s
         self.stale_task_detect_timeout_s = stale_task_detect_timeout_s
         self._stale_tasks_monitor_task: Task = asyncio.create_task(
-            self._stale_tasks_monitor_worker()
+            self._stale_tasks_monitor_worker(),
+            name=f"{__name__}.stale_task_monitor_worker",
         )
 
     def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
@@ -178,7 +179,26 @@ class TasksManager:
             )
         )
 
-    def get_task_result(self, task_id: TaskId) -> TaskResult:
+    def get_task_result(self, task_id: TaskId) -> Any:
+        """
+        returns: the result of the task
+
+        raises TaskNotFoundError if the task cannot be found
+        raises TaskCancelledError if the task was cancelled
+        raises TaskNotCompletedError if the task is not completed
+        """
+        tracked_task = self._get_tracked_task(task_id)
+
+        try:
+            return tracked_task.task.result()
+        except InvalidStateError as exc:
+            # the task is not ready
+            raise TaskNotCompletedError(task_id=task_id) from exc
+        except CancelledError as exc:
+            # the task was cancelled
+            raise TaskCancelledError(task_id=task_id) from exc
+
+    def get_task_result_old(self, task_id: TaskId) -> TaskResult:
         """
         returns: the result of the task
 
@@ -251,7 +271,12 @@ class TasksManager:
         self, task_id: TaskId, *, reraise_errors: bool = True
     ) -> None:
         """cancels and removes task"""
-        tracked_task = self._get_tracked_task(task_id)
+        try:
+            tracked_task = self._get_tracked_task(task_id)
+        except TaskNotFoundError:
+            if reraise_errors:
+                raise
+            return
         try:
             await self._cancel_tracked_task(
                 tracked_task.task, task_id, reraise_errors=reraise_errors

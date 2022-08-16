@@ -53,6 +53,22 @@ def _print_highlight(message: str) -> None:
 
 
 @main.command()
+def state_list_dirs():
+    """Lists files inside state directories"""
+
+    async def _async_state_list_dirs() -> None:
+        app = await _setup_app_for_task_execution()
+
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+        for state_path in mounted_volumes.state_paths:
+            state_path_content = list(state_path.glob("*"))
+            typer.echo(f"Entries in {state_path}: {state_path_content}")
+
+    asyncio.run(_async_state_list_dirs())
+
+
+@main.command()
 def state_save():
     """Saves the state, usually workspace directory"""
 
@@ -67,7 +83,7 @@ def state_save():
             TaskProgress.create(), settings, mounted_volumes, rabbitmq
         )
 
-    asyncio.get_event_loop().run_until_complete(_async_save_state())
+    asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
 
 
@@ -75,7 +91,7 @@ def state_save():
 def outputs_push():
     """Pushes the output ports"""
 
-    async def _async_save_state() -> None:
+    async def _async_outputs_push() -> None:
         app = await _setup_app_for_task_execution()
 
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
@@ -85,7 +101,7 @@ def outputs_push():
             TaskProgress.create(), None, mounted_volumes, rabbitmq
         )
 
-    asyncio.get_event_loop().run_until_complete(_async_save_state())
+    asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")
 
 

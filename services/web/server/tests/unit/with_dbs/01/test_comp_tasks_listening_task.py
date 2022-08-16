@@ -87,7 +87,7 @@ async def comp_task_listening_task(
         pytest.param(
             {"inputs": {"should not trigger": "right?"}},
             [],
-            id="no new outpuot or state shall not trigger",
+            id="no new output or state shall not trigger",
         ),
     ],
 )
