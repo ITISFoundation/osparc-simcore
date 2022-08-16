@@ -34,9 +34,29 @@ from yarl import URL
 TASKS_ROUTER_PREFIX: Final[str] = "/futures"
 
 
+async def _string_list_task(
+    task_progress: long_running_tasks.server.TaskProgress,
+    num_strings: int,
+    sleep_time: float,
+    fail: bool,
+) -> web.Response:
+    task_progress.publish(message="starting", percent=0)
+    generated_strings = []
+    for index in range(num_strings):
+        generated_strings.append(f"{index}")
+        await asyncio.sleep(sleep_time)
+        task_progress.publish(message="generated item", percent=index / num_strings)
+        if fail:
+            raise RuntimeError("We were asked to fail!!")
+
+            # NOTE: this code is used just for the sake of not returning the default 200
+            return web.json_response(
+                data={"data": generated_strings}, status=web.HTTPCreated.status_code
+            )
+
+
 @pytest.fixture
-def app() -> web.Application:
-    app = web.Application()
+def server_routes() -> web.RouteTableDef:
     routes = web.RouteTableDef()
 
     class _LongTaskQueryParams(BaseModel):
@@ -49,28 +69,6 @@ def app() -> web.Application:
         task_manager = long_running_tasks.server.get_tasks_manager(request.app)
         query_params = parse_request_query_parameters_as(_LongTaskQueryParams, request)
         assert task_manager, "task manager is not initiated!"
-
-        async def _string_list_task(
-            task_progress: long_running_tasks.server.TaskProgress,
-            num_strings: int,
-            sleep_time: float,
-            fail: bool,
-        ) -> web.Response:
-            generated_strings = []
-            for index in range(num_strings):
-                generated_strings.append(f"{index}")
-                await asyncio.sleep(sleep_time)
-                task_progress.publish(
-                    message="generated item", percent=index / num_strings
-                )
-                if fail:
-                    raise RuntimeError("We were asked to fail!!")
-
-            # NOTE: this code is used just for the sake of not returning the default 200
-            return web.json_response(
-                data={"data": generated_strings}, status=web.HTTPCreated.status_code
-            )
-
         task_id = long_running_tasks.server.start_task(
             task_manager,
             _string_list_task,
@@ -84,7 +82,14 @@ def app() -> web.Application:
             dumps=json_dumps,
         )
 
-    app.add_routes(routes)
+    return routes
+
+
+@pytest.fixture
+def app(server_routes: web.RouteTableDef) -> web.Application:
+    app = web.Application()
+    app.add_routes(server_routes)
+    # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(app, router_prefix=TASKS_ROUTER_PREFIX)
 
