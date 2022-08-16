@@ -40,7 +40,7 @@ async def get_task_result(
     task_manager: TasksManager = Depends(get_tasks_manager),
 ) -> TaskResult:
     assert request  # nosec
-
+    # TODO: refactor this to use same as in https://github.com/ITISFoundation/osparc-simcore/issues/3265
     task_result = task_manager.get_task_result_old(task_id=task_id)
     await task_manager.remove_task(task_id, reraise_errors=False)
 
