@@ -53,3 +53,4 @@ pydantic[email] # models
 python-magic # excel
 redis
 tenacity
+twilio

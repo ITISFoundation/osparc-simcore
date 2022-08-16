@@ -3,7 +3,7 @@
 """
 import logging
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
@@ -64,6 +64,7 @@ def create_application() -> web.Application:
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_statics(app)
     setup_db(app)
+    setup_redis(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
@@ -83,7 +84,6 @@ def create_application() -> web.Application:
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
-    setup_redis(app)
 
     # resource management
     setup_resource_manager(app)
@@ -121,7 +121,7 @@ def create_application() -> web.Application:
     return app
 
 
-def run_service(app: web.Application, config: Dict[str, Any]):
+def run_service(app: web.Application, config: dict[str, Any]):
     web.run_app(
         app,
         host=config["main"]["host"],

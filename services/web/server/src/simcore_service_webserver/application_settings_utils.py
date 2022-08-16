@@ -6,7 +6,7 @@
 #
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from pydantic.types import SecretStr
 
@@ -15,7 +15,7 @@ from .application_settings import ApplicationSettings
 log = logging.getLogger(__name__)
 
 
-def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
+def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
     """Maps current ApplicationSettings object into former trafaret-based config"""
 
     cfg = {
@@ -100,6 +100,13 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 None,
             )
             else 0,
+            "login_2fa_required": 1
+            if getattr(
+                app_settings.WEBSERVER_LOGIN,
+                "LOGIN_2FA_REQUIRED",
+                None,
+            )
+            else 0,
         },
         "smtp": {
             "sender": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_SENDER", None),
@@ -174,7 +181,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
     return cfg
 
 
-def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
+def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
     """Creates envs dict out of config dict"""
     # NOTE: maily used for testing traferet vs settings_library
     # pylint:disable=too-many-branches

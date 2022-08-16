@@ -1,6 +1,6 @@
 from logging import getLogger
 
-# FIXME: Possible SQL injection vector through string-based query construction.
+# TODO: Possible SQL injection vector through string-based query construction.
 
 log = getLogger(__name__)
 LOG_TPL = "%s <--%s"
@@ -22,7 +22,7 @@ def find_one_sql(table, filter_, fields=None):
     keys, values = _split_dict(filter_)
     fields = ", ".join(fields) if fields else "*"
     where = _pairs(keys)
-    sql = "SELECT {} FROM {} WHERE {}".format(fields, table, where)  # nosec
+    sql = f"SELECT {fields} FROM {table} WHERE {where}"  # nosec
     return sql, values
 
 
@@ -48,7 +48,7 @@ def insert_sql(table, data, returning="id"):
         table,
         ", ".join(keys),
         ", ".join(_placeholders(data)),
-        " RETURNING {}".format(returning) if returning else "",
+        f" RETURNING {returning}" if returning else "",
     )
     return sql, values
 
@@ -68,7 +68,7 @@ def update_sql(table, filter_, updates):
     up_keys, up_vals = _split_dict(updates)
     changes = _pairs(up_keys, sep=", ")
     where = _pairs(where_keys, start=len(up_keys) + 1)
-    sql = "UPDATE {} SET {} WHERE {}".format(table, changes, where)  # nosec
+    sql = f"UPDATE {table} SET {changes} WHERE {where}"  # nosec
     return sql, up_vals + where_vals
 
 
@@ -85,7 +85,7 @@ def delete_sql(table, filter_):
     """
     keys, values = _split_dict(filter_)
     where = _pairs(keys)
-    sql = "DELETE FROM {} WHERE {}".format(table, where)  # nosec
+    sql = f"DELETE FROM {table} WHERE {where}"  # nosec
     return sql, values
 
 
@@ -96,7 +96,7 @@ def _pairs(keys, *, start=1, sep=" AND "):
     >>> _pairs(['foo', 'bar', 'baz'], start=2)
     'foo=$2 AND bar=$3 AND baz=$4'
     """
-    return sep.join("{}=${}".format(k, i) for i, k in enumerate(keys, start))
+    return sep.join(f"{k}=${i}" for i, k in enumerate(keys, start))
 
 
 def _placeholders(variables):
@@ -105,7 +105,7 @@ def _placeholders(variables):
     >>> _placeholders(['foo', 'bar', 1])
     ['$1', '$2', '$3']
     """
-    return ["${}".format(i) for i, _ in enumerate(variables, 1)]
+    return [f"${i}" for i, _ in enumerate(variables, 1)]
 
 
 def _split_dict(dic):

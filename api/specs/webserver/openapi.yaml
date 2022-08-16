@@ -75,8 +75,17 @@ paths:
   /auth/register:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1register"
 
+  /auth/verify-phone-number:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1verify-phone-number"
+
+  /auth/validate-code-register:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1validate-code-register"
+
   /auth/login:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1login"
+
+  /auth/validate-code-login:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1validate-code-login"
 
   /auth/logout:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1logout"
