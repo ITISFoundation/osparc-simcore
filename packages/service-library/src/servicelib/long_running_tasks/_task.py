@@ -132,16 +132,18 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
-    def list_task_ids(self) -> list[TaskId]:
-        task_ids = []
+    def list_tasks(self) -> list[TrackedTask]:
+        tasks = []
         for task_group in self._tasks_groups.values():
-            task_ids.extend(
-                [tracked_task.task_id for tracked_task in task_group.values()]
-            )
-        return task_ids
+            tasks.extend(task_group.values())
+        return tasks
 
     def add_task(
-        self, task_name: TaskName, task: Task, task_progress: TaskProgress
+        self,
+        task_name: TaskName,
+        task: Task,
+        task_progress: TaskProgress,
+        task_context: dict,
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
@@ -153,6 +155,7 @@ class TasksManager:
             task=task,
             task_name=task_name,
             task_progress=task_progress,
+            task_context=task_context,
         )
         self._tasks_groups[task_name][task_id] = tracked_task
 
@@ -316,6 +319,7 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
+    task_name: Optional[str] = None,
     handler_context: Optional[dict[str, Any]] = None,
     **handler_kwargs,
 ) -> TaskId:
@@ -360,6 +364,9 @@ def start_task(
     )
 
     tracked_task = tasks_manager.add_task(
-        task_name=task_name, task=task, task_progress=task_progress
+        task_name=task_name,
+        task=task,
+        task_progress=task_progress,
+        task_context=handler_context,
     )
     return tracked_task.task_id

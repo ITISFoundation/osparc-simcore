@@ -55,6 +55,7 @@ class TrackedTask(BaseModel):
     task: Task
     task_name: TaskName
     task_progress: TaskProgress
+    task_context: dict[str, Any]
 
     started: datetime = Field(default_factory=datetime.utcnow)
     last_status_check: Optional[datetime] = Field(

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from aiohttp import web
 from pydantic import BaseModel
@@ -7,6 +8,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from ...json_serialization import json_dumps
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskId, TaskStatus
+from ...long_running_tasks._task import TrackedTask
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_tasks_manager
 
@@ -18,11 +20,34 @@ class _PathParam(BaseModel):
     task_id: TaskId
 
 
+class TaskGet(BaseModel):
+    task_id: TaskId
+    task_name: str
+    task_context: dict[str, Any]
+    status_href: str
+    result_href: str
+
+
 @routes.get("", name="list_tasks")
 async def list_tasks(request: web.Request) -> web.Response:
     tasks_manager = get_tasks_manager(request.app)
-    tasks = tasks_manager.list_task_ids()
-    return web.json_response({"data": tasks}, dumps=json_dumps)
+    tracked_tasks: list[TrackedTask] = tasks_manager.list_tasks()
+
+    return web.json_response(
+        {
+            "data": [
+                TaskGet(
+                    task_id=task.task_id,
+                    task_name=task.task_name,
+                    task_context=task.task_context,
+                    status_href=f"{request.app.router['get_task_status'].url_for(task_id=task.task_id)}",
+                    result_href=f"{request.app.router['get_task_result'].url_for(task_id=task.task_id)}",
+                )
+                for task in tracked_tasks
+            ]
+        },
+        dumps=json_dumps,
+    )
 
 
 @routes.get("/{task_id}", name="get_task_status")

@@ -22,6 +22,7 @@ from pydantic import BaseModel, parse_obj_as
 # TESTS
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.json_serialization import json_dumps
@@ -70,9 +71,14 @@ def server_routes() -> web.RouteTableDef:
         task_manager = long_running_tasks.server.get_tasks_manager(request.app)
         query_params = parse_request_query_parameters_as(_LongTaskQueryParams, request)
         assert task_manager, "task manager is not initiated!"
+
         task_id = long_running_tasks.server.start_task(
             task_manager,
             _string_list_task,
+            handler_context={
+                "name": f"{request.method} {request.rel_url}",
+                "user_id": 123,
+            },
             num_strings=query_params.num_strings,
             sleep_time=query_params.sleep_time,
             fail=query_params.fail,
@@ -284,4 +290,5 @@ async def test_list_tasks(client: TestClient):
     result = await client.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
-    assert len(data) == NUM_TASKS
+    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    assert len(list_of_tasks) == NUM_TASKS

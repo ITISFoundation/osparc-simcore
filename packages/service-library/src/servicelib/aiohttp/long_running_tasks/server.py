@@ -15,6 +15,7 @@ from ...long_running_tasks._task import (
     start_task,
 )
 from ._dependencies import get_tasks_manager
+from ._routes import TaskGet
 from ._server import setup
 
 __all__: tuple[str, ...] = (
@@ -24,6 +25,7 @@ __all__: tuple[str, ...] = (
     "TaskAlreadyRunningError",
     "TaskCancelledError",
     "TaskId",
+    "TaskGet",
     "TasksManager",
     "TaskProgress",
     "TaskStatus",
