@@ -89,8 +89,7 @@ async def remove_volumes_from_node(
                     # NOTE: the service will have at most 1 task, since there is no restart
                     # policy present
                     if len(tasks) != 1:
-                        # Sometimes swarm did not mange to create a task after the service
-                        # is created. In that case a retry is triggered
+                        # Docker swarm needs a bit of time to startup the tasks
                         raise TryAgain(
                             f"Expected 1 task for service {service_id}, found {tasks=}"
                         )
