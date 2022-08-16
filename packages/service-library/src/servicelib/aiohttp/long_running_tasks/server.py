@@ -10,7 +10,6 @@ from ...long_running_tasks._task import (
     TaskCancelledError,
     TaskId,
     TaskProgress,
-    TaskResult,
     TasksManager,
     TaskStatus,
     start_task,
@@ -27,7 +26,6 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TasksManager",
     "TaskProgress",
-    "TaskResult",
     "TaskStatus",
 )
 

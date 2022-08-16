@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 """
 Showcases/tests an example of long running tasks.
 
@@ -7,7 +9,6 @@ How these tests works:
 
 """
 
-# pylint: disable=redefined-outer-name
 
 import asyncio
 import json
@@ -54,7 +55,8 @@ def app() -> web.Application:
             num_strings: int,
             sleep_time: float,
             fail: bool,
-        ) -> list[str]:
+        ):
+            task_progress.publish(message="starting", percent=0)
             generated_strings = []
             for index in range(num_strings):
                 generated_strings.append(f"{index}")
@@ -65,7 +67,11 @@ def app() -> web.Application:
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
 
-            return generated_strings
+            task_progress.publish(message="finished", percent=1)
+            # NOTE: this code is used just for the sake of not returning the default 200
+            return web.json_response(
+                data={"data": generated_strings}, status=web.HTTPCreated.status_code
+            )
 
         task_id = long_running_tasks.server.start_task(
             task_manager,
@@ -149,13 +155,13 @@ async def test_workflow(client: TestClient):
     assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
-    assert not error
-    task_result = long_running_tasks.server.TaskResult.parse_obj(data)
+    task_result, error = await assert_status(result, web.HTTPCreated)
     assert task_result
-    assert task_result.result == [f"{x}" for x in range(10)]
-    assert not task_result.error
+    assert not error
+    assert task_result == [f"{x}" for x in range(10)]
+    # getting the result again should raise a 404
+    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    await assert_status(result, web.HTTPNotFound)
 
 
 async def test_failing_task_returns_error(client: TestClient):
@@ -183,13 +189,13 @@ async def test_failing_task_returns_error(client: TestClient):
             assert task_status
             assert task_status.done
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
-    data, error = await assert_status(result, web.HTTPOk)
-    assert data
-    assert not error
-    task_result = long_running_tasks.server.TaskResult.parse_obj(data)
-    assert task_result
-    assert not task_result.result
-    assert task_result.error
+    data, error = await assert_status(result, web.HTTPInternalServerError)
+    assert not data
+    assert error
+    assert "errors" in error
+    assert len(error["errors"]) == 1
+    assert error["errors"][0]["code"] == "RuntimeError"
+    assert error["errors"][0]["message"] == "We were asked to fail!!"
 
 
 async def test_get_results_before_tasks_finishes_returns_404(client: TestClient):
