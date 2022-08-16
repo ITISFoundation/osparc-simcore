@@ -6,7 +6,7 @@ from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -135,7 +135,9 @@ class TasksManager:
     def list_task_ids(self) -> list[TaskId]:
         task_ids = []
         for task_group in self._tasks_groups.values():
-            task_ids.extend([task_id for task_id in task_group.values()])
+            task_ids.extend(
+                [tracked_task.task_id for tracked_task in task_group.values()]
+            )
         return task_ids
 
     def add_task(
@@ -314,13 +316,14 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
-    **kwargs,
+    handler_context: Optional[dict[str, Any]] = None,
+    **handler_kwargs,
 ) -> TaskId:
     """
     Creates a task from a given callable to an async function.
 
     A task will be created out of it by injecting a `TaskProgress` as the first
-    positional argument and adding all `kwargs` as named parameters.
+    positional argument and adding all `handler_kwargs` as named parameters.
 
     NOTE: the first progress update will be (message='', percent=0.0)
     NOTE: the `handler` name must be unique in the module, otherwise when using
@@ -346,14 +349,14 @@ def start_task(
     async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
         progress.publish(message="starting", percent=0)
         try:
-            return await handler(progress, **kwargs)
+            return await handler(progress, **handler_kwargs)
         finally:
             # TODO: change that signature. it actually does not publish anything
             # and it can raise if percent is <0 or >1!! -> simplify
             progress.publish(message="finished", percent=1)
 
     task = asyncio.create_task(
-        _progress_task(task_progress, handler), name=f"{__name__}.{task_name}"
+        _progress_task(task_progress, handler), name=f"{task_name}"
     )
 
     tracked_task = tasks_manager.add_task(
