@@ -340,6 +340,23 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         node.getStatus().addListener("changeProgress", () => updateProgress(), this);
       }
 
+      node.bind("outputs", this._outputsBtn, "label", {
+        converter: outputsData => {
+          let outputCounter = 0;
+          Object.keys(outputsData).forEach(outKey => {
+            if (outputsData[outKey] && "value" in outputsData[outKey]) {
+              outputCounter++;
+            }
+          });
+          return `(${outputCounter})`;
+        }
+      });
+      this._outputsBtn.addListener("changeLabel", () => {
+        // make it "blink"
+        this._outputsBtn.setTextColor("ready-green");
+        setTimeout(() => this._outputsBtn.setTextColor("text"), 1000);
+      });
+
       this._addLogger();
     }
   }
