@@ -94,10 +94,13 @@ qx.Class.define("osparc.data.PollTask", {
       return fetch(this.getResultHref())
         .then(res => res.json())
         .then(result => {
-          if (result && "data" in result && "result" in result["data"] && result["data"]["result"]) {
-            return result["data"]["result"];
+          if ("error" in result && result["error"]) {
+            throw new Error(result["error"]);
           }
-          throw new Error("Missing result");
+          if ("data" in result && result["data"]) {
+            return result["data"];
+          }
+          throw new Error("Missing result data");
         })
         .catch(err => console.error(err));
     }
