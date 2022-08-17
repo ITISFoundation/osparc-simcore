@@ -104,11 +104,16 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
                     this.fireDataEvent("finished", template);
                     osparc.component.message.FlashMessenger.getInstance().logAs(this.__studyDataClone.name + this.tr(" successfully published as template."), "INFO");
                     btn.setFetching(false);
+                  })
+                  .catch(errMsg => {
+                    const msg = this.tr("There was an error while saving as template.<br>") + errMsg;
+                    osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+                    btn.setFetching(false);
                   });
               }
             }, this);
           } else {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
+            throw Error("Status missing");
           }
         })
         .catch(err => {

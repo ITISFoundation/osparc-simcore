@@ -666,15 +666,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     this.reloadStudy(duplicatedStudyData["uuid"]);
                     duplicateTask.stop();
                     this._resourcesContainer.remove(duplicatingStudyCard);
+                  })
+                  .catch(errMsg => {
+                    const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+                    osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+                    duplicateTask.stop();
+                    this._resourcesContainer.remove(duplicatingStudyCard);
                   });
               }
             }, this);
           } else {
-            console.error("Status missing");
+            throw Error("Status missing");
           }
         })
-        .catch(e => {
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");
+        .catch(errMsg => {
+          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
           duplicateTask.stop();
           this._resourcesContainer.remove(duplicatingStudyCard);

@@ -87,7 +87,9 @@ qx.Class.define("osparc.data.PollTask", {
             setTimeout(() => this.__pollTaskState(), this.getPollInterval());
           }
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          throw err;
+        });
     },
 
     fetchResult: function() {
@@ -102,7 +104,9 @@ qx.Class.define("osparc.data.PollTask", {
           }
           throw new Error("Missing result data");
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          throw err;
+        });
     }
   }
 });
