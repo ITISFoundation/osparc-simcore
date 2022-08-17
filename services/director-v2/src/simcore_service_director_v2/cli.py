@@ -76,7 +76,7 @@ def _get_dynamic_sidecar_endpoint(
     dynamic_sidecar_names = DynamicSidecarNames.make(UUID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # Compliant
+    return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
 
 
 @main.command()
