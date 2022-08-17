@@ -4,6 +4,7 @@ Provides a convenient way to return the result given a TaskId.
 
 from ...long_running_tasks._errors import TaskClientResultError
 from ...long_running_tasks._models import (
+    ClientConfiguration,
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
@@ -14,6 +15,7 @@ from ._context_manager import periodic_task_result
 
 __all__: tuple[str, ...] = (
     "Client",
+    "ClientConfiguration",
     "periodic_task_result",
     "ProgressCallback",
     "ProgressMessage",
