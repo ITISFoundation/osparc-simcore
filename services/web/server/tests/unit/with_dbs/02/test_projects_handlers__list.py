@@ -172,7 +172,7 @@ async def test_list_projects_with_pagination(
     created_projects = await asyncio.gather(
         *[
             request_create_project(
-                client, expected.accepted, logged_user, primary_group
+                client, expected.accepted, expected.created, logged_user, primary_group
             )
             for i in range(NUM_PROJECTS)
         ]

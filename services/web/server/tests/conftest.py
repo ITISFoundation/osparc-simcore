@@ -19,7 +19,7 @@ from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
-from servicelib.aiohttp.long_running_tasks.server import TaskResult, TaskStatus
+from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
@@ -192,7 +192,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
     async def _creator(
         client: TestClient,
-        expected_response: type[web.HTTPException],
+        expected_accepted_response: type[web.HTTPException],
+        expected_creation_response: type[web.HTTPException],
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
@@ -223,7 +224,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 ):
                     expected_data[key] = from_study[key]
 
-        # POST /v0/projects -> returns 202
+        # POST /v0/projects -> returns 202 or denied access
         assert client.app
         url: URL = client.app.router["create_projects"].url_for()
         if from_study:
@@ -234,7 +235,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             url = url.update_query(copy_data=f"{copy_data}")
         resp = await client.post(f"{url}", json=project_data)
         print(f"<-- created project response: {resp=}")
-        data, error = await assert_status(resp, expected_response)
+        data, error = await assert_status(resp, expected_accepted_response)
         if error:
             assert not data
             return {}
@@ -271,14 +272,11 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         # get result GET /{task_id}/result
         print(f"--> getting project creation result...")
         result = await client.get(f"{result_url}")
-        data, error = await assert_status(result, web.HTTPOk)
+        data, error = await assert_status(result, expected_creation_response)
         assert data
         assert not error
-        task_result = TaskResult.parse_obj(data)
-        print(f"<-- result: {task_result.json(indent=2)}")
-        assert not task_result.error
-        assert task_result.result
-        new_project = task_result.result
+        print(f"<-- result: {data}")
+        new_project = data
 
         # now check returned is as expected
         if new_project:

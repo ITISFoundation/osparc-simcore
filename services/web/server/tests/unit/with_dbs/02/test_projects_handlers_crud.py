@@ -245,7 +245,7 @@ async def test_new_project(
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     new_project = await request_create_project(
-        client, expected.accepted, logged_user, primary_group
+        client, expected.accepted, expected.created, logged_user, primary_group
     )
 
 
@@ -263,6 +263,7 @@ async def test_new_project_from_template(
     new_project = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         from_study=template_project,
@@ -293,6 +294,7 @@ async def test_new_project_from_other_study(
     new_project = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         from_study=user_project,
@@ -342,6 +344,7 @@ async def test_new_project_from_template_with_body(
     project = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         project=predefined,
@@ -381,6 +384,7 @@ async def test_new_template_from_project(
     new_template_prj = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         from_study=user_project,
@@ -438,6 +442,7 @@ async def test_new_template_from_project(
     new_template_prj = await request_create_project(
         client,
         expected.accepted,
+        expected.created,
         logged_user,
         primary_group,
         project=predefined,

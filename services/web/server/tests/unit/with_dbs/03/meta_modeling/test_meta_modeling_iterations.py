@@ -93,17 +93,12 @@ async def test_iterators_workflow(
     project_data = await request_create_project(
         client,
         web.HTTPAccepted,
+        web.HTTPCreated,
         logged_user,
         primary_group,
         project=NEW_PROJECT.request_payload,
     )
 
-    # assert NEW_PROJECT.request_desc == "POST /v0/projects"q
-    # resp = await client.post("/v0/projects", json=NEW_PROJECT.request_payload)
-    # assert resp.status == NEW_PROJECT.status_code, await resp.text()
-    # body = await resp.json()
-
-    # project_data: ProjectDict = body["data"]
     project_uuid = project_data["uuid"]
 
     # CREATE meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------

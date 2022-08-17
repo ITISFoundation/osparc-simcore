@@ -55,7 +55,7 @@ def app() -> web.Application:
             num_strings: int,
             sleep_time: float,
             fail: bool,
-        ) -> list[str]:
+        ) -> web.Response:
             generated_strings = []
             for index in range(num_strings):
                 generated_strings.append(f"{index}")
@@ -65,6 +65,7 @@ def app() -> web.Application:
                 )
                 if fail:
                     raise RuntimeError("We were asked to fail!!")
+
             return generated_strings
 
         task_id = long_running_tasks.server.start_task(
