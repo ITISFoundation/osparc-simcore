@@ -51,7 +51,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Edit Slideshow")
+            toolTipText: this.tr("Edit Slideshow"),
+            visibility: osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? "visible" : "excluded"
           });
           editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
@@ -130,7 +131,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.form.Button().set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             label: this.tr("Stop App"),
-            icon: "@FontAwesome5Solid/stop/14"
+            icon: "@FontAwesome5Solid/stop/14",
+            visibility: osparc.data.Permissions.getInstance().canDo("study.slides.stop") ? "visible" : "excluded"
           });
           control.addListener("execute", () => this.fireEvent("slidesStop"));
           this._add(control);
@@ -175,7 +177,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       const study = this.getStudy();
       if (study) {
         const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
-        osparc.data.model.Study.isOwner(study) ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
+        osparc.data.model.Study.isOwner(study) && osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
         if (!study.getWorkbench().isPipelineLinear()) {
           editSlideshowButtons.exclude();
         }
