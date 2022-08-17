@@ -263,6 +263,13 @@ qx.Class.define("osparc.data.model.Node", {
 
     isDeprecated: function(metaData) {
       return osparc.utils.Services.isDeprecated(metaData);
+    },
+
+    getOutput: function(outputs, outputKey) {
+      if (outputKey in outputs && "value" in outputs[outputKey]) {
+        return outputs[outputKey]["value"];
+      }
+      return null;
     }
   },
 

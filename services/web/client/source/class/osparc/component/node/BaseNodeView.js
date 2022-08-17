@@ -344,7 +344,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         converter: outputsData => {
           let outputCounter = 0;
           Object.keys(outputsData).forEach(outKey => {
-            if (outputsData[outKey] && "value" in outputsData[outKey] && outputsData[outKey]["value"]) {
+            const outValue = osparc.data.model.Node.getOutput(outputsData, outKey);
+            if (![null, undefined, ""].includes(outValue)) {
               outputCounter++;
             }
           });
