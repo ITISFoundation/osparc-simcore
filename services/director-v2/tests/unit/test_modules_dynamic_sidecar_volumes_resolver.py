@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+from asyncio import FastChildWatcher
 import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List
@@ -95,7 +96,7 @@ def test_expected_paths(
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, inputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
-        source=f"dyv_{run_id}_{f'{inputs_path}'.replace('/', '_')[::-1]}{node_uuid}",
+        source=f"dyv_{run_id}_{node_uuid}_{f'{inputs_path}'.replace('/', '_')[::-1]}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
 
@@ -103,7 +104,7 @@ def test_expected_paths(
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         swarm_stack_name, outputs_path, node_uuid, run_id, project_id, user_id
     ) == expected_volume_config(
-        source=f"dyv_{run_id}_{f'{outputs_path}'.replace('/', '_')[::-1]}{node_uuid}",
+        source=f"dyv_{run_id}_{node_uuid}_{f'{outputs_path}'.replace('/', '_')[::-1]}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
 
@@ -112,7 +113,7 @@ def test_expected_paths(
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
             swarm_stack_name, path, node_uuid, run_id, project_id, user_id
         ) == expected_volume_config(
-            source=f"dyv_{run_id}_{name_from_path}{node_uuid}",
+            source=f"dyv_{run_id}_{node_uuid}_{name_from_path}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )
 
@@ -148,11 +149,11 @@ def test_volumes_get_truncated_as_expected(faker: Faker):
     assert node_uuid != run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(
-            f"/home/user/a-{'-'.join(['very' for _ in range(30)])}-long-home-path/workspace"
+            f"/home/user/a-{'-'.join(['very' for _ in range(31)])}-long-home-path/workspace"
         ),
         node_uuid=node_uuid,
         run_id=run_id,
     )
     assert len(unique_volume_name) == 255
     assert f"{run_id}" in unique_volume_name
-    assert f"{node_uuid}" not in unique_volume_name
+    assert f"{node_uuid}" in unique_volume_name

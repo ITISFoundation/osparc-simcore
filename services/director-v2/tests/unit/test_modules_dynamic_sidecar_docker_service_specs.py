@@ -244,7 +244,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "Type": "bind",
                     },
                     {
-                        "Source": f"dyv_{run_id}_erots-derahs_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                         "Target": "/dy-volumes/shared-store",
                         "Type": "volume",
                         "VolumeOptions": {
@@ -252,7 +252,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": f"dyv_{run_id}_erots-derahs_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             }
@@ -260,14 +260,14 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     },
                     {
                         "Target": "/dy-volumes/tmp/inputs",
-                        "Source": f"dyv_{run_id}_stupni_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": f"dyv_{run_id}_stupni_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             }
@@ -275,14 +275,14 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     },
                     {
                         "Target": "/dy-volumes/tmp/outputs",
-                        "Source": f"dyv_{run_id}_stuptuo_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": f"dyv_{run_id}_stuptuo_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             }
@@ -290,14 +290,14 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     },
                     {
                         "Target": "/dy-volumes/tmp/save_1",
-                        "Source": f"dyv_{run_id}_1_evas_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": f"dyv_{run_id}_1_evas_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             }
@@ -305,14 +305,14 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     },
                     {
                         "Target": "/dy-volumes/tmp_save_2",
-                        "Source": f"dyv_{run_id}_2_evas_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": f"dyv_{run_id}_2_evas_pmt_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             }

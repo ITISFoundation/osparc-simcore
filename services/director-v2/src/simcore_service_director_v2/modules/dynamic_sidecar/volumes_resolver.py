@@ -95,17 +95,17 @@ class DynamicSidecarVolumesPathsResolver:
         Example:
         >>> source(
             path="/home/user/a-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-home-path/workspace",
-            node_uuid="17f5b46d-505c-489e-9818-f6d294c892d9",
+            node_uuid="e3e70682-c209-4cac-a29f-6fbed82c07cd",
             run_id="f728b4fa-4248-4e3a-8a5d-2f346baa9455"
         )
-        dyv_f728b4fa-4248-4e3a-8a5d-2f346baa9455_ecapskrow_htap-emoh-gnol-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-a_resu_emoh_17f5b46d-505c-489e-9818-f6d
+        dyv_f728b4fa-4248-4e3a-8a5d-2f346baa9455_e3e70682-c209-4cac-a29f-6fbed82c07cd_ecapskrow_htap-emoh-gnol-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yr
         """
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
         # Reversing volume name to prevent these issues from happening.
         reversed_volume_name = cls._volume_name(path)[::-1]
-        full_unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}_{reversed_volume_name}{node_uuid}"
-        return full_unique_name[:255]
+        unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}_{node_uuid}_{reversed_volume_name}"
+        return unique_name[:255]
 
     @classmethod
     def mount_entry(
