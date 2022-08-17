@@ -161,20 +161,18 @@ qx.Class.define("osparc.utils.Study", {
 
     createStudyAndPoll: function(params) {
       return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "postNewStudy", params)
-          .then(taskData => {
-            if ("status_href" in taskData) {
-              const pollTasks = osparc.data.PollTasks.getInstance();
-              const interval = 1000;
-              const task = pollTasks.createTask(taskData, interval);
-              task.addListener("changeDone", e => {
-                if (e.getData()) {
-                  resolve(task.fetchResult());
-                }
-              }, this);
-            } else {
-              reject("Status missing");
-            }
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params);
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(fetchPromise, interval)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              const resultData = e.getData();
+              resolve(resultData);
+            });
+            task.addListener("pollingError", e => {
+              reject("Polling Error");
+            });
           })
           .catch(err => reject(err));
       });
@@ -202,22 +200,19 @@ qx.Class.define("osparc.utils.Study", {
               },
               data: minStudyData
             };
-            osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params)
-              .then(taskData => {
-                if ("status_href" in taskData) {
-                  const pollTasks = osparc.data.PollTasks.getInstance();
-                  const interval = 1000;
-                  const task = pollTasks.createTask(taskData, interval);
-                  task.addListener("changeDone", e => {
-                    if (e.getData()) {
-                      task.fetchResult()
-                        .then(studyData => resolve(studyData["uuid"]))
-                        .catch(err => reject(err));
-                    }
-                  }, this);
-                } else {
-                  reject("Status missing");
-                }
+            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params);
+            const pollTasks = osparc.data.PollTasks.getInstance();
+            const interval = 1000;
+            pollTasks.createPollingTask(fetchPromise, interval)
+              .then(task => {
+                task.addListener("resultReceived", e => {
+                  const studyData = e.getData();
+                  resolve(studyData["uuid"]);
+                }, this);
+                task.addListener("pollingError", e => {
+                  const errMsg = e.getData();
+                  reject(errMsg);
+                }, this);
               })
               .catch(err => reject(err));
           });

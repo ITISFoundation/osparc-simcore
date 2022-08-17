@@ -38,6 +38,11 @@ qx.Class.define("osparc.data.PollTask", {
     }
   },
 
+  events: {
+    "resultReceived": "qx.event.type.Data",
+    "pollingError": "qx.event.type.Data"
+  },
+
   properties: {
     pollInterval: {
       check: "Number",
@@ -64,7 +69,8 @@ qx.Class.define("osparc.data.PollTask", {
       check: "Boolean",
       nullable: false,
       init: false,
-      event: "changeDone"
+      event: "changeDone",
+      apply: "__fetchResults"
     }
   },
 
@@ -77,36 +83,45 @@ qx.Class.define("osparc.data.PollTask", {
           if (resp.status === 200) {
             return resp.json();
           }
-          return null;
+          const errMsg = this.tr("Failed polling status");
+          this.fireDataEvent("pollingError", errMsg);
+          throw new Error(errMsg);
         })
         .then(data => {
           const response = data["data"];
-          if (response["done"] === true) {
-            this.setDone(true);
-          } else {
+          const done = response["done"];
+          this.setDone(done);
+          if (done === false) {
+            // keep polling
             setTimeout(() => this.__pollTaskState(), this.getPollInterval());
           }
         })
         .catch(err => {
+          this.fireDataEvent("pollingError", err);
           throw err;
         });
     },
 
-    fetchResult: function() {
-      return fetch(this.getResultHref())
-        .then(res => res.json())
-        .then(result => {
-          if ("error" in result && result["error"]) {
-            throw new Error(result["error"]);
-          }
-          if ("data" in result && result["data"]) {
-            return result["data"];
-          }
-          throw new Error("Missing result data");
-        })
-        .catch(err => {
-          throw err;
-        });
+    __fetchResults: function() {
+      if (this.isDone()) {
+        fetch(this.getResultHref())
+          .then(res => res.json())
+          .then(result => {
+            if ("error" in result && result["error"]) {
+              throw new Error(result["error"]);
+            }
+            if ("data" in result && result["data"]) {
+              const resultData = result["data"];
+              this.fireDataEvent("resultReceived", resultData);
+              return;
+            }
+            throw new Error("Missing result data");
+          })
+          .catch(err => {
+            this.fireDataEvent("pollingError", err);
+            throw err;
+          });
+      }
     }
   }
 });

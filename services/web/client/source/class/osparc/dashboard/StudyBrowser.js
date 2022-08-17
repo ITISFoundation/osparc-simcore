@@ -653,31 +653,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyId": studyData["uuid"]
         }
       };
-      osparc.data.Resources.fetch("studies", "duplicate", params)
-        .then(taskData => {
-          if ("status_href" in taskData) {
-            const pollTasks = osparc.data.PollTasks.getInstance();
-            const interval = 1000;
-            const task = pollTasks.createTask(taskData, interval);
-            task.addListener("changeDone", e => {
-              if (e.getData()) {
-                task.fetchResult()
-                  .then(duplicatedStudyData => {
-                    this.reloadStudy(duplicatedStudyData["uuid"]);
-                    duplicateTask.stop();
-                    this._resourcesContainer.remove(duplicatingStudyCard);
-                  })
-                  .catch(errMsg => {
-                    const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-                    osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-                    duplicateTask.stop();
-                    this._resourcesContainer.remove(duplicatingStudyCard);
-                  });
-              }
-            }, this);
-          } else {
-            throw Error("Status missing");
-          }
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params);
+      const interval = 1000;
+      const pollTasks = osparc.data.PollTasks.getInstance();
+      pollTasks.createPollingTask(fetchPromise, interval)
+        .then(task => {
+          task.addListener("resultReceived", e => {
+            const duplicatedStudyData = e.getData();
+            this.reloadStudy(duplicatedStudyData["uuid"]);
+            duplicateTask.stop();
+            this._resourcesContainer.remove(duplicatingStudyCard);
+          });
+          task.addListener("pollingError", e => {
+            const errMsg = e.getData();
+            const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+            osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+            duplicateTask.stop();
+            this._resourcesContainer.remove(duplicatingStudyCard);
+          });
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;

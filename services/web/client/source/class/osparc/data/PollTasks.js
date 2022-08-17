@@ -33,7 +33,7 @@ qx.Class.define("osparc.data.PollTasks", {
   },
 
   members: {
-    createTask: function(taskData, interval) {
+    __createTask: function(taskData, interval) {
       const task = new osparc.data.PollTask(taskData, interval);
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
@@ -41,6 +41,25 @@ qx.Class.define("osparc.data.PollTasks", {
         tasks.push(task);
       }
       return task;
+    },
+
+    createPollingTask: function(fetchPromise, interval) {
+      return new Promise((resolve, reject) => {
+        fetchPromise
+          .then(taskData => {
+            if ("status_href" in taskData) {
+              const task = this.__createTask(taskData, interval);
+              resolve(task);
+            } else {
+              throw Error("Status missing");
+            }
+          })
+          .catch(errMsg => {
+            const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+            osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+            reject(errMsg);
+          });
+      });
     }
   }
 });

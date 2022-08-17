@@ -91,34 +91,27 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
         },
         data: this.__studyDataClone
       };
-      osparc.data.Resources.fetch("studies", "postToTemplate", params)
-        .then(taskData => {
-          if ("status_href" in taskData) {
-            const pollTasks = osparc.data.PollTasks.getInstance();
-            const interval = 1000;
-            const task = pollTasks.createTask(taskData, interval);
-            task.addListener("changeDone", e => {
-              if (e.getData()) {
-                task.fetchResult()
-                  .then(template => {
-                    this.fireDataEvent("finished", template);
-                    osparc.component.message.FlashMessenger.getInstance().logAs(this.__studyDataClone.name + this.tr(" successfully published as template."), "INFO");
-                    btn.setFetching(false);
-                  })
-                  .catch(errMsg => {
-                    const msg = this.tr("There was an error while saving as template.<br>") + errMsg;
-                    osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-                    btn.setFetching(false);
-                  });
-              }
-            }, this);
-          } else {
-            throw Error("Status missing");
-          }
+      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params);
+      const pollTasks = osparc.data.PollTasks.getInstance();
+      const interval = 1000;
+      pollTasks.createPollingTask(fetchPromise, interval)
+        .then(task => {
+          task.addListener("resultReceived", e => {
+            const template = e.getData();
+            this.fireDataEvent("finished", template);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.__studyDataClone.name + this.tr(" successfully published as template."), "INFO");
+            btn.setFetching(false);
+          });
+          task.addListener("pollingError", e => {
+            const errMsg = e.getData();
+            const msg = this.tr("There was an error while saving as template<br>" + errMsg);
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            btn.setFetching(false);
+          });
         })
-        .catch(err => {
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
+        .catch(errMsg => {
+          const msg = this.tr("There was an error while saving as template<br>" + errMsg);
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           btn.setFetching(false);
         });
     }
