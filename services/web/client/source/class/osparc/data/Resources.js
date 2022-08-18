@@ -25,7 +25,7 @@
  *       studyData
  *     }
  *   }
- *   osparc.data.Resources.fetch("studies", "post", params)
+ *   osparc.data.Resources.fetch("studies", "getOne", params)
  *     .then(study => {
  *       // study contains the new updated study
  *       // This code will execute if the call succeeds
@@ -104,18 +104,20 @@ qx.Class.define("osparc.data.Resources", {
           },
           duplicate: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}:duplicate"
+            // url: statics.API + "/projects/{studyId}:duplicate"
+            // supports copy_data
+            url: statics.API + "/projects?from_study={studyId}"
           },
           state: {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/state"
           },
-          post: {
+          postNewStudy: {
             method: "POST",
             url: statics.API + "/projects"
           },
-          postFromStudy: {
+          postNewStudyFromTemplate: {
             method: "POST",
             url: statics.API + "/projects?from_study={templateId}"
           },
@@ -753,7 +755,7 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
-          } else if (useCache) {
+          } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
             } else {
