@@ -1,17 +1,8 @@
-import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, Optional, Union
+from typing import Optional, Union
 
-import aiofiles
-from aiohttp import (
-    ClientConnectionError,
-    ClientError,
-    ClientPayloadError,
-    ClientSession,
-    web,
-)
+from aiohttp import ClientError, ClientSession
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
@@ -29,41 +20,25 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
-from pydantic.networks import AnyUrl
-from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt, stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
-from tqdm import tqdm
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from . import exceptions, r_clone, storage_client
 from .constants import SIMCORE_LOCATION
-from .file_io_utils import file_chunk_reader, file_object_chunk_reader
+from .file_io_utils import (
+    UploadableFileObject,
+    download_link_to_file,
+    upload_file_to_presigned_links,
+)
 from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
-
-CHUNK_SIZE = 16 * 1024 * 1024
-
-_TQDM_FILE_OPTIONS = dict(
-    unit="byte",
-    unit_scale=True,
-    unit_divisor=1024,
-    colour="yellow",
-    miniters=1,
-)
-
-
-@dataclass(frozen=True)
-class UploadableFileObject:
-    file_object: IO
-    file_name: str
-    file_size: int
 
 
 async def _get_location_id_from_location_name(
@@ -77,194 +52,6 @@ async def _get_location_id_from_location_name(
             return location.id
     # location id not found
     raise exceptions.S3InvalidStore(store)
-
-
-async def _get_upload_links(
-    user_id: UserID,
-    store_id: LocationID,
-    file_id: StorageFileID,
-    session: ClientSession,
-    link_type: storage_client.LinkType,
-    file_size: ByteSize,
-) -> FileUploadSchema:
-    """
-    :raises exceptions.S3InvalidPathError: _description_
-    """
-    links: FileUploadSchema = await storage_client.get_upload_file_links(
-        session=session,
-        file_id=file_id,
-        location_id=store_id,
-        user_id=user_id,
-        link_type=link_type,
-        file_size=file_size,
-    )
-    if not links:
-        raise exceptions.S3InvalidPathError(file_id)
-
-    return links
-
-
-async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
-    log.debug("Downloading from %s to %s", url, file_path)
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_exponential(min=1, max=10),
-        stop=stop_after_attempt(
-            NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
-        ),
-        retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
-    ):
-        with attempt:
-            async with session.get(url) as response:
-                if response.status == 404:
-                    raise exceptions.InvalidDownloadLinkError(url)
-                if response.status > 299:
-                    raise exceptions.TransferError(url)
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-                file_size = int(response.headers.get("Content-Length", 0)) or None
-                try:
-                    with tqdm(
-                        desc=f"downloading {url.path} --> {file_path.name}\n",
-                        total=file_size,
-                        **_TQDM_FILE_OPTIONS,
-                    ) as pbar:
-                        async with aiofiles.open(file_path, "wb") as file_pointer:
-                            while chunk := await response.content.read(CHUNK_SIZE):
-                                await file_pointer.write(chunk)
-                                pbar.update(len(chunk))
-                        log.debug("Download complete")
-                except ClientPayloadError as exc:
-                    raise exceptions.TransferError(url) from exc
-
-
-async def _upload_file_part(
-    session: ClientSession,
-    file_to_upload: Union[Path, UploadableFileObject],
-    part_index: int,
-    file_offset: int,
-    file_part_size: int,
-    num_parts: int,
-    upload_url: AnyUrl,
-    pbar,
-) -> tuple[int, ETag]:
-    log.debug(
-        "--> uploading %s of %s, [%s]...",
-        f"{file_part_size=} bytes",
-        f"{file_to_upload=}",
-        f"{part_index+1}/{num_parts}",
-    )
-    file_uploader = file_chunk_reader(
-        file_to_upload,  # type: ignore
-        offset=file_offset,
-        total_bytes_to_read=file_part_size,
-        chunk_size=CHUNK_SIZE,
-    )
-    if isinstance(file_to_upload, UploadableFileObject):
-        file_uploader = file_object_chunk_reader(
-            file_to_upload.file_object,
-            offset=file_offset,
-            total_bytes_to_read=file_part_size,
-            chunk_size=CHUNK_SIZE,
-        )
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_exponential(min=1, max=10),
-        stop=stop_after_attempt(
-            NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
-        ),
-        retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
-    ):
-        with attempt:
-            response = await session.put(
-                upload_url,
-                data=file_uploader,
-                headers={
-                    "Content-Length": f"{file_part_size}",
-                },
-            )
-            response.raise_for_status()
-            pbar.update(file_part_size)
-            # NOTE: the response from minio does not contain a json body
-            assert response.status == web.HTTPOk.status_code
-            assert response.headers
-            assert "Etag" in response.headers
-            received_e_tag = json.loads(response.headers["Etag"])
-            log.info(
-                "--> completed upload %s of %s, [%s], %s",
-                f"{file_part_size=}",
-                f"{file_to_upload=}",
-                f"{part_index+1}/{num_parts}",
-                f"{received_e_tag=}",
-            )
-            return (part_index, received_e_tag)
-    raise exceptions.S3TransferError(
-        f"Unexpected error while transferring {file_to_upload} to {upload_url}"
-    )
-
-
-async def _upload_file_to_presigned_links(
-    session: ClientSession,
-    file_upload_links: FileUploadSchema,
-    file_to_upload: Union[Path, UploadableFileObject],
-) -> list[UploadedPart]:
-    file_size = 0
-    file_name = ""
-    if isinstance(file_to_upload, Path):
-        file_size = file_to_upload.stat().st_size
-        file_name = file_to_upload.as_posix()
-    else:
-        file_size = file_to_upload.file_size
-        file_name = file_to_upload.file_name
-
-    log.debug("Uploading from %s to %s", f"{file_name=}", f"{file_upload_links=}")
-
-    file_chunk_size = int(file_upload_links.chunk_size)
-    num_urls = len(file_upload_links.urls)
-    last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
-    upload_tasks = []
-    with tqdm(
-        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
-    ) as pbar:
-        for index, upload_url in enumerate(file_upload_links.urls):
-            this_file_chunk_size = (
-                file_chunk_size if (index + 1) < num_urls else last_chunk_size
-            )
-            upload_tasks.append(
-                _upload_file_part(
-                    session,
-                    file_to_upload,
-                    index,
-                    index * file_chunk_size,
-                    this_file_chunk_size,
-                    num_urls,
-                    upload_url,
-                    pbar,
-                )
-            )
-        try:
-            results = await logged_gather(
-                *upload_tasks,
-                log=log,
-                # NOTE: when the file object is already created it cannot be duplicated so
-                # no concurrency is allowed in that case
-                max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
-            )
-            part_to_etag = [
-                UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
-            ]
-            log.info(
-                "Uploaded %s, received %s",
-                f"{file_name=}",
-                f"{part_to_etag=}",
-            )
-            return part_to_etag
-        except ClientError as exc:
-            raise exceptions.S3TransferError(
-                f"Could not upload file {file_name}:{exc}"
-            ) from exc
 
 
 async def _complete_upload(
@@ -383,8 +170,13 @@ async def get_upload_links_from_s3(
         assert store_id is not None  # nosec
         return (
             store_id,
-            await _get_upload_links(
-                user_id, store_id, s3_object, session, link_type, file_size
+            await storage_client.get_upload_file_links(
+                session=session,
+                file_id=s3_object,
+                location_id=store_id,
+                user_id=user_id,
+                link_type=link_type,
+                file_size=file_size,
             ),
         )
 
@@ -451,7 +243,12 @@ async def download_file_from_link(
         local_file_path.unlink()
 
     async with ClientSessionContextManager(client_session) as session:
-        await _download_link_to_file(session, download_link, local_file_path)
+        await download_link_to_file(
+            session,
+            download_link,
+            local_file_path,
+            num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
+        )
 
     return local_file_path
 
@@ -530,8 +327,11 @@ async def upload_file(
                     upload_links,
                 )
             else:
-                uploaded_parts = await _upload_file_to_presigned_links(
-                    session, upload_links, file_to_upload
+                uploaded_parts = await upload_file_to_presigned_links(
+                    session,
+                    upload_links,
+                    file_to_upload,
+                    num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
                 )
 
             # complete the upload
