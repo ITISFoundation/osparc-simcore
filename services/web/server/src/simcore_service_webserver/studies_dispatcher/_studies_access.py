@@ -12,19 +12,19 @@ TODO: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
 import logging
 from functools import lru_cache
-from typing import Dict
 from uuid import UUID, uuid5
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
+from servicelib.error_codes import create_error_code
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
-from ..utils import compose_error_msg
+from ..utils import compose_support_error_msg
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
-@lru_cache()
+@lru_cache
 def compose_uuid(template_uuid, user_id, query="") -> str:
     """Creates a new uuid composing a project's and user ids such that
     any template pre-assigned to a user
@@ -123,7 +123,7 @@ async def create_temporary_user(request: web.Request):
 
 
 # TODO: from .users import get_user?
-async def get_authorized_user(request: web.Request) -> Dict:
+async def get_authorized_user(request: web.Request) -> dict:
     from ..login.storage import AsyncpgStorage, get_plugin_storage
     from ..security_api import authorized_userid
 
@@ -135,7 +135,7 @@ async def get_authorized_user(request: web.Request) -> Dict:
 
 # TODO: from .projects import ...?
 async def copy_study_to_account(
-    request: web.Request, template_project: Dict, user: Dict
+    request: web.Request, template_project: dict, user: dict
 ):
     """
     Creates a copy of the study to a given project in user's account
@@ -229,11 +229,16 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             user = await create_temporary_user(request)
             is_anonymous_user = True
     except Exception as exc:  # pylint: disable=broad-except
+        error_code = create_error_code(exc)
         log.exception(
-            "Failed while creating temporary user. TIP: too many simultaneous request?",
+            "Failed while creating temporary user. TIP: too many simultaneous request? [%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
         )
         raise web.HTTPInternalServerError(
-            reason=compose_error_msg("Unable to create temporary user.")
+            reason=compose_support_error_msg(
+                "Unable to create temporary user", error_code
+            )
         ) from exc
     try:
         log.debug(
@@ -246,30 +251,34 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         log.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
+        error_code = create_error_code(exc)
         log.exception(
-            "Failed while copying project '%s' to '%s'",
+            "Failed while copying project '%s' to '%s' [%s]",
             template_project.get("name"),
             user.get("email"),
+            f"{error_code}",
+            extra={"error_code": error_code},
         )
         raise web.HTTPInternalServerError(
-            reason=compose_error_msg("Unable to copy project.")
+            reason=compose_support_error_msg("Unable to copy project", error_code)
         ) from exc
 
     try:
         redirect_url = (
             request.app.router[INDEX_RESOURCE_NAME]
             .url_for()
-            .with_fragment("/study/{}".format(copied_project_id))
+            .with_fragment(f"/study/{copied_project_id}")
         )
     except KeyError as exc:
+        error_code = create_error_code(exc)
         log.exception(
-            (
-                "Cannot redirect to website because route was not registered. "
-                "Probably the static-webserver is disabled (see statics.py)"
-            )
+            "Cannot redirect to website because route was not registered. "
+            "Probably the static-webserver is disabled (see statics.py) [%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
         )
         raise web.HTTPInternalServerError(
-            reason=compose_error_msg("Unable to serve front-end.")
+            reason=compose_support_error_msg("Unable to serve front-end", error_code)
         ) from exc
 
     response = web.HTTPFound(location=redirect_url)
