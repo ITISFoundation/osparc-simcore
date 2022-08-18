@@ -130,28 +130,38 @@ async def create_projects(request: web.Request):
         await check_permission(request, "project.template.create")
 
     task_manager = get_tasks_manager(request.app)
-    task_id = start_task(
-        task_manager,
-        _create_projects,
-        app=request.app,
-        query_params=query_params,
-        user_id=req_ctx.user_id,
-        predefined_project=predefined_project,
-    )
-    status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-    result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-    return web.json_response(
-        data={
-            "data": {
-                "task_id": task_id,
-                "status_href": f"{status_url}",
-                "result_href": f"{result_url}",
-            }
-        },
-        status=web.HTTPAccepted.status_code,
-        dumps=json_dumps,
-        headers={"Location": f"{status_url}"},
-    )
+    task_id = None
+    try:
+        task_id = start_task(
+            task_manager,
+            _create_projects,
+            app=request.app,
+            query_params=query_params,
+            user_id=req_ctx.user_id,
+            predefined_project=predefined_project,
+        )
+        status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
+        result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
+        abort_url = request.app.router["cancel_and_delete_task"].url_for(
+            task_id=task_id
+        )
+        return web.json_response(
+            data={
+                "data": {
+                    "task_id": task_id,
+                    "status_href": f"{status_url}",
+                    "result_href": f"{result_url}",
+                    "abort_href": f"{abort_url}",
+                }
+            },
+            status=web.HTTPAccepted.status_code,
+            dumps=json_dumps,
+        )
+    except asyncio.CancelledError:
+        # cancel the task, the client has disconnected
+        if task_id:
+            await task_manager.cancel_task(task_id)
+        raise
 
 
 async def _init_project_from_request(

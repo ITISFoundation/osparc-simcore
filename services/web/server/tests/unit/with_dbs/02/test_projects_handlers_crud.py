@@ -244,7 +244,7 @@ async def test_new_project(
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    new_project = await request_create_project(
+    await request_create_project(
         client, expected.accepted, expected.created, logged_user, primary_group
     )
 

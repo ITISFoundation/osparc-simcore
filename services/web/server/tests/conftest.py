@@ -240,10 +240,10 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             assert not data
             return {}
         assert data
-        assert all(x in data for x in ["task_id", "status_href", "result_href"])
-        assert "Location" in resp.headers
-        status_url = resp.headers.get("location")
-        assert status_url == data["status_href"]
+        assert all(
+            x in data for x in ["task_id", "status_href", "result_href", "abort_href"]
+        )
+        status_url = data["status_href"]
         result_url = data["result_href"]
 
         # get status GET /{task_id}
