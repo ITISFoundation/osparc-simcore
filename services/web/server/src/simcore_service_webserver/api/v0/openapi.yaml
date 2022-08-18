@@ -203,7 +203,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/verify-phone-number:
@@ -235,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-register:
@@ -271,7 +271,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/login:
@@ -296,6 +296,12 @@ paths:
       responses:
         '200':
           description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+        '202':
+          description: 'Accepted, but 2 Factor Authentication required'
           content:
             application/json:
               schema:
@@ -330,12 +336,6 @@ paths:
                   error:
                     nullable: true
                     default: null
-        '202':
-          description: 'Accepted, but 2 Factor Authentication required'
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-login:
@@ -366,7 +366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/logout:
@@ -389,7 +389,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/reset-password:
@@ -416,7 +416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         '503':
           description: failed to send confirmation email
           content:
@@ -457,7 +457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
@@ -490,7 +490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
@@ -537,7 +537,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
@@ -2470,12 +2470,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:
@@ -3003,15 +3003,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -3047,7 +3039,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
@@ -4985,7 +4985,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
