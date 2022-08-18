@@ -250,6 +250,9 @@ async def _upload_file_part(
                 f"{received_e_tag=}",
             )
             return (part_index, received_e_tag)
+    raise exceptions.S3TransferError(
+        f"Unexpected error while transferring {file_to_upload} to {upload_url}"
+    )
 
 
 async def _upload_file_to_presigned_links(
