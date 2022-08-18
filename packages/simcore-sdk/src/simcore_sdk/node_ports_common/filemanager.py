@@ -79,31 +79,6 @@ async def _get_location_id_from_location_name(
     raise exceptions.S3InvalidStore(store)
 
 
-async def _get_download_link(
-    user_id: UserID,
-    store_id: LocationID,
-    file_id: StorageFileID,
-    session: ClientSession,
-    link_type: storage_client.LinkType,
-) -> URL:
-    """
-    :raises exceptions.S3InvalidPathError
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
-    """
-    link: AnyUrl = await storage_client.get_download_file_link(
-        session=session,
-        file_id=file_id,
-        location_id=store_id,
-        user_id=user_id,
-        link_type=link_type,
-    )
-    if not link:
-        raise exceptions.S3InvalidPathError(file_id)
-
-    return URL(link)
-
-
 async def _get_upload_links(
     user_id: UserID,
     store_id: LocationID,
@@ -376,8 +351,14 @@ async def get_download_link_from_s3(
                 user_id, store_name, session
             )
         assert store_id is not None  # nosec
-        return await _get_download_link(
-            user_id, store_id, s3_object, session, link_type
+        return URL(
+            await storage_client.get_download_file_link(
+                session=session,
+                file_id=s3_object,
+                location_id=store_id,
+                user_id=user_id,
+                link_type=link_type,
+            )
         )
 
 
