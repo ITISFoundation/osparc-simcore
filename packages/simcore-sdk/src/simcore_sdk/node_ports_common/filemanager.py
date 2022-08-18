@@ -35,12 +35,11 @@ from pydantic import ByteSize, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
-from tenacity import wait_random
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_exponential, wait_fixed
 from tqdm import tqdm
 from yarl import URL
 
@@ -136,7 +135,7 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
     log.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
         reraise=True,
-        wait=wait_random(min=0.1, max=2),
+        wait=wait_exponential(min=1, max=10),
         stop=stop_after_delay(
             NodePortsSettings.create_from_envs().NODE_PORTS_IO_RETRY_DELAY_S
         ),
