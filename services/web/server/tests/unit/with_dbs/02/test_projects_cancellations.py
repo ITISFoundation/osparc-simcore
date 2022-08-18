@@ -90,15 +90,16 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     )
     assert data
     assert len(data) == 1, "there are too many projects in the db!"
+
+    # now abort the copy
+    resp = await client.delete(f"{abort_url}")
+    await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(
         reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
     ):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()
-    # now abort the copy
-    resp = await client.delete(f"{abort_url}")
-    await assert_status(resp, expected.no_content)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
