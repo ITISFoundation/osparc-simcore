@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import IO, AsyncGenerator, Optional, Union
 
 import aiofiles
-from aiohttp import ClientError, ClientPayloadError, ClientSession, web
+from aiohttp import (
+    ClientConnectionError,
+    ClientError,
+    ClientPayloadError,
+    ClientSession,
+    web,
+)
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
@@ -29,6 +35,7 @@ from pydantic import ByteSize, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
+from tenacity import wait_random
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -127,27 +134,37 @@ async def _get_upload_links(
 
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
-    async with session.get(url) as response:
-        if response.status == 404:
-            raise exceptions.InvalidDownloadLinkError(url)
-        if response.status > 299:
-            raise exceptions.TransferError(url)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-        file_size = int(response.headers.get("Content-Length", 0)) or None
-        try:
-            with tqdm(
-                desc=f"downloading {url.path} --> {file_path.name}\n",
-                total=file_size,
-                **_TQDM_FILE_OPTIONS,
-            ) as pbar:
-                async with aiofiles.open(file_path, "wb") as file_pointer:
-                    while chunk := await response.content.read(CHUNK_SIZE):
-                        await file_pointer.write(chunk)
-                        pbar.update(len(chunk))
-                log.debug("Download complete")
-        except ClientPayloadError as exc:
-            raise exceptions.TransferError(url) from exc
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_random(min=0.1, max=2),
+        stop=stop_after_delay(
+            NodePortsSettings.create_from_envs().NODE_PORTS_IO_RETRY_DELAY_S
+        ),
+        retry=retry_if_exception_type(ClientConnectionError),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+    ):
+        with attempt:
+            async with session.get(url) as response:
+                if response.status == 404:
+                    raise exceptions.InvalidDownloadLinkError(url)
+                if response.status > 299:
+                    raise exceptions.TransferError(url)
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+                file_size = int(response.headers.get("Content-Length", 0)) or None
+                try:
+                    with tqdm(
+                        desc=f"downloading {url.path} --> {file_path.name}\n",
+                        total=file_size,
+                        **_TQDM_FILE_OPTIONS,
+                    ) as pbar:
+                        async with aiofiles.open(file_path, "wb") as file_pointer:
+                            while chunk := await response.content.read(CHUNK_SIZE):
+                                await file_pointer.write(chunk)
+                                pbar.update(len(chunk))
+                        log.debug("Download complete")
+                except ClientPayloadError as exc:
+                    raise exceptions.TransferError(url) from exc
 
 
 async def _file_object_chunk_reader(
@@ -202,28 +219,38 @@ async def _upload_file_part(
             offset=file_offset,
             total_bytes_to_read=file_part_size,
         )
-    response = await session.put(
-        upload_url,
-        data=file_uploader,
-        headers={
-            "Content-Length": f"{file_part_size}",
-        },
-    )
-    response.raise_for_status()
-    pbar.update(file_part_size)
-    # NOTE: the response from minio does not contain a json body
-    assert response.status == web.HTTPOk.status_code
-    assert response.headers
-    assert "Etag" in response.headers
-    received_e_tag = json.loads(response.headers["Etag"])
-    log.info(
-        "--> completed upload %s of %s, [%s], %s",
-        f"{file_part_size=}",
-        f"{file_to_upload=}",
-        f"{part_index+1}/{num_parts}",
-        f"{received_e_tag=}",
-    )
-    return (part_index, received_e_tag)
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_random(min=0.1, max=2),
+        stop=stop_after_delay(
+            NodePortsSettings.create_from_envs().NODE_PORTS_IO_RETRY_DELAY_S
+        ),
+        retry=retry_if_exception_type(ClientConnectionError),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+    ):
+        with attempt:
+            response = await session.put(
+                upload_url,
+                data=file_uploader,
+                headers={
+                    "Content-Length": f"{file_part_size}",
+                },
+            )
+            response.raise_for_status()
+            pbar.update(file_part_size)
+            # NOTE: the response from minio does not contain a json body
+            assert response.status == web.HTTPOk.status_code
+            assert response.headers
+            assert "Etag" in response.headers
+            received_e_tag = json.loads(response.headers["Etag"])
+            log.info(
+                "--> completed upload %s of %s, [%s], %s",
+                f"{file_part_size=}",
+                f"{file_to_upload=}",
+                f"{part_index+1}/{num_parts}",
+                f"{received_e_tag=}",
+            )
+            return (part_index, received_e_tag)
 
 
 async def _upload_file_to_presigned_links(
