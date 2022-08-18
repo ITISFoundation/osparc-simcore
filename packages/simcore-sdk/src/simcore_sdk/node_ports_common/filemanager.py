@@ -1,11 +1,8 @@
-import asyncio
 import json
-
-# pylint: disable=too-many-arguments
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Optional, Union
+from typing import IO, Optional, Union
 
 import aiofiles
 from aiohttp import (
@@ -35,7 +32,6 @@ from pydantic import ByteSize, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
-from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -47,6 +43,7 @@ from yarl import URL
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from . import exceptions, r_clone, storage_client
 from .constants import SIMCORE_LOCATION
+from .file_io_utils import file_chunk_reader, file_object_chunk_reader
 from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
@@ -132,63 +129,39 @@ async def _get_upload_links(
     return links
 
 
-@retry(
-    reraise=True,
-    wait=wait_exponential(min=1, max=10),
-    stop=stop_after_attempt(
-        NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
-    ),
-    retry=retry_if_exception_type(ClientConnectionError),
-    before_sleep=before_sleep_log(log, logging.WARNING),
-)
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
-    async with session.get(url) as response:
-        if response.status == 404:
-            raise exceptions.InvalidDownloadLinkError(url)
-        if response.status > 299:
-            raise exceptions.TransferError(url)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-        file_size = int(response.headers.get("Content-Length", 0)) or None
-        try:
-            with tqdm(
-                desc=f"downloading {url.path} --> {file_path.name}\n",
-                total=file_size,
-                **_TQDM_FILE_OPTIONS,
-            ) as pbar:
-                async with aiofiles.open(file_path, "wb") as file_pointer:
-                    while chunk := await response.content.read(CHUNK_SIZE):
-                        await file_pointer.write(chunk)
-                        pbar.update(len(chunk))
-                log.debug("Download complete")
-        except ClientPayloadError as exc:
-            raise exceptions.TransferError(url) from exc
-
-
-async def _file_object_chunk_reader(
-    file_object: IO, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes, None]:
-    await asyncio.get_event_loop().run_in_executor(None, file_object.seek, offset)
-    num_read_bytes = 0
-    while chunk := await asyncio.get_event_loop().run_in_executor(
-        None, file_object.read, min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_exponential(min=1, max=10),
+        stop=stop_after_attempt(
+            NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
+        ),
+        retry=retry_if_exception_type(ClientConnectionError),
+        before_sleep=before_sleep_log(log, logging.WARNING),
     ):
-        num_read_bytes += len(chunk)
-        yield chunk
-
-
-async def _file_chunk_reader(
-    file: Path, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes, None]:
-    async with aiofiles.open(file, "rb") as f:
-        await f.seek(offset)
-        num_read_bytes = 0
-        while chunk := await f.read(
-            min(CHUNK_SIZE, total_bytes_to_read - num_read_bytes)
-        ):
-            num_read_bytes += len(chunk)
-            yield chunk
+        with attempt:
+            async with session.get(url) as response:
+                if response.status == 404:
+                    raise exceptions.InvalidDownloadLinkError(url)
+                if response.status > 299:
+                    raise exceptions.TransferError(url)
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+                file_size = int(response.headers.get("Content-Length", 0)) or None
+                try:
+                    with tqdm(
+                        desc=f"downloading {url.path} --> {file_path.name}\n",
+                        total=file_size,
+                        **_TQDM_FILE_OPTIONS,
+                    ) as pbar:
+                        async with aiofiles.open(file_path, "wb") as file_pointer:
+                            while chunk := await response.content.read(CHUNK_SIZE):
+                                await file_pointer.write(chunk)
+                                pbar.update(len(chunk))
+                        log.debug("Download complete")
+                except ClientPayloadError as exc:
+                    raise exceptions.TransferError(url) from exc
 
 
 async def _upload_file_part(
@@ -207,16 +180,18 @@ async def _upload_file_part(
         f"{file_to_upload=}",
         f"{part_index+1}/{num_parts}",
     )
-    file_uploader = _file_chunk_reader(
+    file_uploader = file_chunk_reader(
         file_to_upload,  # type: ignore
         offset=file_offset,
         total_bytes_to_read=file_part_size,
+        chunk_size=CHUNK_SIZE,
     )
     if isinstance(file_to_upload, UploadableFileObject):
-        file_uploader = _file_object_chunk_reader(
+        file_uploader = file_object_chunk_reader(
             file_to_upload.file_object,
             offset=file_offset,
             total_bytes_to_read=file_part_size,
+            chunk_size=CHUNK_SIZE,
         )
     async for attempt in AsyncRetrying(
         reraise=True,
