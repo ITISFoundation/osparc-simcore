@@ -35,10 +35,11 @@ from pydantic import ByteSize, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
+from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 from tqdm import tqdm
 from yarl import URL
@@ -131,39 +132,38 @@ async def _get_upload_links(
     return links
 
 
+@retry(
+    reraise=True,
+    wait=wait_exponential(min=1, max=10),
+    stop=stop_after_attempt(
+        NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
+    ),
+    retry=retry_if_exception_type(ClientConnectionError),
+    before_sleep=before_sleep_log(log, logging.WARNING),
+)
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_exponential(min=1, max=10),
-        stop=stop_after_delay(
-            NodePortsSettings.create_from_envs().NODE_PORTS_IO_RETRY_DELAY_S
-        ),
-        retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
-    ):
-        with attempt:
-            async with session.get(url) as response:
-                if response.status == 404:
-                    raise exceptions.InvalidDownloadLinkError(url)
-                if response.status > 299:
-                    raise exceptions.TransferError(url)
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-                file_size = int(response.headers.get("Content-Length", 0)) or None
-                try:
-                    with tqdm(
-                        desc=f"downloading {url.path} --> {file_path.name}\n",
-                        total=file_size,
-                        **_TQDM_FILE_OPTIONS,
-                    ) as pbar:
-                        async with aiofiles.open(file_path, "wb") as file_pointer:
-                            while chunk := await response.content.read(CHUNK_SIZE):
-                                await file_pointer.write(chunk)
-                                pbar.update(len(chunk))
-                        log.debug("Download complete")
-                except ClientPayloadError as exc:
-                    raise exceptions.TransferError(url) from exc
+    async with session.get(url) as response:
+        if response.status == 404:
+            raise exceptions.InvalidDownloadLinkError(url)
+        if response.status > 299:
+            raise exceptions.TransferError(url)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+        file_size = int(response.headers.get("Content-Length", 0)) or None
+        try:
+            with tqdm(
+                desc=f"downloading {url.path} --> {file_path.name}\n",
+                total=file_size,
+                **_TQDM_FILE_OPTIONS,
+            ) as pbar:
+                async with aiofiles.open(file_path, "wb") as file_pointer:
+                    while chunk := await response.content.read(CHUNK_SIZE):
+                        await file_pointer.write(chunk)
+                        pbar.update(len(chunk))
+                log.debug("Download complete")
+        except ClientPayloadError as exc:
+            raise exceptions.TransferError(url) from exc
 
 
 async def _file_object_chunk_reader(
@@ -220,9 +220,9 @@ async def _upload_file_part(
         )
     async for attempt in AsyncRetrying(
         reraise=True,
-        wait=wait_random(min=0.1, max=2),
-        stop=stop_after_delay(
-            NodePortsSettings.create_from_envs().NODE_PORTS_IO_RETRY_DELAY_S
+        wait=wait_exponential(min=1, max=10),
+        stop=stop_after_attempt(
+            NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS
         ),
         retry=retry_if_exception_type(ClientConnectionError),
         before_sleep=before_sleep_log(log, logging.WARNING),
