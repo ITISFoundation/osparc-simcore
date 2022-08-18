@@ -49,11 +49,6 @@ def standard_user_role_response() -> tuple[
     )
 
 
-@pytest.mark.skip(
-    reason="since long running tasks are now used for copying, this is no longer an issue."
-    "If the timeout is really super short, then the background task should be properly cancelled."
-    "this should be tested now"
-)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     client: TestClient,
