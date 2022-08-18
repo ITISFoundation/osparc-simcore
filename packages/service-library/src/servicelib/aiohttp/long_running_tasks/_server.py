@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Optional
 
 from aiohttp import web
 from pydantic import PositiveFloat
@@ -16,12 +16,13 @@ def setup(
     app: web.Application,
     *,
     router_prefix: str,
+    handlers_decorator: Optional[Callable] = None,
     stale_task_check_interval_s: PositiveFloat = 1 * MINUTE,
     stale_task_detect_timeout_s: PositiveFloat = 5 * MINUTE,
 ) -> None:
     """
-    - `router_prefix` APIs are mounted on `/task/...`, this
-        will change them to be mounted as `{router_prefix}/task/...`
+    - `router_prefix` APIs are mounted on `/...`, this
+        will change them to be mounted as `{router_prefix}/...`
     - `stale_task_check_interval_s` interval at which the
         TaskManager checks for tasks which are no longer being
         actively monitored by a client
@@ -35,7 +36,7 @@ def setup(
             app.router.add_route(
                 route.method,  # type: ignore
                 f"{router_prefix}{route.path}",  # type: ignore
-                route.handler,  # type: ignore
+                handlers_decorator(route.handler) if handlers_decorator else route.handler,  # type: ignore
                 **route.kwargs,  # type: ignore
             )
         # app.router.add_routes(routes)
