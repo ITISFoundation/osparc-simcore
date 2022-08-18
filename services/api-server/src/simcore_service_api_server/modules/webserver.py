@@ -11,7 +11,14 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response
 from pydantic import ValidationError
+from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
+from tenacity import TryAgain
+from tenacity._asyncio import AsyncRetrying
+from tenacity.after import after_log
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
@@ -106,6 +113,7 @@ class AuthSession:
     # TODO: error handling!
 
     async def create_project(self, project: NewProjectIn):
+        # POST /projects --> 202
         resp = await self.client.post(
             "/projects",
             params={"hidden": True},
@@ -114,8 +122,32 @@ class AuthSession:
             ),  ## FIXME: REEAAAALY HACKY!
             cookies=self.session_cookies,
         )
-
         data: Optional[JSON] = self._process(resp)
+        assert data  # nosec
+        assert isinstance(data, dict)  # nosec
+        # NOTE: /v0 is already included in the http client base_url
+        status_url = data["status_href"].lstrip(f"/{self.vtag}")
+        result_url = data["result_href"].lstrip(f"/{self.vtag}")
+        # GET task status now until done
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.5),
+            stop=stop_after_delay(60),
+            reraise=True,
+            before_sleep=before_sleep_log(logger, logging.INFO),
+            after=after_log(logger, log_level=logging.ERROR),
+        ):
+            with attempt:
+                data: Optional[JSON] = await self.get(
+                    status_url,
+                )
+                task_status = TaskStatus.parse_obj(data)
+                if not task_status.done:
+                    raise TryAgain(
+                        "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    )
+        data: Optional[JSON] = await self.get(
+            f"{result_url}",
+        )
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:

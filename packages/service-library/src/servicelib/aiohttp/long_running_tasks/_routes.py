@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from ...json_serialization import json_dumps
+from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskId, TaskStatus
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_tasks_manager
@@ -31,12 +32,18 @@ async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
 
-    # NOTE: this might raise an exception that will be catached by the _error_handlers
-    # in case it did not raise, then we remove the task from the manager
-    task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
-    # NOTE: this will fail if the task failed for some reason....
-    await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
-    return task_result
+    # NOTE: this might raise an exception that will be catched by the _error_handlers
+    try:
+        task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
+        # NOTE: this will fail if the task failed for some reason....
+        await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
+        return task_result
+    except (TaskNotFoundError, TaskNotCompletedError):
+        raise
+    except Exception:
+        # the task shall be removed in this case
+        await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
+        raise
 
 
 @routes.delete("/{task_id}", name="cancel_and_delete_task")

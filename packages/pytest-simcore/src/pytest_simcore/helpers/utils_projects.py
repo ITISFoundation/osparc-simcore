@@ -10,7 +10,6 @@ from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.projects_state import ProjectState
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
@@ -153,7 +152,5 @@ async def assert_get_same_project(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        project_state = data.pop("state")
         assert data == project
-        assert ProjectState(**project_state)
     return data

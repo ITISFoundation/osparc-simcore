@@ -335,9 +335,20 @@ def start_task(
         managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    task_progress = TaskProgress()
-    awaitable = handler(task_progress, **kwargs)
-    task = asyncio.create_task(awaitable)
+    task_progress = TaskProgress.create()
+
+    async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
+        progress.publish(message="starting", percent=0)
+        try:
+            return await handler(progress, **kwargs)
+        finally:
+            # TODO: change that signature. it actually does not publish anything
+            # and it can raise if percent is <0 or >1!! -> simplify
+            progress.publish(message="finished", percent=1)
+
+    task = asyncio.create_task(
+        _progress_task(task_progress, handler), name=f"{__name__}.{task_name}"
+    )
 
     tracked_task = tasks_manager.add_task(
         task_name=task_name, task=task, task_progress=task_progress

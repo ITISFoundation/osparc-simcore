@@ -7,8 +7,11 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 
-from ._meta import WELCOME_GC_MSG, WELCOME_MSG
+from ._meta import API_VTAG, WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
@@ -51,7 +54,6 @@ def create_application() -> web.Application:
     Initializes service
     """
     app = create_safe_application()
-
     settings = setup_settings(app)
 
     # WARNING: setup order matters
@@ -62,6 +64,7 @@ def create_application() -> web.Application:
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
+    setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
     setup_statics(app)
     setup_db(app)
     setup_redis(app)
