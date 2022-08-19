@@ -12,7 +12,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.services import RunID
 from models_library.users import UserID
-from simcore_service_director_v2.modules.dynamic_sidecar.volumes_resolver import (
+from simcore_service_director_v2.modules.dynamic_sidecar.volumes import (
     DynamicSidecarVolumesPathsResolver,
 )
 

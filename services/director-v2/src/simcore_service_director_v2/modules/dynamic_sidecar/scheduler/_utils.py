@@ -17,10 +17,7 @@ from ..docker_api import (
     remove_dynamic_sidecar_stack,
     remove_volumes_from_node,
 )
-from ..volumes_resolver import (
-    DY_SIDECAR_SHARED_STORE_PATH,
-    DynamicSidecarVolumesPathsResolver,
-)
+from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 
 @asynccontextmanager
