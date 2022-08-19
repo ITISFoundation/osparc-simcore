@@ -10,7 +10,7 @@
 
 import asyncio
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Union
+from typing import Awaitable, Callable, Optional, Union
 from uuid import uuid4
 
 import pytest
@@ -20,6 +20,9 @@ from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
@@ -73,6 +76,7 @@ def client(
     setup_db(app)
     setup_session(app)
     setup_security(app)
+    setup_long_running_tasks(app, router_prefix="/tasks")
     setup_rest(app)
     setup_login(app)
     setup_resource_manager(app)
@@ -123,7 +127,7 @@ async def storage_subsystem_mock(mocker):
 async def catalog_subsystem_mock(monkeypatch):
     services_in_project = []
 
-    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
         for proj in projects:
             services_in_project.extend(
                 [
@@ -146,7 +150,7 @@ async def catalog_subsystem_mock(monkeypatch):
 # TODO: merge both unit/with_postgress/test_projects
 
 
-async def _request_list(client) -> List[Dict]:
+async def _request_list(client) -> list[dict]:
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     resp = await client.get(url.with_query(offset=0, limit=3))
@@ -156,22 +160,13 @@ async def _request_list(client) -> List[Dict]:
     return projects
 
 
-async def _request_get(client, pid) -> Dict:
+async def _request_get(client, pid) -> dict:
     url = client.app.router["get_project"].url_for(project_id=pid)
     resp = await client.get(url)
 
     project, _ = await assert_status(resp, web.HTTPOk)
 
     return project
-
-
-async def _request_create(client, project):
-    url = client.app.router["create_projects"].url_for()
-    resp = await client.post(url, json=project)
-
-    new_project, _ = await assert_status(resp, web.HTTPCreated)
-
-    return new_project
 
 
 async def _request_update(client, project, pid):
@@ -200,17 +195,27 @@ async def test_workflow(
     catalog_subsystem_mock,
     client,
     logged_user,
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
     storage_subsystem_mock,
     director_v2_service_mock,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     # empty list
     projects = await _request_list(client)
     assert not projects
 
     # creation
-    await _request_create(client, fake_project)
+    for invalid_key in ["uuid", "creationDate", "lastChangeDate"]:
+        fake_project.pop(invalid_key)
+    await request_create_project(
+        client,
+        web.HTTPAccepted,
+        web.HTTPCreated,
+        logged_user,
+        primary_group,
+        project=fake_project,
+    )
     catalog_subsystem_mock([fake_project])
     # list not empty
     projects = await _request_list(client)

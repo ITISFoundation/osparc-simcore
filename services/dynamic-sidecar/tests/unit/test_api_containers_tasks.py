@@ -356,7 +356,7 @@ async def test_create_containers_task(
     ) as result:
         assert shared_store.container_names == result
 
-    assert last_progress_message == ("done", 1)
+    assert last_progress_message == ("finished", 1.0)
 
 
 async def test_create_containers_task_invalid_yaml_spec(
