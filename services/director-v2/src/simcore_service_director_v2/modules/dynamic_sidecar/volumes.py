@@ -21,7 +21,7 @@ def _get_s3_volume_driver_config(
     node_uuid: NodeID,
     storage_directory_name: str,
 ) -> dict[str, Any]:
-    assert "/" not in storage_directory_name  # no sec
+    assert "/" not in storage_directory_name  # nosec
     driver_config = {
         "Name": "rclone",
         "Options": {
@@ -66,7 +66,7 @@ def _get_s3_volume_driver_config(
             f"Unexpected, all {S3Provider.__name__} should be covered"
         )
 
-    assert extra_options is not None  # no sec
+    assert extra_options is not None  # nosec
     driver_config["Options"].update(extra_options)
 
     return driver_config
