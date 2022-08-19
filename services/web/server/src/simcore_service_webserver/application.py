@@ -25,6 +25,7 @@ from .email import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
+from .login.decorators import login_required
 from .login.plugin import setup_login
 from .meta_modeling import setup_meta_modeling
 from .products import setup_products
@@ -65,7 +66,9 @@ def create_application() -> web.Application:
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_db(app)
-    setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
+    setup_long_running_tasks(
+        app, router_prefix=f"/{API_VTAG}/tasks", handlers_decorator=login_required
+    )
     setup_redis(app)
     setup_session(app)
     setup_security(app)
