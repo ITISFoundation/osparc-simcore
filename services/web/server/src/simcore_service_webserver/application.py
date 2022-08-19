@@ -64,13 +64,15 @@ def create_application() -> web.Application:
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
-    setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
-    setup_statics(app)
     setup_db(app)
     setup_redis(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+
+    # front-end products
+    setup_products(app)
+    setup_statics(app)
 
     # monitoring
     setup_diagnostics(app)
@@ -107,7 +109,6 @@ def create_application() -> web.Application:
     setup_tags(app)
 
     setup_publications(app)
-    setup_products(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)

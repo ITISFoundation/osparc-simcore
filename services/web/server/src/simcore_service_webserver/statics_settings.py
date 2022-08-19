@@ -11,6 +11,8 @@ from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 
+# TODO: move this to OsparcDependency and validate in tests!!
+
 
 class OsparcDependency(BaseModel):
     name: str
@@ -89,6 +91,7 @@ class FrontEndAppSettings(BaseCustomSettings):
     # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
     # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
     WEBSERVER_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
+
     WEBSERVER_S4L_FOGBUGZ_NEWCASE_URL: Optional[
         HttpUrl
     ] = None  # TODO: Move this to products  db
@@ -96,6 +99,7 @@ class FrontEndAppSettings(BaseCustomSettings):
         HttpUrl
     ] = None  # TODO: Move this to products  db
 
+    # TODO: ha
     WEBSERVER_OSPARC_DEPENDENCIES: list[OsparcDependency] = Field(
         default_factory=discover_osparc_dependencies
     )

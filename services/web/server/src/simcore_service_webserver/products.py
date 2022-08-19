@@ -15,6 +15,7 @@ from typing import Optional, Pattern
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
+from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from pydantic import BaseModel, Field, HttpUrl, ValidationError, validator
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
@@ -41,7 +42,7 @@ class Product(BaseModel):
     from env-vars.
     """
 
-    name: str
+    name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
     display_name: str
     host_regex: Pattern
     support_email: str

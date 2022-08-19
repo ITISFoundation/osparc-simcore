@@ -7,7 +7,6 @@
 # pylint:disable=redefined-outer-name
 import json
 from pathlib import Path
-from typing import Dict
 
 import pytest
 from simcore_service_webserver.statics_constants import (
@@ -20,7 +19,7 @@ FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.manuscript.com/f/cases/new?command=
 
 
 @pytest.fixture(scope="module")
-def client_compile_cfg(web_client_dir: Path) -> Dict:
+def client_compile_cfg(web_client_dir: Path) -> dict:
     compile_filepath = web_client_dir / "compile.json"
     assert compile_filepath.exists()
     cfg = json.loads(compile_filepath.read_text())
@@ -34,7 +33,7 @@ def source_boot_index_html(web_client_dir: Path) -> str:
     return index_html
 
 
-def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
+def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     """
     tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
     corresponds to actual front-end apps produced by web/client
@@ -105,6 +104,7 @@ def test_frontend_app_settings(
     assert "fogbugz_url" in statics
 
 
+@pytest.mark.skip(reason="under DEPRECATION")
 def test_default_webserver_env_dev(env_devel_dict):
     assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in env_devel_dict
     assert env_devel_dict[
