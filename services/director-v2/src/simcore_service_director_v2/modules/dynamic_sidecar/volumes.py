@@ -77,7 +77,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def target(cls, path: Path) -> str:
-        """returns path relative to `/dy-volumes`"""
+        """Returns a folder path within `/dy-volumes` folder"""
         target_path = cls.BASE_PATH / path.relative_to("/")
         return f"{target_path}"
 
@@ -87,18 +87,16 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def source(cls, path: Path, node_uuid: NodeID, run_id: RunID) -> str:
-        """
+        """Returns a valid and unique volume name that is composed out of identifiers, namely
+            - relative target path
+            - node_uuid
+            - run_id
+
         Guarantees that the volume name is unique between runs while also
         taking into consideration the limit for the volume name's length
         (255 characters).
 
-        Example:
-        >>> source(
-            path="/home/user/a-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-very-long-home-path/workspace",
-            node_uuid="e3e70682-c209-4cac-a29f-6fbed82c07cd",
-            run_id="f728b4fa-4248-4e3a-8a5d-2f346baa9455"
-        )
-        dyv_f728b4fa-4248-4e3a-8a5d-2f346baa9455_e3e70682-c209-4cac-a29f-6fbed82c07cd_ecapskrow_htap-emoh-gnol-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yrev-yr
+        SEE examples in `tests/unit/test_modules_dynamic_sidecar_volumes_resolver.py`
         """
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
