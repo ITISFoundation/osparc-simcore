@@ -118,8 +118,7 @@ class DynamicSidecarVolumesPathsResolver:
         user_id: UserID,
     ) -> dict[str, Any]:
         """
-        mounts local directories form the host where the service
-        dynamic-sidecar) is running.
+        Creates specification for mount to be added to containers created as part of a service
         """
         return {
             "Source": cls.source(path, node_uuid, run_id),

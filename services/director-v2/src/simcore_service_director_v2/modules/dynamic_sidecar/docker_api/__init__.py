@@ -18,10 +18,7 @@ from ._core import (
     try_to_remove_network,
     update_scheduler_data_label,
 )
-from ._volume_removal import (
-    remove_pending_volume_removal_services,
-    remove_volumes_from_node,
-)
+from ._volume import remove_pending_volume_removal_services, remove_volumes_from_node
 
 __all__: tuple[str, ...] = (
     "are_all_services_present",
