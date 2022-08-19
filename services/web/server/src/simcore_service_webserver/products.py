@@ -53,6 +53,7 @@ class Product(BaseModel):
     )
     manual_url: HttpUrl
     manual_extra_url: Optional[HttpUrl]
+    issues_login_url: HttpUrl
     issues_new_url: HttpUrl
 
     class Config:
