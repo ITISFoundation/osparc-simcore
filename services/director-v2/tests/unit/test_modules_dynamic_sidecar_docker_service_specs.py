@@ -14,7 +14,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import ServiceKeyVersion
+from models_library.services import RunID, ServiceKeyVersion
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -99,7 +99,7 @@ def run_id(scheduler_data: SchedulerData) -> UUID:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
+def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -244,50 +244,77 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "Type": "bind",
                     },
                     {
-                        "Target": "/dy-volumes/tmp/inputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
+                        "Target": "/dy-volumes/shared-store",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_inputs",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
+                            }
+                        },
+                    },
+                    {
+                        "Target": "/dy-volumes/tmp/inputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                                "run_id": f"{run_id}",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
+                                "swarm_stack_name": "test_swarm_name",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp/outputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_outputs",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp/save_1",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_1",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp_save_2",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_2",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },

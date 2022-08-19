@@ -1,10 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
-from uuid import UUID
 
 import aiodocker
 from aiodocker.utils import clean_filters
+from models_library.services import RunID
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
@@ -25,7 +25,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def get_volume_by_label(label: str, run_id: UUID) -> dict[str, Any]:
+async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
     async with docker_client() as docker:
         filters = {"label": [f"source={label}", f"run_id={run_id}"]}
         params = {"filters": clean_filters(filters)}
