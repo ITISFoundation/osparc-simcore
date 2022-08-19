@@ -166,7 +166,32 @@ def client_with_task_context(
     )
 
 
-async def test_list_tasks_with_context(client_with_task_context: TestClient):
+async def test_get_task_status(client_with_task_context: TestClient):
+    assert client_with_task_context.app
+
+    url = (
+        client_with_task_context.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=f"{0.2}")
+    )
+    resp = await client_with_task_context.post(f"{url}")
+    data, error = await assert_status(resp, web.HTTPAccepted)
+    assert data
+    assert not error
+    task_id = parse_obj_as(long_running_tasks.server.TaskId, data)
+
+    status_url = client_with_task_context.app.router["get_task_status"].url_for(
+        task_id=task_id
+    )
+    # calling without Task context should find nothing
+    resp = await client_with_task_context.get(f"{status_url}")
+    await assert_status(resp, web.HTTPNotFound)
+    # calling with context should find the task
+    resp = await client_with_task_context.get(f"{status_url.with_query(TASK_CONTEXT)}")
+    await assert_status(resp, web.HTTPOk)
+
+
+async def test_list_tasks(client_with_task_context: TestClient):
     assert client_with_task_context.app
     url = (
         client_with_task_context.app.router[LONG_RUNNING_TASK_ENTRYPOINT]

@@ -56,8 +56,11 @@ async def list_tasks(request: web.Request) -> web.Response:
 async def get_task_status(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
+    task_context = get_task_context(request)
 
-    task_status: TaskStatus = tasks_manager.get_task_status(task_id=path_params.task_id)
+    task_status: TaskStatus = tasks_manager.get_task_status(
+        task_id=path_params.task_id, with_task_context=task_context
+    )
     return web.json_response({"data": task_status}, dumps=json_dumps)
 
 
@@ -65,18 +68,25 @@ async def get_task_status(request: web.Request) -> web.Response:
 async def get_task_result(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
+    task_context = get_task_context(request)
 
     # NOTE: this might raise an exception that will be catched by the _error_handlers
     try:
-        task_result = tasks_manager.get_task_result(task_id=path_params.task_id)
+        task_result = tasks_manager.get_task_result(
+            task_id=path_params.task_id, with_task_context=task_context
+        )
         # NOTE: this will fail if the task failed for some reason....
-        await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
+        await tasks_manager.remove_task(
+            path_params.task_id, with_task_context=task_context, reraise_errors=False
+        )
         return task_result
     except (TaskNotFoundError, TaskNotCompletedError):
         raise
     except Exception:
         # the task shall be removed in this case
-        await tasks_manager.remove_task(path_params.task_id, reraise_errors=False)
+        await tasks_manager.remove_task(
+            path_params.task_id, with_task_context=task_context, reraise_errors=False
+        )
         raise
 
 
@@ -84,5 +94,6 @@ async def get_task_result(request: web.Request) -> web.Response:
 async def cancel_and_delete_task(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
-    await tasks_manager.remove_task(path_params.task_id)
+    task_context = get_task_context(request)
+    await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

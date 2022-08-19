@@ -133,7 +133,7 @@ class TasksManager:
         return len(managed_tasks_ids) > 0
 
     def list_tasks(
-        self, with_task_context: Optional[dict[str, Any]] = None
+        self, with_task_context: Optional[dict[str, Any]]
     ) -> list[TrackedTask]:
         tasks = []
         for task_group in self._tasks_groups.values():
@@ -172,22 +172,29 @@ class TasksManager:
 
         return tracked_task
 
-    def _get_tracked_task(self, task_id: TaskId) -> TrackedTask:
+    def _get_tracked_task(
+        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+    ) -> TrackedTask:
         for tasks in self._tasks_groups.values():
             if task_id in tasks:
-                tracked_task = tasks[task_id]
-                return tracked_task
+                if with_task_context and (
+                    tasks[task_id].task_context != with_task_context
+                ):
+                    raise TaskNotFoundError(task_id=task_id)
+                return tasks[task_id]
 
         raise TaskNotFoundError(task_id=task_id)
 
-    def get_task_status(self, task_id: TaskId) -> TaskStatus:
+    def get_task_status(
+        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+    ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
         form the progress
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task: TrackedTask = self._get_tracked_task(task_id)
+        tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
         tracked_task.last_status_check = datetime.utcnow()
 
         task = tracked_task.task
@@ -201,7 +208,9 @@ class TasksManager:
             )
         )
 
-    def get_task_result(self, task_id: TaskId) -> Any:
+    def get_task_result(
+        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+    ) -> Any:
         """
         returns: the result of the task
 
@@ -209,7 +218,7 @@ class TasksManager:
         raises TaskCancelledError if the task was cancelled
         raises TaskNotCompletedError if the task is not completed
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, with_task_context)
 
         try:
             return tracked_task.task.result()
@@ -226,7 +235,7 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, {})
 
         if not tracked_task.task.done():
             raise TaskNotCompletedError(task_id=task_id)
@@ -249,13 +258,15 @@ class TasksManager:
 
         return TaskResult(result=tracked_task.task.result(), error=None)
 
-    async def cancel_task(self, task_id: TaskId) -> None:
+    async def cancel_task(
+        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+    ) -> None:
         """
         cancels the task
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
     async def _cancel_asyncio_task(
@@ -290,11 +301,15 @@ class TasksManager:
             ) from e
 
     async def remove_task(
-        self, task_id: TaskId, *, reraise_errors: bool = True
+        self,
+        task_id: TaskId,
+        with_task_context: Optional[dict[str, Any]],
+        *,
+        reraise_errors: bool = True,
     ) -> None:
         """cancels and removes task"""
         try:
-            tracked_task = self._get_tracked_task(task_id)
+            tracked_task = self._get_tracked_task(task_id, with_task_context)
         except TaskNotFoundError:
             if reraise_errors:
                 raise
@@ -318,7 +333,7 @@ class TasksManager:
 
         for task_id in task_ids_to_remove:
             # when closing we do not care about pending errors
-            await self.remove_task(task_id, reraise_errors=False)
+            await self.remove_task(task_id, None, reraise_errors=False)
 
         await self._cancel_asyncio_task(
             self._stale_tasks_monitor_task, "stale_monitor", reraise_errors=False
