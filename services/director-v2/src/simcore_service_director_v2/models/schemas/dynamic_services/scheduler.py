@@ -223,6 +223,14 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
+    skip_sidecar_monitor_and_removal: bool = Field(
+        False,
+        description=(
+            "Marks the sidecar as untouchable since there was an error and "
+            "important data might be lost. awaits for manual intervention."
+        ),
+    )
+
     # below had already been validated and
     # used only to start the proxy
     dynamic_sidecar_id: Optional[ServiceId] = Field(

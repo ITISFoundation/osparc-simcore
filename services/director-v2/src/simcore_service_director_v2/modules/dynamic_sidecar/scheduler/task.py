@@ -47,8 +47,7 @@ from ..docker_api import (
     are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
-    remove_dynamic_sidecar_network,
-    remove_dynamic_sidecar_stack,
+    is_dynamic_sidecar_stack_missing,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -58,6 +57,7 @@ from ..errors import (
     GenericDockerError,
 )
 from .events import REGISTERED_EVENTS
+from .events_utils import save_and_remove_user_created_services
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ ServiceName = str
 
 
 @dataclass
-class DynamicSidecarsScheduler:
+class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
     app: FastAPI
 
     _lock: Lock = field(default_factory=Lock)
@@ -126,6 +126,7 @@ class DynamicSidecarsScheduler:
     _scheduler_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
+    _observation_counter: int = 0
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -351,12 +352,12 @@ class DynamicSidecarsScheduler:
 
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
 
         async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
 
             if (
                 scheduler_data.dynamic_sidecar.status.current
@@ -369,31 +370,40 @@ class DynamicSidecarsScheduler:
                 #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
                 # 4. service started, and failed on closing -> it cannot be removed safely
 
-                failed_while_saving_state_and_outputs = (
-                    scheduler_data.dynamic_sidecar.service_removal_state.can_save
-                    and scheduler_data.dynamic_sidecar.were_containers_created
-                )
-                if failed_while_saving_state_and_outputs:
+                if scheduler_data.dynamic_sidecar.skip_sidecar_monitor_and_removal:
                     # use-cases: 3, 4
                     # Since user data is important and must be saved, take no further
                     # action and wait for manual intervention from support.
+
+                    # After manual intervention service can now be removed
+                    # from tracking.
+                    if (
+                        # trigger every ~30 seconds to reduce pressure on
+                        # docker swarm engine API.
+                        # NOTE: do not change below order
+                        self._observation_counter % 6 == 0
+                        and await is_dynamic_sidecar_stack_missing(
+                            scheduler_data.node_uuid, dynamic_sidecar_settings
+                        )
+                    ):
+                        # if both proxy and sidecar ar missing at this point it
+                        # is safe to assume that user manually removed them from
+                        # Portainer after cleaning up.
+
+                        # NOTE: saving will fail since there is no dy-sidecar,
+                        # and the save was taken care of by support. Disabling it.
+                        scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
+                            False
+                        )
+                        await save_and_remove_user_created_services(
+                            self.app, scheduler_data
+                        )
+
                     return
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await remove_dynamic_sidecar_stack(
-                    scheduler_data.node_uuid, dynamic_sidecar_settings
-                )
-                await remove_dynamic_sidecar_network(
-                    scheduler_data.dynamic_sidecar_network_name
-                )
-                await self.finish_service_removal(scheduler_data.node_uuid)
-
-                logger.warning(
-                    "cleaned up %s service after error without saving "
-                    "any data (it was not required).",
-                    scheduler_data.node_uuid,
-                )
+                await save_and_remove_user_created_services(self.app, scheduler_data)
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
@@ -484,6 +494,7 @@ class DynamicSidecarsScheduler:
                 )
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
+            self._observation_counter += 1
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
