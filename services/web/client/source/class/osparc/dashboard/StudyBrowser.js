@@ -562,14 +562,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDuplicateMenuButton: function(studyData) {
       const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"));
-      duplicateButton.exclude();
-      osparc.utils.DisabledPlugins.isDuplicateDisabled()
-        .then(isDisabled => {
-          duplicateButton.setVisibility(isDisabled ? "excluded" : "visible");
-        });
-      duplicateButton.addListener("execute", () => {
-        this.__duplicateStudy(studyData);
-      }, this);
+      duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
     },
 

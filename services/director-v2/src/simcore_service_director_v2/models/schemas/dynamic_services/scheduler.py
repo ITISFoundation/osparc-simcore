@@ -10,6 +10,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
+from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from pydantic import (
     AnyHttpUrl,
@@ -142,7 +143,7 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    run_id: UUID = Field(
+    run_id: RunID = Field(
         default_factory=uuid4,
         description=(
             "Used to discriminate between dynamic-sidecar docker resources "
