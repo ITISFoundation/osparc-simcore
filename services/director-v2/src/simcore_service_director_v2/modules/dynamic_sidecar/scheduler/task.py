@@ -46,6 +46,7 @@ from ..docker_api import (
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
     is_dynamic_sidecar_stack_missing,
+    remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -55,8 +56,7 @@ from ..errors import (
     GenericDockerError,
 )
 from ._task_utils import apply_observation_cycle
-from ._utils import cleanup_sidecar_stack_and_resources
-from .events_utils import save_and_remove_user_created_services
+from ._utils import save_and_remove_user_created_services
 
 logger = logging.getLogger(__name__)
 
@@ -327,7 +327,6 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                     # use-cases: 3, 4
                     # Since user data is important and must be saved, take no further
                     # action and wait for manual intervention from support.
-                    return
 
                     # After manual intervention service can now be removed
                     # from tracking.

@@ -52,7 +52,6 @@ from ..errors import EntrypointContainerNotFoundError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
-    cleanup_sidecar_stack_and_resources,
     disabled_directory_watcher,
     fetch_repo_outside_of_request,
     get_director_v0_client,

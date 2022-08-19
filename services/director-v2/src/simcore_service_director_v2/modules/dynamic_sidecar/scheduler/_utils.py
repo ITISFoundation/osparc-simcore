@@ -9,11 +9,13 @@ from servicelib.fastapi.long_running_tasks.client import TaskClientResultError
 from servicelib.utils import logged_gather
 
 from ....api.dependencies.database import get_base_repository
-from ....core.settings import DynamicSidecarSettings
 from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import DockerContainerInspect, SchedulerData
-from ....models.schemas.dynamic_services.scheduler import DockerStatus, SchedulerData
+from ....models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+    SchedulerData,
+)
 from ...db.repositories import BaseRepository
 from ...director_v0 import DirectorV0Client
 from ...node_rights import NodeRightsManager, ResourceName
@@ -26,8 +28,10 @@ from ..docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
+    remove_volumes_from_node,
     try_to_remove_network,
 )
+from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +48,6 @@ logger = logging.getLogger(__name__)
 # - study is being opened (state and outputs are pulled)
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
-from ..docker_api import (
-    remove_dynamic_sidecar_network,
-    remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
-)
-from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 
 @asynccontextmanager
@@ -157,6 +155,7 @@ async def save_and_remove_user_created_services(
                     )
 
                 await logged_gather(*tasks, max_concurrency=2)
+                scheduler_data.dynamic_sidecar.was_data_saved_when_closing = True
 
                 logger.info("Ports data pushed by dynamic-sidecar")
             except (BaseClientHTTPError, TaskClientResultError) as e:
@@ -204,9 +203,32 @@ async def save_and_remove_user_created_services(
     # remove network
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
-    # NOTE: for future attempts, volumes cannot be cleaned up
-    # since they are local to the node.
-    # That's why anonymous volumes are used!
+    # NOTE: if data was correctly saved it is safe to remove the volumes
+    # In case of manual support intervention this will be an issue.
+    if scheduler_data.dynamic_sidecar.was_data_saved_when_closing:
+        # Remove all dy-sidecar associated volumes from node
+        unique_volume_names = [
+            DynamicSidecarVolumesPathsResolver.source(
+                path=volume_path,
+                node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.dynamic_sidecar.run_id,
+            )
+            for volume_path in [
+                DY_SIDECAR_SHARED_STORE_PATH,
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        ]
+        assert scheduler_data.docker_node_id  # nosec
+        await remove_volumes_from_node(
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            volume_names=unique_volume_names,
+            docker_node_id=scheduler_data.docker_node_id,
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_uuid=scheduler_data.node_uuid,
+        )
 
     logger.debug(
         "Removed dynamic-sidecar created services for '%s'",
@@ -231,44 +253,3 @@ async def save_and_remove_user_created_services(
         scheduler_data.node_uuid
     )
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-
-
-async def cleanup_sidecar_stack_and_resources(
-    dynamic_sidecar_settings: DynamicSidecarSettings, scheduler_data: SchedulerData
-) -> None:
-    # remove the 2 services
-    await remove_dynamic_sidecar_stack(
-        node_uuid=scheduler_data.node_uuid,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-    )
-    # remove network
-    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
-
-    # Remove all dy-sidecar associated volumes from node
-    unique_volume_names = [
-        DynamicSidecarVolumesPathsResolver.source(
-            path=volume_path,
-            node_uuid=scheduler_data.node_uuid,
-            run_id=scheduler_data.dynamic_sidecar.run_id,
-        )
-        for volume_path in [
-            DY_SIDECAR_SHARED_STORE_PATH,
-            scheduler_data.paths_mapping.inputs_path,
-            scheduler_data.paths_mapping.outputs_path,
-        ]
-        + scheduler_data.paths_mapping.state_paths
-    ]
-    assert scheduler_data.docker_node_id  # nosec
-    # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
-    # it does not remove the volumes. Is this something we want?
-    # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
-    # otherwise keep them in place!!!!!
-    # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
-    await remove_volumes_from_node(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-        volume_names=unique_volume_names,
-        docker_node_id=scheduler_data.docker_node_id,
-        user_id=scheduler_data.user_id,
-        project_id=scheduler_data.project_id,
-        node_uuid=scheduler_data.node_uuid,
-    )

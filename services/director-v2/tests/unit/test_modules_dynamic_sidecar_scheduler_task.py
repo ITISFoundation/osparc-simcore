@@ -20,7 +20,10 @@ from respx.router import MockRouter
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
+    DynamicSidecarClient,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils, task
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
@@ -28,11 +31,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
     DynamicSidecarsScheduler,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    DynamicSidecarClient,
-)
-from pytest_mock import MockerFixture
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import task
 
 SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
 
