@@ -45,6 +45,7 @@ products = sa.Table(
         sa.String,
         nullable=True,
         doc="String Identifier (SID) to a phone from which SMS are sent for this product."
+        "The SID of the Messaging Service you want to associate with the message."
         "When set to None, this feature is disabled.",
     ),
     sa.Column(
