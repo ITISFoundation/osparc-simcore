@@ -96,6 +96,9 @@ def get_dynamic_sidecar_spec(
     The dynamic-sidecar is responsible for managing the lifecycle
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
+
+    returns: the compose the request body for service creation
+    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
