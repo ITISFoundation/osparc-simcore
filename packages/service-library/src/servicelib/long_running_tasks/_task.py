@@ -143,7 +143,7 @@ class TasksManager:
         task_name: TaskName,
         task: Task,
         task_progress: TaskProgress,
-        task_context: dict,
+        task_context: dict[str, Any],
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
@@ -320,7 +320,7 @@ def start_task(
     *,
     unique: bool = False,
     task_name: Optional[str] = None,
-    handler_context: Optional[dict[str, Any]] = dict(),
+    handler_context: dict[str, Any] = dict(),
     **handler_kwargs,
 ) -> TaskId:
     """
