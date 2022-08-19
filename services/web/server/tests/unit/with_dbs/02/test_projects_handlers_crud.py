@@ -7,7 +7,7 @@
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
@@ -18,10 +18,8 @@ from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.projects_handlers_crud import (
-    OVERRIDABLE_DOCUMENT_KEYS,
-)
-from simcore_service_webserver.utils import now_str, to_datetime
+from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
 API_PREFIX = "/" + api_version_prefix
@@ -137,103 +135,6 @@ async def _assert_get_same_project(
     return data
 
 
-async def _new_project(
-    client,
-    expected_response: type[web.HTTPException],
-    logged_user: dict[str, str],
-    primary_group: dict[str, str],
-    *,
-    project: Optional[dict] = None,
-    from_study: Optional[dict] = None,
-) -> dict:
-    # POST /v0/projects
-    url = client.app.router["create_projects"].url_for()
-    assert str(url) == f"{API_PREFIX}/projects"
-    if from_study:
-        url = url.with_query(from_study=from_study["uuid"])
-
-    # Pre-defined fields imposed by required properties in schema
-    project_data = {}
-    expected_data = {}
-    if from_study:
-        # access rights are replaced
-        expected_data = deepcopy(from_study)
-        expected_data["accessRights"] = {}
-        expected_data["name"] = f"{from_study['name']} (Copy)"
-
-    if not from_study or project:
-        project_data = {
-            "uuid": "0000000-invalid-uuid",
-            "name": "Minimal name",
-            "description": "this description should not change",
-            "prjOwner": "me but I will be removed anyway",
-            "creationDate": now_str(),
-            "lastChangeDate": now_str(),
-            "thumbnail": "",
-            "accessRights": {},
-            "workbench": {},
-            "tags": [],
-            "classifiers": [],
-            "ui": {},
-            "dev": {},
-            "quality": {},
-        }
-        if project:
-            project_data.update(project)
-
-        for key in project_data:
-            expected_data[key] = project_data[key]
-            if (
-                key in OVERRIDABLE_DOCUMENT_KEYS
-                and not project_data[key]
-                and from_study
-            ):
-                expected_data[key] = from_study[key]
-
-    resp = await client.post(url, json=project_data)
-
-    new_project, error = await assert_status(resp, expected_response)
-    if not error:
-        # has project state
-        assert not ProjectState(
-            **new_project.pop("state")
-        ).locked.value, "Newly created projects should be unlocked"
-
-        # updated fields
-        assert expected_data["uuid"] != new_project["uuid"]
-        assert (
-            new_project["prjOwner"] == logged_user["email"]
-        )  # the project owner is assigned the user id e-mail
-        assert to_datetime(expected_data["creationDate"]) < to_datetime(
-            new_project["creationDate"]
-        )
-        assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(
-            new_project["lastChangeDate"]
-        )
-        # the access rights are set to use the logged user primary group + whatever was inside the project
-        expected_data["accessRights"].update(
-            {str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
-        )
-        assert new_project["accessRights"] == expected_data["accessRights"]
-
-        # invariant fields
-        modified_fields = [
-            "uuid",
-            "prjOwner",
-            "creationDate",
-            "lastChangeDate",
-            "accessRights",
-            "workbench" if from_study else None,
-            "ui" if from_study else None,
-        ]
-
-        for key in new_project.keys():
-            if key not in modified_fields:
-                assert expected_data[key] == new_project[key]
-
-    return new_project
-
-
 async def _replace_project(
     client, project_update: dict, expected: type[web.HTTPException]
 ) -> dict:
@@ -341,9 +242,10 @@ async def test_new_project(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    new_project = await _new_project(
-        client, expected.created, logged_user, primary_group
+    await request_create_project(
+        client, expected.accepted, expected.created, logged_user, primary_group
     )
 
 
@@ -356,9 +258,11 @@ async def test_new_project_from_template(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    new_project = await _new_project(
+    new_project = await request_create_project(
         client,
+        expected.accepted,
         expected.created,
         logged_user,
         primary_group,
@@ -384,10 +288,12 @@ async def test_new_project_from_other_study(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     catalog_subsystem_mock([user_project])
-    new_project = await _new_project(
+    new_project = await request_create_project(
         client,
+        expected.accepted,
         expected.created,
         logged_user,
         primary_group,
@@ -414,6 +320,7 @@ async def test_new_project_from_template_with_body(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     predefined = {
         "uuid": "",
@@ -434,8 +341,9 @@ async def test_new_project_from_template_with_body(
         "tags": [],
         "classifiers": [],
     }
-    project = await _new_project(
+    project = await request_create_project(
         client,
+        expected.accepted,
         expected.created,
         logged_user,
         primary_group,
@@ -470,20 +378,21 @@ async def test_new_template_from_project(
     storage_subsystem_mock: MockedStorageSubsystem,
     catalog_subsystem_mock: Callable,
     project_db_cleaner: None,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
-    # POST /v0/projects?as_template={project_id}
-    url = (
-        client.app.router["create_projects"]
-        .url_for()
-        .with_query(as_template=user_project["uuid"])
+    new_template_prj = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+        as_template=True,
     )
 
-    resp = await client.post(f"{url}")
-    data, error = await assert_status(resp, expected.created)
-
-    if not error:
-        template_project = data
+    if new_template_prj:
+        template_project = new_template_prj
         catalog_subsystem_mock([template_project])
 
         templates, *_ = await _list_projects(client, web.HTTPOk, {"type": "template"})
@@ -530,12 +439,19 @@ async def test_new_template_from_project(
         "tags": [],
         "classifiers": [],
     }
+    new_template_prj = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        project=predefined,
+        from_study=user_project,
+        as_template=True,
+    )
 
-    resp = await client.post(f"{url}", json=predefined)
-    data, error = await assert_status(resp, expected.created)
-
-    if not error:
-        template_project = data
+    if new_template_prj:
+        template_project = new_template_prj
 
         # uses predefined
         assert template_project["name"] == predefined["name"]

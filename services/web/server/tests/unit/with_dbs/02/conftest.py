@@ -26,6 +26,9 @@ from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
@@ -77,6 +80,7 @@ def client(
     # setup app
 
     assert setup_settings(app)
+    setup_long_running_tasks(app, router_prefix="/tasks")
     setup_db(app)
     setup_session(app)
     setup_security(app)

@@ -5,6 +5,7 @@ import json
 from collections import namedtuple
 from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterable,
@@ -165,7 +166,9 @@ async def httpx_async_client(
     backend_url: AnyHttpUrl,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers: None,
+    ensure_shared_store_dir: Path,
 ) -> AsyncIterable[AsyncClient]:
+    # crete dir here
     async with AsyncClient(
         app=app,
         base_url=backend_url,
@@ -356,7 +359,7 @@ async def test_create_containers_task(
     ) as result:
         assert shared_store.container_names == result
 
-    assert last_progress_message == ("done", 1)
+    assert last_progress_message == ("finished", 1.0)
 
 
 async def test_create_containers_task_invalid_yaml_spec(

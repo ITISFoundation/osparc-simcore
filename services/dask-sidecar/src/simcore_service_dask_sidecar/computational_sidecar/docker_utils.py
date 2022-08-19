@@ -4,7 +4,6 @@ import json
 import re
 import socket
 from contextlib import asynccontextmanager
-from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -32,6 +31,7 @@ from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from servicelib.docker_utils import to_datetime
 from settings_library.s3 import S3Settings
 
 from ..boot_mode import BootMode
@@ -122,20 +122,6 @@ async def managed_container(
                 container or name,
             )
             raise
-
-
-DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
-
-
-def to_datetime(docker_timestamp: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    # NOTE: must be in UNIX Timestamp format
-    return datetime.strptime(
-        docker_timestamp[:DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
-    )
 
 
 DOCKER_LOG_REGEXP = re.compile(
