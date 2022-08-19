@@ -7,6 +7,10 @@ self._to_observe is protected by an asyncio Lock
 1. a background task runs every X seconds and adds all the current scheduled services in an asyncio.Queue
 2. a second background task processes the entries in the Queue and starts a task per service
   a. if the service is already under "observation" then it will skip this cycle
+3. a third background task dealing with ensuring no `volumes removal services`
+    remain in the system in case the director-v2:
+    - is restarted before while the service is running
+    - an error occurs while removing one such services
 """
 
 import asyncio
