@@ -113,21 +113,6 @@ def server_routes() -> web.RouteTableDef:
     return routes
 
 
-class _TestQueryParam(BaseModel):
-    user_id: Optional[int] = None
-
-
-def pass_user_id_decorator(handler: Handler):
-    @wraps(handler)
-    async def _test_task_context_decorator(request: web.Request) -> web.StreamResponse:
-        """this task context callback tries to get the user_id from the query if available"""
-        query_param = parse_request_query_parameters_as(_TestQueryParam, request)
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.dict()
-        return await handler(request)
-
-    return _test_task_context_decorator
-
-
 @pytest.fixture
 def app(server_routes: web.RouteTableDef) -> web.Application:
     app = web.Application()
@@ -152,34 +137,21 @@ def client(
     )
 
 
-@pytest.fixture
-def app_with_task_context(server_routes: web.RouteTableDef) -> web.Application:
-    app = web.Application()
-    app.add_routes(server_routes)
-    # this adds enveloping and error middlewares
-    append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(
-        app,
-        router_prefix=TASKS_ROUTER_PREFIX,
-        task_request_context_decorator=pass_user_id_decorator,
-    )
-
-    return app
-
-
-@pytest.fixture
-def client_with_task_context(
-    event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
-    unused_tcp_port_factory: Callable,
-    app_with_task_context: web.Application,
-) -> TestClient:
-
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
-        )
-    )
+@pytest.mark.parametrize(
+    "method, route_name",
+    [
+        ("GET", "get_task_status"),
+        ("GET", "get_task_result"),
+        ("DELETE", "cancel_and_delete_task"),
+    ],
+)
+async def test_get_task_wrong_task_id_raises_not_found(
+    client: TestClient, method: str, route_name: str
+):
+    assert client.app
+    url = client.app.router[route_name].url_for(task_id="fake_task_id")
+    result = await client.get(f"{url}")
+    await assert_status(result, web.HTTPNotFound)
 
 
 async def test_workflow(client: TestClient):
@@ -362,6 +334,60 @@ async def test_list_tasks(client: TestClient):
         assert not error
         list_of_tasks = parse_obj_as(list[TaskGet], data)
         assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)
+
+
+# WITH TASK CONTEXT
+# NOTE: as the long running task framework may be used in any number of services
+# in some cases there might be specific so-called task contexts.
+# For instance in the webserver the tasks are linked to a specific user_id and product
+# that is retrieved through some complex method
+# all the subsequent routes to GET tasks or GET tasks/{task_id}, ... must only be
+# retrieved if they satisfy to this context (i.e. only user_id=3 can see the tasks of user_id=3)
+
+
+class _TestQueryParam(BaseModel):
+    user_id: Optional[int] = None
+
+
+def _pass_user_id_decorator(handler: Handler):
+    @wraps(handler)
+    async def _test_task_context_decorator(request: web.Request) -> web.StreamResponse:
+        """this task context callback tries to get the user_id from the query if available"""
+        query_param = parse_request_query_parameters_as(_TestQueryParam, request)
+        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.dict()
+        return await handler(request)
+
+    return _test_task_context_decorator
+
+
+@pytest.fixture
+def app_with_task_context(server_routes: web.RouteTableDef) -> web.Application:
+    app = web.Application()
+    app.add_routes(server_routes)
+    # this adds enveloping and error middlewares
+    append_rest_middlewares(app, api_version="")
+    long_running_tasks.server.setup(
+        app,
+        router_prefix=TASKS_ROUTER_PREFIX,
+        task_request_context_decorator=_pass_user_id_decorator,
+    )
+
+    return app
+
+
+@pytest.fixture
+def client_with_task_context(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
+    app_with_task_context: web.Application,
+) -> TestClient:
+
+    return event_loop.run_until_complete(
+        aiohttp_client(
+            app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
+        )
+    )
 
 
 async def test_list_tasks_with_context(client_with_task_context: TestClient):
