@@ -97,20 +97,18 @@ def _to_statics(product: Product) -> dict[str, Any]:
     and prefixes it with its name to produce
     items for statics.json
     """
-    return {
-        f"{product.name}_{key}": value
-        for key, value in product.dict(
-            # public fields sent to the front-end
-            include={
-                "display_name",
-                "support_email",
-                "manual_url",
-                "manual_extra_url",
-                "issues_new_url",
-                "issues_login_url",
-            }
-        )
-    }
+    # public fields sent to the front-end
+    public_selection = product.dict(
+        include={
+            "display_name",
+            "support_email",
+            "manual_url",
+            "manual_extra_url",
+            "issues_new_url",
+            "issues_login_url",
+        }
+    )
+    return {f"{product.name}_{key}": value for key, value in public_selection.items()}
 
 
 async def create_statics_json(app: web.Application) -> None:
@@ -124,6 +122,7 @@ async def create_statics_json(app: web.Application) -> None:
 
     # Adds products defined in db
     products: dict[str, Product] = app[APP_PRODUCTS_KEY]
+    assert products  # nosec
     for product in products.values():
         log.debug("Product %s", product.name)
         info.update(**_to_statics(product))

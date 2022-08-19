@@ -20,7 +20,9 @@ from yarl import URL
 @pytest.fixture()
 def mock_postgres_product_table():
     # NOTE: try here your product's host_regex before adding them in the database!
-    column_defaults = {c.name: c.default.arg for c in products.columns if c.default}
+    column_defaults = {
+        c.name: c.server_default.arg for c in products.columns if c.server_default
+    }
 
     return [
         dict(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])", **column_defaults),
