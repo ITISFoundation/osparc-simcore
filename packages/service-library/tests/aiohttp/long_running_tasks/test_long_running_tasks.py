@@ -42,7 +42,6 @@ async def _string_list_task(
     sleep_time: float,
     fail: bool,
 ) -> web.Response:
-    task_progress.publish(message="starting", percent=0)
     generated_strings = []
     for index in range(num_strings):
         generated_strings.append(f"{index}")
@@ -51,10 +50,10 @@ async def _string_list_task(
         if fail:
             raise RuntimeError("We were asked to fail!!")
 
-            # NOTE: this code is used just for the sake of not returning the default 200
-            return web.json_response(
-                data={"data": generated_strings}, status=web.HTTPCreated.status_code
-            )
+    # NOTE: this code is used just for the sake of not returning the default 200
+    return web.json_response(
+        data={"data": generated_strings}, status=web.HTTPCreated.status_code
+    )
 
 
 @pytest.fixture
@@ -76,7 +75,6 @@ def server_routes() -> web.RouteTableDef:
             task_manager,
             _string_list_task,
             handler_context={
-                "name": f"{request.method} {request.rel_url}",
                 "user_id": 123,
             },
             num_strings=query_params.num_strings,
