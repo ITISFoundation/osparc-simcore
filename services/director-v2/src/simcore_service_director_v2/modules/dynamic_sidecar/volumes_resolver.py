@@ -140,29 +140,20 @@ class DynamicSidecarVolumesPathsResolver:
     @classmethod
     def mount_shared_store(
         cls,
-        swarm_stack_name: str,
-        node_uuid: NodeID,
         run_id: RunID,
+        node_uuid: NodeID,
         project_id: ProjectID,
         user_id: UserID,
+        swarm_stack_name: str,
     ) -> dict[str, Any]:
-        return {
-            "Source": cls.source(DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id),
-            "Target": cls.target(DY_SIDECAR_SHARED_STORE_PATH),
-            "Type": "volume",
-            "VolumeOptions": {
-                "Labels": {
-                    "source": cls.source(
-                        DY_SIDECAR_SHARED_STORE_PATH, node_uuid, run_id
-                    ),
-                    "run_id": f"{run_id}",
-                    "node_uuid": f"{node_uuid}",
-                    "study_id": f"{project_id}",
-                    "user_id": f"{user_id}",
-                    "swarm_stack_name": swarm_stack_name,
-                }
-            },
-        }
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=DY_SIDECAR_SHARED_STORE_PATH,
+            node_uuid=node_uuid,
+            run_id=run_id,
+            project_id=project_id,
+            user_id=user_id,
+        )
 
     @classmethod
     def mount_r_clone(
