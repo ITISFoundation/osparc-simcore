@@ -132,10 +132,21 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
-    def list_tasks(self) -> list[TrackedTask]:
+    def list_tasks(
+        self, with_task_context: dict[str, Any] = dict()
+    ) -> list[TrackedTask]:
         tasks = []
         for task_group in self._tasks_groups.values():
-            tasks.extend(task_group.values())
+            if not with_task_context:
+                tasks.extend(task_group.values())
+            else:
+                tasks.extend(
+                    [
+                        task
+                        for task in task_group.values()
+                        if task.task_context == with_task_context
+                    ]
+                )
         return tasks
 
     def add_task(

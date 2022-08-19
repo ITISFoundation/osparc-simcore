@@ -288,3 +288,64 @@ async def test_remove_unknown_task(tasks_manager: TasksManager):
         await tasks_manager.remove_task("invalid_id")
 
     await tasks_manager.remove_task("invalid_id", reraise_errors=False)
+
+
+async def test_list_tasks(tasks_manager: TasksManager):
+    assert tasks_manager.list_tasks() == []
+    # start a bunch of tasks
+    NUM_TASKS = 10
+    task_ids = []
+    for _ in range(NUM_TASKS):
+        task_ids.append(
+            start_task(
+                tasks_manager=tasks_manager,
+                handler=a_background_task,
+                raise_when_finished=False,
+                total_sleep=10,
+            )
+        )
+    assert len(tasks_manager.list_tasks()) == NUM_TASKS
+    for task_index, task_id in enumerate(task_ids):
+        await tasks_manager.remove_task(task_id)
+        assert len(tasks_manager.list_tasks()) == NUM_TASKS - (task_index + 1)
+
+
+async def test_list_tasks_filtering(tasks_manager: TasksManager):
+    start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+    )
+    start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+        handler_context={"user_id": 213},
+    )
+    start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+        handler_context={"user_id": 213, "product": "osparc"},
+    )
+    assert len(tasks_manager.list_tasks()) == 3
+    assert len(tasks_manager.list_tasks(with_task_context={"user_id": 213})) == 1
+    assert (
+        len(
+            tasks_manager.list_tasks(
+                with_task_context={"user_id": 213, "product": "osparc"}
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            tasks_manager.list_tasks(
+                with_task_context={"user_id": 120, "product": "osparc"}
+            )
+        )
+        == 0
+    )
