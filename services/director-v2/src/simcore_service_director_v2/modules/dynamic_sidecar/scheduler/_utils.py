@@ -100,6 +100,11 @@ async def cleanup_sidecar_stack_and_resources(
         + scheduler_data.paths_mapping.state_paths
     ]
     assert scheduler_data.docker_node_id  # nosec
+    # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
+    # it does not remove the volumes. Is this something we want?
+    # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
+    # otherwise keep them in place!!!!!
+    # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
     await remove_volumes_from_node(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=unique_volume_names,
