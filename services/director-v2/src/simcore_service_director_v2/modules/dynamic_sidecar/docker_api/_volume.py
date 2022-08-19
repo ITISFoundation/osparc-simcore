@@ -17,6 +17,9 @@ from ..docker_service_specs.volume_remover import (
     spec_volume_removal_service,
 )
 from ._utils import docker_client
+from models_library.projects import ProjectID
+from models_library.users import UserID
+from models_library.projects_nodes_io import NodeID
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +38,9 @@ async def remove_volumes_from_node(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     volume_names: list[str],
     docker_node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     *,
     volume_removal_attempts: int = 15,
     sleep_between_attempts_s: int = 2,
@@ -66,6 +72,9 @@ async def remove_volumes_from_node(
         service_spec = spec_volume_removal_service(
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             docker_node_id=docker_node_id,
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
             volume_names=volume_names,
             docker_version=docker_version,
             volume_removal_attempts=volume_removal_attempts,

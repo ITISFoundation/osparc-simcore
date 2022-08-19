@@ -857,6 +857,9 @@ async def test_remove_volume_from_node_ok(
     docker: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     for named_volume in named_volumes:
@@ -866,6 +869,9 @@ async def test_remove_volume_from_node_ok(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=named_volumes,
         docker_node_id=target_node_id,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
     )
     assert volume_removal_result is True
 
@@ -878,6 +884,9 @@ async def test_remove_volume_from_node_no_volume_found(
     docker: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
@@ -890,6 +899,9 @@ async def test_remove_volume_from_node_no_volume_found(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=volumes_to_remove,
         docker_node_id=target_node_id,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
         volume_removal_attempts=2,
         sleep_between_attempts_s=1,
     )
@@ -922,6 +934,9 @@ async def ensure_fake_volume_removal_services(
     docker: aiodocker.Docker,
     docker_version: DockerVersion,
     target_node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     volume_removal_services_names: list[str],
     dynamic_sidecar_settings: DynamicSidecarSettings,
     service_timeout_s: int,
@@ -933,6 +948,9 @@ async def ensure_fake_volume_removal_services(
         service_spec = spec_volume_removal_service(
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             docker_node_id=target_node_id,
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
             volume_names=[],
             docker_version=docker_version,
             volume_removal_attempts=0,

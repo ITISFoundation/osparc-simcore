@@ -13,6 +13,9 @@ from models_library.services_resources import (
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
+from models_library.projects import ProjectID
+from models_library.users import UserID
+from models_library.projects_nodes_io import NodeID
 
 
 class DockerVersion(str):
@@ -79,6 +82,9 @@ fi
 def spec_volume_removal_service(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     docker_node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     volume_names: list[str],
     docker_version: DockerVersion,
     *,
@@ -124,6 +130,9 @@ def spec_volume_removal_service(
             "sleep_between_attempts_s": f"{sleep_between_attempts_s}",
             "service_timeout_s": f"{service_timeout_s}",
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
+            "user_id": f"{user_id}",
+            "study_id": f"{project_id}",
+            "node_id": f"{node_uuid}",
         },
         "name": f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{uuid4()}",
         "task_template": {
