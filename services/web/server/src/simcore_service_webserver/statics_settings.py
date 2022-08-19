@@ -2,7 +2,7 @@
 
     Typically dumped in statics.json
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
@@ -19,7 +19,7 @@ class OsparcDependency(BaseModel):
     thumbnail: Optional[AnyHttpUrl] = None
 
 
-def discover_osparc_dependencies() -> List[OsparcDependency]:
+def discover_osparc_dependencies() -> list[OsparcDependency]:
     # TODO: move this data to a file
     return [
         OsparcDependency(
@@ -78,7 +78,7 @@ class FrontEndAppSettings(BaseCustomSettings):
     # urls to manuals
     WEBSERVER_MANUAL_MAIN_URL: Optional[HttpUrl] = None
     WEBSERVER_MANUAL_EXTRA_URL: Optional[HttpUrl] = None
-    WEBSERVER_MANUAL_TI_URL: Optional[HttpUrl] = None
+    WEBSERVER_MANUAL_TI_URL: Optional[HttpUrl] = None  # TODO: Move this to products  db
 
     # extra feedback url
     WEBSERVER_FEEDBACK_FORM_URL: Optional[HttpUrl] = None
@@ -89,14 +89,18 @@ class FrontEndAppSettings(BaseCustomSettings):
     # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
     # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
     WEBSERVER_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
-    WEBSERVER_S4L_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
-    WEBSERVER_TIS_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
+    WEBSERVER_S4L_FOGBUGZ_NEWCASE_URL: Optional[
+        HttpUrl
+    ] = None  # TODO: Move this to products  db
+    WEBSERVER_TIS_FOGBUGZ_NEWCASE_URL: Optional[
+        HttpUrl
+    ] = None  # TODO: Move this to products  db
 
-    WEBSERVER_OSPARC_DEPENDENCIES: List[OsparcDependency] = Field(
+    WEBSERVER_OSPARC_DEPENDENCIES: list[OsparcDependency] = Field(
         default_factory=discover_osparc_dependencies
     )
 
-    def to_statics(self) -> Dict[str, Any]:
+    def to_statics(self) -> dict[str, Any]:
         data = self.dict(
             exclude_none=True,
             by_alias=True,

@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
+from simcore_postgres_database.webserver_models import products
 from simcore_service_webserver._constants import (
     APP_PRODUCTS_KEY,
     RQ_PRODUCT_KEY,
@@ -18,14 +19,19 @@ from yarl import URL
 
 @pytest.fixture()
 def mock_postgres_product_table():
-    # NOTE: try here your product host_regex before adding them in the database!
+    # NOTE: try here your product's host_regex before adding them in the database!
+    column_defaults = {c.name: c.default.arg for c in products.columns if c.default}
+
     return [
-        dict(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])"),
+        dict(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])", **column_defaults),
         dict(
             name="s4l",
             host_regex=r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)",
+            **column_defaults
         ),
-        dict(name="tis", host_regex=r"(^tis[\.-])|(^ti-solutions\.)"),
+        dict(
+            name="tis", host_regex=r"(^tis[\.-])|(^ti-solutions\.)", **column_defaults
+        ),
     ]
 
 
@@ -37,9 +43,9 @@ def mock_app(mock_postgres_product_table):
             self.middlewares = []
 
     mock_app = MockApp()
-    mock_app[APP_PRODUCTS_KEY] = [
-        Product(**entry) for entry in mock_postgres_product_table
-    ]
+    mock_app[APP_PRODUCTS_KEY] = {
+        entry["name"]: Product(**entry) for entry in mock_postgres_product_table
+    }
 
     return mock_app
 
