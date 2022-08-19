@@ -2,6 +2,9 @@ import logging
 from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.docker_utils import to_datetime
 from tenacity import TryAgain
@@ -17,9 +20,6 @@ from ..docker_service_specs.volume_remover import (
     spec_volume_removal_service,
 )
 from ._utils import docker_client
-from models_library.projects import ProjectID
-from models_library.users import UserID
-from models_library.projects_nodes_io import NodeID
 
 log = logging.getLogger(__name__)
 

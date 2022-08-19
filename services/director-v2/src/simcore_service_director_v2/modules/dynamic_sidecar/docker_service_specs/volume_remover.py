@@ -4,18 +4,18 @@ from asyncio.log import logger
 from uuid import uuid4
 
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     CPU_10_PERCENT,
     CPU_100_PERCENT,
     MEMORY_50MB,
     MEMORY_250MB,
 )
+from models_library.users import UserID
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from models_library.projects import ProjectID
-from models_library.users import UserID
-from models_library.projects_nodes_io import NodeID
 
 
 class DockerVersion(str):

@@ -30,11 +30,7 @@ from models_library.service_settings_labels import RestartPolicy
 from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
-from ....core.settings import (
-    DynamicServicesSchedulerSettings,
-    DynamicServicesSettings,
-    DynamicSidecarSettings,
-)
+from ....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
 from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
@@ -45,10 +41,8 @@ from ..api_client import (
     ClientHttpError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    get_dynamic_sidecar_service_health,
 )
 from ..docker_api import (
-    are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
     remove_pending_volume_removal_services,
@@ -60,57 +54,10 @@ from ..errors import (
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
+from ._task_utils import apply_observation_cycle
 from ._utils import cleanup_sidecar_stack_and_resources
-from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
-
-
-async def _apply_observation_cycle(
-    app: FastAPI, scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData
-) -> None:
-    """
-    fetches status for service and then processes all the registered events
-    and updates the status back
-    """
-    dynamic_services_settings: DynamicServicesSettings = (
-        app.state.settings.DYNAMIC_SERVICES
-    )
-    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
-    initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
-
-    if (  # do not refactor, second part of "and condition" is skiped most times
-        scheduler_data.dynamic_sidecar.were_containers_created
-        and not await are_all_services_present(
-            node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
-        )
-    ):
-        # NOTE: once marked for removal the observation cycle needs
-        # to continue in order for the service to be removed
-        logger.warning(
-            "Removing service %s from observation", scheduler_data.service_name
-        )
-        await scheduler.mark_service_for_removal(
-            node_uuid=scheduler_data.node_uuid,
-            can_save=scheduler_data.dynamic_sidecar.can_save_state,
-        )
-    await get_dynamic_sidecar_service_health(app, scheduler_data)
-
-    for dynamic_scheduler_event in REGISTERED_EVENTS:
-        if await dynamic_scheduler_event.will_trigger(
-            app=app, scheduler_data=scheduler_data
-        ):
-            # event.action will apply changes to the output_scheduler_data
-            await dynamic_scheduler_event.action(app, scheduler_data)
-
-    # check if the status of the services has changed from OK
-    if initial_status != scheduler_data.dynamic_sidecar.status:
-        logger.info(
-            "Service %s overall status changed to %s",
-            scheduler_data.service_name,
-            scheduler_data.dynamic_sidecar.status,
-        )
 
 
 ServiceName = str
@@ -400,7 +347,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
-                await _apply_observation_cycle(self.app, self, scheduler_data)
+                await apply_observation_cycle(self.app, self, scheduler_data)
                 logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover

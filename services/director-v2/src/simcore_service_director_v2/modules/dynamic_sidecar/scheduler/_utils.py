@@ -106,5 +106,7 @@ async def cleanup_sidecar_stack_and_resources(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=unique_volume_names,
         docker_node_id=scheduler_data.docker_node_id,
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_uuid=scheduler_data.node_uuid,
     )
-    scheduler_data.project_id
