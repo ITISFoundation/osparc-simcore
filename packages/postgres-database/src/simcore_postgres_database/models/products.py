@@ -51,7 +51,7 @@ products = sa.Table(
         "manual_url",
         sa.String,
         nullable=False,
-        default="http://docs.osparc.io/",
+        default="https://itisfoundation.github.io/osparc-manual/",
         doc="URL to main product's manual",
     ),
     sa.Column(
