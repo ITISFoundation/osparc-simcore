@@ -22,7 +22,7 @@ from pydantic import BaseModel, parse_obj_as
 # TESTS
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
-from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.json_serialization import json_dumps
@@ -34,6 +34,23 @@ from yarl import URL
 
 TASKS_ROUTER_PREFIX: Final[str] = "/futures"
 LONG_RUNNING_TASK_ENTRYPOINT: Final[str] = "long_running_task"
+
+
+async def _wait_for_task_to_finish(client: TestClient, task_id: TaskId):
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+            data, error = await assert_status(result, web.HTTPOk)
+            assert data
+            assert not error
+            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+            assert task_status
+            assert task_status.done
 
 
 async def _string_list_task(
@@ -189,20 +206,8 @@ async def test_failing_task_returns_error(client: TestClient):
     assert not error
     task_id = parse_obj_as(long_running_tasks.server.TaskId, data)
     # wait for it to finish
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
-            data, error = await assert_status(result, web.HTTPOk)
-            assert data
-            assert not error
-            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
-            assert task_status
-            assert task_status.done
+    await _wait_for_task_to_finish(client, task_id)
+    # get the result
     result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
     data, error = await assert_status(result, web.HTTPInternalServerError)
     assert not data
@@ -261,7 +266,7 @@ async def test_cancel_workflow(client: TestClient):
     await assert_status(result, web.HTTPNotFound)
 
 
-async def test_list_tasks(client: TestClient):
+async def test_list_tasks_empty_list(client: TestClient):
     # initially empty
     list_url = URL(f"{TASKS_ROUTER_PREFIX}")
     result = await client.get(f"{list_url}")
@@ -269,6 +274,8 @@ async def test_list_tasks(client: TestClient):
     assert not error
     assert data == []
 
+
+async def test_list_tasks(client: TestClient):
     assert client.app
     url = (
         client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
@@ -279,14 +286,19 @@ async def test_list_tasks(client: TestClient):
     # now start a few tasks
     NUM_TASKS = 10
     results = await asyncio.gather(*(client.post(f"{url}") for _ in range(NUM_TASKS)))
-    await asyncio.gather(
+    results = await asyncio.gather(
         *(assert_status(result, web.HTTPAccepted) for result in results)
     )
 
-    #
+    # check we have the full list
     list_url = URL(f"{TASKS_ROUTER_PREFIX}")
     result = await client.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
     list_of_tasks = parse_obj_as(list[TaskGet], data)
     assert len(list_of_tasks) == NUM_TASKS
+
+    # now wait for them to finish
+    await asyncio.gather(
+        *(_wait_for_task_to_finish(client, data) for data, error in results)
+    )
