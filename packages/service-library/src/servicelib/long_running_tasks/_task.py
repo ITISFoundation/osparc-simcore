@@ -6,7 +6,7 @@ from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -319,7 +319,6 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
-    task_name: Optional[str] = None,
     handler_context: dict[str, Any] = dict(),
     **handler_kwargs,
 ) -> TaskId:
