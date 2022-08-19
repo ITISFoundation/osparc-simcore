@@ -35,13 +35,13 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from yarl import URL
 
-TASKS_ROUTER_PREFIX: Final[str] = "/futures"
 LONG_RUNNING_TASK_ENTRYPOINT: Final[str] = "long_running_task"
 
 
 async def _wait_for_task_to_finish(client: TestClient, task_id: TaskId):
+    assert client.app
+    status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(60),
@@ -49,7 +49,7 @@ async def _wait_for_task_to_finish(client: TestClient, task_id: TaskId):
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+            result = await client.get(f"{status_url}")
             data, error = await assert_status(result, web.HTTPOk)
             assert data
             assert not error
@@ -119,7 +119,7 @@ def app(server_routes: web.RouteTableDef) -> web.Application:
     app.add_routes(server_routes)
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(app, router_prefix=TASKS_ROUTER_PREFIX)
+    long_running_tasks.server.setup(app, router_prefix="/futures")
 
     return app
 
@@ -135,23 +135,6 @@ def client(
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
     )
-
-
-@pytest.mark.parametrize(
-    "method, route_name",
-    [
-        ("GET", "get_task_status"),
-        ("GET", "get_task_result"),
-        ("DELETE", "cancel_and_delete_task"),
-    ],
-)
-async def test_get_task_wrong_task_id_raises_not_found(
-    client: TestClient, method: str, route_name: str
-):
-    assert client.app
-    url = client.app.router[route_name].url_for(task_id="fake_task_id")
-    result = await client.get(f"{url}")
-    await assert_status(result, web.HTTPNotFound)
 
 
 async def test_workflow(client: TestClient):
@@ -170,6 +153,7 @@ async def test_workflow(client: TestClient):
 
     # get progress updates
     progress_updates = []
+    status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(60),
@@ -177,7 +161,7 @@ async def test_workflow(client: TestClient):
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+            result = await client.get(f"{status_url}")
             data, error = await assert_status(result, web.HTTPOk)
             assert data
             assert not error
@@ -206,13 +190,31 @@ async def test_workflow(client: TestClient):
     ]
     assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
+    result = await client.get(f"{result_url}")
     task_result, error = await assert_status(result, web.HTTPCreated)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    result = await client.get(f"{result_url}")
+    await assert_status(result, web.HTTPNotFound)
+
+
+@pytest.mark.parametrize(
+    "method, route_name",
+    [
+        ("GET", "get_task_status"),
+        ("GET", "get_task_result"),
+        ("DELETE", "cancel_and_delete_task"),
+    ],
+)
+async def test_get_task_wrong_task_id_raises_not_found(
+    client: TestClient, method: str, route_name: str
+):
+    assert client.app
+    url = client.app.router[route_name].url_for(task_id="fake_task_id")
+    result = await client.get(f"{url}")
     await assert_status(result, web.HTTPNotFound)
 
 
@@ -231,7 +233,8 @@ async def test_failing_task_returns_error(client: TestClient):
     # wait for it to finish
     await _wait_for_task_to_finish(client, task_id)
     # get the result
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
+    result = await client.get(f"{result_url}")
     data, error = await assert_status(result, web.HTTPInternalServerError)
     assert not data
     assert error
@@ -254,11 +257,12 @@ async def test_get_results_before_tasks_finishes_returns_404(client: TestClient)
     assert not error
     task_id = parse_obj_as(long_running_tasks.server.TaskId, data)
 
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
+    result = await client.get(f"{result_url}")
     await assert_status(result, web.HTTPNotFound)
 
 
-async def test_cancel_workflow(client: TestClient):
+async def test_cancel_task(client: TestClient):
     assert client.app
     url = (
         client.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
@@ -272,26 +276,30 @@ async def test_cancel_workflow(client: TestClient):
     task_id = parse_obj_as(long_running_tasks.server.TaskId, data)
 
     # cancel the task
-    result = await client.delete(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+    delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
+    result = await client.delete(f"{delete_url}")
     data, error = await assert_status(result, web.HTTPNoContent)
     assert not data
     assert not error
 
     # it should be gone, so no status
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+    status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
+    result = await client.get(f"{status_url}")
     await assert_status(result, web.HTTPNotFound)
     # and also no results
-    result = await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+    result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
+    result = await client.get(f"{result_url}")
     await assert_status(result, web.HTTPNotFound)
 
     # try cancelling again
-    result = await client.delete(f"{TASKS_ROUTER_PREFIX}/{task_id}")
+    result = await client.delete(f"{delete_url}")
     await assert_status(result, web.HTTPNotFound)
 
 
 async def test_list_tasks_empty_list(client: TestClient):
     # initially empty
-    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    assert client.app
+    list_url = client.app.router["list_tasks"].url_for()
     result = await client.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
@@ -314,7 +322,7 @@ async def test_list_tasks(client: TestClient):
     )
 
     # check we have the full list
-    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    list_url = client.app.router["list_tasks"].url_for()
     result = await client.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
@@ -326,8 +334,10 @@ async def test_list_tasks(client: TestClient):
         *(_wait_for_task_to_finish(client, task_id) for task_id, _error in results)
     )
     # now get the result one by one
+
     for task_index, (task_id, error) in enumerate(results):
-        await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+        result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
+        await client.get(f"{result_url}")
         # the list shall go down one by one
         result = await client.get(f"{list_url}")
         data, error = await assert_status(result, web.HTTPOk)
@@ -368,7 +378,7 @@ def app_with_task_context(server_routes: web.RouteTableDef) -> web.Application:
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
-        router_prefix=TASKS_ROUTER_PREFIX,
+        router_prefix="/futures_with_task_context",
         task_request_context_decorator=_pass_user_id_decorator,
     )
 
@@ -403,7 +413,7 @@ async def test_list_tasks_with_context(client_with_task_context: TestClient):
     assert not error
 
     # the list should be empty if we do not pass the expected context
-    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    list_url = client_with_task_context.app.router["list_tasks"].url_for()
     result = await client_with_task_context.get(f"{list_url}")
     data, error = await assert_status(result, web.HTTPOk)
     assert not error
