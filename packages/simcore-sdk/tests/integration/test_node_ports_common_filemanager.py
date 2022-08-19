@@ -152,7 +152,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
+        "simcore_sdk.node_ports_common.file_io_utils.upload_file_part",
         autospec=True,
         side_effect=ClientError,
     )
@@ -237,7 +237,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
+        "simcore_sdk.node_ports_common.file_io_utils.upload_file_part",
         autospec=True,
         side_effect=ClientError,
     )
