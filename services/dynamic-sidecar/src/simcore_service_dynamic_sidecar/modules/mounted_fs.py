@@ -60,15 +60,15 @@ class MountedVolumes:
     @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
-        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(self.inputs_path)}_{self.node_id}"
+        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(self.inputs_path)[::-1]}"
 
     @cached_property
     def volume_name_outputs(self) -> str:
-        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(self.outputs_path)}_{self.node_id}"
+        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(self.outputs_path)[::-1]}"
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
         for state_path in self.state_paths:
-            yield f"{DOCKER_VOLUME_PREFIX}_{self.run_id}{_name_from_full_path(state_path)}_{self.node_id}"
+            yield f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(state_path)[::-1]}"
 
     @cached_property
     def disk_inputs_path(self) -> Path:

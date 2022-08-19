@@ -95,15 +95,15 @@ async def test_expected_paths_and_volumes(
     # check volume mount point
     assert (
         mounted_volumes.volume_name_outputs
-        == f"dyv_{run_id}{_replace_slashes(outputs_dir)}_{node_id}"
+        == f"dyv_{run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
     )
     assert (
         mounted_volumes.volume_name_inputs
-        == f"dyv_{run_id}{_replace_slashes(inputs_dir)}_{node_id}"
+        == f"dyv_{run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
     )
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
-        f"dyv_{run_id}{_replace_slashes(x)}_{node_id}" for x in state_paths_dirs
+        f"dyv_{run_id}_{node_id}_{_replace_slashes(x)[::-1]}" for x in state_paths_dirs
     }
 
     def _get_container_mount(mount_path: str) -> str:
