@@ -26,6 +26,8 @@ class TaskGet(BaseModel):
     task_context: dict[str, Any]
     status_href: str
     result_href: str
+    abort_href: str
+
 
 
 @routes.get("", name="list_tasks")
@@ -42,6 +44,7 @@ async def list_tasks(request: web.Request) -> web.Response:
                     task_context=task.task_context,
                     status_href=f"{request.app.router['get_task_status'].url_for(task_id=task.task_id)}",
                     result_href=f"{request.app.router['get_task_result'].url_for(task_id=task.task_id)}",
+                    abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=task.task_id)}",
                 )
                 for task in tracked_tasks
             ]
