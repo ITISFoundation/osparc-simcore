@@ -101,6 +101,11 @@ def spec_volume_removal_service(
     volume to remove.
     NOTE: service must be removed once it finishes or it will
     remain in the system.
+    NOTE: when running docker-in-docker https://hub.docker.com/_/docker
+    selecting the same version as the actual docker engine running
+    on the current node allows to avoid possible incompatible
+    versions. It is assumed that the same version of docker
+    will be running in the entire swarm.
     """
 
     volume_names_seq = " ".join(volume_names)
