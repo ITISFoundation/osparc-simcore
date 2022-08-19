@@ -320,7 +320,7 @@ def start_task(
     *,
     unique: bool = False,
     task_name: Optional[str] = None,
-    handler_context: Optional[dict[str, Any]] = None,
+    handler_context: Optional[dict[str, Any]] = dict(),
     **handler_kwargs,
 ) -> TaskId:
     """
