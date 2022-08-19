@@ -20,6 +20,7 @@ from ._utils import docker_client
 
 log = logging.getLogger(__name__)
 
+# FROM https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 SERVICE_FINISHED_STATES: set[str] = {
     "complete",
     "failed",
