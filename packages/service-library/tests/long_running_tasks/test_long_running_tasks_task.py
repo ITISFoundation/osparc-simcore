@@ -322,14 +322,14 @@ async def test_list_tasks_filtering(tasks_manager: TasksManager):
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
-        handler_context={"user_id": 213},
+        task_context={"user_id": 213},
     )
     start_task(
         tasks_manager=tasks_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
-        handler_context={"user_id": 213, "product": "osparc"},
+        task_context={"user_id": 213, "product": "osparc"},
     )
     assert len(tasks_manager.list_tasks()) == 3
     assert len(tasks_manager.list_tasks(with_task_context={"user_id": 213})) == 1

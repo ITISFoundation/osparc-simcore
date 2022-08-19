@@ -55,6 +55,7 @@ class TrackedTask(BaseModel):
     task: Task
     task_name: TaskName
     task_progress: TaskProgress
+    # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
     task_context: dict[str, Any]
 
     started: datetime = Field(default_factory=datetime.utcnow)

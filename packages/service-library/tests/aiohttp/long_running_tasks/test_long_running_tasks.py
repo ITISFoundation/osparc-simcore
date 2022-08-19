@@ -12,7 +12,8 @@ How these tests works:
 
 import asyncio
 import json
-from typing import Callable, Final
+from functools import wraps
+from typing import Any, Callable, Final, Optional
 
 import pytest
 from aiohttp import web
@@ -22,9 +23,13 @@ from pydantic import BaseModel, parse_obj_as
 # TESTS
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp.long_running_tasks._server import (
+    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
+)
 from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -73,6 +78,9 @@ async def _string_list_task(
     )
 
 
+TASK_CONTEXT: Final[dict[str, Any]] = {"user_id": 123}
+
+
 @pytest.fixture
 def server_routes() -> web.RouteTableDef:
     routes = web.RouteTableDef()
@@ -91,12 +99,10 @@ def server_routes() -> web.RouteTableDef:
         task_id = long_running_tasks.server.start_task(
             task_manager,
             _string_list_task,
-            handler_context={
-                "user_id": 123,
-            },
             num_strings=query_params.num_strings,
             sleep_time=query_params.sleep_time,
             fail=query_params.fail,
+            task_context=TASK_CONTEXT,
         )
         return web.json_response(
             data={"data": task_id},
@@ -105,6 +111,21 @@ def server_routes() -> web.RouteTableDef:
         )
 
     return routes
+
+
+class _TestQueryParam(BaseModel):
+    user_id: Optional[int] = None
+
+
+def pass_user_id_decorator(handler: Handler):
+    @wraps(handler)
+    async def _test_task_context_decorator(request: web.Request) -> web.StreamResponse:
+        """this task context callback tries to get the user_id from the query if available"""
+        query_param = parse_request_query_parameters_as(_TestQueryParam, request)
+        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.dict()
+        return await handler(request)
+
+    return _test_task_context_decorator
 
 
 @pytest.fixture
@@ -128,6 +149,36 @@ def client(
 
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
+    )
+
+
+@pytest.fixture
+def app_with_task_context(server_routes: web.RouteTableDef) -> web.Application:
+    app = web.Application()
+    app.add_routes(server_routes)
+    # this adds enveloping and error middlewares
+    append_rest_middlewares(app, api_version="")
+    long_running_tasks.server.setup(
+        app,
+        router_prefix=TASKS_ROUTER_PREFIX,
+        task_request_context_decorator=pass_user_id_decorator,
+    )
+
+    return app
+
+
+@pytest.fixture
+def client_with_task_context(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
+    app_with_task_context: web.Application,
+) -> TestClient:
+
+    return event_loop.run_until_complete(
+        aiohttp_client(
+            app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
+        )
     )
 
 
@@ -311,3 +362,33 @@ async def test_list_tasks(client: TestClient):
         assert not error
         list_of_tasks = parse_obj_as(list[TaskGet], data)
         assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)
+
+
+async def test_list_tasks_with_context(client_with_task_context: TestClient):
+    assert client_with_task_context.app
+    url = (
+        client_with_task_context.app.router[LONG_RUNNING_TASK_ENTRYPOINT]
+        .url_for()
+        .update_query(num_strings=10, sleep_time=0.2)
+    )
+    resp = await client_with_task_context.post(f"{url}")
+    task_id, error = await assert_status(resp, web.HTTPAccepted)
+    assert task_id
+    assert not error
+
+    # the list should be empty if we do not pass the expected context
+    list_url = URL(f"{TASKS_ROUTER_PREFIX}")
+    result = await client_with_task_context.get(f"{list_url}")
+    data, error = await assert_status(result, web.HTTPOk)
+    assert not error
+    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    assert len(list_of_tasks) == 0
+
+    # the list should be full if we pass the expected context
+    result = await client_with_task_context.get(
+        f"{list_url.update_query(TASK_CONTEXT)}"
+    )
+    data, error = await assert_status(result, web.HTTPOk)
+    assert not error
+    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    assert len(list_of_tasks) == 1

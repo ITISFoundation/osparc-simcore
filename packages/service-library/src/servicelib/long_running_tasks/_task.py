@@ -330,7 +330,7 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
-    handler_context: dict[str, Any] = dict(),
+    task_context: dict[str, Any] = dict(),
     **handler_kwargs,
 ) -> TaskId:
     """
@@ -377,6 +377,6 @@ def start_task(
         task_name=task_name,
         task=task,
         task_progress=task_progress,
-        task_context=handler_context,
+        task_context=task_context,
     )
     return tracked_task.task_id
