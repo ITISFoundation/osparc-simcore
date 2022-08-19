@@ -300,5 +300,14 @@ async def test_list_tasks(client: TestClient):
 
     # now wait for them to finish
     await asyncio.gather(
-        *(_wait_for_task_to_finish(client, data) for data, error in results)
+        *(_wait_for_task_to_finish(client, task_id) for task_id, _error in results)
     )
+    # now get the result one by one
+    for task_index, (task_id, error) in enumerate(results):
+        await client.get(f"{TASKS_ROUTER_PREFIX}/{task_id}/result")
+        # the list shall go down one by one
+        result = await client.get(f"{list_url}")
+        data, error = await assert_status(result, web.HTTPOk)
+        assert not error
+        list_of_tasks = parse_obj_as(list[TaskGet], data)
+        assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)
