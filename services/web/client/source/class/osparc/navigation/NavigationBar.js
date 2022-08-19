@@ -195,7 +195,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
-          this._add(control);
+          this.getChildControl("right-items").add(control);
           break;
         case "manual":
           control = this.__createManualMenuBtn();
@@ -281,7 +281,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
 
       const feedbackBtn = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Give us feedback")
+        toolTipText: this.tr("Give us feedback"),
+        visibility: osparc.utils.Utils.isProduct("tis") ? "excluded" : "visible"
       });
       return feedbackBtn;
     },

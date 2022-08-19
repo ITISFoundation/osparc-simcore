@@ -879,9 +879,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __evalSlidesButtons: function() {
       const study = this.getStudy();
       if (study && this.__editSlidesButton) {
-        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         const isOwner = osparc.data.model.Study.isOwner(study);
-        this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
+        this.__editSlidesButton.setEnabled(isOwner);
         this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
     },

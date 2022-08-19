@@ -5,19 +5,34 @@
 import json
 import logging
 import sys
+from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable
+from typing import AsyncIterator, Awaitable, Callable, Optional
 from uuid import UUID
 
 import pytest
 import simcore_service_webserver
 from _pytest.monkeypatch import MonkeyPatch
+from aiohttp import web
+from aiohttp.test_utils import TestClient
 from models_library.projects_networks import PROJECT_NETWORK_PREFIX
+from models_library.projects_state import ProjectState
+from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.projects_handlers_crud import (
+    OVERRIDABLE_DOCUMENT_KEYS,
+)
+from simcore_service_webserver.utils import now_str, to_datetime
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -144,3 +159,171 @@ def mock_projects_networks_network_name(mocker) -> None:
         return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
     )
     return remove_orphaned_services
+
+
+def _minimal_project() -> ProjectDict:
+    return {
+        "uuid": "0000000-invalid-uuid",
+        "name": "Minimal name",
+        "description": "this description should not change",
+        "prjOwner": "me but I will be removed anyway",
+        "creationDate": now_str(),
+        "lastChangeDate": now_str(),
+        "thumbnail": "",
+        "accessRights": {},
+        "workbench": {},
+        "tags": [],
+        "classifiers": [],
+        "ui": {},
+        "dev": {},
+        "quality": {},
+    }
+
+
+@pytest.fixture
+def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
+    """this fixture allows to create projects through the webserver interface
+
+        NOTE: a next iteration should take care of cleaning up created projects
+
+    Returns:
+        Callable[..., Awaitable[ProjectDict]]: _description_
+    """
+
+    async def _creator(
+        client: TestClient,
+        expected_accepted_response: type[web.HTTPException],
+        expected_creation_response: type[web.HTTPException],
+        logged_user: dict[str, str],
+        primary_group: dict[str, str],
+        *,
+        project: Optional[dict] = None,
+        from_study: Optional[dict] = None,
+        as_template: Optional[bool] = None,
+        copy_data: Optional[bool] = None,
+    ) -> ProjectDict:
+        # Pre-defined fields imposed by required properties in schema
+        project_data = {}
+        expected_data = {}
+        if from_study:
+            # access rights are replaced
+            expected_data = deepcopy(from_study)
+            expected_data["accessRights"] = {}
+            if not as_template:
+                expected_data["name"] = f"{from_study['name']} (Copy)"
+        if not from_study or project:
+            project_data = _minimal_project()
+            if project:
+                project_data.update(project)
+            for key in project_data:
+                expected_data[key] = project_data[key]
+                if (
+                    key in OVERRIDABLE_DOCUMENT_KEYS
+                    and not project_data[key]
+                    and from_study
+                ):
+                    expected_data[key] = from_study[key]
+
+        # POST /v0/projects -> returns 202 or denied access
+        assert client.app
+        url: URL = client.app.router["create_projects"].url_for()
+        if from_study:
+            url = url.update_query(from_study=from_study["uuid"])
+        if as_template:
+            url = url.update_query(as_template=f"{as_template}")
+        if copy_data is not None:
+            url = url.update_query(copy_data=f"{copy_data}")
+        resp = await client.post(f"{url}", json=project_data)
+        print(f"<-- created project response: {resp=}")
+        data, error = await assert_status(resp, expected_accepted_response)
+        if error:
+            assert not data
+            return {}
+        assert data
+        assert all(
+            x in data for x in ["task_id", "status_href", "result_href", "abort_href"]
+        )
+        status_url = data["status_href"]
+        result_url = data["result_href"]
+
+        # get status GET /{task_id}
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(60),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                print(
+                    f"--> waiting for creation {attempt.retry_state.attempt_number}..."
+                )
+                result = await client.get(f"{status_url}")
+                data, error = await assert_status(result, web.HTTPOk)
+                assert data
+                assert not error
+                task_status = TaskStatus.parse_obj(data)
+                assert task_status
+                print(f"<-- status: {task_status.json(indent=2)}")
+                assert task_status.done, "task incomplete"
+                print(
+                    f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                )
+
+        # get result GET /{task_id}/result
+        print(f"--> getting project creation result...")
+        result = await client.get(f"{result_url}")
+        data, error = await assert_status(result, expected_creation_response)
+        assert data
+        assert not error
+        print(f"<-- result: {data}")
+        new_project = data
+
+        # now check returned is as expected
+        if new_project:
+            # has project state
+            assert not ProjectState(
+                **new_project.get("state", {})
+            ).locked.value, "Newly created projects should be unlocked"
+
+            # updated fields
+            assert expected_data["uuid"] != new_project["uuid"]
+            assert (
+                new_project["prjOwner"] == logged_user["email"]
+            )  # the project owner is assigned the user id e-mail
+            assert to_datetime(expected_data["creationDate"]) < to_datetime(
+                new_project["creationDate"]
+            )
+            assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(
+                new_project["lastChangeDate"]
+            )
+            # the access rights are set to use the logged user primary group + whatever was inside the project
+            expected_data["accessRights"].update(
+                {
+                    str(primary_group["gid"]): {
+                        "read": True,
+                        "write": True,
+                        "delete": True,
+                    }
+                }
+            )
+            assert new_project["accessRights"] == expected_data["accessRights"]
+
+            # invariant fields
+            modified_fields = [
+                "uuid",
+                "prjOwner",
+                "creationDate",
+                "lastChangeDate",
+                "accessRights",
+                "workbench" if from_study else None,
+                "ui" if from_study else None,
+                "state",
+            ]
+
+            for key in new_project.keys():
+                if key not in modified_fields:
+                    assert expected_data[key] == new_project[key]
+
+        return new_project
+
+    return _creator
