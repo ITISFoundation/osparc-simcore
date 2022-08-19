@@ -6,7 +6,7 @@ from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -133,7 +133,7 @@ class TasksManager:
         return len(managed_tasks_ids) > 0
 
     def list_tasks(
-        self, with_task_context: dict[str, Any] = dict()
+        self, with_task_context: Optional[dict[str, Any]] = None
     ) -> list[TrackedTask]:
         tasks = []
         for task_group in self._tasks_groups.values():
@@ -330,7 +330,7 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
-    task_context: dict[str, Any] = dict(),
+    task_context: Optional[dict[str, Any]] = None,
     **handler_kwargs,
 ) -> TaskId:
     """
@@ -377,6 +377,6 @@ def start_task(
         task_name=task_name,
         task=task,
         task_progress=task_progress,
-        task_context=task_context,
+        task_context=task_context or {},
     )
     return tracked_task.task_id
