@@ -107,10 +107,13 @@ class TutorialBase {
   }
 
   async checkFirstStudyId(studyId) {
-    await page.waitForSelector('[osparc-test-id="studiesList"]')
+    await this.__page.waitForSelector('[osparc-test-id="studiesList"]')
     const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
+    console.log("checkFirstStudyId", studyId);
     console.log(studies);
-    console.log("------", studyId);
+    if (studyId !== studies[0]) {
+      throw (studyId + "not found");
+    }
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
