@@ -106,6 +106,13 @@ class TutorialBase {
     }
   }
 
+  async checkFirstStudyId(studyId) {
+    await page.waitForSelector('[osparc-test-id="studiesList"]')
+    const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
+    console.log(studies);
+    console.log("------", studyId);
+  }
+
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
