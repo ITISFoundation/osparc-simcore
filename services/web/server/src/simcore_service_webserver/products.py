@@ -51,9 +51,10 @@ class Product(BaseModel):
         max_length=34,
     )
     manual_url: HttpUrl
-    manual_extra_url: Optional[HttpUrl]
+    manual_extra_url: Optional[HttpUrl] = None
     issues_login_url: HttpUrl
     issues_new_url: HttpUrl
+    feedback_form_url: Optional[HttpUrl] = None
 
     class Config:
         orm_mode = True
