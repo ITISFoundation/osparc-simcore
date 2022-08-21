@@ -163,7 +163,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code"].called
-    phone, received_code, _ = mocked_twilio_service["send_sms_code"].call_args.args
+    phone, received_code, *_ = mocked_twilio_service["send_sms_code"].call_args.args
     assert phone == PHONE
 
     # check phone still NOT in db (TODO: should be in database and unconfirmed)

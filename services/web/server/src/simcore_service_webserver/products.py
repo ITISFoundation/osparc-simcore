@@ -38,8 +38,7 @@ class Product(BaseModel):
     """
     Pydantic model associated to db_models.Products table
 
-    The standard case is serving a single product, therefore defaults are set
-    from env-vars.
+    SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
     name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
@@ -106,7 +105,7 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
     return None
 
 
-def get_product_context(request: web.Request) -> Product:
+def get_current_product(request: web.Request) -> Product:
     product_name = request[RQ_PRODUCT_KEY]
     return request.app[APP_PRODUCTS_KEY][product_name]
 

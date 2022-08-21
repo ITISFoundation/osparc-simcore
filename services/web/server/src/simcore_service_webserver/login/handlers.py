@@ -11,6 +11,7 @@ from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
+from ..products import Product, get_current_product
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils import HOUR, MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
@@ -154,6 +155,7 @@ async def register_phone(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     phone = body.phone
@@ -165,6 +167,12 @@ async def register_phone(request: web.Request):
         )
 
     try:
+        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        if not product.twilio_messaging_sid:
+            raise ValueError(
+                f"Messaging SID is not configured in {product}. "
+                "Update product's twilio_messaging_sid in database."
+            )
 
         if await db.get_user({"phone": phone}):
             raise web.HTTPUnauthorized(
@@ -173,7 +181,14 @@ async def register_phone(request: web.Request):
             )
 
         code = await set_2fa_code(request.app, email)
-        await send_sms_code(phone, code, settings.LOGIN_TWILIO)
+
+        await send_sms_code(
+            phone_number=phone,
+            code=code,
+            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            product_display_name=product.display_name,
+        )
 
         response = flash_response(
             cfg.MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(phone)),
@@ -239,7 +254,7 @@ async def phone_confirmation(request: web.Request):
             await remember(request, response, identity)
             return response
 
-    #
+    # unauthorized
     raise web.HTTPUnauthorized(
         reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -251,6 +266,7 @@ async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     password = body.password
@@ -291,9 +307,18 @@ async def login(request: web.Request):
             return rsp
 
         assert user["phone"]  # nosec
+        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+
         try:
             code = await set_2fa_code(request.app, user["email"])
-            await send_sms_code(user["phone"], code, settings.LOGIN_TWILIO)
+            await send_sms_code(
+                phone_number=user["phone"],
+                code=code,
+                twilo_auth=settings.LOGIN_TWILIO,
+                twilio_messaging_sid=product.twilio_messaging_sid,
+                product_display_name=product.display_name,
+            )
 
             rsp = envelope_response(
                 {
