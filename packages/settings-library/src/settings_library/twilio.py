@@ -1,18 +1,16 @@
-""" Twilio settings
+""" Account settings for twilio.com service
 
-
- SID stands for String Identifier: SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-  It’s a unique key that is used to identify specific resources. At Twilio, each SID has 34 digits
-  and you can identify the type of SID and the product it’s associated with
-  by the first two characters.
-
-SEE https://www.twilio.com/docs/sms/quickstart/python
+For twilio SMS services:
+    SEE https://www.twilio.com/docs/sms/quickstart/python
+    SEE https://support.twilio.com/hc/en-us/articles/223136027-Auth-Tokens-and-How-to-Change-Them
 """
 
+
+from pydantic import Field
 
 from .base import BaseCustomSettings
 
 
 class TwilioSettings(BaseCustomSettings):
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_AUTH_TOKEN: str
+    TWILIO_ACCOUNT_SID: str = Field(..., description="Twilio account String Identifier")
+    TWILIO_AUTH_TOKEN: str = Field(..., description="API tokens")
