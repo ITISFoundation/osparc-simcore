@@ -6,73 +6,61 @@ from typing import Any, Optional
 
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
+from pydantic import AnyHttpUrl, Field, HttpUrl
 from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 
-# TODO: move this to OsparcDependency and validate in tests!!
-
-
-class OsparcDependency(BaseModel):
-    name: str
-    version: str
-    url: AnyHttpUrl
-    thumbnail: Optional[AnyHttpUrl] = None
-
-
-def discover_osparc_dependencies() -> list[OsparcDependency]:
-    # TODO: move this data to a file
-    return [
-        OsparcDependency(
-            name="adminer",
-            version="4.8.0",
-            url="https://www.adminer.org/",
-            thumbnail="https://www.adminer.org/static/images/logo.png",
-        ),
-        OsparcDependency(
-            name="dask",
-            version="-",
-            url="https://docs.dask.org/en/latest/scheduler-overview.html",
-            thumbnail="https://dask.org/_images/dask_horizontal_white_no_pad.svg",
-        ),
-        OsparcDependency(
-            name="docker",
-            version="-",
-            url="https://www.docker.com/",
-            thumbnail="https://www.docker.com/sites/default/files/d8/2019-07/horizontal-logo-monochromatic-white.png",
-        ),
-        OsparcDependency(
-            name="github",
-            version="-",
-            url="https://github.com/",
-            thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
-        ),
-        OsparcDependency(
-            name="minio",
-            version="-",
-            url="https://min.io/",
-            thumbnail="https://min.io/resources/img/logo.svg",
-        ),
-        OsparcDependency(
-            name="portainer",
-            version="-",
-            url="https://www.portainer.io/",
-            thumbnail="https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20Solid%20All%20-%20Blue%20no%20padding.svg",
-        ),
-        OsparcDependency(
-            name="postgres",
-            version="10.11",
-            url="https://www.postgresql.org/",
-            thumbnail="https://www.postgresql.org/media/img/about/press/elephant.png",
-        ),
-        OsparcDependency(
-            name="redis",
-            version="-",
-            url="https://redis.io/",
-            thumbnail="https://redis.io/images/redis-white.png",
-        ),
-    ]
+OSPARC_DEPENDENCIES = [
+    dict(
+        name="adminer",
+        version="4.8.0",
+        url="https://www.adminer.org/",
+        thumbnail="https://www.adminer.org/static/images/logo.png",
+    ),
+    dict(
+        name="dask",
+        version="-",
+        url="https://docs.dask.org/en/latest/scheduler-overview.html",
+        thumbnail="https://dask.org/_images/dask_horizontal_white_no_pad.svg",
+    ),
+    dict(
+        name="docker",
+        version="-",
+        url="https://www.docker.com/",
+        thumbnail="https://www.docker.com/sites/default/files/d8/2019-07/horizontal-logo-monochromatic-white.png",
+    ),
+    dict(
+        name="github",
+        version="-",
+        url="https://github.com/",
+        thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
+    ),
+    dict(
+        name="minio",
+        version="-",
+        url="https://min.io/",
+        thumbnail="https://min.io/resources/img/logo.svg",
+    ),
+    dict(
+        name="portainer",
+        version="-",
+        url="https://www.portainer.io/",
+        thumbnail="https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20Solid%20All%20-%20Blue%20no%20padding.svg",
+    ),
+    dict(
+        name="postgres",
+        version="10.11",
+        url="https://www.postgresql.org/",
+        thumbnail="https://www.postgresql.org/media/img/about/press/elephant.png",
+    ),
+    dict(
+        name="redis",
+        version="-",
+        url="https://redis.io/",
+        thumbnail="https://redis.io/images/redis-white.png",
+    ),
+]
 
 
 class FrontEndAppSettings(BaseCustomSettings):
@@ -99,16 +87,13 @@ class FrontEndAppSettings(BaseCustomSettings):
         HttpUrl
     ] = None  # TODO: Move this to products  db
 
-    # TODO: ha
-    WEBSERVER_OSPARC_DEPENDENCIES: list[OsparcDependency] = Field(
-        default_factory=discover_osparc_dependencies
-    )
-
     def to_statics(self) -> dict[str, Any]:
         data = self.dict(
             exclude_none=True,
             by_alias=True,
         )
+        data["osparc_dependencies"] = OSPARC_DEPENDENCIES
+
         return {
             snake_to_camel(k.replace("WEBSERVER_", "").lower()): v
             for k, v in data.items()
