@@ -140,7 +140,6 @@ async def register_phone(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
 
     email = body.email
     phone = body.phone
@@ -152,6 +151,7 @@ async def register_phone(request: web.Request):
         )
 
     try:
+        product: Product = get_current_product(request)
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
         if not product.twilio_messaging_sid:
             raise ValueError(
@@ -251,7 +251,6 @@ async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
 
     email = body.email
     password = body.password
@@ -281,6 +280,8 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
+        product: Product = get_current_product(request)
+
         if not user["phone"]:
             rsp = envelope_response(
                 {
