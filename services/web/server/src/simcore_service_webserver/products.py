@@ -85,7 +85,9 @@ async def load_products_from_db(app: web.Application):
                 name = row.name  # type:ignore
                 app_products[name] = Product.from_orm(row)
             except ValidationError as err:
-                log.error("Discarding invalid product in db %s: %s", row, err)
+                log.error(
+                    "Invalid product in db '%s'. Skipping product info:\n %s", row, err
+                )
 
     app[APP_PRODUCTS_KEY] = app_products
 

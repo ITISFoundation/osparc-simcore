@@ -107,7 +107,8 @@ def _to_statics(product: Product) -> dict[str, Any]:
             "manual_extra_url",
             "issues_new_url",
             "issues_login_url",
-        }
+        },
+        exclude_none=True,
     )
     # e.g. OsparcDisplayName, OsparcSupportEmail, OsparcManualUrl, ...
     return {
