@@ -19,9 +19,27 @@ from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 
 from .._resources import resources
+from ..db_models import ConfirmationAction, UserRole, UserStatus
 from .settings import LoginOptions, get_plugin_options
 
 log = getLogger(__name__)
+
+
+def _to_names(enum_cls, names):
+    """ensures names are in enum be retrieving each of them"""
+    # FIXME: with asyncpg need to user NAMES
+    return [getattr(enum_cls, att).name for att in names.split()]
+
+
+CONFIRMATION_PENDING, ACTIVE, BANNED = _to_names(
+    UserStatus, "CONFIRMATION_PENDING ACTIVE BANNED"
+)
+
+ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
+
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
+    ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
+)
 
 
 def encrypt_password(password: str) -> str:
