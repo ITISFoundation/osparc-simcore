@@ -83,8 +83,9 @@ async def send_sms_code(
 ):
     def sender():
         log.info(
-            "Sending sms code to %s",
+            "Sending sms code to %s from product %s",
             f"{phone_number=}",
+            product_display_name,
         )
         # SEE https://www.twilio.com/docs/sms/quickstart/python
         #

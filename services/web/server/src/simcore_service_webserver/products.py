@@ -106,6 +106,7 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
 
 
 def get_current_product(request: web.Request) -> Product:
+    """Returns product associated to current request"""
     product_name = request[RQ_PRODUCT_KEY]
     return request.app[APP_PRODUCTS_KEY][product_name]
 
