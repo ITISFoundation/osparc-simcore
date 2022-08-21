@@ -4,6 +4,7 @@ from typing import Any
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
+from models_library.utils.change_case import snake_to_camel
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.json_serialization import json_dumps
 from tenacity._asyncio import AsyncRetrying
@@ -108,7 +109,11 @@ def _to_statics(product: Product) -> dict[str, Any]:
             "issues_login_url",
         }
     )
-    return {f"{product.name}_{key}": value for key, value in public_selection.items()}
+    # e.g. OsparcDisplayName, OsparcSupportEmail, OsparcManualUrl, ...
+    return {
+        snake_to_camel(f"{product.name}_{key}"): value
+        for key, value in public_selection.items()
+    }
 
 
 async def create_statics_json(app: web.Application) -> None:

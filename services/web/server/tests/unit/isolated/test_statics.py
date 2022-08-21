@@ -1,10 +1,12 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 """
     This tests some invariants considered in the webserver code regarding
     the structure of the frontend apps produced after compiling web/client
 """
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+
 import json
 from pathlib import Path
 
@@ -13,9 +15,6 @@ from simcore_service_webserver.statics_constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
-from simcore_service_webserver.statics_settings import FrontEndAppSettings
-
-FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.manuscript.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
 
 
 @pytest.fixture(scope="module")
@@ -67,46 +66,3 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
-
-
-@pytest.fixture
-def test_frontend_app_settings(
-    monkeypatch,
-):
-    monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
-    monkeypatch.setenv(
-        "WEBSERVER_S4L_FOGBUGZ_URL",
-        FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=458),
-    )
-    monkeypatch.setenv(
-        "WEBSERVER_FOGBUGZ_URL",
-        FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=457),
-    )
-
-    settings = FrontEndAppSettings()
-
-    assert settings.manual_main_url.host == "some_doc.org"
-    assert settings.manual_main_url.tld == "org"
-    assert str(settings.s4l_fogbugz_newcase_url) == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(
-        projet=54, area=458
-    )
-    assert str(settings.fogbugz_newcase_url) == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(
-        project=54, area=457
-    )
-    assert settings.tis_fogbugz_newcase_url is None
-
-    # is json-serializable
-    statics = settings.to_statics()
-    assert json.dumps(statics)
-
-    # nulls are not output
-    assert "tis_fogbugz_url" not in statics
-    assert "fogbugz_url" in statics
-
-
-@pytest.mark.skip(reason="under DEPRECATION")
-def test_default_webserver_env_dev(env_devel_dict):
-    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in env_devel_dict
-    assert env_devel_dict[
-        "WEBSERVER_FOGBUGZ_NEWCASE_URL"
-    ] == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=449)
