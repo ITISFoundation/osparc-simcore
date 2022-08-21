@@ -59,9 +59,8 @@ async def create_temporary_user(request: web.Request):
     """
     TODO: user should have an expiration date and limited persmissions!
     """
-    from ..login.handlers import ACTIVE, GUEST
     from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..login.utils import get_client_ip, get_random_string
+    from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
     from ..security_api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
