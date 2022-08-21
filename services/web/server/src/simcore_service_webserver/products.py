@@ -10,12 +10,13 @@ At every request to this service API, a middleware discovers which product is th
 
 
 import logging
-from typing import Optional, Pattern
+from typing import Any, Optional, Pattern
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
+from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, Field, HttpUrl, ValidationError, validator
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
@@ -67,6 +68,31 @@ class Product(BaseModel):
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             )
         return v
+
+    def to_statics(self) -> dict[str, Any]:
+        """
+        Selects public fields from product's info
+        and prefixes it with its name to produce
+        items for statics.json
+        """
+        # public fields sent to the front-end
+        public_selection = self.dict(
+            include={
+                "display_name",
+                "support_email",
+                "manual_url",
+                "manual_extra_url",
+                "issues_new_url",
+                "issues_login_url",
+                "feedback_form_url",
+            },
+            exclude_none=True,
+        )
+        # e.g. OsparcDisplayName, OsparcSupportEmail, OsparcManualUrl, ...
+        return {
+            snake_to_camel(f"{self.name}_{key}"): value
+            for key, value in public_selection.items()
+        }
 
 
 async def load_products_from_db(app: web.Application):

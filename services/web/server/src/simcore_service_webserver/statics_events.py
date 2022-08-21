@@ -1,10 +1,8 @@
 import logging
-from typing import Any
 
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
-from models_library.utils.change_case import snake_to_camel
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.json_serialization import json_dumps
 from tenacity._asyncio import AsyncRetrying
@@ -92,31 +90,6 @@ async def create_cached_indexes(app: web.Application) -> None:
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
-def _to_statics(product: Product) -> dict[str, Any]:
-    """
-    Selects public fields from product's info
-    and prefixes it with its name to produce
-    items for statics.json
-    """
-    # public fields sent to the front-end
-    public_selection = product.dict(
-        include={
-            "display_name",
-            "support_email",
-            "manual_url",
-            "manual_extra_url",
-            "issues_new_url",
-            "issues_login_url",
-        },
-        exclude_none=True,
-    )
-    # e.g. OsparcDisplayName, OsparcSupportEmail, OsparcManualUrl, ...
-    return {
-        snake_to_camel(f"{product.name}_{key}"): value
-        for key, value in public_selection.items()
-    }
-
-
 async def create_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
@@ -131,7 +104,7 @@ async def create_statics_json(app: web.Application) -> None:
     assert products  # nosec
     for product in products.values():
         log.debug("Product %s", product.name)
-        info.update(**_to_statics(product))
+        info.update(**product.to_statics())
 
     # Adds specifics to front-end app
     frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
