@@ -96,8 +96,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       loginBtn.addListener("execute", () => {
         osparc.data.Resources.get("statics")
           .then(statics => {
-            if (statics && statics.fogbugzLoginUrl) {
-              window.open(statics.fogbugzLoginUrl);
+            if (statics && statics.osparcIssuesLoginUrl) {
+              window.open(statics.osparcIssuesLoginUrl);
             }
           });
       }, this);
