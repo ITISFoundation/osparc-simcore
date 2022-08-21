@@ -77,6 +77,12 @@ products = sa.Table(
         doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)",
     ),
     sa.Column(
+        "feedback_form_url",
+        sa.String,
+        nullable=True,
+        doc="URL to a feedback form (e.g. google forms etc)",
+    ),
+    sa.Column(
         "created",
         sa.DateTime(),
         nullable=False,
