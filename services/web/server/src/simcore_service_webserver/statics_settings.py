@@ -11,7 +11,7 @@ from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 
-OSPARC_DEPENDENCIES = [
+THIRD_PARTY_REFERENCES = [
     dict(
         name="adminer",
         version="4.8.0",
@@ -75,7 +75,7 @@ class FrontEndAppSettings(BaseCustomSettings):
             exclude_none=True,
             by_alias=True,
         )
-        data["osparc_dependencies"] = OSPARC_DEPENDENCIES
+        data["third_party_references"] = THIRD_PARTY_REFERENCES
 
         return {
             snake_to_camel(k.replace("WEBSERVER_", "").lower()): v
