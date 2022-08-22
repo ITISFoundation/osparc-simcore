@@ -292,14 +292,14 @@ async def test_remove_task_with_task_context(tasks_manager: TasksManager):
         total_sleep=10,
         task_context=TASK_CONTEXT,
     )
-    # getting status fails if no task context given
+    # getting status fails if wrong task context given
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_status(
             task_id, with_task_context={"wrong_task_context": 12}
         )
     tasks_manager.get_task_status(task_id, with_task_context=TASK_CONTEXT)
 
-    # removing task fails if no task context given
+    # removing task fails if wrong task context given
     with pytest.raises(TaskNotFoundError):
         await tasks_manager.remove_task(
             task_id, with_task_context={"wrong_task_context": 12}
@@ -314,6 +314,28 @@ async def test_remove_unknown_task(tasks_manager: TasksManager):
     await tasks_manager.remove_task(
         "invalid_id", with_task_context=None, reraise_errors=False
     )
+
+
+async def test_cancel_task_with_task_context(tasks_manager: TasksManager):
+    TASK_CONTEXT = {"some_context": "some_value"}
+    task_id = start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+        task_context=TASK_CONTEXT,
+    )
+    # getting status fails if wrong task context given
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_status(
+            task_id, with_task_context={"wrong_task_context": 12}
+        )
+    # getting status fails if wrong task context given
+    with pytest.raises(TaskNotFoundError):
+        await tasks_manager.cancel_task(
+            task_id, with_task_context={"wrong_task_context": 12}
+        )
+    await tasks_manager.cancel_task(task_id, with_task_context=TASK_CONTEXT)
 
 
 async def test_list_tasks(tasks_manager: TasksManager):
