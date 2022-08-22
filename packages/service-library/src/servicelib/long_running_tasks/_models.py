@@ -85,3 +85,11 @@ class TaskResult(BaseModel):
 class ClientConfiguration(BaseModel):
     router_prefix: str
     default_timeout: PositiveFloat
+
+
+class TaskGet(BaseModel):
+    task_id: TaskId
+    task_name: str
+    status_href: str
+    result_href: str
+    abort_href: str

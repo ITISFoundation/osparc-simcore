@@ -6,7 +6,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 
 from ...json_serialization import json_dumps
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
-from ...long_running_tasks._models import TaskId, TaskStatus
+from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from ...long_running_tasks._task import TrackedTask
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_task_context, get_tasks_manager
@@ -17,14 +17,6 @@ routes = web.RouteTableDef()
 
 class _PathParam(BaseModel):
     task_id: TaskId
-
-
-class TaskGet(BaseModel):
-    task_id: TaskId
-    task_name: str
-    status_href: str
-    result_href: str
-    abort_href: str
 
 
 @routes.get("", name="list_tasks")
