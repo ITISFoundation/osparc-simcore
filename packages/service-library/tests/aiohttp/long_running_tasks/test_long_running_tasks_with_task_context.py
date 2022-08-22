@@ -148,7 +148,6 @@ async def test_get_task_result(
     task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client_with_task_context.app
-
     task_id = await start_task(client_with_task_context)
     await task_waiter(client_with_task_context, task_id, task_context)
     # calling without Task context should find nothing
@@ -160,3 +159,28 @@ async def test_get_task_result(
     # calling with context should find the task
     resp = await client_with_task_context.get(f"{result_url.with_query(task_context)}")
     await assert_status(resp, web.HTTPCreated)
+
+
+async def test_cancel_task(
+    client_with_task_context: TestClient,
+    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    task_context: TaskContext,
+):
+    assert client_with_task_context.app
+    task_id = await start_task(client_with_task_context)
+    cancel_url = client_with_task_context.app.router["cancel_and_delete_task"].url_for(
+        task_id=task_id
+    )
+    # calling cancel without task context should find nothing
+    resp = await client_with_task_context.delete(f"{cancel_url}")
+    await assert_status(resp, web.HTTPNotFound)
+    # calling with context should find and delete the task
+    resp = await client_with_task_context.delete(
+        f"{cancel_url.update_query(task_context)}"
+    )
+    await assert_status(resp, web.HTTPNoContent)
+    # calling with context a second time should find nothing
+    resp = await client_with_task_context.delete(
+        f"{cancel_url.update_query(task_context)}"
+    )
+    await assert_status(resp, web.HTTPNotFound)
