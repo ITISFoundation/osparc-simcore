@@ -112,7 +112,7 @@ class TutorialBase {
     console.log("checkFirstStudyId", studyId);
     console.log(studies);
     if (studyId !== studies[0]) {
-      throw (studyId + "not found");
+      throw (studyId + " not found");
     }
   }
 
