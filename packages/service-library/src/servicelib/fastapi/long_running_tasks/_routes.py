@@ -14,6 +14,7 @@ router = APIRouter(prefix="/task")
 async def list_tasks(
     request: Request, tasks_manager: TasksManager = Depends(get_tasks_manager)
 ) -> list[TaskGet]:
+    assert request  # nosec
     return [
         TaskGet(
             task_id=task.task_id,
