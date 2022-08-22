@@ -11,7 +11,7 @@ from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namespace import get_compose_namespace
-from ..volumes import DynamicSidecarVolumesPathsResolver
+from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 from .settings import update_service_params_from_settings
 
