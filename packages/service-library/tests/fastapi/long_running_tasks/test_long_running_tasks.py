@@ -225,6 +225,8 @@ async def test_failing_task_returns_error(
 
     assert not task_result.result
     assert task_result.error
+    assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
+    assert 'raise RuntimeError("raised this error as instructed")' in task_result.error
     # NOTE: this is not yet happening with fastapi version of long running task
     # assert "errors" in task_result.error
     # assert len(task_result.error["errors"]) == 1
