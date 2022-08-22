@@ -196,12 +196,12 @@ class TutorialBase {
   }
 
   async startNewPlan() {
-    await this.waitFor(2000);
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
+      await this.waitFor(2000);
       await auto.dashboardNewPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
@@ -212,6 +212,7 @@ class TutorialBase {
       console.error(`New Plan could not be started:\n`, err);
       throw (err);
     }
+    await this.waitFor(2000);
     await this.takeScreenshot("startNewPlan_after");
     return resp;
   }
