@@ -74,10 +74,23 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
     )
     _keep_running: bool = False
     _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
+
+    # scheduler task
     _scheduler_task: Optional[Task] = None
-    _cleanup_volume_removal_services_task: Optional[Task] = None
+
+    # trigger task
     _trigger_observation_queue_task: Optional[Task] = None
-    _trigger_observation_queue: Queue = field(default_factory=Queue)
+    _trigger_observation_queue: Queue = field(
+        default_factory=Queue
+    )  # exchange between scheduler and trigger tasks
+
+    # volume-removal task
+    _cleanup_volume_removal_services_task: Optional[Task] = None
+
+    @classmethod
+    def _prefix_task_name(cls):
+        prefix_name = f"dynamic_sidecar.scheduler.task.{cls.__name__}"
+        return prefix_name
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -304,7 +317,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
 
-        async def _observing_single_service(service_name: str) -> None:
+        async def _observe(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -343,41 +356,47 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                     "any data (it was not required).",
                     scheduler_data.node_uuid,
                 )
-                return
 
-            scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
-            try:
-                await apply_observation_cycle(self.app, self, scheduler_data)
-                logger.debug("completed observation cycle of %s", f"{service_name=}")
-            except asyncio.CancelledError:  # pylint: disable=try-except-raise
-                raise  # pragma: no cover
-            except Exception as e:  # pylint: disable=broad-except
-                service_name = scheduler_data.service_name
+            else:
 
-                # With unhandled errors, let's generate and ID and send it to the end-user
-                # so that we can trace the logs and debug the issue.
+                scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
+                try:
+                    await apply_observation_cycle(self.app, self, scheduler_data)
+                    logger.debug(
+                        "completed observation cycle of %s", f"{service_name=}"
+                    )
 
-                error_code = create_error_code(e)
-                logger.exception(
-                    "Observation of %s unexpectedly failed [%s]",
-                    f"{service_name=} ",
-                    f"{error_code}",
-                    extra={"error_code": error_code},
-                )
-                scheduler_data.dynamic_sidecar.status.update_failing_status(
-                    # This message must be human-friendly
-                    f"Upss! This service ({service_name}) unexpectedly failed",
-                    error_code,
-                )
-            finally:
-                if scheduler_data_copy != scheduler_data:
-                    try:
-                        await update_scheduler_data_label(scheduler_data)
-                    except GenericDockerError as e:
-                        logger.warning(
-                            "Skipped labels update, please check:\n %s", f"{e}"
-                        )
+                except asyncio.CancelledError:  # pylint: disable=try-except-raise
+                    raise  # pragma: no cover
 
+                except Exception as e:  # pylint: disable=broad-except
+                    service_name = scheduler_data.service_name
+
+                    # With unhandled errors, let's generate and ID and send it to the end-user
+                    # so that we can trace the logs and debug the issue.
+
+                    error_code = create_error_code(e)
+                    logger.exception(
+                        "Observation of %s unexpectedly failed [%s]",
+                        f"{service_name=} ",
+                        f"{error_code}",
+                        extra={"error_code": error_code},
+                    )
+                    scheduler_data.dynamic_sidecar.status.update_failing_status(
+                        # This message must be human-friendly
+                        f"Upss! This service ({service_name}) unexpectedly failed",
+                        error_code,
+                    )
+                finally:
+                    if scheduler_data_copy != scheduler_data:
+                        try:
+                            await update_scheduler_data_label(scheduler_data)
+                        except GenericDockerError as e:
+                            logger.warning(
+                                "Skipped labels update, please check:\n %s", f"{e}"
+                            )
+
+        # -------------------------------------------------------------
         service_name: str
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
@@ -389,11 +408,13 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                 continue
 
             if self._service_observation_task.get(service_name) is None:
+                prefix = self._prefix_task_name()
+
                 self._service_observation_task[
                     service_name
                 ] = observation_task = asyncio.create_task(
-                    _observing_single_service(service_name),
-                    name=f"observe_{service_name}",
+                    _observe(service_name),
+                    name=f"{prefix}._observe[{service_name}]",
                 )
                 observation_task.add_done_callback(
                     functools.partial(
@@ -479,20 +500,22 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                 )
 
     async def start(self) -> None:
+
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
+
+        prefix = self._prefix_task_name()
         self._scheduler_task = asyncio.create_task(
-            self._run_scheduler_task(), name="dynamic-scheduler"
+            self._run_scheduler_task(), name=f"{prefix}._run_scheduler_task"
         )
         self._trigger_observation_queue_task = asyncio.create_task(
             self._run_trigger_observation_queue_task(),
-            name="dynamic-scheduler-trigger-obs-queue",
+            name=f"{prefix}._run_trigger_observation_queue_task",
         )
-
         self._cleanup_volume_removal_services_task = asyncio.create_task(
             self._cleanup_volume_removal_services(),
-            name="dynamic-scheduler-cleanup-volume-removal-services",
+            name=f"{prefix}._cleanup_volume_removal_services_task",
         )
         await self._discover_running_services()
 
