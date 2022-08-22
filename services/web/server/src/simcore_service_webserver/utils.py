@@ -14,6 +14,7 @@ from typing import Any
 
 import orjson
 from models_library.basic_types import SHA1Str
+from servicelib.error_codes import ErrorCodeStr
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
@@ -137,9 +138,13 @@ def get_tracemalloc_info(top=10) -> list[str]:
     return top_trace
 
 
-def compose_error_msg(msg: str) -> str:
-    msg = msg.strip()
-    return f"{msg}. Please send this message to support@osparc.io [{now_str()}]"
+def compose_support_error_msg(
+    msg: str, error_code: ErrorCodeStr, support_email: str = "support"
+) -> str:
+    return (
+        f"{msg.strip(' .').capitalize()} [{error_code}].\n"
+        f"Please contact {support_email} and attach the message above"
+    )
 
 
 # -----------------------------------------------
