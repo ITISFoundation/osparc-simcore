@@ -72,6 +72,17 @@ class TutorialBase {
     console.log("commit", commit);
   }
 
+  async __printMe() {
+    const resp = await utils.makeRequest(this.__page, "/me");
+    if (resp) {
+      console.log("login:", resp["login"]);
+      console.log("user_id:", resp["id"]);
+    }
+    else {
+      console.log("Not found");
+    }
+  }
+
   async start() {
     try {
       await this.beforeScript();
@@ -103,45 +114,6 @@ class TutorialBase {
     catch (err) {
       console.error("Error starting", err);
       throw (err);
-    }
-  }
-
-  async checkFirstStudyId(studyId) {
-    await this.__page.waitForSelector('[osparc-test-id="studiesList"]')
-    const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
-    console.log("checkFirstStudyId", studyId);
-    console.log(studies);
-    if (studyId !== studies[0]) {
-      throw (studyId + " not found");
-    }
-  }
-
-  async openStudyLink(openStudyTimeout = 20000) {
-    this.__responsesQueue.addResponseListener("open");
-
-    let resp = null;
-    try {
-      await this.__goTo();
-      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
-      await this.__printMe();
-      const studyId = resp["data"]["uuid"];
-      console.log("Study ID:", studyId);
-    }
-    catch (err) {
-      console.error(this.__templateName, "could not be started", err);
-      throw (err);
-    }
-    return resp;
-  }
-
-  async __printMe() {
-    const resp = await utils.makeRequest(this.__page, "/me");
-    if (resp) {
-      console.log("login:", resp["login"]);
-      console.log("user_id:", resp["id"]);
-    }
-    else {
-      console.log("Not found");
     }
   }
 
@@ -200,6 +172,16 @@ class TutorialBase {
     }
   }
 
+  async checkFirstStudyId(studyId) {
+    await this.__page.waitForSelector('[osparc-test-id="studiesList"]')
+    const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
+    console.log("checkFirstStudyId", studyId);
+    console.log(studies);
+    if (studyId !== studies[0]) {
+      throw (studyId + " not found");
+    }
+  }
+
   async waitForOpen() {
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
@@ -208,6 +190,24 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
+  }
+
+  async openStudyLink(openStudyTimeout = 20000) {
+    this.__responsesQueue.addResponseListener("open");
+
+    let resp = null;
+    try {
+      await this.__goTo();
+      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      await this.__printMe();
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(this.__templateName, "could not be started", err);
+      throw (err);
     }
     return resp;
   }
