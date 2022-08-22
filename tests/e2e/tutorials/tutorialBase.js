@@ -173,7 +173,8 @@ class TutorialBase {
   }
 
   async checkFirstStudyId(studyId) {
-    await this.__page.waitForSelector('[osparc-test-id="studiesList"]')
+    await this.__page.waitForSelector('[osparc-test-id="studiesList"]');
+    await this.waitFor(1000);
     const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
     console.log("checkFirstStudyId", studyId);
     console.log(studies);
