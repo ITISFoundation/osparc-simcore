@@ -226,7 +226,7 @@ async def test_failing_task_returns_error(
     assert not task_result.result
     assert task_result.error
     assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
-    assert 'raise RuntimeError("raised this error as instructed")' in task_result.error
+    assert 'raise RuntimeError("We were asked to fail!!")' in task_result.error
     # NOTE: this is not yet happening with fastapi version of long running task
     # assert "errors" in task_result.error
     # assert len(task_result.error["errors"]) == 1
@@ -274,7 +274,7 @@ async def test_cancel_task(
 
 async def test_list_tasks_empty_list(app: FastAPI, client: AsyncClient):
     # initially empty
-    list_url = app.url_path_for.router["list_tasks"].url_for()
+    list_url = app.url_path_for("list_tasks")
     result = await client.get(f"{list_url}")
     assert result.status_code == status.HTTP_200_OK
     list_of_tasks = parse_obj_as(list[TaskGet], result.json())
