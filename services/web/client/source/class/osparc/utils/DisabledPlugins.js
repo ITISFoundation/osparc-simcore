@@ -24,17 +24,12 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
 
   statics: {
     EXPORT: "WEBSERVER_EXPORTER",
-    DUPLICATE: "WEBSERVER_EXPORTER",
     IMPORT: "WEBSERVER_EXPORTER",
     SCICRUNCH: "WEBSERVER_SCICRUNCH",
     VERSION_CONTROL: "WEBSERVER_VERSION_CONTROL",
     META_MODELING: "WEBSERVER_META_MODELING",
 
     isExportDisabled: function() {
-      return this.self().isPluginDisabled(this.self().EXPORT);
-    },
-
-    isDuplicateDisabled: function() {
       return this.self().isPluginDisabled(this.self().EXPORT);
     },
 

@@ -4,12 +4,14 @@
 
 import os
 from pathlib import Path
-from uuid import UUID
 
 import pytest
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
+from models_library.services import RunID
 from simcore_service_dynamic_sidecar.core.application import AppState
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     MountedVolumes,
     _name_from_full_path,
@@ -28,6 +30,12 @@ def _replace_slashes(path: Path) -> str:
 @pytest.fixture
 def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
+
+
+@pytest.fixture
+def app(app: FastAPI) -> FastAPI:
+    app.state.shared_store = SharedStore()  # emulate on_startup event
+    return app
 
 
 @pytest.fixture
@@ -54,8 +62,8 @@ async def test_expected_paths_and_volumes(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: list[Path],
-    compose_namespace: str,
-    run_id: UUID,
+    run_id: RunID,
+    node_id: NodeID,
 ):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
@@ -87,15 +95,15 @@ async def test_expected_paths_and_volumes(
     # check volume mount point
     assert (
         mounted_volumes.volume_name_outputs
-        == f"{compose_namespace}{_replace_slashes(outputs_dir)}"
+        == f"dyv_{run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
     )
     assert (
         mounted_volumes.volume_name_inputs
-        == f"{compose_namespace}{_replace_slashes(inputs_dir)}"
+        == f"dyv_{run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
     )
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
-        f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs
+        f"dyv_{run_id}_{node_id}_{_replace_slashes(x)[::-1]}" for x in state_paths_dirs
     }
 
     def _get_container_mount(mount_path: str) -> str:

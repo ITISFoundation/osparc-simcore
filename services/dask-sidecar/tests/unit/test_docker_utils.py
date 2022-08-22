@@ -4,7 +4,6 @@
 # pylint: disable=no-member
 
 import asyncio
-from datetime import datetime
 from typing import Any, Dict, List, Tuple
 from unittest.mock import call
 
@@ -18,7 +17,6 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     create_container_config,
     managed_container,
     parse_line,
-    to_datetime,
 )
 
 
@@ -48,7 +46,7 @@ def comp_volume_mount_point() -> str:
 
 
 @pytest.mark.parametrize(
-    "task_max_resources", [{}, {"CPU": 12, "RAM": 2 ** 9}, {"GPU": 4, "RAM": 1 ** 6}]
+    "task_max_resources", [{}, {"CPU": 12, "RAM": 2**9}, {"GPU": 4, "RAM": 1**6}]
 )
 @pytest.mark.parametrize("boot_mode", list(BootMode))
 async def test_create_container_config(
@@ -90,19 +88,11 @@ async def test_create_container_config(
                     f"{comp_volume_mount_point}/logs:/logs",
                 ],
                 "Init": True,
-                "Memory": task_max_resources.get("RAM", 1024 ** 3),
+                "Memory": task_max_resources.get("RAM", 1024**3),
                 "NanoCPUs": task_max_resources.get("CPU", 1) * 1e9,
             },
         }
     )
-
-
-@pytest.mark.parametrize(
-    "docker_time, expected_datetime",
-    [("2020-10-09T12:28:14.771034099Z", datetime(2020, 10, 9, 12, 28, 14, 771034))],
-)
-def test_to_datetime(docker_time: str, expected_datetime: datetime):
-    assert to_datetime(docker_time) == expected_datetime
 
 
 @pytest.mark.parametrize(
