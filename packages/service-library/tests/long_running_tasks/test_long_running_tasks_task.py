@@ -72,9 +72,9 @@ async def test_unchecked_task_is_auto_removed(tasks_manager: TasksManager):
     )
     await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_status(task_id)
+        tasks_manager.get_task_status(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_result_old(task_id)
 
@@ -87,12 +87,12 @@ async def test_checked_once_task_is_auto_removed(tasks_manager: TasksManager):
         total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
     )
     # check once (different branch in code)
-    tasks_manager.get_task_status(task_id)
+    tasks_manager.get_task_status(task_id, with_task_context=None)
     await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_status(task_id)
+        tasks_manager.get_task_status(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_result_old(task_id)
 
@@ -111,9 +111,9 @@ async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            status = tasks_manager.get_task_status(task_id)
+            status = tasks_manager.get_task_status(task_id, with_task_context=None)
             assert status.done, f"task {task_id} not complete"
-    result = tasks_manager.get_task_result(task_id)
+    result = tasks_manager.get_task_result(task_id, with_task_context=None)
     assert result
 
 
@@ -125,7 +125,7 @@ async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager)
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
     )
     with pytest.raises(TaskNotCompletedError):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
 
     with pytest.raises(TaskNotCompletedError):
         tasks_manager.get_task_result_old(task_id)
@@ -162,7 +162,7 @@ async def test_get_status(tasks_manager: TasksManager):
         raise_when_finished=False,
         total_sleep=10,
     )
-    task_status = tasks_manager.get_task_status(task_id)
+    task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_progress.message == ""
     assert task_status.task_progress.percent == 0.0
@@ -172,14 +172,14 @@ async def test_get_status(tasks_manager: TasksManager):
 
 async def test_get_status_missing(tasks_manager: TasksManager):
     with pytest.raises(TaskNotFoundError) as exec_info:
-        tasks_manager.get_task_status("missing_task_id")
+        tasks_manager.get_task_status("missing_task_id", with_task_context=None)
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
 async def test_get_result(tasks_manager: TasksManager):
     task_id = start_task(tasks_manager=tasks_manager, handler=fast_background_task)
     await asyncio.sleep(0.1)
-    result = tasks_manager.get_task_result(task_id)
+    result = tasks_manager.get_task_result(task_id, with_task_context=None)
     assert result == 42
 
 
@@ -192,7 +192,7 @@ async def test_get_result_old(tasks_manager: TasksManager):
 
 async def test_get_result_missing(tasks_manager: TasksManager):
     with pytest.raises(TaskNotFoundError) as exec_info:
-        tasks_manager.get_task_result("missing_task_id")
+        tasks_manager.get_task_result("missing_task_id", with_task_context=None)
     assert f"{exec_info.value}" == "No task with missing_task_id found"
 
 
@@ -206,10 +206,10 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager):
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            assert tasks_manager.get_task_status(task_id).done
+            assert tasks_manager.get_task_status(task_id, with_task_context=None).done
 
     with pytest.raises(RuntimeError, match="failing asap"):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
 
 
 async def test_get_result_old_finished_with_error(tasks_manager: TasksManager):
@@ -222,7 +222,7 @@ async def test_get_result_old_finished_with_error(tasks_manager: TasksManager):
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            assert tasks_manager.get_task_status(task_id).done
+            assert tasks_manager.get_task_status(task_id, with_task_context=None).done
 
     task_result = tasks_manager.get_task_result_old(task_id)
     assert task_result.result is None
@@ -241,12 +241,12 @@ async def test_get_result_task_was_cancelled_multiple_times(
         total_sleep=10,
     )
     for _ in range(5):
-        await tasks_manager.cancel_task(task_id)
+        await tasks_manager.cancel_task(task_id, with_task_context=None)
 
     with pytest.raises(
         TaskCancelledError, match=f"Task {task_id} was cancelled before completing"
     ):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
 
 
 async def test_get_result_old_task_was_cancelled_multiple_times(
@@ -259,39 +259,65 @@ async def test_get_result_old_task_was_cancelled_multiple_times(
         total_sleep=10,
     )
     for _ in range(5):
-        await tasks_manager.cancel_task(task_id)
+        await tasks_manager.cancel_task(task_id, with_task_context=None)
 
     task_result = tasks_manager.get_task_result_old(task_id)
     assert task_result.result is None
     assert task_result.error == f"Task {task_id} was cancelled before completing"
 
 
-async def test_remove_ok(tasks_manager: TasksManager):
+async def test_remove_task(tasks_manager: TasksManager):
     task_id = start_task(
         tasks_manager=tasks_manager,
         handler=a_background_task,
         raise_when_finished=False,
         total_sleep=10,
     )
-    tasks_manager.get_task_status(task_id)
-    await tasks_manager.remove_task(task_id)
+    tasks_manager.get_task_status(task_id, with_task_context=None)
+    await tasks_manager.remove_task(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_status(task_id)
+        tasks_manager.get_task_status(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result(task_id)
+        tasks_manager.get_task_result(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_result_old(task_id)
 
 
+async def test_remove_task_with_task_context(tasks_manager: TasksManager):
+    TASK_CONTEXT = {"some_context": "some_value"}
+    task_id = start_task(
+        tasks_manager=tasks_manager,
+        handler=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+        task_context=TASK_CONTEXT,
+    )
+    # getting status fails if no task context given
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_status(
+            task_id, with_task_context={"wrong_task_context": 12}
+        )
+    tasks_manager.get_task_status(task_id, with_task_context=TASK_CONTEXT)
+
+    # removing task fails if no task context given
+    with pytest.raises(TaskNotFoundError):
+        await tasks_manager.remove_task(
+            task_id, with_task_context={"wrong_task_context": 12}
+        )
+    await tasks_manager.remove_task(task_id, with_task_context=TASK_CONTEXT)
+
+
 async def test_remove_unknown_task(tasks_manager: TasksManager):
     with pytest.raises(TaskNotFoundError):
-        await tasks_manager.remove_task("invalid_id")
+        await tasks_manager.remove_task("invalid_id", with_task_context=None)
 
-    await tasks_manager.remove_task("invalid_id", reraise_errors=False)
+    await tasks_manager.remove_task(
+        "invalid_id", with_task_context=None, reraise_errors=False
+    )
 
 
 async def test_list_tasks(tasks_manager: TasksManager):
-    assert tasks_manager.list_tasks() == []
+    assert tasks_manager.list_tasks(with_task_context=None) == []
     # start a bunch of tasks
     NUM_TASKS = 10
     task_ids = []
@@ -304,10 +330,12 @@ async def test_list_tasks(tasks_manager: TasksManager):
                 total_sleep=10,
             )
         )
-    assert len(tasks_manager.list_tasks()) == NUM_TASKS
+    assert len(tasks_manager.list_tasks(with_task_context=None)) == NUM_TASKS
     for task_index, task_id in enumerate(task_ids):
-        await tasks_manager.remove_task(task_id)
-        assert len(tasks_manager.list_tasks()) == NUM_TASKS - (task_index + 1)
+        await tasks_manager.remove_task(task_id, with_task_context=None)
+        assert len(tasks_manager.list_tasks(with_task_context=None)) == NUM_TASKS - (
+            task_index + 1
+        )
 
 
 async def test_list_tasks_filtering(tasks_manager: TasksManager):
@@ -331,7 +359,7 @@ async def test_list_tasks_filtering(tasks_manager: TasksManager):
         total_sleep=10,
         task_context={"user_id": 213, "product": "osparc"},
     )
-    assert len(tasks_manager.list_tasks()) == 3
+    assert len(tasks_manager.list_tasks(with_task_context=None)) == 3
     assert len(tasks_manager.list_tasks(with_task_context={"user_id": 213})) == 1
     assert (
         len(
