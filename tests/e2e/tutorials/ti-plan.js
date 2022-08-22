@@ -22,7 +22,7 @@ async function runTutorial() {
     await tutorial.start();
 
     // check that the "New Study" is "New Plan"
-    await tutorial.checkFirstStudyId("newPlanBtn");
+    await tutorial.checkFirstStudyId("newPlanButton");
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
