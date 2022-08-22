@@ -1,6 +1,7 @@
+import logging
 from collections import deque
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Type
+from typing import Any, AsyncIterator, Deque, Optional
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
@@ -13,11 +14,14 @@ from ...db.repositories import BaseRepository
 from ...director_v0 import DirectorV0Client
 from ..api_client import DynamicSidecarClient
 from ..docker_api import (
+    ServiceSpecsError,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
     remove_volumes_from_node,
 )
 from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -41,7 +45,7 @@ async def disabled_directory_watcher(
 
 
 def fetch_repo_outside_of_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
+    app: FastAPI, repo_type: type[BaseRepository]
 ) -> BaseRepository:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
@@ -52,8 +56,8 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
+    containers_inspect: Optional[dict[str, Any]]
+) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
@@ -65,15 +69,16 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def all_containers_running(containers_inspect: list[DockerContainerInspect]) -> bool:
     return len(containers_inspect) > 0 and all(
-        (x.status == DockerStatus.RUNNING for x in containers_inspect)
+        x.status == DockerStatus.RUNNING for x in containers_inspect
     )
 
 
 async def cleanup_sidecar_stack_and_resources(
     dynamic_sidecar_settings: DynamicSidecarSettings, scheduler_data: SchedulerData
 ) -> None:
+
     # remove the 2 services
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
@@ -96,17 +101,26 @@ async def cleanup_sidecar_stack_and_resources(
         ]
         + scheduler_data.paths_mapping.state_paths
     ]
-    assert scheduler_data.docker_node_id  # nosec
+
     # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
     # it does not remove the volumes. Is this something we want?
     # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
     # otherwise keep them in place!!!!!
     # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
-    await remove_volumes_from_node(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
-        volume_names=unique_volume_names,
-        docker_node_id=scheduler_data.docker_node_id,
-        user_id=scheduler_data.user_id,
-        project_id=scheduler_data.project_id,
-        node_uuid=scheduler_data.node_uuid,
-    )
+
+    try:
+
+        await remove_volumes_from_node(
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            volume_names=unique_volume_names,
+            docker_node_id=scheduler_data.docker_node_id,
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_uuid=scheduler_data.node_uuid,
+        )
+    except ServiceSpecsError:
+        logger.warning(
+            "With current state, we cannot gather sufficient specs to run volume removal service."
+            "Skipping volume-removal upon cleanup",
+            exc_info=True,
+        )
