@@ -29,6 +29,8 @@ async function runTutorial() {
     studyId = studyData["data"]["uuid"];
 
     // check the app mode steps
+    const appModeSteps = await tutorial.getAppModeSteps();
+    console.log(appModeSteps);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

@@ -194,7 +194,7 @@ class TutorialBase {
     return resp;
   }
 
-  async startNewPlan(waitFor = 1000) {
+  async startNewPlan(waitFor = 5000) {
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener("open");
@@ -273,6 +273,16 @@ class TutorialBase {
     await this.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenService_after");
     return resp;
+  }
+
+  async getAppModeSteps() {
+    await this.__page.waitForSelector('[osparc-test-id="appModeButtons"]')
+    const appModeButtons = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
+    console.log(appModeButtons);
+    if (appModeButtons) {
+      throw ("appModeButtons not found");
+    }
+    return appModeButtons;
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
