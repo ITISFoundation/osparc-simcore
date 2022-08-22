@@ -231,7 +231,10 @@ class DynamicSidecar(BaseModel):
             "important data might be lost. awaits for manual intervention."
         ),
     )
-    was_data_saved_when_closing: bool = Field(False, description="used to ")
+    was_data_saved_when_closing: bool = Field(
+        False,
+        description="marked as True if sidecar managed to store the data when it was closing",
+    )
 
     # below had already been validated and
     # used only to start the proxy
