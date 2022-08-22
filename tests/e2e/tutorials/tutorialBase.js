@@ -195,7 +195,8 @@ class TutorialBase {
     return resp;
   }
 
-  async startNewPlan(waitFor = 5000) {
+  async startNewPlan() {
+    await this.waitFor(2000);
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener("open");
@@ -211,7 +212,6 @@ class TutorialBase {
       console.error(`New Plan could not be started:\n`, err);
       throw (err);
     }
-    await this.waitFor(waitFor);
     await this.takeScreenshot("startNewPlan_after");
     return resp;
   }
