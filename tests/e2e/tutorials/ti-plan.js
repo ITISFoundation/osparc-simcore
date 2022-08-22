@@ -13,7 +13,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const studyName = "New Plan";
+const studyName = "TI Planning Tool";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
@@ -31,7 +31,7 @@ async function runTutorial() {
     // check the app mode steps
     const appModeSteps = await tutorial.getAppModeSteps();
     if (appModeSteps.length !== 3) {
-      throw "Three steps expected, got" + appModeSteps;
+      throw "Three steps expected, got " + appModeSteps;
     }
 
     // wait for the three services
