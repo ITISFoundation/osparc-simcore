@@ -277,10 +277,13 @@ class TutorialBase {
 
   async getAppModeSteps() {
     await this.__page.waitForSelector('[osparc-test-id="appModeButtons"]')
-    const appModeButtons = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
-    console.log(appModeButtons);
-    if (appModeButtons) {
+    const appModeButtonsAll = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
+    if (appModeButtonsAll.length < 1) {
       throw ("appModeButtons not found");
+    }
+    const appModeButtons = appModeButtonsAll.filter(btn => btn.includes("appModeButton_"));
+    if (appModeButtons.length < 1) {
+      throw ("appModeButtons filtered not found");
     }
     return appModeButtons;
   }

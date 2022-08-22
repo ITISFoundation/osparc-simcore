@@ -31,6 +31,16 @@ async function runTutorial() {
     // check the app mode steps
     const appModeSteps = await tutorial.getAppModeSteps();
     console.log(appModeSteps);
+
+    // wait for the three services
+    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    console.log("workbenchData.nodeIds", workbenchData["nodeIds"]);
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
+      [workbenchData["nodeIds"][0], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3]],
+      startTimeout,
+      false
+    );
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
