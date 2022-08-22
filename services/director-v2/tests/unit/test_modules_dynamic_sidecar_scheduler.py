@@ -40,7 +40,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import
     DynamicSchedulerEvent,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
-    apply_observation_cycle,
+    _apply_observation_cycle,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -250,7 +250,7 @@ async def manually_trigger_scheduler(
     scheduler_data: SchedulerData,
 ) -> Callable[[], Awaitable[None]]:
     async def _triggerer() -> None:
-        await apply_observation_cycle(minimal_app, scheduler, scheduler_data)
+        await _apply_observation_cycle(minimal_app, scheduler, scheduler_data)
 
     return _triggerer
 

@@ -26,11 +26,12 @@ def _docker_compose_options_from_settings(settings: ApplicationSettings) -> str:
     return " ".join(options)
 
 
-def _increase_timeout(docker_command_timeout: Optional[int]) -> Optional[int]:
+def _pad_docker_command_timeout(
+    docker_command_timeout: Optional[int], *, padding: int = 2
+) -> Optional[int]:
     if docker_command_timeout is None:
         return None
-    # NOTE: ensuring process has enough time to end
-    return docker_command_timeout * 10
+    return docker_command_timeout + padding
 
 
 @run_sequentially_in_context()
@@ -151,7 +152,9 @@ async def docker_compose_restart(
             f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
             f" --timeout {default_compose_restart_timeout}"
         ),
-        process_termination_timeout=_increase_timeout(default_compose_restart_timeout),
+        process_termination_timeout=_pad_docker_command_timeout(
+            default_compose_restart_timeout
+        ),
     )
     return result  # type: ignore
 
@@ -176,7 +179,9 @@ async def docker_compose_down(
             f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
             f" --volumes --remove-orphans --timeout {default_compose_down_timeout}"
         ),
-        process_termination_timeout=_increase_timeout(default_compose_down_timeout),
+        process_termination_timeout=_pad_docker_command_timeout(
+            default_compose_down_timeout
+        ),
     )
     return result  # type: ignore
 
