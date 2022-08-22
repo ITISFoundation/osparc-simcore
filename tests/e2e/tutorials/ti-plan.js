@@ -30,11 +30,14 @@ async function runTutorial() {
 
     // check the app mode steps
     const appModeSteps = await tutorial.getAppModeSteps();
-    console.log(appModeSteps);
+    if (appModeSteps.length !== 3) {
+      throw "Three steps expected, got" + appModeSteps;
+    }
 
     // wait for the three services
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log("workbenchData.nodeIds", workbenchData["nodeIds"]);
+    // skipping the second one wchich is the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
       [workbenchData["nodeIds"][0], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3]],

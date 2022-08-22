@@ -278,15 +278,15 @@ class TutorialBase {
 
   async getAppModeSteps() {
     await this.__page.waitForSelector('[osparc-test-id="appModeButtons"]')
-    const appModeButtonsAll = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
-    if (appModeButtonsAll.length < 1) {
+    const appModeButtonsAllIds = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
+    if (appModeButtonsAllIds.length < 1) {
       throw ("appModeButtons not found");
     }
-    const appModeButtons = appModeButtonsAll.filter(btn => btn.includes("appModeButton_"));
-    if (appModeButtons.length < 1) {
+    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("appModeButton_"));
+    if (appModeButtonIds.length < 1) {
       throw ("appModeButtons filtered not found");
     }
-    return appModeButtons;
+    return appModeButtonIds;
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
