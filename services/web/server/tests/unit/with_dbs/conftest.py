@@ -99,11 +99,12 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    monkeypatch: MonkeyPatch,
-    postgres_db,
+    postgres_db: sa.engine.Engine,
+    # tools
     aiohttp_server: Callable,
-    disable_static_webserver: Callable,
+    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable,
+    disable_static_webserver: Callable,
 ) -> TestServer:
 
     print("+ web_server:")

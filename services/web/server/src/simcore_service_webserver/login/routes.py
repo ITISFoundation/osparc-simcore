@@ -15,6 +15,7 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import api_keys_handlers
 from . import handlers as login_handlers
+from . import handlers_confirmation as confirmation_handlers
 
 log = logging.getLogger(__name__)
 
@@ -43,10 +44,10 @@ def create_routes(specs: openapi.Spec) -> list[web.RouteDef]:
         "auth_validate_2fa_login": login_handlers.login_2fa,
         "auth_logout": login_handlers.logout,
         "auth_reset_password": login_handlers.reset_password,
-        "auth_reset_password_allowed": login_handlers.reset_password_allowed,
+        "auth_reset_password_allowed": confirmation_handlers.reset_password_allowed,
         "auth_change_email": login_handlers.change_email,
         "auth_change_password": login_handlers.change_password,
-        "auth_confirmation": login_handlers.email_confirmation,
+        "auth_confirmation": confirmation_handlers.email_confirmation,
         "create_api_key": api_keys_handlers.create_api_key,
         "delete_api_key": api_keys_handlers.delete_api_key,
         "list_api_keys": api_keys_handlers.list_api_keys,

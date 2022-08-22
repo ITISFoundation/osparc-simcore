@@ -6,6 +6,7 @@ import asyncio
 from unittest.mock import Mock
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
@@ -13,6 +14,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link
+from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
     delete_2fa_code,
@@ -50,11 +52,22 @@ def app_cfg(
         {
             "TWILIO_ACCOUNT_SID": "fake-account",
             "TWILIO_AUTH_TOKEN": "fake-token",
-            "TWILIO_MESSAGING_SID": "x" * 34,
         },
     )
 
     return app_cfg
+
+
+@pytest.fixture
+def postgres_db(postgres_db: sa.engine.Engine):
+    # adds fake twilio_messaging_sid in osparc product (pre-initialized)
+    stmt = (
+        products.update()
+        .values(twilio_messaging_sid="x" * 34)
+        .where(products.c.name == "osparc")
+    )
+    postgres_db.execute(stmt)
+    return postgres_db
 
 
 @pytest.fixture
@@ -163,7 +176,8 @@ async def test_workflow_register_and_login_with_2fa(
 
     # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code"].called
-    phone, received_code, _ = mocked_twilio_service["send_sms_code"].call_args.args
+    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
     # check phone still NOT in db (TODO: should be in database and unconfirmed)
@@ -204,7 +218,8 @@ async def test_workflow_register_and_login_with_2fa(
     assert data["code"] == "SMS_CODE_REQUIRED"
 
     # assert SMS was sent
-    phone, received_code, _ = mocked_twilio_service["send_sms_code"].call_args.args
+    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
     # 2. check SMS code

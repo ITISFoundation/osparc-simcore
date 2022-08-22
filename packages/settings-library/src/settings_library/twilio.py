@@ -1,6 +1,10 @@
-""" Twilio settings
+""" Account settings for twilio.com service
 
+For twilio SMS services:
+    SEE https://www.twilio.com/docs/sms/quickstart/python
+    SEE https://support.twilio.com/hc/en-us/articles/223136027-Auth-Tokens-and-How-to-Change-Them
 """
+
 
 from pydantic import Field
 
@@ -8,16 +12,5 @@ from .base import BaseCustomSettings
 
 
 class TwilioSettings(BaseCustomSettings):
-    # SEE https://www.twilio.com/docs/sms/quickstart/python
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_AUTH_TOKEN: str
-
-    # SID stands for String Identifier: SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    # It’s a unique key that is used to identify specific resources. At Twilio, each SID has 34 digits
-    # and you can identify the type of SID and the product it’s associated with
-    # by the first two characters.
-    TWILIO_MESSAGING_SID: str = Field(
-        description="Corresponds to phone's String Identifier. from which SMS are sent (i.e. osparc side)",
-        min_length=34,
-        max_length=34,
-    )
+    TWILIO_ACCOUNT_SID: str = Field(..., description="Twilio account String Identifier")
+    TWILIO_AUTH_TOKEN: str = Field(..., description="API tokens")
