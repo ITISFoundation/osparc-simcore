@@ -17,7 +17,7 @@ const studyName = "New Plan";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
-  let studyId
+  let studyId;
   try {
     await tutorial.start();
 
@@ -25,6 +25,8 @@ async function runTutorial() {
     await tutorial.checkFirstStudyId("newPlanButton");
 
     // create New Plan
+    const studyData = await tutorial.startNewPlan();
+    studyId = studyData["data"]["uuid"];
 
     // check the app mode steps
   }

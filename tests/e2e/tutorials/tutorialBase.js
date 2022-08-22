@@ -194,6 +194,27 @@ class TutorialBase {
     return resp;
   }
 
+  async startNewPlan(waitFor = 1000) {
+    await this.takeScreenshot("startNewPlan_before");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      await auto.dashboardNewPlan(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(`New Plan could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(waitFor);
+    await this.takeScreenshot("startNewPlan_after");
+    return resp;
+  }
+
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
