@@ -14,7 +14,7 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import SharedStore, setup_shared_store
+from ..models.shared_store import SharedStore
 from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .docker_compose_utils import docker_compose_down
@@ -64,7 +64,7 @@ class AppState:
     def __init__(self, initialized_app: FastAPI):
         # Ensures states are initialized upon construction
         errors = [
-            f"app.state.{name}"
+            "app.state.{name}"
             for name, type_ in AppState._STATES.items()
             if not isinstance(getattr(initialized_app.state, name, None), type_)
         ]
@@ -136,7 +136,7 @@ def create_app():
 
     # MODULES SETUP --------------
 
-    setup_shared_store(app)
+    app.state.shared_store = SharedStore()
     app.state.application_health = ApplicationHealth()
 
     if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
@@ -155,16 +155,15 @@ def create_app():
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
 
     # EVENTS ---------------------
+    app_state = AppState(app)
 
     async def _on_startup() -> None:
-        app_state = AppState(app)
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
         print(APP_STARTED_BANNER_MSG, flush=True)
 
     async def _on_shutdown() -> None:
-        app_state = AppState(app)
         if docker_compose_yaml := app_state.compose_spec:
             logger.info("Removing spawned containers")
 

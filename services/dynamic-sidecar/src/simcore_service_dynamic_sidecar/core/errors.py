@@ -1,6 +1,5 @@
 from typing import Any
-
-from models_library.services import RunID
+from uuid import UUID
 
 
 class BaseDynamicSidecarError(Exception):
@@ -14,7 +13,7 @@ class BaseDynamicSidecarError(Exception):
 
 class VolumeNotFoundError(BaseDynamicSidecarError):
     def __init__(
-        self, source_label: str, run_id: RunID, volumes: list[dict[str, Any]]
+        self, source_label: str, run_id: UUID, volumes: list[dict[str, Any]]
     ) -> None:
         super().__init__(
             f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=!s}: "

@@ -5,7 +5,6 @@ import json
 from collections import namedtuple
 from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
-from pathlib import Path
 from typing import (
     Any,
     AsyncIterable,
@@ -166,9 +165,7 @@ async def httpx_async_client(
     backend_url: AnyHttpUrl,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers: None,
-    ensure_shared_store_dir: Path,
 ) -> AsyncIterable[AsyncClient]:
-    # crete dir here
     async with AsyncClient(
         app=app,
         base_url=backend_url,
