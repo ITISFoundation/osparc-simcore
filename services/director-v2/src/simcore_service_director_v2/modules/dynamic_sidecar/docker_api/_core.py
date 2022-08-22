@@ -206,13 +206,13 @@ async def get_service_placement(
         target_statuses=TASK_STATES_RUNNING,
     )
 
-    if "NodeID" not in task:
+    docker_node_id = task.get("NodeID", None)
+    if not docker_node_id:
         raise DynamicSidecarError(
             f"Could not find an assigned NodeID for service_id={service_id}. "
             f"Last task inspect result: {task}"
         )
-
-    return task["NodeID"]
+    return docker_node_id
 
 
 async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]:
