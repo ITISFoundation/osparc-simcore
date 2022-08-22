@@ -1,12 +1,29 @@
 from fastapi import APIRouter, Depends, Request, status
 
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
-from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._models import TaskGet, TaskId, TaskResult, TaskStatus
 from ...long_running_tasks._task import TasksManager
 from ..requests_decorators import cancel_on_disconnect
 from ._dependencies import get_tasks_manager
 
 router = APIRouter(prefix="/task")
+
+
+@router.get("", response_model=list[TaskGet])
+@cancel_on_disconnect
+async def list_tasks(
+    request: Request, tasks_manager: TasksManager = Depends(get_tasks_manager)
+) -> list[TaskGet]:
+    return [
+        TaskGet(
+            task_id=task.task_id,
+            task_name=task.task_name,
+            status_href="",
+            result_href="",
+            abort_href="",
+        )
+        for task in tasks_manager.list_tasks(with_task_context=None)
+    ]
 
 
 @router.get(
