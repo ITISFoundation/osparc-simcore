@@ -113,6 +113,12 @@ def spec_volume_removal_service(
     versions. It is assumed that the same version of docker
     will be running in the entire swarm.
     """
+    if not docker_node_id:
+        # TODO: Ideally this should raise ValidationError
+        raise ValueError(
+            f"Invalid {docker_node_id=}."
+            f"Cannot defined task_template.ContainerSpec.Placement.Constraints=['node.id == {docker_node_id}']"
+        )
 
     volume_names_seq = " ".join(volume_names)
     formatted_command = SH_SCRIPT_REMOVE_VOLUMES.format(
@@ -121,7 +127,6 @@ def spec_volume_removal_service(
         sleep=sleep_between_attempts_s,
     )
     logger.debug("Service will run:\n%s", formatted_command)
-    command = ["sh", "-c", formatted_command]
 
     create_service_params = {
         "labels": {
@@ -137,7 +142,7 @@ def spec_volume_removal_service(
         "name": f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{uuid4()}",
         "task_template": {
             "ContainerSpec": {
-                "Command": command,
+                "Command": ["sh", "-c", formatted_command],
                 "Image": f"docker:{docker_version}-dind",
                 "Mounts": [
                     {
