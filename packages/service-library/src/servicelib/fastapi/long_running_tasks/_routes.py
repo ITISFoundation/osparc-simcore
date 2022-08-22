@@ -22,7 +22,7 @@ async def get_task_status(
     tasks_manager: TasksManager = Depends(get_tasks_manager),
 ) -> TaskStatus:
     assert request  # nosec
-    return tasks_manager.get_task_status(task_id=task_id)
+    return tasks_manager.get_task_status(task_id=task_id, with_task_context=None)
 
 
 @router.get(
@@ -44,13 +44,17 @@ async def get_task_result(
     # TODO: refactor this to use same as in https://github.com/ITISFoundation/osparc-simcore/issues/3265
     try:
         task_result = tasks_manager.get_task_result_old(task_id=task_id)
-        await tasks_manager.remove_task(task_id, reraise_errors=False)
+        await tasks_manager.remove_task(
+            task_id, with_task_context=None, reraise_errors=False
+        )
         return task_result
     except (TaskNotFoundError, TaskNotCompletedError):
         raise
     except Exception:
         # the task shall be removed in this case
-        await tasks_manager.remove_task(task_id, reraise_errors=False)
+        await tasks_manager.remove_task(
+            task_id, with_task_context=None, reraise_errors=False
+        )
         raise
 
 
@@ -70,4 +74,4 @@ async def cancel_and_delete_task(
     tasks_manager: TasksManager = Depends(get_tasks_manager),
 ) -> None:
     assert request  # nosec
-    await tasks_manager.remove_task(task_id)
+    await tasks_manager.remove_task(task_id, with_task_context=None)
