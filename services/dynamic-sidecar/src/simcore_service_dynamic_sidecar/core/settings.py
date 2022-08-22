@@ -2,11 +2,11 @@ import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, cast
+from uuid import UUID
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -31,13 +31,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Sidecar must have r/w permissions in this folder.",
     )
 
-    DYNAMIC_SIDECAR_SHARED_STORE_DIR: Path = Field(
-        ...,
-        description="Directory where the dynamic-sidecar persists "
-        "it's SharedStore data. This is used in case of reboots of the "
-        "container to reload recover the state of the store.",
-    )
-
     # LOGGING
     LOG_LEVEL: str = Field(
         default="WARNING", env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"]
@@ -56,7 +49,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ...,
         description=(
             "To avoid collisions when scheduling on the same node, this "
-            "will be composed by the project_uuid and node_uuid."
+            "will be compsoed by the project_uuid and node_uuid."
         ),
     )
 
@@ -96,7 +89,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
-    DY_SIDECAR_RUN_ID: RunID
+    DY_SIDECAR_RUN_ID: UUID
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

@@ -4,6 +4,7 @@ import json
 import re
 import socket
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -13,11 +14,8 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Dict,
     Final,
-    List,
     Optional,
-    Tuple,
     cast,
 )
 
@@ -31,7 +29,6 @@ from distributed.pubsub import Pub
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
-from servicelib.docker_utils import to_datetime
 from settings_library.s3 import S3Settings
 
 from ..boot_mode import BootMode
@@ -53,10 +50,10 @@ async def create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: Dict[str, Any],
+    task_max_resources: dict[str, Any],
 ) -> DockerContainerConfig:
 
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
@@ -124,6 +121,20 @@ async def managed_container(
             raise
 
 
+DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
+
+
+def to_datetime(docker_timestamp: str) -> datetime:
+    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+    #  - The T separates the date portion from the time-of-day portion
+    #  - The Z on the end means UTC, that is, an offset-from-UTC
+    # The 099 before the Z is not clear, therefore we will truncate the last part
+    # NOTE: must be in UNIX Timestamp format
+    return datetime.strptime(
+        docker_timestamp[:DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
+    )
+
+
 DOCKER_LOG_REGEXP = re.compile(
     r"^([0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+.[0-9]+.) (.+)$"
 )
@@ -133,7 +144,7 @@ PROGRESS_REGEXP = re.compile(
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
 
-async def parse_line(line: str) -> Tuple[LogType, str, str]:
+async def parse_line(line: str) -> tuple[LogType, str, str]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # default return as log

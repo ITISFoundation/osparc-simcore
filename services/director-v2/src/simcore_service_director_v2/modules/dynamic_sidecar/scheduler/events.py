@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Any, Final, Optional, cast
-from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -45,6 +44,8 @@ from ..docker_api import (
     get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
     try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
@@ -55,15 +56,14 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import EntrypointContainerNotFoundError
-from ._utils import (
+from .abc import DynamicSchedulerEvent
+from .events_utils import (
     all_containers_running,
-    cleanup_sidecar_stack_and_resources,
     disabled_directory_watcher,
     fetch_repo_outside_of_request,
     get_director_v0_client,
     parse_containers_inspect,
 )
-from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
 
@@ -165,10 +165,6 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # start dynamic-sidecar and run the proxy on the same node
 
-        # Each time a new dynamic-sidecar service is created
-        # generate a new `run_id` to avoid resource collisions
-        scheduler_data.dynamic_sidecar.run_id = uuid4()
-
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
@@ -208,7 +204,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
-            docker_node_id=scheduler_data.docker_node_id,
+            node_id=scheduler_data.docker_node_id,
         )
 
         # update service_port and assing it to the status
@@ -647,9 +643,19 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         else:
             await _remove_containers_save_state_and_outputs()
 
-        await cleanup_sidecar_stack_and_resources(
-            dynamic_sidecar_settings, scheduler_data
+        # remove the 2 services
+        await remove_dynamic_sidecar_stack(
+            node_uuid=scheduler_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
         )
+        # remove network
+        await remove_dynamic_sidecar_network(
+            scheduler_data.dynamic_sidecar_network_name
+        )
+
+        # NOTE: for future attempts, volumes cannot be cleaned up
+        # since they are local to the node.
+        # That's why anonymous volumes are used!
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",
