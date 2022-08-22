@@ -48,6 +48,7 @@ def _mark_task_to_remove_if_required(
 
 
 TrackedTaskGroupDict = dict[TaskId, TrackedTask]
+TaskContext = dict[str, Any]
 
 
 class TasksManager:
@@ -116,9 +117,11 @@ class TasksManager:
                 logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
-                    self.get_task_status(task_id).json(),
+                    self.get_task_status(task_id, with_task_context=None).json(),
                 )
-                await self.remove_task(task_id, reraise_errors=False)
+                await self.remove_task(
+                    task_id, with_task_context=None, reraise_errors=False
+                )
 
     @staticmethod
     def _create_task_id(task_name: TaskName) -> str:
@@ -132,9 +135,7 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
-    def list_tasks(
-        self, with_task_context: Optional[dict[str, Any]]
-    ) -> list[TrackedTask]:
+    def list_tasks(self, with_task_context: Optional[TaskContext]) -> list[TrackedTask]:
         tasks = []
         for task_group in self._tasks_groups.values():
             if not with_task_context:
@@ -154,7 +155,7 @@ class TasksManager:
         task_name: TaskName,
         task: Task,
         task_progress: TaskProgress,
-        task_context: dict[str, Any],
+        task_context: TaskContext,
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
@@ -173,7 +174,7 @@ class TasksManager:
         return tracked_task
 
     def _get_tracked_task(
-        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
     ) -> TrackedTask:
         for tasks in self._tasks_groups.values():
             if task_id in tasks:
@@ -186,7 +187,7 @@ class TasksManager:
         raise TaskNotFoundError(task_id=task_id)
 
     def get_task_status(
-        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -209,7 +210,7 @@ class TasksManager:
         )
 
     def get_task_result(
-        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
     ) -> Any:
         """
         returns: the result of the task
@@ -259,7 +260,7 @@ class TasksManager:
         return TaskResult(result=tracked_task.task.result(), error=None)
 
     async def cancel_task(
-        self, task_id: TaskId, with_task_context: Optional[dict[str, Any]]
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
     ) -> None:
         """
         cancels the task
@@ -303,7 +304,7 @@ class TasksManager:
     async def remove_task(
         self,
         task_id: TaskId,
-        with_task_context: Optional[dict[str, Any]],
+        with_task_context: Optional[TaskContext],
         *,
         reraise_errors: bool = True,
     ) -> None:
@@ -345,7 +346,7 @@ def start_task(
     handler: Callable[..., Awaitable],
     *,
     unique: bool = False,
-    task_context: Optional[dict[str, Any]] = None,
+    task_context: Optional[TaskContext] = None,
     **handler_kwargs,
 ) -> TaskId:
     """
