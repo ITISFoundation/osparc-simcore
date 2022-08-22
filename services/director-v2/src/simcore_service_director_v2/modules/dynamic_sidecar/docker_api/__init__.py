@@ -18,7 +18,11 @@ from ._core import (
     try_to_remove_network,
     update_scheduler_data_label,
 )
-from ._volume import remove_pending_volume_removal_services, remove_volumes_from_node
+from ._volume import (
+    ServiceSpecsError,
+    remove_pending_volume_removal_services,
+    remove_volumes_from_node,
+)
 
 __all__: tuple[str, ...] = (
     "are_all_services_present",
@@ -39,6 +43,7 @@ __all__: tuple[str, ...] = (
     "remove_dynamic_sidecar_stack",
     "remove_pending_volume_removal_services",
     "remove_volumes_from_node",
+    "ServiceSpecsError",
     "try_to_remove_network",
     "update_scheduler_data_label",
 )

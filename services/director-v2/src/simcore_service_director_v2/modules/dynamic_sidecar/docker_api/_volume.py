@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -34,6 +34,10 @@ SERVICE_FINISHED_STATES: set[str] = {
 }
 
 
+class ServiceSpecsError(Exception):
+    """Invalid service specs (e.g. some inputs are wrong)"""
+
+
 async def remove_volumes_from_node(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     volume_names: list[str],
@@ -48,6 +52,8 @@ async def remove_volumes_from_node(
     """
     Starts a service at target docker node which will remove
     all entries in the `volumes_names` list.
+
+    raises ServiceSpecsError
     """
 
     async with docker_client() as client:
@@ -69,18 +75,24 @@ async def remove_volumes_from_node(
         volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s
         service_timeout_s = volume_removal_timeout_s * len(volume_names)
 
-        service_spec = spec_volume_removal_service(
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            docker_node_id=docker_node_id,
-            user_id=user_id,
-            project_id=project_id,
-            node_uuid=node_uuid,
-            volume_names=volume_names,
-            docker_version=docker_version,
-            volume_removal_attempts=volume_removal_attempts,
-            sleep_between_attempts_s=sleep_between_attempts_s,
-            service_timeout_s=service_timeout_s,
-        )
+        try:
+
+            service_spec = spec_volume_removal_service(
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                docker_node_id=docker_node_id,
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                volume_names=volume_names,
+                docker_version=docker_version,
+                volume_removal_attempts=volume_removal_attempts,
+                sleep_between_attempts_s=sleep_between_attempts_s,
+                service_timeout_s=service_timeout_s,
+            )
+        except (ValueError, ValidationError) as err:
+            raise ServiceSpecsError(
+                "Cannot build specs for volume-removal service"
+            ) from err
 
         volume_removal_service = await client.services.create(
             **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
