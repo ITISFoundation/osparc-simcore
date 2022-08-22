@@ -339,8 +339,8 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 2,
+                "Delay": 5000000000,
+                "MaxAttempts": 0,
             },
         },
     }
