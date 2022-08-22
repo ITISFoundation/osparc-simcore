@@ -212,23 +212,26 @@ qx.Class.define("osparc.auth.LoginPage", {
         margin: [10, 0]
       });
 
-      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      if (platformVersion) {
-        let text = platformVersion.name + " " + platformVersion.version;
-        const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
-          textColor: "text-darker"
-        });
-        versionLinkLayout.add(versionLink);
-
-        const separator = new qx.ui.basic.Label("::");
-        versionLinkLayout.add(separator);
-        osparc.utils.LibVersions.getPlatformName()
-          .then(platformName => {
-            text += platformName.length ? ` (${platformName})` : " (production)";
-          })
-          .finally(() => {
-            versionLink.setValue(text);
+      if (!osparc.utils.Utils.isProduct("tis")) {
+        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+        if (platformVersion) {
+          let text = platformVersion.name + " " + platformVersion.version;
+          const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
+            textColor: "text-darker"
           });
+          versionLinkLayout.add(versionLink);
+
+          const separator = new qx.ui.basic.Label("::");
+          versionLinkLayout.add(separator);
+
+          osparc.utils.LibVersions.getPlatformName()
+            .then(platformName => {
+              text += platformName.length ? ` (${platformName})` : " (production)";
+            })
+            .finally(() => {
+              versionLink.setValue(text);
+            });
+        }
       }
 
       const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
