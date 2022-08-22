@@ -23,6 +23,10 @@ async function runTutorial() {
 
     // check that the "New Study" is "New Plan"
     await tutorial.checkFirstStudyId("newPlanButton");
+
+    // create New Plan
+
+    // check the app mode steps
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
