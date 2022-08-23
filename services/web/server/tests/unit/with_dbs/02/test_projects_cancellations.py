@@ -125,12 +125,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})
     data, error = await assert_status(resp, expected.accepted)
-    assert not error
-    assert data
-    assert "task_id" in data
-    assert "status_href" in data
-    assert "result_href" in data
-    assert "abort_href" in data
+    created_copy_task = TaskGet.parse_obj(data)
     # list current tasks
     list_task_url = client.app.router["list_tasks"].url_for()
     resp = await client.get(f"{list_task_url}")
@@ -141,6 +136,17 @@ async def test_copying_large_project_and_retrieving_copy_task(
     assert len(list_of_tasks) == 1
     task = list_of_tasks[0]
     assert task.task_name == f"POST {create_url}"
+    # let the copy start
+    await asyncio.sleep(2)
+    # now abort the copy
+    resp = await client.delete(f"{created_copy_task.abort_href}")
+    await assert_status(resp, expected.no_content)
+    # wait to check that the call to storage is "done"
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+    ):
+        with attempt:
+            slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
