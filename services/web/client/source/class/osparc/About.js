@@ -46,8 +46,15 @@ qx.Class.define("osparc.About", {
 
   members: {
     __buildLayout: function() {
-      this.add(new qx.ui.basic.Label(this.tr("oSPARC is built upon a number of open-source \
-      resources - we can't do it all alone! Some of the technologies that we leverage include:")).set({
+      let aboutText = this.tr(" is built upon a number of open-source \
+      resources - we can't do it all alone! Some of the technologies that we leverage include:");
+      if (osparc.utils.Utils.isProduct("tis")) {
+        aboutText = "TI Planning Tool" + aboutText;
+      } else {
+        aboutText = "oSPARC" + aboutText;
+      }
+      this.add(new qx.ui.basic.Label().set({
+        value: aboutText,
         font: "text-14",
         maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
         rich: true,
