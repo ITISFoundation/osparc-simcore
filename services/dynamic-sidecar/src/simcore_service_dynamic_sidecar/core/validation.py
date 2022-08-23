@@ -125,27 +125,32 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-def _inject_backend_networking(
-    parsed_compose_spec: dict[str, Any], network_name: str = "__backend__"
-) -> None:
+DEFAULT_BACKEND_NETWORK_NAME = "__backend__"
+
+
+def _inject_backend_networking(parsed_compose_spec: dict[str, Any]) -> None:
     """
     Put all containers in the compose spec in the same network.
     The `network_name` must only be unique inside the user defined spec;
     docker-compose will add some prefix to it.
     """
 
-    networks = parsed_compose_spec.get("networks", {})
-    networks[network_name] = None
+    networks = parsed_compose_spec.setdefault("networks", {})
+    if not networks:
+        parsed_compose_spec["networks"] = {DEFAULT_BACKEND_NETWORK_NAME: None}
+    else:
+        networks[DEFAULT_BACKEND_NETWORK_NAME] = None
 
     for service_content in parsed_compose_spec["services"].values():
-        service_networks = service_content.get("networks", [])
+        service_networks = service_content.setdefault("networks", [])
         if isinstance(service_networks, list):
-            service_networks.append(network_name)
+            service_networks.append(DEFAULT_BACKEND_NETWORK_NAME)
+        elif not service_networks:
+            # if network is set without entries
+            service_content["networks"] = [DEFAULT_BACKEND_NETWORK_NAME]
         else:
-            service_networks[network_name] = None
-        service_content["networks"] = service_networks
-
-    parsed_compose_spec["networks"] = networks
+            # if the network is set as a dictionary (rather non official but works)
+            service_networks[DEFAULT_BACKEND_NETWORK_NAME] = None
 
 
 def parse_compose_spec(compose_file_content: str) -> Any:
@@ -172,7 +177,7 @@ async def validate_compose_spec(
 
     Finally runs docker-compose config to properly validate the result
     """
-
+    logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
     parsed_compose_spec = parse_compose_spec(compose_file_content)
 
     if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
