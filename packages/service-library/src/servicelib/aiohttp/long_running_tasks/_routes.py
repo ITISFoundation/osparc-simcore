@@ -31,13 +31,13 @@ async def list_tasks(request: web.Request) -> web.Response:
         {
             "data": [
                 TaskGet(
-                    task_id=task.task_id,
-                    task_name=task.task_name,
-                    status_href=f"{request.app.router['get_task_status'].url_for(task_id=task.task_id)}",
-                    result_href=f"{request.app.router['get_task_result'].url_for(task_id=task.task_id)}",
-                    abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=task.task_id)}",
+                    task_id=t.task_id,
+                    task_name=t.task_name,
+                    status_href=f"{request.app.router['get_task_status'].url_for(task_id=t.task_id)}",
+                    result_href=f"{request.app.router['get_task_result'].url_for(task_id=t.task_id)}",
+                    abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=t.task_id)}",
                 )
-                for task in tracked_tasks
+                for t in tracked_tasks
             ]
         },
         dumps=json_dumps,

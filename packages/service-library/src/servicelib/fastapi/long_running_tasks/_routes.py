@@ -17,13 +17,13 @@ async def list_tasks(
     assert request  # nosec
     return [
         TaskGet(
-            task_id=task.task_id,
-            task_name=task.task_name,
+            task_id=t.task_id,
+            task_name=t.task_name,
             status_href="",
             result_href="",
             abort_href="",
         )
-        for task in tasks_manager.list_tasks(with_task_context=None)
+        for t in tasks_manager.list_tasks(with_task_context=None)
     ]
 
 
