@@ -6,7 +6,7 @@ from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Optional, Protocol
+from typing import Any, Optional, Protocol
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -356,26 +356,39 @@ def start_task(
     *,
     unique: bool = False,
     task_context: Optional[TaskContext] = None,
+    task_name: Optional[str] = None,
     **task_kwargs,
 ) -> TaskId:
     """
     Creates a background task from an async function.
 
-    An asyncio task will be created
-    A task will be created out of it by injecting a `TaskProgress` as the first
+    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
     positional argument and adding all `handler_kwargs` as named parameters.
 
-    NOTE: the first progress update will be (message='', percent=0.0)
-    NOTE: the `handler` name must be unique in the module, otherwise when using
+    NOTE: the progress is automatically bounded between 0 and 1
+    NOTE: the `task` name must be unique in the module, otherwise when using
         the unique parameter is True, it will not be able to distinguish between
         them.
+
+    Args:
+        tasks_manager (TasksManager): the tasks manager
+        task (TaskProtocol): the tasks to be run in the background
+        unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
+        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
+        task_name (Optional[str], optional): optional task name. Defaults to None.
+
+    Raises:
+        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
+
+    Returns:
+        TaskId: the task unique identifier
     """
 
-    # NOTE: Composing the task_name out of the handler's module and it's name
+    # NOTE: If not task name is given, it will be composed of the handler's module and it's name
     # to keep the urls shorter and more meaningful.
     handler_module = inspect.getmodule(task)
     handler_module_name = handler_module.__name__ if handler_module else ""
-    task_name = f"{handler_module_name}.{task.__name__}"
+    task_name = task_name or f"{handler_module_name}.{task.__name__}"
 
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
@@ -386,7 +399,8 @@ def start_task(
 
     task_progress = TaskProgress.create()
 
-    async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
+    # bind the task with progress 0 and 1
+    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
         progress.publish(message="starting", percent=0)
         try:
             return await handler(progress, **task_kwargs)
@@ -395,11 +409,13 @@ def start_task(
             # and it can raise if percent is <0 or >1!! -> simplify
             progress.publish(message="finished", percent=1)
 
-    task = asyncio.create_task(_progress_task(task_progress, task), name=f"{task_name}")
+    async_task = asyncio.create_task(
+        _progress_task(task_progress, task), name=f"{task_name}"
+    )
 
     tracked_task = tasks_manager.add_task(
         task_name=task_name,
-        task=task,
+        task=async_task,
         task_progress=task_progress,
         task_context=task_context or {},
     )
