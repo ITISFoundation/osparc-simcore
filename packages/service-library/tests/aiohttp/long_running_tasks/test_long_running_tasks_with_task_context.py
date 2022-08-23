@@ -4,7 +4,7 @@
 Showcases/tests an example of long running tasks.
 
 How these tests works:
-- setup a FastAPI server and launch it in the background.
+- setup a AIOHTTP server and launch it in the background.
 - client directly makes requests to the FastAPI background client.
 
 """
