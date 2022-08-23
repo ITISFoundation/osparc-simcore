@@ -6,6 +6,10 @@ from fastapi import FastAPI
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from tenacity import retry
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 
 from ..core.docker_compose_utils import (
     docker_compose_create,
@@ -18,7 +22,7 @@ from ..core.docker_compose_utils import (
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
-from ..core.utils import assemble_container_names
+from ..core.utils import CommandResult, assemble_container_names
 from ..core.validation import validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
@@ -39,6 +43,22 @@ async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
 
 # NOTE: most services have only 1 "working" directory
 CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
+_MINUTE: Final[int] = 60
+
+
+@retry(
+    wait=wait_random_exponential(),
+    stop=stop_after_delay(5 * _MINUTE),
+    retry=retry_if_result(lambda result: result.success is False),
+    reraise=False,
+)
+async def _retry_docker_compose_start(
+    compose_spec: str, settings: ApplicationSettings
+) -> CommandResult:
+    # NOTE: sometimes the system is not capable of starting
+    # the containers as soon as they are created. This might
+    # happen due to the docker engine's load.
+    return await docker_compose_start(compose_spec, settings)
 
 
 async def task_create_service_containers(
@@ -77,7 +97,7 @@ async def task_create_service_containers(
         await docker_compose_create(shared_store.compose_spec, settings)
 
         progress.publish(message="ensure containers are started", percent=0.95)
-        r = await docker_compose_start(shared_store.compose_spec, settings)
+        r = await _retry_docker_compose_start(shared_store.compose_spec, settings)
 
     message = f"Finished docker-compose start with output\n{r.message}"
 
