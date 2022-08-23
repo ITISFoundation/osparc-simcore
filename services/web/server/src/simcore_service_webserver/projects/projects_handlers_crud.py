@@ -21,10 +21,9 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
+    TaskGet,
     TaskProgress,
-    create_task_name_from_request,
     get_tasks_manager,
-    start_task,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -39,6 +38,7 @@ from .. import catalog, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..long_running_tasks import start_task_with_context
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
@@ -131,41 +131,28 @@ async def create_projects(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    task_manager = get_tasks_manager(request.app)
-    task_id = None
+    task_get: Optional[TaskGet] = None
     try:
-        task_id = start_task(
-            task_manager,
+        task_get = start_task_with_context(
+            request,
             _create_projects,
             app=request.app,
             query_params=query_params,
             user_id=req_ctx.user_id,
             predefined_project=predefined_project,
-            task_context=jsonable_encoder(req_ctx),
-            task_name=create_task_name_from_request(request),
         )
-        status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-        result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-        abort_url = request.app.router["cancel_and_delete_task"].url_for(
-            task_id=task_id
-        )
+
         return web.json_response(
-            data={
-                "data": {
-                    "task_id": task_id,
-                    "status_href": f"{status_url}",
-                    "result_href": f"{result_url}",
-                    "abort_href": f"{abort_url}",
-                }
-            },
+            data={"data": task_get},
             status=web.HTTPAccepted.status_code,
             dumps=json_dumps,
         )
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
-        if task_id:
+        if task_get:
+            task_manager = get_tasks_manager(request.app)
             await task_manager.cancel_task(
-                task_id, with_task_context=jsonable_encoder(req_ctx)
+                task_get.task_id, with_task_context=jsonable_encoder(req_ctx)
             )
         raise
 
