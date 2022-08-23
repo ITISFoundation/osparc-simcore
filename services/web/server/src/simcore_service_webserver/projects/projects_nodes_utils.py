@@ -84,7 +84,7 @@ async def update_node_outputs(
         else list(ui_changed_keys | set(keys_changed))
     )
 
-    # notify
+    # triggers to retrieve inputs to connected services (if possible)
     await projects_api.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=node_uuid, changed_keys=keys
     )

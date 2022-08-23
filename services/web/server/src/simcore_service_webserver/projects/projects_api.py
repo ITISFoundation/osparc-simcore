@@ -58,7 +58,12 @@ from ..socketio.events import (
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete
-from .project_lock import UserNameDict, get_project_locked_state, lock_project
+from .project_lock import (
+    UserNameDict,
+    get_project_locked_state,
+    is_project_locked,
+    lock_project,
+)
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port
@@ -387,11 +392,23 @@ async def is_node_id_present_in_any_project_workbench(
     return await db.node_id_exists(node_id)
 
 
-async def trigger_connected_service_retrieve(
+async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
+    project_id = project["uuid"]
+    if await is_project_locked(app, project_id):
+        # NOTE: we log warn since this function is fire&forget and non-critical
+        log.warning(
+            "Skipping service retrieval because project with %s is currently locked."
+            "Operation triggered by %s",
+            f"{project_id=}",
+            f"{changed_keys=}",
+        )
+        return
+
     workbench = project["workbench"]
     nodes_keys_to_update: dict[str, list[str]] = defaultdict(list)
+
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
         # check this node is dynamic
@@ -425,7 +442,7 @@ async def post_trigger_connected_service_retrieve(
     app: web.Application, **kwargs
 ) -> None:
     await fire_and_forget_task(
-        trigger_connected_service_retrieve(app, **kwargs),
+        _trigger_connected_service_retrieve(app, **kwargs),
         task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
