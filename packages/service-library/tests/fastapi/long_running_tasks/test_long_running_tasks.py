@@ -62,7 +62,6 @@ def server_routes() -> APIRouter:
             long_running_tasks.server.get_tasks_manager
         ),
     ) -> long_running_tasks.server.TaskId:
-        # NOTE: TaskProgress is injected by start_task
         task_id = long_running_tasks.server.start_task(
             task_manager,
             _string_list_task,
@@ -92,7 +91,7 @@ async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def start_task() -> Callable[[FastAPI, AsyncClient], Awaitable[TaskId]]:
+def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[TaskId]]:
     async def _caller(app: FastAPI, client: AsyncClient, **query_kwargs) -> TaskId:
         url = URL(app.url_path_for("create_string_list_task")).update_query(
             num_strings=10, sleep_time=f"{0.2}", **query_kwargs
@@ -139,9 +138,9 @@ def task_waiter() -> Callable[
 async def test_workflow(
     app: FastAPI,
     client: AsyncClient,
-    start_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
 ) -> None:
-    task_id = await start_task(app, client)
+    task_id = await start_long_running_task(app, client)
 
     progress_updates = []
     status_url = app.url_path_for("get_task_status", task_id=task_id)
@@ -211,10 +210,10 @@ async def test_get_task_wrong_task_id_raises_not_found(
 async def test_failing_task_returns_error(
     app: FastAPI,
     client: AsyncClient,
-    start_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
     task_waiter: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
 ) -> None:
-    task_id = await start_task(app, client, fail=f"{True}")
+    task_id = await start_long_running_task(app, client, fail=f"{True}")
     # wait for it to finish
     await task_waiter(app, client, task_id, {})
     # get the result
@@ -237,9 +236,9 @@ async def test_failing_task_returns_error(
 async def test_get_results_before_tasks_finishes_returns_404(
     app: FastAPI,
     client: AsyncClient,
-    start_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
 ):
-    task_id = await start_task(app, client)
+    task_id = await start_long_running_task(app, client)
 
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -249,9 +248,9 @@ async def test_get_results_before_tasks_finishes_returns_404(
 async def test_cancel_task(
     app: FastAPI,
     client: AsyncClient,
-    start_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
 ):
-    task_id = await start_task(app, client)
+    task_id = await start_long_running_task(app, client)
 
     # cancel the task
     delete_url = app.url_path_for("cancel_and_delete_task", task_id=task_id)
@@ -284,12 +283,14 @@ async def test_list_tasks_empty_list(app: FastAPI, client: AsyncClient):
 async def test_list_tasks(
     app: FastAPI,
     client: AsyncClient,
-    start_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
     task_waiter: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
 ):
     # now start a few tasks
     NUM_TASKS = 10
-    results = await asyncio.gather(*(start_task(app, client) for _ in range(NUM_TASKS)))
+    results = await asyncio.gather(
+        *(start_long_running_task(app, client) for _ in range(NUM_TASKS))
+    )
 
     # check we have the full list
     list_url = app.url_path_for("list_tasks")

@@ -94,7 +94,7 @@ def server_routes(
 
 
 @pytest.fixture
-def start_task(
+def start_long_running_task(
     long_running_task_entrypoint,
 ) -> Callable[[TestClient], Awaitable[TaskId]]:
     async def _caller(client: TestClient, **query_kwargs) -> TaskId:

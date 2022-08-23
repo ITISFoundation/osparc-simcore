@@ -96,13 +96,13 @@ def client_with_task_context(
 
 async def test_list_tasks(
     client_with_task_context: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_context: TaskContext,
 ):
     assert client_with_task_context.app
 
     # start one task
-    await start_task(client_with_task_context)
+    await start_long_running_task(client_with_task_context)
 
     # the list should be empty if we do not pass the expected context
     list_url = client_with_task_context.app.router["list_tasks"].url_for()
@@ -124,12 +124,12 @@ async def test_list_tasks(
 
 async def test_get_task_status(
     client_with_task_context: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_context: TaskContext,
 ):
     assert client_with_task_context.app
 
-    task_id = await start_task(client_with_task_context)
+    task_id = await start_long_running_task(client_with_task_context)
     # calling without Task context should find nothing
     status_url = client_with_task_context.app.router["get_task_status"].url_for(
         task_id=task_id
@@ -143,12 +143,12 @@ async def test_get_task_status(
 
 async def test_get_task_result(
     client_with_task_context: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_context: TaskContext,
     task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client_with_task_context.app
-    task_id = await start_task(client_with_task_context)
+    task_id = await start_long_running_task(client_with_task_context)
     await task_waiter(client_with_task_context, task_id, task_context)
     # calling without Task context should find nothing
     result_url = client_with_task_context.app.router["get_task_result"].url_for(
@@ -163,11 +163,11 @@ async def test_get_task_result(
 
 async def test_cancel_task(
     client_with_task_context: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_context: TaskContext,
 ):
     assert client_with_task_context.app
-    task_id = await start_task(client_with_task_context)
+    task_id = await start_long_running_task(client_with_task_context)
     cancel_url = client_with_task_context.app.router["cancel_and_delete_task"].url_for(
         task_id=task_id
     )

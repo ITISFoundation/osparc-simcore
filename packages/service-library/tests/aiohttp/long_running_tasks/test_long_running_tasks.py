@@ -57,10 +57,10 @@ def client(
 
 async def test_workflow(
     client: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
 ):
     assert client.app
-    task_id = await start_task(client)
+    task_id = await start_long_running_task(client)
 
     # get progress updates
     progress_updates = []
@@ -131,11 +131,11 @@ async def test_get_task_wrong_task_id_raises_not_found(
 
 async def test_failing_task_returns_error(
     client: TestClient,
-    start_task: Callable[[TestClient, Any], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient, Any], Awaitable[TaskId]],
     task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client.app
-    task_id = await start_task(client, fail=f"{True}")
+    task_id = await start_long_running_task(client, fail=f"{True}")
     # wait for it to finish
     await task_waiter(client, task_id, {})
     # get the result
@@ -152,10 +152,10 @@ async def test_failing_task_returns_error(
 
 async def test_get_results_before_tasks_finishes_returns_404(
     client: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
 ):
     assert client.app
-    task_id = await start_task(client)
+    task_id = await start_long_running_task(client)
 
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -164,10 +164,10 @@ async def test_get_results_before_tasks_finishes_returns_404(
 
 async def test_cancel_task(
     client: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
 ):
     assert client.app
-    task_id = await start_task(client)
+    task_id = await start_long_running_task(client)
 
     # cancel the task
     delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
@@ -202,13 +202,15 @@ async def test_list_tasks_empty_list(client: TestClient):
 
 async def test_list_tasks(
     client: TestClient,
-    start_task: Callable[[TestClient], Awaitable[TaskId]],
+    start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client.app
     # now start a few tasks
     NUM_TASKS = 10
-    results = await asyncio.gather(*(start_task(client) for _ in range(NUM_TASKS)))
+    results = await asyncio.gather(
+        *(start_long_running_task(client) for _ in range(NUM_TASKS))
+    )
 
     # check we have the full list
     list_url = client.app.router["list_tasks"].url_for()
