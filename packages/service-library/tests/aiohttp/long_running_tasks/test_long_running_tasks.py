@@ -222,7 +222,8 @@ async def test_list_tasks(
 
     # the task name is properly formatted
     assert all(
-        task.task_name == "POST /long_running_task:start" for task in list_of_tasks
+        task.task_name == "POST /long_running_task:start?num_strings=10&sleep_time=0.2"
+        for task in list_of_tasks
     )
     # now wait for them to finish
     await asyncio.gather(*(wait_for_task(client, task_id, {}) for task_id in results))
