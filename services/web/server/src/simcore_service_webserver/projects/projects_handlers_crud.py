@@ -331,7 +331,8 @@ async def _create_projects(
             f"{user_id=}",
         )
         # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
-        await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
+        if prj_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(app, prj_uuid, user_id)
         raise
 
 
