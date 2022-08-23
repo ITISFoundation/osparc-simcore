@@ -5,10 +5,12 @@
 
 
 import asyncio
+import urllib.parse
 from datetime import datetime
 from typing import AsyncIterator, Final
 
 import pytest
+from faker import Faker
 from servicelib.long_running_tasks._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -399,3 +401,15 @@ async def test_list_tasks_filtering(tasks_manager: TasksManager):
         )
         == 0
     )
+
+
+async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
+    task_name = faker.name()
+    task_id = start_task(
+        tasks_manager=tasks_manager,
+        task=a_background_task,
+        raise_when_finished=False,
+        total_sleep=10,
+        task_name=task_name,
+    )
+    assert task_id.startswith(urllib.parse.quote(task_name, safe=""))

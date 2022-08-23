@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
+import urllib.parse
 from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
@@ -389,6 +390,7 @@ def start_task(
     handler_module = inspect.getmodule(task)
     handler_module_name = handler_module.__name__ if handler_module else ""
     task_name = task_name or f"{handler_module_name}.{task.__name__}"
+    task_name = urllib.parse.quote(task_name, safe="")
 
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
