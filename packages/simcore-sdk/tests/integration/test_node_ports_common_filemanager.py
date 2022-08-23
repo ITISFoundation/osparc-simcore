@@ -67,9 +67,62 @@ async def test_valid_upload_download(
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        local_file_path=file_path,
+        file_to_upload=file_path,
         r_clone_settings=optional_r_clone,
     )
+    assert store_id == s3_simcore_location
+    assert e_tag
+    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+        user_id=user_id, store_id=store_id, s3_object=file_id
+    )
+    assert get_store_id == store_id
+    assert get_e_tag == e_tag
+
+    download_folder = Path(tmpdir) / "downloads"
+    download_file_path = await filemanager.download_file_from_s3(
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        store_name=None,
+        s3_object=file_id,
+        local_folder=download_folder,
+    )
+    assert download_file_path.exists()
+    assert download_file_path.name == "test.test"
+    assert filecmp.cmp(download_file_path, file_path)
+
+
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        _file_size("10Mib"),
+        _file_size("103Mib"),
+    ],
+    ids=byte_size_ids,
+)
+async def test_valid_upload_download_using_file_object(
+    node_ports_config: None,
+    tmpdir: Path,
+    user_id: int,
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    s3_simcore_location: LocationID,
+    file_size: ByteSize,
+    create_file_of_size: Callable[[ByteSize, str], Path],
+    optional_r_clone: Optional[RCloneSettings],
+):
+    file_path = create_file_of_size(file_size, "test.test")
+
+    file_id = create_valid_file_uuid(file_path)
+    with file_path.open("rb") as file_object:
+        store_id, e_tag = await filemanager.upload_file(
+            user_id=user_id,
+            store_id=s3_simcore_location,
+            store_name=None,
+            s3_object=file_id,
+            file_to_upload=filemanager.UploadableFileObject(
+                file_object, file_path.name, file_path.stat().st_size
+            ),
+            r_clone_settings=optional_r_clone,
+        )
     assert store_id == s3_simcore_location
     assert e_tag
     get_store_id, get_e_tag = await filemanager.get_file_metadata(
@@ -99,7 +152,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
+        "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
         autospec=True,
         side_effect=ClientError,
     )
@@ -131,7 +184,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
-            local_file_path=file_path,
+            file_to_upload=file_path,
             r_clone_settings=optional_r_clone,
         )
     with pytest.raises(exceptions.S3InvalidPathError):
@@ -166,7 +219,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        local_file_path=file_path,
+        file_to_upload=file_path,
         r_clone_settings=optional_r_clone,
     )
     assert store_id == s3_simcore_location
@@ -184,7 +237,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         side_effect=RCloneFailedError,
     )
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager._upload_file_part",
+        "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
         autospec=True,
         side_effect=ClientError,
     )
@@ -194,7 +247,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
-            local_file_path=file_path,
+            file_to_upload=file_path,
             r_clone_settings=optional_r_clone,
         )
     # the file shall be back to its original state
@@ -224,7 +277,7 @@ async def test_invalid_file_path(
             store_id=store,
             store_name=None,
             s3_object=file_id,
-            local_file_path=Path(tmpdir) / "some other file.txt",
+            file_to_upload=Path(tmpdir) / "some other file.txt",
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -256,7 +309,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_id=store,
             store_name=None,
             s3_object="",  # type: ignore
-            local_file_path=file_path,
+            file_to_upload=file_path,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):
@@ -265,7 +318,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_id=store,
             store_name=None,
             s3_object="file_id",  # type: ignore
-            local_file_path=file_path,
+            file_to_upload=file_path,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -308,7 +361,7 @@ async def test_invalid_store(
             store_id=None,
             store_name=store,  # type: ignore
             s3_object=file_id,
-            local_file_path=file_path,
+            file_to_upload=file_path,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -349,7 +402,7 @@ async def test_valid_metadata(
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        local_file_path=file_path,
+        file_to_upload=file_path,
     )
     assert store_id == s3_simcore_location
     assert e_tag
@@ -406,7 +459,7 @@ async def test_delete_File(
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        local_file_path=file_path,
+        file_to_upload=file_path,
     )
     assert store_id == s3_simcore_location
     assert e_tag

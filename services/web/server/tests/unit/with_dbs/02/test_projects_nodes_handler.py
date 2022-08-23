@@ -4,17 +4,24 @@
 # pylint: disable=unused-variable
 
 import re
-from typing import Any, Type
-from uuid import uuid4
+from collections import UserDict
+from copy import deepcopy
+from typing import Any
+from unittest import mock
+from uuid import UUID, uuid4
 
 import pytest
+from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 
 @pytest.fixture
@@ -62,7 +69,7 @@ async def test_get_node_resources(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
     mock_catalog_service_api_responses: None,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     project_workbench = user_project["workbench"]
@@ -84,7 +91,7 @@ async def test_get_wrong_project_raises_not_found_error(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     project_workbench = user_project["workbench"]
@@ -106,7 +113,7 @@ async def test_get_wrong_node_raises_not_found_error(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     url = client.app.router["get_node_resources"].url_for(
@@ -130,7 +137,7 @@ async def test_replace_node_resources(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
     mock_catalog_service_api_responses: None,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     project_workbench = user_project["workbench"]
@@ -140,3 +147,86 @@ async def test_replace_node_resources(
         )
         response = await client.put(f"{url}", json={})
         await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_create_node_properly_upgrade_database(
+    client: TestClient,
+    logged_user: UserDict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    faker: Faker,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    catalog_subsystem_mock,
+    mocker: MockerFixture,
+):
+    create_or_update_mock = mocker.patch(
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        autospec=True,
+        return_value=None,
+    )
+
+    assert client.app
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+
+    # Use-case 1.: not passing a service UUID will generate a new one on the fly
+    body = {
+        "service_key": f"simcore/services/frontend/{faker.pystr()}",
+        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+    }
+    response = await client.post(url.path, json=body)
+    data, error = await assert_status(response, expected.created)
+    if not error:
+        assert data
+        assert "node_id" in data
+        assert UUID(data["node_id"])
+        new_node_uuid = UUID(data["node_id"])
+        expected_project_data = deepcopy(user_project)
+        expected_project_data["workbench"][f"{new_node_uuid}"] = {
+            "key": body["service_key"],
+            "version": body["service_version"],
+        }
+        # give access to services inside the project
+        catalog_subsystem_mock([expected_project_data])
+        # check the project was updated
+        get_url = client.app.router["get_project"].url_for(
+            project_id=user_project["uuid"]
+        )
+        response = await client.get(get_url.path)
+        prj_data, error = await assert_status(response, expected.ok)
+        assert prj_data
+        assert not error
+        assert "workbench" in prj_data
+        assert (
+            f"{new_node_uuid}" in prj_data["workbench"]
+        ), f"node {new_node_uuid} is missing from project workbench! workbench nodes {list(prj_data['workbench'].keys())}"
+
+        create_or_update_mock.assert_called_once_with(
+            mock.ANY, logged_user["id"], user_project["uuid"]
+        )
+
+    # this does not start anything in the backend since this is not a dynamic service
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_create_node_returns_422_if_body_is_missing(
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    faker: Faker,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+):
+    assert client.app
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    for partial_body in [
+        {},
+        {"service_key": faker.pystr()},
+        {
+            "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}"
+        },
+    ]:
+        response = await client.post(url.path, json=partial_body)
+        await assert_status(response, expected.unprocessable)
+    # this does not start anything in the backend
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()

@@ -99,11 +99,12 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    monkeypatch: MonkeyPatch,
-    postgres_db,
+    postgres_db: sa.engine.Engine,
+    # tools
     aiohttp_server: Callable,
-    disable_static_webserver: Callable,
+    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable,
+    disable_static_webserver: Callable,
 ) -> TestServer:
 
     print("+ web_server:")
@@ -316,14 +317,18 @@ def postgres_db(
 
     # Configures db and initializes tables
     kwargs = postgres_dsn.copy()
+    assert pg_cli.discover.callback
     pg_cli.discover.callback(**kwargs)
+    assert pg_cli.upgrade.callback
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
 
     yield engine
 
+    assert pg_cli.downgrade.callback
     pg_cli.downgrade.callback("base")
+    assert pg_cli.clean.callback
     pg_cli.clean.callback()
 
     orm.metadata.drop_all(engine)

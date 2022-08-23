@@ -22,7 +22,7 @@ class File(BaseModel):
 
     filename: str = Field(..., description="Name of the file with extension")
     content_type: Optional[str] = Field(
-        None, description="Guess of type content [EXPERIMENTAL]"
+        default=None, description="Guess of type content [EXPERIMENTAL]"
     )
     checksum: Optional[str] = Field(
         None, description="MD5 hash of the file's content [EXPERIMENTAL]"

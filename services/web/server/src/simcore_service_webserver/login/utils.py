@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 from pprint import pformat
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional
 
 import aiosmtplib
 import attr
@@ -20,9 +20,27 @@ from servicelib.json_serialization import json_dumps
 from settings_library.email import EmailProtocol
 
 from .._resources import resources
+from ..db_models import ConfirmationAction, UserRole, UserStatus
 from .settings import LoginOptions, get_plugin_options
 
 log = getLogger(__name__)
+
+
+def _to_names(enum_cls, names):
+    """ensures names are in enum be retrieving each of them"""
+    # FIXME: with asyncpg need to user NAMES
+    return [getattr(enum_cls, att).name for att in names.split()]
+
+
+CONFIRMATION_PENDING, ACTIVE, BANNED = _to_names(
+    UserStatus, "CONFIRMATION_PENDING ACTIVE BANNED"
+)
+
+ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
+
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
+    ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
+)
 
 
 def encrypt_password(password: str) -> str:
@@ -65,7 +83,7 @@ async def compose_multipart_mail(
     recipient: str,
     subject: str,
     body: str,
-    attachments: List[Tuple[str, bytearray]],
+    attachments: list[tuple[str, bytearray]],
 ) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -92,7 +110,7 @@ async def render_and_send_mail(
     to: str,
     template: str,
     context: Mapping[str, Any],
-    attachments: Optional[List[Tuple[str, bytearray]]] = None,
+    attachments: Optional[list[tuple[str, bytearray]]] = None,
 ):
     page = render_string(f"{template}", request, context)
     subject, body = page.split("\n", 1)
@@ -109,12 +127,28 @@ def themed(dirname, template):
     return resources.get_path(join(dirname, template))
 
 
-def flash_response(msg: str, level: str = "INFO") -> web.Response:
-    response = web.json_response(
-        data={"data": attr.asdict(LogMessageType(msg, level)), "error": None},
-        dumps=json_dumps,
+def flash_response(
+    message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
+) -> web.Response:
+    rsp = envelope_response(
+        attr.asdict(LogMessageType(message, level)),
+        status=status,
     )
-    return response
+    return rsp
+
+
+def envelope_response(
+    data: Any, *, status: int = web.HTTPOk.status_code
+) -> web.Response:
+    rsp = web.json_response(
+        {
+            "data": data,
+            "error": None,
+        },
+        dumps=json_dumps,
+        status=status,
+    )
+    return rsp
 
 
 async def send_mail(app: web.Application, msg: MIMEText):

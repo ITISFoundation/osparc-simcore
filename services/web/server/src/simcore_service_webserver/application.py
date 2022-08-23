@@ -3,12 +3,15 @@
 """
 import logging
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.server import (
+    setup as setup_long_running_tasks,
+)
 
-from ._meta import WELCOME_GC_MSG, WELCOME_MSG
+from ._meta import API_VTAG, WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
@@ -51,7 +54,6 @@ def create_application() -> web.Application:
     Initializes service
     """
     app = create_safe_application()
-
     settings = setup_settings(app)
 
     # WARNING: setup order matters
@@ -62,11 +64,16 @@ def create_application() -> web.Application:
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
-    setup_statics(app)
     setup_db(app)
+    setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
+    setup_redis(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+
+    # front-end products
+    setup_products(app)
+    setup_statics(app)
 
     # monitoring
     setup_diagnostics(app)
@@ -83,7 +90,6 @@ def create_application() -> web.Application:
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
-    setup_redis(app)
 
     # resource management
     setup_resource_manager(app)
@@ -104,7 +110,6 @@ def create_application() -> web.Application:
     setup_tags(app)
 
     setup_publications(app)
-    setup_products(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)
@@ -121,7 +126,7 @@ def create_application() -> web.Application:
     return app
 
 
-def run_service(app: web.Application, config: Dict[str, Any]):
+def run_service(app: web.Application, config: dict[str, Any]):
     web.run_app(
         app,
         host=config["main"]["host"],

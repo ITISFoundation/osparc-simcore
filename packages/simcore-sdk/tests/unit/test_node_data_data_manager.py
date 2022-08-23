@@ -74,7 +74,7 @@ async def test_push_folder(
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
-        local_file_path=(test_compression_folder / f"{test_folder.stem}.zip"),
+        file_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
         r_clone_settings=None,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
@@ -122,7 +122,7 @@ async def test_push_file(
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
         r_clone_settings=None,
-        local_file_path=file_path,
+        file_to_upload=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,

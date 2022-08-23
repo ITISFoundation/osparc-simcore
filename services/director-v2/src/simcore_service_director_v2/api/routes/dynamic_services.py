@@ -203,9 +203,9 @@ async def stop_dynamic_service(
 
         return RedirectResponse(str(redirection_url))
 
-    # Serice was marked for removal, the scheduler will
+    # Service was marked for removal, the scheduler will
     # take care of stopping cleaning up all allocated resources:
-    # services, containsers, volumes and networks.
+    # services, containers, volumes and networks.
     # Once the service is no longer being tracked this can return
     dynamic_sidecar_settings: DynamicSidecarSettings = (
         dynamic_services_settings.DYNAMIC_SIDECAR

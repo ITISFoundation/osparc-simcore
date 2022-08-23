@@ -110,7 +110,7 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
-jinja2==2.11.3
+jinja2==3.1.2
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -118,7 +118,6 @@ jinja2==2.11.3
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/constraints.txt
     #   bokeh
     #   dask
     #   distributed
@@ -142,7 +141,7 @@ jupyter-core==4.7.1
     #   jupyter-server
     #   nbconvert
     #   nbformat
-jupyter-server==1.16.0
+jupyter-server==1.18.1
     # via jupyter-server-proxy
 jupyter-server-proxy==3.2.1
     # via -r requirements/_base.in
@@ -306,7 +305,7 @@ traitlets==5.1.1
     #   nbclient
     #   nbconvert
     #   nbformat
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   aiodocker
     #   aioitertools

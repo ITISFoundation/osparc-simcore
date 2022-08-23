@@ -79,6 +79,12 @@ def _mock_containers_docker_status(
             name="containers_docker_status",
         ).mock(**mocked_params)
 
+        mock.get(
+            re.compile(
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/health"
+            ),
+            name="health",
+        ).respond(json=dict(is_healthy=True, error=None))
         mock.post(
             get_url(service_endpoint, "/v1/containers:down"),
             name="begin_service_destruction",
@@ -283,7 +289,7 @@ async def test_scheduler_removes_partially_started_services(
     await manually_trigger_scheduler()
     await scheduler.add_service(scheduler_data)
 
-    scheduler_data.dynamic_sidecar.were_services_created = True
+    scheduler_data.dynamic_sidecar.were_containers_created = True
     await manually_trigger_scheduler()
 
 

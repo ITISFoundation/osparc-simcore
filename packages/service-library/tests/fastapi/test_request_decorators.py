@@ -22,7 +22,7 @@ CURRENT_DIR = CURRENT_FILE.parent
 
 mock_app = FastAPI(title="Disconnect example")
 
-MESSAGE_ON_HANDLER_CANCELLATION = f"Exiting on cancellation @ {__name__}"
+MESSAGE_ON_HANDLER_CANCELLATION = "Request was cancelled!!"
 
 
 @mock_app.get("/example")
@@ -96,6 +96,7 @@ def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
 
         # kill service
         server.proc.terminate()
+        assert server.proc.stdout
         server_log = server.proc.stdout.read().decode("utf-8")
         print(
             f"{server.url=} stdout",

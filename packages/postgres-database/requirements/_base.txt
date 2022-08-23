@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-alembic==1.8.0
+alembic==1.8.1
     # via -r requirements/_base.in
 greenlet==1.1.2
     # via sqlalchemy
 idna==3.3
     # via yarl
-mako==1.2.0
+mako==1.2.1
     # via alembic
 markupsafe==2.1.1
     # via mako
@@ -18,10 +18,10 @@ multidict==6.0.2
     # via yarl
 psycopg2-binary==2.9.3
     # via sqlalchemy
-sqlalchemy==1.4.37
+sqlalchemy==1.4.40
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   alembic
-yarl==1.7.2
+yarl==1.8.1
     # via -r requirements/_base.in

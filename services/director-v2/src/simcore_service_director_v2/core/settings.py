@@ -241,9 +241,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * MINS,
         description=(
-            "After running `docker-compose up`, images might need to be pulled "
-            "before everything is started. Using default 1hour timeout to let this "
-            "operation finish."
+            "When starting container (`docker-compose up`), images might "
+            "require pulling before containers are started."
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(

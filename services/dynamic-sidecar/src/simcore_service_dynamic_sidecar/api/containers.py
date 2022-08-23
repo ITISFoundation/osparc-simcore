@@ -1,84 +1,20 @@
 # pylint: disable=too-many-arguments
 
-import functools
 import json
 import logging
 from typing import Any, Union
 
-from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
-from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.docker_compose_utils import (
-    docker_compose_down,
-    docker_compose_rm,
-    docker_compose_up,
-)
-from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
-from ..core.settings import ApplicationSettings
-from ..core.utils import assemble_container_names
-from ..core.validation import (
-    InvalidComposeSpec,
-    parse_compose_spec,
-    validate_compose_spec,
-)
-from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import ContainerNameStr, SharedStore
-from ..modules.directory_watcher import directory_watcher_disabled
-from ..modules.mounted_fs import MountedVolumes
-from ._dependencies import (
-    get_application,
-    get_application_health,
-    get_mounted_volumes,
-    get_rabbitmq,
-    get_settings,
-    get_shared_store,
-)
+from ..core.validation import parse_compose_spec
+from ..models.shared_store import SharedStore
+from ._dependencies import get_shared_store
 
 logger = logging.getLogger(__name__)
-
-
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.info(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
-
-
-async def _task_docker_compose_up_and_send_message(
-    settings: ApplicationSettings,
-    shared_store: SharedStore,
-    app: FastAPI,
-    application_health: ApplicationHealth,
-    rabbitmq: RabbitMQ,
-    command_timeout: int,
-) -> None:
-    # building is a security risk hence is disabled via "--no-build" parameter
-    await send_message(rabbitmq, "starting service containers")
-    assert shared_store.compose_spec  # nosec
-
-    with directory_watcher_disabled(app):
-        r = await docker_compose_up(
-            shared_store.compose_spec, settings, timeout=command_timeout
-        )
-
-    message = f"Finished docker-compose up with output\n{r.message}"
-
-    if r.success:
-        await send_message(rabbitmq, "service containers started")
-        logger.info(message)
-        for container_name in shared_store.container_names:
-            await start_log_fetching(app, container_name)
-    else:
-        application_health.is_healthy = False
-        application_health.error_message = message
-        logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
-        await send_message(rabbitmq, "could not start service containers")
-
-    return None
 
 
 def _raise_if_container_is_missing(
@@ -90,139 +26,7 @@ def _raise_if_container_is_missing(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-#
-# API Schema Models ------------------
-#
-
-
-class ContainersCreate(BaseModel):
-    docker_compose_yaml: str
-
-
-#
-# HANDLERS ------------------
-#
 containers_router = APIRouter(tags=["containers"])
-
-
-@containers_router.post(
-    "/containers",
-    summary="Run docker-compose up",
-    status_code=status.HTTP_202_ACCEPTED,
-    response_model=list[ContainerNameStr],
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Cannot validate submitted compose spec"
-        }
-    },
-)
-@cancel_on_disconnect
-async def create_containers(
-    request: Request,
-    containers_create: ContainersCreate,
-    background_tasks: BackgroundTasks,
-    command_timeout: int = Query(
-        3600, description="docker-compose up command timeout run as a background"
-    ),
-    validation_timeout: int = Query(
-        60, description="docker-compose config timeout (EXPERIMENTAL)"
-    ),
-    settings: ApplicationSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-    app: FastAPI = Depends(get_application),
-    application_health: ApplicationHealth = Depends(get_application_health),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-):
-    assert request  # nosec
-
-    try:
-        shared_store.compose_spec = await validate_compose_spec(
-            settings=settings,
-            compose_file_content=containers_create.docker_compose_yaml,
-            mounted_volumes=mounted_volumes,
-            docker_compose_config_timeout=validation_timeout,
-        )
-        shared_store.container_names = assemble_container_names(
-            shared_store.compose_spec
-        )
-
-        logger.debug("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
-
-    except InvalidComposeSpec as e:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
-
-    # run docker-compose in a background queue and return early
-    assert shared_store.compose_spec is not None  # nosec
-    background_tasks.add_task(
-        functools.partial(
-            _task_docker_compose_up_and_send_message,
-            settings=settings,
-            shared_store=shared_store,
-            app=app,
-            application_health=application_health,
-            rabbitmq=rabbitmq,
-            command_timeout=command_timeout,
-        )
-    )
-
-    return shared_store.container_names
-
-
-@containers_router.post(
-    "/containers:down",
-    response_class=PlainTextResponse,
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": "No compose spec found"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Error while shutting down containers"
-        },
-    },
-)
-async def runs_docker_compose_down(
-    command_timeout: int = Query(
-        10, description="docker-compose down command timeout default  (EXPERIMENTAL)"
-    ),
-    settings: ApplicationSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-    app: FastAPI = Depends(get_application),
-) -> str:
-    """Removes the previously started service
-    and returns the docker-compose output"""
-
-    if shared_store.compose_spec is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail="No compose-specs were found",
-        )
-
-    result = await docker_compose_down(
-        shared_store.compose_spec,
-        settings,
-        timeout=min(command_timeout, settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT),
-    )
-
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
-
-    await docker_compose_rm(shared_store.compose_spec, settings)
-
-    if not result.success:
-        logger.warning(
-            "docker-compose down command finished with errors\n%s",
-            result.message,
-        )
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=result.message)
-
-    # removing compose-file spec
-    assert result.success  # nosec
-    shared_store.clear()
-
-    # NOTE: @run_sequentially_in_context decorator on docker_compose* functions
-    # change return type to Any and mypy gets confused! Should use generics
-    # SEE https://github.com/python/mypy/issues/8645
-    assert isinstance(result.message, str)  # nosec
-    return result.message
 
 
 @containers_router.get(

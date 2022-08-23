@@ -146,7 +146,7 @@ qx.Class.define("osparc.utils.Study", {
                   const params = {
                     data: minStudyData
                   };
-                  osparc.data.Resources.fetch("studies", "post", params)
+                  osparc.utils.Study.createStudyAndPoll(params)
                     .then(studyData => resolve(studyData["uuid"]))
                     .catch(err => reject(err));
                 });
@@ -156,6 +156,25 @@ qx.Class.define("osparc.utils.Study", {
             osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             console.error(err);
           });
+      });
+    },
+
+    createStudyAndPoll: function(params) {
+      return new Promise((resolve, reject) => {
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params);
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(fetchPromise, interval)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              const resultData = e.getData();
+              resolve(resultData);
+            });
+            task.addListener("pollingError", e => {
+              reject("Polling Error");
+            });
+          })
+          .catch(err => reject(err));
       });
     },
 
@@ -181,8 +200,20 @@ qx.Class.define("osparc.utils.Study", {
               },
               data: minStudyData
             };
-            osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-              .then(studyData => resolve(studyData["uuid"]))
+            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params);
+            const pollTasks = osparc.data.PollTasks.getInstance();
+            const interval = 1000;
+            pollTasks.createPollingTask(fetchPromise, interval)
+              .then(task => {
+                task.addListener("resultReceived", e => {
+                  const studyData = e.getData();
+                  resolve(studyData["uuid"]);
+                }, this);
+                task.addListener("pollingError", e => {
+                  const errMsg = e.getData();
+                  reject(errMsg);
+                }, this);
+              })
               .catch(err => reject(err));
           });
       });

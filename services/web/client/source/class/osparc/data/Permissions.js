@@ -77,7 +77,7 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     getInitPermissions: function() {
-      return {
+      const initPermissions = {
         "anonymous": [],
         "guest": [
           "studies.templates.read",
@@ -113,8 +113,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.edge.delete",
           "study.service.update",
           "study.classifier",
-          "study.tag",
-          "study.slides"
+          "study.tag"
         ],
         "tester": [
           "studies.template.create.all",
@@ -131,6 +130,22 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
+      if (osparc.utils.Utils.isProduct("tis")) {
+        initPermissions.tester.push(...[
+          "dashboard.templates.read",
+          "dashboard.services.read",
+          "study.slides.edit",
+          "study.slides.stop"
+        ]);
+      } else {
+        initPermissions.user.push(...[
+          "dashboard.templates.read",
+          "dashboard.services.read",
+          "study.slides.edit",
+          "study.slides.stop"
+        ]);
+      }
+      return initPermissions;
     }
   },
 

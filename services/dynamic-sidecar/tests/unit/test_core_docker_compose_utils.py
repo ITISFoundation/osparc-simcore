@@ -11,10 +11,12 @@ from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_config,
+    docker_compose_create,
     docker_compose_down,
+    docker_compose_pull,
     docker_compose_restart,
     docker_compose_rm,
-    docker_compose_up,
+    docker_compose_start,
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import CommandResult
@@ -59,56 +61,44 @@ async def test_docker_compose_workflow(
     print("compose_spec:\n", compose_spec)
 
     # validates specs
-    r = await docker_compose_config(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    r = await docker_compose_config(compose_spec_yaml, timeout=10)
     _print_result(r)
     assert r.success, r.message
 
     # removes all stopped containers from specs
-    r = await docker_compose_rm(
-        compose_spec_yaml,
-        settings,
-    )
+    r = await docker_compose_rm(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 
-    # creates and starts in detached mode
-    r = await docker_compose_up(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    # pulls containers before starting them
+    r = await docker_compose_pull(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success, r.message
+
+    # creates containers
+    r = await docker_compose_create(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success, r.message
+
+    # tries to start containers which were not able to start
+    r = await docker_compose_start(compose_spec_yaml, settings)
     _print_result(r)
     assert r.success, r.message
 
     if with_restart:
         # restarts
-        r = await docker_compose_restart(
-            compose_spec_yaml,
-            settings,
-            10,
-        )
+        r = await docker_compose_restart(compose_spec_yaml, settings)
         _print_result(r)
         assert r.success, r.message
 
     # stops and removes
-    r = await docker_compose_down(
-        compose_spec_yaml,
-        settings,
-        10,
-    )
+    r = await docker_compose_down(compose_spec_yaml, settings)
 
     _print_result(r)
     assert r.success, r.message
 
     # full cleanup
-    r = await docker_compose_rm(
-        compose_spec_yaml,
-        settings,
-    )
+    r = await docker_compose_rm(compose_spec_yaml, settings)
 
     _print_result(r)
     assert r.success, r.message
@@ -119,15 +109,12 @@ async def test_burst_calls_to_docker_compose_config(
     mock_environment: EnvVarsDict,
     ensure_run_in_sequence_context_is_empty: None,
 ):
-    settings = ApplicationSettings.create_from_envs()
-
     CALLS_COUNT = 10  # tried manually with 1E3 but takes too long
     results = await asyncio.gather(
         *(
             docker_compose_config(
                 compose_spec_yaml,
-                settings,
-                100 + i,  # large timeout and emulates change in parameters
+                timeout=100 + i,  # large timeout and emulates change in parameters
             )
             for i in range(CALLS_COUNT)
         ),
@@ -145,3 +132,28 @@ async def test_burst_calls_to_docker_compose_config(
     failed = [r for r in results if not r.success]
 
     assert len(success) == CALLS_COUNT and not failed
+
+
+async def test_docker_start_fails_if_containers_are_not_present(
+    compose_spec_yaml: str,
+    mock_environment: EnvVarsDict,
+    ensure_run_in_sequence_context_is_empty: None,
+):
+    settings = ApplicationSettings.create_from_envs()
+
+    def _print_result(r: CommandResult):
+        assert r.elapsed and r.elapsed > 0
+        print(f"{r.command:*^100}", "\nELAPSED:", r.elapsed)
+
+    compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
+    print("compose_spec:\n", compose_spec)
+
+    # validates specs
+    r = await docker_compose_config(compose_spec_yaml, timeout=10)
+    _print_result(r)
+    assert r.success, r.message
+
+    # fails when containers are missing
+    r = await docker_compose_start(compose_spec_yaml, settings)
+    _print_result(r)
+    assert r.success is False, r.message

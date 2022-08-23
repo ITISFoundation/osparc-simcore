@@ -16,7 +16,7 @@ main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=
 @main.command()
 def run():
     """Runs application"""
-    typer.secho("Sorry, this entrypoint is intentionally disabled." "Use instead")
+    typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
     typer.secho(
         "$ uvicorn simcore_service_api_server.main:the_app",
         fg=typer.colors.BLUE,

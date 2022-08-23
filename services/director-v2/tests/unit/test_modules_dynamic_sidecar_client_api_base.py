@@ -37,6 +37,18 @@ class FakeThickClient(BaseThinClient):
         return await self._client.get("http://missing-host:1111")
 
 
+def _assert_messages(messages: list[str], retry_count: int) -> None:
+    # check if the right amount of messages was captured by the logs
+    unexpected_counter = 1
+    for log_message in messages:
+        if log_message.startswith("Retrying"):
+            assert "as it raised" in log_message
+            continue
+        assert log_message.startswith("Unexpected error")
+        assert log_message.endswith(f"(attempt [{unexpected_counter}/{retry_count}])")
+        unexpected_counter += 1
+
+
 # FIXTURES
 
 
@@ -78,12 +90,7 @@ async def test_retry_on_errors(
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
 
-    # check if the right amount of messages was captured by the logs
-    assert len(caplog_info_level.messages) == retry_count
-    for i, log_message in enumerate(caplog_info_level.messages):
-        assert log_message.startswith(
-            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-        )
+    _assert_messages(caplog_info_level.messages, retry_count)
 
 
 @pytest.mark.parametrize("error_class", [ConnectError, PoolTimeout])
@@ -108,21 +115,12 @@ async def test_retry_on_errors_by_error_type(
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
 
-    log_count = retry_count + 1 if error_class == PoolTimeout else retry_count
-    assert len(caplog_info_level.messages) == log_count
-
     if error_class == PoolTimeout:
-        for i, retry_message in enumerate(caplog_info_level.messages[:-1]):
-            assert retry_message.startswith(
-                f"[{i+1}/{retry_count}]Retry. Unexpected PoolTimeout"
-            )
+        _assert_messages(caplog_info_level.messages[:-1], retry_count)
         connections_message = caplog_info_level.messages[-1]
         assert connections_message == "Requests while event 'POOL TIMEOUT': []"
     else:
-        for i, log_message in enumerate(caplog_info_level.messages):
-            assert log_message.startswith(
-                f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-            )
+        _assert_messages(caplog_info_level.messages, retry_count)
 
 
 async def test_retry_on_errors_raises_client_http_error() -> None:

@@ -1,6 +1,5 @@
 from aiodocker.exceptions import DockerError
 from models_library.projects_nodes import NodeID
-from pydantic.errors import PydanticErrorMixin
 
 from ...core.errors import DirectorException
 
@@ -30,11 +29,3 @@ class EntrypointContainerNotFoundError(DirectorException):
 
 class LegacyServiceIsNotSupportedError(DirectorException):
     """This API is not implemented by the director-v0"""
-
-
-class NodeportsDidNotFindNodeError(PydanticErrorMixin, DirectorException):
-    code = "dynamic_scheduler.output_ports_pulling.node_not_found"
-    msg_template = (
-        "Could not find node '{node_uuid}' in the database. Did not upload data to S3, "
-        "most likely due to service being removed from the study."
-    )

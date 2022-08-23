@@ -18,7 +18,8 @@ from servicelib.aiohttp.rest_middlewares import (
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.aiohttp.rest_routing import create_routes_from_namespace
-from tutils import Handlers
+
+from .tutils import Handlers
 
 
 @pytest.fixture

@@ -72,6 +72,17 @@ class TutorialBase {
     console.log("commit", commit);
   }
 
+  async __printMe() {
+    const resp = await utils.makeRequest(this.__page, "/me");
+    if (resp) {
+      console.log("login:", resp["login"]);
+      console.log("user_id:", resp["id"]);
+    }
+    else {
+      console.log("Not found");
+    }
+  }
+
   async start() {
     try {
       await this.beforeScript();
@@ -90,7 +101,7 @@ class TutorialBase {
             })
           console.log('Flash message', messages)
           setTimeout(waitForFlash, 0)
-        }).catch(() => {})
+        }).catch(() => { })
       }
       setTimeout(waitForFlash, 0)
 
@@ -103,35 +114,6 @@ class TutorialBase {
     catch (err) {
       console.error("Error starting", err);
       throw (err);
-    }
-  }
-
-  async openStudyLink(openStudyTimeout = 20000) {
-    this.__responsesQueue.addResponseListener("open");
-
-    let resp = null;
-    try {
-      await this.__goTo();
-      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
-      await this.__printMe();
-      const studyId = resp["data"]["uuid"];
-      console.log("Study ID:", studyId);
-    }
-    catch (err) {
-      console.error(this.__templateName, "could not be started", err);
-      throw (err);
-    }
-    return resp;
-  }
-
-  async __printMe() {
-    const resp = await utils.makeRequest(this.__page, "/me");
-    if (resp) {
-      console.log("login:", resp["login"]);
-      console.log("user_id:", resp["id"]);
-    }
-    else {
-      console.log("Not found");
     }
   }
 
@@ -190,6 +172,17 @@ class TutorialBase {
     }
   }
 
+  async checkFirstStudyId(studyId) {
+    await this.__page.waitForSelector('[osparc-test-id="studiesList"]');
+    await this.waitFor(1000);
+    const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
+    console.log("checkFirstStudyId", studyId);
+    console.log(studies);
+    if (studyId !== studies[0]) {
+      throw (studyId + " not found");
+    }
+  }
+
   async waitForOpen() {
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
@@ -202,15 +195,55 @@ class TutorialBase {
     return resp;
   }
 
+  async startNewPlan() {
+    await this.takeScreenshot("startNewPlan_before");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      await this.waitFor(2000);
+      await auto.dashboardNewPlan(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(`New Plan could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(2000);
+    await this.takeScreenshot("startNewPlan_after");
+    return resp;
+  }
+
+  async openStudyLink(openStudyTimeout = 20000) {
+    this.__responsesQueue.addResponseListener("open");
+
+    let resp = null;
+    try {
+      await this.__goTo();
+      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      await this.__printMe();
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(this.__templateName, "could not be started", err);
+      throw (err);
+    }
+    return resp;
+  }
+
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
-    this.__responsesQueue.addResponseListener("projects?from_template=");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
       const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
-      await this.__responsesQueue.waitUntilResponse("projects?from_template=");
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
@@ -242,6 +275,19 @@ class TutorialBase {
     await this.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenService_after");
     return resp;
+  }
+
+  async getAppModeSteps() {
+    await this.__page.waitForSelector('[osparc-test-id="appModeButtons"]')
+    const appModeButtonsAllIds = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="appModeButtons"]');
+    if (appModeButtonsAllIds.length < 1) {
+      throw ("appModeButtons not found");
+    }
+    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("appModeButton_"));
+    if (appModeButtonIds.length < 1) {
+      throw ("appModeButtons filtered not found");
+    }
+    return appModeButtonIds;
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
@@ -358,7 +404,7 @@ class TutorialBase {
     await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true, checkFileNames=true) {
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
     try {
       await this.openNodeFiles(nodePos);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -378,7 +424,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error("Results don't match", err);
-      throw(err)
+      throw (err)
     }
     finally {
       await this.takeScreenshot("checkNodeOutputs_after");
@@ -416,7 +462,7 @@ class TutorialBase {
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy(studyId, timeout=5000) {
+  async removeStudy(studyId, timeout = 5000) {
     await this.waitFor(timeout, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
@@ -445,7 +491,7 @@ class TutorialBase {
 
   async fetchRemoveStudy(studyId) {
     console.log(`Removing study ${studyId}`)
-    await this.__page.evaluate(async function(studyId) {
+    await this.__page.evaluate(async function (studyId) {
       return await osparc.data.Resources.fetch('studies', 'delete', {
         url: {
           "studyId": studyId

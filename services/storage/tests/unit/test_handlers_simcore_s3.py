@@ -175,50 +175,121 @@ async def random_project_with_files(
         [ByteSize, str, str], Awaitable[tuple[Path, SimcoreS3FileID]]
     ],
     faker: Faker,
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]:
-    project = await create_project()
-    NUM_NODES = 12
-    FILE_SIZES = [
-        parse_obj_as(ByteSize, "7Mib"),
-        parse_obj_as(ByteSize, "110Mib"),
-        parse_obj_as(ByteSize, "1Mib"),
-    ]
-    src_projects_list: dict[NodeID, dict[SimcoreS3FileID, Path]] = {}
-    upload_tasks: deque[Awaitable] = deque()
-    for _node_index in range(NUM_NODES):
-        src_node_id = await create_project_node(ProjectID(project["uuid"]))
-        src_projects_list[src_node_id] = {}
+) -> Callable[
+    [int, tuple[ByteSize, ...]],
+    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]],
+]:
+    async def _creator(
+        num_nodes: int = 12,
+        file_sizes: tuple[ByteSize, ...] = (
+            parse_obj_as(ByteSize, "7Mib"),
+            parse_obj_as(ByteSize, "110Mib"),
+            parse_obj_as(ByteSize, "1Mib"),
+        ),
+    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]:
+        project = await create_project()
+        src_projects_list: dict[NodeID, dict[SimcoreS3FileID, Path]] = {}
+        upload_tasks: deque[Awaitable] = deque()
+        for _node_index in range(num_nodes):
+            src_node_id = await create_project_node(ProjectID(project["uuid"]))
+            src_projects_list[src_node_id] = {}
 
-        async def _upload_file_and_update_project(project, src_node_id):
-            src_file_name = faker.file_name()
-            src_file_uuid = create_simcore_file_id(
-                ProjectID(project["uuid"]), src_node_id, src_file_name
+            async def _upload_file_and_update_project(project, src_node_id):
+                src_file_name = faker.file_name()
+                src_file_uuid = create_simcore_file_id(
+                    ProjectID(project["uuid"]), src_node_id, src_file_name
+                )
+                src_file, _ = await upload_file(
+                    choice(file_sizes), src_file_name, src_file_uuid
+                )
+                src_projects_list[src_node_id][src_file_uuid] = src_file
+
+            upload_tasks.extend(
+                [
+                    _upload_file_and_update_project(project, src_node_id)
+                    for _ in range(randint(0, 3))
+                ]
             )
-            src_file, _ = await upload_file(
-                choice(FILE_SIZES), src_file_name, src_file_uuid
-            )
-            src_projects_list[src_node_id][src_file_uuid] = src_file
+        await logged_gather(*upload_tasks, max_concurrency=2)
 
-        upload_tasks.extend(
-            [
-                _upload_file_and_update_project(project, src_node_id)
-                for _ in range(randint(0, 3))
-            ]
-        )
-    await logged_gather(*upload_tasks, max_concurrency=2)
+        project = await _get_updated_project(aiopg_engine, project["uuid"])
+        return project, src_projects_list
 
-    project = await _get_updated_project(aiopg_engine, project["uuid"])
-    return project, src_projects_list
+    return _creator
 
 
-async def test_copy_folders_from_valid_project(
+@pytest.fixture
+def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
+    monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "1")
+    return 1
+
+
+async def test_copy_folders_from_valid_project_with_one_large_file(
+    short_dsm_cleaner_interval: int,
     client: TestClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     aiopg_engine: Engine,
-    random_project_with_files: tuple[
-        dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]
+    random_project_with_files: Callable[
+        ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
+    ],
+):
+    assert client.app
+    url = (
+        client.app.router["copy_folders_from_project"]
+        .url_for()
+        .with_query(user_id=user_id)
+    )
+    # 1. create a src project with 1 large file
+    src_project, src_projects_list = await random_project_with_files(
+        num_nodes=1, file_sizes=(parse_obj_as(ByteSize, "210Mib"),)
+    )
+    # 2. create a dst project without files
+    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project = await create_project(**dst_project)
+    # copy the project files
+    response = await client.post(
+        f"{url}",
+        json=jsonable_encoder(
+            FoldersBody(
+                source=src_project,
+                destination=dst_project,
+                nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+            )
+        ),
+    )
+    data, error = await assert_status(response, web.HTTPCreated)
+    assert not error
+    assert data == jsonable_encoder(
+        await _get_updated_project(aiopg_engine, dst_project["uuid"])
+    )
+    # check that file meta data was effectively copied
+    for src_node_id in src_projects_list:
+        dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
+        assert dst_node_id
+        for src_file in src_projects_list[src_node_id].values():
+            await assert_file_meta_data_in_db(
+                aiopg_engine,
+                file_id=create_simcore_file_id(
+                    ProjectID(dst_project["uuid"]), NodeID(dst_node_id), src_file.name
+                ),
+                expected_entry_exists=True,
+                expected_file_size=src_file.stat().st_size,
+                expected_upload_id=None,
+                expected_upload_expiration_date=None,
+            )
+
+
+async def test_copy_folders_from_valid_project(
+    short_dsm_cleaner_interval: int,
+    client: TestClient,
+    user_id: UserID,
+    create_project: Callable[[], Awaitable[dict[str, Any]]],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    aiopg_engine: Engine,
+    random_project_with_files: Callable[
+        ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
     ],
 ):
     assert client.app
@@ -229,7 +300,7 @@ async def test_copy_folders_from_valid_project(
     )
 
     # 1. create a src project with some files
-    src_project, src_projects_list = random_project_with_files
+    src_project, src_projects_list = await random_project_with_files()
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -362,7 +433,6 @@ def mock_check_project_exists(mocker: MockerFixture):
     )
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "project",
     [pytest.param(prj, id=prj.name) for prj in _get_project_with_data()],

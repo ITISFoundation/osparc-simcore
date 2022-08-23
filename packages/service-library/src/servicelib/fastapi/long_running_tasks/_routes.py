@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
-from ._dependencies import get_task_manager
-from ._errors import TaskNotCompletedError
-from ._models import TaskId, TaskResult, TaskStatus, CancelResult
-from ._task import TaskManager
+from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
+from ...long_running_tasks._models import TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._task import TasksManager
+from ..requests_decorators import cancel_on_disconnect
+from ._dependencies import get_tasks_manager
 
 router = APIRouter(prefix="/task")
 
@@ -14,11 +15,14 @@ router = APIRouter(prefix="/task")
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def get_task_status(
+    request: Request,
     task_id: TaskId,
-    task_manager: TaskManager = Depends(get_task_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
 ) -> TaskStatus:
-    return task_manager.get_status(task_id=task_id)
+    assert request  # nosec
+    return tasks_manager.get_task_status(task_id=task_id)
 
 
 @router.get(
@@ -30,32 +34,40 @@ async def get_task_status(
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def get_task_result(
+    request: Request,
     task_id: TaskId,
-    task_manager: TaskManager = Depends(get_task_manager),
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
 ) -> TaskResult:
-    remove_task = True
-
+    assert request  # nosec
+    # TODO: refactor this to use same as in https://github.com/ITISFoundation/osparc-simcore/issues/3265
     try:
-        task_result = task_manager.get_result(task_id=task_id)
-    except TaskNotCompletedError:
-        remove_task = False
+        task_result = tasks_manager.get_task_result_old(task_id=task_id)
+        await tasks_manager.remove_task(task_id, reraise_errors=False)
+        return task_result
+    except (TaskNotFoundError, TaskNotCompletedError):
         raise
-    finally:
-        if remove_task:
-            await task_manager.remove(task_id, reraise_errors=False)
-
-    return task_result
+    except Exception:
+        # the task shall be removed in this case
+        await tasks_manager.remove_task(task_id, reraise_errors=False)
+        raise
 
 
 @router.delete(
     "/{task_id}",
+    summary="Cancel and deletes a task",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
+@cancel_on_disconnect
 async def cancel_and_delete_task(
+    request: Request,
     task_id: TaskId,
-    task_manager: TaskManager = Depends(get_task_manager),
-) -> CancelResult:
-    return CancelResult(task_removed=await task_manager.remove(task_id))
+    tasks_manager: TasksManager = Depends(get_tasks_manager),
+) -> None:
+    assert request  # nosec
+    await tasks_manager.remove_task(task_id)

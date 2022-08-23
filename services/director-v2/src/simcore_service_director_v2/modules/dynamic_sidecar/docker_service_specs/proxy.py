@@ -10,6 +10,7 @@ from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 
 def get_dynamic_proxy_spec(
@@ -107,10 +108,6 @@ def get_dynamic_proxy_spec(
                 },
                 "Limits": {"MemoryBytes": MEMORY_250MB, "NanoCPUs": CPU_100_PERCENT},
             },
-            "RestartPolicy": {
-                "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 100,
-            },
+            "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
         },
     }

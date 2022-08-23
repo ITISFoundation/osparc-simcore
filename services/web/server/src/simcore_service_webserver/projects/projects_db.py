@@ -242,12 +242,15 @@ class ProjectDBAPI:
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id)
-                kargs["access_rights"].update(
+                kargs.setdefault("access_rights", {}).update(
                     _create_project_access_rights(
                         primary_gid, ProjectAccessRights.OWNER
                     )
                 )
-
+            # ensure we have the minimal amount of data here
+            kargs.setdefault("name", "New Study")
+            kargs.setdefault("description", "")
+            kargs.setdefault("workbench", {})
             # must be valid uuid
             try:
                 uuidlib.UUID(str(kargs.get("uuid")))
@@ -853,6 +856,16 @@ class ProjectDBAPI:
                 .where(projects.c.uuid == f"{project_uuid}")
             )
             await conn.execute(stmt)
+
+    async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([projects.c.type]).where(projects.c.uuid == f"{project_uuid}")
+            )
+            row = await result.first()
+            if row:
+                return row[projects.c.type]
+        raise ProjectNotFoundError(project_uuid=project_uuid)
 
 
 def setup_projects_db(app: web.Application):

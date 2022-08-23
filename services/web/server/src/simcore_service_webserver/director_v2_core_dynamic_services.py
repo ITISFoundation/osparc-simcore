@@ -38,12 +38,17 @@ async def get_dynamic_services(
         params["project_id"] = project_id
 
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / "dynamic_services").update_query(**params)
+    if params:  # Update query doesnt work with no params to unwrap
+        backend_url = (settings.base_url / "dynamic_services").update_query(**params)
+    else:
+        backend_url = settings.base_url / "dynamic_services"
 
     services = await request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
     )
 
+    if services is None:
+        services = []
     assert isinstance(services, list)  # nosec
     return services
 
@@ -123,7 +128,7 @@ async def stop_dynamic_service(
         app,
         "DELETE",
         url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-            save_state="true" if save_state else "false",
+            can_save="true" if save_state else "false",
         ),
         expected_status=web.HTTPNoContent,
         timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,

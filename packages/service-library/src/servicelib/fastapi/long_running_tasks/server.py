@@ -6,17 +6,30 @@ The server only has to return a `TaskId` in the handler creating the long
 running task. The client will take care of recovering the result from it.
 """
 
-from ._dependencies import get_task_manager
-from ._models import TaskId, TaskProgress, TaskStatus
+from ...long_running_tasks._task import (
+    TaskAlreadyRunningError,
+    TaskCancelledError,
+    TaskId,
+    TaskProgress,
+    TaskResult,
+    TasksManager,
+    TaskStatus,
+    start_task,
+)
+from ._dependencies import get_tasks_manager
 from ._server import setup
-from ._task import TaskManager, start_task
 
 __all__: tuple[str, ...] = (
-    "get_task_manager",
+    "get_tasks_manager",
     "setup",
     "start_task",
+    "TaskAlreadyRunningError",
+    "TaskCancelledError",
     "TaskId",
-    "TaskManager",
+    "TasksManager",
     "TaskProgress",
+    "TaskResult",
     "TaskStatus",
 )
+
+# nopycln: file

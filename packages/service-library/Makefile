@@ -24,34 +24,71 @@ install-%: _check_venv_active ## install app in development/production or CI mod
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
-
+APP_PACKAGE_NAME=servicelib
 .PHONY: test-dev
 test-dev: ## runs unit tests in w/o extras
 	# running test-dev
-	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
-	--pdb \
-	--ignore=tests/aiohttp --ignore=tests/fastapi \
-	$(CURDIR)/tests
+	@pytest -vv \
+		--color=yes \
+		--cov-config=$(CURDIR)/../../.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		--asyncio-mode=auto \
+		--ignore=tests/aiohttp \
+		--ignore=tests/fastapi \
+		$(CURDIR)/tests
+
 
 .PHONY: test-dev[aiohttp]
 test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 	# running test-dev[aiohttp]
-	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
-	--pdb \
-	--ignore=tests/fastapi \
-	$(CURDIR)/tests
+	@pytest -vv \
+		--color=yes \
+		--cov-config=$(CURDIR)/../../.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		--asyncio-mode=auto \
+		--ignore=tests/fastapi \
+		$(CURDIR)/tests
 
 .PHONY: test-dev[fastapi]
 test-dev[fastapi]: ## runs unit common tests and fastapi extras
 	# running test-dev[aiohttp]
-	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
-	--pdb \
-	--ignore=tests/aiohttp \
-	$(CURDIR)/tests
+	@pytest -vv \
+		--color=yes \
+		--cov-config=$(CURDIR)/../../.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		--asyncio-mode=auto \
+		--ignore=tests/aiohttp \
+		$(CURDIR)/tests
 
 .PHONY: test-dev[fastapi]
 test-dev[all]: ## runs unit tests  w/ all extras
-	# running test-dev
-	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
-	--pdb \
-	$(CURDIR)/tests
+	@pytest -vv \
+		--color=yes \
+		--cov-config=$(CURDIR)/../../.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=$(APP_PACKAGE_NAME) \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		--asyncio-mode=auto \
+		$(CURDIR)/tests

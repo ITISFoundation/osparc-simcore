@@ -12,6 +12,7 @@ from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namespace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
+from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 from .settings import update_service_params_from_settings
 
 log = logging.getLogger(__name__)
@@ -46,9 +47,9 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_RUN_ID": f"{scheduler_data.dynamic_sidecar.run_id}",
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps({f"{x}" for x in state_exclude}),
+        "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
-            [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
+            f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -241,11 +242,7 @@ def get_dynamic_sidecar_spec(
                     app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
                 )
             },
-            "RestartPolicy": {
-                "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 2,
-            },
+            "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
             "Resources": {
                 "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},

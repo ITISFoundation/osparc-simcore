@@ -10,20 +10,25 @@ from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
-from servicelib.fastapi.long_running_tasks._errors import (
-    TaskClientResultError,
-    TaskClientTimeoutError,
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    ProgressMessage,
+    ProgressPercent,
+    periodic_task_result,
 )
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.client import periodic_task_result, Client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
-    TaskManager,
     TaskProgress,
-    get_task_manager,
+    TasksManager,
+    get_tasks_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.fastapi.long_running_tasks.server import start_task
+from servicelib.long_running_tasks._errors import (
+    TaskClientResultError,
+    TaskClientTimeoutError,
+)
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -41,16 +46,12 @@ async def _assert_task_removed(
 
 
 async def a_test_task(task_progress: TaskProgress) -> int:
-    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
-    task_progress.publish(message="finished", percent=1.0)
     return 42
 
 
 async def a_failing_test_task(task_progress: TaskProgress) -> None:
-    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
-    task_progress.publish(message="finished", percent=1.0)
     raise RuntimeError("I am failing as requested")
 
 
@@ -60,16 +61,16 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        task_manager: TaskManager = Depends(get_task_manager),
+        tasks_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manager, handler=a_test_task)
+        task_id = start_task(tasks_manager, handler=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        task_manager: TaskManager = Depends(get_task_manager),
+        task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager=task_manager, handler=a_failing_test_task)
+        task_id = start_task(task_manager, handler=a_failing_test_task)
         return task_id
 
     return router
@@ -88,6 +89,11 @@ async def bg_task_app(
 
     async with LifespanManager(app):
         yield app
+
+
+@pytest.fixture
+def mock_task_id() -> TaskId:
+    return parse_obj_as(TaskId, "fake_task_id")
 
 
 # TESTS
@@ -162,32 +168,35 @@ async def test_task_result_task_result_is_an_error(
 
 
 @pytest.mark.parametrize("repeat", [1, 2, 10])
-async def test_progress_updater(repeat: int) -> None:
+async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     counter = 0
     received = ()
 
-    async def progress_update(message: str, percent: float) -> None:
+    async def progress_update(
+        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+    ) -> None:
         nonlocal counter
         nonlocal received
         counter += 1
         received = (message, percent)
+        assert task_id == mock_task_id
 
     progress_updater = _ProgressManager(progress_update)
 
     # different from None and the last value only
     # triggers once
     for _ in range(repeat):
-        await progress_updater.update(message="")
+        await progress_updater.update(mock_task_id, message="")
         assert counter == 1
         assert received == ("", None)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=0.0)
+        await progress_updater.update(mock_task_id, percent=0.0)
         assert counter == 2
         assert received == ("", 0.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=1.0, message="done")
+        await progress_updater.update(mock_task_id, percent=1.0, message="done")
         assert counter == 3
         assert received == ("done", 1.0)
 
@@ -195,21 +204,21 @@ async def test_progress_updater(repeat: int) -> None:
     # will not trigger an event
 
     for _ in range(repeat):
-        await progress_updater.update(message=None)
+        await progress_updater.update(mock_task_id, message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=None)
+        await progress_updater.update(mock_task_id, percent=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update(percent=None, message=None)
+        await progress_updater.update(mock_task_id, percent=None, message=None)
         assert counter == 3
         assert received == ("done", 1.0)
 
     for _ in range(repeat):
-        await progress_updater.update()
+        await progress_updater.update(mock_task_id)
         assert counter == 3
         assert received == ("done", 1.0)

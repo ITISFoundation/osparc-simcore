@@ -40,7 +40,7 @@ async def _push_file(
         store_id=store_id,
         store_name=None,
         s3_object=s3_object,
-        local_file_path=file_path,
+        file_to_upload=file_path,
         r_clone_settings=r_clone_settings,
     )
     log.info("%s successfuly uploaded", file_path)
