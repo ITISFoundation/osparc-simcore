@@ -26,10 +26,10 @@ def _raise_if_container_is_missing(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-containers_router = APIRouter(tags=["containers"])
+router = APIRouter()
 
 
-@containers_router.get(
+@router.get(
     "/containers",
     responses={
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
@@ -74,7 +74,20 @@ async def containers_docker_inspect(
         return results
 
 
-@containers_router.get(
+# Some of the operations and sub-resources on containers are implemented as long-running tasks.
+# Handlers for these operations can be found in:
+#
+# POST /containers                       : SEE containers_long_running_tasks::create_service_containers_task
+# POST /containers:down                  : SEE containers_long_running_tasks::runs_docker_compose_down_task
+# POST /containers/state:restore         : SEE containers_long_running_tasks::state_restore_task
+# POST /containers/state:save            : SEE containers_long_running_tasks::state_save_task
+# POST /containers/ports/inputs:pull     : SEE containers_long_running_tasks::ports_inputs_pull_task
+# POST /containers/ports/outputs:pull    : SEE containers_long_running_tasks::ports_outputs_pull_task
+# POST /containers/ports/outputs:push    : SEE containers_long_running_tasks::ports_outputs_push_task
+#
+
+
+@router.get(
     "/containers/{id}/logs",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -120,7 +133,7 @@ async def get_container_logs(
         return container_logs
 
 
-@containers_router.get(
+@router.get(
     "/containers/name",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -186,7 +199,7 @@ async def get_containers_name(
     return f"{container_name}"
 
 
-@containers_router.get(
+@router.get(
     "/containers/{id}",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
