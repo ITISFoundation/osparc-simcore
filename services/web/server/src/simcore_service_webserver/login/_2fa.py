@@ -74,20 +74,26 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def send_sms_code(phone_number: str, code: str, settings: TwilioSettings):
-    # SEE https://www.twilio.com/docs/sms/quickstart/python
+async def send_sms_code(
+    phone_number: str,
+    code: str,
+    twilo_auth: TwilioSettings,
+    twilio_messaging_sid: str,
+    product_display_name: str,
+):
     def sender():
         log.info(
-            "Sending sms code to %s",
+            "Sending sms code to %s from product %s",
             f"{phone_number=}",
+            product_display_name,
         )
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        # SEE https://www.twilio.com/docs/sms/quickstart/python
+        #
+        client = Client(twilo_auth.TWILIO_ACCOUNT_SID, twilo_auth.TWILIO_AUTH_TOKEN)
         message = client.messages.create(
-            messaging_service_sid=settings.TWILIO_MESSAGING_SID,
+            messaging_service_sid=twilio_messaging_sid,
             to=phone_number,
-            body="Dear TI Planning Tool user, your verification code is {}".format(
-                code
-            ),
+            body=f"Dear {product_display_name} user, your verification code is {code}",
         )
 
         log.debug(

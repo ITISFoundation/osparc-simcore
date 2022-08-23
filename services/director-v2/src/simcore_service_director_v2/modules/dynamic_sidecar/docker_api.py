@@ -1,8 +1,12 @@
+# wraps all calls to underlying docker engine
+
+
 import asyncio
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional, Union
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -14,22 +18,20 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
-from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.constants import (
+from ...core.settings import DynamicSidecarSettings
+from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
-from ....utils.dict_utils import get_leaf_key_paths, nested_update
-from ..docker_states import TASK_STATES_RUNNING, extract_task_state
-from ..errors import DynamicSidecarError, GenericDockerError
-from ._utils import docker_client
+from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ...utils.dict_utils import get_leaf_key_paths, nested_update
+from .docker_states import TASK_STATES_RUNNING, extract_task_state
+from .errors import DynamicSidecarError, GenericDockerError
 
 NO_PENDING_OVERWRITE = {
     ServiceState.FAILED,
@@ -37,8 +39,25 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
-
 log = logging.getLogger(__name__)
+
+
+class _RetryError(Exception):
+    pass
+
+
+@asynccontextmanager
+async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
+    client = None
+    try:
+        client = aiodocker.Docker()
+        yield client
+    except aiodocker.exceptions.DockerError as e:
+        message = "Unexpected error from docker client"
+        raise GenericDockerError(message, e) from e
+    finally:
+        if client is not None:
+            await client.close()
 
 
 async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
@@ -462,7 +481,7 @@ async def _update_service_spec(
             # waits exponentially to a max of `stop_delay` seconds
             stop=stop_after_delay(stop_delay),
             wait=wait_exponential(min=1),
-            retry=retry_if_exception_type(TryAgain),
+            retry=retry_if_exception_type(_RetryError),
             reraise=True,
         ):
             with attempt:
@@ -490,7 +509,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise TryAgain() from e
+                        raise _RetryError() from e
                     raise e
 
 
@@ -512,13 +531,11 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             )
 
 
-async def constrain_service_to_node(service_name: str, docker_node_id: str) -> None:
+async def constrain_service_to_node(service_name: str, node_id: str) -> None:
     await _update_service_spec(
         service_name,
         update_in_service_spec={
-            "TaskTemplate": {
-                "Placement": {"Constraints": [f"node.id == {docker_node_id}"]}
-            }
+            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
         },
     )
-    log.info("Constraining service %s to node %s", service_name, docker_node_id)
+    log.info("Constraining service %s to node %s", service_name, node_id)

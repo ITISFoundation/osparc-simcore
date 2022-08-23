@@ -7,10 +7,9 @@ from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
-from yarl import URL
 
-from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
+from ..products import Product, get_current_product
 from ..security_api import check_password, encrypt_password, forget, remember
 from ..utils import HOUR, MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
@@ -21,11 +20,7 @@ from ._2fa import (
     send_sms_code,
     set_2fa_code,
 )
-from ._confirmation import (
-    is_confirmation_allowed,
-    make_confirmation_link,
-    validate_confirmation_code,
-)
+from ._confirmation import is_confirmation_allowed, make_confirmation_link
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
 from .settings import (
@@ -36,6 +31,14 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
 from .utils import (
+    ACTIVE,
+    ANONYMOUS,
+    BANNED,
+    CHANGE_EMAIL,
+    CONFIRMATION_PENDING,
+    REGISTRATION,
+    RESET_PASSWORD,
+    USER,
     envelope_response,
     flash_response,
     get_client_ip,
@@ -44,23 +47,6 @@ from .utils import (
 )
 
 log = logging.getLogger(__name__)
-
-
-def _to_names(enum_cls, names):
-    """ensures names are in enum be retrieving each of them"""
-    # FIXME: with asyncpg need to user NAMES
-    return [getattr(enum_cls, att).name for att in names.split()]
-
-
-CONFIRMATION_PENDING, ACTIVE, BANNED = _to_names(
-    UserStatus, "CONFIRMATION_PENDING ACTIVE BANNED"
-)
-
-ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
-
-REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
-    ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
-)
 
 
 async def register(request: web.Request):
@@ -165,6 +151,13 @@ async def register_phone(request: web.Request):
         )
 
     try:
+        product: Product = get_current_product(request)
+        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        if not product.twilio_messaging_sid:
+            raise ValueError(
+                f"Messaging SID is not configured in {product}. "
+                "Update product's twilio_messaging_sid in database."
+            )
 
         if await db.get_user({"phone": phone}):
             raise web.HTTPUnauthorized(
@@ -173,7 +166,14 @@ async def register_phone(request: web.Request):
             )
 
         code = await set_2fa_code(request.app, email)
-        await send_sms_code(phone, code, settings.LOGIN_TWILIO)
+
+        await send_sms_code(
+            phone_number=phone,
+            code=code,
+            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            product_display_name=product.display_name,
+        )
 
         response = flash_response(
             cfg.MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(phone)),
@@ -239,7 +239,7 @@ async def phone_confirmation(request: web.Request):
             await remember(request, response, identity)
             return response
 
-    #
+    # unauthorized
     raise web.HTTPUnauthorized(
         reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -280,6 +280,8 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED:
+        product: Product = get_current_product(request)
+
         if not user["phone"]:
             rsp = envelope_response(
                 {
@@ -291,9 +293,18 @@ async def login(request: web.Request):
             return rsp
 
         assert user["phone"]  # nosec
+        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+
         try:
             code = await set_2fa_code(request.app, user["email"])
-            await send_sms_code(user["phone"], code, settings.LOGIN_TWILIO)
+            await send_sms_code(
+                phone_number=user["phone"],
+                code=code,
+                twilo_auth=settings.LOGIN_TWILIO,
+                twilio_messaging_sid=product.twilio_messaging_sid,
+                product_display_name=product.display_name,
+            )
 
             rsp = envelope_response(
                 {
@@ -547,87 +558,3 @@ async def change_password(request: web.Request):
 
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
     return response
-
-
-async def email_confirmation(request: web.Request):
-    """Handles email confirmation by checking a code passed as query parameter
-
-    Retrieves confirmation key and redirects back to some location front-end
-
-    * registration, change-email:
-        - sets user as active
-        - redirects to login
-    * reset-password:
-        - redirects to login
-        - attaches page and token info onto the url
-        - info appended as fragment, e.g. https://osparc.io#reset-password?code=131234
-        - front-end should interpret that info as:
-            - show the reset-password page
-            - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
-    """
-    params, _, _ = await extract_and_validate(request)
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
-
-    code = params["code"]
-
-    confirmation = await validate_confirmation_code(code, db, cfg)
-
-    if confirmation:
-        action = confirmation["action"]
-        redirect_url = URL(cfg.LOGIN_REDIRECT)
-
-        if action == REGISTRATION:
-            user = await db.get_user({"id": confirmation["user_id"]})
-            await db.update_user(user, {"status": ACTIVE})
-            await db.delete_confirmation(confirmation)
-            log.debug("User %s registered", user)
-            redirect_url = redirect_url.with_fragment("?registered=true")
-
-        elif action == CHANGE_EMAIL:
-            user = await db.get_user({"id": confirmation["user_id"]})
-            await db.update_user(user, {"email": confirmation["data"]})
-            await db.delete_confirmation(confirmation)
-            log.debug("User %s changed email", user)
-
-        elif action == RESET_PASSWORD:
-            # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code)
-            log.debug("Reset password requested %s", confirmation)
-
-    raise web.HTTPFound(location=redirect_url)
-
-
-async def reset_password_allowed(request: web.Request):
-    """Changes password using a token code without being logged in"""
-    params, _, body = await extract_and_validate(request)
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
-
-    code = params["code"]
-    password = body.password
-    confirm = body.confirm
-
-    if password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 409
-
-    confirmation = await validate_confirmation_code(code, db, cfg)
-
-    if confirmation:
-        user = await db.get_user({"id": confirmation["user_id"]})
-        assert user  # nosec
-
-        await db.update_user(user, {"password_hash": encrypt_password(password)})
-        await db.delete_confirmation(confirmation)
-
-        response = flash_response(cfg.MSG_PASSWORD_CHANGED)
-        return response
-
-    raise web.HTTPUnauthorized(
-        reason="Cannot reset password. Invalid token or user",
-        content_type=MIMETYPE_APPLICATION_JSON,
-    )  # 401

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict
 
 from aiohttp import web
 from aiohttp.client import ClientSession
@@ -14,6 +13,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
+from .products import APP_PRODUCTS_KEY, Product
 from .statics_constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
@@ -44,16 +44,16 @@ _STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = dict(
 )
 
 
-async def assemble_cached_indexes(app: web.Application):
+async def create_cached_indexes(app: web.Application) -> None:
     """
     Currently the static resources are contain 3 folders: osparc, s4l, tis
     each of them contain and index.html to be served to as the root of the site
     for each type of frontend.
 
-    Caching these 3 items on start. This
+    Caching these 3 items on start
     """
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
-    cached_indexes: Dict[str, str] = {}
+    cached_indexes: dict[str, str] = {}
 
     session: ClientSession = get_client_session(app)
 
@@ -90,18 +90,27 @@ async def assemble_cached_indexes(app: web.Application):
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
-async def assemble_statics_json(app: web.Application):
+async def create_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
     # on_startup instead of upon setup
 
     # Adds general server settings
     app_settings = app[APP_SETTINGS_KEY]
-    info: Dict = app_settings.to_client_statics()
+    info: dict = app_settings.to_client_statics()
+
+    # Adds products defined in db
+    products: dict[str, Product] = app[APP_PRODUCTS_KEY]
+    assert products  # nosec
+    for product in products.values():
+        log.debug("Product %s", product.name)
+        info.update(**product.to_statics())
 
     # Adds specifics to front-end app
     frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
     info.update(frontend_settings.to_statics())
+
+    log.debug("Front-end statics.json:\n%s", json_dumps(info, indent=1))
 
     # cache computed statics.json
     app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = json_dumps(info)

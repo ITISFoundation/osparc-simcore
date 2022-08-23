@@ -5,28 +5,28 @@ qx.Class.define("osparc.navigation.Manuals", {
   statics: {
     getManuals: function(statics) {
       let manuals = [];
-      if (statics && statics.manualMainUrl) {
+      if (statics && statics.osparcManualUrl) {
         manuals.push({
           label: qx.locale.Manager.tr("User Manual"),
           icon: "@FontAwesome5Solid/book/22",
-          url: statics.manualMainUrl
+          url: statics.osparcManualUrl
         });
       }
 
-      if (osparc.utils.Utils.isInZ43() && statics && statics.manualExtraUrl) {
+      if (osparc.utils.Utils.isInZ43() && statics && statics.osparcManualExtraUrl) {
         manuals.push({
           label: qx.locale.Manager.tr("Z43 Manual"),
           icon: "@FontAwesome5Solid/book-medical/22",
-          url: statics.manualExtraUrl
+          url: statics.osparcManualExtraUrl
         });
       }
 
-      if (osparc.utils.Utils.isProduct("tis") && statics && statics.manualTiUrl) {
+      if (osparc.utils.Utils.isProduct("tis") && statics && statics.tisManualUrl) {
         // "TI Planning Tool Manual" only
         manuals = [{
           label: qx.locale.Manager.tr("TI Planning Tool Manual"),
           icon: "@FontAwesome5Solid/book/22",
-          url: statics.manualTiUrl
+          url: statics.tisManualUrl
         }];
       }
 
@@ -46,8 +46,8 @@ qx.Class.define("osparc.navigation.Manuals", {
 
       const feedbackAnonBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Anonymous feedback"));
       feedbackAnonBtn.addListener("execute", () => {
-        if (statics.feedbackFormUrl) {
-          window.open(statics.feedbackFormUrl);
+        if (statics.osparcFeedbackFormUrl) {
+          window.open(statics.osparcFeedbackFormUrl);
         }
       });
       menu.add(feedbackAnonBtn);
