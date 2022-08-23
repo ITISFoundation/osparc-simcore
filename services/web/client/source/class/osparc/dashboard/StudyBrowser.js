@@ -151,6 +151,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (templateData) {
             this._resourcesContainer.remove(this.__newStudyBtn);
             const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNewPlan() : new osparc.dashboard.ListButtonNewPlan();
+            osparc.utils.Utils.setIdToWidget(newPlanButton, "newPlanButton");
             newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(templateData));
             this.__newStudyBtn = newPlanButton;
             if (this._resourcesContainer.getMode() === "list") {
