@@ -343,7 +343,7 @@ class TasksManager:
 
 def start_task(
     tasks_manager: TasksManager,
-    handler: Callable[..., Awaitable],
+    task: Callable[..., Awaitable],
     *,
     unique: bool = False,
     task_context: Optional[TaskContext] = None,
@@ -363,9 +363,9 @@ def start_task(
 
     # NOTE: Composing the task_name out of the handler's module and it's name
     # to keep the urls shorter and more meaningful.
-    handler_module = inspect.getmodule(handler)
+    handler_module = inspect.getmodule(task)
     handler_module_name = handler_module.__name__ if handler_module else ""
-    task_name = f"{handler_module_name}.{handler.__name__}"
+    task_name = f"{handler_module_name}.{task.__name__}"
 
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
@@ -385,9 +385,7 @@ def start_task(
             # and it can raise if percent is <0 or >1!! -> simplify
             progress.publish(message="finished", percent=1)
 
-    task = asyncio.create_task(
-        _progress_task(task_progress, handler), name=f"{task_name}"
-    )
+    task = asyncio.create_task(_progress_task(task_progress, task), name=f"{task_name}")
 
     tracked_task = tasks_manager.add_task(
         task_name=task_name,
