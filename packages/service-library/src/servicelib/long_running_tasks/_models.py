@@ -29,7 +29,7 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = Field(default="")
     percent: ProgressPercent = Field(default=0.0)
 
-    def publish(
+    def update(
         self,
         *,
         message: Optional[ProgressMessage] = None,

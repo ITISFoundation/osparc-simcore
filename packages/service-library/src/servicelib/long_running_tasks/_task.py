@@ -401,13 +401,13 @@ def start_task(
 
     # bind the task with progress 0 and 1
     async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.publish(message="starting", percent=0)
+        progress.update(message="starting", percent=0)
         try:
             return await handler(progress, **task_kwargs)
         finally:
             # TODO: change that signature. it actually does not publish anything
             # and it can raise if percent is <0 or >1!! -> simplify
-            progress.publish(message="finished", percent=1)
+            progress.update(message="finished", percent=1)
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
