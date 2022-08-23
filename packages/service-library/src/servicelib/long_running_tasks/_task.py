@@ -6,7 +6,7 @@ from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Optional, Protocol
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -341,17 +341,27 @@ class TasksManager:
         )
 
 
+class TaskProtocol(Protocol):
+    async def __call__(self, task_progress: TaskProgress, **task_kwargs: Any) -> Any:
+        ...
+
+    @property
+    def __name__(self) -> str:
+        ...
+
+
 def start_task(
     tasks_manager: TasksManager,
-    task: Callable[..., Awaitable],
+    task: TaskProtocol,
     *,
     unique: bool = False,
     task_context: Optional[TaskContext] = None,
-    **handler_kwargs,
+    **task_kwargs,
 ) -> TaskId:
     """
-    Creates a task from a given callable to an async function.
+    Creates a background task from an async function.
 
+    An asyncio task will be created
     A task will be created out of it by injecting a `TaskProgress` as the first
     positional argument and adding all `handler_kwargs` as named parameters.
 
@@ -379,7 +389,7 @@ def start_task(
     async def _progress_task(progress: TaskProgress, handler: Callable[..., Awaitable]):
         progress.publish(message="starting", percent=0)
         try:
-            return await handler(progress, **handler_kwargs)
+            return await handler(progress, **task_kwargs)
         finally:
             # TODO: change that signature. it actually does not publish anything
             # and it can raise if percent is <0 or >1!! -> simplify
