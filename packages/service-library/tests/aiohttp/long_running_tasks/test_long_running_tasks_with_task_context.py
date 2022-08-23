@@ -145,11 +145,11 @@ async def test_get_task_result(
     client_with_task_context: TestClient,
     start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
     task_context: TaskContext,
-    task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
+    wait_for_task: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client_with_task_context.app
     task_id = await start_long_running_task(client_with_task_context)
-    await task_waiter(client_with_task_context, task_id, task_context)
+    await wait_for_task(client_with_task_context, task_id, task_context)
     # calling without Task context should find nothing
     result_url = client_with_task_context.app.router["get_task_result"].url_for(
         task_id=task_id

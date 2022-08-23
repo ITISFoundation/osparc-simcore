@@ -115,7 +115,7 @@ def start_long_running_task(
 
 
 @pytest.fixture
-def task_waiter() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[None]]:
+def wait_for_task() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[None]]:
     async def _waiter(
         client: TestClient,
         task_id: TaskId,

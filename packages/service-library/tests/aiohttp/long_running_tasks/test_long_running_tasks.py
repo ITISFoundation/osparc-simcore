@@ -132,12 +132,12 @@ async def test_get_task_wrong_task_id_raises_not_found(
 async def test_failing_task_returns_error(
     client: TestClient,
     start_long_running_task: Callable[[TestClient, Any], Awaitable[TaskId]],
-    task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
+    wait_for_task: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client.app
     task_id = await start_long_running_task(client, fail=f"{True}")
     # wait for it to finish
-    await task_waiter(client, task_id, {})
+    await wait_for_task(client, task_id, {})
     # get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -203,7 +203,7 @@ async def test_list_tasks_empty_list(client: TestClient):
 async def test_list_tasks(
     client: TestClient,
     start_long_running_task: Callable[[TestClient], Awaitable[TaskId]],
-    task_waiter: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
+    wait_for_task: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
 ):
     assert client.app
     # now start a few tasks
@@ -225,7 +225,7 @@ async def test_list_tasks(
         task.task_name == "POST /long_running_task:start" for task in list_of_tasks
     )
     # now wait for them to finish
-    await asyncio.gather(*(task_waiter(client, task_id, {}) for task_id in results))
+    await asyncio.gather(*(wait_for_task(client, task_id, {}) for task_id in results))
     # now get the result one by one
 
     for task_index, task_id in enumerate(results):

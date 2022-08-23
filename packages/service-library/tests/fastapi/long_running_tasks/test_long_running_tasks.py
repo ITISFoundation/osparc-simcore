@@ -105,7 +105,7 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
 
 
 @pytest.fixture
-def task_waiter() -> Callable[
+def wait_for_task() -> Callable[
     [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
 ]:
     async def _waiter(
@@ -211,11 +211,13 @@ async def test_failing_task_returns_error(
     app: FastAPI,
     client: AsyncClient,
     start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
-    task_waiter: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
+    wait_for_task: Callable[
+        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
+    ],
 ) -> None:
     task_id = await start_long_running_task(app, client, fail=f"{True}")
     # wait for it to finish
-    await task_waiter(app, client, task_id, {})
+    await wait_for_task(app, client, task_id, {})
     # get the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -284,7 +286,9 @@ async def test_list_tasks(
     app: FastAPI,
     client: AsyncClient,
     start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
-    task_waiter: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
+    wait_for_task: Callable[
+        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
+    ],
 ):
     # now start a few tasks
     NUM_TASKS = 10
@@ -301,7 +305,7 @@ async def test_list_tasks(
 
     # now wait for them to finish
     await asyncio.gather(
-        *(task_waiter(app, client, task_id, {}) for task_id in results)
+        *(wait_for_task(app, client, task_id, {}) for task_id in results)
     )
     # now get the result one by one
 
