@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -46,7 +46,7 @@ from settings_library.email import EmailProtocol, SMTPSettings
         },
     ],
 )
-def test_smtp_configuration_ok(cfg: Dict[str, Any]):
+def test_smtp_configuration_ok(cfg: dict[str, Any]):
     assert SMTPSettings.parse_obj(cfg)
 
 
@@ -84,6 +84,6 @@ def test_smtp_configuration_ok(cfg: Dict[str, Any]):
         },
     ],
 )
-def test_smtp_configuration_fails(cfg: Dict[str, Any]):
+def test_smtp_configuration_fails(cfg: dict[str, Any]):
     with pytest.raises(ValidationError):
         assert SMTPSettings.parse_obj(cfg)

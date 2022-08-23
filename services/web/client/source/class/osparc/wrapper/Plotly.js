@@ -44,8 +44,8 @@ qx.Class.define("osparc.wrapper.Plotly", {
     VERSION: "2.9.0",
     URL: "https://github.com/plotly/plotly.js",
 
-    createEmptyPlot: function(plotId) {
-      return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId);
+    createEmptyPlot: function(plotId, config) {
+      return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId, config);
     },
 
     setLayout: function(plotId, data) {
@@ -163,10 +163,10 @@ qx.Class.define("osparc.wrapper.Plotly", {
       });
     },
 
-    createEmptyPlot: function(plotId) {
+    createEmptyPlot: function(plotId, config = {}) {
       const emptyData = [];
       const emptyLayout = this.self().getDefaultLayout();
-      Plotly.newPlot(plotId, emptyData, emptyLayout);
+      Plotly.newPlot(plotId, emptyData, emptyLayout, config);
       return {
         emptyData,
         emptyLayout

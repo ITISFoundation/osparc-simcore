@@ -3,8 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -12,12 +11,16 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
-from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.services import ServiceOut, ServiceUpdate
+from ...models.schemas.constants import (
+    DIRECTOR_CACHING_TTL,
+    LIST_SERVICES_CACHING_TTL,
+    RESPONSE_MODEL_POLICY,
+)
+from ...models.schemas.services import ServiceGet, ServiceUpdate
 from ...services.function_services import get_function_service, is_function_service
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
@@ -28,26 +31,13 @@ logger = logging.getLogger(__name__)
 
 ServicesSelection = Set[Tuple[str, str]]
 
-# These are equivalent to pydantic export models but for responses
-# SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
-# SEE https://fastapi.tiangolo.com/tutorial/response-model/#use-the-response_model_exclude_unset-parameter
-RESPONSE_MODEL_POLICY = {
-    "response_model_by_alias": True,
-    "response_model_exclude_unset": True,
-    "response_model_exclude_defaults": False,
-    "response_model_exclude_none": False,
-}
-
-DIRECTOR_CACHING_TTL = 5 * MINUTE
-LIST_SERVICES_CACHING_TTL = 30
-
 
 def _prepare_service_details(
     service_in_registry: Dict[str, Any],
     service_in_db: ServiceMetaDataAtDB,
     service_access_rights_in_db: List[ServiceAccessRightsAtDB],
     service_owner: Optional[str],
-) -> Optional[ServiceOut]:
+) -> Optional[ServiceGet]:
     # compose service from registry and DB
     composed_service = service_in_registry
     composed_service.update(
@@ -59,7 +49,7 @@ def _prepare_service_details(
     # validate the service
     validated_service = None
     try:
-        validated_service = ServiceOut(**composed_service)
+        validated_service = ServiceGet(**composed_service)
     except ValidationError as exc:
         logger.warning(
             "could not validate service [%s:%s]: %s",
@@ -77,7 +67,7 @@ def _build_cache_key(fct, *_, **kwargs):
 # NOTE: this call is pretty expensive and can be called several times
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
-@router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
+@router.get("", response_model=List[ServiceGet], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
@@ -119,7 +109,7 @@ async def list_services(
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         services_overview = [
-            ServiceOut.construct(
+            ServiceGet.construct(
                 key=key,
                 version=version,
                 name="nodetails",
@@ -136,19 +126,11 @@ async def list_services(
 
     # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
     @cached(ttl=DIRECTOR_CACHING_TTL)
-    async def cached_registry_services() -> Deque[Tuple[str, str, Dict[str, Any]]]:
-        services_in_registry = await director_client.get("/services")
-        filtered_services = deque(
-            (s["key"], s["version"], s)
-            for s in (
-                request.app.state.frontend_services_catalog + services_in_registry
-            )
-            if (s.get("key"), s.get("version")) in services_in_db
-        )
-        return filtered_services
+    async def cached_registry_services() -> dict[str, Any]:
+        return cast(dict[str, Any], await director_client.get("/services"))
 
     (
-        registry_filtered_services,
+        services_in_registry,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
@@ -173,12 +155,17 @@ async def list_services(
             asyncio.get_event_loop().run_in_executor(
                 None,
                 _prepare_service_details,
-                details,
-                services_in_db[key, version],
-                services_access_rights[key, version],
-                services_owner_emails.get(services_in_db[key, version].owner),
+                s,
+                services_in_db[s["key"], s["version"]],
+                services_access_rights[s["key"], s["version"]],
+                services_owner_emails.get(
+                    services_in_db[s["key"], s["version"]].owner or 0
+                ),
             )
-            for key, version, details in registry_filtered_services
+            for s in (
+                request.app.state.frontend_services_catalog + services_in_registry
+            )
+            if (s.get("key"), s.get("version")) in services_in_db
         ]
     )
     return [s for s in services_details if s is not None]
@@ -186,7 +173,7 @@ async def list_services(
 
 @router.get(
     "/{service_key:path}/{service_version}",
-    response_model=ServiceOut,
+    response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
 )
 async def get_service(
@@ -205,12 +192,15 @@ async def get_service(
         )
         _service_data = frontend_service
     else:
-        services_in_registry = await director_client.get(
-            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        services_in_registry = cast(
+            list[Any],
+            await director_client.get(
+                f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+            ),
         )
         _service_data = services_in_registry[0]
 
-    service: ServiceOut = ServiceOut.parse_obj(_service_data)
+    service: ServiceGet = ServiceGet.parse_obj(_service_data)
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -266,10 +256,10 @@ async def get_service(
 
 @router.patch(
     "/{service_key:path}/{service_version}",
-    response_model=ServiceOut,
+    response_model=ServiceGet,
     **RESPONSE_MODEL_POLICY,
 )
-async def modify_service(
+async def update_service(
     # pylint: disable=too-many-arguments
     user_id: int,
     service_key: ServiceKey,

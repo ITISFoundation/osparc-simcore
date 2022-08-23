@@ -4,15 +4,17 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from pprint import pformat
+from typing import Any
 
 import pytest
 import yaml
-from service_integration.osparc_config import MetaConfig, RuntimeConfig
+from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
+from service_integration.osparc_config import MetaConfig, RuntimeConfig, SettingsItem
 
 
 @pytest.fixture
-def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
+def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
     data = yaml.safe_load((tests_data_dir / "docker-compose-meta.yml").read_text())
 
     service_name = {
@@ -38,7 +40,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
     "labels_fixture_name", ["legacy", "service-sidecared", "compose-sidecared"]
 )
 def test_load_from_labels(
-    labels: Dict[str, str], labels_fixture_name: str, tmp_path: Path
+    labels: dict[str, str], labels_fixture_name: str, tmp_path: Path
 ):
     meta_cfg = MetaConfig.from_labels_annotations(labels)
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
@@ -60,3 +62,27 @@ def test_load_from_labels(
         # reload from yaml and compare
         new_model = model.__class__.from_yaml(config_path)
         assert new_model == model
+
+
+@pytest.mark.parametrize(
+    "example_data", SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+)
+def test_settings_item_in_sync_with_service_settings_label(
+    example_data: dict[str, Any]
+):
+
+    print(pformat(example_data))
+
+    # First we parse with SimcoreServiceSettingLabelEntry since it also supports backwards compatibility
+    # and will upgrade old version
+    example_model = SimcoreServiceSettingLabelEntry.parse_obj(example_data)
+
+    # SettingsItem is exclusively for NEW labels, so it should not support backwards compatibility
+    new_model = SettingsItem(
+        name=example_model.name,
+        type=example_model.setting_type,
+        value=example_model.value,
+    )
+
+    # check back
+    SimcoreServiceSettingLabelEntry.parse_obj(new_model.dict(by_alias=True))

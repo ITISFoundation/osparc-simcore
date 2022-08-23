@@ -83,7 +83,10 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
+        center: true,
+        appearance: "strong-button"
+      });
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
       grp.add(submitBtn, {
         flex:1

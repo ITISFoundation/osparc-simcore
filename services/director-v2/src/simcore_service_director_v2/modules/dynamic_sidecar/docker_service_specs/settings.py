@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 
 from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
@@ -11,29 +11,29 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from models_library.services_resources import (
+    CPU_100_PERCENT,
+    DEFAULT_SINGLE_SERVICE_NAME,
+    GIGA,
+    MEMORY_1GB,
+    ServiceResourcesDict,
+)
+from servicelib.docker_compose import (
+    MATCH_IMAGE_END,
+    MATCH_IMAGE_START,
+    MATCH_SERVICE_VERSION,
+)
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
-# Notes on below env var names:
-# - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
-# deployed inside the platform
-# - SERVICE_VERSION will be replaced by the version of the service
-# to which this compos spec is attached
-# Example usage in docker compose:
-#   image: ${SIMCORE_REGISTRY}/${DOCKER_IMAGE_NAME}-dynamic-sidecar-compose-spec:${SERVICE_VERSION}
-MATCH_SERVICE_VERSION = "${SERVICE_VERSION}"
-MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
-MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
-MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
-
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
+
 
 log = logging.getLogger(__name__)
 
 
-def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
+def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     mounts = []
     for s in settings:
         log.debug("Retrieved mount settings %s", s)
@@ -57,7 +57,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
     return mounts
 
 
-def _parse_env_settings(settings: List[str]) -> Dict:
+def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
@@ -73,9 +73,10 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 
 # pylint: disable=too-many-branches
-def inject_settings_to_create_service_params(
+# TODO: PC->ANE: i tend to agree with pylint, perhaps we can refactor this together
+def update_service_params_from_settings(
     labels_service_settings: SimcoreServiceSettingsLabel,
-    create_service_params: Dict[str, Any],
+    create_service_params: dict[str, Any],
 ) -> None:
     for param in labels_service_settings:
         param: SimcoreServiceSettingLabelEntry = param
@@ -101,6 +102,7 @@ def inject_settings_to_create_service_params(
                 ] = param.value["cpu_reservation"]
             # REST-API compatible
             if "Limits" in param.value or "Reservations" in param.value:
+                # NOTE: The Docker REST API reads Reservation when actually it's Reservations
                 create_service_params["task_template"]["Resources"].update(param.value)
 
         # publishing port on the ingress network.
@@ -121,13 +123,17 @@ def inject_settings_to_create_service_params(
 
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
+
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
+
         elif param.setting_type == "Constraints":  # REST-API compatible
+
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
+
         elif param.name == "env":
             log.debug("Found env parameter %s", param.value)
             env_settings = _parse_env_settings(param.value)
@@ -137,7 +143,7 @@ def inject_settings_to_create_service_params(
                 )
         elif param.name == "mount":
             log.debug("Found mount parameter %s", param.value)
-            mount_settings: List[Dict] = _parse_mount_settings(param.value)
+            mount_settings: list[dict] = _parse_mount_settings(param.value)
             if mount_settings:
                 create_service_params["task_template"]["ContainerSpec"][
                     "Mounts"
@@ -152,6 +158,13 @@ def inject_settings_to_create_service_params(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 
+    # Cleanup repeated constraints.
+    # Observed in deploy how constraint 'node.platform.os == linux' was appended many many times
+    constraints = create_service_params["task_template"]["Placement"]["Constraints"]
+    if constraints:
+        assert isinstance(constraints, list)  # nosec
+        constraints = list(set(constraints))
+
 
 def _assemble_key(service_key: str, service_tag: str) -> str:
     return f"{service_key}:{service_tag}"
@@ -162,26 +175,26 @@ async def _extract_osparc_involved_service_labels(
     service_key: str,
     service_tag: str,
     service_labels: SimcoreServiceLabels,
-) -> Dict[str, SimcoreServiceLabels]:
+) -> dict[str, SimcoreServiceLabels]:
     """
     Returns all the involved oSPARC services from the provided service labels.
 
     If the service contains a compose-spec that will also be parsed for images.
     Searches for images like the following in the spec:
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
-    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:${SERVICE_VERSION}`
+    - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
     """
 
     # initialize with existing labels
     # stores labels mapped by image_name service:tag
     _default_key = _assemble_key(service_key=service_key, service_tag=service_tag)
-    docker_image_name_by_services: Dict[str, SimcoreServiceLabels] = {
+    docker_image_name_by_services: dict[str, SimcoreServiceLabels] = {
         _default_key: service_labels
     }
     # maps form image_name to compose_spec key
-    reverse_mapping: Dict[str, str] = {_default_key: CONTAINER_NAME}
+    reverse_mapping: dict[str, str] = {_default_key: DEFAULT_SINGLE_SERVICE_NAME}
 
-    def remap_to_compose_spec_key() -> Dict[str, str]:
+    def remap_to_compose_spec_key() -> dict[str, str]:
         # remaps from image_name as key to compose_spec key
         return {reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()}
 
@@ -189,7 +202,6 @@ async def _extract_osparc_involved_service_labels(
         ComposeSpecLabel, service_labels.compose_spec
     )
     if compose_spec is None:
-
         return remap_to_compose_spec_key()
 
     compose_spec_services = compose_spec.get("services", {})
@@ -209,7 +221,7 @@ async def _extract_osparc_involved_service_labels(
         ):
             continue
 
-        # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
+        # strips `${SIMCORE_REGISTRY}/`; replaces `${SERVICE_VERSION}` with `service_tag`
         osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(
             MATCH_IMAGE_START, ""
         )
@@ -240,74 +252,90 @@ async def _extract_osparc_involved_service_labels(
     return remap_to_compose_spec_key()
 
 
-def _add_compose_destination_container_to_settings_entries(
-    settings: SimcoreServiceSettingsLabel, destination_container: str
-) -> List[SimcoreServiceSettingLabelEntry]:
+def _add_compose_destination_containers_to_settings_entries(
+    settings: SimcoreServiceSettingsLabel, destination_containers: list[str]
+) -> list[SimcoreServiceSettingLabelEntry]:
     def _inject_destination_container(
         item: SimcoreServiceSettingLabelEntry,
     ) -> SimcoreServiceSettingLabelEntry:
         # pylint: disable=protected-access
-        item._destination_container = destination_container
+        item._destination_containers = destination_containers
         return item
 
     return [_inject_destination_container(x) for x in settings]
 
 
 def _merge_resources_in_settings(
-    settings: Deque[SimcoreServiceSettingLabelEntry],
-) -> Deque[SimcoreServiceSettingLabelEntry]:
+    settings: deque[SimcoreServiceSettingLabelEntry],
+    service_resources: ServiceResourcesDict,
+) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
-    result: Deque[SimcoreServiceSettingLabelEntry] = deque()
-    resources_entries: Deque[SimcoreServiceSettingLabelEntry] = deque()
+    log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
 
-    log.debug("merging settings %s", settings)
+    result: deque[SimcoreServiceSettingLabelEntry] = deque()
 
     for entry in settings:
         entry: SimcoreServiceSettingLabelEntry = entry
         if entry.name == "Resources" and entry.setting_type == "Resources":
-            resources_entries.append(entry)
-        else:
-            result.append(entry)
-
-    if len(resources_entries) <= 1:
-        return settings
+            # skipping resources
+            continue
+        result.append(entry)
 
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
-        SimcoreServiceSettingLabelEntry(
-            name="Resources",
-            setting_type="Resources",
-            value={
-                "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
-                "Reservations": {
-                    "NanoCPUs": 0,
-                    "MemoryBytes": 0,
-                    "GenericResources": [],
+        SimcoreServiceSettingLabelEntry.parse_obj(
+            dict(
+                name="Resources",
+                type="Resources",
+                value={
+                    "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                    "Reservations": {
+                        "NanoCPUs": 0,
+                        "MemoryBytes": 0,
+                        "GenericResources": [],
+                    },
                 },
-            },
+            )
         )
     )
 
-    for resource_entry in resources_entries:
-        resource_entry: SimcoreServiceSettingLabelEntry = resource_entry
-        limits = resource_entry.value.get("Limits", {})
-        empty_resource_entry.value["Limits"]["NanoCPUs"] += limits.get("NanoCPUs", 0)
-        empty_resource_entry.value["Limits"]["MemoryBytes"] += limits.get(
-            "MemoryBytes", 0
-        )
-
-        reservations = resource_entry.value.get("Reservations", {})
-        empty_resource_entry.value["Reservations"]["NanoCPUs"] = reservations.get(
-            "NanoCPUs", 0
-        )
-        empty_resource_entry.value["Reservations"]["MemoryBytes"] = reservations.get(
-            "MemoryBytes", 0
-        )
-        empty_resource_entry.value["Reservations"]["GenericResources"] = []
-        # put all generic resources together without looking for duplicates
-        empty_resource_entry.value["Reservations"]["GenericResources"].extend(
-            reservations.get("GenericResources", [])
-        )
+    for _, image_resources in service_resources.items():
+        for resource_name, resource_value in image_resources.resources.items():
+            if resource_name == "CPU":
+                empty_resource_entry.value["Limits"]["NanoCPUs"] += int(
+                    float(resource_value.limit) * GIGA
+                )
+                empty_resource_entry.value["Reservations"]["NanoCPUs"] += int(
+                    float(resource_value.reservation) * GIGA
+                )
+            elif resource_name == "RAM":
+                empty_resource_entry.value["Limits"][
+                    "MemoryBytes"
+                ] += resource_value.limit
+                empty_resource_entry.value["Reservations"][
+                    "MemoryBytes"
+                ] += resource_value.reservation
+            else:  # generic resources
+                generic_resource = {
+                    "DiscreteResourceSpec": {
+                        "Kind": resource_name,
+                        # NOTE: when dealing with generic resources only `reservation`
+                        # is set, `limit` is 0
+                        "Value": resource_value.reservation,
+                    }
+                }
+                empty_resource_entry.value["Reservations"]["GenericResources"].extend(
+                    [generic_resource]
+                )
+    # since some services do not define CPU limitations, by default 0.1% CPU is assigned
+    # ensuring limit is at least 1.0 CPUs otherwise the dynamic-sidecar is not able to work
+    # properly
+    empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
+        empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
+    )
+    empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
+        empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
+    )
 
     result.append(empty_resource_entry)
 
@@ -315,14 +343,14 @@ def _merge_resources_in_settings(
 
 
 def _patch_target_service_into_env_vars(
-    settings: Deque[SimcoreServiceSettingLabelEntry],
-) -> Deque[SimcoreServiceSettingLabelEntry]:
+    settings: deque[SimcoreServiceSettingLabelEntry],
+) -> deque[SimcoreServiceSettingLabelEntry]:
     """NOTE: this method will modify settings in place"""
 
-    def _format_env_var(env_var: str, destination_container: str) -> str:
+    def _format_env_var(env_var: str, destination_container: list[str]) -> str:
         var_name, var_payload = env_var.split("=")
         json_encoded = json.dumps(
-            dict(destination_container=destination_container, env_var=var_payload)
+            dict(destination_containers=destination_container, env_var=var_payload)
         )
         return f"{var_name}={json_encoded}"
 
@@ -333,13 +361,13 @@ def _patch_target_service_into_env_vars(
             list_of_env_vars = entry.value if entry.value else []
 
             # pylint: disable=protected-access
-            destination_container = entry._destination_container
+            destination_containers: list[str] = entry._destination_containers
 
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
-            # to   `ENV_VAR={"destination_container": "destination_container", "env_var": "PAYLOAD"}`
+            # to   `ENV_VAR={"destination_container": ["destination_container"], "env_var": "PAYLOAD"}`
             entry.value = [
-                _format_env_var(x, destination_container) for x in list_of_env_vars
+                _format_env_var(x, destination_containers) for x in list_of_env_vars
             ]
 
     return settings
@@ -347,7 +375,7 @@ def _patch_target_service_into_env_vars(
 
 def _get_boot_options(
     service_labels: SimcoreServiceLabels,
-) -> Optional[Dict[EnvVarKey, BootOption]]:
+) -> Optional[dict[EnvVarKey, BootOption]]:
     as_dict = service_labels.dict()
     boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
     if boot_options_encoded is None:
@@ -359,11 +387,11 @@ def _get_boot_options(
 
 
 def _assemble_env_vars_for_boot_options(
-    boot_options: Dict[EnvVarKey, BootOption],
-    service_user_selection_boot_options: Dict[EnvVarKey, str],
+    boot_options: dict[EnvVarKey, BootOption],
+    service_user_selection_boot_options: dict[EnvVarKey, str],
 ) -> SimcoreServiceSettingsLabel:
 
-    env_vars: Deque[str] = deque()
+    env_vars: deque[str] = deque()
     for env_var_key, boot_option in boot_options.items():
         # fetch value selected by the user or use default if not present
         value = service_user_selection_boot_options.get(
@@ -381,13 +409,9 @@ def _assemble_env_vars_for_boot_options(
     )
 
 
-async def merge_settings_before_use(
-    director_v0_client: DirectorV0Client,
-    service_key: str,
-    service_tag: str,
-    service_user_selection_boot_options: Dict[EnvVarKey, str],
-) -> SimcoreServiceSettingsLabel:
-
+async def get_labels_for_involved_services(
+    director_v0_client: DirectorV0Client, service_key: str, service_tag: str
+) -> dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service_key, version=service_tag)
@@ -400,7 +424,7 @@ async def merge_settings_before_use(
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
-    labels_for_involved_services: Dict[
+    labels_for_involved_services: dict[
         str, SimcoreServiceLabels
     ] = await _extract_osparc_involved_service_labels(
         director_v0_client=director_v0_client,
@@ -409,40 +433,57 @@ async def merge_settings_before_use(
         service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+    return labels_for_involved_services
 
-    # merge the settings from the all the involved services
-    settings: Deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
+
+async def merge_settings_before_use(
+    director_v0_client: DirectorV0Client,
+    service_key: str,
+    service_tag: str,
+    service_user_selection_boot_options: dict[EnvVarKey, str],
+    service_resources: ServiceResourcesDict,
+) -> SimcoreServiceSettingsLabel:
+    labels_for_involved_services = await get_labels_for_involved_services(
+        director_v0_client=director_v0_client,
+        service_key=service_key,
+        service_tag=service_tag,
+    )
+
+    settings: deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
+
+    boot_options_settings_env_vars: Optional[SimcoreServiceSettingsLabel] = None
+    # search for boot options first and inject to all containers
     for compose_spec_key, service_labels in labels_for_involved_services.items():
-        service_settings: SimcoreServiceSettingsLabel = cast(
-            SimcoreServiceSettingsLabel, service_labels.settings
-        )
-
-        settings.extend(
-            # inject compose spec key, used to target container specific services
-            _add_compose_destination_container_to_settings_entries(
-                settings=service_settings, destination_container=compose_spec_key
-            )
-        )
-
-        # inject boot options as env vars
         labels_boot_options = _get_boot_options(service_labels)
         if labels_boot_options:
-            # create a new setting from SimcoreServiceSettingsLabel as env var to pass to target container
+            # create a new setting from SimcoreServiceSettingsLabel as env var
             boot_options_settings_env_vars = _assemble_env_vars_for_boot_options(
                 labels_boot_options, service_user_selection_boot_options
             )
             settings.extend(
-                # inject compose spec key, used to target container specific services
-                _add_compose_destination_container_to_settings_entries(
+                _add_compose_destination_containers_to_settings_entries(
                     settings=boot_options_settings_env_vars,
-                    destination_container=compose_spec_key,
+                    destination_containers=list(labels_for_involved_services.keys()),
                 )
             )
+            break
 
-    settings = _merge_resources_in_settings(settings)
+    # merge the settings from the all the involved services
+    for compose_spec_key, service_labels in labels_for_involved_services.items():
+        service_settings: SimcoreServiceSettingsLabel = cast(
+            SimcoreServiceSettingsLabel, service_labels.settings
+        )
+        settings.extend(
+            # inject compose spec key, used to target container specific services
+            _add_compose_destination_containers_to_settings_entries(
+                settings=service_settings, destination_containers=[compose_spec_key]
+            )
+        )
+
+    settings = _merge_resources_in_settings(settings, service_resources)
     settings = _patch_target_service_into_env_vars(settings)
 
     return SimcoreServiceSettingsLabel.parse_obj(settings)
 
 
-__all__ = ["merge_settings_before_use", "inject_settings_to_create_service_params"]
+__all__ = ["merge_settings_before_use", "update_service_params_from_settings"]

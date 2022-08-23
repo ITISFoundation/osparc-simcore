@@ -70,8 +70,18 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/18",
-            toolTipText: this.tr("Update available"),
             visibility: "excluded"
+          });
+          layout.add(control);
+          break;
+        }
+        case "hits-service": {
+          const layout = this.getChildControl("tsr-mode-update-layout");
+          control = new qx.ui.basic.Label().set({
+            toolTipText: this.tr("Number of times it was instantiated")
+          });
+          layout.add(new qx.ui.core.Spacer(), {
+            flex: 1
           });
           layout.add(control);
           break;
@@ -294,81 +304,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
-    },
-
-    _applyState: function(state) {
-      const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setLocked(locked);
-      if (locked) {
-        this.__setLockedStatus(state["locked"]);
-      }
-    },
-
-    __setLockedStatus: function(lockedStatus) {
-      const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      const lock = this.getChildControl("lock-status");
-      const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
-      let source = null;
-      switch (status) {
-        case "CLOSING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is closing it...");
-          break;
-        case "CLONING":
-          source = "@FontAwesome5Solid/clone/70";
-          toolTipText += this.tr(" is cloning it...");
-          break;
-        case "EXPORTING":
-          source = osparc.component.task.Export.EXPORT_ICON+"/70";
-          toolTipText += this.tr(" is exporting it...");
-          break;
-        case "OPENING":
-          source = "@FontAwesome5Solid/key/70";
-          toolTipText += this.tr(" is opening it...");
-          break;
-        case "OPENED":
-          source = "@FontAwesome5Solid/lock/70";
-          toolTipText += this.tr(" is using it.");
-          break;
-        default:
-          source = "@FontAwesome5Solid/lock/70";
-          break;
-      }
-      lock.set({
-        toolTipText: toolTipText
-      });
-      lockImage.setSource(source);
-    },
-
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("lock-status").set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-    },
-
-    __enableCard: function(enabled) {
-      this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
-      });
-
-      [
-        "tick-selected",
-        "tick-unselected",
-        "menu-button"
-      ].forEach(childName => {
-        const child = this.getChildControl(childName);
-        child.set({
-          enabled
-        });
-      });
     },
 
     // overridden

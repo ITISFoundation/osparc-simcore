@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -6,31 +5,46 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from pprint import pformat
-from typing import Any, Deque, Dict, List, Optional, Tuple
+from typing import Deque, Optional
 from uuid import UUID
 
-import aiofiles
-from aiohttp import ClientSession, ClientTimeout, web
+from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from models_library.api_schemas_storage import ETag, LinkType
 from models_library.projects import AccessRights, Project
-from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.projects_nodes_io import (
+    BaseFileLink,
+    LocationID,
+    NodeID,
+    NodeIDStr,
+    StorageFileID,
+)
+from models_library.users import UserID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
+from pydantic import AnyUrl, parse_obj_as
+from servicelib.aiohttp.client_session import get_client_session
+from servicelib.utils import logged_gather
+from simcore_sdk.node_ports_common.exceptions import (
+    NodeportsException,
+    S3InvalidPathError,
+    StorageInvalidCall,
+)
+from simcore_sdk.node_ports_common.filemanager import (
+    get_download_link_from_s3,
+    upload_file,
+)
+from simcore_sdk.node_ports_common.storage_client import (
+    get_storage_locations,
+    list_file_metadata,
+)
 
 from ...director_v2_api import create_or_update_pipeline
 from ...projects.projects_api import get_project_for_user, submit_delete_project_task
 from ...projects.projects_db import APP_PROJECT_DBAPI
 from ...projects.projects_exceptions import ProjectsException
-from ...storage_handlers import (
-    get_file_download_url,
-    get_file_upload_url,
-    get_project_files_metadata,
-    get_storage_locations_for_user,
-)
 from ...users_api import get_user
 from ...utils import now_str
 from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader
-from ..utils import path_getsize
 from .base_formatter import BaseFormatter
 from .models import LinkAndPath2, ManifestFile, ProjectFile, ShuffledData
 
@@ -50,6 +64,7 @@ async def download_all_files_from_storage(
             link_and_path.download_link,
             link_and_path.storage_path_to_file,
         )
+        assert link_and_path.download_link  # nosec
         await parallel_downloader.append_file(
             link=link_and_path.download_link,
             download_path=link_and_path.storage_path_to_file,
@@ -67,28 +82,28 @@ async def download_all_files_from_storage(
 
 
 async def extract_download_links(
-    app: web.Application, dir_path: Path, project_id: str, user_id: int
+    app: web.Application, dir_path: Path, project_id: str, user_id: UserID
 ) -> Deque[LinkAndPath2]:
     download_links: Deque[LinkAndPath2] = deque()
     try:
-        available_locations: List[
-            Dict[str, Any]
-        ] = await get_storage_locations_for_user(app=app, user_id=user_id)
+        session = get_client_session(app)
+        file_locations = await get_storage_locations(session=session, user_id=user_id)
         log.debug(
             "will create download links for following locations: %s",
-            pformat(available_locations),
+            file_locations.json(),
         )
 
-        all_file_metadata = await asyncio.gather(
+        all_file_metadata = await logged_gather(
             *[
-                get_project_files_metadata(
-                    app=app,
-                    location_id=str(loc["id"]),
+                list_file_metadata(
+                    session=session,
+                    location_id=loc.id,
                     uuid_filter=project_id,
                     user_id=user_id,
                 )
-                for loc in available_locations
-            ]
+                for loc in file_locations
+            ],
+            max_concurrency=2,
         )
     except Exception as e:
         raise ExporterException(
@@ -99,22 +114,24 @@ async def extract_download_links(
 
     for file_metadata in chain.from_iterable(all_file_metadata):
         try:
-            download_link = await get_file_download_url(
-                app=app,
-                location_id=file_metadata["location_id"],
-                fileId=file_metadata["raw_file_path"],
+            download_link = await get_download_link_from_s3(
                 user_id=user_id,
+                store_id=file_metadata.location_id,
+                store_name=None,
+                s3_object=file_metadata.file_id,
+                link_type=LinkType.PRESIGNED,
+                client_session=session,
             )
-        except Exception as e:
+        except (S3InvalidPathError, StorageInvalidCall, ClientError) as e:
             raise ExporterException(
-                f'Error while requesting download url for file {file_metadata["raw_file_path"]}'
+                f"Error while requesting download url for file {file_metadata.file_id}: {e}"
             ) from e
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
-                storage_type=file_metadata["location_id"],
-                relative_path_to_file=file_metadata["raw_file_path"],
-                download_link=download_link,
+                storage_type=file_metadata.location_id,
+                relative_path_to_file=file_metadata.file_id,
+                download_link=parse_obj_as(AnyUrl, f"{download_link}"),
             )
         )
 
@@ -162,50 +179,30 @@ async def generate_directory_contents(
     await ProjectFile.model_to_file(root_dir=root_folder, **project_data)
 
 
-ETag = str
-
-
 async def upload_file_to_storage(
-    app: web.Application,
     link_and_path: LinkAndPath2,
     user_id: int,
     session: ClientSession,
-) -> Tuple[LinkAndPath2, ETag]:
+) -> tuple[LinkAndPath2, ETag]:
+
     try:
-        upload_url = await get_file_upload_url(
-            app=app,
-            location_id=str(link_and_path.storage_type),
-            fileId=str(link_and_path.relative_path_to_file),
+        _, e_tag = await upload_file(
             user_id=user_id,
-        )
-    except Exception as e:
-        raise ExporterException(
-            f"While requesting upload for {str(link_and_path.relative_path_to_file)}"
-            f"the following error occurred {str(e)}"
-        ) from e
-    log.debug(">>> upload url >>> %s", upload_url)
-
-    async def file_sender(file_name=None):
-        async with aiofiles.open(file_name, "rb") as f:
-            chunk = await f.read(64 * 1024)
-            while chunk:
-                yield chunk
-                chunk = await f.read(64 * 1024)
-
-    data_provider = file_sender(file_name=link_and_path.storage_path_to_file)
-    content_size = await path_getsize(link_and_path.storage_path_to_file)
-    headers = {"Content-Length": str(content_size)}
-    async with session.put(upload_url, data=data_provider, headers=headers) as resp:
-        upload_result = await resp.text()
-        if resp.status != 200:
-            raise ExporterException(
-                f"Client replied with status={resp.status} and body '{upload_result}'"
-            )
-        e_tag = json.loads(resp.headers.get("Etag", None))
-        log.debug(
-            "Upload status=%s, result: '%s', Etag %s", resp.status, upload_result, e_tag
+            store_id=link_and_path.storage_type,
+            store_name=None,
+            s3_object=link_and_path.relative_path_to_file,
+            local_file_path=link_and_path.storage_path_to_file,
+            client_session=session,
         )
         return (link_and_path, e_tag)
+    except (
+        NodeportsException,
+        ClientError,
+    ) as err:
+        raise ExporterException(
+            f"While requesting upload for '{link_and_path.relative_path_to_file}' "
+            f"the following error occurred: {err}"
+        ) from err
 
 
 async def add_new_project(app: web.Application, project: Project, user_id: int):
@@ -215,12 +212,12 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
     db = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: Dict = json.loads(
+    project_in: dict = json.loads(
         project.json(exclude_none=True, by_alias=True, exclude_unset=True)
     )
 
     # update metadata (uuid, timestamps, ownership) and save
-    _project_db: Dict = await db.add_project(
+    _project_db: dict = await db.add_project(
         project_in, user_id, force_as_template=False
     )
     if _project_db["uuid"] != str(project.uuid):
@@ -230,7 +227,7 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
 
 
 async def _fix_node_run_hashes_based_on_old_project(
-    project: Project, original_project: Project, node_mapping: Dict[NodeID, NodeID]
+    project: Project, original_project: Project, node_mapping: ShuffledData
 ) -> None:
     for old_node_id, old_node in original_project.workbench.items():
         new_node_id = node_mapping.get(old_node_id)
@@ -238,7 +235,7 @@ async def _fix_node_run_hashes_based_on_old_project(
             # this should not happen
             log.warning("could not find new node id %s", new_node_id)
             continue
-        new_node = project.workbench.get(new_node_id)
+        new_node = project.workbench.get(parse_obj_as(NodeIDStr, f"{new_node_id}"))
         if new_node is None:
             # this should also not happen
             log.warning("could not find new node data from id %s", new_node_id)
@@ -246,7 +243,7 @@ async def _fix_node_run_hashes_based_on_old_project(
 
         # check the node status in the old project
         old_computed_hash = await compute_node_hash(
-            old_node_id, project_node_io_payload_cb(original_project)
+            NodeID(old_node_id), project_node_io_payload_cb(original_project)
         )
         log.debug(
             "node %s old run hash: %s, computed old hash: %s",
@@ -260,26 +257,27 @@ async def _fix_node_run_hashes_based_on_old_project(
             None
             if node_needs_update
             else await compute_node_hash(
-                new_node_id, project_node_io_payload_cb(project)
+                NodeID(new_node_id), project_node_io_payload_cb(project)
             )
         )
 
 
 async def _fix_file_e_tags(
-    project: Project, links_to_etags: List[Tuple[LinkAndPath2, ETag]]
+    project: Project, links_to_etags: list[tuple[LinkAndPath2, ETag]]
 ) -> None:
     for link_and_path, e_tag in links_to_etags:
         file_path = link_and_path.relative_path_to_file
-        if len(file_path.parts) < 3:
+        parts = link_and_path.relative_path_to_file.split("/")
+        if len(parts) < 3:
             log.warning(
                 "fixing eTag while importing issue: the path is not expected, skipping %s",
                 file_path,
             )
             continue
-        node_id = file_path.parts[-2]
+        node_id = parts[-2]
 
         # now try to fix the eTag if any
-        node = project.workbench.get(node_id)
+        node = project.workbench.get(NodeIDStr(node_id))
         if node is None:
             log.warning(
                 "node %s could not be found in project, skipping eTag fix",
@@ -287,26 +285,25 @@ async def _fix_file_e_tags(
             )
             continue
         # find the file in the outputs if any
-        for output in node.outputs.values():
-            if isinstance(output, BaseFileLink) and output.path == str(file_path):
-                output.e_tag = e_tag
+        if node.outputs:
+            for output in node.outputs.values():
+                if isinstance(output, BaseFileLink) and output.path == str(file_path):
+                    output.e_tag = e_tag
 
 
 async def _remove_runtime_states(project: Project):
     for node_data in project.workbench.values():
-        node_data.state.modified = None
-        node_data.state.dependencies = None
+        node_data.state = None
 
 
 async def _upload_files_to_storage(
-    app: web.Application,
     user_id: int,
     root_folder: Path,
     manifest_file: ManifestFile,
     shuffled_data: ShuffledData,
-) -> List[Tuple[LinkAndPath2, ETag]]:
+) -> list[tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
-    client_timeout = ClientTimeout(
+    client_timeout = ClientTimeout(  # type: ignore
         total=UPLOAD_HTTP_TIMEOUT, connect=None, sock_connect=5
     )
     async with ClientSession(timeout=client_timeout) as session:
@@ -315,9 +312,11 @@ async def _upload_files_to_storage(
             attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
                 root_dir=root_folder,
-                storage_type=attachment_parts[0],
-                relative_path_to_file="/".join(attachment_parts[1:]),
-                download_link="",
+                storage_type=parse_obj_as(LocationID, attachment_parts[0]),
+                relative_path_to_file=parse_obj_as(
+                    StorageFileID, "/".join(attachment_parts[1:])
+                ),
+                download_link=None,
             )
             # check file exists
             if not await link_and_path.is_file():
@@ -333,13 +332,12 @@ async def _upload_files_to_storage(
 
             run_in_parallel.append(
                 upload_file_to_storage(
-                    app=app,
                     link_and_path=link_and_path,
                     user_id=user_id,
                     session=session,
                 )
             )
-        links_to_new_e_tags = await asyncio.gather(*run_in_parallel)
+        links_to_new_e_tags = await logged_gather(*run_in_parallel, max_concurrency=2)
 
     return links_to_new_e_tags
 
@@ -361,7 +359,7 @@ async def import_files_and_validate_project(
     )
     # creating an unique name to help the user distinguish
     # between the original and new study
-    shuffled_project_file.name = "%s %s" % (
+    shuffled_project_file.name = "{} {}".format(
         shuffled_project_file.name,
         datetime.datetime.utcnow().strftime("%Y:%m:%d:%H:%M:%S"),
     )
@@ -373,7 +371,7 @@ async def import_files_and_validate_project(
         root_dir=manifest_root_folder or root_folder
     )
 
-    user: Dict = await get_user(app=app, user_id=user_id)
+    user: dict = await get_user(app=app, user_id=user_id)
 
     # create and add the project
     project = Project(
@@ -400,7 +398,6 @@ async def import_files_and_validate_project(
 
         # upload files to storage
         links_to_new_e_tags = await _upload_files_to_storage(
-            app=app,
             user_id=user_id,
             root_folder=root_folder,
             manifest_file=manifest_file,

@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=no-name-in-module
 
 import asyncio
 import hashlib
@@ -13,12 +14,12 @@ import tempfile
 from collections import namedtuple
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Iterable, Optional
 
 import pytest
 from faker import Faker
 from servicelib.archiving_utils import archive_dir, unarchive_dir
-from test_utils import print_tree  # pylint:disable=no-name-in-module
+from test_utils import print_tree
 
 # FIXTURES
 
@@ -55,7 +56,7 @@ def dir_with_random_content() -> Iterable[Path]:
                 max_file_count=max_file_count,
             )
 
-    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> List[Path]:
+    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> list[Path]:
         return [path for path in path_to_scan.rglob("*") if path.is_dir()]
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,7 +106,7 @@ def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     return Path(str(input_path).replace(str(to_strip) + "/", ""))
 
 
-def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
+def get_all_files_in_dir(dir_path: Path) -> set[Path]:
     return {
         strip_directory_from_path(x, dir_path)
         for x in dir_path.rglob("*")
@@ -113,7 +114,7 @@ def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
     }
 
 
-def _compute_hash(file_path: Path) -> Tuple[Path, str]:
+def _compute_hash(file_path: Path) -> tuple[Path, str]:
     with open(file_path, "rb") as file_to_hash:
         file_hash = hashlib.md5()
         chunk = file_to_hash.read(8192)
@@ -124,7 +125,7 @@ def _compute_hash(file_path: Path) -> Tuple[Path, str]:
     return file_path, file_hash.hexdigest()
 
 
-async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
+async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
     """given a list of files computes hashes for the files on a process pool"""
 
     loop = asyncio.get_event_loop()
@@ -139,7 +140,7 @@ async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
         return {k: v for k, v in await asyncio.gather(*tasks)}
 
 
-def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
+def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
@@ -154,7 +155,7 @@ def _escape_undecodable_path(path: Path) -> Path:
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
-    inject_relative_path: Path = None,
+    inject_relative_path: Optional[Path] = None,
     unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
@@ -205,7 +206,7 @@ async def assert_same_directory_content(
 
 
 def assert_unarchived_paths(
-    unarchived_paths: Set[Path],
+    unarchived_paths: set[Path],
     src_dir: Path,
     dst_dir: Path,
     is_saved_as_relpath: bool,
@@ -224,12 +225,12 @@ def assert_unarchived_paths(
     if not is_saved_as_relpath:
         basedir += str(src_dir)
 
-    got_tails = set(os.path.relpath(f, basedir) for f in unarchived_paths)
-    expected_tails = set(
+    got_tails = {os.path.relpath(f, basedir) for f in unarchived_paths}
+    expected_tails = {
         os.path.relpath(f, src_dir)
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
-    )
+    }
     if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
@@ -263,7 +264,7 @@ async def test_archive_unarchive_same_structure_dir(
         compress=compress,
     )
 
-    unarchived_paths: Set[Path] = await unarchive_dir(
+    unarchived_paths: set[Path] = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
     )
 
@@ -372,8 +373,8 @@ async def test_regression_unsupported_characters(
     )
 
 
-EMPTY_SET: Set[Path] = set()
-ALL_ITEMS_SET: Set[Path] = {
+EMPTY_SET: set[Path] = set()
+ALL_ITEMS_SET: set[Path] = {
     Path("d1/f2.txt"),
     Path("d1/f1"),
     Path("d1/sd1/f1"),
@@ -394,48 +395,48 @@ TestCase = namedtuple("TestCase", "exclude_patterns, expected_result")
     "exclude_patterns, expected_result",
     [
         TestCase(
-            exclude_patterns=["/d1*"],
+            exclude_patterns={"/d1*"},
             expected_result=EMPTY_SET,
         ),
         TestCase(
-            exclude_patterns=["/d1/sd1*"],
+            exclude_patterns={"/d1/sd1*"},
             expected_result={
                 Path("d1/f2.txt"),
                 Path("d1/f1"),
             },
         ),
         TestCase(
-            exclude_patterns=["d1*"],
+            exclude_patterns={"d1*"},
             expected_result=EMPTY_SET,
         ),
         TestCase(
-            exclude_patterns=["*d1*"],
+            exclude_patterns={"*d1*"},
             expected_result=EMPTY_SET,
         ),
         TestCase(
-            exclude_patterns=["*.txt"],
+            exclude_patterns={"*.txt"},
             expected_result={
                 Path("d1/f1"),
                 Path("d1/sd1/f1"),
             },
         ),
         TestCase(
-            exclude_patterns=["/absolute/path/does/not/exist*"],
+            exclude_patterns={"/absolute/path/does/not/exist*"},
             expected_result=ALL_ITEMS_SET,
         ),
         TestCase(
-            exclude_patterns=["/../../this/is/ignored*"],
+            exclude_patterns={"/../../this/is/ignored*"},
             expected_result=ALL_ITEMS_SET,
         ),
         TestCase(
-            exclude_patterns=["*relative/path/does/not/exist"],
+            exclude_patterns={"*relative/path/does/not/exist"},
             expected_result=ALL_ITEMS_SET,
         ),
     ],
 )
 async def test_archive_unarchive_check_exclude(
-    exclude_patterns: List[str],
-    expected_result: Set[Path],
+    exclude_patterns: set[str],
+    expected_result: set[Path],
     exclude_patterns_validation_dir: Path,
     tmp_path: Path,
 ):
@@ -448,10 +449,10 @@ async def test_archive_unarchive_check_exclude(
     archive_file = temp_dir_one / "archive.zip"
 
     # make exclude_patterns work relative to test directory
-    exclude_patterns = [
+    exclude_patterns = {
         f"{exclude_patterns_validation_dir}/{x.strip('/') if x.startswith('/') else x}"
         for x in exclude_patterns
-    ]
+    }
 
     await archive_dir(
         dir_to_compress=exclude_patterns_validation_dir,
@@ -461,7 +462,7 @@ async def test_archive_unarchive_check_exclude(
         exclude_patterns=exclude_patterns,
     )
 
-    unarchived_paths: Set[Path] = await unarchive_dir(
+    unarchived_paths: set[Path] = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
     )
 

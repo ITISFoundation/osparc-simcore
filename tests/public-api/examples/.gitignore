@@ -2,3 +2,5 @@
 *.json
 *.txt
 *.ipynb
+# input files
+!data_rabbit_cardiac/

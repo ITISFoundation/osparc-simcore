@@ -66,6 +66,13 @@ class DaskClientsPool:
                     "acquiring connection to cluster %s:%s", cluster.id, cluster.name
                 )
                 if not dask_client:
+                    tasks_file_link_type = (
+                        self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
+                    )
+                    if cluster == self.settings.default_cluster:
+                        tasks_file_link_type = (
+                            self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+                        )
                     self._cluster_to_client_map[
                         cluster.id
                     ] = dask_client = await DaskClient.create(
@@ -73,6 +80,7 @@ class DaskClientsPool:
                         settings=self.settings,
                         endpoint=cluster.endpoint,
                         authentication=cluster.authentication,
+                        tasks_file_link_type=tasks_file_link_type,
                     )
                     if self._task_handlers:
                         dask_client.register_handlers(self._task_handlers)

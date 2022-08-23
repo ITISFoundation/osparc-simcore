@@ -6,9 +6,10 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from httpx import HTTPStatusError, codes
+from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, Field, PositiveInt
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 # TODO: shall schemas of internal APIs be in models_library as well?? or is against
 
 
-class ComputationTaskOut(ComputationTask):
+class ComputationTaskGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
@@ -38,6 +39,16 @@ class ComputationTaskOut(ComputationTask):
             return 100
         return 0
 
+
+class TaskLogFileGet(BaseModel):
+    task_id: NodeID
+    download_link: Optional[AnyUrl] = Field(
+        None, description="Presigned link for log file or None if still not available"
+    )
+
+
+NodeName = str
+DownloadLink = AnyUrl
 
 # API CLASS ---------------------------------------------
 
@@ -92,7 +103,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     async def create_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         resp = await self.client.post(
             "/v2/computations",
             json={
@@ -103,12 +114,12 @@ class DirectorV2Api(BaseServiceClientApi):
         )
 
         resp.raise_for_status()
-        computation_task = ComputationTaskOut(**resp.json())
+        computation_task = ComputationTaskGet(**resp.json())
         return computation_task
 
     async def start_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
 
         with handle_errors_context(project_id):
             resp = await self.client.post(
@@ -120,12 +131,12 @@ class DirectorV2Api(BaseServiceClientApi):
                 },
             )
             resp.raise_for_status()
-            computation_task = ComputationTaskOut(**resp.json())
+            computation_task = ComputationTaskGet(**resp.json())
             return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         resp = await self.client.get(
             f"/v2/computations/{project_id}",
             params={
@@ -133,12 +144,12 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         resp.raise_for_status()
-        computation_task = ComputationTaskOut(**resp.json())
+        computation_task = ComputationTaskGet(**resp.json())
         return computation_task
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
+    ) -> ComputationTaskGet:
         data = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
@@ -146,7 +157,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTaskOut(**data.json())
+        computation_task = ComputationTaskGet(**data.json())
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
@@ -158,6 +169,20 @@ class DirectorV2Api(BaseServiceClientApi):
                 "force": True,
             },
         )
+
+    async def get_computation_logs(
+        self, user_id: PositiveInt, project_id: UUID
+    ) -> dict[NodeName, DownloadLink]:
+        resp = await self.client.get(
+            f"/v2/computations/{project_id}/tasks/-/logfile",
+            params={
+                "user_id": user_id,
+            },
+        )
+        # probably not found
+        resp.raise_for_status()
+        payload = parse_raw_as(list[TaskLogFileGet], resp.text or "[]")
+        return {r.task_id: r.download_link for r in payload}
 
     # TODO: HIGHER lever interface with job* resources
     # or better in another place?

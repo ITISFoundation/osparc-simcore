@@ -7,10 +7,9 @@ import asyncio
 import json
 import logging
 import subprocess
-import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import Any, Iterator
 
 import docker
 import pytest
@@ -29,31 +28,19 @@ from .helpers.utils_docker import get_localhost_ip
 log = logging.getLogger(__name__)
 
 
-#
-# NOTE: this file must be PYTHON >=3.6 COMPATIBLE because it is used by the director service
-#
-
 # HELPERS --------------------------------------------------------------------------------
-
-
-class _NotInSwarmException(Exception):
-    pass
 
 
 class _ResourceStillNotRemoved(Exception):
     pass
 
 
-def _in_docker_swarm(
-    docker_client: docker.client.DockerClient, raise_error: bool = False
-) -> bool:
+def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
     try:
         docker_client.swarm.reload()
         inspect_result = docker_client.swarm.attrs
         assert type(inspect_result) == dict
     except APIError as error:
-        if raise_error:
-            raise _NotInSwarmException() from error
         return False
     return True
 
@@ -61,7 +48,7 @@ def _in_docker_swarm(
 def assert_service_is_running(service):
     """Checks that a number of tasks of this service are in running state"""
 
-    def _get(obj: Dict[str, Any], dotted_key: str, default=None) -> Any:
+    def _get(obj: dict[str, Any], dotted_key: str, default=None) -> Any:
         keys = dotted_key.split(".")
         value = obj
         for key in keys[:-1]:
@@ -152,6 +139,7 @@ def _fetch_and_print_services(
 def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
     yield client
+    client.close()
 
 
 @pytest.fixture(scope="session")
@@ -169,14 +157,13 @@ def docker_swarm(
         wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
         with attempt:
-            if not _in_docker_swarm(docker_client):
+            if not _is_docker_swarm_init(docker_client):
                 print("--> initializing docker swarm...")
                 docker_client.swarm.init(advertise_addr=get_localhost_ip())
                 print("--> docker swarm initialized.")
-            # if still not in swarm, raise an error to try and initialize again
-            _in_docker_swarm(docker_client, raise_error=True)
 
-    assert _in_docker_swarm(docker_client) is True
+            # if still not in swarm, raise an error to try and initialize again
+            assert _is_docker_swarm_init(docker_client)
 
     yield
 
@@ -185,7 +172,7 @@ def docker_swarm(
         assert docker_client.swarm.leave(force=True)
         print("<-- docker swarm left.")
 
-    assert _in_docker_swarm(docker_client) is keep_docker_up
+    assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
 @pytest.fixture(scope="module")
@@ -196,7 +183,7 @@ def docker_stack(
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
     testing_environ_vars: EnvVarsDict,
-) -> Iterator[Dict]:
+) -> Iterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
@@ -219,7 +206,7 @@ def docker_stack(
     ]
 
     # make up-version
-    stacks_deployed: Dict[str, Dict] = {}
+    stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
         try:
             subprocess.run(
@@ -242,6 +229,7 @@ def docker_stack(
                 f"returncode={err.returncode}",
                 f"stdout={err.stdout}",
                 f"stderr={err.stderr}",
+                "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
             )
             raise
 
@@ -254,38 +242,26 @@ def docker_stack(
     # - notice that the timeout is set for all services in both stacks
     # - TODO: the time to deploy will depend on the number of services selected
     try:
-        if sys.version_info >= (3, 7):
-            from tenacity._asyncio import AsyncRetrying
+        from tenacity._asyncio import AsyncRetrying
 
-            async def _check_all_services_are_running():
-                async for attempt in AsyncRetrying(
-                    wait=wait_fixed(1),
-                    stop=stop_after_delay(8 * MINUTE),
-                    before_sleep=before_sleep_log(log, logging.INFO),
-                    reraise=True,
-                ):
-                    with attempt:
-                        await asyncio.gather(
-                            *[
-                                asyncio.get_event_loop().run_in_executor(
-                                    None, assert_service_is_running, service
-                                )
-                                for service in docker_client.services.list()
-                            ]
-                        )
-
-            asyncio.run(_check_all_services_are_running())
-
-        else:
-            for attempt in Retrying(
+        async def _check_all_services_are_running():
+            async for attempt in AsyncRetrying(
                 wait=wait_fixed(5),
                 stop=stop_after_delay(8 * MINUTE),
                 before_sleep=before_sleep_log(log, logging.INFO),
                 reraise=True,
             ):
                 with attempt:
-                    for service in docker_client.services.list():
-                        assert_service_is_running(service)
+                    await asyncio.gather(
+                        *[
+                            asyncio.get_event_loop().run_in_executor(
+                                None, assert_service_is_running, service
+                            )
+                            for service in docker_client.services.list()
+                        ]
+                    )
+
+        asyncio.run(_check_all_services_are_running())
 
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")

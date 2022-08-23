@@ -4,11 +4,11 @@ import json
 # pylint:disable=redefined-outer-name
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import simcore_sdk
-from simcore_sdk.node_ports_common import config as node_config
+from pytest_simcore.postgres_service import PostgresTestConfig
 
 ## HELPERS
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -18,14 +18,16 @@ sys.path.append(str(current_dir / "helpers"))
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.file_extra",
     "pytest_simcore.minio_service",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
+    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.pytest_global_environs",
 ]
 
 
@@ -68,7 +70,7 @@ def default_configuration_file() -> Path:
 
 
 @pytest.fixture(scope="session")
-def default_configuration(default_configuration_file: Path) -> Dict[str, Any]:
+def default_configuration(default_configuration_file: Path) -> dict[str, Any]:
     config = json.loads(default_configuration_file.read_text())
     return config
 
@@ -80,12 +82,8 @@ def empty_configuration_file() -> Path:
     return path
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def node_ports_config(
-    postgres_dsn: Dict[str, str], minio_config: Dict[str, str]
+    postgres_host_config: PostgresTestConfig, minio_config: dict[str, str]
 ) -> None:
-    node_config.POSTGRES_DB = postgres_dsn["database"]
-    node_config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
-    node_config.POSTGRES_USER = postgres_dsn["user"]
-    node_config.POSTGRES_PW = postgres_dsn["password"]
-    node_config.BUCKET = minio_config["bucket_name"]
+    ...

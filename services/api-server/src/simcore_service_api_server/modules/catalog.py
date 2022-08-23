@@ -2,13 +2,13 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
+from settings_library.catalog import CatalogSettings
 
-from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -79,7 +79,7 @@ class CatalogApi(BaseServiceClientApi):
         self,
         user_id: int,
         predicate: Optional[Callable[[Solver], bool]] = None,
-    ) -> List[Solver]:
+    ) -> list[Solver]:
         resp = await self.client.get(
             "/services",
             params={"user_id": user_id, "details": True},
@@ -131,8 +131,8 @@ class CatalogApi(BaseServiceClientApi):
 
         return service.to_solver()
 
-    async def list_latest_releases(self, user_id: int) -> List[Solver]:
-        solvers: List[Solver] = await self.list_solvers(user_id)
+    async def list_latest_releases(self, user_id: int) -> list[Solver]:
+        solvers: list[Solver] = await self.list_solvers(user_id)
 
         latest_releases = {}
         for solver in solvers:
@@ -144,11 +144,11 @@ class CatalogApi(BaseServiceClientApi):
 
     async def list_solver_releases(
         self, user_id: int, solver_key: SolverKeyId
-    ) -> List[Solver]:
+    ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
-        releases: List[Solver] = await self.list_solvers(user_id, _this_solver)
+        releases: list[Solver] = await self.list_solvers(user_id, _this_solver)
         return releases
 
     async def get_latest_release(self, user_id: int, solver_key: SolverKeyId) -> Solver:
@@ -167,5 +167,5 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
         settings = CatalogSettings()
 
     setup_client_instance(
-        app, CatalogApi, api_baseurl=settings.base_url, service_name="catalog"
+        app, CatalogApi, api_baseurl=settings.api_base_url, service_name="catalog"
     )

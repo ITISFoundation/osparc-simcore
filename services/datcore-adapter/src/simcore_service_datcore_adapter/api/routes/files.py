@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, Header
+from pydantic import AnyUrl, parse_obj_as
 from starlette import status
 
 from ...models.domains.files import FileDownloadOut
@@ -28,7 +29,7 @@ async def download_file(
         api_secret=x_datcore_api_secret,
         package_id=file_id,
     )
-    return FileDownloadOut(link=f"{presigned_download_link}")
+    return FileDownloadOut(link=parse_obj_as(AnyUrl, f"{presigned_download_link}"))
 
 
 @router.delete(

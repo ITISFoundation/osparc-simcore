@@ -1,12 +1,12 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
+# pylint:disable=not-context-manager
 
 import itertools
 import random
 from random import randint
-from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple
+from typing import Any, AsyncIterator, Callable, Iterable, Iterator
 
 import pytest
 import respx
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from fastapi import FastAPI
-from pydantic import PositiveInt
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
@@ -35,7 +35,7 @@ def app(
     mocker: MockerFixture,
     service_test_environ: None,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
 ) -> Iterable[FastAPI]:
     monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
@@ -85,12 +85,12 @@ def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
 
 
 @pytest.fixture(scope="session")
-def user_id() -> PositiveInt:
-    return randint(1, 10000)
+def user_id() -> UserID:
+    return UserID(randint(1, 10000))
 
 
 @pytest.fixture()
-def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dict]:
+def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
     with postgres_db.connect() as con:
         # removes all users before continuing
         con.execute(users.delete())
@@ -109,7 +109,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dic
         # this is needed to get the primary_gid correctly
         result = con.execute(sa.select([users]).where(users.c.id == user_id))
         user = result.first()
-
+        assert user
         yield dict(user)
 
         con.execute(users.delete().where(users.c.id == user_id))
@@ -118,7 +118,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dic
 @pytest.fixture()
 async def products_names(
     sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[List[str]]:
+) -> AsyncIterator[list[str]]:
     """Inits products db table and returns product names"""
     data = [
         # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
@@ -145,8 +145,8 @@ async def products_names(
 
 @pytest.fixture()
 async def user_groups_ids(
-    sqlalchemy_async_engine: AsyncEngine, user_db: Dict[str, Any]
-) -> AsyncIterator[List[int]]:
+    sqlalchemy_async_engine: AsyncEngine, user_db: dict[str, Any]
+) -> AsyncIterator[list[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
@@ -206,7 +206,7 @@ async def services_db_tables_injector(
     """
     # pylint: disable=no-value-for-parameter
 
-    async def inject_in_db(fake_catalog: List[Tuple]):
+    async def inject_in_db(fake_catalog: list[tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
 
         async with sqlalchemy_async_engine.begin() as conn:
@@ -235,8 +235,8 @@ async def services_db_tables_injector(
 
 @pytest.fixture()
 async def service_catalog_faker(
-    user_groups_ids: List[int],
-    products_names: List[str],
+    user_groups_ids: list[int],
+    products_names: list[str],
     faker: Faker,
 ) -> Callable:
     """Returns a fake factory that creates catalog DATA that can be used to fill
@@ -257,7 +257,7 @@ async def service_catalog_faker(
     """
     everyone_gid, user_gid, team_gid = user_groups_ids
 
-    def _random_service(**overrides) -> Dict[str, Any]:
+    def _random_service(**overrides) -> dict[str, Any]:
         data = dict(
             key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
             version=".".join([str(faker.pyint()) for _ in range(3)]),
@@ -267,11 +267,12 @@ async def service_catalog_faker(
             thumbnail=random.choice([faker.image_url(), None]),
             classifiers=[],
             quality={},
+            deprecated=None,
         )
         data.update(overrides)
         return data
 
-    def _random_access(service, **overrides) -> Dict[str, Any]:
+    def _random_access(service, **overrides) -> dict[str, Any]:
         data = dict(
             key=service["key"],
             version=service["version"],
@@ -285,7 +286,7 @@ async def service_catalog_faker(
 
     def _fake_factory(
         key, version, team_access=None, everyone_access=None, product=products_names[0]
-    ) -> Tuple[Dict[str, Any], ...]:
+    ) -> tuple[dict[str, Any], ...]:
 
         service = _random_service(key=key, version=version)
 

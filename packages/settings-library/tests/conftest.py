@@ -4,7 +4,7 @@
 
 import sys
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
 import settings_library
@@ -70,7 +70,7 @@ def mock_environment(
 
 
 @pytest.fixture
-def fake_settings_class() -> Type[BaseCustomSettings]:
+def fake_settings_class() -> type[BaseCustomSettings]:
     """Creates a fake Settings class
 
     NOTE: How to use this fixture? BaseCustomSettings captures env vars, therefore

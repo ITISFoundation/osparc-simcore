@@ -22,6 +22,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.core.errors import TaskSchedulingError
 
 from ...core.settings import ComputationalBackendSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
@@ -144,6 +145,7 @@ class DaskScheduler(BaseCompScheduler):
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
+        errors = None
 
         if task.job_id is not None:
             (
@@ -153,27 +155,38 @@ class DaskScheduler(BaseCompScheduler):
                 project_id,
                 node_id,
             ) = parse_dask_job_id(task.job_id)
+
             assert task.project_id == project_id  # nosec
             assert task.node_id == node_id  # nosec
 
-            if isinstance(result, TaskOutputData):
-                # success!
-                task_final_state = RunningState.SUCCESS
+            try:
+                if isinstance(result, TaskOutputData):
+                    # success!
+                    await parse_output_data(
+                        self.db_engine,
+                        task.job_id,
+                        result,
+                    )
+                    task_final_state = RunningState.SUCCESS
 
-                await parse_output_data(
-                    self.db_engine,
-                    task.job_id,
-                    result,
-                )
-            else:
-                if isinstance(result, TaskCancelledError):
-                    task_final_state = RunningState.ABORTED
                 else:
-                    task_final_state = RunningState.FAILED
-                # we need to remove any invalid files in the storage
-                await clean_task_output_and_log_files_if_invalid(
-                    self.db_engine, user_id, project_id, node_id
+                    if isinstance(result, TaskCancelledError):
+                        task_final_state = RunningState.ABORTED
+                    else:
+                        task_final_state = RunningState.FAILED
+                    # we need to remove any invalid files in the storage
+                    await clean_task_output_and_log_files_if_invalid(
+                        self.db_engine, user_id, project_id, node_id
+                    )
+            except TaskSchedulingError as err:
+                task_final_state = RunningState.FAILED
+                errors = err.get_errors()
+                logger.debug(
+                    "Unexpected failure while processing results of %s: %s",
+                    f"{task=}",
+                    f"{errors=}",
                 )
+
             # instrumentation
             message = InstrumentationRabbitMessage(
                 metrics="service_stopped",
@@ -189,7 +202,7 @@ class DaskScheduler(BaseCompScheduler):
             await self.rabbitmq_client.publish_message(message)
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            task.project_id, [task.node_id], task_final_state
+            task.project_id, [task.node_id], task_final_state, errors=errors
         )
 
     async def _task_state_change_handler(self, event: str) -> None:

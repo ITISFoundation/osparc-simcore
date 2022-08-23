@@ -10,11 +10,11 @@ from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 
 from ..json_serialization import json_dumps
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
 OFFSET_PAGINATION_KEYS = ("_meta", "_links")
-JSON_CONTENT_TYPE = "application/json"
 
 JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
 
@@ -69,7 +69,7 @@ def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
 
 
 def create_data_response(
-    data: _DataType, *, skip_internal_error_details=False
+    data: _DataType, *, skip_internal_error_details=False, status=web.HTTPOk.status_code
 ) -> web.Response:
     response = None
     try:
@@ -78,7 +78,7 @@ def create_data_response(
         else:
             payload = data
 
-        response = web.json_response(payload, dumps=json_dumps)
+        response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
@@ -124,7 +124,7 @@ def create_error_response(
     payload = wrap_as_envelope(error=attr.asdict(error))
 
     response = http_error_cls(
-        reason=reason, text=json_dumps(payload), content_type=JSON_CONTENT_TYPE
+        reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
     )
 
     return response

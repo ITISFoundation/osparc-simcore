@@ -1,10 +1,10 @@
 import asyncio
 import logging
 from collections import deque
+from contextlib import suppress
+from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, List, Optional
-
-import attr
+from typing import TYPE_CHECKING, Any, Callable, Deque, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ else:
         pass
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class Context:
     in_queue: asyncio.Queue
     out_queue: asyncio.Queue
@@ -30,22 +30,30 @@ class Context:
     task: Optional[asyncio.Task] = None
 
 
-_sequential_jobs_contexts: Dict[str, Context] = {}
+_sequential_jobs_contexts: dict[str, Context] = {}
 
 
-async def stop_sequential_workers() -> None:
-    """Singlas all workers to close thus avoiding errors on shutdown"""
+async def cancel_sequential_workers() -> None:
+    """Signals all workers to close thus avoiding errors on shutdown"""
     for context in _sequential_jobs_contexts.values():
         await context.in_queue.put(None)
         if context.task is not None:
-            await context.task
+            context.task.cancel()
+            with suppress(asyncio.CancelledError):
+                await context.task
+
     _sequential_jobs_contexts.clear()
     logger.info("All run_sequentially_in_context pending workers stopped")
 
 
+# NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
+# @run_sequentially_in_contextreturn changes the return type of the decorated function to `Any`.
+# Instead we should annotate this decorator with ParamSpec and TypeVar generics.
+# SEE https://peps.python.org/pep-0612/
+#
 def run_sequentially_in_context(
-    target_args: List[str] = None,
-) -> Callable[[Any], Any]:
+    target_args: Optional[list[str]] = None,
+) -> Callable:
     """All request to function with same calling context will be run sequentially.
 
     Example:
@@ -83,10 +91,8 @@ def run_sequentially_in_context(
     """
     target_args = [] if target_args is None else target_args
 
-    def internal(
-        decorated_function: Callable[[Any], Optional[Any]]
-    ) -> Callable[[Any], Optional[Any]]:
-        def get_context(args: Any, kwargs: Dict[Any, Any]) -> Context:
+    def decorator(decorated_function: Callable[[Any], Optional[Any]]):
+        def _get_context(args: Any, kwargs: dict) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
             ]
@@ -98,17 +104,17 @@ def run_sequentially_in_context(
                 sub_args = arg.split(".")
                 main_arg = sub_args[0]
                 if main_arg not in search_args:
-                    message = (
+                    raise ValueError(
                         f"Expected '{main_arg}' in '{decorated_function.__name__}'"
                         f" arguments. Got '{search_args}'"
                     )
-                    raise ValueError(message)
                 context_key = search_args[main_arg]
                 for attribute in sub_args[1:]:
                     potential_key = getattr(context_key, attribute)
                     if not potential_key:
-                        message = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
-                        raise ValueError(message)
+                        raise ValueError(
+                            f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                        )
                     context_key = potential_key
 
                 key_parts.append(f"{decorated_function.__name__}_{context_key}")
@@ -124,9 +130,10 @@ def run_sequentially_in_context(
 
             return _sequential_jobs_contexts[key]
 
+        # --------------------
         @wraps(decorated_function)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            context: Context = get_context(args, kwargs)
+            context: Context = _get_context(args, kwargs)
 
             if not context.initialized:
                 context.initialized = True
@@ -164,4 +171,4 @@ def run_sequentially_in_context(
 
         return wrapper
 
-    return internal
+    return decorator

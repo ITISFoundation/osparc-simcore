@@ -66,19 +66,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     }
   },
 
-  statics: {
-    hasIteratorUpstream: function(workbench, node) {
-      const upstreamNodeIDs = workbench.getUpstreamNodes(node);
-      return [...upstreamNodeIDs].some(upstreamNodeID => {
-        const upstreamNode = workbench.getNode(upstreamNodeID);
-        if (upstreamNode) {
-          return upstreamNode.isIterator();
-        }
-        return false;
-      });
-    }
-  },
-
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -105,19 +92,16 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    isContainer: function() {
-      return false;
-    },
-
-    getUpstreamNodes: function(node, upstreamNodes = new Set()) {
-      upstreamNodes.add(node.getNodeId());
+    getUpstreamNodes: function(node, recursive = true, upstreamNodes = new Set()) {
       const links = node.getLinks();
       links.forEach(link => {
         upstreamNodes.add(link["nodeUuid"]);
-        const linkNode = this.getNode(link["nodeUuid"]);
-        this.getUpstreamNodes(linkNode, upstreamNodes);
+        if (recursive) {
+          const linkNode = this.getNode(link["nodeUuid"]);
+          this.getUpstreamNodes(linkNode, recursive, upstreamNodes);
+        }
       });
-      return upstreamNodes;
+      return Array.from(upstreamNodes);
     },
 
     isPipelineLinear: function() {
@@ -242,7 +226,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return null;
     },
 
-    createEdge: function(edgeId, nodeLeftId, nodeRightId) {
+    createEdge: function(edgeId, nodeLeftId, nodeRightId, autoConnect = true) {
       const existingEdge = this.getEdge(edgeId, nodeLeftId, nodeRightId);
       if (existingEdge) {
         return existingEdge;
@@ -256,8 +240,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         const edge = new osparc.data.model.Edge(edgeId, nodeLeft, nodeRight);
         this.addEdge(edge);
 
-        // post edge creation
-        this.getNode(nodeRightId).edgeAdded(edge);
+        if (autoConnect) {
+          nodeRight.createAutoPortConnection(nodeLeft, nodeRight);
+        }
 
         nodeRight.addInputNode(nodeLeftId);
 
@@ -283,6 +268,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __createNode: function(study, key, version, uuid) {
+      osparc.utils.Utils.localCache.serviceToFavs(key);
       const node = new osparc.data.model.Node(study, key, version, uuid);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
@@ -335,13 +321,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
         node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
         node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
-        node.addListener("parameterRequested", e => {
-          const {
-            portId,
-            nodeId
-          } = e.getData();
-          this.__parameterNodeRequested(nodeId, portId);
-        }, this);
         node.addListener("filePickerRequested", e => {
           const {
             portId,
@@ -349,6 +328,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             file
           } = e.getData();
           this.__filePickerNodeRequested(nodeId, portId, file);
+        }, this);
+        node.addListener("parameterRequested", e => {
+          const {
+            portId,
+            nodeId
+          } = e.getData();
+          this.__parameterNodeRequested(nodeId, portId);
         }, this);
         node.addListener("probeRequested", e => {
           const {
@@ -360,7 +346,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __getFreePosition: function(node, toTheLeft = true) {
+    getFreePosition: function(node, toTheLeft = true) {
       // do not overlap the new node2 with other nodes
       const pos = node.getPosition();
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
@@ -388,21 +374,36 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
+    getFarthestPosition: function() {
+      let x = 0;
+      let y = 0;
+      Object.values(this.getNodes()).forEach(node => {
+        x = Math.max(x, node.getPosition().x);
+        y = Math.max(y, node.getPosition().y);
+      });
+      x += osparc.component.workbench.NodeUI.NODE_WIDTH;
+      y += osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      return {
+        x,
+        y
+      };
+    },
+
     __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
-        const freePos = this.__getFreePosition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
         const filePickerMetadata = osparc.utils.Services.getFilePicker();
-        const parentNodeId = requesterNode.getParentNodeId();
-        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-        const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"], null, parent);
+        const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
         filePicker.setPosition(freePos);
 
         // create connection
         const filePickerId = filePicker.getNodeId();
         requesterNode.addInputNode(filePickerId);
+        // reload also before port connection happens
+        this.fireEvent("reloadModel");
         requesterNode.addPortLink(portId, filePickerId, "outFile")
           .then(success => {
             if (success) {
@@ -442,28 +443,22 @@ qx.Class.define("osparc.data.model.Workbench", {
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
       const pmMD = osparc.utils.Services.getParameterMetadata(type);
       if (pmMD) {
-        const parentNodeId = requesterNode.getParentNodeId();
-        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-        const pm = this.createNode(pmMD["key"], pmMD["version"], null, parent);
+        const pm = this.createNode(pmMD["key"], pmMD["version"]);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.__getFreePosition(requesterNode);
+        const freePos = this.getFreePosition(requesterNode);
         pm.setPosition(freePos);
 
         // create connection
         const pmId = pm.getNodeId();
         requesterNode.addInputNode(pmId);
-        requesterNode.addPortLink(portId, pmId, "out_1")
-          .then(success => {
-            if (success) {
-              this.fireDataEvent("openNode", pmId);
-              this.fireEvent("reloadModel");
-            } else {
-              this.removeNode(pmId);
-              const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }
-          });
+        // bypass the compatibility check
+        if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
+          this.removeNode(pmId);
+          const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        }
+        this.fireEvent("reloadModel");
       }
     },
 
@@ -475,28 +470,23 @@ qx.Class.define("osparc.data.model.Workbench", {
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
       const probeMD = osparc.utils.Services.getProbeMetadata(type);
       if (probeMD) {
-        const parentNodeId = requesterNode.getParentNodeId();
-        const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-        const probeNode = this.createNode(probeMD["key"], probeMD["version"], null, parent);
+        const probeNode = this.createNode(probeMD["key"], probeMD["version"]);
         probeNode.setLabel(requesterPortMD.label);
 
         // do not overlap the new Parameter Node with other nodes
-        const freePos = this.__getFreePosition(requesterNode, false);
+        const freePos = this.getFreePosition(requesterNode, false);
         probeNode.setPosition(freePos);
 
         // create connection
         const probeId = probeNode.getNodeId();
         probeNode.addInputNode(nodeId);
-        probeNode.addPortLink("in_1", nodeId, portId)
-          .then(success => {
-            if (success) {
-              this.fireEvent("reloadModel");
-            } else {
-              this.removeNode(probeId);
-              const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }
-          });
+        // bypass the compatibility check
+        if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
+          this.removeNode(probeId);
+          const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        }
+        this.fireEvent("reloadModel");
       }
     },
 
@@ -566,10 +556,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       if (leftNodeId) {
         const leftNode = this.getNode(leftNodeId);
-        node.setPosition(this.__getFreePosition(leftNode, false));
+        node.setPosition(this.getFreePosition(leftNode, false));
       } else if (rightNodeId) {
         const rightNode = this.getNode(rightNodeId);
-        node.setPosition(this.__getFreePosition(rightNode, true));
+        node.setPosition(this.getFreePosition(rightNode, true));
       } else {
         node.setPosition({
           x: 20,
@@ -587,10 +577,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create connections
       if (leftNodeId) {
-        this.createEdge(null, leftNodeId, node.getNodeId());
+        this.createEdge(null, leftNodeId, node.getNodeId(), true);
       }
       if (rightNodeId) {
-        this.createEdge(null, node.getNodeId(), rightNodeId);
+        this.createEdge(null, node.getNodeId(), rightNodeId, true);
       }
       this.fireEvent("reloadModel");
 
@@ -808,18 +798,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
         });
       });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        selectedNodes.forEach(selectedNode => {
-          const selectedNodeId = selectedNode.getNodeId();
-          if (currentModel.isOutputNode(selectedNodeId)) {
-            currentModel.removeOutputNode(selectedNodeId);
-            nodesGroup.addOutputNode(selectedNodeId);
-            currentModel.addOutputNode(nodesGroup.getNodeId());
-          }
-        });
-      }
     },
 
     ungroupNode: function(currentModel, nodesGroup) {
@@ -843,26 +821,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
           brotherNode.addInputNodes(nodesGroup.getExposedNodeIDs());
-
-          if (brotherNode.isContainer()) {
-            const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
-            broInnerNodes.forEach(broInnerNode => {
-              if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
-                broInnerNode.removeInputNode(nodesGroup.getNodeId());
-                broInnerNode.addInputNodes(nodesGroup.getExposedNodeIDs());
-              }
-            });
-          }
         }
       });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
-          currentModel.removeOutputNode(nodesGroup.getNodeId());
-          currentModel.addOutputNodes(nodesGroup.getExposedNodeIDs());
-        }
-      }
 
       // Remove nodesGroup
       this.removeNode(nodesGroup.getNodeId());

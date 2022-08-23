@@ -244,7 +244,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _createInfoWHint: function(hint) {
-      const infoWHint = new osparc.ui.hint.InfoHint(hint);
+      const infoWHint = new osparc.component.form.PortInfoHint(hint);
       return infoWHint;
     },
 
@@ -287,9 +287,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     __switchPrefix: function(item, oldPrefix, newPrefix) {
-      const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
+      let newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
-      item.setValue(String(newValue));
+      if ("type" in item && item.type !== "integer") {
+        newValue = String(newValue);
+      }
+      item.setValue(newValue);
       this.self().updateUnitLabelPrefix(item);
     },
 
@@ -323,6 +326,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getLabelFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().GRID_POS.LABEL);
+    },
+
+    _getInfoFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this.self().GRID_POS.INFO);
     },
 
     _getCtrlFieldChild: function(portId) {

@@ -1,8 +1,9 @@
 """ Utils to operate with dicts """
 
-from typing import Any, Dict, Mapping, Optional, Set, Union
+from copy import deepcopy
+from typing import Any, Mapping, Optional, Union
 
-ConfigDict = Dict[str, Any]
+ConfigDict = dict[str, Any]
 
 
 def get_from_dict(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
@@ -13,27 +14,40 @@ def get_from_dict(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
     return value.get(keys[-1], default)
 
 
-def copy_from_dict(data: Dict[str, Any], *, include: Optional[Union[Set, Dict]] = None):
+def copy_from_dict_ex(data: dict[str, Any], exclude: set[str]) -> dict[str, Any]:
+    # NOTE: to be refactored by someone and merged with the next method
+    return {k: v for k, v in data.items() if k not in exclude}
+
+
+def copy_from_dict(
+    data: dict[str, Any],
+    *,
+    include: Optional[Union[set, dict]] = None,
+    deep: bool = False
+):
     #
     # Analogous to advanced includes from pydantic exports
     #   https://pydantic-docs.helpmanual.io/usage/exporting_models/#advanced-include-and-exclude
     #
 
     if include is None:
-        return data.copy()
+        return deepcopy(data) if deep else data.copy()
 
     if include == ...:
-        return data
+        return deepcopy(data) if deep else data.copy()
 
     if isinstance(include, set):
         return {key: data[key] for key in include}
 
     assert isinstance(include, dict)  # nosec
 
-    return {key: copy_from_dict(data[key], include=include[key]) for key in include}
+    return {
+        key: copy_from_dict(data[key], include=include[key], deep=deep)
+        for key in include
+    }
 
 
-def update_dict(obj: Dict, **updates):
+def update_dict(obj: dict, **updates):
     for key, update_value in updates.items():
         if callable(update_value):
             update_value = update_value(obj[key])

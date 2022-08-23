@@ -2,11 +2,10 @@ import asyncio
 import logging
 import math
 import time
-
-from typing import List, Awaitable
 from functools import wraps
+from typing import Awaitable
 
-from aiohttp import ClientSession, ClientTimeout, ClientResponse
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 
 log = logging.getLogger()
 
@@ -125,7 +124,7 @@ async def assert_steady_rate_in_5_seconds(
     return sleep_interval
 
 
-CHECKS_TO_RUN: List[Awaitable] = [
+CHECKS_TO_RUN: list[Awaitable] = [
     assert_steady_rate_in_5_seconds,
     assert_burst_rate_limit,
 ]

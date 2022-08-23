@@ -12,7 +12,7 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, AsyncIterator, Iterator, Optional
 from uuid import UUID, uuid5
 
 import pytest
@@ -21,8 +21,11 @@ from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
+from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
@@ -34,14 +37,13 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
-    _find_changed_dict_keys,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
 
 
-def test_convert_to_db_names(fake_project: Dict[str, Any]):
+def test_convert_to_db_names(fake_project: dict[str, Any]):
     db_entries = _convert_to_db_names(fake_project)
     assert "tags" not in db_entries
     assert "prjOwner" not in db_entries
@@ -50,7 +52,7 @@ def test_convert_to_db_names(fake_project: Dict[str, Any]):
     assert re.match(r"[A-Z]", json.dumps(list(db_entries.keys()))) is None
 
 
-def test_convert_to_schema_names(fake_project: Dict[str, Any]):
+def test_convert_to_schema_names(fake_project: dict[str, Any]):
     db_entries = _convert_to_db_names(fake_project)
 
     schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
@@ -110,7 +112,7 @@ def test_project_access_rights_creation(
     assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
 
-def all_permission_combinations() -> List[str]:
+def all_permission_combinations() -> list[str]:
     entries_list = ["read", "write", "delete"]
     temp = []
     for i in range(1, len(entries_list) + 1):
@@ -140,7 +142,7 @@ def test_check_project_permissions(
 
     def _project_access_rights_from_permissions(
         permissions: str, invert: bool = False
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         access_rights = {}
         for p in ["read", "write", "delete"]:
             access_rights[p] = (
@@ -257,9 +259,9 @@ def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[Projec
 
 
 def _assert_added_project(
-    exp_project: Dict[str, Any],
-    added_project: Dict[str, Any],
-    exp_overrides: Dict[str, Any],
+    exp_project: dict[str, Any],
+    added_project: dict[str, Any],
+    exp_overrides: dict[str, Any],
 ):
     original_prj = deepcopy(exp_project)
     added_prj = deepcopy(added_project)
@@ -282,7 +284,7 @@ def _assert_added_project(
 
 
 def _assert_project_db_row(
-    postgres_db: sa.engine.Engine, project: Dict[str, Any], **kwargs
+    postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
 ):
     row: Optional[Row] = postgres_db.execute(
         f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
@@ -320,10 +322,10 @@ def _assert_project_db_row(
     ],
 )
 async def test_add_project_to_db(
-    fake_project: Dict[str, Any],
+    fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
     db_api: ProjectDBAPI,
 ):
     original_project = deepcopy(fake_project)
@@ -434,77 +436,6 @@ async def test_add_project_to_db(
 
 
 @pytest.mark.parametrize(
-    "dict_a, dict_b, exp_changes",
-    [
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"state": "PUBLISHED"},
-            {},
-            id="same entry",
-        ),
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            id="new entry",
-        ),
-        pytest.param({"state": "PUBLISHED"}, {}, {}, id="empty patch"),
-        pytest.param(
-            {"state": "PUBLISHED"},
-            {"state": "RUNNING"},
-            {"state": "RUNNING"},
-            id="patch with new data",
-        ),
-        pytest.param(
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_2": 5}},
-            {"inputs": {"in_1": 1, "in_2": 5}},
-            id="patch with new nested data",
-        ),
-        pytest.param(
-            {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_1": 1, "in_2": 4, "in_6": "new_entry"}},
-            {"inputs": {"in_6": "new_entry"}},
-            id="patch with additional nested data",
-        ),
-        pytest.param(
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "lkjflsdkjfslkdj"}},
-                    "in_2": 4,
-                }
-            },
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "newEtag"}},
-                    "in_2": 4,
-                }
-            },
-            {
-                "inputs": {
-                    "in_1": {"some_file": {"etag": "newEtag"}},
-                }
-            },
-            id="patch with 2x nested new data",
-        ),
-        pytest.param(
-            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-            {"remove_entries_in_dict": {"outputs": {}}},
-            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-            id="removal of data",
-        ),
-    ],
-)
-def test_find_changed_dict_keys(
-    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
-):
-    assert (
-        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == exp_changes
-    )
-
-
-@pytest.mark.parametrize(
     "user_role",
     [
         (UserRole.USER),
@@ -512,10 +443,10 @@ def test_find_changed_dict_keys(
 )
 @pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])
 async def test_patch_user_project_workbench_concurrently(
-    fake_project: Dict[str, Any],
+    fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
-    logged_user: Dict[str, Any],
-    primary_group: Dict[str, str],
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
     db_api: ProjectDBAPI,
     number_of_nodes: int,
 ):
@@ -564,8 +495,8 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: Tuple[
-        Tuple[Dict[str, Any], Dict[str, Any]]
+    patched_projects: tuple[
+        tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
             db_api.patch_user_project_workbench(
@@ -670,10 +601,10 @@ async def test_patch_user_project_workbench_concurrently(
 
 @pytest.fixture()
 async def lots_of_projects_and_nodes(
-    logged_user: Dict[str, Any],
-    fake_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    fake_project: dict[str, Any],
     db_api: ProjectDBAPI,
-) -> AsyncIterator[Dict[ProjectID, List[NodeID]]]:
+) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
     """Will create >1000 projects with each between 200-1434 nodes"""
     NUMBER_OF_PROJECTS = 1245
 
@@ -717,7 +648,7 @@ async def lots_of_projects_and_nodes(
     [UserRole.USER],
 )
 async def test_node_id_exists(
-    db_api: ProjectDBAPI, lots_of_projects_and_nodes: Dict[ProjectID, List[NodeID]]
+    db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
 
     # create a node uuid that does not exist from an existing project
@@ -740,12 +671,77 @@ async def test_node_id_exists(
     [UserRole.USER],
 )
 async def test_get_node_ids_from_project(
-    db_api: ProjectDBAPI, lots_of_projects_and_nodes: Dict[ProjectID, List[NodeID]]
+    db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
     for project_id in lots_of_projects_and_nodes:
-        node_ids_inside_project: Set[str] = await db_api.get_node_ids_from_project(
+        node_ids_inside_project: set[str] = await db_api.get_node_ids_from_project(
             f"{project_id}"
         )
         assert node_ids_inside_project == {
             f"{n}" for n in lots_of_projects_and_nodes[project_id]
         }
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_replace_user_project(
+    db_api: ProjectDBAPI,
+    user_project: ProjectDict,
+    logged_user: UserInfoDict,
+):
+    PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
+    original_project = user_project
+    # replace the project with the same should do nothing
+    working_project = await db_api.replace_user_project(
+        original_project,
+        user_id=logged_user["id"],
+        project_uuid=original_project["uuid"],
+    )
+    assert copy_from_dict_ex(
+        original_project, PROJECT_DICT_IGNORE_FIELDS
+    ) == copy_from_dict_ex(working_project, PROJECT_DICT_IGNORE_FIELDS)
+
+    # now let's create some outputs (similar to what happens when running services)
+    NODE_INDEX = 1  # this is not the file-picker
+    node_id = tuple(working_project["workbench"].keys())[NODE_INDEX]
+    node_data = working_project["workbench"][node_id]
+    node_data["progress"] = 100
+    node_data["outputs"] = {
+        "output_1": {
+            "store": 0,
+            "path": "687b8dc2-fea2-11ec-b7fd-02420a6e3a4d/d61a2ec8-19b4-4375-adcb-fdd22f850333/single_number.txt",
+            "eTag": "c4ca4238a0b923820dcc509a6f75849b",
+        },
+        "output_2": 5,
+    }
+    node_data[
+        "runHash"
+    ] = "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
+    # replacing with the new entries shall return the very same data
+    replaced_project = await db_api.replace_user_project(
+        working_project,
+        user_id=logged_user["id"],
+        project_uuid=working_project["uuid"],
+    )
+    assert copy_from_dict_ex(
+        working_project, PROJECT_DICT_IGNORE_FIELDS
+    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
+
+    # the frontend sends project without some fields, but for FRONTEND type of nodes
+    # replacing should keep the values
+    FRONTEND_EXCLUDED_FIELDS = ["outputs", "progress", "runHash"]
+    incoming_frontend_project = deepcopy(original_project)
+    for node_data in incoming_frontend_project["workbench"].values():
+        if "frontend" not in node_data["key"]:
+            for field in FRONTEND_EXCLUDED_FIELDS:
+                node_data.pop(field, None)
+    replaced_project = await db_api.replace_user_project(
+        incoming_frontend_project,
+        user_id=logged_user["id"],
+        project_uuid=incoming_frontend_project["uuid"],
+    )
+    assert copy_from_dict_ex(
+        working_project, PROJECT_DICT_IGNORE_FIELDS
+    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)

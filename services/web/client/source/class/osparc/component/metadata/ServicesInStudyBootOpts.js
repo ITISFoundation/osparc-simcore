@@ -74,8 +74,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
             sbItems.push(sbItem);
           });
           let defaultBMId = null;
-          if ("bootOptions" in this._studyData["workbench"][nodeId] && "boot_mode" in this._studyData["workbench"][nodeId]["bootOptions"]) {
-            defaultBMId = this._studyData["workbench"][nodeId]["bootOptions"]["boot_mode"];
+          if ("bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
+            defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
           } else {
             defaultBMId = bootModesMD["default"];
           }

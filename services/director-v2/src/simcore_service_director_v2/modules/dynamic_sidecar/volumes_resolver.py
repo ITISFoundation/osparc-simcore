@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
 from typing import Any, Dict
+from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from settings_library.r_clone import S3Provider
 
-from ...core.settings import RCloneSettings, S3Provider
+from ...core.settings import RCloneSettings
 from .errors import DynamicSidecarError
 
 
@@ -20,10 +22,10 @@ def _get_s3_volume_driver_config(
         "Name": "rclone",
         "Options": {
             "type": "s3",
-            "s3-access_key_id": r_clone_settings.S3_ACCESS_KEY,
-            "s3-secret_access_key": r_clone_settings.S3_SECRET_KEY,
-            "s3-endpoint": r_clone_settings.endpoint,
-            "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
+            "s3-access_key_id": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+            "s3-secret_access_key": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+            "s3-endpoint": r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+            "path": f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
             "allow-other": "true",
             "vfs-cache-mode": r_clone_settings.R_CLONE_VFS_CACHE_MODE.value,
             # Directly connected to how much time it takes for
@@ -37,19 +39,19 @@ def _get_s3_volume_driver_config(
 
     extra_options = None
 
-    if r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.MINIO:
+    if r_clone_settings.R_CLONE_PROVIDER == S3Provider.MINIO:
         extra_options = {
             "s3-provider": "Minio",
             "s3-region": "us-east-1",
             "s3-location_constraint": "",
             "s3-server_side_encryption": "",
         }
-    elif r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.CEPH:
+    elif r_clone_settings.R_CLONE_PROVIDER == S3Provider.CEPH:
         extra_options = {
             "s3-provider": "Ceph",
             "s3-acl": "private",
         }
-    elif r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.AWS:
+    elif r_clone_settings.R_CLONE_PROVIDER == S3Provider.AWS:
         extra_options = {
             "s3-provider": "AWS",
             "s3-region": "us-east-1",
@@ -90,6 +92,7 @@ class DynamicSidecarVolumesPathsResolver:
         compose_namespace: str,
         path: Path,
         node_uuid: NodeID,
+        run_id: UUID,
     ) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
@@ -101,6 +104,7 @@ class DynamicSidecarVolumesPathsResolver:
             "VolumeOptions": {
                 "Labels": {
                     "source": cls.source(compose_namespace, path),
+                    "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 }
@@ -115,6 +119,7 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
+        run_id: UUID,
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
@@ -123,6 +128,7 @@ class DynamicSidecarVolumesPathsResolver:
             "VolumeOptions": {
                 "Labels": {
                     "source": cls.source(compose_namespace, path),
+                    "run_id": f"{run_id}",
                     "uuid": f"{node_uuid}",
                     "swarm_stack_name": swarm_stack_name,
                 },

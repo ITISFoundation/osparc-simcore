@@ -2,10 +2,9 @@ from pathlib import Path
 
 from .text_files import write_text_files
 from .xlsx import write_xlsx_files
-from .xlsx.templates.submission import SubmissionDocumentParams
-from .xlsx.templates.dataset_description import DatasetDescriptionParams
-
 from .xlsx.templates.code_description import CodeDescriptionParams
+from .xlsx.templates.dataset_description import DatasetDescriptionParams
+from .xlsx.templates.submission import SubmissionDocumentParams
 
 
 def write_sds_directory_content(

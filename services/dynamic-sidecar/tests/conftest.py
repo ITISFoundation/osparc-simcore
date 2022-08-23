@@ -1,214 +1,184 @@
-# pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-import asyncio
-import json
-import os
-import random
+
+import logging
 import sys
-import tempfile
-import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
-from unittest.mock import AsyncMock, Mock
+from uuid import UUID
 
-import aiodocker
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
-from async_asgi_testclient import TestClient
-from fastapi import FastAPI
-from pytest_mock.plugin import MockerFixture
-from simcore_service_dynamic_sidecar.core import utils
-from simcore_service_dynamic_sidecar.core.application import assemble_application
-from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
-from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
-from simcore_service_dynamic_sidecar.core.shared_handlers import (
-    write_file_and_run_command,
+import simcore_service_dynamic_sidecar
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.users import UserID
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_envs import (
+    EnvVarsDict,
+    setenvs_from_dict,
+    setenvs_from_envfile,
 )
-from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules import mounted_fs
+from servicelib.json_serialization import json_dumps
+
+logger = logging.getLogger(__name__)
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.monkeypatch_extra",  # TODO: remove this dependency
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.tmp_path_extra",
 ]
 
-
-@pytest.fixture(scope="session")
-def mock_dy_volumes() -> Iterator[Path]:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
-def io_temp_dir() -> Iterator[Path]:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+def package_dir() -> Path:
+    folder = Path(simcore_service_dynamic_sidecar.__file__).resolve().parent
+    assert folder.exists()
+    return folder
 
 
 @pytest.fixture(scope="session")
-def compose_namespace() -> str:
-    return f"dy-sidecar_{uuid.uuid4()}"
+def project_slug_dir() -> Path:
+    folder = CURRENT_DIR.parent
+    assert folder.exists()
+    assert any(folder.glob("src/simcore_service_dynamic_sidecar"))
+    return folder
 
 
-@pytest.fixture(scope="session")
-def inputs_dir(io_temp_dir: Path) -> Path:
-    return io_temp_dir / "inputs"
+#
+# Fixtures associated to the configuration of a dynamic-sidecar service
+#  - Can be used both to create new fixture or as references
+#
 
 
-@pytest.fixture(scope="session")
-def outputs_dir(io_temp_dir: Path) -> Path:
-    return io_temp_dir / "outputs"
+@pytest.fixture
+def dy_volumes(tmp_path: Path) -> Path:
+    """mount folder on the sidecar (path withn the sidecar)"""
+    return tmp_path / "dy-volumes"
 
 
-@pytest.fixture(scope="session")
-def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
-    return [io_temp_dir / f"dir_{x}" for x in range(4)]
+@pytest.fixture
+def container_base_dir() -> Path:
+    return Path("/data")
 
 
-@pytest.fixture(scope="session")
-def state_exclude_dirs(io_temp_dir: Path) -> List[Path]:
-    return [io_temp_dir / f"dir_exclude_{x}" for x in range(4)]
+@pytest.fixture
+def compose_namespace(faker: Faker) -> str:
+    return f"dy-sidecar_{faker.uuid4()}"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
+def inputs_dir(container_base_dir: Path) -> Path:
+    return container_base_dir / "inputs"
+
+
+@pytest.fixture
+def outputs_dir(container_base_dir: Path) -> Path:
+    return container_base_dir / "outputs"
+
+
+@pytest.fixture
+def state_paths_dirs(container_base_dir: Path) -> list[Path]:
+    return [container_base_dir / f"state_dir{i}" for i in range(4)]
+
+
+@pytest.fixture
+def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
+    return [container_base_dir / f"exclude_{i}" for i in range(4)]
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def run_id(faker: Faker) -> UUID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
 def mock_environment(
-    monkeypatch_module: MonkeyPatch,
-    mock_dy_volumes: Path,
+    monkeypatch: MonkeyPatch,
+    dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
-    state_exclude_dirs: List[Path],
-) -> None:
-    monkeypatch_module.setenv("SC_BOOT_MODE", "production")
-    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
-    monkeypatch_module.setenv("REGISTRY_AUTH", "false")
-    monkeypatch_module.setenv("REGISTRY_USER", "test")
-    monkeypatch_module.setenv("REGISTRY_PW", "test")
-    monkeypatch_module.setenv("REGISTRY_SSL", "false")
-    monkeypatch_module.setenv("DY_SIDECAR_USER_ID", "1")
-    monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
-    monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
-    monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
-    monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
-    monkeypatch_module.setenv(
-        "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
-    )
-    monkeypatch_module.setenv(
-        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
-    )
-    monkeypatch_module.setenv("RABBIT_SETTINGS", "null")
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    run_id: UUID,
+) -> EnvVarsDict:
+    """Main test environment used to build the application
 
-    monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
+    Override if new configuration for the app is needed.
+    """
+    envs = {}
+    # envs in Dockerfile
+    envs["SC_BOOT_MODE"] = "production"
+    envs["SC_BUILD_TARGET"] = "production"
+    envs["DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR"] = f"{dy_volumes}"
 
+    # envs on container
+    envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
 
-@pytest.fixture(scope="module")
-def disable_registry_check(monkeypatch_module: MockerFixture) -> None:
-    async def _mock_is_registry_reachable(*args, **kwargs) -> None:
-        pass
+    envs["REGISTRY_AUTH"] = "false"
+    envs["REGISTRY_USER"] = "test"
+    envs["REGISTRY_PW"] = "test"
+    envs["REGISTRY_SSL"] = "false"
 
-    monkeypatch_module.setattr(
-        utils, "_is_registry_reachable", _mock_is_registry_reachable
-    )
+    envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
+    envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
+    envs["DY_SIDECAR_RUN_ID"] = f"{run_id}"
+    envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"
+    envs["DY_SIDECAR_PATH_INPUTS"] = f"{inputs_dir}"
+    envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
+    envs["DY_SIDECAR_STATE_PATHS"] = json_dumps(state_paths_dirs)
+    envs["DY_SIDECAR_STATE_EXCLUDE"] = json_dumps(state_exclude_dirs)
 
+    envs["S3_ENDPOINT"] = "endpoint"
+    envs["S3_ACCESS_KEY"] = "access_key"
+    envs["S3_SECRET_KEY"] = "secret_key"
+    envs["S3_BUCKET_NAME"] = "bucket_name"
+    envs["S3_SECURE"] = "false"
 
-@pytest.fixture(scope="module")
-def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
-    app = assemble_application()
-    app.state.rabbitmq = AsyncMock()
-    return app
+    envs["R_CLONE_PROVIDER"] = "MINIO"
 
+    setenvs_from_dict(monkeypatch, envs)
 
-@pytest.fixture
-async def ensure_external_volumes(
-    compose_namespace: str,
-    inputs_dir: Path,
-    outputs_dir: Path,
-    state_paths_dirs: List[Path],
-) -> AsyncGenerator[None, None]:
-    """ensures inputs and outputs volumes for the service are present"""
-
-    volume_names = []
-    for state_paths_dir in [inputs_dir, outputs_dir] + state_paths_dirs:
-        name_from_path = str(state_paths_dir).replace(os.sep, "_")
-        volume_names.append(f"{compose_namespace}{name_from_path}")
-
-    async with docker_client() as client:
-        volumes = await asyncio.gather(
-            *[
-                client.volumes.create({"Labels": {"source": volume_name}})
-                for volume_name in volume_names
-            ]
-        )
-
-        yield
-
-        await asyncio.gather(*[volume.delete() for volume in volumes])
+    return envs
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
+def mock_environment_with_envdevel(
+    monkeypatch: MonkeyPatch, project_slug_dir: Path
+) -> EnvVarsDict:
+    """Alternative environment loaded fron .env-devel.
 
-
-@pytest.fixture(autouse=True)
-async def cleanup_containers(
-    app: FastAPI, ensure_external_volumes: None
-) -> AsyncGenerator[None, None]:
-    yield
-    # run docker compose down here
-
-    shared_store: SharedStore = app.state.shared_store
-    stored_compose_content = shared_store.compose_spec
-
-    if stored_compose_content is None:
-        # if no compose-spec is stored skip this operation
-        return
-
-    settings: DynamicSidecarSettings = app.state.settings
-    command = (
-        "docker-compose -p {project} -f {file_path} "
-        "down --remove-orphans -t {stop_and_remove_timeout}"
-    )
-    await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
-        command=command,
-        command_timeout=5.0,
-    )
-
-
-@pytest.fixture
-def mock_containers_get(mocker: MockerFixture) -> int:
-    """raises a DockerError with a random HTTP status which is also returned"""
-    mock_status_code = random.randint(1, 999)
-
-    async def mock_get(*args: str, **kwargs: Any) -> None:
-        raise aiodocker.exceptions.DockerError(
-            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
-        )
-
-    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
-
-    return mock_status_code
-
-
-@pytest.fixture
-def tests_dir() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-@pytest.fixture
-def mock_dir_watcher_on_any_event(
-    app: FastAPI, monkeypatch: MonkeyPatch
-) -> Iterator[Mock]:
-
-    mock = Mock(return_value=None)
-
-    monkeypatch.setattr(
-        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
-    )
-    yield mock
+    .env-devel is used mainly to run CLI
+    """
+    env_file = project_slug_dir / ".env-devel"
+    envs = setenvs_from_envfile(monkeypatch, env_file.read_text())
+    return envs

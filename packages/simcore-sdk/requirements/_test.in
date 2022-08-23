@@ -7,29 +7,26 @@
 #
 --constraint _base.txt
 
-# testing
+aioboto3
+aioresponses
+alembic
+click
 coverage
+coveralls
+docker
+faker
+flaky
+minio
+pylint
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-icdiff
 pytest-instafail
+pytest-lazy-fixture
 pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
-pytest-lazy-fixture
-
-# mockups/fixtures
-aioresponses
-alembic
-click
-docker
-faker
-minio
 python-dotenv
 requests
-
-# tools for CI
-pylint
-coveralls

@@ -5,7 +5,7 @@
 
 import random
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 from osparc.api.solvers_api import SolversApi
@@ -15,7 +15,7 @@ from packaging.version import parse as parse_version
 
 
 @pytest.fixture(scope="module")
-def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str]:
+def sleeper_key_and_version(services_registry: dict[str, Any]) -> tuple[str, str]:
     # image in registry
     repository_name = services_registry["sleeper_service"]["name"]
     tag = services_registry["sleeper_service"]["version"]
@@ -31,7 +31,7 @@ def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str
 
 
 def test_get_latest_solver(solvers_api: SolversApi):
-    solvers: List[Solver] = solvers_api.list_solvers()  # latest versions of all solvers
+    solvers: list[Solver] = solvers_api.list_solvers()  # latest versions of all solvers
 
     solver_names = []
     for latest in solvers:
@@ -45,14 +45,14 @@ def test_get_latest_solver(solvers_api: SolversApi):
 
 def test_get_all_releases(solvers_api: SolversApi):
 
-    all_releases: List[
+    all_releases: list[
         Solver
     ] = solvers_api.list_solvers_releases()  # all release of all solvers
 
     assert all_releases
 
     one_solver = random.choice(all_releases)
-    all_releases_of_given_solver: List[Solver] = solvers_api.list_solver_releases(
+    all_releases_of_given_solver: list[Solver] = solvers_api.list_solver_releases(
         one_solver.id
     )
 

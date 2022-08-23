@@ -10,18 +10,7 @@ from collections import namedtuple
 from itertools import tee
 from pathlib import Path
 from pprint import pformat
-from typing import (
-    Any,
-    AsyncIterable,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Set,
-    Tuple,
-    cast,
-)
+from typing import Any, AsyncIterable, Callable, Iterable, Iterator, cast
 from uuid import uuid4
 
 import aioboto3
@@ -50,6 +39,7 @@ from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -62,10 +52,9 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 
 # FIXTURES
-from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
@@ -96,6 +85,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -126,11 +116,12 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
-    sleeper_service: Dict,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    sleeper_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
@@ -138,9 +129,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
-    node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_service.host}:{storage_service.port}"
-    )
+
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -151,17 +140,17 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
 @pytest.fixture
 def fake_dy_workbench(
     mocks_dir: Path,
-    sleeper_service: Dict,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-) -> Dict[str, Any]:
+    sleeper_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
+) -> dict[str, Any]:
     dy_workbench_template = mocks_dir / "fake_dy_workbench_template.json"
     assert dy_workbench_template.exists()
 
     file_content = dy_workbench_template.read_text()
     file_as_dict = json.loads(file_content)
 
-    def _assert_version(registry_service_data: Dict) -> None:
+    def _assert_version(registry_service_data: dict) -> None:
         key = registry_service_data["schema"]["key"]
         version = registry_service_data["schema"]["version"]
         found = False
@@ -189,14 +178,14 @@ def fake_dy_workbench(
 
 
 @pytest.fixture
-def fake_dy_success(mocks_dir: Path) -> Dict[str, Any]:
+def fake_dy_success(mocks_dir: Path) -> dict[str, Any]:
     fake_dy_status_success = mocks_dir / "fake_dy_status_success.json"
     assert fake_dy_status_success.exists()
     return json.loads(fake_dy_status_success.read_text())
 
 
 @pytest.fixture
-def fake_dy_published(mocks_dir: Path) -> Dict[str, Any]:
+def fake_dy_published(mocks_dir: Path) -> dict[str, Any]:
     fake_dy_status_published = mocks_dir / "fake_dy_status_published.json"
     assert fake_dy_status_published.exists()
     return json.loads(fake_dy_status_published.read_text())
@@ -204,12 +193,12 @@ def fake_dy_published(mocks_dir: Path) -> Dict[str, Any]:
 
 @pytest.fixture
 def services_node_uuids(
-    fake_dy_workbench: Dict[str, Any],
-    sleeper_service: Dict,
-    dy_static_file_server_dynamic_sidecar_service: Dict,
-    dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
+    fake_dy_workbench: dict[str, Any],
+    sleeper_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
 ) -> ServicesNodeUUIDs:
-    def _get_node_uuid(registry_service_data: Dict) -> str:
+    def _get_node_uuid(registry_service_data: dict) -> str:
         key = registry_service_data["schema"]["key"]
         version = registry_service_data["schema"]["version"]
 
@@ -232,15 +221,15 @@ def services_node_uuids(
 
 
 @pytest.fixture
-def current_user(registered_user: Callable) -> Dict[str, Any]:
+def current_user(registered_user: Callable) -> dict[str, Any]:
     return registered_user()
 
 
 @pytest.fixture
 async def current_study(
-    current_user: Dict[str, Any],
+    current_user: dict[str, Any],
     project: Callable,
-    fake_dy_workbench: Dict[str, Any],
+    fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
 ) -> ProjectAtDB:
 
@@ -260,8 +249,8 @@ async def current_study(
 
 @pytest.fixture
 def workbench_dynamic_services(
-    current_study: ProjectAtDB, sleeper_service: Dict
-) -> Dict[str, Node]:
+    current_study: ProjectAtDB, sleeper_service: dict
+) -> dict[str, Node]:
     sleeper_key = sleeper_service["schema"]["key"]
     result = {k: v for k, v in current_study.workbench.items() if v.key != sleeper_key}
     assert len(result) == 2
@@ -297,10 +286,13 @@ def dev_features_enabled(request) -> str:
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch,
+    redis_service: RedisSettings,
     network_name: str,
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
+    minio_config: dict[str, Any],
+    storage_service: URL,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -317,10 +309,12 @@ def mock_env(
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
     monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG", "true")
     monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", "debug")
     # patch host for dynamic-sidecar, not reachable via localhost
@@ -328,18 +322,28 @@ def mock_env(
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
+    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
+    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
+    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
+    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
+    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
+    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
+
+    # always test the node limit feature, by default is disabled
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
 
 @pytest.fixture
 async def cleanup_services_and_networks(
-    workbench_dynamic_services: Dict[str, Node],
+    workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
     initialized_app: FastAPI,
 ) -> AsyncIterable[None]:
@@ -413,8 +417,8 @@ async def projects_networks_db(
 
 async def _get_mapped_nodeports_values(
     user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
-) -> Dict[str, InputsOutputs]:
-    result: Dict[str, InputsOutputs] = {}
+) -> dict[str, InputsOutputs]:
+    result: dict[str, InputsOutputs] = {}
 
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
@@ -442,7 +446,7 @@ def _print_values_to_assert(**kwargs) -> None:
 
 
 async def _assert_port_values(
-    mapped: Dict[str, InputsOutputs],
+    mapped: dict[str, InputsOutputs],
     services_node_uuids: ServicesNodeUUIDs,
 ):
     print("Nodeport mapped values")
@@ -525,11 +529,6 @@ async def _assert_port_values(
     assert sleeper_out_1 == dy_compose_spec_file_output
 
 
-def _assert_command_successful(command: str) -> None:
-    print(command)
-    assert os.system(command) == 0
-
-
 async def _container_id_via_services(service_uuid: str) -> str:
     container_id = None
 
@@ -577,7 +576,7 @@ async def _fetch_data_via_data_manager(
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.is_file_present_in_storage(
+        await data_manager.exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
@@ -608,11 +607,13 @@ async def _fetch_data_via_aioboto(
     save_to.mkdir(parents=True, exist_ok=True)
 
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.endpoint) as s3:
-        bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
+    async with session.resource(
+        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+    ) as s3:
+        bucket = await s3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():
             key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
             if s3_object.key.startswith(key_path):
@@ -628,9 +629,10 @@ async def _fetch_data_via_aioboto(
 async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
     user_id: UserID,
-    workbench_dynamic_services: Dict[str, Node],
+    workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
-) -> Dict[str, str]:
+    catalog_url: URL,
+) -> dict[str, str]:
     # start dynamic services
     await asyncio.gather(
         *(
@@ -642,12 +644,13 @@ async def _start_and_wait_for_dynamic_services_ready(
                 service_version=node.version,
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
+                catalog_url=catalog_url,
             )
             for service_uuid, node in workbench_dynamic_services.items()
         )
     )
 
-    dynamic_services_urls: Dict[str, str] = {}
+    dynamic_services_urls: dict[str, str] = {}
 
     for service_uuid in workbench_dynamic_services:
         dynamic_service_url = await patch_dynamic_service_url(
@@ -679,10 +682,8 @@ async def _wait_for_dy_services_to_fully_stop(
 
     for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
         print(
-            (
-                f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
-                "seconds while waiting for removal of all dynamic-sidecars"
-            )
+            f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
+            "seconds while waiting for removal of all dynamic-sidecars"
         )
         await asyncio.sleep(1)
         if len(to_observe) == 0:
@@ -692,19 +693,19 @@ async def _wait_for_dy_services_to_fully_stop(
             assert False, "Timeout reached"
 
 
-def _pairwise(iterable) -> Iterable[Tuple[Any, Any]]:
+def _pairwise(iterable) -> Iterable[tuple[Any, Any]]:
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
 
 
-def _assert_same_set(*sets_to_compare: Set[Any]) -> None:
+def _assert_same_set(*sets_to_compare: set[Any]) -> None:
     for first, second in _pairwise(sets_to_compare):
         assert first == second
 
 
-def _get_file_hashes_in_path(path_to_hash: Path) -> Set[Tuple[Path, str]]:
+def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
         with open(path, "rb") as f:
@@ -733,7 +734,7 @@ LINE_PARTS_TO_MATCH = [
 ]
 
 
-def _is_matching_line_in_logs(logs: List[str]) -> bool:
+def _is_matching_line_in_logs(logs: list[str]) -> bool:
     for line in logs:
         if LINE_PARTS_TO_MATCH[0][1] in line:
             print("".join(logs))
@@ -747,9 +748,9 @@ def _is_matching_line_in_logs(logs: List[str]) -> bool:
 
 
 async def _print_dynamic_sidecars_containers_logs_and_get_containers(
-    dynamic_services_urls: Dict[str, str]
-) -> List[str]:
-    containers_names: List[str] = []
+    dynamic_services_urls: dict[str, str]
+) -> list[str]:
+    containers_names: list[str] = []
     for node_uuid, url in dynamic_services_urls.items():
         print(f"Containers logs for service {node_uuid} @ {url}")
         async with httpx.AsyncClient(base_url=f"{url}/v1") as client:
@@ -766,7 +767,7 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
                 containers_names.append(container_name)
                 print(f"Fetching logs for {container_name}")
                 container_logs_response = await client.get(
-                    f"/containers/{container_name}/logs"
+                    f"/containers/{container_name}/logs", timeout=60
                 )
                 assert container_logs_response.status_code == status.HTTP_200_OK
                 logs = "".join(container_logs_response.json())
@@ -792,7 +793,7 @@ async def _print_all_docker_volumes() -> None:
 async def _assert_retrieve_completed(
     director_v2_client: httpx.AsyncClient,
     service_uuid: str,
-    dynamic_services_urls: Dict[str, str],
+    dynamic_services_urls: dict[str, str],
 ) -> None:
     await assert_retrieve_service(
         director_v2_client=director_v2_client,
@@ -842,10 +843,8 @@ async def _assert_retrieve_completed(
                 assert False, "Timeout reached"
 
             print(
-                (
-                    f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED} "
-                    f"before searching logs from {service_uuid} again"
-                )
+                f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED} "
+                f"before searching logs from {service_uuid} again"
             )
             await asyncio.sleep(1)
 
@@ -863,13 +862,13 @@ async def test_nodeports_integration(
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
-    current_user: Dict[str, Any],
+    current_user: dict[str, Any],
     current_study: ProjectAtDB,
-    services_endpoint: Dict[str, URL],
-    workbench_dynamic_services: Dict[str, Node],
+    services_endpoint: dict[str, URL],
+    workbench_dynamic_services: dict[str, Node],
     services_node_uuids: ServicesNodeUUIDs,
-    fake_dy_success: Dict[str, Any],
-    fake_dy_published: Dict[str, Any],
+    fake_dy_success: dict[str, Any],
+    fake_dy_published: dict[str, Any],
     temp_dir: Path,
     mocker: MockerFixture,
 ) -> None:
@@ -901,13 +900,14 @@ async def test_nodeports_integration(
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
     # STEP 1
-    dynamic_services_urls: Dict[
+    dynamic_services_urls: dict[
         str, str
     ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     # STEP 2
@@ -918,7 +918,7 @@ async def test_nodeports_integration(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskGet.parse_obj(response.json())
+    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -983,13 +983,6 @@ async def test_nodeports_integration(
 
     # STEP 3
     # pull data via nodeports
-
-    # storage config.py resolves env vars at import time, unlike newer settingslib
-    # configuration. patching the module with the correct url
-    mocker.patch(
-        "simcore_sdk.node_ports_common.config.STORAGE_ENDPOINT",
-        str(services_endpoint["storage"]).replace("http://", ""),
-    )
 
     mapped_nodeports_values = await _get_mapped_nodeports_values(
         current_user["id"],
@@ -1106,6 +1099,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     dy_path_volume_after = (

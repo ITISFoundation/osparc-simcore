@@ -19,7 +19,7 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
   type: "static",
 
   statics: {
-    getDomainText: function(s) {
+    __getDomainText: function(s) {
       let rangeText = null;
       if ("minimum" in s && "maximum" in s) {
         rangeText = `&isin; [${s.minimum}, ${s.maximum}] `;
@@ -39,6 +39,35 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
         }
       }
       return rangeText;
+    },
+
+    __getArrayDomainText: function(s) {
+      const sMerged = osparc.utils.Utils.deepCloneObject(s);
+      if ("items" in sMerged) {
+        Object.keys(sMerged.items).forEach(item => {
+          sMerged[item] = sMerged.items[item];
+        });
+      }
+      let rangeText = this.__getDomainText(sMerged);
+      if (rangeText === null) {
+        rangeText = "";
+      }
+      if ("minItems" in s) {
+        rangeText += "<br>";
+        rangeText += qx.locale.Manager.tr("Minimum items: ") + s.minItems;
+      }
+      if ("maxItems" in s) {
+        rangeText += "<br>";
+        rangeText += qx.locale.Manager.tr("Maximum items: ") + s.maxItems;
+      }
+      return rangeText;
+    },
+
+    getDomainText: function(s) {
+      if (s.type === "array") {
+        return this.__getArrayDomainText(s);
+      }
+      return this.__getDomainText(s);
     },
 
     createValidator: function(control, s) {
@@ -65,6 +94,49 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
         }
         if (!valid) {
           item.setInvalidMessage(invalidMessage);
+        }
+        return Boolean(valid);
+      });
+      return manager;
+    },
+
+    createArrayValidator: function(control, s) {
+      const manager = new qx.ui.form.validation.Manager();
+      manager.add(control, (valuesInString, item) => {
+        const values = JSON.parse(valuesInString);
+        if ("minItems" in s && (values.length < s.minItems)) {
+          let oorInvalidMessage = qx.locale.Manager.tr("Minimum items: ") + s.minItems;
+          item.setInvalidMessage(oorInvalidMessage);
+          return false;
+        }
+        if ("maxItems" in s && (values.length > s.maxItems)) {
+          let oorInvalidMessage = qx.locale.Manager.tr("Maximum items: ") + s.maxItems;
+          item.setInvalidMessage(oorInvalidMessage);
+          return false;
+        }
+        let multiplier = 1;
+        let oorInvalidMessage = qx.locale.Manager.tr("Out of range");
+        if ("x_unit" in s) {
+          const {
+            unitPrefix
+          } = osparc.utils.Units.decomposeXUnit(s["x_unit"]);
+          multiplier = osparc.utils.Units.getMultiplier(unitPrefix, control.unitPrefix);
+        }
+        let valid = true;
+        if ("items" in s) {
+          if ("minimum" in s["items"] && values.some(v => v < multiplier*(s["items"].minimum))) {
+            valid = false;
+            oorInvalidMessage += "<br>";
+            oorInvalidMessage += qx.locale.Manager.tr("Minimum value: ") + multiplier*(s["items"].minimum);
+          }
+          if ("maximum" in s["items"] && values.some(v => v > multiplier*(s["items"].maximum))) {
+            valid = false;
+            oorInvalidMessage += "<br>";
+            oorInvalidMessage += qx.locale.Manager.tr("Maximum value: ") + multiplier*(s["items"].maximum);
+          }
+        }
+        if (!valid) {
+          item.setInvalidMessage(oorInvalidMessage);
         }
         return Boolean(valid);
       });

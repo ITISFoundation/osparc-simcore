@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Awaitable, Coroutine, List, Optional, Union
+from typing import Any, Awaitable, Coroutine, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -62,18 +62,25 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 
 # FUTURES
 def fire_and_forget_task(
-    obj: Union[Coroutine, asyncio.Future, Awaitable]
-) -> asyncio.Future:
-    future = asyncio.ensure_future(obj)
+    obj: Coroutine,
+    *,
+    task_suffix_name: str,
+    fire_and_forget_tasks_collection: set[asyncio.Task],
+) -> asyncio.Task:
+    task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_suffix_name}")
+    fire_and_forget_tasks_collection.add(task)
 
     def log_exception_callback(fut: asyncio.Future):
         try:
             fut.result()
+        except asyncio.CancelledError:
+            logger.warning("%s spawned as fire&forget was cancelled", fut)
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error occured while running task!")
+            logger.exception("Error occurred while running task!")
 
-    future.add_done_callback(log_exception_callback)
-    return future
+    task.add_done_callback(log_exception_callback)
+    task.add_done_callback(fire_and_forget_tasks_collection.discard)
+    return task
 
 
 # // tasks
@@ -82,7 +89,7 @@ async def logged_gather(
     reraise: bool = True,
     log: logging.Logger = logger,
     max_concurrency: int = 0,
-) -> List[Optional[Any]]:
+) -> list[Any]:
     """
         Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
         even if any of them fail. Finally, all errors are logged and the first raised (if reraise=True)

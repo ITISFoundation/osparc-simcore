@@ -12,10 +12,17 @@ from servicelib.aiohttp.rest_routing import iter_path_operations
 
 from . import catalog_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
-from .catalog_client import get_services_for_user_in_product, is_service_responsive
-from .catalog_utils import reverse_proxy_handler
+from .catalog_client import (
+    get_services_for_user_in_product,
+    is_catalog_service_responsive,
+)
+from .catalog_handlers_reverse_proxy import reverse_proxy_handler
 
 logger = logging.getLogger(__name__)
+
+
+assert get_services_for_user_in_product  # nosec
+assert is_catalog_service_responsive  # nosec
 
 
 @app_module_setup(
@@ -55,6 +62,6 @@ def setup_catalog(app: web.Application):
 
 __all__: Tuple[str] = (
     "get_services_for_user_in_product",
-    "is_service_responsive",
+    "is_catalog_service_responsive",
     "setup_catalog",
 )

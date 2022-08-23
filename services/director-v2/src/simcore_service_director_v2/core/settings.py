@@ -1,10 +1,12 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 
+
+import logging
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -20,19 +22,34 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.projects_networks import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    constr,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
+from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
-from settings_library.s3 import S3Settings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
+from simcore_sdk.node_ports_v2 import FileLinkType
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+
+logger = logging.getLogger(__name__)
+
 
 MINS = 60
 API_ROOT: str = "api"
@@ -41,19 +58,18 @@ SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
-ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
+ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
     "org.label-schema.build-date": "build_date",
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
 
-SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
-
-class S3Provider(str, Enum):
-    AWS = "AWS"
-    CEPH = "CEPH"
-    MINIO = "MINIO"
+PlacementConstraintStr = constr(
+    strip_whitespace=True,
+    regex=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$",
+)
 
 
 class VFSCacheMode(str, Enum):
@@ -63,9 +79,7 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
-class RCloneSettings(S3Settings):
-    R_CLONE_S3_PROVIDER: S3Provider
-
+class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",
@@ -85,19 +99,25 @@ class RCloneSettings(S3Settings):
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
             raise ValueError(
-                (
-                    f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
-                    f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-                )
+                f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
+                f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             )
         return v
 
+
+class StorageSettings(BaseCustomSettings):
+    STORAGE_HOST: str = "storage"
+    STORAGE_PORT: int = 8080
+    STORAGE_VTAG: str = "v0"
+
     @cached_property
     def endpoint(self) -> str:
-        if not self.S3_ENDPOINT.startswith("http"):
-            scheme = "https" if self.S3_SECURE else "http"
-            return f"{scheme}://{self.S3_ENDPOINT}"
-        return self.S3_ENDPOINT
+        return AnyHttpUrl.build(
+            scheme="http",
+            host=self.STORAGE_HOST,
+            port=f"{self.STORAGE_PORT}",
+            path=f"/{self.STORAGE_VTAG}",
+        )
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -106,7 +126,7 @@ class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_HOST: str = "director"
     DIRECTOR_PORT: PortInt = 8080
     DIRECTOR_V0_VTAG: VersionTag = Field(
-        "v0", description="Director-v0 service API's version tag"
+        default="v0", description="Director-v0 service API's version tag"
     )
 
     @cached_property
@@ -127,38 +147,58 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    SC_BOOT_MODE: BootModeEnum = Field(
-        BootModeEnum.PRODUCTION,
-        description="Used to compute where or not should start sidecar in development mode",
+    DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
+        ...,
+        description="Boot mode used for the dynamic-sidecar services"
+        "By defaults, it uses the same boot mode set for the director-v2",
+        env=["DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"],
     )
+
+    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
+        "WARNING",
+        description="log level of the dynamic sidecar"
+        "If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
+        env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+
     DYNAMIC_SIDECAR_IMAGE: str = Field(
         ...,
         regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        8000,
-        description="port on which the webserver for the dynamic-sidecar is exposed",
-    )
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
-        None,
-        description="optional, only used for development, mounts the source of the dynamic-sidecar",
-    )
-
-    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        False,
-        description="exposes the service on localhost for debuging and testing",
-    )
-    PROXY_EXPOSE_PORT: bool = Field(
-        False,
-        description="exposes the proxy on localhost for debuging and testing",
-    )
-
     SIMCORE_SERVICES_NETWORK_NAME: str = Field(
         ...,
         regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
+    )
+
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose version used in the compose-specs"
+    )
+
+    SWARM_STACK_NAME: str = Field(
+        ...,
+        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    )
+
+    TRAEFIK_SIMCORE_ZONE: str = Field(
+        ...,
+        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    )
+
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
+
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    #
+    # TIMEOUTS AND RETRY dark worlds
+    #
+
+    DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES: int = Field(
+        4, description="maximum attempts to retry a request before giving up"
     )
     DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
         15.0,
@@ -168,7 +208,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
-        1.0,
+        5.0,
         description=(
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),
@@ -227,31 +267,92 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "time to wait before giving up on removing dynamic-sidecar's volumes"
         ),
     )
-
-    TRAEFIK_SIMCORE_ZONE: str = Field(
-        ...,
-        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S: PositiveFloat = Field(
+        1.0,
+        description=(
+            "when requesting the status of a service this is the "
+            "maximum amount of time the request can last"
+        ),
     )
 
-    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+    #
+    # DEVELOPMENT ONLY config
+    #
 
-    SWARM_STACK_NAME: str = Field(
-        ...,
-        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
+        None,
+        description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
+        example="osparc-simcore/services/dynamic-sidecar",
     )
 
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
-        auto_default_from_env=True
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(
+        DEFAULT_FASTAPI_PORT,
+        description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]",
     )
 
-    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose version used in the compose-specs"
+    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
+        False,
+        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
+        "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
+        "where 30023 is the host published port",
     )
+
+    PROXY_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the proxy on localhost for debuging and testing",
+    )
+
+    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
+        False,
+        description=(
+            "Limits concurrent service saves for a docker node. Guarantees "
+            "that no more than X services use a resource together."
+        ),
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
+        2, description="Amount of slots per resource on a node"
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
+        10,
+        description=(
+            "Lifetime of the lock. Allows the system to recover a lock "
+            "in case of crash, the lock will expire and result as released."
+        ),
+    )
+
+    @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
+    @classmethod
+    def auto_disable_if_production(cls, v, values):
+        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+            logger.warning(
+                "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
+                v,
+            )
+            return None
+        return v
+
+    @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
+    @classmethod
+    def auto_enable_if_development(cls, v, values):
+        if (
+            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
+        ) and boot_mode.is_devel_mode():
+            # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
+            return True
+        return v
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
     def strip_leading_slashes(cls, v) -> str:
         return v.lstrip("/")
+
+    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v) -> str:
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
+        if v not in valid_log_levels:
+            raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
+        return v
 
 
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
@@ -259,14 +360,6 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
         5.0, description="interval at which the scheduler cycle is repeated"
-    )
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION: PositiveFloat = Field(
-        1.0,
-        description=(
-            "when requesting the status of a service this is the "
-            "maximum amount of time the request can last"
-        ),
     )
 
 
@@ -310,6 +403,14 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.S3,
+        description=f"Default file link type to use with the internal cluster '{list(FileLinkType)}'",
+    )
+    COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.PRESIGNED,
+        description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
+    )
 
     @cached_property
     def default_cluster(self):
@@ -332,7 +433,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # docker environs
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum
     SC_BOOT_TARGET: Optional[BuildTargetEnum]
 
     LOG_LEVEL: LogLevel = Field(
@@ -378,6 +479,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
+    DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
+
+    DIRECTOR_V2_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
@@ -385,9 +489,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     POSTGRES: PGSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+    REDIS: RedisSettings = Field(auto_default_from_env=True)
 
-    STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
+    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
@@ -398,6 +502,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
+        default_factory=list,
+        example='["node.labels.region==east", "one!=yes"]',
+    )
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

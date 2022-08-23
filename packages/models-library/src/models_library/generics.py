@@ -3,6 +3,7 @@ from typing import (
     Dict,
     Generic,
     ItemsView,
+    Iterable,
     Iterator,
     KeysView,
     List,
@@ -11,6 +12,7 @@ from typing import (
     ValuesView,
 )
 
+from pydantic import validator
 from pydantic.generics import GenericModel
 
 DictKey = TypeVar("DictKey")
@@ -35,11 +37,17 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def values(self) -> ValuesView[DictValue]:
         return self.__root__.values()
 
+    def update(self, *s: Iterable[tuple[DictKey, DictValue]]) -> None:
+        return self.__root__.update(*s)
+
     def __iter__(self) -> Iterator[DictKey]:
         return self.__root__.__iter__()
 
     def get(self, key: DictKey, default: Optional[DictValue] = None):
         return self.__root__.get(key, default)
+
+    def setdefault(self, key: DictKey, default: DictValue):
+        return self.__root__.setdefault(key, default)
 
     def __len__(self) -> int:
         return self.__root__.__len__()
@@ -62,10 +70,16 @@ class ListModel(GenericModel, Generic[DataT]):
 
 
 class Envelope(GenericModel, Generic[DataT]):
-    data: Optional[DataT]
-    error: Optional[Any]
-    # TODO: this needs to be more concreate e.g. { "error": { "reason": "Invalid" , "exception": "ValueError" } }
+    data: Optional[DataT] = None
+    error: Optional[Any] = None
 
     @classmethod
     def parse_data(cls, obj):
         return cls.parse_obj({"data": obj})
+
+    @validator("data", pre=True)
+    @classmethod
+    def empty_dict_is_none(cls, v):
+        if v == {}:
+            return None
+        return v

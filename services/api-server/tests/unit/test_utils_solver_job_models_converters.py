@@ -1,12 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
-from typing import Dict
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import pytest
 from models_library.projects import Project
-from models_library.projects_nodes import Inputs, InputTypes, SimCoreFileLink
+from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
 from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
@@ -80,7 +78,7 @@ def test_job_to_node_inputs_conversion():
     for name, value in job_inputs.values.items():
         assert isinstance(value, get_types(ArgumentType)), f"Invalid type in {name}"
 
-    node_inputs: Inputs = {
+    node_inputs: InputsDict = {
         "x": 4.33,
         "n": 55,
         "title": "Temperature",
@@ -101,7 +99,7 @@ def test_job_to_node_inputs_conversion():
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
     got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
 
-    NodeInputs = create_model("NodeInputs", __root__=(Dict[str, InputTypes], ...))
+    NodeInputs = create_model("NodeInputs", __root__=(dict[str, InputTypes], ...))
     print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
     print(got_job_inputs.json(indent=2))
 
@@ -132,7 +130,7 @@ def test_create_job_from_project():
                         "input_3": 0,
                         "input_2": 3,
                         "input_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "api/bfb821c0-a4ef-305e-a23b-4d79065f0078/file_with_number.txt",
                             "eTag": None,
                             "label": "file_with_number.txt",
@@ -142,7 +140,7 @@ def test_create_job_from_project():
                     "inputNodes": [],
                     "outputs": {
                         "output_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt",
                             "eTag": "6c22e9b968b205c0dd3614edd1b28d35-1",
                         },
@@ -214,9 +212,9 @@ def test_create_job_from_project():
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.modules.director_v2 import ComputationTaskOut
+    from simcore_service_api_server.modules.director_v2 import ComputationTaskGet
 
-    task = ComputationTaskOut.parse_obj({})  # TODO:
+    task = ComputationTaskGet.parse_obj({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id

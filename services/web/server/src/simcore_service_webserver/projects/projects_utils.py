@@ -1,9 +1,10 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple, Union
+from typing import Any, AnyStr, Match, Optional, TypedDict, Union
 from uuid import UUID, uuid1, uuid5
 
+from models_library.services import ServiceKey
 from servicelib.decorators import safe_return
 from yarl import URL
 
@@ -16,13 +17,22 @@ VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
 # NOTE: InputTypes/OutputTypes that are NOT links
 NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
+SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
+    "simcore/services/frontend/file-picker",
+}
+
+
+class NodeDict(TypedDict, total=False):
+    key: Optional[ServiceKey]
+    outputs: Optional[dict[str, Any]]
+
 
 def clone_project_document(
-    project: Dict,
+    project: dict,
     *,
     forced_copy_project_id: Optional[UUID] = None,
     clean_output_data: bool = False,
-) -> Tuple[Dict, Dict]:
+) -> tuple[dict, dict]:
     project_copy = deepcopy(project)
 
     # Update project id
@@ -47,7 +57,7 @@ def clone_project_document(
 
     project_map = {project["uuid"]: project_copy["uuid"]}
 
-    def _replace_uuids(node: Union[str, List, Dict]) -> Union[str, List, Dict]:
+    def _replace_uuids(node: Union[str, list, dict]) -> Union[str, list, dict]:
         if isinstance(node, str):
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
@@ -88,8 +98,8 @@ def clone_project_document(
 
 @safe_return(if_fails_return=False, logger=log)
 def substitute_parameterized_inputs(
-    parameterized_project: Dict, parameters: Dict
-) -> Dict:
+    parameterized_project: dict, parameters: dict
+) -> dict:
     """Substitutes parameterized r/w inputs
 
     NOTE: project is is changed
@@ -142,7 +152,7 @@ def substitute_parameterized_inputs(
 
 
 def is_graph_equal(
-    lhs_workbench: Dict[str, Any], rhs_workbench: Dict[str, Any]
+    lhs_workbench: dict[str, Any], rhs_workbench: dict[str, Any]
 ) -> bool:
     """Checks whether both workbench contain the same graph
 
@@ -177,18 +187,18 @@ def is_graph_equal(
 
 
 async def project_uses_available_services(
-    project: Dict[str, Any], available_services: List[Dict[str, Any]]
+    project: dict[str, Any], available_services: list[dict[str, Any]]
 ) -> bool:
     if not project["workbench"]:
         # empty project
         return True
     # get project services
-    needed_services: Set[Tuple[str, str]] = {
+    needed_services: set[tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available_services_set: Set[Tuple[str, str]] = {
+    available_services_set: set[tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
@@ -196,34 +206,19 @@ async def project_uses_available_services(
 
 
 def get_project_unavailable_services(
-    project: Dict[str, Any], available_services: List[Dict[str, Any]]
-) -> Set[Tuple[str, str]]:
+    project: dict[str, Any], available_services: list[dict[str, Any]]
+) -> set[tuple[str, str]]:
     # get project services
-    required: Set[Tuple[str, str]] = {
+    required: set[tuple[str, str]] = {
         (s["key"], s["version"]) for _, s in project["workbench"].items()
     }
 
     # get available services
-    available: Set[Tuple[str, str]] = {
+    available: set[tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
     return required - available
-
-
-async def project_get_depending_nodes(
-    project: Dict[str, Any], node_uuid: str
-) -> Set[str]:
-    depending_node_uuids = set()
-    for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
-        for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
-            if (
-                isinstance(dep_node_inputs_key_data, dict)
-                and dep_node_inputs_key_data.get("nodeUuid") == node_uuid
-            ):
-                depending_node_uuids.add(dep_node_uuid)
-
-    return depending_node_uuids
 
 
 def extract_dns_without_default_port(url: URL) -> str:
@@ -286,3 +281,81 @@ def any_node_inputs_changed(
                     )
                     return True
     return False
+
+
+def get_frontend_node_outputs_changes(
+    new_node: NodeDict, old_node: NodeDict
+) -> set[str]:
+    changed_keys: set[str] = set()
+
+    # if node changes it's outputs and is not a supported
+    # frontend type, return no frontend changes
+    nodes_keys = {old_node.get("key"), new_node.get("key")}
+    if len(nodes_keys) == 1 and nodes_keys.pop() not in SUPPORTED_FRONTEND_KEYS:
+        return changed_keys
+
+    log.debug("Comparing nodes %s %s", new_node, old_node)
+
+    def _check_for_changes(d1: dict[str, Any], d2: dict[str, Any]) -> None:
+        """
+        Checks if d1's values have changed compared to d2's.
+        NOTE: Does not guarantee that d2's values have changed
+        compare to d1's.
+        """
+        for k, v in d1.items():
+            if k not in d2:
+                changed_keys.add(k)
+                continue
+            if v != d2[k]:
+                changed_keys.add(k)
+
+    new_outputs: dict[str, Any] = new_node.get("outputs", {}) or {}
+    old_outputs: dict[str, Any] = old_node.get("outputs", {}) or {}
+
+    _check_for_changes(new_outputs, old_outputs)
+    _check_for_changes(old_outputs, new_outputs)
+
+    return changed_keys
+
+
+def find_changed_node_keys(
+    current_dict: dict[str, Any],
+    new_dict: dict[str, Any],
+    *,
+    look_for_removed_keys: bool,
+) -> dict[str, Any]:
+    # The `store` key inside outputs could be either `0` (integer) or `"0"` (string)
+    # this generates false positives.
+    # Casting to `int` to fix the issue.
+    # NOTE: this could make services relying on side effects to stop form propagating
+    # changes to downstream connected services.
+    # Will only fix the issue for `file-picker` to avoid issues.
+    def _cast_outputs_store(dict_data: dict[str, Any]) -> None:
+        for data in dict_data.get("outputs", {}).values():
+            if "store" in data:
+                data["store"] = int(data["store"])
+
+    if current_dict.get("key") == "simcore/services/frontend/file-picker":
+        _cast_outputs_store(current_dict)
+        _cast_outputs_store(new_dict)
+
+    # start with the missing keys
+    changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
+    if look_for_removed_keys:
+        changed_keys.update(
+            {k: current_dict[k] for k in current_dict.keys() - new_dict.keys()}
+        )
+    # then go for the modified ones
+    for k in current_dict.keys() & new_dict.keys():
+        if current_dict[k] == new_dict[k]:
+            continue
+        # if the entry was modified put the new one
+        modified_entry = {k: new_dict[k]}
+        if isinstance(new_dict[k], dict):
+            modified_entry = {
+                k: find_changed_node_keys(
+                    current_dict[k], new_dict[k], look_for_removed_keys=True
+                )
+            }
+        changed_keys.update(modified_entry)
+    return changed_keys

@@ -2,76 +2,79 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Iterable
+import uuid
+from functools import lru_cache
+from typing import AsyncIterator
 
-import attr
 import pytest
 from aiopg.sa.engine import Engine
-from simcore_service_storage.constants import SIMCORE_S3_STR
-from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData, FileMetaDataEx, file_meta_data
-from simcore_service_storage.utils import create_resource_uuid
+from models_library.api_schemas_storage import S3BucketName
+from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ByteSize
+from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.sql.expression import literal_column
 
-
-@pytest.fixture
-def storage(postgres_engine: Engine) -> DataStorageManager:
-
-    return DataStorageManager(
-        s3_client=None,
-        engine=postgres_engine,
-        loop=None,
-        pool=None,
-        simcore_bucket_name="master-simcore",
-        has_project_db=True,
-        app=None,
-    )  # type: ignore
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["adminer"]
 
 
 @pytest.fixture()
 async def output_file(
-    user_id: int, project_id: str, postgres_engine: Engine
-) -> Iterable[FileMetaData]:
+    user_id: UserID, project_id: str, aiopg_engine: Engine
+) -> AsyncIterator[FileMetaData]:
 
     node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
 
     # pylint: disable=no-value-for-parameter
 
-    file = FileMetaData()
-    file.simcore_from_uuid(
-        f"{project_id}/{node_id}/filename.txt", bucket_name="master-simcore"
+    file = FileMetaData.from_simcore_node(
+        user_id=user_id,
+        file_id=SimcoreS3FileID(f"{project_id}/{node_id}/filename.txt"),
+        bucket=S3BucketName("master-simcore"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
-    file.file_size = 12
-    file.user_name = "test"
-    file.user_id = str(user_id)
+    file.file_size = ByteSize(12)
+    file.user_id = user_id
 
-    async with postgres_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         stmt = (
             file_meta_data.insert()
-            .values(
-                **attr.asdict(file),
-            )
+            .values(jsonable_encoder(FileMetaDataAtDB.from_orm(file)))
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)
         row = await result.fetchone()
-
-        # hacks defect
-        file.user_id = str(user_id)
-        file.location_id = str(file.location_id)
-        # --
-        assert file == FileMetaData(**dict(row))  # type: ignore
+        assert row
 
         yield file
 
         result = await conn.execute(
-            file_meta_data.delete().where(file_meta_data.c.file_uuid == row.file_uuid)
+            file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
         )
 
 
+def create_reverse_dns(*resource_name_parts) -> str:
+    """
+    Returns a name for the resource following the reverse domain name notation
+    """
+    # See https://en.wikipedia.org/wiki/Reverse_domain_name_notation
+    return "io.simcore.storage" + ".".join(map(str, resource_name_parts))
+
+
+@lru_cache
+def create_resource_uuid(*resource_name_parts) -> uuid.UUID:
+    revers_dns = create_reverse_dns(*resource_name_parts)
+    return uuid.uuid5(uuid.NAMESPACE_DNS, revers_dns)
+
+
 async def test_create_soft_link(
-    storage: DataStorageManager, user_id: int, output_file: FileMetaData
+    simcore_s3_dsm: SimcoreS3DataManager, user_id: int, output_file: FileMetaData
 ):
 
     api_file_id = create_resource_uuid(
@@ -79,11 +82,12 @@ async def test_create_soft_link(
     )
     file_name = output_file.file_name
 
-    link_file: FileMetaDataEx = await storage.create_soft_link(
-        user_id, output_file.file_uuid, f"api/{api_file_id}/{file_name}"
+    link_file: FileMetaData = await simcore_s3_dsm.create_soft_link(
+        user_id,
+        output_file.file_id,
+        SimcoreS3FileID(f"api/{api_file_id}/{file_name}"),
     )
-    assert isinstance(link_file, FileMetaDataEx)
-    assert isinstance(link_file.fmd, FileMetaData)
+    assert isinstance(link_file, FileMetaData)
 
     # copy:
     #     - you have two different versions of the file.
@@ -109,26 +113,26 @@ async def test_create_soft_link(
     # 6686594 -rw-rw-r--  2 crespo crespo    6 Mar  9  2020 VERSION-hard
     # 6686197 lrwxrwxrwx  1 crespo crespo    7 Apr 14 14:48 VERSION-link -> VERSION
 
-    assert link_file.fmd.file_uuid == f"api/{api_file_id}/{file_name}"
-    assert link_file.fmd.file_id == link_file.fmd.file_uuid
-    assert link_file.fmd.object_name == output_file.object_name
-    assert link_file.fmd.entity_tag == output_file.entity_tag
-    assert link_file.fmd.is_soft_link
+    assert link_file.file_uuid == f"api/{api_file_id}/{file_name}"
+    assert link_file.file_id == link_file.file_uuid
+    assert link_file.object_name == output_file.object_name
+    assert link_file.entity_tag == output_file.entity_tag
+    assert link_file.is_soft_link
 
     # TODO: in principle we keep this ...
     # assert output_file.created_at < link_file.fmd.created_at
     # assert output_file.last_modified < link_file.fmd.last_modified
 
     # can find
-    files_list = await storage.search_files_starting_with(
+    files_list = await simcore_s3_dsm.search_files_starting_with(
         user_id, f"api/{api_file_id}/{file_name}"
     )
     assert len(files_list) == 1
     assert files_list[0] == link_file
 
     # can get
-    got_file = await storage.list_file(
-        str(user_id), SIMCORE_S3_STR, f"api/{api_file_id}/{file_name}"
+    got_file = await simcore_s3_dsm.get_file(
+        user_id, SimcoreS3FileID(f"api/{api_file_id}/{file_name}")
     )
 
     assert got_file == link_file

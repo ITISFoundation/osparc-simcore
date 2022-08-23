@@ -163,6 +163,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    hits: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyHits"
+    },
+
     state: {
       check: "Object",
       nullable: false,
@@ -216,6 +222,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let defaultHits = null;
       let workbench = null;
       switch (studyData["resourceType"]) {
         case "study":
@@ -243,6 +250,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           if (osparc.data.model.Node.isDynamic(studyData)) {
             defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
           }
+          defaultHits = 0;
           break;
       }
 
@@ -259,6 +267,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
         quality: studyData.quality ? studyData.quality : null,
         uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
+        hits: studyData.hits ? studyData.hits : defaultHits,
         workbench
       });
     },
@@ -331,26 +340,139 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
+    __applyHits: function(hits) {
+      if (hits !== null) {
+        const hitsLabel = this.getChildControl("hits-service");
+        hitsLabel.setValue(this.tr("Hits: ") + String(hits));
+      }
+    },
+
     __applyWorkbench: function(workbench) {
       if (workbench === null) {
         return;
       }
+
       const updateStudy = this.getChildControl("update-study");
-      osparc.utils.Study.isWorkbenchUpdatable(workbench)
-        .then(updatable => {
-          if (updatable) {
-            updateStudy.show();
-            updateStudy.addListener("tap", e => {
-              e.stopPropagation();
-              this.__openUpdateServices();
-            }, this);
-            updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        this.__openUpdateServices();
+      }, this);
+      if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText: this.tr("Service(s) deprecated, please update"),
+          textColor: "red"
+        });
+      } else {
+        osparc.utils.Study.isWorkbenchUpdatable(workbench)
+          .then(updatable => {
+            if (updatable) {
+              updateStudy.show();
+              updateStudy.set({
+                toolTipText: this.tr("Update available"),
+                textColor: "text"
+              });
+            }
+          });
+      }
+
+      osparc.utils.Study.getUnaccessibleServices(workbench)
+        .then(unaccessibleServices => {
+          if (unaccessibleServices.length) {
+            this.setLocked(true);
+            const image = "@FontAwesome5Solid/ban/";
+            let toolTipText = this.tr("Service info missing");
+            unaccessibleServices.forEach(unSrv => {
+              toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+            });
+            this._blockCard(image, toolTipText);
           }
         });
     },
 
     _applyState: function(state) {
-      throw new Error("Abstract method called!");
+      const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      this.setLocked(locked);
+      if (locked) {
+        this.__setLockedStatus(state["locked"]);
+      }
+    },
+
+    __setLockedStatus: function(lockedStatus) {
+      const status = lockedStatus["status"];
+      const owner = lockedStatus["owner"];
+      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
+      let image = null;
+      switch (status) {
+        case "CLOSING":
+          image = "@FontAwesome5Solid/key/";
+          toolTip += this.tr(" is closing it...");
+          break;
+        case "CLONING":
+          image = "@FontAwesome5Solid/clone/";
+          toolTip += this.tr(" is cloning it...");
+          break;
+        case "EXPORTING":
+          image = osparc.component.task.Export.EXPORT_ICON+"/";
+          toolTip += this.tr(" is exporting it...");
+          break;
+        case "OPENING":
+          image = "@FontAwesome5Solid/key/";
+          toolTip += this.tr(" is opening it...");
+          break;
+        case "OPENED":
+          image = "@FontAwesome5Solid/lock/";
+          toolTip += this.tr(" is using it.");
+          break;
+        default:
+          image = "@FontAwesome5Solid/lock/";
+          break;
+      }
+      this._blockCard(image, toolTip);
+    },
+
+    _blockCard: function(lockImageSrc, toolTipText) {
+      const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
+      lockImage.setSource(lockImageSrc);
+      if (toolTipText) {
+        this.set({
+          toolTipText
+        });
+      }
+    },
+
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __enableCard: function(enabled) {
+      this.set({
+        cursor: enabled ? "pointer" : "not-allowed"
+      });
+      if (enabled) {
+        this.resetToolTipText();
+      }
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(enabled ? 1.0 : 0.4);
+      });
+
+      [
+        "tick-selected",
+        "tick-unselected",
+        "menu-button"
+      ].forEach(childName => {
+        const child = this.getChildControl(childName);
+        child.set({
+          enabled
+        });
+      });
     },
 
     _applyFetching: function(value) {
@@ -487,7 +609,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     }
   },
 
-  destruct : function() {
+  destruct: function() {
     this.removeListener("pointerover", this._onPointerOver, this);
     this.removeListener("pointerout", this._onPointerOut, this);
   }

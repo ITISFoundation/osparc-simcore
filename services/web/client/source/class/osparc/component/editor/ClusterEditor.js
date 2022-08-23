@@ -22,6 +22,8 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(8));
 
+    this.__newCluster = newCluster;
+
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     const title = this.getChildControl("title");
     title.setRequired(true);
@@ -92,6 +94,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
 
   members: {
     __validator: null,
+    __newCluster: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -220,17 +223,23 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       testButton.addListener("execute", () => {
         if (this.__validator.validate()) {
           testButton.setFetching(true);
-          const params = {
-            data: {
+          const endpoint = this.__newCluster ? "pingWCredentials" : "ping";
+          const params = {};
+          if (this.__newCluster) {
+            params["data"] = {
               "endpoint": this.getEndpoint(),
               "authentication": {
                 "type": "simple",
                 "username": this.getSimpleAuthenticationUsername(),
                 "password": this.getSimpleAuthenticationPassword()
               }
-            }
-          };
-          osparc.data.Resources.fetch("clusters", "pingWCredentials", params)
+            };
+          } else {
+            params["url"] = {
+              cid: this.getCid()
+            };
+          }
+          osparc.data.Resources.fetch("clusters", endpoint, params)
             .then(() => testResult.setTextColor("ready-green"))
             .catch(err => {
               testResult.setTextColor("failed-red");

@@ -4,23 +4,22 @@
 
 import os
 from pathlib import Path
-from typing import Any, List
+from uuid import UUID
 
 import pytest
-from simcore_service_dynamic_sidecar.modules import mounted_fs
-
-pytestmark = pytest.mark.asyncio
+from aiodocker.volumes import DockerVolume
+from fastapi import FastAPI
+from simcore_service_dynamic_sidecar.core.application import AppState
+from simcore_service_dynamic_sidecar.modules.mounted_fs import (
+    MountedVolumes,
+    _name_from_full_path,
+)
 
 # UTILS
 
 
 def _replace_slashes(path: Path) -> str:
     return str(path).replace(os.sep, "_")
-
-
-def _assert_same_object(first: Any, second: Any) -> None:
-    assert first == second
-    assert id(first) == id(second)
 
 
 # FIXTURES
@@ -31,44 +30,58 @@ def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
 
 
+@pytest.fixture
+def mounted_volumes(app: FastAPI) -> MountedVolumes:
+    return AppState(app).mounted_volumes
+
+
 # TESTS
 
 
-def test_name_from_full_path(path_to_transform: Path) -> None:
-    assert mounted_fs._name_from_full_path(  # pylint: disable=protected-access
+def test_name_from_full_path(path_to_transform: Path):
+    assert _name_from_full_path(  # pylint: disable=protected-access
         path_to_transform
     ) == _replace_slashes(path_to_transform)
 
 
-def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
+def test_setup_ok(mounted_volumes: MountedVolumes):
     assert mounted_volumes
 
 
 async def test_expected_paths_and_volumes(
-    mounted_volumes: mounted_fs.MountedVolumes,
+    ensure_external_volumes: tuple[DockerVolume],
+    mounted_volumes: MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
-    state_paths_dirs: List[Path],
+    state_paths_dirs: list[Path],
     compose_namespace: str,
-) -> None:
+    run_id: UUID,
+):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len({x async for x in mounted_volumes.iter_state_paths_to_docker_volumes()})
+        == len(
+            {
+                x
+                async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
+                    run_id
+                )
+            }
+        )
         == len(set(mounted_volumes.disk_state_paths()))
     )
 
     # check location on disk
     assert (
         mounted_volumes.disk_outputs_path
-        == mounted_fs.DY_VOLUMES / outputs_dir.relative_to("/")
+        == mounted_volumes._dy_volumes / outputs_dir.relative_to("/")
     )
     assert (
         mounted_volumes.disk_inputs_path
-        == mounted_fs.DY_VOLUMES / inputs_dir.relative_to("/")
+        == mounted_volumes._dy_volumes / inputs_dir.relative_to("/")
     )
 
     assert set(mounted_volumes.disk_state_paths()) == {
-        mounted_fs.DY_VOLUMES / x.relative_to("/") for x in state_paths_dirs
+        mounted_volumes._dy_volumes / x.relative_to("/") for x in state_paths_dirs
     }
 
     # check volume mount point
@@ -90,15 +103,15 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        _get_container_mount(await mounted_volumes.get_inputs_docker_volume())
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume(run_id))
         == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        _get_container_mount(await mounted_volumes.get_outputs_docker_volume())
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume(run_id))
         == f"{mounted_volumes.outputs_path}"
     )
 
     assert {
         _get_container_mount(x)
-        async for x in mounted_volumes.iter_state_paths_to_docker_volumes()
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(run_id)
     } == {f"{state_path}" for state_path in state_paths_dirs}

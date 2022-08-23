@@ -2,11 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from models_library.service_settings_labels import (
@@ -50,7 +49,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     ids=[x.id for x in SIMCORE_SERVICE_EXAMPLES],
 )
 def test_simcore_service_labels(
-    example: Dict, items: int, uses_dynamic_sidecar: bool
+    example: dict, items: int, uses_dynamic_sidecar: bool
 ) -> None:
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
 
@@ -72,7 +71,7 @@ def test_service_settings() -> None:
     # ensure private attribute assignment
     for service_setting in simcore_settings_settings_label:
         # pylint: disable=protected-access
-        service_setting._destination_container = "random_value"
+        service_setting._destination_containers = ["random_value1", "random_value2"]
 
 
 @pytest.mark.parametrize(
@@ -84,7 +83,7 @@ def test_service_settings() -> None:
     ),
 )
 def test_service_settings_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ) -> None:
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -97,7 +96,7 @@ def test_service_settings_model_examples(
     (SimcoreServiceLabels,),
 )
 def test_correctly_detect_dynamic_sidecar_boot(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ) -> None:
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -108,7 +107,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 
 def test_raises_error_if_http_entrypoint_is_missing() -> None:
-    simcore_service_labels: Dict[str, Any] = deepcopy(
+    simcore_service_labels: dict[str, Any] = deepcopy(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
@@ -128,7 +127,7 @@ def test_path_mappings_json_encoding() -> None:
     example = PathMappingsLabel.Config.schema_extra["example"]
     path_mappings = PathMappingsLabel.parse_obj(example)
     print(path_mappings)
-    assert json.loads(path_mappings.json()) == example
+    assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
 
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:
@@ -141,7 +140,7 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
 
 
 def test_raises_error_wrong_restart_policy() -> None:
-    simcore_service_labels: Dict[str, Any] = deepcopy(
+    simcore_service_labels: dict[str, Any] = deepcopy(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"

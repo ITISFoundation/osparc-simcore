@@ -20,6 +20,11 @@ anyio==3.5.0
     #   watchgod
 asgiref==3.5.0
     # via uvicorn
+attrs==20.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   jsonschema
 boto3==1.21.33
     # via pennsieve
 botocore==1.24.33
@@ -32,9 +37,7 @@ certifi==2021.10.8
     #   httpx
     #   requests
 charset-normalizer==2.0.12
-    # via
-    #   httpx
-    #   requests
+    # via requests
 click==8.1.2
     # via
     #   typer
@@ -49,7 +52,7 @@ docopt==0.6.2
     # via pennsieve
 ecdsa==0.14.1
     # via python-jose
-email-validator==1.1.3
+email-validator==1.2.1
     # via pydantic
 fastapi==0.75.1
     # via
@@ -73,12 +76,18 @@ h2==4.1.0
     # via httpx
 hpack==4.0.0
     # via h2
-httpcore==0.14.7
+httpcore==0.15.0
     # via httpx
 httptools==0.4.0
     # via uvicorn
-httpx==0.22.0
-    # via -r requirements/_base.in
+httpx==0.23.0
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 hyperframe==6.0.1
     # via h2
 idna==3.3
@@ -93,6 +102,11 @@ jmespath==1.0.0
     # via
     #   boto3
     #   botocore
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 opentracing==2.4.0
     # via
     #   fastapi-contrib
@@ -125,6 +139,8 @@ pyinstrument==4.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+pyrsistent==0.18.1
+    # via jsonschema
 python-dateutil==2.8.2
     # via
     #   botocore
@@ -155,7 +171,6 @@ rfc3986==1.5.0
     # via httpx
 rsa==4.0
     # via
-    #   -r requirements/_base.in
     #   pennsieve
     #   python-jose
 s3transfer==0.5.2
@@ -165,6 +180,7 @@ semver==2.13.0
 six==1.16.0
     # via
     #   ecdsa
+    #   jsonschema
     #   python-dateutil
     #   python-jose
     #   python-multipart
@@ -215,3 +231,6 @@ websockets==10.2
     # via uvicorn
 wrapt==1.14.0
     # via deprecated
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

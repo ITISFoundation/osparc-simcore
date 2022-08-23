@@ -23,24 +23,40 @@ from pydantic import (
     validator,
 )
 from pydantic.networks import AnyUrl
-from pydantic.types import ByteSize, PositiveFloat
+from pydantic.types import ByteSize, NonNegativeInt, PositiveFloat
 
 
 class WorkerMetrics(BaseModel):
-    cpu: float = Field(..., description="consumed # of cpus")
+    cpu: float = Field(..., description="consumed % of cpus")
     memory: ByteSize = Field(..., description="consumed memory")
     num_fds: int = Field(..., description="consumed file descriptors")
-    ready: int = Field(..., description="# tasks ready to run")
-    executing: int = Field(..., description="# tasks currently executing")
-    in_flight: int = Field(..., description="# tasks currenntly waiting for data")
-    in_memory: ByteSize = Field(..., description="result data still in memory")
+    ready: NonNegativeInt = Field(..., description="# tasks ready to run")
+    executing: NonNegativeInt = Field(..., description="# tasks currently executing")
+    in_flight: NonNegativeInt = Field(..., description="# tasks waiting for data")
+    in_memory: NonNegativeInt = Field(..., description="# tasks in worker memory")
+
+
+AvailableResources = DictModel[str, PositiveFloat]
+
+
+class UsedResources(DictModel[str, NonNegativeFloat]):
+    @root_validator(pre=True)
+    @classmethod
+    def ensure_negative_value_is_zero(cls, values):
+        # dasks adds/remove resource values and sometimes
+        # they end up being negative instead of 0
+        if v := values.get("__root__", {}):
+            for res_key, res_value in v.items():
+                if res_value < 0:
+                    v[res_key] = 0
+        return values
 
 
 class Worker(BaseModel):
     id: str
     name: str
-    resources: DictModel[str, PositiveFloat]
-    used_resources: DictModel[str, NonNegativeFloat]
+    resources: AvailableResources
+    used_resources: UsedResources
     memory_limit: ByteSize
     metrics: WorkerMetrics
 

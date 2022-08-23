@@ -1,9 +1,8 @@
 import json
 import logging
-from asyncio import Lock
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
-from uuid import UUID
+from typing import Any, Mapping, Optional
+from uuid import UUID, uuid4
 
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -11,7 +10,17 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
+from models_library.services_resources import ServiceResourcesDict
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    PositiveInt,
+    constr,
+    parse_obj_as,
+)
+from servicelib.error_codes import ErrorCodeStr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -60,9 +69,14 @@ class Status(BaseModel):
     def update_ok_status(self, info: str) -> None:
         self._update(DynamicSidecarStatus.OK, info)
 
-    def update_failing_status(self, info: str) -> None:
-        logger.error(info)
-        self._update(DynamicSidecarStatus.FAILING, info)
+    def update_failing_status(
+        self, user_msg: str, error_code: Optional[ErrorCodeStr] = None
+    ) -> None:
+        next_info = f"{user_msg}"
+        if error_code:
+            next_info = f"{user_msg} [{error_code}]"
+
+        self._update(DynamicSidecarStatus.FAILING, next_info)
 
     def __eq__(self, other: "Status") -> bool:
         return self.current == other.current and self.info == other.info
@@ -93,7 +107,7 @@ class DockerContainerInspect(BaseModel):
     id: str = Field(..., description="docker id of the container")
 
     @classmethod
-    def from_container(cls, container: Dict[str, Any]) -> "DockerContainerInspect":
+    def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
         return cls(
             status=DockerStatus(container["State"]["Status"]),
             name=container["Name"],
@@ -128,6 +142,16 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
+    run_id: UUID = Field(
+        default_factory=uuid4,
+        description=(
+            "Used to discriminate between dynamic-sidecar docker resources "
+            "generated during different runs. Sometimes artifacts remain in the"
+            "system after an error. This helps avoiding collisions."
+            "For now used by anonymous volumes involved in data sharing"
+        ),
+    )
+
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
@@ -159,7 +183,7 @@ class DynamicSidecar(BaseModel):
         description="if the docker-compose spec was already submitted this fields is True",
     )
 
-    containers_inspect: List[DockerContainerInspect] = Field(
+    containers_inspect: list[DockerContainerInspect] = Field(
         [],
         scription="docker inspect results from all the container ran at regular intervals",
     )
@@ -226,9 +250,11 @@ class DynamicSidecar(BaseModel):
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        return f"http://{self.hostname}:{self.port}"
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
 
     @property
     def are_containers_ready(self) -> bool:
@@ -291,8 +317,9 @@ class DynamicSidecarNames(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    service_name: str = Field(
-        ..., description="Name of the current dynamic-sidecar being observed"
+    service_name: constr(strip_whitespace=True, min_length=2) = Field(
+        ...,
+        description="Name of the current dynamic-sidecar being observed",
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
@@ -320,9 +347,11 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "is started, this value is fetched from the service start spec"
         ),
     )
-    # Below values are used only once and then are nto required, thus optional
-    # after the service is picked up by the scheduler after a reboot these are not required
-    # and can be set to None
+
+    service_resources: ServiceResourcesDict = Field(
+        ..., description="service resources used to enforce limits"
+    )
+
     request_dns: Optional[str] = Field(
         None, description="used when configuring the CORS options on the proxy"
     )
@@ -332,6 +361,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     proxy_service_name: Optional[str] = Field(
         None, description="service name given to the proxy"
     )
+    docker_node_id: Optional[str] = Field(
+        None,
+        description=(
+            "contains node id of the docker node where all services "
+            "and created containers are started"
+        ),
+    )
 
     @classmethod
     def from_http_request(
@@ -340,8 +376,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
         port: Optional[int],
-        request_dns: str = None,
-        request_scheme: str = None,
+        request_dns: Optional[str] = None,
+        request_scheme: Optional[str] = None,
     ) -> "SchedulerData":
         dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
 
@@ -352,6 +388,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             user_id=service.user_id,
             key=service.key,
             version=service.version,
+            service_resources=service.service_resources,
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
@@ -375,55 +412,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
+    def as_label_data(self) -> str:
+        # compose_spec needs to be json encoded before encoding it to json
+        # and storing it in the label
+        return self.copy(
+            update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
+        ).json()
+
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True
-
-
-class AsyncResourceLock(BaseModel):
-    _lock: Lock = PrivateAttr()
-    _is_locked = PrivateAttr()
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        self._lock = Lock()
-
-    @classmethod
-    def from_is_locked(cls, is_locked: bool) -> "AsyncResourceLock":
-        instance = cls()
-        instance._is_locked = is_locked
-        return instance
-
-    async def mark_as_locked_if_unlocked(self) -> bool:
-        """
-        If the resource is currently not in used it will mark it as in use.
-
-        returns: True if it succeeds otherwise False
-        """
-        async with self._lock:
-            if not self._is_locked:
-                self._is_locked = True
-                return True
-
-        return False
-
-    async def unlock_resource(self) -> None:
-        """Marks the resource as unlocked"""
-        async with self._lock:
-            self._is_locked = False
-
-
-class LockWithSchedulerData(BaseModel):
-    # locking is required to guarantee the scheduling will not be triggered
-    # twice in a row for the service
-    resource_lock: AsyncResourceLock = Field(
-        ...,
-        description=(
-            "needed to exclude the service from a scheduling cycle while another "
-            "scheduling cycle is already running"
-        ),
-    )
-
-    scheduler_data: SchedulerData = Field(
-        ..., description="required data used to schedule the dynamic-sidecar"
-    )

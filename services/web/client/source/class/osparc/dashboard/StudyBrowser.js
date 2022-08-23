@@ -137,7 +137,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _createLayout: function() {
-      const studiesLayout = this._createResourcesLayout("study");
+      this._createResourcesLayout("study");
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
@@ -211,7 +211,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
       }, this);
 
-      return studiesLayout;
+      return this._resourcesContainer;
     },
 
     __createImportButton: function() {
@@ -301,7 +301,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __studyStateReceived: function(studyId, state) {
+    __studyStateReceived: function(studyId, state, errors) {
       osparc.store.Store.getInstance().setStudyState(studyId, state);
       const idx = this.__studies.findIndex(study => study["uuid"] === studyId);
       if (idx > -1) {
@@ -310,6 +310,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyItem = this._resourcesContainer.getChildren().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
         studyItem.setState(state);
+      }
+      if (errors.length) {
+        console.error(errors);
       }
     },
 
@@ -324,7 +327,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (data) {
           const studyId = data["project_uuid"];
           const state = ("data" in data) ? data["data"] : {};
-          this.__studyStateReceived(studyId, state);
+          const errors = ("errors" in data) ? data["errors"] : [];
+          this.__studyStateReceived(studyId, state, errors);
         }
       }, this);
 
@@ -424,6 +428,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         const studyItem = this.__createStudyItem(study);
+        studyItem.setMultiSelectionMode(this.getMultiSelection());
         this._resourcesContainer.add(studyItem);
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));

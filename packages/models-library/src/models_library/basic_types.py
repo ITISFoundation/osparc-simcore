@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import conint, constr
 
-from .basic_regex import VERSION_RE
+from .basic_regex import UUID_RE, VERSION_RE
 
 # port number range
 PortInt = conint(gt=0, lt=65535)
@@ -19,6 +19,9 @@ MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
 
 # env var
 EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
+
+# e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
+UUIDStr = constr(regex=UUID_RE)
 
 
 class LogLevel(str, Enum):
@@ -39,6 +42,10 @@ class BootModeEnum(str, Enum):
     DEBUG = "debug-ptvsd"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
+
+    def is_devel_mode(self) -> bool:
+        """returns True if this boot mode is used for development"""
+        return self in (self.DEBUG, self.DEVELOPMENT, self.LOCAL)
 
 
 class BuildTargetEnum(str, Enum):

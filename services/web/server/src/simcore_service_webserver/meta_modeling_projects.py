@@ -8,7 +8,6 @@
 
 import logging
 import re
-from typing import List, Tuple
 
 from aiohttp import web
 from aiohttp.typedefs import Handler
@@ -42,7 +41,7 @@ def _match_project_id(request: web.Request):
 
 @web.middleware
 async def projects_redirection_middleware(request: web.Request, handler: Handler):
-    """Intercepts /projects/{project_id}* requests and redirect them to the copy @HEAD
+    """Intercepts /projects/{project_uuid}* requests and redirect them to the copy @HEAD
 
     Any given project has a unique identifier 'project_id' but, when activated,
     it also has a version history (denoted 'checkpoints' in the API).
@@ -91,14 +90,14 @@ class MetaProjectRunPolicy(AbstractProjectRunPolicy):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> List[ProjectID]:
+    ) -> list[ProjectID]:
         return await get_runnable_projects_ids(request, project_uuid)
 
     async def get_or_create_runnable_projects(
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> Tuple[List[ProjectID], List[CommitID]]:
+    ) -> tuple[list[ProjectID], list[CommitID]]:
         return await get_or_create_runnable_projects(request, project_uuid)
 
 

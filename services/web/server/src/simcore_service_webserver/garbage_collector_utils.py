@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Optional, Set
+from contextlib import contextmanager
+from typing import Callable, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _fetch_new_project_owner_from_groups(
-    app: web.Application, standard_groups: Dict, user_id: UserID
+    app: web.Application, standard_groups: dict, user_id: UserID
 ) -> Optional[UserID]:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid
@@ -52,7 +53,7 @@ async def get_new_project_owner_gid(
     project_uuid: str,
     user_id: UserID,
     user_primary_gid: GroupID,
-    project: Dict,
+    project: dict,
 ) -> Optional[GroupID]:
     """Goes through the access rights and tries to find a new suitable owner.
     The first viable user is selected as a new owner.
@@ -62,7 +63,7 @@ async def get_new_project_owner_gid(
     access_rights = project["accessRights"]
     # A Set[str] is prefered over Set[int] because access_writes
     # is a Dict with only key,valus in {str, None}
-    other_users_access_rights: Set[str] = set(access_rights.keys()) - {
+    other_users_access_rights: set[str] = set(access_rights.keys()) - {
         f"{user_primary_gid}"
     }
     logger.debug(
@@ -123,7 +124,7 @@ async def replace_current_owner(
     project_uuid: str,
     user_primary_gid: GroupID,
     new_project_owner_gid: GroupID,
-    project: Dict,
+    project: dict,
 ) -> None:
     try:
         new_project_owner_id = await get_user_id_from_gid(
@@ -173,3 +174,21 @@ async def replace_current_owner(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
         )
+
+
+@contextmanager
+def log_context(log: Callable, message: str):
+    """Logs entering/existing context as start/done and informs if exited with error"""
+    # NOTE: could have been done with a LoggerAdapter but wonder if it would work
+    # with a global logger and asyncio context switches
+    # PC: I still do not find useful enought to move it to e.g. servicelib.logging_utils
+    try:
+        log("%s [STARTING]", message)
+
+        yield
+
+        log("%s [DONE w/ SUCCESS]", message)
+
+    except Exception as e:  # pylint: disable=broad-except
+        log("%s [DONE w/ ERROR %s]", message, type(e))
+        raise

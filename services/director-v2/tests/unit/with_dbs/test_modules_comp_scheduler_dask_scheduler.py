@@ -9,7 +9,7 @@
 
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterator, List, Union
+from typing import Any, Callable, Iterator, Union
 from unittest import mock
 
 import aiopg
@@ -32,6 +32,7 @@ from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -55,8 +56,12 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 from simcore_service_director_v2.utils.scheduler import COMPLETED_STATES
 from starlette.testclient import TestClient
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture()
@@ -69,8 +74,8 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
 
 @pytest.fixture
 def minimal_dask_scheduler_config(
-    mock_env: None,
-    postgres_host_config: Dict[str, str],
+    mock_env: EnvVarsDict,
+    postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
     mocked_rabbit_mq_client: None,
 ) -> None:
@@ -80,7 +85,12 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
 
 
 @pytest.fixture
@@ -177,7 +187,7 @@ async def test_empty_pipeline_is_not_scheduled(
     mocked_scheduler_task: None,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
-    registered_user: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
@@ -220,11 +230,11 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     mocked_scheduler_task: None,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
-    registered_user: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
@@ -314,7 +324,11 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     # the client should be created here
     mocked_dask_client.create.assert_called_once_with(
-        app=mock.ANY, settings=mock.ANY, endpoint=mock.ANY, authentication=mock.ANY
+        app=mock.ANY,
+        settings=mock.ANY,
+        endpoint=mock.ANY,
+        authentication=mock.ANY,
+        tasks_file_link_type=mock.ANY,
     )
     # the tasks are set to pending, so they are ready to be taken, and the dask client is triggered
     await assert_comp_tasks_state(
@@ -651,7 +665,7 @@ async def test_handling_scheduling_after_reboot(
     shall continue scheduling correctly. Even though the task might have continued to run
     in the dask-scheduler."""
 
-    async def mocked_get_tasks_status(job_ids: List[str]) -> List[RunningState]:
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
         return [reboot_state.task_status for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status

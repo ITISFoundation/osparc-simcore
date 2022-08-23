@@ -10,7 +10,7 @@ aiohttp==3.8.1
     #   -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.5.0
+anyio==3.6.1
     # via httpcore
 async-timeout==4.0.2
     # via aiohttp
@@ -19,7 +19,7 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   httpcore
     #   httpx
@@ -27,13 +27,12 @@ certifi==2021.10.8
 charset-normalizer==2.0.12
     # via
     #   aiohttp
-    #   httpx
     #   requests
 coverage==6.3.2
     # via pytest-cov
 docker==5.0.3
     # via -r requirements/_test.in
-faker==13.3.3
+faker==13.7.0
     # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
@@ -41,10 +40,12 @@ frozenlist==1.3.0
     #   aiosignal
 h11==0.12.0
     # via httpcore
-httpcore==0.14.7
+httpcore==0.15.0
     # via httpx
-httpx==0.22.0
-    # via -r requirements/_test.in
+httpx==0.23.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 idna==3.3
     # via
     #   anyio
@@ -53,7 +54,7 @@ idna==3.3
     #   yarl
 iniconfig==1.1.1
     # via pytest
-jsonschema==4.4.0
+jsonschema==4.6.0
     # via -r requirements/_test.in
 multidict==6.0.2
     # via
@@ -65,11 +66,11 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -107,7 +108,7 @@ urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-websocket-client==1.3.1
+websocket-client==1.3.2
     # via docker
 yarl==1.7.2
     # via aiohttp

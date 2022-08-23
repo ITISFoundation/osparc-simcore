@@ -30,6 +30,7 @@ def assert_match_and_get_capture(regex_str, test_str, expected) -> Optional[Sequ
         assert match is not None
         print(regex_str, "captured:", match.group(), "->", match.groups())
     else:
+        assert match
         captured = match.groups()
         assert captured == expected
         return captured

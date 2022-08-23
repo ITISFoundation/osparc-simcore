@@ -1,13 +1,9 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.aiohttp.aiopg_utils import (
-    DataSourceName,
-    init_pg_tables,
-    is_pg_responsive,
-)
+from servicelib.aiohttp.aiopg_utils import DataSourceName, is_pg_responsive
 from servicelib.common_aiopg_utils import create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.utils_aiopg import (
@@ -18,7 +14,6 @@ from simcore_postgres_database.utils_aiopg import (
 from tenacity import retry
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from .models import metadata
 from .settings import PostgresSettings
 
 log = logging.getLogger(__name__)
@@ -58,10 +53,6 @@ async def postgres_cleanup_ctx(app: web.Application):
         dsn, min_size=pg_cfg.POSTGRES_MINSIZE, max_size=pg_cfg.POSTGRES_MAXSIZE
     )
 
-    if app[APP_CONFIG_KEY].STORAGE_TESTING:
-        log.info("Initializing tables for %s", dsn)
-        init_pg_tables(dsn, schema=metadata)
-
     assert engine  # nosec
     app[APP_DB_ENGINE_KEY] = engine
 
@@ -87,7 +78,7 @@ async def is_service_responsive(app: web.Application):
     return is_responsive
 
 
-def get_engine_state(app: web.Application) -> Dict[str, Any]:
+def get_engine_state(app: web.Application) -> dict[str, Any]:
     engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
     if engine:
         return get_pg_engine_stateinfo(engine)
@@ -95,11 +86,6 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    if "postgres" in app[APP_CONFIG_KEY].STORAGE_DISABLE_SERVICES:
-        app[APP_DB_ENGINE_KEY] = None
-        log.warning("Service '%s' explicitly disabled in config", "postgres")
-        return
-
     app[APP_DB_ENGINE_KEY] = None
 
     # app is created at this point but not yet started

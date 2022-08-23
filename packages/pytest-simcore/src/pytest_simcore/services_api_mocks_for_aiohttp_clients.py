@@ -6,29 +6,33 @@ import json
 import random
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
-from models_library.api_schemas_storage import FileMetaData
+from models_library.api_schemas_storage import (
+    FileMetaDataGet,
+    FileUploadLinks,
+    FileUploadSchema,
+    LinkType,
+    PresignedLink,
+)
 from models_library.clusters import Cluster
+from models_library.generics import Envelope
 from models_library.projects_state import RunningState
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
-# WARNING: any request done through the client will go through aioresponses. It is
-# unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
-# Other than that it seems to behave nicely
-PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
-
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
-FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
+FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": [
         "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
         "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
@@ -40,7 +44,7 @@ FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
     "e83a359a-1efe-41d3-83aa-a285afbfaf12": [],
 }
 
-FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
+FULL_PROJECT_NODE_STATES: dict[str, dict[str, Any]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": {"modified": True, "dependencies": []},
     "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
         "modified": True,
@@ -76,7 +80,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         if "start_pipeline" in body and body["start_pipeline"]
         else RunningState.NOT_STARTED
     )
-    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     if body.get("subgraph"):
         # create some fake adjacency list
@@ -116,7 +120,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
 
 def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
-    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
 
     return CallbackResult(
@@ -326,47 +330,109 @@ async def director_v2_service_mock(
     return aioresponses_mocker
 
 
+def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
+    file_id = url.path.rsplit("/files/")[1]
+    assert "params" in kwargs
+    assert "link_type" in kwargs["params"]
+    link_type = kwargs["params"]["link_type"]
+    scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
+    return CallbackResult(
+        status=web.HTTPOk.status_code,
+        payload={"data": {"link": f"{scheme[link_type]}://{file_id}"}},
+    )
+
+
+def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
+    file_id = url.path.rsplit("/files/")[1]
+    assert "params" in kwargs
+    assert "link_type" in kwargs["params"]
+    link_type = kwargs["params"]["link_type"]
+    scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
+
+    if file_size := kwargs["params"].get("file_size") is not None:
+
+        upload_schema = FileUploadSchema(
+            chunk_size=parse_obj_as(ByteSize, "5GiB"),
+            urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],
+            links=FileUploadLinks(
+                abort_upload=parse_obj_as(AnyUrl, f"{url}:abort"),
+                complete_upload=parse_obj_as(AnyUrl, f"{url}:complete"),
+            ),
+        )
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload={"data": jsonable_encoder(upload_schema)},
+        )
+    # version 1 returns a presigned link
+    presigned_link = PresignedLink(
+        link=parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")
+    )
+    return CallbackResult(
+        status=web.HTTPOk.status_code,
+        payload={"data": jsonable_encoder(presigned_link)},
+    )
+
+
+def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
+    assert "params" in kwargs
+    assert "user_id" in kwargs["params"]
+    assert "uuid_filter" in kwargs["params"]
+    return CallbackResult(
+        status=web.HTTPOk.status_code,
+        payload=jsonable_encoder(Envelope[list[FileMetaDataGet]](data=[])),
+    )
+
+
 @pytest.fixture
 async def storage_v0_service_mock(
     aioresponses_mocker: AioResponsesMock,
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
 
-    def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
-        file_id = url.path.rsplit("/files/")[1]
-
-        return CallbackResult(
-            status=web.HTTPOk.status_code,
-            payload={"data": {"link": f"file://{file_id}"}},
-        )
-
     get_file_metadata_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
 
-    get_upload_link_pattern = get_download_link_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+$"
+    get_upload_link_pattern = (
+        get_download_link_pattern
+    ) = delete_file_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"
     )
 
     get_locations_link_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.*$"
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.+$"
+    )
+
+    list_file_meta_data_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$"
     )
 
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=web.HTTPOk.status_code,
-        payload={"data": FileMetaData.Config.schema_extra["examples"][0]},
+        payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
+        repeat=True,
+    )
+    aioresponses_mocker.get(
+        list_file_meta_data_pattern,
+        callback=list_file_meta_data_cb,
+        repeat=True,
     )
     aioresponses_mocker.get(
         get_download_link_pattern, callback=get_download_link_cb, repeat=True
     )
     aioresponses_mocker.put(
-        get_upload_link_pattern, callback=get_download_link_cb, repeat=True
+        get_upload_link_pattern, callback=get_upload_link_cb, repeat=True
     )
+    aioresponses_mocker.delete(
+        delete_file_pattern, status=web.HTTPNoContent.status_code
+    )
+
     aioresponses_mocker.get(
         get_locations_link_pattern,
         status=web.HTTPOk.status_code,
-        payload={"data": [{"name": "simcore.s3", "id": "0"}]},
+        payload={"data": [{"name": "simcore.s3", "id": 0}]},
+        repeat=True,
     )
 
     return aioresponses_mocker

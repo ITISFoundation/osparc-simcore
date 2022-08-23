@@ -150,6 +150,20 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: false
     },
 
+    errors: {
+      check: "Array",
+      init: [],
+      nullable: true,
+      event: "changeErrors",
+      apply: "__applyErrors"
+    },
+
+    bootOptions: {
+      check: "Object",
+      init: null,
+      nullable: true
+    },
+
     // GUI elements //
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
@@ -231,10 +245,6 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("/parameter/"));
     },
 
-    isContainer: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("nodes-group"));
-    },
-
     isIterator: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
     },
@@ -249,6 +259,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isComputational: function(metaData) {
       return (metaData && metaData.type && metaData.type === "computational");
+    },
+
+    isDeprecated: function(metaData) {
+      return osparc.utils.Services.isDeprecated(metaData);
     }
   },
 
@@ -285,10 +299,6 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isParameter(this.getMetaData());
     },
 
-    isContainer: function() {
-      return osparc.data.model.Node.isContainer(this.getMetaData());
-    },
-
     isIterator: function() {
       return osparc.data.model.Node.isIterator(this.getMetaData());
     },
@@ -305,8 +315,8 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isComputational(this.getMetaData());
     },
 
-    hasIteratorUpstream: function() {
-      return osparc.data.model.Workbench.hasIteratorUpstream(this.getStudy().getWorkbench(), this);
+    isDeprecated: function() {
+      return osparc.data.model.Node.isDeprecated(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -388,12 +398,7 @@ qx.Class.define("osparc.data.model.Node", {
       let outputNodes = [];
       for (let i = 0; i < this.__exposedNodes.length; i++) {
         const outputNode = workbench.getNode(this.__exposedNodes[i]);
-        if (outputNode.isContainer()) {
-          let myOutputNodes = outputNode.getExposedInnerNodes();
-          outputNodes = outputNodes.concat(myOutputNodes);
-        } else {
-          outputNodes.push(outputNode);
-        }
+        outputNodes.push(outputNode);
       }
       const uniqueNodes = [...new Set(outputNodes)];
       return uniqueNodes;
@@ -434,6 +439,9 @@ qx.Class.define("osparc.data.model.Node", {
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
         }
+        if (nodeData.bootOptions) {
+          this.setBootOptions(nodeData.bootOptions);
+        }
       }
 
       this.__initLogger();
@@ -451,7 +459,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setPosition(nodeUIData.position);
       }
       if ("marker" in nodeUIData) {
-        this.addMarker(nodeUIData.marker);
+        this.__addMarker(nodeUIData.marker);
       }
     },
 
@@ -467,7 +475,13 @@ qx.Class.define("osparc.data.model.Node", {
     populateStates: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
-        this.getStatus().setProgress(progress);
+        const oldProgress = this.getStatus().getProgress();
+        if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
+          // file is being uploaded
+          this.getStatus().setProgress(oldProgress);
+        } else {
+          this.getStatus().setProgress(progress);
+        }
       }
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
@@ -496,7 +510,8 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsg = "Error when starting " + key + ":" + version + ": " + err.getTarget().getResponse()["error"];
           const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: errorMsg
+            msg: errorMsg,
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           this.getStatus().setInteractive("failed");
@@ -623,7 +638,15 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    addMarker: function(marker) {
+    toggleMarker: function() {
+      if (this.getMarker()) {
+        this.__removeMarker();
+      } else {
+        this.__addMarker();
+      }
+    },
+
+    __addMarker: function(marker) {
       if (marker === undefined) {
         marker = {
           color: osparc.utils.Utils.getRandomColor()
@@ -633,7 +656,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setMarker(markerModel);
     },
 
-    removeMarker: function() {
+    __removeMarker: function() {
       this.setMarker(null);
     },
 
@@ -716,15 +739,45 @@ qx.Class.define("osparc.data.model.Node", {
       return outputsData;
     },
 
-    // post edge creation routine
-    edgeAdded: function(edge) {
-      const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
-      const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
-      this.__createAutoPortConnection(inputNode, outputNode);
+    __applyErrors: function(errors) {
+      if (errors && errors.length) {
+        errors.forEach(error => {
+          const loc = error["loc"];
+          if (loc.length < 2) {
+            return;
+          }
+          if (loc[1] === this.getNodeId()) {
+            const errorMsgData = {
+              nodeId: this.getNodeId(),
+              msg: error["msg"],
+              level: "ERROR"
+            };
+
+            // errors to port
+            if (loc.length > 2) {
+              const portKey = loc[2];
+              if (this.hasInputs() && portKey in this.getMetaData()["inputs"]) {
+                errorMsgData["msg"] = this.getMetaData()["inputs"][portKey]["label"] + ": " + errorMsgData["msg"];
+              } else {
+                errorMsgData["msg"] = portKey + ": " + errorMsgData["msg"];
+              }
+              this.getPropsForm().setPortErrorMessage(portKey, errorMsgData["msg"]);
+            }
+
+            // errors to logger
+            this.fireDataEvent("showInLogger", errorMsgData);
+          }
+        });
+      } else if (this.hasInputs()) {
+        // reset port errors
+        Object.keys(this.getMetaData()["inputs"]).forEach(portKey => {
+          this.getPropsForm().setPortErrorMessage(portKey, null);
+        });
+      }
     },
 
     // Iterate over output ports and connect them to first compatible input port
-    __createAutoPortConnection: async function(node1, node2) {
+    createAutoPortConnection: async function(node1, node2) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
@@ -930,6 +983,9 @@ qx.Class.define("osparc.data.model.Node", {
           case "integer":
             val = 1;
             break;
+          case "array":
+            val = "[1]";
+            break;
         }
         if (val !== null) {
           osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
@@ -938,22 +994,11 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     callRetrieveInputs: function(portKey) {
-      if (this.isContainer()) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        for (let i = 0; i < innerNodes.length; i++) {
-          const data = {
-            node: innerNodes[i],
-            portKey: null
-          };
-          innerNodes[i].fireDataEvent("retrieveInputs", data);
-        }
-      } else {
-        const data = {
-          node: this,
-          portKey
-        };
-        this.fireDataEvent("retrieveInputs", data);
-      }
+      const data = {
+        node: this,
+        portKey
+      };
+      this.fireDataEvent("retrieveInputs", data);
     },
 
     retrieveInputs: function(portKey = null) {
@@ -999,11 +1044,12 @@ qx.Class.define("osparc.data.model.Node", {
                 this.getPropsForm().retrievedPortData(portKey, false);
               }
               console.error(failure, error);
-              const msgData = {
+              const errorMsgData = {
                 nodeId: this.getNodeId(),
-                msg: "Failed retrieving inputs"
+                msg: "Failed retrieving inputs",
+                level: "ERROR"
               };
-              this.fireDataEvent("showInLogger", msgData);
+              this.fireDataEvent("showInLogger", errorMsgData);
             }, this);
           });
           updReq.send();
@@ -1089,11 +1135,12 @@ qx.Class.define("osparc.data.model.Node", {
         case "failed": {
           status.setInteractive("failed");
           const msg = "Service failed: " + data["service_message"];
-          const msgData = {
+          const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: msg
+            msg,
+            lvel: "ERROR"
           };
-          this.fireDataEvent("showInLogger", msgData);
+          this.fireDataEvent("showInLogger", errorMsgData);
           return;
         }
         default:
@@ -1130,7 +1177,8 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
           const errorMsgData = {
             nodeId: this.getNodeId(),
-            msg: errorMsg
+            msg: errorMsg,
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           this.getStatus().setInteractive("failed");
@@ -1145,11 +1193,12 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (error) {
         const msg = "Error received: " + error;
-        const msgData = {
+        const errorMsgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg,
+          level: "ERROR"
         };
-        this.fireDataEvent("showInLogger", msgData);
+        this.fireDataEvent("showInLogger", errorMsgData);
         return;
       }
 
@@ -1297,7 +1346,8 @@ qx.Class.define("osparc.data.model.Node", {
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         parent: this.getParentNodeId(),
-        thumbnail: this.getThumbnail()
+        thumbnail: this.getThumbnail(),
+        bootOptions: this.getBootOptions()
       };
       if (!clean) {
         nodeEntry.progress = this.getStatus().getProgress();
@@ -1305,9 +1355,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.state = this.getStatus().serialize();
       }
 
-      if (this.isContainer()) {
-        nodeEntry.outputNodes = this.getExposedNodeIDs();
-      } else if (this.isFilePicker()) {
+      if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {

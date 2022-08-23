@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Type, Union
+from typing import Optional, Type, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
@@ -18,8 +18,8 @@ from ..api_resources import (
 # FIXME: all ints and bools will be floats
 # TODO: evaluate how coupled is this to InputTypes/OUtputTypes
 ArgumentType = Union[File, float, int, bool, str, None]
-KeywordArguments = Dict[str, ArgumentType]
-PositionalArguments = List[ArgumentType]
+KeywordArguments = dict[str, ArgumentType]
+PositionalArguments = list[ArgumentType]
 
 
 def compute_checksum(kwargs: KeywordArguments):
@@ -78,7 +78,7 @@ class JobOutputs(BaseModel):
 
     # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
     # on one specific output.
-    # errors: List[JobErrors] = []
+    # errors: list[JobErrors] = []
 
     class Config(BaseConfig):
         frozen = True

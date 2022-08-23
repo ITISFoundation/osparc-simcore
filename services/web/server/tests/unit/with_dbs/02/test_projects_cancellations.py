@@ -6,9 +6,7 @@ import asyncio
 from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
-from _helpers import ExpectedResponse  # type: ignore
-from _helpers import MockedStorageSubsystem  # type: ignore
-from _helpers import standard_role_response  # type: ignore
+from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
@@ -18,6 +16,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 API_PREFIX = "/" + api_version_prefix
+A_VERY_SHORT_TIMEOUT = 5
 
 
 @pytest.fixture
@@ -62,6 +61,8 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
 ):
+    assert client.app
+
     catalog_subsystem_mock([template_project])
     # create a project from another and disconnect while doing this by timing out
     # POST /v0/projects
@@ -69,7 +70,7 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_template=template_project["uuid"])
     with pytest.raises(asyncio.TimeoutError):
-        await client.post(f"{create_url}", json={}, timeout=5)
+        await client.post(f"{create_url}", json={}, timeout=A_VERY_SHORT_TIMEOUT)
 
     # let's check that there are no new project created, after timing out
     list_url = client.app.router["list_projects"].url_for()
@@ -103,6 +104,8 @@ async def test_creating_new_project_as_template_and_disconnecting_does_not_creat
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
 ):
+    assert client.app
+
     catalog_subsystem_mock([user_project])
     # create a project from another and disconnect while doing this by timing out
     # POST /v0/projects
@@ -110,7 +113,7 @@ async def test_creating_new_project_as_template_and_disconnecting_does_not_creat
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(as_template=user_project["uuid"])
     with pytest.raises(asyncio.TimeoutError):
-        await client.post(f"{create_url}", json={}, timeout=5)
+        await client.post(f"{create_url}", json={}, timeout=A_VERY_SHORT_TIMEOUT)
 
     # let's check that there are no new project created, after timing out
     list_url = client.app.router["list_projects"].url_for()
@@ -143,6 +146,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
 ):
+    assert client.app
     catalog_subsystem_mock([template_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects
@@ -189,6 +193,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
 ):
+    assert client.app
     catalog_subsystem_mock([user_project])
     # create a project from another without copying data shall not call in the storage API
     # POST /v0/projects

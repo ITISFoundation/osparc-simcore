@@ -70,7 +70,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         column: this.self().GRID_POS.LATEST_VERSION
       });
 
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14");
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
+        appearance: "strong-button",
+        visibility: "excluded"
+      });
       this._add(updateAllButton, {
         row: 0,
         column: this.self().GRID_POS.UPDATE_BUTTON
@@ -79,6 +82,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
 
     _populateRows: function() {
       this.base(arguments);
+
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+      const canIWriteStudy = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
 
       const updatableServices = [];
       let i = 0;
@@ -92,16 +100,28 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
+        const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
         const updatable = node["version"] !== latestCompatibleMetadata["version"];
         if (updatable) {
           updatableServices.push(nodeId);
         }
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
-          font: "text-14",
-          textColor: updatable ? "text-darker" : "text",
-          backgroundColor: updatable ? "warning-yellow" : null
+          font: "text-14"
         });
+        if (isDeprecated) {
+          currentVersionLabel.set({
+            textColor: "contrasted-text-dark",
+            backgroundColor: "failed-red",
+            toolTipText: this.tr("Service deprecated, please update")
+          });
+        } else if (updatable) {
+          currentVersionLabel.set({
+            textColor: "contrasted-text-dark",
+            backgroundColor: "warning-yellow"
+          });
+        }
         this._add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
@@ -115,11 +135,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.LATEST_VERSION
         });
 
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-        orgIDs.push(myGroupId);
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
-        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWrite) {
+        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             label: updatable ? this.tr("Update") : this.tr("Up-to-date"),
@@ -136,11 +152,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         }
       }
 
-      const updateAllButton = this.__updateAllButton;
-      updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
-      updateAllButton.setEnabled(Boolean(updatableServices.length));
-      if (updatableServices.length) {
-        updateAllButton.setAppearance("strong-button");
+      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        const updateAllButton = this.__updateAllButton;
+        updateAllButton.show();
+        updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
       }
     }
   }

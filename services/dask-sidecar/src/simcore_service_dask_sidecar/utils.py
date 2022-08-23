@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 from pprint import pformat
-from typing import Any, Awaitable, Optional, cast
+from typing import Any, Awaitable, Coroutine, Optional, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
@@ -10,7 +10,7 @@ from aiodocker.containers import DockerContainer
 logger = logging.getLogger(__name__)
 
 
-def wrap_async_call(fct: Awaitable[Any]) -> Any:
+def _wrap_async_call(fct: Awaitable[Any]) -> Any:
     return asyncio.get_event_loop().run_until_complete(fct)
 
 
@@ -42,7 +42,10 @@ def num_available_gpus() -> int:
                     return 0
 
                 container_data = await container.wait(timeout=10)
-                container_logs = await container.log(stdout=True, stderr=True)
+                container_logs = await cast(
+                    Coroutine,
+                    container.log(stdout=True, stderr=True, follow=False),
+                )
                 num_gpus = (
                     len(container_logs)
                     if container_data.setdefault("StatusCode", 127) == 0
@@ -71,4 +74,4 @@ def num_available_gpus() -> int:
 
             return num_gpus
 
-    return cast(int, wrap_async_call(async_num_available_gpus()))
+    return cast(int, _wrap_async_call(async_num_available_gpus()))

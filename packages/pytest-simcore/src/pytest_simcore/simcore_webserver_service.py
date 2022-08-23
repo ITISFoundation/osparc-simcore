@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict
 
 import aiohttp
 import pytest
@@ -14,7 +13,7 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def webserver_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> URL:
+def webserver_endpoint(docker_stack: dict, testing_environ_vars: dict) -> URL:
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_webserver" in docker_stack["services"]
 
@@ -23,7 +22,7 @@ def webserver_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> URL:
 
 
 @pytest.fixture(scope="function")
-async def webserver_service(webserver_endpoint: URL, docker_stack: Dict) -> URL:
+async def webserver_service(webserver_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_webserver_responsive(webserver_endpoint)
 
     yield webserver_endpoint

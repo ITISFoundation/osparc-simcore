@@ -16,6 +16,7 @@
 
 --editable ../postgres-database
 --editable ../models-library/
+--editable ../settings-library/
 
 # FIXME: these dependencies should be removed
 --editable ../service-library/

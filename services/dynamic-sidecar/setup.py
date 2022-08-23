@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(
@@ -54,6 +53,11 @@ SETUP = dict(
     PROD_REQUIREMENTS=PROD_REQUIREMENTS,
     TEST_REQUIREMENTS=TEST_REQUIREMENTS,
     setup_requires=["setuptools_scm"],
+    entry_points={
+        "console_scripts": [
+            "simcore-service-dynamic-sidecar=simcore_service_dynamic_sidecar.cli:main",
+        ],
+    },
 )
 
 

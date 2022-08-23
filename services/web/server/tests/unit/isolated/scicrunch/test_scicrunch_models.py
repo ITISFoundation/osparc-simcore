@@ -64,7 +64,3 @@ def test_research_resource_model(name, rrid_tag):
     )
 
     assert re.match(STRICT_RRID_PATTERN, resource.rrid)
-
-
-def test_models_conversion():
-    assert True

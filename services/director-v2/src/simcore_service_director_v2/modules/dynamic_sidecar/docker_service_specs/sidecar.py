@@ -1,65 +1,86 @@
 import logging
-from typing import Any, Dict
+from copy import deepcopy
 
+from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.basic_types import BootModeEnum
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-from .._namepsace import get_compose_namespace
+from .._namespace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
-from .settings import inject_settings_to_create_service_params
+from .settings import update_service_params_from_settings
 
 log = logging.getLogger(__name__)
 
 
 def extract_service_port_from_compose_start_spec(
-    create_service_params: Dict[str, Any]
+    create_service_params: AioDockerServiceSpec,
 ) -> int:
-    return create_service_params["labels"]["service_port"]
+    assert create_service_params.Labels  # nosec
+    return parse_obj_as(int, create_service_params.Labels["service_port"])
 
 
 def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
-) -> Dict[str, str]:
+) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
+    r_clone_settings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
+    )
 
-    state_exclude = []
+    state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
     return {
-        "SIMCORE_HOST_NAME": scheduler_data.service_name,
-        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+        # These environments will be captured by
+        # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
+        #
+        "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
+        "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
+        "DY_SIDECAR_RUN_ID": f"{scheduler_data.dynamic_sidecar.run_id}",
+        "DY_SIDECAR_STATE_EXCLUDE": json_dumps({f"{x}" for x in state_exclude}),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps([f"{x}" for x in state_exclude]),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
-        "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
-        "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
-        "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
+        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+        "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
+        "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
         "POSTGRES_ENDPOINT": f"{app_settings.POSTGRES.POSTGRES_HOST}:{app_settings.POSTGRES.POSTGRES_PORT}",
+        "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
         "POSTGRES_PASSWORD": f"{app_settings.POSTGRES.POSTGRES_PASSWORD.get_secret_value()}",
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
-        "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
-        "STORAGE_ENDPOINT": app_settings.STORAGE_ENDPOINT,
-        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
-        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
-        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
-        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
-        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
-        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
+        "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",
+        "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
+        "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
+        "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
-        "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
-        "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
+        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
+        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
+        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
+        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
+        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
+        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
+        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
+        "S3_ENDPOINT": r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
+        "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
+        "SIMCORE_HOST_NAME": scheduler_data.service_name,
+        "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
+        "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
     }
 
 
@@ -70,7 +91,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
-) -> Dict[str, Any]:
+) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
     of the dynamic service. The director-v2 directly coordinates with
@@ -78,6 +99,7 @@ def get_dynamic_sidecar_spec(
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
+    # MOUNTS -----------
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -107,6 +129,7 @@ def get_dynamic_sidecar_spec(
                 compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.dynamic_sidecar.run_id,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -120,6 +143,7 @@ def get_dynamic_sidecar_spec(
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.dynamic_sidecar.run_id,
                     r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
@@ -130,72 +154,77 @@ def get_dynamic_sidecar_spec(
                     compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.dynamic_sidecar.run_id,
                 )
             )
 
-    endpoint_spec = {}
+    if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
+        # Settings validators guarantees that this never happens in production mode
+        assert (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE
+            != BootModeEnum.PRODUCTION
+        )
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV is not None:
-        dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-        if dynamic_sidecar_path is None:
-            log.warning(
-                (
-                    "Could not mount the sources for the dynamic-sidecar, please "
-                    "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
-                )
-            )
-        else:
-            mounts.append(
-                {
-                    "Source": str(dynamic_sidecar_path),
-                    "Target": "/devel/services/dynamic-sidecar",
-                    "Type": "bind",
-                }
-            )
-            packages_path = (
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
-                / ".."
-                / ".."
-                / "packages"
-            )
-            mounts.append(
-                {
-                    "Source": str(packages_path),
-                    "Target": "/devel/packages",
-                    "Type": "bind",
-                }
-            )
-    # expose this service on an empty port
+        mounts.append(
+            {
+                "Source": str(dynamic_sidecar_path),
+                "Target": "/devel/services/dynamic-sidecar",
+                "Type": "bind",
+            }
+        )
+        packages_path = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+            / ".."
+            / ".."
+            / "packages"
+        )
+        mounts.append(
+            {
+                "Source": str(packages_path),
+                "Target": "/devel/packages",
+                "Type": "bind",
+            }
+        )
+
+    # PORTS -----------
+    ports = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
-        endpoint_spec["Ports"] = [
+        ports.append(
+            # server port
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
             }
-        ]
+        )
 
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE == BootModeEnum.DEBUG:
+            ports.append(
+                # debugger port
+                {
+                    "Protocol": "tcp",
+                    "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
+                }
+            )
+
+    #  -----------
     create_service_params = {
-        "endpoint_spec": endpoint_spec,
+        "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
-            # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": scheduler_data.simcore_traefik_zone,
-            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
-            "study_id": f"{scheduler_data.project_id}",
-            "traefik.docker.network": scheduler_data.dynamic_sidecar_network_name,  # also used for scheduling
-            "traefik.enable": "true",
-            f"traefik.http.routers.{scheduler_data.service_name}.entrypoints": "http",
-            f"traefik.http.routers.{scheduler_data.service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.service_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{scheduler_data.service_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "user_id": f"{scheduler_data.user_id}",
+            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
+            "study_id": f"{scheduler_data.project_id}",
             # the following are used for scheduling
             "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
-            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.json(),
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
+            "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
         },
         "name": scheduler_data.service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
+        "networks": [
+            {"Target": swarm_network_id},
+            {"Target": dynamic_sidecar_network_id},
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
@@ -207,7 +236,11 @@ def get_dynamic_sidecar_spec(
                 "Labels": {},
                 "Mounts": mounts,
             },
-            "Placement": {"Constraints": []},
+            "Placement": {
+                "Constraints": deepcopy(
+                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                )
+            },
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": 5000000,
@@ -215,18 +248,15 @@ def get_dynamic_sidecar_spec(
             },
             # this will get overwritten
             "Resources": {
-                "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
-                "Reservations": {
-                    "NanoCPUs": 1 * pow(10, 8),
-                    "MemoryBytes": 500 * pow(1024, 2),
-                },
+                "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                "Reservation": {"NanoCPUs": 0, "MemoryBytes": 0},
             },
         },
     }
 
-    inject_settings_to_create_service_params(
+    update_service_params_from_settings(
         labels_service_settings=settings,
         create_service_params=create_service_params,
     )
 
-    return create_service_params
+    return AioDockerServiceSpec.parse_obj(create_service_params)

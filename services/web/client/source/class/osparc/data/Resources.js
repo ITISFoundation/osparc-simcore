@@ -142,6 +142,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
+          getNodeErrors: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/errors"
+          },
           addTag: {
             useCache: false,
             method: "PUT",
@@ -151,6 +156,31 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
+          }
+        }
+      },
+      /*
+       * NODES
+       */
+      "nodesInStudyResources": {
+        idField: "nodeId",
+        useCache: false,
+        endpoints: {
+          getResources: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
+          }
+        }
+      },
+      "serviceResources": {
+        idField: ["key", "version"],
+        useCache: false,
+        endpoints: {
+          getResources: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/resources"
           }
         }
       },
@@ -595,7 +625,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
           }
         }
       },

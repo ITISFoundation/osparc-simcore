@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Coroutine, Final, Optional, cast
 
-import httpx
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
@@ -14,28 +15,36 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
+from tenacity.wait import wait_fixed
 
+from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
+from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from .._namepsace import get_compose_namespace
-from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
+from ...node_rights import NodeRightsManager, ResourceName
+from ..api_client import (
+    BaseClientHTTPError,
+    DynamicSidecarClient,
+    get_dynamic_sidecar_client,
+)
 from ..docker_api import (
+    are_all_services_present,
+    constrain_service_to_node,
     create_network,
     create_service_and_get_id,
-    get_node_id_from_task_for_service,
     get_projects_networks_containers,
+    get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    remove_dynamic_sidecar_volumes,
     try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
@@ -45,12 +54,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import (
-    DynamicSidecarUnexpectedResponseStatus,
-    EntrypointContainerNotFoundError,
-    GenericDockerError,
-)
-from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
+from ..errors import EntrypointContainerNotFoundError, NodeportsDidNotFindNodeError
 from .abc import DynamicSchedulerEvent
 from .events_utils import (
     all_containers_running,
@@ -61,6 +65,30 @@ from .events_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
+    ["labels"],
+    ["task_template", "Resources", "Limits"],
+    ["task_template", "Resources", "Reservation", "MemoryBytes"],
+    ["task_template", "Resources", "Reservation", "NanoCPUs"],
+    ["task_template", "Placement", "Constraints"],
+    ["task_template", "ContainerSpec", "Env"],
+    ["task_template", "Resources", "Reservation", "GenericResources"],
+)
+
+
+# NOTE regarding locking resources
+# A node can end up with all the services from a single study.
+# When the study is closed/opened all the services will try to
+# upload/download their data. This causes a lot of disk
+# and network stress (especially for low power nodes like in AWS).
+# Some nodes collapse under load or behave unexpectedly.
+
+# Used to ensure no more that X services per node pull or push data
+# Locking is applied when:
+# - study is being opened (state and outputs are pulled)
+# - study is being closed (state and outputs are saved)
+RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -88,9 +116,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
-
         # fetching project form DB and fetching user settings
-        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
+        projects_repository = cast(
+            ProjectsRepository, fetch_repo_outside_of_request(app, ProjectsRepository)
+        )
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
@@ -109,6 +138,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
+            service_resources=scheduler_data.service_resources,
         )
 
         # these configuration should guarantee 245 address network
@@ -126,7 +156,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_sidecar_network_id = await create_network(network_config)
 
         # attach the service to the swarm network dedicated to services
-        swarm_network: Dict[str, Any] = await get_swarm_network(
+        swarm_network: dict[str, Any] = await get_swarm_network(
             dynamic_sidecar_settings
         )
         swarm_network_id: str = swarm_network["Id"]
@@ -136,25 +166,50 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_create_service_params: Dict[str, Any]
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
+            get_dynamic_sidecar_spec(
+                scheduler_data=scheduler_data,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+                swarm_network_id=swarm_network_id,
+                settings=settings,
+                app_settings=app.state.settings,
+            )
+        )
 
-        dynamic_sidecar_create_service_params = get_dynamic_sidecar_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-            swarm_network_id=swarm_network_id,
-            settings=settings,
-            app_settings=app.state.settings,
+        catalog_client = CatalogClient.instance(app)
+        user_specific_service_spec = await catalog_client.get_service_specifications(
+            scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+        )
+        user_specific_service_spec = AioDockerServiceSpec.parse_obj(
+            user_specific_service_spec.get("sidecar", {})
+        )
+        # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
+        # we do not use aliases when exporting dynamic_sidecar_service_spec_base
+        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.parse_obj(
+            nested_update(
+                jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
+                jsonable_encoder(user_specific_service_spec, exclude_unset=True),
+                include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+            )
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
-            dynamic_sidecar_create_service_params
+            dynamic_sidecar_service_final_spec
+        )
+        # constrain service to the same node
+        scheduler_data.docker_node_id = await get_service_placement(
+            dynamic_sidecar_id, dynamic_sidecar_settings
+        )
+        await constrain_service_to_node(
+            service_name=scheduler_data.service_name,
+            node_id=scheduler_data.docker_node_id,
         )
 
         # update service_port and assing it to the status
         # needed by CreateUserServices action
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
-            dynamic_sidecar_create_service_params
+            dynamic_sidecar_service_final_spec
         )
 
         # finally mark services created
@@ -188,12 +243,12 @@ class GetStatus(DynamicSchedulerEvent):
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         try:
-            containers_inspect: Dict[
+            containers_inspect: dict[
                 str, Any
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except (httpx.HTTPError, DynamicSidecarUnexpectedResponseStatus):
+        except BaseClientHTTPError:
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.
@@ -231,45 +286,70 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
 
-        async with disabled_directory_watcher(
-            dynamic_sidecar_client, dynamic_sidecar_endpoint
-        ):
-            tasks = [
-                dynamic_sidecar_client.service_pull_output_ports(
-                    dynamic_sidecar_endpoint
-                )
-            ]
-            # When enabled no longer downloads state via nodeports
-            # S3 is used to store state paths
-            if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-                tasks.append(
-                    dynamic_sidecar_client.service_restore_state(
+        async def _pull_outputs_and_state():
+            async with disabled_directory_watcher(
+                dynamic_sidecar_client, dynamic_sidecar_endpoint
+            ):
+                tasks: list[Coroutine[Any, Any, Any]] = [
+                    dynamic_sidecar_client.service_pull_output_ports(
                         dynamic_sidecar_endpoint
                     )
-                )
-            await logged_gather(*tasks)
+                ]
+                # When enabled no longer downloads state via nodeports
+                # S3 is used to store state paths
+                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                    tasks.append(
+                        dynamic_sidecar_client.service_restore_state(
+                            dynamic_sidecar_endpoint
+                        )
+                    )
+                await logged_gather(*tasks)
 
-            # inside this directory create the missing dirs, fetch those form the labels
-            director_v0_client: DirectorV0Client = get_director_v0_client(app)
-            simcore_service_labels: SimcoreServiceLabels = (
-                await director_v0_client.get_service_labels(
-                    service=ServiceKeyVersion(
-                        key=scheduler_data.key, version=scheduler_data.version
+                # inside this directory create the missing dirs, fetch those form the labels
+                director_v0_client: DirectorV0Client = get_director_v0_client(app)
+                simcore_service_labels: SimcoreServiceLabels = (
+                    await director_v0_client.get_service_labels(
+                        service=ServiceKeyVersion(
+                            key=scheduler_data.key, version=scheduler_data.version
+                        )
                     )
                 )
-            )
-            service_outputs_labels = json.loads(
-                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-            ).get("outputs", {})
-            logger.debug(
-                "Creating dirs from service outputs labels: %s", service_outputs_labels
-            )
-            await dynamic_sidecar_client.service_outputs_create_dirs(
-                dynamic_sidecar_endpoint, service_outputs_labels
-            )
+                service_outputs_labels = json.loads(
+                    simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+                ).get("outputs", {})
+                logger.debug(
+                    "Creating dirs from service outputs labels: %s",
+                    service_outputs_labels,
+                )
+                await dynamic_sidecar_client.service_outputs_create_dirs(
+                    dynamic_sidecar_endpoint, service_outputs_labels
+                )
 
-            scheduler_data.dynamic_sidecar.service_environment_prepared = True
+                scheduler_data.dynamic_sidecar.service_environment_prepared = True
+
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
+            node_rights_manager = NodeRightsManager.instance(app)
+            assert scheduler_data.docker_node_id  # nosec
+            try:
+                async with node_rights_manager.acquire(
+                    scheduler_data.docker_node_id,
+                    resource_name=RESOURCE_STATE_AND_INPUTS,
+                ):
+                    await _pull_outputs_and_state()
+            except NodeRightsAcquireError:
+                # Next observation cycle, the service will try again
+                logger.debug(
+                    "Skip saving service state for %s. Docker node %s is busy. Will try later.",
+                    scheduler_data.node_uuid,
+                    scheduler_data.docker_node_id,
+                )
+                return
+        else:
+            await _pull_outputs_and_state()
 
 
 class CreateUserServices(DynamicSchedulerEvent):
@@ -307,8 +387,13 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            service_resources=scheduler_data.service_resources,
         )
-
+        logger.debug(
+            "Starting service %s with compose-specs:\n%s",
+            scheduler_data.service_name,
+            compose_spec,
+        )
         await dynamic_sidecar_client.start_service_creation(
             dynamic_sidecar_endpoint, compose_spec
         )
@@ -325,13 +410,11 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
         ):
             raise ValueError(
-                (
-                    "Expected a value for all the following values: "
-                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
-                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
-                    f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                    f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
-                )
+                "Expected a value for all the following values: "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
             )
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -363,17 +446,14 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
-            scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
-        )
-
-        dynamic_sidecar_proxy_create_service_params = get_dynamic_proxy_spec(
+        dynamic_sidecar_proxy_create_service_params: dict[
+            str, Any
+        ] = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
             swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
-            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )
@@ -415,8 +495,9 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        projects_networks_repository: ProjectsNetworksRepository = (
-            fetch_repo_outside_of_request(app, ProjectsNetworksRepository)
+        projects_networks_repository: ProjectsNetworksRepository = cast(
+            ProjectsNetworksRepository,
+            fetch_repo_outside_of_request(app, ProjectsNetworksRepository),
         )
 
         projects_networks: ProjectsNetworks = (
@@ -461,56 +542,102 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         # invoke container cleanup at this point
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
-
-        try:
-            await dynamic_sidecar_client.begin_service_destruction(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-            )
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(
-                "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
-                scheduler_data.service_name,
-                str(e),
-            )
-
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
-            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-            dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
-
-            logger.info(
-                "Calling into dynamic-sidecar to save state and pushing data to nodeports"
+        async def _remove_containers_save_state_and_outputs() -> None:
+            dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+                app
             )
             try:
-                tasks = [
-                    dynamic_sidecar_client.service_push_output_ports(
-                        dynamic_sidecar_endpoint,
-                    )
-                ]
-                # When enabled no longer uploads state via nodeports
-                # S3 is used to store state paths
-                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-                    tasks.append(
-                        dynamic_sidecar_client.service_save_state(
-                            dynamic_sidecar_endpoint,
-                        )
-                    )
-                await logged_gather(*tasks)
-                logger.info("Ports data pushed by dynamic-sidecar")
-            except Exception as e:  # pylint: disable=broad-except
+                await dynamic_sidecar_client.begin_service_destruction(
+                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+                )
+            except BaseClientHTTPError as e:
                 logger.warning(
                     (
-                        "Could not contact dynamic-sidecar to save service "
-                        "state and upload outputs %s\n%s"
+                        "Could not contact dynamic-sidecar to begin destruction of "
+                        "%s\n%s. Will continue service removal!"
                     ),
                     scheduler_data.service_name,
-                    str(e),
+                    f"{e}",
                 )
+
+            # only try to save the status if :
+            # - the dynamic-sidecar has finished booting correctly
+            # - it is requested to save the state
+            if (
+                scheduler_data.dynamic_sidecar.service_removal_state.can_save
+                and await are_all_services_present(
+                    node_uuid=scheduler_data.node_uuid,
+                    dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+                )
+            ):
+                dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+                dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+                logger.info(
+                    "Calling into dynamic-sidecar to save state and pushing data to nodeports"
+                )
+                try:
+                    tasks = [
+                        dynamic_sidecar_client.service_push_output_ports(
+                            dynamic_sidecar_endpoint,
+                        )
+                    ]
+                    # When enabled no longer uploads state via nodeports
+                    # It uses rclone mounted volumes for this task.
+                    if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                        tasks.append(
+                            dynamic_sidecar_client.service_save_state(
+                                dynamic_sidecar_endpoint,
+                            )
+                        )
+
+                    try:
+                        # at most 2 parallel tasks will be running
+                        await logged_gather(*tasks, max_concurrency=2)
+                    except NodeportsDidNotFindNodeError as err:
+                        logger.warning("%s", f"{err}")
+
+                    logger.info("Ports data pushed by dynamic-sidecar")
+                except BaseClientHTTPError as e:
+                    logger.warning(
+                        (
+                            "Could not contact dynamic-sidecar to save service "
+                            "state and upload outputs %s\n%s"
+                        ),
+                        scheduler_data.service_name,
+                        f"{e}",
+                    )
+                    # ensure dynamic-sidecar does not get removed
+                    # user data can be manually saved and manual
+                    # cleanup of the dynamic-sidecar is required
+                    # TODO: ANE: maybe have a mechanism stop the dynamic sidecar
+                    # and make the director warn about hanging sidecars?
+                    raise e
+
+        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
+            node_rights_manager = NodeRightsManager.instance(app)
+            assert scheduler_data.docker_node_id  # nosec
+            try:
+                async with node_rights_manager.acquire(
+                    scheduler_data.docker_node_id,
+                    resource_name=RESOURCE_STATE_AND_INPUTS,
+                ):
+                    await _remove_containers_save_state_and_outputs()
+            except NodeRightsAcquireError:
+                # Next observation cycle, the service will try again
+                logger.debug(
+                    "Skip saving service state for %s. Docker node %s is busy. Will try later.",
+                    scheduler_data.node_uuid,
+                    scheduler_data.docker_node_id,
+                )
+                return
+        else:
+            await _remove_containers_save_state_and_outputs()
 
         # remove the 2 services
         await remove_dynamic_sidecar_stack(
@@ -522,49 +649,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             scheduler_data.dynamic_sidecar_network_name
         )
 
-        # remove created inputs and outputs volumes
-
-        # compute which volumes we expected to be removed
-        # in case the expected volumes differ from the removed ones
-        # show an error
-        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
-        expected_volumes_to_remove: Set[str] = {
-            DynamicSidecarVolumesPathsResolver.source(
-                compose_namespace=compose_namespace, path=path
-            )
-            for path in [
-                scheduler_data.paths_mapping.inputs_path,
-                scheduler_data.paths_mapping.outputs_path,
-            ]
-            + scheduler_data.paths_mapping.state_paths
-        }
-
-        async for attempt in AsyncRetrying(
-            wait=wait_exponential(min=1),
-            stop=stop_after_delay(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S
-            ),
-            retry_error_cls=GenericDockerError,
-        ):
-            with attempt:
-                logger.info(
-                    "Trying to remove volumes for %s", scheduler_data.service_name
-                )
-
-                removed_volumes = await remove_dynamic_sidecar_volumes(
-                    scheduler_data.node_uuid, dynamic_sidecar_settings
-                )
-
-                if expected_volumes_to_remove != removed_volumes:
-                    logger.warning(
-                        (
-                            "Attention expected to remove %s, instead only removed %s. "
-                            "Please check with check that all expected to remove volumes "
-                            "are now gone."
-                        ),
-                        expected_volumes_to_remove,
-                        removed_volumes,
-                    )
+        # NOTE: for future attempts, volumes cannot be cleaned up
+        # since they are local to the node.
+        # That's why anonymous volumes are used!
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",
@@ -593,7 +680,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
-REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
+REGISTERED_EVENTS: list[type[DynamicSchedulerEvent]] = [
     CreateSidecars,
     GetStatus,
     PrepareServicesEnvironment,

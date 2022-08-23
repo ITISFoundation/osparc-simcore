@@ -145,7 +145,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           return nodeTreeItem;
         },
         bindItem: (c, item, id) => {
-          console.log(item.getModel());
           c.bindDefaultProperties(item, id);
           c.bindProperty("label", "label", null, item, id);
           c.bindProperty("id", "id", null, item, id);
@@ -245,7 +244,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
         } else {
           const node = study.getWorkbench().getNode(nodeId);
-          const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), nodeId);
+          const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
+            nodeId,
+            label: node.getLabel(),
+            study
+          });
           const title = this.tr("Service information");
           const width = 600;
           const height = 700;

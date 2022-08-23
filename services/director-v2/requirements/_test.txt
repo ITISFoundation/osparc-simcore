@@ -8,9 +8,9 @@ aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==9.4.0
+aioboto3==9.6.0
     # via -r requirements/_test.in
-aiobotocore==2.1.2
+aiobotocore==2.3.0
     # via aioboto3
 aiohttp==3.8.1
     # via
@@ -29,20 +29,22 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.7.5
+alembic==1.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.2.1
+anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.11.2
+astroid==2.11.5
     # via pylint
-async-asgi-testclient==1.4.10
-    # via -r requirements/_test.in
+async-asgi-testclient==1.4.11
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -54,18 +56,18 @@ attrs==20.3.0
     #   jsonschema
     #   pytest
     #   pytest-docker
-bcrypt==3.2.0
+bcrypt==3.2.2
     # via paramiko
 bokeh==2.4.2
     # via -r requirements/_test.in
-boto3==1.20.24
+boto3==1.21.21
     # via aiobotocore
-botocore==1.23.24
+botocore==1.24.21
     # via
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2021.5.30
+certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -77,15 +79,11 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
-charset-normalizer==2.0.10
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   httpx
+    #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
@@ -97,12 +95,12 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.2
+cryptography==37.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
     #   paramiko
-dask-gateway-server==0.9.0
+dask-gateway-server==2022.6.1
     # via -r requirements/_test.in
 dill==0.3.4
     # via pylint
@@ -124,7 +122,7 @@ docopt==0.6.2
     #   docker-compose
 execnet==1.9.0
     # via pytest-xdist
-faker==13.3.3
+faker==13.7.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -141,15 +139,16 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.14.4
+httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.21.3
+httpx==0.23.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.4
+icdiff==2.0.5
     # via pytest-icdiff
 idna==2.10
     # via
@@ -167,7 +166,7 @@ jinja2==2.11.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   bokeh
-jmespath==0.10.0
+jmespath==1.0.0
     # via
     #   boto3
     #   botocore
@@ -181,7 +180,7 @@ mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.0.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -192,7 +191,7 @@ minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -200,7 +199,7 @@ multidict==5.2.0
     #   yarl
 numpy==1.22.3
     # via bokeh
-packaging==20.4
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   bokeh
@@ -209,17 +208,19 @@ pamqp==2.3.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
-paramiko==2.10.3
-    # via docker
-pillow==9.0.1
+paramiko==2.11.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
+pillow==9.1.0
     # via bokeh
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -229,11 +230,11 @@ py==1.11.0
     #   pytest-forked
 pycparser==2.21
     # via cffi
-pylint==2.13.2
+pylint==2.13.8
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
@@ -241,7 +242,7 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -258,7 +259,7 @@ pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.11.0
+pytest-docker==0.12.0
     # via -r requirements/_test.in
 pytest-forked==1.4.0
     # via pytest-xdist
@@ -274,7 +275,7 @@ python-dateutil==2.8.2
     # via
     #   botocore
     #   faker
-python-dotenv==0.18.0
+python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
@@ -284,7 +285,7 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   bokeh
     #   docker-compose
-requests==2.25.1
+requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -303,10 +304,8 @@ s3transfer==0.5.2
 six==1.15.0
     # via
     #   -c requirements/_base.txt
-    #   bcrypt
     #   dockerpty
     #   jsonschema
-    #   packaging
     #   paramiko
     #   python-dateutil
     #   websocket-client
@@ -317,7 +316,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.31
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -334,16 +333,16 @@ tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
-traitlets==5.1.1
+traitlets==5.3.0
     # via dask-gateway-server
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   aioitertools
     #   astroid
     #   bokeh
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -354,8 +353,9 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-wrapt==1.14.0
+wrapt==1.14.1
     # via
+    #   -c requirements/_base.txt
     #   aiobotocore
     #   astroid
 yarl==1.7.2

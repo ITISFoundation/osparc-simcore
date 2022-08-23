@@ -5,18 +5,23 @@ import asyncio
 import json
 import logging
 import time
-import traceback
 from contextlib import asynccontextmanager
-from copy import deepcopy
-from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Set, Tuple
+from typing import Any, AsyncIterator, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
+from fastapi import status
+from fastapi.encoders import jsonable_encoder
+from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from packaging import version
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import (
@@ -24,6 +29,7 @@ from ...models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ...utils.dict_utils import get_leaf_key_paths, nested_update
 from .docker_states import TASK_STATES_RUNNING, extract_task_state
 from .errors import DynamicSidecarError, GenericDockerError
 
@@ -36,47 +42,8 @@ NO_PENDING_OVERWRITE = {
 log = logging.getLogger(__name__)
 
 
-def _monkey_patch_aiodocker() -> None:
-    """Raises an error once the library is up to date."""
-    from aiodocker import volumes
-    from aiodocker.volumes import DockerVolume
-
-    if version.parse(aiodocker.__version__) > version.parse("0.21.0"):
-        raise RuntimeError(
-            "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
-            "is not part of the current bump version. "
-            "Otherwise, if the current PR is part of this new release "
-            "remove monkey_patch."
-        )
-
-    # pylint: disable=protected-access
-    async def _custom_volumes_list(self, *, filters=None):
-        """
-        Return a list of volumes
-
-        Args:
-            filters: a dict with a list of filters
-
-        Available filters:
-            dangling=<boolean>
-            driver=<volume-driver-name>
-            label=<key> or label=<key>:<value>
-            name=<volume-name>
-        """
-        params = {} if filters is None else {"filters": clean_filters(filters)}
-
-        data = await self.docker._query_json("volumes", params=params)
-        return data
-
-    async def _custom_volumes_get(self, id):  # pylint: disable=redefined-builtin
-        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
-        return DockerVolume(self.docker, data["Name"])
-
-    setattr(volumes.DockerVolumes, "list", _custom_volumes_list)
-    setattr(volumes.DockerVolumes, "get", _custom_volumes_get)
-
-
-_monkey_patch_aiodocker()
+class _RetryError(Exception):
+    pass
 
 
 @asynccontextmanager
@@ -87,15 +54,13 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
         yield client
     except aiodocker.exceptions.DockerError as e:
         message = "Unexpected error from docker client"
-        log_message = f"{message} {e.message}\n{traceback.format_exc()}"
-        log.warning(log_message)
         raise GenericDockerError(message, e) from e
     finally:
         if client is not None:
             await client.close()
 
 
-async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> Dict:
+async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
     async with docker_client() as client:
         all_networks = await client.networks.list()
 
@@ -108,15 +73,13 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     ]
     if not networks or len(networks) > 1:
         raise DynamicSidecarError(
-            (
-                f"Swarm network name (searching for '*{network_name}*') is not configured."
-                f"Found following networks: {networks}"
-            )
+            f"Swarm network name (searching for '*{network_name}*') is not configured."
+            f"Found following networks: {networks}"
         )
     return networks[0]
 
 
-async def create_network(network_config: Dict[str, Any]) -> str:
+async def create_network(network_config: dict[str, Any]) -> str:
     async with docker_client() as client:
         try:
             docker_network = await client.networks.create(network_config)
@@ -144,28 +107,41 @@ async def create_network(network_config: Dict[str, Any]) -> str:
             )
 
 
-async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
+async def create_service_and_get_id(
+    create_service_data: Union[AioDockerServiceSpec, dict[str, Any]]
+) -> str:
+    # NOTE: ideally the argument should always be AioDockerServiceSpec
+    # but for that we need get_dynamic_proxy_spec to return that type
     async with docker_client() as client:
-        service_start_result = await client.services.create(**create_service_data)
+        kwargs = jsonable_encoder(
+            create_service_data, by_alias=True, exclude_unset=True
+        )
+        service_start_result = await client.services.create(**kwargs)
+
+        log.debug(
+            "Started service %s with\n%s",
+            service_start_result,
+            json.dumps(kwargs, indent=1),
+        )
 
     if "ID" not in service_start_result:
         raise DynamicSidecarError(
-            "Error while starting service: {}".format(str(service_start_result))
+            f"Error while starting service: {str(service_start_result)}"
         )
     return service_start_result["ID"]
 
 
-async def inspect_service(service_id: str) -> Dict[str, Any]:
+async def inspect_service(service_id: str) -> dict[str, Any]:
     async with docker_client() as client:
         return await client.services.inspect(service_id)
 
 
 async def get_dynamic_sidecars_to_observe(
     dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> List[SchedulerData]:
+) -> list[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services: List[
+        running_dynamic_sidecar_services: list[
             Mapping[str, Any]
         ] = await client.services.list(
             filters={
@@ -183,12 +159,12 @@ async def get_dynamic_sidecars_to_observe(
 async def _extract_task_data_from_service_for_state(
     service_id: str,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    target_statuses: Set[str],
-) -> Dict[str, Any]:
+    target_statuses: set[str],
+) -> dict[str, Any]:
     """Waits until the dynamic-sidecar task is in one of the target_statuses
     and then returns the task"""
 
-    async def _sleep_or_error(started: float, task: Dict):
+    async def _sleep_or_error(started: float, task: dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
         if (
@@ -196,15 +172,13 @@ async def _extract_task_data_from_service_for_state(
             > dynamic_sidecar_settings.DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID
         ):
             raise DynamicSidecarError(
-                msg=(
-                    "Timed out while searching for an assigned NodeID for "
-                    f"service_id={service_id}. Last task inspect result: {task}"
-                )
+                "Timed out while searching for an assigned NodeID for "
+                f"service_id={service_id}. Last task inspect result: {task}"
             )
 
     async with docker_client() as client:
         service_state: Optional[str] = None
-        task: Dict[str, Any] = {}
+        task: dict[str, Any] = {}
 
         started = time.time()
 
@@ -238,7 +212,7 @@ async def _extract_task_data_from_service_for_state(
         return task
 
 
-async def get_node_id_from_task_for_service(
+async def get_service_placement(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> str:
     """Awaits until the service has a running task and returns the
@@ -253,17 +227,15 @@ async def get_node_id_from_task_for_service(
 
     if "NodeID" not in task:
         raise DynamicSidecarError(
-            msg=(
-                f"Could not find an assigned NodeID for service_id={service_id}. "
-                f"Last task inspect result: {task}"
-            )
+            f"Could not find an assigned NodeID for service_id={service_id}. "
+            f"Last task inspect result: {task}"
         )
 
     return task["NodeID"]
 
 
-async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]:
-    def _make_pending() -> Tuple[ServiceState, str]:
+async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]:
+    def _make_pending() -> tuple[ServiceState, str]:
         pending_task_state = {"State": ServiceState.PENDING.value}
         return extract_task_state(task_status=pending_task_state)
 
@@ -276,19 +248,18 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
         service_container_count = len(running_services)
 
         if service_container_count == 0:
-            # if the service is nor present, return pending
+            # if the service is not present, return pending
             return _make_pending()
 
         last_task = running_services[0]
 
     # GenericDockerError
     except GenericDockerError as e:
-        if e.original_exception.message != f"service {service_id} not found":
-            raise e
-
-        # because the service is not there yet return a pending state
-        # it is looking for a service or something with no error message
-        return _make_pending()
+        if e.original_exception.status == 404:
+            # because the service is not there yet return a pending state
+            # it is looking for a service or something with no error message
+            return _make_pending()
+        raise e
 
     service_state, message = extract_task_state(task_status=last_task["Status"])
 
@@ -351,10 +322,13 @@ async def remove_dynamic_sidecar_stack(
                 ]
             }
         )
-        to_remove_tasks = [
-            client.services.delete(service["ID"]) for service in services_to_remove
-        ]
-        await asyncio.gather(*to_remove_tasks)
+        if services_to_remove:
+            await logged_gather(
+                *(
+                    client.services.delete(service["ID"])
+                    for service in services_to_remove
+                )
+            )
 
 
 async def remove_dynamic_sidecar_network(network_name: str) -> bool:
@@ -365,46 +339,19 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
             return True
     except GenericDockerError as e:
         message = (
-            f"{str(e)}\nThe above error may occur when trying tor remove the network.\n"
+            f"{e}\nTIP: The above error may occur when trying tor remove the network.\n"
             "Docker takes some time to establish that the network has no more "
-            "containers attaced to it."
+            "containers attached to it."
         )
         log.warning(message)
         return False
-
-
-async def remove_dynamic_sidecar_volumes(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> Set[str]:
-    async with docker_client() as client:
-        volumes_response = await client.volumes.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
-                ]
-            }
-        )
-        volumes = volumes_response["Volumes"]
-        log.debug("Removing volumes: %s", [v["Name"] for v in volumes])
-        if len(volumes) == 0:
-            log.warning("Expected to find at least 1 volume to remove, 0 were found")
-
-        removed_volumes: Set[str] = set()
-
-        for volume_data in volumes:
-            volume = await client.volumes.get(volume_data["Name"])
-            await volume.delete()
-            removed_volumes.add(volume_data["Name"])
-
-        return removed_volumes
 
 
 async def list_dynamic_sidecar_services(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     service_filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -438,8 +385,8 @@ async def is_dynamic_service_running(
 
 
 async def get_or_create_networks_ids(
-    networks: List[str], project_id: ProjectID
-) -> Dict[str, str]:
+    networks: list[str], project_id: ProjectID
+) -> dict[str, str]:
     async def _get_id_from_name(client, network_name: str) -> str:
         network = await client.networks.get(network_name)
         network_inspect = await network.show()
@@ -483,7 +430,7 @@ async def get_or_create_networks_ids(
 
 async def get_projects_networks_containers(
     project_id: ProjectID,
-) -> Dict[str, int]:
+) -> dict[str, int]:
     """
     Returns all current projects_networks for the project with
     the amount of containers attached to them.
@@ -498,8 +445,8 @@ async def get_projects_networks_containers(
     if not filtered_networks:
         return {}
 
-    def _count_containers(item: Dict[str, Any]) -> int:
-        containers: Optional[List] = item.get("Containers")
+    def _count_containers(item: dict[str, Any]) -> int:
+        containers: Optional[list] = item.get("Containers")
         return 0 if containers is None else len(containers)
 
     return {x["Name"]: _count_containers(x) for x in filtered_networks}
@@ -514,41 +461,81 @@ async def try_to_remove_network(network_name: str) -> None:
             log.warning("Could not remove network %s", network_name)
 
 
-async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+async def _update_service_spec(
+    service_name: str,
+    *,
+    update_in_service_spec: dict,
+    stop_delay: float = 10.0,
+) -> None:
+    """
+    Updates the spec of a service. The `update_spec_data` must always return the updated spec.
+    """
     async with docker_client() as client:
         # NOTE: builtin `DockerServices.update` function is very limited.
         # Using the same pattern but updating labels
 
-        try:
-            # fetch information from service name
-            service_inspect = await client.services.inspect(scheduler_data.service_name)
-            service_version = service_inspect["Version"]["Index"]
-            service_id = service_inspect["ID"]
-            spec = service_inspect["Spec"]
+        # The docker service update API is async, so `update out of sequence` error
+        # might get raised. This is caused by the `service_version` being out of sync
+        # with what is currently stored in the docker daemon.
+        async for attempt in AsyncRetrying(
+            # waits exponentially to a max of `stop_delay` seconds
+            stop=stop_after_delay(stop_delay),
+            wait=wait_exponential(min=1),
+            retry=retry_if_exception_type(_RetryError),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    # fetch information from service name
+                    service_inspect = await client.services.inspect(service_name)
+                    service_version = service_inspect["Version"]["Index"]
+                    service_id = service_inspect["ID"]
+                    spec = service_inspect["Spec"]
 
-            # compose_spec needs to be json encoded
-            # before encoding it to json and storing it
-            # in the label
-            scheduler_data_copy = deepcopy(scheduler_data)
-            scheduler_data_copy.compose_spec = json.dumps(
-                scheduler_data_copy.compose_spec
-            )
-            label_data = scheduler_data_copy.json()
-            spec["Labels"][DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL] = label_data
+                    updated_spec = nested_update(
+                        spec,
+                        update_in_service_spec,
+                        include=get_leaf_key_paths(update_in_service_spec),
+                    )
 
-            await client._query_json(  # pylint: disable=protected-access
-                f"services/{service_id}/update",
-                method="POST",
-                data=json.dumps(clean_map(spec)),
-                params={"version": service_version},
-            )
-        except aiodocker.exceptions.DockerError as e:
-            if not (
-                e.status == 404
-                and e.message == f"service {scheduler_data.service_name} not found"
-            ):
-                raise e
-            log.debug(
-                "Skip update for service '%s' which could not be found",
+                    await client._query_json(  # pylint: disable=protected-access
+                        f"services/{service_id}/update",
+                        method="POST",
+                        data=json_dumps(clean_map(updated_spec)),
+                        params={"version": service_version},
+                    )
+                except aiodocker.exceptions.DockerError as e:
+                    if (
+                        e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+                        and "out of sequence" in e.message
+                    ):
+                        raise _RetryError() from e
+                    raise e
+
+
+async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
+    try:
+        await _update_service_spec(
+            service_name=scheduler_data.service_name,
+            update_in_service_spec={
+                "Labels": {
+                    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data()
+                }
+            },
+        )
+    except GenericDockerError as e:
+        if e.original_exception.status == status.HTTP_404_NOT_FOUND:
+            log.warning(
+                "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,
             )
+
+
+async def constrain_service_to_node(service_name: str, node_id: str) -> None:
+    await _update_service_spec(
+        service_name,
+        update_in_service_spec={
+            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
+        },
+    )
+    log.info("Constraining service %s to node %s", service_name, node_id)

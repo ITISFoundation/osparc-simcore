@@ -20,6 +20,16 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.common.Decoration,
 
   decorations: {
+    "material-button": {
+      style: {
+        radius: 4,
+        backgroundColor: "material-button-background",
+        transitionProperty: ["all"],
+        transitionDuration: "0s",
+        shadowColor: "transparent"
+      }
+    },
+
     "form-array-container": {
       style: {
         radius: 2,
@@ -139,6 +149,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "no-border": {
       style: {
+        radius: 4,
         width: 1,
         color: "transparent"
       }

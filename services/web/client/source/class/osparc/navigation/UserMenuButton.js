@@ -64,12 +64,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
       );
-      const contBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
         window.open(osparc.utils.issue.Github.getNewIssueUrl());
         issueConfirmationWindow.close();
       }, this);
-      const loginBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
+      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);
@@ -81,7 +81,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
       );
-      const contBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
         osparc.data.Resources.get("statics")
           .then(statics => {
@@ -92,7 +92,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             }
           });
       }, this);
-      const loginBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
+      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => {
         osparc.data.Resources.get("statics")
           .then(statics => {

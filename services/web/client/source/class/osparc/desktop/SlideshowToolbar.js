@@ -78,7 +78,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "breadcrumbs-scroll":
           control = new qx.ui.container.SlideBar().set({
-            maxHeight: 32
+            maxHeight: 32,
+            allowGrowX: false
           });
           [
             control.getChildControl("button-backward"),

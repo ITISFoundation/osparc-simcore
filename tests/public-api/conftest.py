@@ -8,7 +8,7 @@ import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Iterable
 
 import httpx
 import osparc
@@ -40,7 +40,7 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]:
+def testing_environ_vars(testing_environ_vars: dict[str, str]) -> dict[str, str]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
 
     # help faster update of service_metadata table by catalog
@@ -49,7 +49,7 @@ def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]
 
 
 @pytest.fixture(scope="module")
-def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+def core_services_selection(simcore_docker_compose: dict) -> list[str]:
     """Selection of services from the simcore stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
     all_core_services = list(simcore_docker_compose["services"].keys())
@@ -57,7 +57,7 @@ def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
 
 
 @pytest.fixture(scope="module")
-def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
+def ops_services_selection(ops_docker_compose: dict) -> list[str]:
     """Selection of services from the ops stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
@@ -76,9 +76,9 @@ def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
 def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
     docker_registry: UrlStr,
-    docker_stack: Dict,
+    docker_stack: dict,
     simcore_services_ready: None,
-) -> Dict:
+) -> dict:
     # At this point `simcore_services_ready` waited until all services
     # are running. Let's make one more check on the web-api
     for attempt in Retrying(
@@ -149,9 +149,9 @@ def registered_user(simcore_docker_stack_and_registry_ready):
 @pytest.fixture(scope="module")
 def services_registry(
     docker_registry_image_injector: Callable,
-    registered_user: Dict[str, str],
-    testing_environ_vars: Dict[str, str],
-) -> Dict[str, Any]:
+    registered_user: dict[str, str],
+    testing_environ_vars: dict[str, str],
+) -> dict[str, Any]:
     # NOTE: service image MUST be injected in registry AFTER user is registered
     #
     # See injected fixture in packages/pytest-simcore/src/pytest_simcore/docker_registry.py
@@ -251,6 +251,8 @@ def api_client(registered_user) -> osparc.ApiClient:
         username=registered_user["api_key"],
         password=registered_user["api_secret"],
     )
+
+    print("Configuration:", cfg.to_debug_report())
 
     def as_dict(obj: object):
         return {

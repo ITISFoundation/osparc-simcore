@@ -3,4 +3,5 @@
 #
 --constraint ../../../requirements/constraints.txt
 
+jsonschema
 pydantic[email]

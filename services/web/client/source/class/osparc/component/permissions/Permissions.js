@@ -223,7 +223,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     getCollaborators: function() {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
-          this.__collaborators = potentialCollaborators;
+          this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });
@@ -284,11 +284,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           collaborator["accessRights"] = aceessRights[gid];
           collaborator["showOptions"] = this._isUserOwner();
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
-          if (parseInt(gid) === osparc.auth.Data.getInstance().getGroupId()) {
-            this.__collaboratorsModel.insertAt(0, collaboratorModel);
-          } else {
-            this.__collaboratorsModel.append(collaboratorModel);
-          }
+          this.__collaboratorsModel.append(collaboratorModel);
         }
       });
     },

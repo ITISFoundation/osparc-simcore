@@ -5,13 +5,13 @@
 import json
 import logging
 from io import StringIO
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 import pytest
 import typer
 from dotenv import dotenv_values
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
+from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 # HELPERS  --------------------------------------------------------------------------------
 
 
-def envs_to_kwargs(envs: EnvVarsDict) -> Dict[str, Any]:
+def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
     kwargs = {}
     for k, v in envs.items():
         if v is not None:
@@ -39,7 +39,7 @@ def envs_to_kwargs(envs: EnvVarsDict) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def cli(fake_settings_class: Type[BaseCustomSettings]) -> typer.Typer:
+def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -140,7 +140,7 @@ Options:
 
 def test_settings_as_json(
     cli: typer.Typer,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
     mock_environment,
     cli_runner: CliRunner,
 ):
@@ -151,13 +151,13 @@ def test_settings_as_json(
     print(result.stdout)
 
     # reuse resulting json to build settings
-    settings: Dict = json.loads(result.stdout)
+    settings: dict = json.loads(result.stdout)
     assert fake_settings_class.parse_obj(settings)
 
 
 def test_settings_as_json_schema(
     cli: typer.Typer,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
     mock_environment,
     cli_runner: CliRunner,
 ):
@@ -168,19 +168,19 @@ def test_settings_as_json_schema(
     print(result.stdout)
 
     # reuse resulting json to build settings
-    settings_schema: Dict = json.loads(result.stdout)
+    settings_schema: dict = json.loads(result.stdout)
 
 
 def test_cli_default_settings_envs(
     cli: typer.Typer,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
     fake_granular_env_file_content: str,
     export_as_dict: Callable,
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content
         )
 
@@ -194,7 +194,7 @@ def test_cli_default_settings_envs(
 
     # now let's use these as env vars
     with monkeypatch.context() as patch:
-        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_2: EnvVarsDict = setenvs_from_envfile(
             patch,
             cli_settings_output,
         )
@@ -221,7 +221,7 @@ def test_cli_default_settings_envs(
 
 def test_cli_compact_settings_envs(
     cli: typer.Typer,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
     fake_granular_env_file_content: str,
     export_as_dict: Callable,
     cli_runner: CliRunner,
@@ -229,7 +229,7 @@ def test_cli_compact_settings_envs(
 ):
 
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content
         )
 
@@ -262,7 +262,7 @@ def test_cli_compact_settings_envs(
     print(setting_env_content_compact)
 
     with monkeypatch.context() as patch:
-        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+        mocked_envs_2: EnvVarsDict = setenvs_from_envfile(
             patch,
             setting_env_content_compact,
         )
@@ -280,9 +280,9 @@ def test_cli_compact_settings_envs(
 
 def test_compact_format(
     monkeypatch: pytest.MonkeyPatch,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
 ):
-    compact_envs: EnvVarsDict = setenvs_as_envfile(
+    compact_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         APP_HOST=localhost
@@ -300,9 +300,9 @@ def test_compact_format(
 
 def test_granular_format(
     monkeypatch: pytest.MonkeyPatch,
-    fake_settings_class: Type[BaseCustomSettings],
+    fake_settings_class: type[BaseCustomSettings],
 ):
-    setenvs_as_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
     APP_HOST=localhost
@@ -353,7 +353,7 @@ def test_cli_settings_exclude_unset(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # minimal envfile
-    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+    mocked_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         # these are required
@@ -397,7 +397,7 @@ def test_cli_settings_exclude_unset_as_json(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # minimal envfile
-    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+    mocked_envs: EnvVarsDict = setenvs_from_envfile(
         monkeypatch,
         """
         # these are required

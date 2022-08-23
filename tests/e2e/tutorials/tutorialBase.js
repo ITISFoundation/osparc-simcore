@@ -244,7 +244,7 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForServices(studyId, nodeIds, timeout = 40000) {
+  async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
     if (nodeIds.length < 1) {
       return;
     }
@@ -253,7 +253,12 @@ class TutorialBase {
     while ((new Date().getTime()) - start < timeout) {
       for (let i = nodeIds.length - 1; i >= 0; i--) {
         const nodeId = nodeIds[i];
-        if (await utils.isServiceReady(this.__page, studyId, nodeId) && await utils.isServiceConnected(this.__page, studyId, nodeId)) {
+        let isLoaded = await utils.isServiceReady(this.__page, studyId, nodeId);
+        if (waitForConnected) {
+          isLoaded = isLoaded && await utils.isServiceConnected(this.__page, studyId, nodeId);
+        }
+
+        if (isLoaded) {
           nodeIds.splice(i, 1);
         }
       }
@@ -311,6 +316,12 @@ class TutorialBase {
 
   async showLogger(show) {
     await auto.showLogger(this.__page, show);
+  }
+
+  async takeLoggerScreenshot() {
+    await this.takeScreenshot("logger_before");
+    await this.showLogger(true);
+    await this.takeScreenshot("logger_after");
   }
 
   async runPipeline() {
@@ -405,12 +416,12 @@ class TutorialBase {
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy(studyId) {
-    await this.waitFor(5000, 'Wait to be unlocked');
+  async removeStudy(studyId, timeout=5000) {
+    await this.waitFor(timeout, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
       // await this.waitForStudyUnlocked(studyId);
-      const nTries = 3;
+      const nTries = 10;
       let i
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
@@ -482,7 +493,10 @@ class TutorialBase {
     return this.__failed;
   }
 
-  setTutorialFailed(failed) {
+  async setTutorialFailed(failed) {
+    if (failed) {
+      await this.takeLoggerScreenshot();
+    }
     this.__failed = failed;
   }
 }

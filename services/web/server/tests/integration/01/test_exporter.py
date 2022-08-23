@@ -16,17 +16,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Set,
-    Tuple,
-)
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
 import aiofiles
@@ -37,14 +27,18 @@ import pytest
 import redis.asyncio as aioredis
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_storage import LinkType
+from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.users import UserID
+from pydantic import AnyUrl, parse_obj_as
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_sdk.node_ports_common.filemanager import get_download_link_from_s3
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.application import (
     setup_director,
@@ -73,7 +67,6 @@ from simcore_service_webserver.exporter.settings import (
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
@@ -116,30 +109,11 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
 }
 
 
-@pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    database_from_template_before_each_function,
-) -> Iterator[None]:
-    yield
-
-
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_settings: RedisSettings):
-    client = aioredis.from_url(
-        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
-    )
-    await client.flushall()
-    await client.close(close_connection_pool=True)
-    yield
-    # do nothing on teadown
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_config: Dict,
-    postgres_with_template_db: aiopg.sa.engine.Engine,
+    app_config: dict,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
 ):
@@ -195,7 +169,7 @@ async def login_user(client):
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
 
 
-def get_exported_projects() -> List[Path]:
+def get_exported_projects() -> list[Path]:
     # These files are generated from the front-end
     # when the formatter be finished
     exporter_dir = DATA_DIR / "exporter"
@@ -209,7 +183,7 @@ def get_exported_projects() -> List[Path]:
 async def apply_access_rights(
     aiopg_engine: aiopg.sa.Engine,
 ) -> AsyncIterator[Callable[..., Awaitable[None]]]:
-    async def grant_rights_to_services(services: List[Tuple[str, str]]) -> None:
+    async def grant_rights_to_services(services: list[tuple[str, str]]) -> None:
         for service_key, service_version in services:
             metada_data_values = dict(
                 key=service_key,
@@ -270,7 +244,7 @@ async def grant_access_rights(
 
 
 @pytest.fixture(scope="session")
-def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> None:
+def push_services_to_registry(docker_registry: str, node_meta_schema: dict) -> None:
     """Adds a itisfoundation/sleeper in docker registry"""
     # Used by V1 study
     _pull_push_service(
@@ -299,7 +273,7 @@ def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
 
 async def query_project_from_db(
     aiopg_engine: aiopg.sa.Engine, project_uuid: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     async with aiopg_engine.acquire() as conn:
         project_result = await conn.execute(
             projects.select().where(projects.c.uuid == project_uuid)
@@ -309,7 +283,7 @@ async def query_project_from_db(
         return dict(project)
 
 
-def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, Any]:
+def replace_uuids_with_sequences(original_project: dict[str, Any]) -> dict[str, Any]:
     # first make a copy
     project = deepcopy(original_project)
     workbench = project["workbench"]
@@ -344,7 +318,7 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     return project
 
 
-def dict_with_keys(dict_data: Dict[str, Any], kept_keys: Set[str]) -> Dict[str, Any]:
+def dict_with_keys(dict_data: dict[str, Any], kept_keys: set[str]) -> dict[str, Any]:
     modified_dict = {}
     for key, value in dict_data.items():
         if key in kept_keys:
@@ -360,8 +334,8 @@ def dict_with_keys(dict_data: Dict[str, Any], kept_keys: Set[str]) -> Dict[str, 
 
 
 def dict_without_keys(
-    dict_data: Dict[str, Any], skipped_keys: Set[str]
-) -> Dict[str, Any]:
+    dict_data: dict[str, Any], skipped_keys: set[str]
+) -> dict[str, Any]:
 
     modified_dict = {}
     for key, value in dict_data.items():
@@ -382,8 +356,8 @@ def assert_combined_entires_condition(
 
 
 def extract_original_files_for_node_sequence(
-    project: Dict[str, Any], normalized_project: Dict[str, Any]
-) -> Dict[str, Dict[str, str]]:
+    project: dict[str, Any], normalized_project: dict[str, Any]
+) -> dict[str, dict[str, str]]:
     """
     Extracts path and store from ouput_1 field of each node and
     returns mapped to the normalized data node keys for simpler comparison
@@ -401,19 +375,21 @@ def extract_original_files_for_node_sequence(
 
 async def extract_download_links_from_storage(
     app: aiohttp.web.Application,
-    original_files: Dict[str, Dict[str, str]],
-    user_id: str,
-) -> Dict[str, str]:
+    original_files: dict[str, dict[str, Any]],
+    user_id: UserID,
+) -> dict[str, str]:
     async def _get_mapped_link(
-        seq_key: str, location_id: str, raw_file_path: str
-    ) -> Tuple[str, str]:
-        link = await get_file_download_url(
-            app=app,
-            location_id=location_id,
-            fileId=raw_file_path,
-            user_id=int(user_id),
+        seq_key: str, location_id: LocationID, file_id: StorageFileID
+    ) -> tuple[str, AnyUrl]:
+        link = await get_download_link_from_s3(
+            user_id=user_id,
+            store_id=location_id,
+            store_name=None,
+            s3_object=file_id,
+            link_type=LinkType.PRESIGNED,
         )
-        return seq_key, link
+
+        return seq_key, parse_obj_as(AnyUrl, f"{link}")
 
     tasks = deque()
     for seq_key, data in original_files.items():
@@ -421,7 +397,7 @@ async def extract_download_links_from_storage(
             _get_mapped_link(
                 seq_key=seq_key,
                 location_id=data["store"],
-                raw_file_path=data["path"],
+                file_id=data["path"],
             )
         )
 
@@ -431,8 +407,8 @@ async def extract_download_links_from_storage(
 
 
 async def download_files_and_get_checksums(
-    app: aiohttp.web.Application, download_links: Dict[str, str]
-) -> Dict[str, str]:
+    app: aiohttp.web.Application, download_links: dict[str, str]
+) -> dict[str, str]:
     with tempfile.TemporaryDirectory() as store_dir:
         download_paths = {}
         parallel_downloader = ParallelDownloader()
@@ -455,10 +431,10 @@ async def download_files_and_get_checksums(
 
 async def get_checksums_for_files_in_storage(
     app: aiohttp.web.Application,
-    project: Dict[str, Any],
-    normalized_project: Dict[str, Any],
-    user_id: str,
-) -> Dict[str, str]:
+    project: dict[str, Any],
+    normalized_project: dict[str, Any],
+    user_id: UserID,
+) -> dict[str, str]:
     original_files = extract_original_files_for_node_sequence(
         project=project, normalized_project=normalized_project
     )
@@ -483,7 +459,7 @@ async def import_study_from_file(client, file_path: Path) -> str:
     assert url_import == URL(API_PREFIX + "/projects:import")
 
     data = {"fileName": open(file_path, mode="rb")}
-    async with await client.post(url_import, data=data, timeout=10) as import_response:
+    async with client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
         assert reply_data.get("data") is not None
@@ -508,7 +484,7 @@ async def test_import_export_import_duplicate(
     Checks if the full "import -> export -> import -> duplicate" cycle
     produces the same result in the DB.
     """
-
+    assert client.app
     user = await login_user(client)
     export_file_name = export_version.name
     version_from_name = export_file_name.split("#")[0]
@@ -599,6 +575,7 @@ async def test_import_export_import_duplicate(
     )
 
     # check files in storage fingerprint matches
+    assert client.app
     imported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=imported_project,
@@ -647,6 +624,7 @@ async def test_download_error_reporting(
     grant_access_rights: None,
     mock_file_downloader: None,
 ):
+    assert client.app
     await login_user(client)
 
     # not testing agains all versions, results will be the same

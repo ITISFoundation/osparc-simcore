@@ -20,6 +20,7 @@ RUN apt-get update \
   && apt-get clean
 
 
+# SEE bug with pip==22.1 https://github.com/jazzband/pip-tools/issues/1617
 RUN pip --no-cache-dir install --upgrade \
   pip~=22.0  \
   wheel \
@@ -30,4 +31,5 @@ RUN pip --no-cache-dir install --upgrade \
 RUN pip install \
   pip-tools \
   pipreqs \
-  pipdeptree
+  pipdeptree && \
+  pip list -vv

@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.11.2
+astroid==2.11.5
     # via pylint
 attrs==21.4.0
     # via pytest
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 charset-normalizer==2.0.12
     # via requests
@@ -37,17 +37,17 @@ packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pylint==2.13.2
+pylint==2.13.8
     # via -r requirements/_test.in
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -75,7 +75,7 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   -c requirements/_base.txt
     #   astroid
@@ -84,7 +84,7 @@ urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-wrapt==1.14.0
+wrapt==1.14.1
     # via astroid
 
 # The following packages are considered to be unsafe in a requirements file:

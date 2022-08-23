@@ -2,23 +2,23 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict, Set
+from typing import Any
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from models_library.basic_types import LogLevel
 from pydantic import ValidationError
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
     DynamicSidecarSettings,
     RCloneSettings,
-    S3Provider,
 )
 
 
-def _get_backend_type_options() -> Set[str]:
+def _get_backend_type_options() -> set[str]:
     return {x for x in dir(S3Provider) if not x.startswith("_")}
 
 
@@ -35,7 +35,7 @@ def test_supported_backends_did_not_change() -> None:
     "endpoint, is_secure",
     [
         ("localhost", False),
-        ("s3_aws", True),
+        ("s3_aws", False),
         ("https://ceph.home", True),
         ("http://local.dev", False),
     ],
@@ -43,25 +43,28 @@ def test_supported_backends_did_not_change() -> None:
 def test_expected_s3_endpoint(
     endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
 
-    r_clone_settings = RCloneSettings()
+    r_clone_settings = RCloneSettings.create_from_envs()
 
     scheme = "https" if is_secure else "http"
-    assert r_clone_settings.endpoint.startswith(f"{scheme}://")
-    assert r_clone_settings.endpoint.endswith(endpoint)
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.startswith(f"{scheme}://")
+    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.endswith(endpoint)
 
 
 def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
     with pytest.raises(ValueError):
-        RCloneSettings()
+        RCloneSettings.create_from_envs()
 
 
-def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str, Any]):
+def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
@@ -72,7 +75,11 @@ def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
+def test_settings_with_repository_env_devel(
+    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+):
+    monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
+
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
@@ -84,6 +91,12 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
         "local/dynamic-sidecar:production",
         "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
         "itisfoundation/dynamic-sidecar:1.0.0",
+        "itisfoundation/dynamic-sidecar:staging-github-staging_diolkos1-2022-06-15--15-04.75ddf7e3fb86944ef95fcf77e4075464848121f1",
+        "itisfoundation/dynamic-sidecar:hotfix-github-2022-06-24--12-34.162bfe899d6b62d808e70a07da280fd390bc4434",
+        "itisfoundation/dynamic-sidecar:hotfix-v1-28-1-github-testbuild-latest",
+        "itisfoundation/dynamic-sidecar:staging-github-latest",
+        "itisfoundation/dynamic-sidecar:release-github-v1.28.0-2022-05-30--14-52.62c4c48b1846ecaa8280773f48a2f14bf0f3047b",
+        "itisfoundation/dynamic-sidecar:master-github-2022-06-24--14-35.38add6817bc8cafabc14ec7dacd9b249daa3a11e",
         "local/dynamic-sidecar:sadasd",
         "itisfoundation/dynamic-sidecar:sadasd",
         "10.10.10.10.no.ip:8080/dynamic-sidecar:10.0.1",
@@ -107,7 +120,7 @@ def testing_environ_expected_success(
 
 
 def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
-    settings = DynamicSidecarSettings()
+    settings = DynamicSidecarSettings.create_from_envs()
     assert settings.DYNAMIC_SIDECAR_IMAGE == testing_environ_expected_success.lstrip(
         "/"
     )
@@ -115,11 +128,11 @@ def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None
 
 @pytest.fixture(
     params=[
-        "10.10.10.10.no_ip:8080/dynamic-sidecar:sadasd",
-        "10.10.10.10.no.ip:8080/dynamic-sidecar:the_tag",
+        "10.10.10.10.no/ip:8080/dynamic-sidecar:sadasd",
+        "10.10.10.10.no$ip:8080/dynamic-sidecar:the_tag",
     ],
 )
-def testing_environ_expected_failure(
+def environment_with_invalid_values(
     request: FixtureRequest,
     project_env_devel_environment,
     monkeypatch: MonkeyPatch,
@@ -129,7 +142,113 @@ def testing_environ_expected_failure(
 
 
 def test_expected_failure_dynamic_sidecar_settings(
-    testing_environ_expected_failure,
+    environment_with_invalid_values,
 ) -> None:
     with pytest.raises(ValidationError) as exc_info:
-        DynamicSidecarSettings()
+        DynamicSidecarSettings.create_from_envs()
+    assert "DYNAMIC_SIDECAR_IMAGE" in f"{exc_info.value}"
+
+
+@pytest.mark.parametrize(
+    "custom_constraints, expected",
+    (
+        ("[]", []),
+        ('["one==yes"]', ["one==yes"]),
+        ('["two!=no"]', ["two!=no"]),
+        ('["one==yes", "two!=no"]', ["one==yes", "two!=no"]),
+        ('["strips.white.spaces==  ok "]', ["strips.white.spaces==  ok"]),
+        (
+            # Bug from https://github.com/ITISFoundation/osparc-simcore/pull/3190
+            '["node.labels.standard-worker==true"]',
+            ["node.labels.standard-worker==true"],
+        ),
+    ),
+)
+def test_services_custom_constraints(
+    custom_constraints: str,
+    expected: list[str],
+    project_env_devel_environment: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    settings = AppSettings.create_from_envs()
+    assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
+    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == expected
+
+
+@pytest.mark.parametrize(
+    "custom_constraints, expected",
+    (
+        # Whitespaces in key are not allowed https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
+        ('["strips.white spaces==ok "]', ["strips.white spaces==ok"]),
+        ('[".starting.trailing.dot.==forbidden"]', [".starting.dot==forbidden"]),
+        ('["double...dot==forbidden"]', ["double..dot==forbidden"]),
+        ('["double--hyphen==forbidden"]', ["double--hyphen==forbidden"]),
+        (
+            '["-starting.trailing.hyphen-==forbidden"]',
+            ["-starting.trailing.hyphen-==forbidden"],
+        ),
+        (
+            # Bug from https://github.com/ITISFoundation/osparc-simcore/pull/
+            # Underscores forbidden
+            '["node.labels.standard_worker==true"]',
+            ["node.labels.standard_worker==true"],
+        ),
+    ),
+)
+def test_services_custom_constraint_failures(
+    custom_constraints: str,
+    expected: list[str],
+    project_env_devel_environment: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    with pytest.raises(Exception) as excinfo:
+        settings = AppSettings.create_from_envs()
+
+
+def test_services_custom_constraints_default_empty_list(
+    project_env_devel_environment: EnvVarsDict,
+) -> None:
+    settings = AppSettings.create_from_envs()
+    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
+
+
+def test_class_dynamicsidecarsettings_in_development(
+    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If development ...
+    monkeypatch.setenv("SC_BOOT_MODE", "development")
+    devel_settings = DynamicSidecarSettings.create_from_envs()
+
+    assert devel_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE.is_devel_mode()
+    assert devel_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert devel_settings.DYNAMIC_SIDECAR_EXPOSE_PORT, "Should auto-enable"
+    assert devel_settings.DYNAMIC_SIDECAR_PORT
+
+
+def test_class_dynamicsidecarsettings_in_production(
+    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+):
+    # assume in environ is set
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_MOUNT_PATH_DEV",
+        "/home/user/devp/osparc-simcore/services/dynamic-sidecar",
+    )
+    monkeypatch.delenv("DYNAMIC_SIDECAR_EXPOSE_PORT", raising=False)
+
+    # If production ...
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+    prod_settings = DynamicSidecarSettings.create_from_envs()
+
+    assert not prod_settings.DYNAMIC_SIDECAR_SC_BOOT_MODE.is_devel_mode()
+    assert not prod_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
+    assert not prod_settings.DYNAMIC_SIDECAR_EXPOSE_PORT
+    assert prod_settings.DYNAMIC_SIDECAR_PORT

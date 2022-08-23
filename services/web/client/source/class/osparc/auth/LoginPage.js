@@ -68,11 +68,43 @@ qx.Class.define("osparc.auth.LoginPage", {
     _getLogoWPlatform: function() {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
-        width: 250,
-        height: 150
+        width: 240,
+        height: 120
       });
       image.setFont("text-18");
       return image;
+    },
+
+    _getLogoWPlatform2: function() {
+      const container = new qx.ui.container.Stack();
+      [
+        "osparc/kz_1.jpg",
+        "osparc/kz_2.jpg",
+        "osparc/kz_3.png",
+        "osparc/kz_4.png"
+      ].forEach((src, i) => {
+        const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+        layout.add(new qx.ui.core.Spacer(), {
+          flex: 1
+        });
+        const image = new qx.ui.basic.Image(src).set({
+          allowShrinkX: true,
+          allowShrinkY: true,
+          width: 300,
+          height: 150,
+          scale: true
+        });
+        image.addListener("tap", () => {
+          const nextIdx = i === 3 ? 0 : i+1;
+          container.setSelection([container.getSelectables()[nextIdx]]);
+        });
+        layout.add(image);
+        layout.add(new qx.ui.core.Spacer(), {
+          flex: 1
+        });
+        container.add(layout);
+      });
+      return container;
     },
 
     _getLoginStack: function() {

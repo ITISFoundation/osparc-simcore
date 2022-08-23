@@ -8,7 +8,7 @@ from pydantic import BaseModel, Extra, NonNegativeFloat
 
 class BaseTaskEvent(BaseModel, ABC):
     job_id: str
-    msg: Optional[str]
+    msg: Optional[str] = None
 
     @staticmethod
     @abstractmethod

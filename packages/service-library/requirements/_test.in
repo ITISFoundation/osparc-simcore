@@ -11,20 +11,19 @@
 --constraint _fastapi.txt
 
 # testing
+asgi_lifespan
 coverage
+coveralls
+faker
+flaky
+openapi-spec-validator
+pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
-pytest-instafail
-pytest-runner
 pytest-docker
+pytest-instafail
 pytest-mock
+pytest-runner
 pytest-sugar
-
-faker
-
-pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
-coveralls
-
-# openapi validator
-openapi-spec-validator
+pytest-xdist

@@ -1,12 +1,15 @@
 from typing import Any, Dict
 
+from models_library.services_resources import (
+    CPU_10_PERCENT,
+    CPU_100_PERCENT,
+    MEMORY_50MB,
+    MEMORY_250MB,
+)
 from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-
-MEMORY_50MB = 52430000
-CPU_1_PERCENT = 10000000
 
 
 def get_dynamic_proxy_spec(
@@ -15,7 +18,6 @@ def get_dynamic_proxy_spec(
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    dynamic_sidecar_node_id: str,
     entrypoint_container_name: str,
     service_port: PositiveInt,
 ) -> Dict[str, Any]:
@@ -52,7 +54,7 @@ def get_dynamic_proxy_spec(
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
                 [
@@ -95,12 +97,15 @@ def get_dynamic_proxy_spec(
             "Placement": {
                 "Constraints": [
                     "node.platform.os == linux",
-                    f"node.id == {dynamic_sidecar_node_id}",
+                    f"node.id == {scheduler_data.docker_node_id}",
                 ]
             },
             "Resources": {
-                "Limits": {"MemoryBytes": MEMORY_50MB, "NanoCPUs": CPU_1_PERCENT},
-                "Reservations": {"MemoryBytes": MEMORY_50MB, "NanoCPUs": CPU_1_PERCENT},
+                "Reservations": {
+                    "MemoryBytes": MEMORY_50MB,
+                    "NanoCPUs": CPU_10_PERCENT,
+                },
+                "Limits": {"MemoryBytes": MEMORY_250MB, "NanoCPUs": CPU_100_PERCENT},
             },
             "RestartPolicy": {
                 "Condition": "on-failure",

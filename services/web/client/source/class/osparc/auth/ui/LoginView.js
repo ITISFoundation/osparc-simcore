@@ -76,10 +76,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
-      loginBtn.addListener("execute", () => {
-        this.__login();
-      }, this);
+      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
+        center: true,
+        appearance: "strong-button"
+      });
+      loginBtn.addListener("execute", () => this.__login(), this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
 
@@ -106,9 +107,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       }, this);
       osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
-      const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
-        this.fireEvent("toReset");
-      }, this);
+      const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => this.fireEvent("toReset"), this);
       osparc.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {

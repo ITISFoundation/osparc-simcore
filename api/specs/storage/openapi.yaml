@@ -47,36 +47,6 @@ paths:
         "200":
           description: returns app status check
 
-  /check/{action}:
-    post:
-      summary: Test checkpoint to ask server to fail or echo back the transmitted data
-      parameters:
-        - in: path
-          required: true
-          name: action
-          schema:
-            type: string
-            default: "echo"
-            enum: ["fail", "echo"]
-        - in: query
-          name: data
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Fake"
-      responses:
-        "200":
-          description: Echoes response based on action
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FakeEnveloped"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
   /locations:
     get:
       summary: Lists available storage locations
@@ -214,12 +184,12 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /locations/{location_id}/files/{fileId}/metadata:
+  /locations/{location_id}/files/{file_id}/metadata:
     get:
       summary: Get file metadata
       operationId: get_file_metadata
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -234,34 +204,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        "200":
-          description: "Returns file metadata"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FileMetaEnvelope"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-    patch:
-      summary: Update file metadata
-      operationId: update_file_meta_data
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/FileMetaData"
       responses:
         "200":
           description: "Returns file metadata"
@@ -272,12 +214,12 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /locations/{location_id}/files/{fileId}:
+  /locations/{location_id}/files/{file_id}:
     get:
       summary: Gets download link for file at location
       operationId: download_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -292,6 +234,16 @@ paths:
           required: true
           schema:
             type: string
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "presigned"
+            enum:
+              - presigned
+              - s3
+
       responses:
         "200":
           description: "Returns presigned link"
@@ -302,10 +254,10 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     put:
-      summary: Returns upload link or performs copy operation to datcore
+      summary: Returns upload object
       operationId: upload_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -320,30 +272,52 @@ paths:
           required: true
           schema:
             type: string
-        - name: extra_location
+        - name: link_type
           in: query
           required: false
           schema:
             type: string
-        - name: extra_source
+            default: "presigned"
+            enum:
+              - presigned
+              - s3
+        - name: file_size
           in: query
           required: false
+          description: will be required once all legacy services are gone or updated. if null returns the PresignedLinkEnveloped, else returns FileUploadEnveloped
           schema:
-            type: string
+            type: integer
+            format: int64
+            minimum: 0
       responses:
         "200":
-          description: "Returns presigned link"
+          description: "Creates and returns file upload object"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PresignedLinkEnveloped"
+                oneOf:
+                  - $ref: "#/components/schemas/PresignedLinkEnveloped"
+                  - $ref: "#/components/schemas/FileUploadEnveloped"
+          links:
+            CompleteUpload:
+              operationId: complete_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                query.user_id: "$request.query.user_id"
+            AbortUpload:
+              operationId: abort_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                query.user_id: "$request.query.user_id"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       summary: Deletes file
       operationId: delete_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -360,7 +334,147 @@ paths:
             type: string
       responses:
         "204":
-          description: everything is OK, but there is no content to return
+          description: everything is OK
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /locations/{location_id}/files/{file_id}:abort:
+    post:
+      summary: Asks the server to abort the upload and revert to the last valid version if any
+      operationId: abort_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Abort OK
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /locations/{location_id}/files/{file_id}:complete:
+    post:
+      summary: Asks the server to complete the upload
+      operationId: complete_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parts
+              properties:
+                parts:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - number
+                      - e_tag
+                    properties:
+                      number:
+                        type: integer
+                        minimum: 1
+                      e_tag:
+                        type: string
+      responses:
+        "202":
+          description: Completion of upload is accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadCompleteEnveloped"
+          links:
+            CompleteUploadStatus:
+              operationId: is_completed_upload_file
+              parameters:
+                path.location_id: "$request.path.location_id"
+                path.file_id: "$request.path.file_id"
+                path.future_id: "$response.body.data.links.state"
+                query.user_id: "$request.query.user_id"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
+    post:
+      summary: Check for upload completion
+      operationId: is_completed_upload_file
+      parameters:
+        - name: future_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: returns state of upload completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadCompleteFutureEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /simcore-s3:access:
+    post:
+      summary: Returns the temporary access credentials for the user storage space
+      operationId: get_or_create_temporary_s3_access
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: the S3 access credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/S3AccessCredentialsEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -375,7 +489,7 @@ paths:
           schema:
             type: integer
         - name: startswith
-          description: matches starting string of the file_uuid
+          description: matches starting string of the file_id
           in: query
           schema:
             type: string
@@ -785,31 +899,13 @@ components:
           type: string
         location_id:
           type: string
-        location:
-          type: string
-        bucket_name:
-          type: string
-        object_name:
-          type: string
-        project_id:
-          type: string
         project_name:
-          type: string
-        node_id:
           type: string
         node_name:
           type: string
         file_name:
           type: string
-        user_id:
-          type: string
-        user_name:
-          type: string
         file_id:
-          type: string
-        raw_file_path:
-          type: string
-        display_file_path:
           type: string
         created_at:
           type: string
@@ -817,8 +913,6 @@ components:
           type: string
         file_size:
           type: integer
-        parent_id:
-          type: string
         entity_tag:
           type: string
 
@@ -860,6 +954,124 @@ components:
           type: string
       example:
         link: "example_link"
+
+    FileUploadEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadSchema"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadSchema:
+      type: object
+      required:
+        - chunk_size
+        - urls
+        - links
+      properties:
+        chunk_size:
+          type: integer
+          format: int64
+          minimum: 0
+        urls:
+          type: array
+          items:
+            type: string
+        links:
+          type: object
+          required:
+            - abort_upload
+            - complete_upload
+          properties:
+            abort_upload:
+              type: string
+            complete_upload:
+              type: string
+
+    FileUploadCompleteEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadComplete"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadComplete:
+      type: object
+      required:
+        - links
+      properties:
+        links:
+          type: object
+          required:
+            - state
+          properties:
+            state:
+              type: string
+
+    FileUploadCompleteFutureEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/FileUploadCompleteFuture"
+        error:
+          nullable: true
+          default: null
+
+    FileUploadCompleteFuture:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+          enum:
+            - ok
+            - nok
+        e_tag:
+          type: string
+          nullable: true
+
+    S3AccessCredentialsEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/S3AccessCredentials"
+        error:
+          nullable: true
+          default: null
+
+    S3AccessCredentials:
+      type: object
+      required:
+        - access
+        - secret
+        - token
+        - endpoint
+      properties:
+        access:
+          type: string
+        secret:
+          type: string
+        token:
+          type: string
+        endpoint:
+          type: string
 
     Project:
       $ref: "../common/schemas/project.yaml#/components/schemas/ProjectIn"

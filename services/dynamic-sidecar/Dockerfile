@@ -13,7 +13,9 @@ LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 RUN set -eux && \
   apt-get update && \
   apt-get install -y \
+  curl \
   gosu \
+  # required by python-magic
   libmagic1 \
   && \
   rm -rf /var/lib/apt/lists/* && \
@@ -44,8 +46,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # directory where dynamic-sidecar stores creates and shares
 # volumes between itself and the spawned containers
-ENV DY_VOLUMES="/dy-volumes"
+ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
+# rclone installation
+ARG R_CLONE_VERSION="1.58.0"
+RUN curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rclone --version
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -62,8 +70,8 @@ RUN apt-get update &&\
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
-RUN mkdir -p ${DY_VOLUMES}
+RUN python -m venv "${VIRTUAL_ENV}" \
+  && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 RUN pip install --upgrade --no-cache-dir \
   pip~=22.0  \
@@ -76,6 +84,10 @@ WORKDIR /build
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
+
+# copy utility devops scripts
+COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -95,7 +107,6 @@ WORKDIR /build/services/dynamic-sidecar
 RUN pip --no-cache-dir install -r requirements/prod.txt &&\
   pip --no-cache-dir list -v
 
-
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
 # Runs as scu (non-root user)
@@ -114,7 +125,7 @@ WORKDIR /home/scu
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
+COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR} ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
@@ -142,12 +153,13 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET=development
+ENV SC_BUILD_TARGET=development \
+  SC_BOOT_MODE=development
 
 WORKDIR /devel
 
-RUN chown -R scu:scu ${VIRTUAL_ENV}
-RUN chown -R scu:scu ${DY_VOLUMES}
+RUN chown -R scu:scu "${VIRTUAL_ENV}" \
+  && chown -R scu:scu "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 EXPOSE 8000
 EXPOSE 3000

@@ -8,10 +8,6 @@
 import re
 from typing import Callable, List
 
-import httpx
-import pytest
-import respx
-from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from respx.router import MockRouter
 from starlette.testclient import TestClient
@@ -23,20 +19,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def mock_director_services(
-    director_mockup: respx.MockRouter, app: FastAPI
-) -> MockRouter:
-    mock_route = director_mockup.get(
-        f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services",
-        name="list_services",
-    ).respond(200, json={"data": ["blahblah"]})
-    response = httpx.get(f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services")
-    assert mock_route.called
-    assert response.json() == {"data": ["blahblah"]}
-    return director_mockup
 
 
 async def test_list_services_with_details(

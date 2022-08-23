@@ -1,17 +1,18 @@
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Union
+from typing import Callable, Optional, Union
 
-import aiofiles
+import aiofiles.os
 from models_library.projects import Project
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.projects_state import ProjectStatus
-from pydantic import BaseModel, DirectoryPath, Field, validator
+from pydantic import AnyUrl, BaseModel, DirectoryPath, Field, parse_obj_as, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
 
-ShuffledData = Dict[str, str]
+ShuffledData = dict[str, str]
 
 
 class LinkAndPath2(BaseModel):
@@ -21,16 +22,18 @@ class LinkAndPath2(BaseModel):
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
-    storage_type: str = Field(
+    storage_type: LocationID = Field(
         ...,
         description="usually 0 for S3 or 1 for Pennsieve",
     )
-    relative_path_to_file: Path = Field(
+    relative_path_to_file: StorageFileID = Field(
         ...,
         description="full path to where the file is going to be stored",
     )
 
-    download_link: str = Field(..., description="Link from where to download the file")
+    download_link: Optional[AnyUrl] = Field(
+        ..., description="Link from where to download the file"
+    )
 
     @validator("relative_path_to_file")
     @classmethod
@@ -45,7 +48,7 @@ class LinkAndPath2(BaseModel):
     @property
     def store_path(self) -> Path:
         """Returns an absolute path to the file"""
-        return Path(self.storage_type) / self.relative_path_to_file
+        return Path(f"{self.storage_type}") / self.relative_path_to_file
 
     @property
     def storage_path_to_file(self) -> Path:
@@ -63,7 +66,9 @@ class LinkAndPath2(BaseModel):
             relative_path_to_file_str = relative_path_to_file_str.replace(
                 old_uuid, new_uuid
             )
-        self.relative_path_to_file = Path(relative_path_to_file_str)
+        self.relative_path_to_file = parse_obj_as(
+            StorageFileID, relative_path_to_file_str
+        )
 
         # finally move file to new target path
         destination = self.storage_path_to_file
@@ -88,7 +93,7 @@ class ManifestFile(BaseLoadingModel):
         default_factory=datetime.utcnow,
     )
 
-    attachments: List[str] = Field(
+    attachments: list[str] = Field(
         ..., description="list of paths for attachments found in the project directory"
     )
 

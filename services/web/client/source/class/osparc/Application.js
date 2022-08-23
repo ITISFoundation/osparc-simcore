@@ -49,9 +49,9 @@ qx.Class.define("osparc.Application", {
       this.base();
 
       // Load user preferred theme if present
-      if (window.localStorage.getItem("themeName") &&
-        window.localStorage.getItem("themeName") !== qx.theme.manager.Meta.getInstance().getTheme().name) {
-        const preferredTheme = qx.Theme.getByName(window.localStorage.getItem("themeName"));
+      const themeName = osparc.utils.Utils.localCache.getTheme();
+      if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
+        const preferredTheme = qx.Theme.getByName(themeName);
         const themes = qx.Theme.getAll();
         if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
           qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
@@ -324,12 +324,17 @@ qx.Class.define("osparc.Application", {
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
-        default:
+        case "tis":
+          view = new osparc.auth.LoginPageTI();
+          this.__loadView(view);
+          break;
+        default: {
           view = new osparc.auth.LoginPage();
           this.__loadView(view, {
-            top: "10%"
+            top: "15%"
           });
           break;
+        }
       }
       view.addListener("done", () => this.__restart(), this);
     },

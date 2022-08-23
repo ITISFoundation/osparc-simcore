@@ -49,6 +49,14 @@ components:
             vcs_url:
               type: string
 
+        container_spec:
+          type: object
+          properties:
+            command:
+              type: array
+              items:
+                type: string
+
     ServiceExtrasEnveloped:
       type: object
       required:

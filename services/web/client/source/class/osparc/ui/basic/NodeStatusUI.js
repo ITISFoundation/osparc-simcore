@@ -70,6 +70,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       } else {
         this.__setupBlank();
       }
+      node.bind("errors", this, "toolTipText", {
+        converter: errors => {
+          let errorsText = "";
+          if (errors) {
+            errors.forEach(error => errorsText += error["msg"] + "<br>");
+          }
+          return errorsText;
+        }
+      });
     },
 
     __setupComputational: function() {
@@ -173,6 +182,13 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             return outputLabel;
           }
           return this.tr("Select a file");
+        }
+      });
+
+      this.getNode().getStatus().addListener("changeProgress", e => {
+        const progress = e.getData();
+        if (progress > 0 && progress < 100) {
+          this.__label.setValue(this.tr("Uploading"));
         }
       });
     },

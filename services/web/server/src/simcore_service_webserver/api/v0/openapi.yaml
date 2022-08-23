@@ -30,7 +30,6 @@ tags:
   - name: cluster
   - name: catalog
   - name: storage
-  - name: service
   - name: activity
   - name: tag
     description: |
@@ -1213,17 +1212,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D~1metadata/patch/requestBody/content/application~1json/schema'
+                  $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D~1metadata/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{fileId}':
+  '/storage/locations/{location_id}/files/{file_id}':
     get:
       summary: Returns download link for requested file
       tags:
         - storage
       operationId: download_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -1246,12 +1245,12 @@ paths:
                 example:
                   link: example_link
     put:
-      summary: Returns upload link or performs copy operation to datcore
+      summary: Returns upload link
       tags:
         - storage
       operationId: upload_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -1261,26 +1260,72 @@ paths:
           required: true
           schema:
             type: string
-        - name: extra_location
+        - name: file_size
           in: query
           required: false
           schema:
-            type: string
-        - name: extra_source
-          in: query
-          required: false
-          schema:
-            type: string
+            type: integer
+            format: int64
+            minimum: 0
       responses:
         '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/get/responses/200'
+          description: Return upload object
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - chunk_size
+                      - urls
+                      - links
+                    properties:
+                      chunk_size:
+                        type: integer
+                        format: int64
+                        minimum: 0
+                      urls:
+                        type: array
+                        items:
+                          type: string
+                      links:
+                        type: object
+                        required:
+                          - abort_upload
+                          - complete_upload
+                        properties:
+                          abort_upload:
+                            type: string
+                          complete_upload:
+                            type: string
+                  error:
+                    nullable: true
+                    default: null
+          links:
+            CompleteUpload:
+              operationId: complete_upload_file
+              parameters:
+                path.location_id: $request.path.location_id
+                path.file_id: $request.path.file_id
+                query.user_id: $request.query.user_id
+            AbortUpload:
+              operationId: abort_upload_file
+              parameters:
+                path.location_id: $request.path.location_id
+                path.file_id: $request.path.file_id
+                query.user_id: $request.query.user_id
     delete:
       summary: Deletes File
       tags:
         - storage
       operationId: delete_file
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -1293,14 +1338,155 @@ paths:
       responses:
         '204':
           description: ''
-  '/storage/locations/{location_id}/files/{fileId}/metadata':
+  '/storage/locations/{location_id}/files/{file_id}:complete':
+    post:
+      summary: Asks the server to complete the upload
+      operationId: complete_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parts
+              properties:
+                parts:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - number
+                      - e_tag
+                    properties:
+                      number:
+                        type: integer
+                        minimum: 1
+                      e_tag:
+                        type: string
+      responses:
+        '202':
+          description: Completion of upload is accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - links
+                    properties:
+                      links:
+                        type: object
+                        required:
+                          - state
+                        properties:
+                          state:
+                            type: string
+                  error:
+                    nullable: true
+                    default: null
+          links:
+            CompleteUploadStatus:
+              operationId: is_completed_upload_file
+              parameters:
+                path.location_id: $request.path.location_id
+                path.file_id: $request.path.file_id
+                path.future_id: $response.body.data.links.state
+                query.user_id: $request.query.user_id
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/storage/locations/{location_id}/files/{file_id}:abort':
+    post:
+      summary: Asks the server to abort the upload and revert to the last valid version if any
+      operationId: abort_upload_file
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Abort OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
+    post:
+      summary: Check for upload completion
+      operationId: is_completed_upload_file
+      parameters:
+        - name: future_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returns state of upload completion
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - error
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - state
+                    properties:
+                      state:
+                        type: string
+                        enum:
+                          - ok
+                          - nok
+                      e_tag:
+                        type: string
+                        nullable: true
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/storage/locations/{location_id}/files/{file_id}/metadata':
     get:
       summary: Get File Metadata
       tags:
         - storage
       operationId: get_file_metadata
       parameters:
-        - name: fileId
+        - name: file_id
           in: path
           required: true
           schema:
@@ -1316,93 +1502,39 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D~1metadata/patch/requestBody/content/application~1json/schema'
-    patch:
-      summary: Update File Metadata
-      tags:
-        - storage
-      operationId: update_file_meta_data
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                file_uuid:
-                  type: string
-                location_id:
-                  type: string
-                location:
-                  type: string
-                bucket_name:
-                  type: string
-                object_name:
-                  type: string
-                project_id:
-                  type: string
-                project_name:
-                  type: string
-                node_id:
-                  type: string
-                node_name:
-                  type: string
-                file_name:
-                  type: string
-                user_id:
-                  type: string
-                user_name:
-                  type: string
-                file_id:
-                  type: string
-                raw_file_path:
-                  type: string
-                display_file_path:
-                  type: string
-                created_at:
-                  type: string
-                last_modified:
-                  type: string
-                file_size:
-                  type: integer
-                parent_id:
-                  type: string
-                entity_tag:
-                  type: string
-              example:
-                file_uuid: simcore-testing/105/1000/3
-                location_id: '0'
-                location_name: simcore.s3
-                bucket_name: simcore-testing
-                object_name: 105/10000/3
-                project_id: '105'
-                project_name: futurology
-                node_id: '10000'
-                node_name: alpha
-                file_name: example.txt
-                user_id: '12'
-                user_name: dennis
-                file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                created_at: '2019-06-19T12:29:03.308611Z'
-                last_modified: '2019-06-19T12:29:03.78852Z'
-                file_size: 73
-                parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-                entity_tag: a87ff679a2f3e71d9181a67b7542122c
-      responses:
-        '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D~1metadata/get/responses/200'
+                type: object
+                properties:
+                  file_uuid:
+                    type: string
+                  location_id:
+                    type: string
+                  project_name:
+                    type: string
+                  node_name:
+                    type: string
+                  file_name:
+                    type: string
+                  file_id:
+                    type: string
+                  created_at:
+                    type: string
+                  last_modified:
+                    type: string
+                  file_size:
+                    type: integer
+                  entity_tag:
+                    type: string
+                example:
+                  file_uuid: simcore-testing/105/1000/3
+                  location_id: '0'
+                  project_name: futurology
+                  node_name: alpha
+                  file_name: example.txt
+                  file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
+                  created_at: '2019-06-19T12:29:03.308611Z'
+                  last_modified: '2019-06-19T12:29:03.78852Z'
+                  file_size: 73
+                  entity_tag: a87ff679a2f3e71d9181a67b7542122c
   '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       summary: Get Files Metadata
@@ -2327,7 +2459,7 @@ paths:
       tags:
         - project
       summary: returns the state of a project
-      operationId: state_project
+      operationId: get_project_state
       responses:
         '200':
           description: returns the project current state
@@ -2655,7 +2787,7 @@ paths:
       tags:
         - project
       description: Triggers service retrieve
-      operationId: post_retrieve
+      operationId: retrieve_node
       requestBody:
         required: true
         content:
@@ -2685,9 +2817,9 @@ paths:
                         description: amount of transferred bytes
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/nodes/{node_id}:restart':
+  '/projects/{project_id}/nodes/{node_id}:restart':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -2701,10 +2833,80 @@ paths:
       tags:
         - project
       description: Restarts containers started by the dynamic-sidecar
-      operationId: post_restart
+      operationId: restart_node
       responses:
         '204':
           description: Restarts containers started by the dynamic-sidecar
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/{node_id}/resources':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      description: Returns the node resources
+      operationId: get_node_resources
+      responses:
+        '200':
+          description: Returns the node resources.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+        - project
+      description: Replaces the node resources
+      operationId: replace_node_resources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+                required:
+                  - limit
+                  - reservation
+                properties:
+                  limit:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
+                  reservation:
+                    anyOf:
+                      - type: integer
+                      - type: number
+                      - type: string
+      responses:
+        '200':
+          description: Returns the udpated node resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
@@ -4615,6 +4817,36 @@ paths:
                 $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  '/catalog/services/{service_key}/{service_version}/resources':
+    get:
+      tags:
+        - catalog
+      description: Returns the service default resources
+      operationId: get_service_resources_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
     post:
       summary: test connectivity with cluster

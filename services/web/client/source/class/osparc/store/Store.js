@@ -62,6 +62,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    nodesInStudyResources: {
+      check: "Array",
+      init: []
+    },
+    serviceResources: {
+      check: "Array",
+      init: []
+    },
     snapshots: {
       check: "Array",
       init: [],
@@ -303,13 +311,6 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
-     * @param {String} key
-     */
-    getServiceVersions: function(key) {
-      console.log(this.getServices());
-    },
-
-    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload
      */
@@ -320,31 +321,7 @@ qx.Class.define("osparc.store.Store", {
           .then(services => {
             allServices = services;
           })
-          .catch(err => console.error("getServices2 failed", err))
-          .finally(() => {
-            const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
-            osparc.utils.Services.servicesToCache(servicesObj, true);
-            resolve(osparc.utils.Services.servicesCached);
-          });
-      });
-    },
-
-    /**
-     * This functions does the needed processing in order to have a working list of services and DAGs.
-     * @param {Boolean} reload
-     */
-    getServicesDAGs: function(reload = false) {
-      return new Promise((resolve, reject) => {
-        const allServices = [];
-        const servicesPromise = osparc.data.Resources.get("services", null, !reload);
-        const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
-        Promise.all([servicesPromise, dagsPromise])
-          .then(values => {
-            allServices.push(...values[0], ...values[1]);
-          })
-          .catch(err => {
-            console.error("getServicesDAGs failed", err);
-          })
+          .catch(err => console.error("getServices failed", err))
           .finally(() => {
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
             osparc.utils.Services.servicesToCache(servicesObj, true);

@@ -103,7 +103,7 @@ async def get_app_status(request: web.Request):
 
     async def _check_catalog():
         check.services["catalog"] = {
-            "healthy": await catalog_client.is_service_responsive(request.app)
+            "healthy": await catalog_client.is_catalog_service_responsive(request.app)
         }
 
     await logged_gather(

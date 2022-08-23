@@ -21,10 +21,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
   /**
     * @param serviceData {Object} Serialized Service Object
-    * @param instanceUuid {String} uuid of the service instance
+    * @param instance {Object} instance related data
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, instanceUuid = null, openOptions = true) {
+  construct: function(serviceData, instance = null, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -35,20 +35,24 @@ qx.Class.define("osparc.servicecard.Large", {
 
     this.setService(serviceData);
 
-    if (instanceUuid) {
-      this.setInstanceUuid(instanceUuid);
+    if (instance) {
+      if ("nodeId" in instance) {
+        this.setNodeId(instance["nodeId"]);
+      }
+      if ("label" in instance) {
+        this.setInstanceLabel(instance["label"]);
+      }
+      if ("study" in instance) {
+        this.setStudy(instance["study"]);
+      }
     }
 
     if (openOptions !== undefined) {
       this.setOpenOptions(openOptions);
     }
 
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
-    this.addListener("resize", () => {
-      this.__rebuildLayout();
-    }, this);
+    this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
+    this.addListener("resize", () => this.__rebuildLayout(), this);
   },
 
   events: {
@@ -66,8 +70,20 @@ qx.Class.define("osparc.servicecard.Large", {
       apply: "__rebuildLayout"
     },
 
-    instanceUuid: {
+    nodeId: {
       check: "String",
+      init: null,
+      nullable: true
+    },
+
+    instanceLabel: {
+      check: "String",
+      init: null,
+      nullable: true
+    },
+
+    study: {
+      check: "osparc.data.model.Study",
       init: null,
       nullable: true
     },
@@ -93,6 +109,11 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __rebuildLayout: function() {
       this._removeAll();
+
+      const deprecated = this.__createDeprecated();
+      if (deprecated) {
+        this._add(deprecated);
+      }
 
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
@@ -127,6 +148,9 @@ qx.Class.define("osparc.servicecard.Large", {
       description.addAt(editInTitle, 0);
       this._add(description);
 
+      const resources = this.__createResources();
+      this._add(resources);
+
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
         caretSize: 14
@@ -136,6 +160,9 @@ qx.Class.define("osparc.servicecard.Large", {
       this._add(more, {
         flex: 1
       });
+      const copy2Clip = osparc.utils.Utils.getCopyButton();
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
+      more.getChildControl("header").add(copy2Clip);
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -152,8 +179,30 @@ qx.Class.define("osparc.servicecard.Large", {
       return layout;
     },
 
+    __createDeprecated: function() {
+      const isDeprecated = osparc.utils.Services.isDeprecated(this.getService());
+      if (isDeprecated) {
+        const chip = new osparc.ui.basic.Chip().set({
+          label: this.tr("Service deprecated"),
+          icon: "@FontAwesome5Solid/exclamation-triangle/12",
+          textColor: "contrasted-text-dark",
+          backgroundColor: "failed-red",
+          allowGrowX: false
+        });
+        return chip;
+      }
+      return null;
+    },
+
     __createTitle: function() {
-      const title = osparc.servicecard.Utils.createTitle(this.getService()).set({
+      const serviceName = this.getService()["name"];
+      let text = "";
+      if (this.getInstanceLabel()) {
+        text = `${this.getInstanceLabel()} [${serviceName}]`;
+      } else {
+        text = serviceName;
+      }
+      const title = osparc.servicecard.Utils.createTitle(text).set({
         font: "title-16"
       });
       return title;
@@ -217,13 +266,13 @@ qx.Class.define("osparc.servicecard.Large", {
           }
         });
 
-        if (this.getInstanceUuid()) {
+        if (this.getNodeId()) {
           extraInfo.unshift({
             label: this.tr("UUID"),
-            view: this.__createInstaceUuid(),
+            view: this.__createNodeId(),
             action: {
               button: osparc.utils.Utils.getCopyButton(),
-              callback: this.__copyUuidToClipboard,
+              callback: this.__copyNodeIdToClipboard,
               ctx: this
             }
           });
@@ -241,8 +290,8 @@ qx.Class.define("osparc.servicecard.Large", {
       return moreInfo;
     },
 
-    __createInstaceUuid: function() {
-      return osparc.servicecard.Utils.createInstaceUuid(this.getInstanceUuid());
+    __createNodeId: function() {
+      return osparc.servicecard.Utils.createNodeId(this.getNodeId());
     },
 
     __createKey: function() {
@@ -282,6 +331,36 @@ qx.Class.define("osparc.servicecard.Large", {
       return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
     },
 
+    __createResources: function() {
+      const resourcesLayout = osparc.servicecard.Utils.createResourcesInfo();
+      resourcesLayout.exclude();
+      let promise = null;
+      if (this.getNodeId()) {
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid(),
+            nodeId: this.getNodeId()
+          }
+        };
+        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+      } else {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.getService()["key"],
+            this.getService()["version"]
+          )
+        };
+        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+      }
+      promise
+        .then(serviceResources => {
+          resourcesLayout.show();
+          osparc.servicecard.Utils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+        })
+        .catch(err => console.error(err));
+      return resourcesLayout;
+    },
+
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
       container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
@@ -302,8 +381,8 @@ qx.Class.define("osparc.servicecard.Large", {
       titleEditor.open();
     },
 
-    __copyUuidToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getInstanceUuid());
+    __copyNodeIdToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getNodeId());
     },
 
     __copyKeyToClipboard: function() {
@@ -348,7 +427,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();

@@ -6,17 +6,17 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import AsyncIterator, Callable, Dict
+from typing import AsyncIterator, Callable
 from uuid import UUID
 
 import pytest
 import simcore_service_webserver
 from _pytest.monkeypatch import MonkeyPatch
+from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
-from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -36,19 +36,20 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.hypothesis_type_strategies",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
+    "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.websocket_client",
-    "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.hypothesis_type_strategies",
 ]
 
 
@@ -117,7 +118,7 @@ def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
     # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
-    def _patch(app_config: Dict) -> Dict[str, str]:
+    def _patch(app_config: dict) -> dict[str, str]:
         assert isinstance(app_config, dict)
 
         print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))

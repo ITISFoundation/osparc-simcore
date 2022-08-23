@@ -4,7 +4,7 @@
 
 
 from random import choice
-from typing import Any, AsyncIterator, Callable, Dict, List, get_args
+from typing import Any, AsyncIterator, Callable, get_args
 from unittest import mock
 
 import pytest
@@ -23,6 +23,7 @@ from models_library.clusters import (
 )
 from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
@@ -37,17 +38,17 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_dask_config(
-    mock_env: None,
-    project_env_devel_environment: Dict[str, Any],
+    mock_env: EnvVarsDict,
+    project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -82,8 +83,8 @@ def test_dask_clients_pool_properly_setup_and_deleted(
 
 
 @pytest.fixture
-def fake_clusters(faker: Faker) -> Callable[[int], List[Cluster]]:
-    def creator(num_clusters: int) -> List[Cluster]:
+def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
+    def creator(num_clusters: int) -> list[Cluster]:
         fake_clusters = []
         for n in range(num_clusters):
             fake_clusters.append(
@@ -167,7 +168,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], List[Cluster]],
+    fake_clusters: Callable[[int], list[Cluster]],
 ):
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
@@ -187,6 +188,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 settings=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
+                tasks_file_link_type=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
             )
         )
         async with clients_pool.acquire(cluster) as dask_client:
@@ -207,7 +209,7 @@ async def test_acquiring_wrong_cluster_raises_exception(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], List[Cluster]],
+    fake_clusters: Callable[[int], list[Cluster]],
 ):
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
@@ -268,6 +270,10 @@ async def test_acquire_default_cluster(
         def just_a_quick_fct(x, y):
             return x + y
 
+        assert (
+            dask_client.tasks_file_link_type
+            == client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+        )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
         result = await future.result(timeout=10)  # type: ignore

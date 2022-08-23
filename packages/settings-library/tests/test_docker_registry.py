@@ -2,13 +2,12 @@
 # pylint: disable=unused-argument
 
 from copy import deepcopy
-from typing import Dict
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 
-MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
+MOCKED_BASE_REGISTRY_ENV_VARS: dict[str, str] = {
     "REGISTRY_AUTH": "False",
     "REGISTRY_USER": "usr",
     "REGISTRY_PW": "pwd",
@@ -16,13 +15,13 @@ MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
 }
 
 
-def _add_parameter_to_env(env: Dict[str, str], key: str, value: str) -> Dict[str, str]:
+def _add_parameter_to_env(env: dict[str, str], key: str, value: str) -> dict[str, str]:
     registry_env = deepcopy(env)
     registry_env[key] = value
     return registry_env
 
 
-def _mock_env_vars(monkeypatch: MonkeyPatch, env_vars: Dict[str, str]) -> None:
+def _mock_env_vars(monkeypatch: MonkeyPatch, env_vars: dict[str, str]) -> None:
     for key, value in env_vars.items():
         monkeypatch.setenv(key, value)
 

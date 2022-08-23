@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -27,11 +27,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_MONITORING_ENABLED: bool = False
 
-    STORAGE_DISABLE_SERVICES: List[str] = []
-
-    STORAGE_TESTING: bool = Field(
-        False, description="Flag to enable some fakes for testing purposes"
-    )
     BF_API_KEY: Optional[str] = Field(
         None, description="Pennsieve API key ONLY for testing purposes"
     )
@@ -39,9 +34,9 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
+    STORAGE_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
 
-    STORAGE_S3: S3Settings = Field(auto_default_from_env=True)
+    STORAGE_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
 
     STORAGE_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
@@ -49,6 +44,20 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
         180, description="Timeout (seconds) for metadata sync task"
+    )
+
+    STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS: int = Field(
+        3600, description="Default expiration time in seconds for presigned links"
+    )
+
+    STORAGE_CLEANER_INTERVAL_S: Optional[int] = Field(
+        30,
+        description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+    )
+
+    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(
+        4,
+        description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
     )
 
     @validator("LOG_LEVEL")

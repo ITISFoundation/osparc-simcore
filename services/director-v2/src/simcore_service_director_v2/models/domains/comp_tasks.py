@@ -3,10 +3,16 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Inputs, NodeID, Outputs
+from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
-from models_library.services import KEY_RE, PropertyName, ServiceInputs, ServiceOutput
+from models_library.services import (
+    KEY_RE,
+    PropertyName,
+    ServiceInputsDict,
+    ServiceOutput,
+)
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -18,16 +24,31 @@ from ..schemas.services import NodeRequirements
 class Image(BaseModel):
     name: str = Field(..., regex=KEY_RE)
     tag: str = Field(..., regex=VERSION_RE)
-    requires_gpu: Optional[bool] = Field(None, deprecated=True)
-    requires_mpi: Optional[bool] = Field(None, deprecated=True)
+
+    requires_gpu: Optional[bool] = Field(
+        None, deprecated=True, description="Use instead node_requirements"
+    )
+    requires_mpi: Optional[bool] = Field(
+        None, deprecated=True, description="Use instead node_requirements"
+    )
     node_requirements: NodeRequirements = Field(
         None, description="the requirements for the service to run on a node"
+    )
+    command: list[str] = Field(
+        default=[
+            "run",
+        ],
+        description="command to run container. Can override using ContainerSpec service labels",
     )
 
     @validator("node_requirements", pre=True, always=True)
     @classmethod
     def migrate_from_requirements(cls, v, values):
         if v is None:
+            # NOTE: 'node_requirements' field's default=None although is NOT declared as nullable.
+            # Then this validator with `pre=True, always=True` is used to create a default
+            # based on that accounts for an old version.
+            # This strategy guarantees backwards compatibility
             v = NodeRequirements(
                 CPU=1.0,
                 GPU=1 if values.get("requires_gpu") else 0,
@@ -47,6 +68,16 @@ class Image(BaseModel):
                 }
                 for node_req_example in NodeRequirements.Config.schema_extra["examples"]
             ]
+            +
+            # old version
+            [
+                {
+                    "name": "simcore/services/dynamic/jupyter-octave-python-math",
+                    "tag": "0.0.1",
+                    "requires_gpu": True,
+                    "requires_mpi": False,
+                }
+            ]
         }
 
 
@@ -61,7 +92,7 @@ _ServiceOutputsOverride = Dict[PropertyName, _ServiceOutputOverride]
 
 
 class NodeSchema(BaseModel):
-    inputs: ServiceInputs = Field(..., description="the inputs scheam")
+    inputs: ServiceInputsDict = Field(..., description="the inputs scheam")
     outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
 
     class Config:
@@ -72,22 +103,23 @@ class NodeSchema(BaseModel):
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    job_id: Optional[str] = Field(None, description="The worker job ID")
+    job_id: Optional[str] = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
-    inputs: Optional[Inputs] = Field(..., description="the inputs payload")
-    outputs: Optional[Outputs] = Field({}, description="the outputs payload")
+    inputs: Optional[InputsDict] = Field(..., description="the inputs payload")
+    outputs: Optional[OutputsDict] = Field({}, description="the outputs payload")
     run_hash: Optional[str] = Field(
-        None,
+        default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
     submit: datetime
-    start: Optional[datetime]
-    end: Optional[datetime]
+    start: Optional[datetime] = Field(default=None)
+    end: Optional[datetime] = Field(default=None)
     state: RunningState
-    task_id: Optional[PositiveInt]
+    task_id: Optional[PositiveInt] = Field(default=None)
     internal_id: PositiveInt
     node_class: NodeClass
+    errors: Optional[list[ErrorDict]] = Field(default=None)
 
     @validator("state", pre=True)
     @classmethod
@@ -145,7 +177,7 @@ class CompTaskAtDB(BaseModel):
                     },
                     "outputs": {
                         "output_1": {
-                            "store": "0",
+                            "store": 0,
                             "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
                         }
                     },

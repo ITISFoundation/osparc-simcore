@@ -42,14 +42,20 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           control = new osparc.ui.basic.Thumbnail().set({
             minWidth: 40
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LOCK_STATUS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
+          });
           break;
         case "permission-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50
           });
           control.exclude();
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.PERMISSION);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.PERMISSION
+          });
           break;
         }
         case "tags":
@@ -59,14 +65,20 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             anonymous: true,
             maxWidth: 100
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.TAGS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TAGS
+          });
           break;
         case "shared-icon": {
           control = new qx.ui.basic.Image().set({
             minWidth: 50,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.SHARED);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.SHARED
+          });
           break;
         }
         case "last-change": {
@@ -77,7 +89,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 120,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
+          });
           break;
         }
         case "tsr-rating": {
@@ -91,7 +106,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._addAt(tsrLayout, osparc.dashboard.ListButtonBase.POS.TSR);
+          this._add(tsrLayout, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TSR
+          });
           break;
         }
         case "ui-mode":
@@ -99,17 +117,33 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minWidth: 20,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UI_MODE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.UI_MODE
+          });
           break;
+        case "hits-service": {
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle",
+            toolTipText: this.tr("Number of times it was instantiated")
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.HITS
+          });
+          break;
+        }
         case "update-study":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
             alignY: "middle",
             source: "@MaterialIcons/update/18",
-            toolTipText: this.tr("Update available"),
             visibility: "excluded"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY
+          });
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
@@ -117,7 +151,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             minHeight: this.self().MENU_BTN_WIDTH,
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.OPTIONS
+          });
           break;
         case "tick-unselected": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
@@ -301,78 +338,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         menuButton.setMenu(value);
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    _applyState: function(state) {
-      const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setLocked(locked);
-      if (locked) {
-        this.__setLockedStatus(state["locked"]);
-      }
-    },
-
-    __setLockedStatus: function(lockedStatus) {
-      const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      const lock = this.getChildControl("lock-status");
-      const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      let toolTipText = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
-      let source = null;
-      switch (status) {
-        case "CLOSING":
-          source = "@FontAwesome5Solid/key/24";
-          toolTipText += this.tr(" is closing it...");
-          break;
-        case "CLONING":
-          source = "@FontAwesome5Solid/clone/24";
-          toolTipText += this.tr(" is cloning it...");
-          break;
-        case "EXPORTING":
-          source = osparc.component.task.Export.EXPORT_ICON+"/24";
-          toolTipText += this.tr(" is exporting it...");
-          break;
-        case "OPENING":
-          source = "@FontAwesome5Solid/key/24";
-          toolTipText += this.tr(" is opening it...");
-          break;
-        case "OPENED":
-          source = "@FontAwesome5Solid/lock/24";
-          toolTipText += this.tr(" is using it.");
-          break;
-        default:
-          source = "@FontAwesome5Solid/lock/24";
-          break;
-      }
-      lock.set({
-        toolTipText: toolTipText
-      });
-      lockImage.setSource(source);
-    },
-
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("icon").set({
-        visibility: locked ? "excluded" : "visible"
-      });
-      this.getChildControl("lock-status").set({
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-    },
-
-    __enableCard: function(enabled) {
-      this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
-      });
     }
-  },
-
-  destruct : function() {
-    this.removeListener("pointerover", this._onPointerOver, this);
-    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });

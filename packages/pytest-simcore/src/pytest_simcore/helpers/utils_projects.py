@@ -6,7 +6,7 @@
 import json
 import uuid as uuidlib
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -36,7 +36,7 @@ def empty_project_data():
 
 async def create_project(
     app: web.Application,
-    params_override: Optional[Dict[str, Any]] = None,
+    params_override: Optional[dict[str, Any]] = None,
     user_id: Optional[int] = None,
     *,
     default_project_json: Optional[Path] = None,
@@ -92,8 +92,8 @@ async def delete_all_projects(app: web.Application):
 class NewProject:
     def __init__(
         self,
-        params_override: Dict = None,
-        app: web.Application = None,
+        params_override: Optional[dict] = None,
+        app: Optional[web.Application] = None,
         clear_all: bool = True,
         user_id: Optional[int] = None,
         *,
@@ -140,15 +140,16 @@ class NewProject:
 async def assert_get_same_project(
     client: TestClient,
     project: ProjectDict,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
     api_vtag="/v0",
-) -> Dict:
+) -> dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
+    assert client.app
     url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{api_vtag}/projects/{project['uuid']}"
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
     if not error:

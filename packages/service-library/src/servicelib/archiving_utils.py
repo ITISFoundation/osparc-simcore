@@ -1,15 +1,32 @@
 import asyncio
 import fnmatch
 import logging
+import types
 import zipfile
+from contextlib import contextmanager
+from functools import partial
 from pathlib import Path
-from typing import Iterator, List, Optional, Set, Tuple, Union
+from typing import Final, Iterator, Optional, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
+from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
-MAX_UNARCHIVING_WORKER_COUNT = 2
-
+MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
+CHUNK_SIZE: Final[int] = 1024 * 8
 log = logging.getLogger(__name__)
+
+
+def _human_readable_size(size, decimal_places=3):
+    human_readable_file_size = float(size)
+    unit = "B"
+    for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
+        if human_readable_file_size < 1024.0:
+            unit = t_unit
+            break
+        human_readable_file_size /= 1024.0
+
+    return f"{human_readable_file_size:.{decimal_places}f}{unit}"
 
 
 def _strip_undecodable_in_path(path: Path) -> Path:
@@ -17,9 +34,9 @@ def _strip_undecodable_in_path(path: Path) -> Path:
 
 
 def _iter_files_to_compress(
-    dir_path: Path, exclude_patterns: Optional[List[str]]
+    dir_path: Path, exclude_patterns: Optional[set[str]]
 ) -> Iterator[Path]:
-    exclude_patterns = exclude_patterns if exclude_patterns else []
+    exclude_patterns = exclude_patterns if exclude_patterns else set()
     for path in dir_path.rglob("*"):
         if path.is_file() and not any(
             fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
@@ -32,37 +49,65 @@ def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     return Path(str(input_path).replace(_to_strip, ""))
 
 
-def _read_in_chunks(file_object, chunk_size=1024 * 8):
-    """Lazy function (generator) to read a file piece by piece.
-    Default chunk size: 8k."""
-    while True:
-        data = file_object.read(chunk_size)
-        if not data:
-            break
-        yield data
+class _FastZipFileReader(zipfile.ZipFile):
+    """
+    Used to gain a speed boost of several orders of magnitude.
+
+    When opening archives the `_RealGetContents` is called
+    generating the list of files contained in the zip archive.
+    This is done by the constructor.
+
+    If the archive contains a very large amount, the file scan operation
+    can take up to seconds. This was observed with 10000+ files.
+
+    When opening the zip file in the background worker the entire file
+    list generation can be skipped because the `zipfile.ZipFile.open`
+    is used passing `ZipInfo` object as file to decompress.
+    Using a `ZipInfo` object does nto require to have the list of
+    files contained in the archive.
+    """
+
+    def _RealGetContents(self):
+        """method disabled"""
+
+
+_TQDM_FILE_OPTIONS = dict(
+    unit="byte",
+    unit_scale=True,
+    unit_divisor=1024,
+    colour="yellow",
+    miniters=1,
+)
 
 
 def _zipfile_single_file_extract_worker(
-    zip_file_path: Path, file_in_archive: str, destination_folder: Path, is_dir: bool
+    zip_file_path: Path,
+    file_in_archive: zipfile.ZipInfo,
+    destination_folder: Path,
+    is_dir: bool,
 ) -> Path:
     """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
 
     Extracts in chunks to avoid memory pressure on zip/unzip
-    Retuns a path to extracted file or directory
+    returns: a path to extracted file or directory
     """
-    with zipfile.ZipFile(zip_file_path) as zf:
+    with _FastZipFileReader(zip_file_path) as zf:
         # assemble destination and ensure it exits
-        destination_path = destination_folder / file_in_archive
+        destination_path = destination_folder / file_in_archive.filename
 
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
             return destination_path
-
-        with zf.open(name=file_in_archive) as zip_fp:
-            with open(destination_path, "wb") as destination_fp:
-                for chunk in _read_in_chunks(zip_fp):
-                    destination_fp.write(chunk)
-                return destination_path
+        desc = f"decompressing {zip_file_path}:{file_in_archive.filename} -> {destination_path}\n"
+        with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
+            "wb"
+        ) as dest_fp, tqdm(
+            total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
+        ) as pbar:
+            while chunk := zip_fp.read(CHUNK_SIZE):
+                dest_fp.write(chunk)
+                pbar.update(len(chunk))
+            return destination_path
 
 
 def ensure_destination_subdirectories_exist(
@@ -84,7 +129,7 @@ async def unarchive_dir(
     destination_folder: Path,
     *,
     max_workers: int = MAX_UNARCHIVING_WORKER_COUNT,
-) -> Set[Path]:
+) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
 
@@ -109,21 +154,52 @@ async def unarchive_dir(
                     pool,
                     _zipfile_single_file_extract_worker,
                     archive_to_extract,
-                    zip_entry.filename,
+                    zip_entry,
                     destination_folder,
                     zip_entry.is_dir(),
                 )
                 for zip_entry in zip_file_handler.infolist()
             ]
 
-            extracted_paths: Tuple[Path] = await asyncio.gather(*tasks)
+            extracted_paths: list[Path] = await tqdm_asyncio.gather(
+                *tasks,
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
+                f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                total=len(tasks),
+                unit="file",
+            )
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
-            return set(
+            return {
                 p
                 for p in extracted_paths
                 if p.is_file() or (p.is_dir() and not any(p.glob("*")))
-            )
+            }
+
+
+@contextmanager
+def _progress_enabled_zip_write_handler(
+    zip_file_handler: zipfile.ZipFile, progress_bar: tqdm
+) -> Iterator[zipfile.ZipFile]:
+    """This function overrides the default zip write fct to allow to get progress using tqdm library"""
+
+    def _write_with_progress(
+        original_write_fct, self, data, pbar  # pylint: disable=unused-argument
+    ):
+        pbar.update(len(data))
+        return original_write_fct(data)
+
+    # Replace original write() with a wrapper to track progress
+    assert zip_file_handler.fp  # nosec
+    old_write_method = zip_file_handler.fp.write
+    zip_file_handler.fp.write = types.MethodType(
+        partial(_write_with_progress, old_write_method, pbar=progress_bar),
+        zip_file_handler.fp,
+    )
+    try:
+        yield zip_file_handler
+    finally:
+        zip_file_handler.fp.write = old_write_method
 
 
 def _add_to_archive(
@@ -131,34 +207,38 @@ def _add_to_archive(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: List[str] = None,
+    exclude_patterns: Optional[set[str]] = None,
 ) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-        with zipfile.ZipFile(
-            destination, "w", compression=compression
+        folder_size_bytes = sum(
+            file.stat().st_size
+            for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+        )
+        desc = f"compressing {dir_to_compress} -> {destination}"
+
+        with tqdm(
+            desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
+        ) as progress_bar, _progress_enabled_zip_write_handler(
+            zipfile.ZipFile(destination, "w", compression=compression), progress_bar
         ) as zip_file_handler:
-            files_to_compress_generator = _iter_files_to_compress(
+            for file_to_add in _iter_files_to_compress(
                 dir_to_compress, exclude_patterns
-            )
-            for file_to_add in files_to_compress_generator:
-                try:
-                    file_name_in_archive = (
-                        _strip_directory_from_path(file_to_add, dir_to_compress)
-                        if store_relative_path
-                        else file_to_add
-                    )
+            ):
+                progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
+                file_name_in_archive = (
+                    _strip_directory_from_path(file_to_add, dir_to_compress)
+                    if store_relative_path
+                    else file_to_add
+                )
 
-                    # because surrogates are not allowed in zip files,
-                    # replacing them will ensure errors will not happen.
-                    escaped_file_name_in_archive = _strip_undecodable_in_path(
-                        file_name_in_archive
-                    )
+                # because surrogates are not allowed in zip files,
+                # replacing them will ensure errors will not happen.
+                escaped_file_name_in_archive = _strip_undecodable_in_path(
+                    file_name_in_archive
+                )
 
-                    zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
-                except ValueError as value_error:
-                    log.exception("Could write files to archive, please check logs")
-                    raise value_error
+                zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
     except Exception as e:  # pylint: disable=broad-except
         return e
     return None
@@ -169,7 +249,7 @@ async def archive_dir(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: List[str] = None,
+    exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -177,7 +257,7 @@ async def archive_dir(
     When unarchiveing, the **escaped version** of the file names
     will be created.
 
-    The **exclude_patterns** is a list of patterns created using
+    The **exclude_patterns** is a set of patterns created using
     Unix shell-style wildcards to exclude files and directories.
     """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
@@ -224,19 +304,19 @@ class PrunableFolder:
 
     def capture(self) -> None:
         # captures leaf paths in folder at this moment
-        self.before_relpaths = set(
+        self.before_relpaths = {
             p.relative_to(self.basedir)
             for p in self.basedir.rglob("*")
             if is_leaf_path(p)
-        )
+        }
 
-    def prune(self, exclude: Set[Path]) -> None:
+    def prune(self, exclude: set[Path]) -> None:
         """
         Deletes all paths in folder skipping the exclude set
         """
         assert all(self.basedir in p.parents for p in exclude)  # nosec
 
-        after_relpaths = set(p.relative_to(self.basedir) for p in exclude)
+        after_relpaths = {p.relative_to(self.basedir) for p in exclude}
         to_delete = self.before_relpaths.difference(after_relpaths)
 
         for p in to_delete:
@@ -259,4 +339,8 @@ class PrunableFolder:
                 p.rmdir()
 
 
-__all__ = ["archive_dir", "unarchive_dir", "PrunableFolder"]
+__all__ = (
+    "archive_dir",
+    "PrunableFolder",
+    "unarchive_dir",
+)

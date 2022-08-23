@@ -2,15 +2,13 @@
 --constraint ./constraints.txt
 --constraint _base.txt
 
-pytest
-pytest-cov
-pytest-asyncio
-pytest-mock
+
 async-asgi-testclient
 faker
-
-# missing mypy stubs
-types-pkg_resources
-types-aiofiles
-types-PyYAML
+pytest
 pytest-asyncio
+pytest-cov
+pytest-mock
+types-aiofiles # missing mypy stubs
+types-pkg_resources # missing mypy stubs
+types-PyYAML # missing mypy stubs

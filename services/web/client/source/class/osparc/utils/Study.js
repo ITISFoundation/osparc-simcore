@@ -34,10 +34,31 @@ qx.Class.define("osparc.utils.Study", {
       return services;
     },
 
+    getUnaccessibleServices: async function(workbench) {
+      return new Promise(resolve => {
+        const store = osparc.store.Store.getInstance();
+        store.getServicesOnly(false)
+          .then(allServices => {
+            const unaccessibleServices = [];
+            const services = new Set(this.extractServices(workbench));
+            services.forEach(srv => {
+              if (srv.key in allServices && srv.version in allServices[srv.key]) {
+                return;
+              }
+              const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+              if (idx === -1) {
+                unaccessibleServices.push(srv);
+              }
+            });
+            resolve(unaccessibleServices);
+          });
+      });
+    },
+
     isWorkbenchUpdatable: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly()
+        store.getServicesOnly(false)
           .then(allServices => {
             const services = new Set(this.extractServices(workbench));
             const filtered = [];
@@ -54,6 +75,25 @@ qx.Class.define("osparc.utils.Study", {
             resolve(updatable);
           });
       });
+    },
+
+    isWorkbenchDeprecated: function(workbench) {
+      const services = new Set(this.extractServices(workbench));
+      const filtered = [];
+      services.forEach(srv => {
+        const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
+        if (idx === -1) {
+          filtered.push(srv);
+        }
+      });
+      const deprecated = filtered.some(srv => {
+        const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
+        if (srvMetadata) {
+          return osparc.utils.Services.isDeprecated(srvMetadata);
+        }
+        return false;
+      });
+      return deprecated;
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices) {

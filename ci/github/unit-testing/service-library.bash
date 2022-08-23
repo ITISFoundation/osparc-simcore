@@ -16,12 +16,20 @@ install_all() {
 }
 
 test_all() {
-  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --cov=servicelib --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+  pytest \
     --asyncio-mode=auto \
-    -v -m "not travis" packages/service-library/tests
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=servicelib \
+    --durations=10 \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+    packages/service-library/tests
 }
 
 # Check if the function exists (bash specific)

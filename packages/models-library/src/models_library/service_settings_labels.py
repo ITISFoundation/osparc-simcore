@@ -4,9 +4,11 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+
+from .generics import ListModel
 
 
 class _BaseConfig:
@@ -14,10 +16,45 @@ class _BaseConfig:
     keep_untouched = (cached_property,)
 
 
+class ContainerSpec(BaseModel):
+    """Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    request body: TaskTemplate -> ContainerSpec
+    """
+
+    command: list[str] = Field(
+        alias="Command",
+        description="Used to override the container's command",
+        # NOTE: currently constraint to our use cases. Might mitigate some security issues.
+        min_items=1,
+        max_items=2,
+    )
+
+    class Config(_BaseConfig):
+        schema_extra = {
+            "examples": [
+                {"Command": ["executable"]},
+                {"Command": ["executable", "subcommand"]},
+                {"Command": ["ofs", "linear-regression"]},
+            ]
+        }
+
+
 class SimcoreServiceSettingLabelEntry(BaseModel):
-    _destination_container: str = PrivateAttr()
+    """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    Specifically the section under ``TaskTemplate``
+    """
+
+    _destination_containers: list[str] = PrivateAttr()
     name: str = Field(..., description="The name of the service setting")
-    setting_type: str = Field(
+    setting_type: Literal[
+        "string",
+        "int",
+        "integer",
+        "number",
+        "object",
+        "ContainerSpec",
+        "Resources",
+    ] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",
@@ -26,6 +63,14 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         ...,
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
+
+    @validator("setting_type", pre=True)
+    @classmethod
+    def ensure_backwards_compatible_setting_type(cls, v):
+        if v == "resources":
+            # renamed in the latest version as
+            return "Resources"
+        return v
 
     class Config(_BaseConfig):
         schema_extra = {
@@ -36,7 +81,13 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "type": "string",
                     "value": ["node.platform.os == linux"],
                 },
-                # resources
+                # SEE service_settings_labels.py::ContainerSpec
+                {
+                    "name": "ContainerSpec",
+                    "type": "ContainerSpec",
+                    "value": {"Command": ["run"]},
+                },
+                # SEE services_resources.py::ResourceValue
                 {
                     "name": "Resources",
                     "type": "Resources",
@@ -66,21 +117,20 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                 },
                 # environments
                 {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
+                # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
+                {"name": "ports", "type": "int", "value": 8888},
+                {
+                    "name": "resources",
+                    "type": "resources",
+                    "value": {
+                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 8589934592}
+                    },
+                },
             ]
         }
 
 
-class SimcoreServiceSettingsLabel(BaseModel):
-    __root__: List[SimcoreServiceSettingLabelEntry]
-
-    def __iter__(self):
-        return iter(self.__root__)
-
-    def __getitem__(self, item):
-        return self.__root__[item]
-
-    def __len__(self):
-        return len(self.__root__)
+SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
 class PathMappingsLabel(BaseModel):
@@ -91,12 +141,12 @@ class PathMappingsLabel(BaseModel):
         ...,
         description="folder path where the service is expected to provide all its outputs",
     )
-    state_paths: List[Path] = Field(
+    state_paths: list[Path] = Field(
         [],
         description="optional list of paths which contents need to be persisted",
     )
 
-    state_exclude: Optional[List[str]] = Field(
+    state_exclude: Optional[set[str]] = Field(
         None,
         description="optional list unix shell rules used to exclude files from the state",
     )
@@ -112,7 +162,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = Dict[str, Any]
+ComposeSpecLabel = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
@@ -214,6 +264,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         extra = Extra.allow
         schema_extra = {
             "examples": [
+                # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
                     "simcore.service.settings": json.dumps(
@@ -243,12 +294,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                             "version": "2.3",
                             "services": {
                                 "rt-web": {
-                                    "image": "${REGISTRY_URL}/simcore/services/dynamic/sim4life:${SERVICE_TAG}",
+                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
                                     "init": True,
                                     "depends_on": ["s4l-core"],
                                 },
                                 "s4l-core": {
-                                    "image": "${REGISTRY_URL}/simcore/services/dynamic/s4l-core:${SERVICE_TAG}",
+                                    "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
                                     "runtime": "nvidia",
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],

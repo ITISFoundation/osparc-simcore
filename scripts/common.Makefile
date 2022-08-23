@@ -37,6 +37,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 
 # relevant repo folders
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
+PACKAGES_DIR := $(abspath $(REPO_BASE_DIR)/packages)
 
 # virtual env
 EXPECTED_PYTHON_VERSION := $(shell cat $(REPO_BASE_DIR)/requirements/PYTHON_VERSION)
@@ -115,6 +116,11 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 	@python3 -m black --verbose \
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
 		$(CURDIR)
+
+
+.PHONY: pyupgrade
+pyupgrade: ## Upgrade python syntax for newer versions of the language (SEE https://github.com/asottile/pyupgrade)
+	@$(REPO_BASE_DIR)/scripts/pyupgrade.bash $(shell find . -type f -name '*.py')
 
 
 .PHONY: mypy

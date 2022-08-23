@@ -1,4 +1,4 @@
-from servicelib.async_utils import stop_sequential_workers
+from servicelib.async_utils import cancel_sequential_workers
 
 from ..meta import PROJECT_NAME, __version__
 
@@ -11,7 +11,7 @@ ______ _               _
 | | | |_ _ __ ___  ___| |_ ___  _ __
 | | | | | '__/ _ \/ __| __/ _ \| '__|
 | |/ /| | | |  __/ (__| || (_) | |
-|___/ |_|_|  \___|\___|\__\___/|_|   {0}
+|___/ |_|_|  \___|\___|\__\___/|_|   {}
 
 """.format(
     f"v{__version__}"
@@ -23,6 +23,6 @@ async def on_startup() -> None:
 
 
 async def on_shutdown() -> None:
-    await stop_sequential_workers()
+    await cancel_sequential_workers()
     msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)

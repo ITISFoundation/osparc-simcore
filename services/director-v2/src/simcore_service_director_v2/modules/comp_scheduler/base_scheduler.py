@@ -29,11 +29,10 @@ from pydantic import PositiveInt
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
-    InsuficientComputationalResourcesError,
     InvalidPipelineError,
-    MissingComputationalResourcesError,
     PipelineNotFoundError,
     SchedulerError,
+    TaskSchedulingError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
@@ -431,25 +430,22 @@ class BaseCompScheduler(ABC):
             ],
             return_exceptions=True,
         )
-        # let's parse the results
+        # Handling errors raised when _start_tasks(...)
         for r, t in zip(results, tasks_ready_to_start):
-            if isinstance(
-                r,
-                (
-                    MissingComputationalResourcesError,
-                    InsuficientComputationalResourcesError,
-                ),
-            ):
+            if isinstance(r, TaskSchedulingError):
                 logger.error(
                     "Project '%s''s task '%s' could not be scheduled due to the following: %s",
-                    project_id,
+                    r.project_id,
                     r.node_id,
                     f"{r}",
                 )
+
                 await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [r.node_id], RunningState.FAILED
+                    project_id,
+                    [r.node_id],
+                    RunningState.FAILED,
+                    r.get_errors(),
                 )
-                # TODO: we should set some specific state so the user may know what to do
             elif isinstance(
                 r,
                 (

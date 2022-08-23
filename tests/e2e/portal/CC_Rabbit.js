@@ -52,7 +52,7 @@ async function runTutorial () {
     await tutorial.checkNodeOutputs(3, outFiles2);
   }
   catch(err) {
-    tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {

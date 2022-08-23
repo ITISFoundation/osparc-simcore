@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import copy
@@ -7,13 +8,13 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any, AsyncIterable, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
+from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
     run_sequentially_in_context,
-    stop_sequential_workers,
 )
 
 RETRIES = 10
@@ -21,17 +22,8 @@ DIFFERENT_CONTEXTS_COUNT = 10
 
 
 @pytest.fixture
-async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
-    yield
-    # NOTE
-    # required when shutting down the application or ending tests
-    # otherwise errors will occur when closing the loop
-    await stop_sequential_workers()
-
-
-@pytest.fixture
-def payload() -> str:
-    return "some string payload"
+def payload(faker: Faker) -> str:
+    return faker.text()
 
 
 @pytest.fixture
@@ -55,9 +47,15 @@ class LockedStore:
         async with self._lock:
             self._queue.append(item)
 
-    async def get_all(self) -> List[Any]:
+    async def get_all(self) -> list[Any]:
         async with self._lock:
             return list(self._queue)
+
+
+def _compensate_for_slow_systems(number: float) -> float:
+    # NOTE: in slower systems it is important to allow for enough time to pass
+    # raising by one order of magnitude
+    return number * 10
 
 
 async def test_context_aware_dispatch(
@@ -72,7 +70,7 @@ async def test_context_aware_dispatch(
         context = dict(c1=c1, c2=c2, c3=c3)
         await locked_stores[make_key_from_context(context)].push(control)
 
-    def make_key_from_context(context: Dict) -> str:
+    def make_key_from_context(context: dict) -> str:
         return ".".join([f"{k}:{v}" for k, v in context.items()])
 
     def make_context():
@@ -155,7 +153,6 @@ async def test_context_aware_measure_parallelism(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-    # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
@@ -168,8 +165,8 @@ async def test_context_aware_measure_parallelism(
     result = await asyncio.gather(*functions)
     elapsed = time() - start
 
-    assert elapsed < sleep_duration * 2  # allow for some internal delay
     assert control_sequence == result
+    assert elapsed < _compensate_for_slow_systems(sleep_duration)
 
 
 async def test_context_aware_measure_serialization(

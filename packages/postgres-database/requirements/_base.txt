@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-alembic==1.7.7
+alembic==1.8.0
     # via -r requirements/_base.in
 greenlet==1.1.2
     # via sqlalchemy
@@ -18,7 +18,7 @@ multidict==6.0.2
     # via yarl
 psycopg2-binary==2.9.3
     # via sqlalchemy
-sqlalchemy==1.4.32
+sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in

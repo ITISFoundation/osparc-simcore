@@ -1,19 +1,7 @@
 import asyncio
 import collections
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    get_args,
-)
+from typing import Any, Awaitable, Callable, Final, Iterable, Optional, Union, get_args
 from uuid import uuid4
 
 import distributed
@@ -27,21 +15,26 @@ from dask_task_models_library.container_tasks.io import (
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports_v2 import links, port_utils
+from simcore_sdk.node_ports_common.exceptions import (
+    S3InvalidPathError,
+    StorageInvalidCall,
+)
+from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
-from simcore_sdk.node_ports_v2.port import Port
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
+    PortsValidationError,
 )
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
@@ -50,6 +43,20 @@ logger = logging.getLogger(__name__)
 
 ServiceKeyStr = str
 ServiceVersionStr = str
+
+_PVType = Optional[_NPItemValue]
+
+assert len(get_args(_PVType)) == len(  # nosec
+    get_args(PortValue)
+), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
+
+
+def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[ErrorDict]:
+    errors = err.errors()
+    for error in errors:
+        assert error["loc"][-1] != (port_key,)
+        error["loc"] = error["loc"] + (port_key,)
+    return errors
 
 
 def generate_dask_job_id(
@@ -69,7 +76,7 @@ def generate_dask_job_id(
 
 def parse_dask_job_id(
     job_id: str,
-) -> Tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
+) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
     assert len(parts) == 6  # nosec
     return (
@@ -81,21 +88,43 @@ def parse_dask_job_id(
     )
 
 
-async def _create_node_ports(
+async def create_node_ports(
     db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> node_ports_v2.Nodeports:
-    db_manager = node_ports_v2.DBManager(db_engine)
-    return await node_ports_v2.ports(
-        user_id=user_id,
-        project_id=f"{project_id}",
-        node_uuid=f"{node_id}",
-        db_manager=db_manager,
-    )
+    """
+    This function create a nodeports object by fetching the node state from the database
+    and then validating all the ports.
+
+    In some scenarios there is no need to redo this and therefore the returned instance
+    can be passed and reused since members functions fetch the latest state from the database
+    without having to go through the entire construction+validation process.
+
+    For that reason, many of the functions below offer an optional `ports` parameter
+
+    :raises PortsValidationError: if any of the ports assigned values are invalid
+    """
+    try:
+        db_manager = node_ports_v2.DBManager(db_engine)
+        return await node_ports_v2.ports(
+            user_id=user_id,
+            project_id=f"{project_id}",
+            node_uuid=f"{node_id}",
+            db_manager=db_manager,
+        )
+    except ValidationError as err:
+        raise PortsValidationError(project_id, node_id, err.errors()) from err
 
 
 async def parse_output_data(
-    db_engine: Engine, job_id: str, data: TaskOutputData
+    db_engine: Engine,
+    job_id: str,
+    data: TaskOutputData,
+    ports: Optional[node_ports_v2.Nodeports] = None,
 ) -> None:
+    """
+
+    :raises PortsValidationError
+    """
     (
         service_key,
         service_version,
@@ -113,12 +142,15 @@ async def parse_output_data(
         node_id,
     )
 
-    ports = await _create_node_ports(
-        db_engine=db_engine,
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-    )
+    if ports is None:
+        ports = await create_node_ports(
+            db_engine=db_engine,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+        )
+
+    ports_errors = []
     for port_key, port_value in data.items():
         value_to_transfer: Optional[links.ItemValue] = None
         if isinstance(port_value, FileUrl):
@@ -126,13 +158,13 @@ async def parse_output_data(
         else:
             value_to_transfer = port_value
 
-        await (await ports.outputs)[port_key].set_value(value_to_transfer)
+        try:
+            await (await ports.outputs)[port_key].set_value(value_to_transfer)
+        except ValidationError as err:
+            ports_errors.extend(_get_port_validation_errors(port_key, err))
 
-
-_PVType = Optional[_NPItemValue]
-assert len(get_args(_PVType)) == len(  # nosec
-    get_args(PortValue)
-), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
+    if ports_errors:
+        raise PortsValidationError(project_id, node_id, ports_errors)
 
 
 async def compute_input_data(
@@ -140,30 +172,53 @@ async def compute_input_data(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
+    ports: Optional[node_ports_v2.Nodeports] = None,
 ) -> TaskInputData:
-    """Retrieves values registered to the inputs of project_id/node_id"""
-    ports = await _create_node_ports(
-        db_engine=app.state.engine,
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-    )
+    """Retrieves values registered to the inputs of project_id/node_id
+
+    - ports is optional because
+
+    :raises PortsValidationError: when inputs ports validation fail
+    """
+
+    if ports is None:
+        ports = await create_node_ports(
+            db_engine=app.state.engine,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+        )
+
     input_data = {}
 
+    ports_errors = []
     port: Port
     for port in (await ports.inputs).values():
-        value: _PVType = await port.get_value()
+        try:
+            value: _PVType = await port.get_value(file_link_type=file_link_type)
 
-        # Mapping _PVType -> PortValue
-        if isinstance(value, AnyUrl):
-            input_data[port.key] = FileUrl(
-                url=value,
-                file_mapping=(
-                    next(iter(port.file_to_key_map)) if port.file_to_key_map else None
-                ),
-            )
-        else:
-            input_data[port.key] = value
+            # Mapping _PVType -> PortValue
+            if isinstance(value, AnyUrl):
+                logger.debug("Creating file url for %s", f"{port=}")
+                input_data[port.key] = FileUrl(
+                    url=value,
+                    file_mapping=(
+                        next(iter(port.file_to_key_map))
+                        if port.file_to_key_map
+                        else None
+                    ),
+                    file_mime_type=port.property_type.removeprefix("data:"),
+                )
+            else:
+                input_data[port.key] = value
+
+        except ValidationError as err:
+            ports_errors.extend(_get_port_validation_errors(port.key, err))
+
+    if ports_errors:
+        raise PortsValidationError(project_id, node_id, ports_errors)
+
     return TaskInputData.parse_obj(input_data)
 
 
@@ -172,32 +227,48 @@ async def compute_output_data_schema(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
+    ports: Optional[node_ports_v2.Nodeports] = None,
 ) -> TaskOutputDataSchema:
-    ports = await _create_node_ports(
-        db_engine=app.state.engine,
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-    )
+    """
+
+    :raises PortsValidationError
+    """
+    if ports is None:
+        # Based on when this function is normally called,
+        # it is very unlikely that NodePorts raise an exception here
+        # This function only needs the outputs but the design of NodePorts
+        # will validate all inputs and outputs.
+        ports = await create_node_ports(
+            db_engine=app.state.engine,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+        )
+
     output_data_schema = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port_utils.is_file_type(port.property_type):
-            value_link = await port_utils.get_upload_link_from_storage(
+            value_links = await port_utils.get_upload_links_from_storage(
                 user_id=user_id,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
                 file_name=next(iter(port.file_to_key_map))
                 if port.file_to_key_map
                 else port.key,
+                link_type=file_link_type,
+                file_size=ByteSize(0),  # will create a single presigned link
             )
+            assert value_links.urls  # nosec
+            assert len(value_links.urls) == 1  # nosec
             output_data_schema[port.key].update(
                 {
                     "mapping": next(iter(port.file_to_key_map))
                     if port.file_to_key_map
                     else None,
-                    "url": value_link,
+                    "url": f"{value_links.urls[0]}",
                 }
             )
 
@@ -211,23 +282,63 @@ async def compute_service_log_file_upload_link(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    file_link_type: FileLinkType,
 ) -> AnyUrl:
 
-    value_link = await port_utils.get_upload_link_from_storage(
+    value_links = await port_utils.get_upload_links_from_storage(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=_LOGS_FILE_NAME,
+        link_type=file_link_type,
+        file_size=ByteSize(0),  # will create a single presigned link
     )
-    return value_link
+    return value_links.urls[0]
+
+
+async def get_service_log_file_download_link(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    file_link_type: FileLinkType,
+) -> Optional[AnyUrl]:
+    """Returns None if log file is not available (e.g. when tasks is not done)
+
+    : raises StorageServerIssue
+    : raises NodeportsException
+    """
+    try:
+        value_link = await port_utils.get_download_link_from_storage_overload(
+            user_id=user_id,
+            project_id=f"{project_id}",
+            node_id=f"{node_id}",
+            file_name=_LOGS_FILE_NAME,
+            link_type=file_link_type,
+        )
+        return value_link
+
+    except (S3InvalidPathError, StorageInvalidCall) as err:
+        logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
+        return None
 
 
 async def clean_task_output_and_log_files_if_invalid(
-    db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    db_engine: Engine,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    ports: Optional[node_ports_v2.Nodeports] = None,
 ) -> None:
+    """
+
+    :raises PortsValidationError: when output ports validation fail
+    """
+
     # check outputs
-    node_ports = await _create_node_ports(db_engine, user_id, project_id, node_id)
-    for port in (await node_ports.outputs).values():
+    if ports is None:
+        ports = await create_node_ports(db_engine, user_id, project_id, node_id)
+
+    for port in (await ports.outputs).values():
         if not port_utils.is_file_type(port.property_type):
             continue
         file_name = (
@@ -290,7 +401,7 @@ async def dask_sub_consumer_task(
 
 def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
-) -> Dict[str, Union[int, float]]:
+) -> dict[str, Union[int, float]]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
     dask_resources = node_reqs.dict(
         exclude_unset=True, by_alias=True, exclude_none=True
@@ -303,6 +414,11 @@ def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
     logger.debug("current %s", f"{client.scheduler_info()=}")
+    if "id" not in client.scheduler_info():
+        raise ComputationalSchedulerChangedError(
+            original_scheduler_id=original_scheduler_id,
+            current_scheduler_id="No scheduler identifier",
+        )
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
         logger.error("The computational backend changed!")
@@ -331,9 +447,10 @@ def check_scheduler_status(client: distributed.Client):
 
 
 def check_if_cluster_is_able_to_run_pipeline(
+    project_id: ProjectID,
     node_id: NodeID,
-    scheduler_info: Dict[str, Any],
-    task_resources: Dict[str, Any],
+    scheduler_info: dict[str, Any],
+    task_resources: dict[str, Any],
     node_image: Image,
     cluster_id: ClusterID,
 ):
@@ -341,10 +458,10 @@ def check_if_cluster_is_able_to_run_pipeline(
     workers = scheduler_info.get("workers", {})
 
     def can_task_run_on_worker(
-        task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+        task_resources: dict[str, Any], worker_resources: dict[str, Any]
     ) -> bool:
         def gen_check(
-            task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+            task_resources: dict[str, Any], worker_resources: dict[str, Any]
         ) -> Iterable[bool]:
             for name, required_value in task_resources.items():
                 if required_value is None:
@@ -357,8 +474,8 @@ def check_if_cluster_is_able_to_run_pipeline(
         return all(gen_check(task_resources, worker_resources))
 
     def cluster_missing_resources(
-        task_resources: Dict[str, Any], cluster_resources: Dict[str, Any]
-    ) -> List[str]:
+        task_resources: dict[str, Any], cluster_resources: dict[str, Any]
+    ) -> list[str]:
         return [r for r in task_resources if r not in cluster_resources]
 
     cluster_resources_counter = collections.Counter()
@@ -384,17 +501,26 @@ def check_if_cluster_is_able_to_run_pipeline(
     if missing_resources := cluster_missing_resources(
         task_resources, all_available_resources_in_cluster
     ):
+        cluster_resources = (
+            f"'{all_available_resources_in_cluster}', missing: '{missing_resources}'"
+            if all_available_resources_in_cluster
+            else "no workers available! TIP: contact oSparc support"
+        )
+
         raise MissingComputationalResourcesError(
+            project_id=project_id,
             node_id=node_id,
             msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
             f"on cluster {cluster_id}: task needs '{task_resources}', "
-            f"cluster has '{all_available_resources_in_cluster}', missing: '{missing_resources}'",
+            f"cluster has {cluster_resources}",
         )
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
+        project_id=project_id,
         node_id=node_id,
         msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
         f"on cluster {cluster_id}: insuficient resources"
-        f"cluster has '{all_available_resources_in_cluster}', missing: '{missing_resources}'",
+        f"cluster has '{all_available_resources_in_cluster}', cluster has no worker with the"
+        " necessary computational resources for running the service! TIP: contact oSparc support",
     )

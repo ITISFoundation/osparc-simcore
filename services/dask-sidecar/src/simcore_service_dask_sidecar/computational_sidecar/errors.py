@@ -7,7 +7,7 @@ class ComputationalSidecarRuntimeError(PydanticErrorMixin, RuntimeError):
 
 class ServiceRunError(ComputationalSidecarRuntimeError):
     msg_template = (
-        "The service {service_key}:{service_version} running"
+        "The service {service_key}:{service_version} running "
         "in container {container_id} failed with exit code {exit_code}\n"
         "last logs: {service_logs}"
     )

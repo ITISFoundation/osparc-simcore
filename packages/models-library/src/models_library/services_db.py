@@ -3,7 +3,7 @@
 NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field
 from pydantic.types import PositiveInt
@@ -19,7 +19,7 @@ from .services_access import ServiceGroupAccessRights
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional
-    classifiers: Optional[List[str]] = Field([])
+    classifiers: Optional[list[str]] = Field([])
     owner: Optional[PositiveInt]
 
     class Config:
@@ -34,6 +34,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
                 "thumbnail": "http://thumbnailit.org/image",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
+                "deprecated": "2099-01-19 12:45:00",
                 "quality": {
                     "enabled": True,
                     "tsr_target": {

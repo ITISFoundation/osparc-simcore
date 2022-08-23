@@ -9,7 +9,7 @@ import logging
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Dict
+from typing import Any, AsyncIterator, Callable
 from unittest import mock
 from unittest.mock import call
 
@@ -34,6 +34,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
@@ -86,7 +87,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: Dict[str, Any],
+    app_cfg: dict[str, Any],
     postgres_db: sa.engine.Engine,
     mock_orphaned_services,
     redis_client: Redis,
@@ -122,6 +123,7 @@ def client(
     setup_director(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_products(app)
 
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)
 
@@ -158,7 +160,7 @@ async def empty_user_project(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> AsyncIterator[Dict[str, Any]]:
+) -> AsyncIterator[dict[str, Any]]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -174,7 +176,7 @@ async def empty_user_project2(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> AsyncIterator[Dict[str, Any]]:
+) -> AsyncIterator[dict[str, Any]]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -330,7 +332,7 @@ async def test_websocket_multiple_connections(
 )
 async def test_websocket_disconnected_after_logout(
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     expected,
@@ -395,9 +397,9 @@ async def test_websocket_disconnected_after_logout(
 @pytest.mark.flaky(max_runs=3)  # TODO: remove this flaky mark
 async def test_interactive_services_removed_after_logout(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    empty_user_project: Dict[str, Any],
-    mocked_director_v2_api: Dict[str, mock.MagicMock],
+    logged_user: dict[str, Any],
+    empty_user_project: dict[str, Any],
+    mocked_director_v2_api: dict[str, mock.MagicMock],
     create_dynamic_service_mock,
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
@@ -440,7 +442,9 @@ async def test_interactive_services_removed_after_logout(
                 service["service_uuid"],
                 expected_save_state,
             )
-            mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
+            mocked_director_v2_api[
+                "director_v2_core_dynamic_services.stop_dynamic_service"
+            ].assert_awaited_with(
                 app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=expected_save_state,
@@ -521,19 +525,19 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await garbage_collector_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
 
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     assert not sio2.sid
@@ -551,7 +555,9 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             service_uuid=service["service_uuid"],
         )
     ]
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].assert_has_calls(calls)
 
 
 @pytest.fixture
@@ -616,7 +622,7 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
@@ -628,14 +634,20 @@ async def test_interactive_services_removed_per_project(
             save_state=expected_save_state,
         )
     ]
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
-    mocked_director_v2_api["director_v2_core.stop_service"].reset_mock()
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].assert_has_calls(calls)
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_not_called()
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
@@ -652,8 +664,12 @@ async def test_interactive_services_removed_per_project(
             save_state=expected_save_state,
         ),
     ]
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
-    mocked_director_v2_api["director_v2_core.stop_service"].reset_mock()
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].assert_has_calls(calls)
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].reset_mock()
 
 
 @pytest.mark.xfail(
@@ -700,13 +716,13 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
-    mocked_director_v2_api["director_v2_api.stop_service"].assert_has_calls(
+    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_has_calls(
         [call(client.server.app, service["service_uuid"], expected_save_state)]
     )
 
@@ -761,7 +777,9 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             service_uuid=service["service_uuid"],
         )
     ]
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
+    mocked_director_v2_api[
+        "director_v2_core_dynamic_services.stop_dynamic_service"
+    ].assert_has_calls(calls)
 
     # this call is done async, so wait a bit here to ensure it is correctly done
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
@@ -781,8 +799,8 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
 async def test_regression_removing_unexisting_user(
     client: TestClient,
-    logged_user: Dict[str, Any],
-    empty_user_project: Dict[str, Any],
+    logged_user: dict[str, Any],
+    empty_user_project: dict[str, Any],
     user_role: UserRole,
     mock_storage_delete_data_folders: mock.Mock,
 ) -> None:

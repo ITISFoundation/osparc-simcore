@@ -24,7 +24,8 @@ requests
 dask[complete]
 dask-gateway
 pydantic[email,dotenv]
-
+# s3 access
+s3fs
 # compression
 blosc
 lz4

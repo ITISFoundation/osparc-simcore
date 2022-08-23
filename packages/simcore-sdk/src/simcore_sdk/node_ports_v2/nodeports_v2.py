@@ -3,8 +3,11 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.error_wrappers import flatten_errors
 from servicelib.utils import logged_gather
+from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
@@ -16,6 +19,10 @@ log = logging.getLogger(__name__)
 
 
 class Nodeports(BaseModel):
+    """
+    Represents a node in a project and all its input/output ports
+    """
+
     internal_inputs: InputsList = Field(..., alias="inputs")
     internal_outputs: OutputsList = Field(..., alias="outputs")
     db_manager: DBManager
@@ -27,6 +34,7 @@ class Nodeports(BaseModel):
         [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
     ]
     auto_update: bool = False
+    r_clone_settings: Optional[RCloneSettings] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -55,14 +63,20 @@ class Nodeports(BaseModel):
             await self._auto_update_from_db()
         return self.internal_outputs
 
-    async def get_value_link(self, item_key: str) -> Optional[ItemValue]:
+    async def get_value_link(
+        self, item_key: str, *, file_link_type: LinkType
+    ) -> Optional[ItemValue]:
         try:
-            return await (await self.inputs)[item_key].get_value()
+            return await (await self.inputs)[item_key].get_value(
+                file_link_type=file_link_type
+            )
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get_value()
+        return await (await self.outputs)[item_key].get_value(
+            file_link_type=file_link_type
+        )
 
     async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
         try:
@@ -116,6 +130,8 @@ class Nodeports(BaseModel):
         Sets the provided values to the respective input or output ports
         Only supports port_key by name, not able to distinguish between inputs
         and outputs using the index.
+
+        raises ValidationError
         """
         tasks = deque()
         for port_key, value in port_values.items():
@@ -127,5 +143,13 @@ class Nodeports(BaseModel):
                 # if this fails it will raise another exception
                 tasks.append(self.internal_inputs[port_key]._set(value))
 
-        await logged_gather(*tasks)
+        results = await logged_gather(*tasks)
         await self.save_to_db_cb(self)
+
+        # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
+        if errors := [
+            flatten_errors(r, self.__config__, loc=(f"{port_key}",))
+            for port_key, r in zip(port_values.keys(), results)
+            if isinstance(r, ValidationError)
+        ]:
+            raise ValidationError(errors, model=self)

@@ -1,9 +1,8 @@
 import asyncio
 import logging
-from typing import Coroutine, List, Optional, Union, cast
+from typing import Coroutine, Optional, Union, cast
 from uuid import UUID
 
-import async_timeout
 import httpx
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
@@ -12,8 +11,14 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from servicelib.json_serialization import json_dumps
 from starlette import status
 from starlette.datastructures import URL
+from tenacity import RetryCallState, TryAgain
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client
@@ -56,7 +61,7 @@ logger = logging.getLogger(__name__)
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
-    response_model=List[DynamicServiceOut],
+    response_model=list[DynamicServiceOut],
     response_model_exclude_unset=True,
     summary=(
         "returns a list of running interactive services filtered by user_id and/or project_id"
@@ -71,20 +76,22 @@ async def list_running_dynamic_services(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> List[DynamicServiceOut]:
-    legacy_running_services: List[DynamicServiceOut] = cast(
-        List[DynamicServiceOut],
+) -> list[DynamicServiceOut]:
+    legacy_running_services: list[DynamicServiceOut] = cast(
+        list[DynamicServiceOut],
         await director_v0_client.get_running_services(user_id, project_id),
     )
 
-    get_stack_statuse_tasks: List[Coroutine] = [
+    get_stack_statuse_tasks: list[Coroutine] = [
         scheduler.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
         for service in await list_dynamic_sidecar_services(
             dynamic_services_settings.DYNAMIC_SIDECAR, user_id, project_id
         )
     ]
-    dynamic_sidecar_running_services: List[DynamicServiceOut] = cast(
-        List[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
+
+    # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
+    dynamic_sidecar_running_services: list[DynamicServiceOut] = cast(
+        list[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
     )
 
     return legacy_running_services + dynamic_sidecar_running_services
@@ -204,11 +211,26 @@ async def stop_dynamic_service(
         dynamic_services_settings.DYNAMIC_SIDECAR
     )
     _STOPPED_CHECK_INTERVAL = 1.0
-    async with async_timeout.timeout(
-        dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
+
+    def _log_error(retry_state: RetryCallState):
+        logger.error(
+            "Service with %s could not be untracked after %s",
+            f"{node_uuid=}",
+            f"{json_dumps(retry_state.retry_object.statistics)}",
+        )
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(_STOPPED_CHECK_INTERVAL),
+        stop=stop_after_delay(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
+        ),
+        before_sleep=before_sleep_log(logger=logger, log_level=logging.INFO),
+        reraise=False,
+        retry_error_callback=_log_error,
     ):
-        while scheduler.is_service_tracked(node_uuid):
-            await asyncio.sleep(_STOPPED_CHECK_INTERVAL)
+        with attempt:
+            if scheduler.is_service_tracked(node_uuid):
+                raise TryAgain
 
     return NoContentResponse()
 
@@ -254,7 +276,7 @@ async def service_retrieve_data_on_ports(
         response = await services_client.request(
             "POST",
             f"{service_base_url}/retrieve",
-            data=retrieve_settings.json(by_alias=True),
+            content=retrieve_settings.json(by_alias=True),
             timeout=timeout,
         )
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..core.dependencies import get_application_health
 from ..models.schemas.application_health import ApplicationHealth
+from ._dependencies import get_application_health
 
 health_router = APIRouter()
 
@@ -24,4 +24,4 @@ async def health_endpoint(
     return application_health
 
 
-__all__ = ["health_router"]
+__all__: tuple[str, ...] = ("health_router",)

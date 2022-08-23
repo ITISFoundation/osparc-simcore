@@ -56,8 +56,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     this._add(table, {
       flex: 1
     });
-
-    this.__messengerColors = new Set();
   },
 
   properties: {
@@ -68,6 +66,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       init: 0
     },
 
+    lockLogs: {
+      apply : "__updateTable",
+      nullable: false,
+      check : "Boolean",
+      init: true
+    },
+
     currentNodeId: {
       check: "String",
       nullable: true,
@@ -76,6 +81,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   },
 
   statics: {
+    POS: {
+      TIMESTAMP: 0,
+      ORIGIN: 1,
+      MESSAGE: 2
+    },
+
     LOG_LEVELS: {
       debug: -1,
       info: 0,
@@ -83,29 +94,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       error: 2
     },
 
-    getLevelColorTag: function(logLevel) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      let logColor = null;
-      Object.keys(this.LOG_LEVELS).forEach(logLevelKey => {
-        const logString = logLevelKey;
-        const logNumber = this.LOG_LEVELS[logLevelKey];
-        if (logNumber === logLevel) {
-          logColor = colorManager.resolve("logger-"+logString+"-message");
-        }
-      });
-      return logColor ? logColor : colorManager.resolve("logger-info-message");
-    },
-
-    getNewColor: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
-      let luminanceText = null;
-      let color = null;
-      do {
-        color = osparc.utils.Utils.getRandomColor();
-        luminanceText = osparc.utils.Utils.getColorLuminance(color);
-      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
-      return color;
+    logLevel2Str: function(logLevel) {
+      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
+      if (pairFound && pairFound.length) {
+        return pairFound[0].toUpperCase();
+      }
+      return undefined;
     }
   },
 
@@ -113,7 +107,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __textFilterField: null,
     __loggerModel: null,
     __logView: null,
-    __messengerColors: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -169,11 +162,35 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           toolbar.add(control);
           break;
         }
+        case "lock-logs-button": {
+          control = new qx.ui.form.ToggleButton().set({
+            toolTipText: this.tr("Toggle auto-scroll"),
+            appearance: "toolbar-button"
+          });
+          control.bind("value", this, "lockLogs");
+          control.bind("value", control, "icon", {
+            converter: val => val ? "@FontAwesome5Solid/lock/14" : "@FontAwesome5Solid/lock-open/14"
+          });
+          const toolbar = this.getChildControl("toolbar");
+          toolbar.add(control);
+          break;
+        }
         case "copy-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/copy/14",
             toolTipText: this.tr("Copy logs to clipboard"),
+            appearance: "toolbar-button"
+          });
+          osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
+          toolbar.add(control);
+          break;
+        }
+        case "download-logs-button": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/download/14",
+            toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
           osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
@@ -201,9 +218,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       }, this);
       toolbar.add(logLevelSelectBox);
 
+      const lockLogsButton = this.getChildControl("lock-logs-button");
+      toolbar.add(lockLogsButton);
+
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
       toolbar.add(copyToClipboardButton);
+
+      const downloadButton = this.getChildControl("download-logs-button");
+      downloadButton.addListener("execute", () => this.__downloadLogs(), this);
+      toolbar.add(downloadButton);
 
       return toolbar;
     },
@@ -221,17 +245,22 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
-        showCellFocusIndicator: false
+        showCellFocusIndicator: false,
+        rowHeight: 15,
+        forceLineHeight: false
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
+        defaultCellStyle: "user-select: text"
+      }));
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
+      colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(0, "20%");
-      resizeBehavior.setWidth(1, "80%");
+      resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
+      resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
       this.__applyFilters();
 
@@ -243,8 +272,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __currentNodeClicked: function(checked) {
-      const currentNodeId = this.getCurrentNodeId();
       if (checked) {
+        const currentNodeId = this.getCurrentNodeId();
         this.__nodeSelected(currentNodeId);
       }
     },
@@ -253,20 +282,24 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
       const node = workbench.getNode(nodeId);
-      if (node) {
-        this.__textFilterField.setValue(node.getLabel());
-      } else {
-        // Root selected
-        this.__textFilterField.setValue("");
-      }
+      this.__textFilterField.setValue(node ? node.getLabel() : "");
+    },
+
+    __getLogsString: function() {
+      let logs = "";
+      this.__loggerModel.getRows().forEach(row => {
+        logs += `${row.timeStamp} ${this.self().logLevel2Str(row.logLevel)} ${row.nodeId} ${row.label}: ${row.msg} \n`;
+      });
+      return logs;
     },
 
     __copyLogsToClipboard: function() {
-      let logs = "";
-      this.__loggerModel.getRows().forEach(row => {
-        logs += `(${row.nodeId}) ${row.label}: ${row.msg} \n`;
-      });
-      osparc.utils.Utils.copyTextToClipboard(logs);
+      osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
+    },
+
+    __downloadLogs: function() {
+      const logs = this.__getLogsString();
+      osparc.utils.Utils.downloadContent("data:text/plain;charset=utf-8," + logs, "logs.log");
     },
 
     debug: function(nodeId, msg = "") {
@@ -309,40 +342,31 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         label = "Workbench";
       }
 
-      const nodeColor = this.__getNodesColor(nodeId);
-      const msgColor = osparc.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
       const msgLogs = [];
-      for (let i=0; i<msgs.length; i++) {
+      msgs.forEach(msg => {
         const msgLog = {
+          timeStamp: new Date(),
           nodeId,
           label,
-          msg: msgs[i],
-          logLevel,
-          nodeColor,
-          msgColor
+          msg,
+          tooltip: msg,
+          logLevel
         };
         msgLogs.push(msgLog);
-      }
+      });
       this.__loggerModel.addRows(msgLogs);
 
       this.__updateTable();
     },
 
     __updateTable: function() {
-      this.__loggerModel.reloadData();
-      const nFilteredRows = this.__loggerModel.getFilteredRowCount();
-      this.__logView.scrollCellVisible(0, nFilteredRows);
-    },
-
-    __getNodesColor: function(nodeId) {
-      for (const item of this.__messengerColors) {
-        if (item[0] === nodeId) {
-          return item[1];
+      if (this.__loggerModel) {
+        this.__loggerModel.reloadData();
+        if (!this.isLockLogs()) {
+          const nFilteredRows = this.__loggerModel.getFilteredRowCount();
+          this.__logView.scrollCellVisible(0, nFilteredRows);
         }
       }
-      const color = osparc.component.widget.logger.LoggerView.getNewColor();
-      this.__messengerColors.add([nodeId, color]);
-      return color;
     },
 
     __applyFilters: function() {

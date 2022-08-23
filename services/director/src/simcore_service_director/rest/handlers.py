@@ -106,6 +106,7 @@ async def get_service_labels(
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
+# GET /service_extras/{service_key}/{service_version}
 async def service_extras_by_key_version_get(
     request: web.Request, service_key: str, service_version: str
 ) -> web.Response:

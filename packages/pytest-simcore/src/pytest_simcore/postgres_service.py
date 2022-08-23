@@ -1,7 +1,8 @@
-# pylint:disable=redefined-outer-name
-# pylint:disable=unused-argument
-# pylint:disable=unused-variable
-from typing import AsyncIterator, Dict, Final, Iterator, List
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+from typing import AsyncIterator, Final, Iterator, TypedDict
 
 import pytest
 import sqlalchemy as sa
@@ -11,15 +12,23 @@ from sqlalchemy.orm import sessionmaker
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 from .helpers.utils_postgres import migrated_pg_tables_context
 
 TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
 
+class PostgresTestConfig(TypedDict):
+    user: str
+    password: str
+    database: str
+    host: str
+    port: str
+
+
 def execute_queries(
     postgres_engine: sa.engine.Engine,
-    sql_statements: List[str],
+    sql_statements: list[str],
     ignore_errors: bool = False,
 ) -> None:
     """runs the queries in the list in order"""
@@ -34,7 +43,9 @@ def execute_queries(
                 print(f"SQL error which can be ignored {e}")
 
 
-def create_template_db(postgres_dsn: Dict, postgres_engine: sa.engine.Engine) -> None:
+def create_template_db(
+    postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine
+) -> None:
     # create a template db, the removal is necessary to allow for the usage of --keep-docker-up
     queries = [
         # disconnect existing users
@@ -69,7 +80,9 @@ def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
 
 @pytest.fixture(scope="module")
 def postgres_with_template_db(
-    postgres_db: sa.engine.Engine, postgres_dsn: Dict, postgres_engine: sa.engine.Engine
+    postgres_db: sa.engine.Engine,
+    postgres_dsn: PostgresTestConfig,
+    postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
     create_template_db(postgres_dsn, postgres_engine)
     yield postgres_engine
@@ -77,7 +90,7 @@ def postgres_with_template_db(
 
 
 @pytest.fixture
-def drop_db_engine(postgres_dsn: Dict) -> sa.engine.Engine:
+def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
     postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
     postgres_dsn_copy["database"] = "postgres"
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
@@ -88,7 +101,7 @@ def drop_db_engine(postgres_dsn: Dict) -> sa.engine.Engine:
 
 @pytest.fixture
 def database_from_template_before_each_function(
-    postgres_dsn: Dict, drop_db_engine: sa.engine.Engine, postgres_db
+    postgres_dsn: PostgresTestConfig, drop_db_engine: sa.engine.Engine, postgres_db
 ) -> None:
     """
     Will recrate the db before running each test.
@@ -118,14 +131,14 @@ def database_from_template_before_each_function(
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn(docker_stack: Dict, testing_environ_vars: Dict) -> Dict[str, str]:
+def postgres_dsn(docker_stack: dict, testing_environ_vars: dict) -> PostgresTestConfig:
     assert "pytest-simcore_postgres" in docker_stack["services"]
 
-    pg_config = {
+    pg_config: PostgresTestConfig = {
         "user": testing_environ_vars["POSTGRES_USER"],
         "password": testing_environ_vars["POSTGRES_PASSWORD"],
         "database": testing_environ_vars["POSTGRES_DB"],
-        "host": "127.0.0.1",
+        "host": get_localhost_ip(),
         "port": get_service_published_port(
             "postgres", testing_environ_vars["POSTGRES_PORT"]
         ),
@@ -138,7 +151,7 @@ _MINUTE: Final[int] = 60
 
 
 @pytest.fixture(scope="module")
-def postgres_engine(postgres_dsn: Dict[str, str]) -> Iterator[sa.engine.Engine]:
+def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         **postgres_dsn
     )
@@ -165,8 +178,15 @@ def postgres_engine(postgres_dsn: Dict[str, str]) -> Iterator[sa.engine.Engine]:
 
 
 @pytest.fixture(scope="module")
+def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
+    return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+        **postgres_dsn
+    )
+
+
+@pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict[str, str],
+    postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
@@ -208,7 +228,10 @@ async def sqlalchemy_async_engine(
 
 
 @pytest.fixture(scope="function")
-def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str, str]:
+def postgres_host_config(
+    postgres_dsn: PostgresTestConfig, monkeypatch
+) -> PostgresTestConfig:
+    """sets postgres env vars and returns config"""
     monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])
     monkeypatch.setenv("POSTGRES_PASSWORD", postgres_dsn["password"])
     monkeypatch.setenv("POSTGRES_DB", postgres_dsn["database"])

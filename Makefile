@@ -364,7 +364,7 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip \
+		pip~=22.0 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
@@ -464,6 +464,9 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+.PHONY: CITATION-validate
+CITATION-validate: ## validates CITATION.cff file
+	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
 ## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
 
@@ -682,7 +685,7 @@ define create_github_release_url
 endef
 
 .PHONY: release-staging release-prod
-release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
 	$(create_github_release_url)
 
 .PHONY: release-hotfix release-staging-hotfix

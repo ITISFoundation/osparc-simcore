@@ -18,7 +18,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
-    "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 40),
+    // "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 40),
+    "strong-main": "rgba(0, 144, 208, 1)",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
 
@@ -152,7 +153,7 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
 
-    "node-selected-background": "#666666",
+    "node-selected-background": "background-main-4",
     "node-title-text": "#DCDCDC",
     "node-port-text": "#BABABA",
 

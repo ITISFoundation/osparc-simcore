@@ -3,7 +3,7 @@ import logging
 import signal
 import threading
 from pprint import pformat
-from typing import List
+from typing import List, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.io import (
 )
 from distributed.worker import logger
 from pydantic.networks import AnyUrl
+from settings_library.s3 import S3Settings
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
@@ -37,6 +38,7 @@ class GracefulKiller:
 
     kill_now = False
     worker = None
+    task = None
 
     def __init__(self, worker: distributed.Worker):
         signal.signal(signal.SIGINT, self.exit_gracefully)
@@ -51,7 +53,9 @@ class GracefulKiller:
         )
         self.kill_now = True
         assert self.worker  # nosec
-        asyncio.ensure_future(self.worker.close(timeout=5))
+        self.task = asyncio.create_task(
+            self.worker.close(timeout=5), name="close_dask_worker_task"
+        )
 
 
 async def dask_setup(worker: distributed.Worker) -> None:
@@ -86,22 +90,21 @@ async def _run_computational_sidecar_async(
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
-    command: List[str],
+    command: list[str],
+    s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
 
     task_publishers = TaskPublisher()
 
     log.debug(
         "run_computational_sidecar %s",
-        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
+        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}, {s3_settings=}",
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
     async with monitor_task_abortion(
         task_name=current_task.get_name(), log_publisher=task_publishers.logs
     ):
-        _retry = 0
-        _max_retries = 1
         sidecar_bootmode = get_current_task_boot_mode()
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
@@ -114,6 +117,7 @@ async def _run_computational_sidecar_async(
             boot_mode=sidecar_bootmode,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
+            s3_settings=s3_settings,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         log.debug("completed run of sidecar with result %s", f"{output_data=}")
@@ -128,6 +132,7 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: List[str],
+    s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -149,6 +154,7 @@ def run_computational_sidecar(
             output_data_keys,
             log_file_url,
             command,
+            s3_settings,
         )
     )
     return result

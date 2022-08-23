@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterator, Dict, Union
+from typing import AsyncIterator, Union
 
 import pytest
 import tenacity
@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture
 async def redis_settings(
-    docker_stack: Dict,  # stack is up
-    testing_environ_vars: Dict,
+    docker_stack: dict,  # stack is up
+    testing_environ_vars: dict,
 ) -> RedisSettings:
     """Returns the settings of a redis service that is up and responsive"""
 
@@ -93,5 +93,8 @@ async def redis_locks_client(
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
     client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
 
-    if not await client.ping():
-        raise ConnectionError(f"{redis_url=} not available")
+    try:
+        if not await client.ping():
+            raise ConnectionError(f"{redis_url=} not available")
+    finally:
+        await client.close(close_connection_pool=True)

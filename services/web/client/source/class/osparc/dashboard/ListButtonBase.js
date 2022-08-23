@@ -28,17 +28,20 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   construct: function() {
     this.base(arguments);
     this.set({
-      width: this.self().ITEM_WIDTH,
-      height: this.self().ITEM_HEIGHT,
+      width: osparc.dashboard.ListButtonBase.ITEM_WIDTH,
+      height: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
       allowGrowX: true
     });
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    const layout = new qx.ui.layout.Grid();
+    layout.setSpacing(10);
+    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.DESCRIPTION, 1);
+    this._setLayout(layout);
   },
 
   statics: {
     ITEM_WIDTH: 600,
-    ITEM_HEIGHT: 40,
+    ITEM_HEIGHT: 35,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -48,11 +51,12 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       TAGS: 4,
       PERMISSION: 5,
       SHARED: 6,
-      LAST_CHANGE: 7,
-      TSR: 8,
-      UI_MODE: 9,
-      UPDATE_STUDY: 10,
-      OPTIONS: 11
+      TSR: 7,
+      UI_MODE: 8,
+      UPDATE_STUDY: 9,
+      LAST_CHANGE: 10,
+      HITS: 11,
+      OPTIONS: 12
     }
   },
 
@@ -67,7 +71,10 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           control.getChildControl("image").set({
             anonymous: true
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.THUMBNAIL);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.THUMBNAIL
+          });
           break;
         }
         case "title":
@@ -75,7 +82,10 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             font: "title-14",
             alignY: "middle"
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.TITLE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TITLE
+          });
           break;
         case "description":
           control = new qx.ui.basic.Label().set({
@@ -84,8 +94,20 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             alignY: "middle",
             allowGrowX: true
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.DESCRIPTION, {
-            flex: 1
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+          });
+          break;
+        case "description-md":
+          control = new osparc.ui.markdown.Markdown().set({
+            maxHeight: 15,
+            alignY: "middle",
+            allowGrowX: true
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
           });
           break;
       }

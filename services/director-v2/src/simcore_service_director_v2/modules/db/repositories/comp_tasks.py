@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -14,6 +14,7 @@ from models_library.services import ServiceDockerData, ServiceKeyVersion
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
+from ....core.errors import ErrorDict
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
@@ -34,9 +35,7 @@ logger = logging.getLogger(__name__)
 # Examples are nodes like file-picker or parameter/*
 #
 _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
-    meta.key: meta
-    for meta in iter_service_docker_data()
-    if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
+    meta.key: meta for meta in iter_service_docker_data()
 }
 
 
@@ -68,11 +67,17 @@ async def _generate_tasks_list_from_project(
         if not node_details:
             continue
 
-        image = Image(
-            name=service_key_version.key,
-            tag=service_key_version.version,
-            node_requirements=node_extras.node_requirements if node_extras else None,
-        )
+        # aggregates node_details amd node_extras into Image
+        data: Dict[str, Any] = {
+            "name": service_key_version.key,
+            "tag": service_key_version.version,
+        }
+        if node_extras:
+            data.update(node_requirements=node_extras.node_requirements)
+            if node_extras.container_spec:
+                data.update(command=node_extras.container_spec.command)
+        image = Image.parse_obj(data)
+        assert image.command  # nosec
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
@@ -133,6 +138,16 @@ class CompTasksRepository(BaseRepository):
                 tasks.append(task_db)
         logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
+
+    async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
+        async with self.db_engine.acquire() as conn:
+            nid: Optional[str] = await conn.scalar(
+                sa.select([comp_tasks.c.node_id]).where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+            )
+            return nid is not None
 
     async def upsert_tasks_from_project(
         self,
@@ -231,7 +246,11 @@ class CompTasksRepository(BaseRepository):
         )
 
     async def set_project_tasks_state(
-        self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
+        self,
+        project_id: ProjectID,
+        tasks: List[NodeID],
+        state: RunningState,
+        errors: Optional[List[ErrorDict]] = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(
@@ -240,7 +259,7 @@ class CompTasksRepository(BaseRepository):
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=RUNNING_STATE_TO_DB[state])
+                .values(state=RUNNING_STATE_TO_DB[state], errors=errors)
             )
         logger.debug(
             "set project %s tasks %s with state %s",

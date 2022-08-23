@@ -12,6 +12,7 @@
 --requirement ../../../../packages/models-library/requirements/_base.in
 --requirement ../../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../../packages/settings-library/requirements/_base.in
+--requirement ../../../../packages/simcore-sdk/requirements/_base.in
 # simcore-service-library[aiohttp]
 --requirement ../../../../packages/service-library/requirements/_base.in
 --requirement ../../../../packages/service-library/requirements/_aiohttp.in
@@ -23,8 +24,6 @@
 # socket_id saved in redis does not correspond to client's sio
 python-socketio~=4.6.1
 
-# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
-yarl<1.6
 
 
 aio-pika # RabbitMQ client
@@ -38,7 +37,6 @@ aiohttp-swagger[performance]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
-change_case
 cryptography # security
 expiringdict
 gunicorn[setproctitle]
@@ -47,11 +45,11 @@ json2html
 jsondiff
 openpyxl # excel
 orjson  # json
+packaging
 parfive  # excel
 passlib
 pint # units
 pydantic[email] # models
 python-magic # excel
 redis
-semantic_version
 tenacity

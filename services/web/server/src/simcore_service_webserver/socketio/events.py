@@ -7,6 +7,7 @@ from collections import deque
 from typing import Any, Dict, List, Sequence, TypedDict
 
 from aiohttp.web import Application
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -48,13 +49,21 @@ async def send_messages(
 async def post_messages(
     app: Application, user_id: str, messages: Sequence[SocketMessageDict]
 ) -> None:
-    fire_and_forget_task(send_messages(app, user_id, messages))
+    fire_and_forget_task(
+        send_messages(app, user_id, messages),
+        task_suffix_name=f"post_message_{user_id=}",
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
 
 async def post_group_messages(
     app: Application, room: str, messages: Sequence[SocketMessageDict]
 ) -> None:
-    fire_and_forget_task(send_group_messages(app, room, messages))
+    fire_and_forget_task(
+        send_group_messages(app, room, messages),
+        task_suffix_name=f"post_group_messages_{room=}",
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
 
 async def send_group_messages(

@@ -8,46 +8,58 @@
 
 
 from random import choice
-from typing import Any, Dict
+from typing import Any, Callable
 from unittest import mock
 
 import aiopg
 import httpx
 import pytest
-from _helpers import (  # type: ignore
-    PublishedProject,
-    set_comp_task_inputs,
-    set_comp_task_outputs,
-)
+from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from _pytest.monkeypatch import MonkeyPatch
-from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
+from dask_task_models_library.container_tasks.io import (
+    FilePortSchema,
+    FileUrl,
+    TaskOutputData,
+)
 from faker import Faker
+from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
+    compute_output_data_schema,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
     parse_dask_job_id,
     parse_output_data,
 )
+from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture
 async def mocked_node_ports_filemanager_fcts(
     mocker: MockerFixture,
-) -> Dict[str, mock.MagicMock]:
+    faker: Faker,
+    tasks_file_link_scheme: tuple,
+) -> dict[str, mock.MagicMock]:
     return {
         "entry_exists": mocker.patch(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.entry_exists",
@@ -58,6 +70,28 @@ async def mocked_node_ports_filemanager_fcts(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.delete_file",
             autospec=True,
             return_value=None,
+        ),
+        "get_upload_links_from_s3": mocker.patch(
+            "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_links_from_s3",
+            autospec=True,
+            side_effect=lambda **kwargs: (
+                0,
+                FileUploadSchema(
+                    urls=[
+                        parse_obj_as(
+                            AnyUrl,
+                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",
+                        )
+                    ],
+                    chunk_size=parse_obj_as(ByteSize, "5GiB"),
+                    links=FileUploadLinks(
+                        abort_upload=parse_obj_as(AnyUrl, "https://www.fakeabort.com"),
+                        complete_upload=parse_obj_as(
+                            AnyUrl, "https://www.fakecomplete.com"
+                        ),
+                    ),
+                ),
+            ),
         ),
     }
 
@@ -114,7 +148,7 @@ def test_dask_job_id_serialization(
 
 
 @pytest.fixture()
-def fake_io_config(faker: Faker) -> Dict[str, str]:
+def fake_io_config(faker: Faker) -> dict[str, str]:
     return {
         f"pytest_io_key_{faker.pystr()}": choice(
             ["integer", "data:*/*", "boolean", "number", "string"]
@@ -125,8 +159,8 @@ def fake_io_config(faker: Faker) -> Dict[str, str]:
 
 @pytest.fixture(params=[True, False])
 def fake_io_schema(
-    fake_io_config: Dict[str, str], faker: Faker, request
-) -> Dict[str, Dict[str, str]]:
+    fake_io_config: dict[str, str], faker: Faker, request
+) -> dict[str, dict[str, str]]:
     fake_io_schema = {}
     for key, value_type in fake_io_config.items():
         fake_io_schema[key] = {
@@ -141,11 +175,18 @@ def fake_io_schema(
 
 
 @pytest.fixture()
-def fake_io_data(fake_io_config: Dict[str, str], faker: Faker) -> Dict[str, Any]:
-    def generate_simcore_file_link() -> Dict[str, Any]:
-        return SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+def fake_io_data(
+    fake_io_config: dict[str, str],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
+) -> dict[str, Any]:
+    def generate_simcore_file_link() -> dict[str, Any]:
+        return SimCoreFileLink(
+            store=0,
+            path=create_simcore_file_id(
+                faker.uuid4(), faker.uuid4(), faker.file_name()
+            ),
+        ).dict(by_alias=True, exclude_unset=True)
 
     TYPE_TO_FAKE_CALLABLE_MAP = {
         "number": faker.pyfloat,
@@ -162,8 +203,8 @@ def fake_io_data(fake_io_config: Dict[str, str], faker: Faker) -> Dict[str, Any]
 
 @pytest.fixture()
 def fake_task_output_data(
-    fake_io_schema: Dict[str, Dict[str, str]],
-    fake_io_data: Dict[str, Any],
+    fake_io_schema: dict[str, dict[str, str]],
+    fake_io_data: dict[str, Any],
     faker: Faker,
 ) -> TaskOutputData:
     converted_data = {
@@ -186,7 +227,7 @@ async def test_parse_output_data(
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     published_project: PublishedProject,
     user_id: UserID,
-    fake_io_schema: Dict[str, Dict[str, str]],
+    fake_io_schema: dict[str, dict[str, str]],
     fake_task_output_data: TaskOutputData,
     mocker: MockerFixture,
 ):
@@ -223,12 +264,17 @@ async def test_parse_output_data(
 
 @pytest.fixture
 def app_with_db(
-    mock_env: None,
+    mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
-    postgres_host_config: Dict[str, str],
+    postgres_host_config: dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
+    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
+    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
+    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
+    monkeypatch.setenv("S3_SECURE", "false")
 
 
 async def test_compute_input_data(
@@ -237,18 +283,23 @@ async def test_compute_input_data(
     async_client: httpx.AsyncClient,
     user_id: UserID,
     published_project: PublishedProject,
-    fake_io_schema: Dict[str, Dict[str, str]],
-    fake_io_data: Dict[str, Any],
+    fake_io_schema: dict[str, dict[str, str]],
+    fake_io_data: dict[str, Any],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     faker: Faker,
     mocker: MockerFixture,
+    tasks_file_link_type: FileLinkType,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
 
     # set some fake inputs
     fake_inputs = {
-        key: SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+        key: SimCoreFileLink(
+            store=0,
+            path=create_simcore_file_id(
+                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
+            ),
+        ).dict(by_alias=True, exclude_unset=True)
         if value_type["type"] == "data:*/*"
         else fake_io_data[key]
         for key, value_type in fake_io_schema.items()
@@ -274,11 +325,66 @@ async def test_compute_input_data(
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
+        file_link_type=tasks_file_link_type,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
-        [mock.call(mock.ANY) for n in fake_io_data.keys()]
+        [
+            mock.call(mock.ANY, file_link_type=tasks_file_link_type)
+            for n in fake_io_data.keys()
+        ]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
+
+
+@pytest.fixture
+def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
+    if tasks_file_link_type == FileLinkType.S3:
+        return ("s3", "s3a")
+    if tasks_file_link_type == FileLinkType.PRESIGNED:
+        return ("http", "https")
+    assert False, "unknown file link type, need update of the fixture"
+
+
+async def test_compute_output_data_schema(
+    app_with_db: None,
+    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    async_client: httpx.AsyncClient,
+    user_id: UserID,
+    published_project: PublishedProject,
+    fake_io_schema: dict[str, dict[str, str]],
+    tasks_file_link_type: FileLinkType,
+    tasks_file_link_scheme: tuple,
+    mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
+):
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    # simulate pre-created file links
+    no_outputs = {}
+    await set_comp_task_outputs(
+        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+    )
+
+    output_schema = await compute_output_data_schema(
+        async_client._transport.app,
+        user_id,
+        published_project.project.uuid,
+        sleeper_task.node_id,
+        file_link_type=tasks_file_link_type,
+    )
+    for port_key, port_schema in fake_io_schema.items():
+        assert port_key in output_schema
+        assert output_schema[port_key]
+        assert output_schema[port_key].required is True  # currently always true
+        assert isinstance(output_schema[port_key], FilePortSchema) == port_schema[
+            "type"
+        ].startswith("data:")
+        if isinstance(output_schema[port_key], FilePortSchema):
+            file_port_schema = output_schema[port_key]
+            assert isinstance(file_port_schema, FilePortSchema)
+            assert file_port_schema.url.scheme in tasks_file_link_scheme
+            if "fileToKeyMap" in port_schema:
+                assert file_port_schema.mapping
+            else:
+                assert file_port_schema.mapping is None
 
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
@@ -286,9 +392,10 @@ async def test_clean_task_output_and_log_files_if_invalid(
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     user_id: UserID,
     published_project: PublishedProject,
-    mocked_node_ports_filemanager_fcts: Dict[str, mock.MagicMock],
+    mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     entry_exists_returns: bool,
-    fake_io_schema: Dict[str, Dict[str, str]],
+    fake_io_schema: dict[str, dict[str, str]],
     faker: Faker,
 ):
     # since the presigned links for outputs and logs file are created
@@ -303,9 +410,12 @@ async def test_clean_task_output_and_log_files_if_invalid(
 
     # simulate pre-created file links
     fake_outputs = {
-        key: SimCoreFileLink(store=0, path=faker.file_path()).dict(
-            by_alias=True, exclude_unset=True
-        )
+        key: SimCoreFileLink(
+            store=0,
+            path=create_simcore_file_id(
+                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
+            ),
+        ).dict(by_alias=True, exclude_unset=True)
         for key, value_type in fake_io_schema.items()
         if value_type["type"] == "data:*/*"
     }
@@ -322,14 +432,14 @@ async def test_clean_task_output_and_log_files_if_invalid(
     expected_calls = [
         mock.call(
             user_id=user_id,
-            store_id="0",
+            store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
         )
         for key in fake_outputs.keys()
     ] + [
         mock.call(
             user_id=user_id,
-            store_id="0",
+            store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
         )
     ]
@@ -346,7 +456,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     "req_example", NodeRequirements.Config.schema_extra["examples"]
 )
 def test_node_requirements_correctly_convert_to_dask_resources(
-    req_example: Dict[str, Any]
+    req_example: dict[str, Any]
 ):
     node_reqs = NodeRequirements(**req_example)
     assert node_reqs

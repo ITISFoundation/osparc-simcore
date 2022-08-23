@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Tuple
@@ -6,6 +7,10 @@ import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pint import UnitRegistry
 from pydantic import ValidationError
 
@@ -22,10 +27,12 @@ from .catalog_models import (
     json_dumps,
     replace_service_input_outputs,
 )
-from .catalog_utils import can_connect
+from .catalog_units import can_connect
 from .login.decorators import RQT_USERID_KEY, login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
+
+logger = logging.getLogger(__name__)
 
 ###############
 # API HANDLERS
@@ -279,6 +286,33 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
+@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/resources")
+@login_required
+@permission_required("services.catalog.*")
+async def get_service_resources_handler(request: Request):
+    """
+    Filters outputs of this service that match a given service input
+
+    Returns compatible output port of a connected node for a given input
+    """
+    with parameters_validation(request):
+        # match, parse and validate
+        service_key: ServiceKey = request.match_info["service_key"]
+        service_version: ServiceVersion = request.match_info["service_version"]
+
+    service_resources: ServiceResourcesDict = (
+        await catalog_client.get_service_resources(
+            request.app, service_key=service_key, service_version=service_version
+        )
+    )
+
+    # format response
+    enveloped: str = json_dumps(
+        {"data": ServiceResourcesDictHelpers.create_jsonable(service_resources)}
+    )
+    return web.Response(text=enveloped, content_type="application/json")
+
+
 ###############
 # IMPLEMENTATION
 #
@@ -289,9 +323,22 @@ async def list_services(ctx: _RequestContext):
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
-        replace_service_input_outputs(
-            service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
-        )
+        try:
+            replace_service_input_outputs(
+                service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+            )
+        except KeyError:
+            # This will limit the effect of a any error in the formatting of
+            # service metadata (mostly in label annotations). Otherwise it would
+            # completely break all the listing operation. At this moment,
+            # a limitation on schema's $ref produced an error that made faiing
+            # the full service listing.
+            logger.exception(
+                "Failed while processing this %s. "
+                "Skipping service from listing. "
+                "TIP: check formatting of docker label annotations for inputs/outputs.",
+                f"{service=}",
+            )
     return services
 
 

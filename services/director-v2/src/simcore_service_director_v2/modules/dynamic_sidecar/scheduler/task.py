@@ -1,19 +1,29 @@
+"""Dynamic services scheduler
+
+This scheduler takes care of scheduling the dynamic services life cycle.
+
+self._to_observe is a list containing all the dynamic services to schedule (from creation to deletion)
+self._to_observe is protected by an asyncio Lock
+1. a background task runs every X seconds and adds all the current scheduled services in an asyncio.Queue
+2. a second background task processes the entries in the Queue and starts a task per service
+  a. if the service is already under "observation" then it will skip this cycle
+"""
+
 import asyncio
 import contextlib
+import functools
 import logging
-import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
-import httpx
-from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -22,16 +32,15 @@ from ....core.settings import (
 )
 from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
 from ....models.schemas.dynamic_services import (
-    AsyncResourceLock,
     DynamicSidecarStatus,
-    LockWithSchedulerData,
     RunningDynamicServiceDetails,
     SchedulerData,
 )
-from ..client_api import (
+from ..api_client import (
+    ClientHttpError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
-    update_dynamic_sidecar_health,
+    get_dynamic_sidecar_service_health,
 )
 from ..docker_api import (
     are_all_services_present,
@@ -40,7 +49,11 @@ from ..docker_api import (
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
-from ..errors import DynamicSidecarError, DynamicSidecarNotFoundError
+from ..errors import (
+    DynamicSidecarError,
+    DynamicSidecarNotFoundError,
+    GenericDockerError,
+)
 from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
@@ -66,6 +79,8 @@ async def _apply_observation_cycle(
             dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
         )
     ):
+        # NOTE: once marked for removal the observation cycle needs
+        # to continue in order for the service to be removed
         logger.warning(
             "Removing service %s from observation", scheduler_data.service_name
         )
@@ -73,14 +88,7 @@ async def _apply_observation_cycle(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.can_save_state,
         )
-
-    try:
-        async with timeout(
-            dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
-        ):
-            await update_dynamic_sidecar_health(app, scheduler_data)
-    except asyncio.TimeoutError:
-        scheduler_data.dynamic_sidecar.is_available = False
+    await get_dynamic_sidecar_service_health(app, scheduler_data)
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(
@@ -98,14 +106,20 @@ async def _apply_observation_cycle(
         )
 
 
+ServiceName = str
+
+
 @dataclass
 class DynamicSidecarsScheduler:
     app: FastAPI
 
     _lock: Lock = field(default_factory=Lock)
-    _to_observe: Dict[str, LockWithSchedulerData] = field(default_factory=dict)
+    _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
+    _service_observation_task: dict[ServiceName, asyncio.Task] = field(
+        default_factory=dict
+    )
     _keep_running: bool = False
-    _inverse_search_mapping: Dict[UUID, str] = field(default_factory=dict)
+    _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
@@ -117,12 +131,6 @@ class DynamicSidecarsScheduler:
         keep track of the service for faster searches.
         """
         async with self._lock:
-
-            if not scheduler_data.service_name:
-                raise DynamicSidecarError(
-                    "a service with no name is not valid. Invalid usage."
-                )
-
             if scheduler_data.service_name in self._to_observe:
                 logger.warning(
                     "Service %s is already being observed", scheduler_data.service_name
@@ -139,10 +147,7 @@ class DynamicSidecarsScheduler:
             self._inverse_search_mapping[
                 scheduler_data.node_uuid
             ] = scheduler_data.service_name
-            self._to_observe[scheduler_data.service_name] = LockWithSchedulerData(
-                resource_lock=AsyncResourceLock.from_is_locked(False),
-                scheduler_data=scheduler_data,
-            )
+            self._to_observe[scheduler_data.service_name] = scheduler_data
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
@@ -158,13 +163,10 @@ class DynamicSidecarsScheduler:
             if service_name not in self._to_observe:
                 return
 
-            current: LockWithSchedulerData = self._to_observe[service_name]
-            current.scheduler_data.dynamic_sidecar.service_removal_state.mark_to_remove(
-                can_save
-            )
-            await update_scheduler_data_label(current.scheduler_data)
+            current: SchedulerData = self._to_observe[service_name]
+            current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
+            await update_scheduler_data_label(current)
 
-        self._enqueue_observation_from_service_name(service_name)
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def finish_service_removal(self, node_uuid: NodeID) -> None:
@@ -186,11 +188,15 @@ class DynamicSidecarsScheduler:
         logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
+        """
+
+        raises DynamicSidecarNotFoundError
+        """
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]
 
-        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+        scheduler_data: SchedulerData = self._to_observe[service_name]
 
         # check if there was an error picked up by the scheduler
         # and marked this service as failing
@@ -223,11 +229,11 @@ class DynamicSidecarsScheduler:
 
         try:
             docker_statuses: Optional[
-                Dict[str, Dict[str, str]]
+                dict[str, dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        except httpx.HTTPError:
+        except ClientHttpError:
             # error fetching docker_statues, probably someone should check
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -258,14 +264,14 @@ class DynamicSidecarsScheduler:
         )
 
     async def retrieve_service_inputs(
-        self, node_uuid: NodeID, port_keys: List[str]
+        self, node_uuid: NodeID, port_keys: list[str]
     ) -> RetrieveDataOutEnveloped:
         """Pulls data from input ports for the service"""
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
 
         service_name = self._inverse_search_mapping[node_uuid]
-        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+        scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
@@ -292,7 +298,7 @@ class DynamicSidecarsScheduler:
             return
 
         service_name = self._inverse_search_mapping[node_id]
-        scheduler_data = self._to_observe[service_name].scheduler_data
+        scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
@@ -313,7 +319,7 @@ class DynamicSidecarsScheduler:
             return
 
         service_name = self._inverse_search_mapping[node_id]
-        scheduler_data = self._to_observe[service_name].scheduler_data
+        scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
@@ -331,7 +337,7 @@ class DynamicSidecarsScheduler:
             raise DynamicSidecarNotFoundError(node_uuid)
 
         service_name = self._inverse_search_mapping[node_uuid]
-        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+        scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
@@ -347,50 +353,79 @@ class DynamicSidecarsScheduler:
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
 
-        async def observing_single_service(service_name: str) -> None:
-            lock_with_scheduler_data: LockWithSchedulerData = self._to_observe[
-                service_name
-            ]
-            scheduler_data: SchedulerData = lock_with_scheduler_data.scheduler_data
+        async def _observing_single_service(service_name: str) -> None:
+            scheduler_data: SchedulerData = self._to_observe[service_name]
+
+            # NOTE: ANE: not very readable should be refactored
+            if (
+                scheduler_data.dynamic_sidecar.status.current
+                == DynamicSidecarStatus.FAILING
+            ):
+                # Nothing will be done if there is an error while interacting
+                # with the sidecar.
+                # It makes no sense to continuously occupy resources or create
+                # issues due to high request to components like the `docker damon`
+                # and the `storage service`.
+                return
+
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
                 await _apply_observation_cycle(self.app, self, scheduler_data)
+                logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
-            except Exception:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 service_name = scheduler_data.service_name
 
-                message = (
-                    f"Observation of {service_name} failed:\n{traceback.format_exc()}"
-                )
-                logger.error(message)
-                scheduler_data.dynamic_sidecar.status.update_failing_status(message)
-            finally:
-                # when done, always unlock the resource
-                if scheduler_data_copy != scheduler_data:
-                    await update_scheduler_data_label(scheduler_data)
-                await lock_with_scheduler_data.resource_lock.unlock_resource()
+                # With unhandled errors, let's generate and ID and send it to the end-user
+                # so that we can trace the logs and debug the issue.
 
-        service_name: Optional[str]
+                error_code = create_error_code(e)
+                logger.exception(
+                    "Observation of %s unexpectedly failed [%s]",
+                    f"{service_name=} ",
+                    f"{error_code}",
+                    extra={"error_code": error_code},
+                )
+                scheduler_data.dynamic_sidecar.status.update_failing_status(
+                    # This message must be human-friendly
+                    f"Upss! This service ({service_name}) unexpectedly failed",
+                    error_code,
+                )
+            finally:
+                if scheduler_data_copy != scheduler_data:
+                    try:
+                        await update_scheduler_data_label(scheduler_data)
+                    except GenericDockerError as e:
+                        logger.warning(
+                            "Skipped labels update, please check:\n %s", f"{e}"
+                        )
+
+        service_name: str
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
+
             if service_name not in self._to_observe:
-                logger.debug(
-                    "Skipping observation, service no longer found %s", service_name
+                logger.warning(
+                    "%s is missing from list of services to observe", f"{service_name=}"
                 )
                 continue
 
-            lock_with_scheduler_data = self._to_observe[service_name]
-            resource_marked_as_locked = (
-                await lock_with_scheduler_data.resource_lock.mark_as_locked_if_unlocked()
-            )
-            # below is True if it could lock the resource,
-            # if the resource was already locked is False
-            if resource_marked_as_locked:
-                # fire and forget about the task
-                asyncio.create_task(
-                    observing_single_service(service_name),
-                    name=f"observe {service_name}",
+            if self._service_observation_task.get(service_name) is None:
+                self._service_observation_task[
+                    service_name
+                ] = observation_task = asyncio.create_task(
+                    _observing_single_service(service_name),
+                    name=f"observe_{service_name}",
+                )
+                observation_task.add_done_callback(
+                    functools.partial(
+                        lambda s, _: self._service_observation_task.pop(s, None),
+                        service_name,
+                    )
+                )
+                logger.debug(
+                    "created %s for %s", f"{observation_task=}", f"{service_name=}"
                 )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
@@ -399,29 +434,35 @@ class DynamicSidecarsScheduler:
         settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
+        logger.debug(
+            "dynamic-sidecars observation interval %s",
+            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+        )
 
         while self._keep_running:
-            logger.debug("Observing dynamic-sidecars %s", self._to_observe.keys())
+            logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
 
             try:
                 # prevent access to self._to_observe
                 async with self._lock:
                     for service_name in self._to_observe:
                         self._enqueue_observation_from_service_name(service_name)
-
-                await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover
                 logger.info("Stopped dynamic scheduler")
                 raise
             except Exception:  # pylint: disable=broad-except
-                logger.error("Unexpected error in dynamic scheduler", exc_info=True)
+                logger.exception(
+                    "Unexpected error while scheduling sidecars observation"
+                )
+
+            await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        services_to_observe: List[
+        services_to_observe: list[
             SchedulerData
         ] = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
 
@@ -467,13 +508,36 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
+        # let's properly cleanup remaining observation tasks
+        running_tasks = self._service_observation_task.values()
+        for task in running_tasks:
+            task.cancel()
+        try:
+            MAX_WAIT_TIME_SECONDS = 5
+            results = await asyncio.wait_for(
+                asyncio.gather(*running_tasks, return_exceptions=True),
+                timeout=MAX_WAIT_TIME_SECONDS,
+            )
+            if bad_results := list(filter(lambda r: isinstance(r, Exception), results)):
+                logger.error(
+                    "Following observation tasks completed with an unexpected error:%s",
+                    f"{bad_results}",
+                )
+        except asyncio.TimeoutError:
+            logger.error(
+                "Timed-out waiting for %s to complete. Action: Check why this is blocking",
+                f"{running_tasks=}",
+            )
+
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
 
 
 async def setup_scheduler(app: FastAPI):
-    dynamic_sidecars_scheduler = DynamicSidecarsScheduler(app)
-    app.state.dynamic_sidecar_scheduler = dynamic_sidecars_scheduler
+    scheduler = DynamicSidecarsScheduler(app)
+    app.state.dynamic_sidecar_scheduler = scheduler
+    assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
@@ -481,12 +545,19 @@ async def setup_scheduler(app: FastAPI):
         logger.warning("dynamic-sidecar scheduler will not be started!!!")
         return
 
-    await dynamic_sidecars_scheduler.start()
+    await scheduler.start()
 
 
 async def shutdown_scheduler(app: FastAPI):
-    dynamic_sidecar_scheduler = app.state.dynamic_sidecar_scheduler
-    await dynamic_sidecar_scheduler.shutdown()
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    assert isinstance(scheduler, DynamicSidecarsScheduler)  # nosec
+
+    # FIXME: PC->ANE: if not started, should it be shutdown?
+    await scheduler.shutdown()
 
 
-__all__ = ["DynamicSidecarsScheduler", "setup_scheduler", "shutdown_scheduler"]
+__all__: tuple[str, ...] = (
+    "DynamicSidecarsScheduler",
+    "setup_scheduler",
+    "shutdown_scheduler",
+)

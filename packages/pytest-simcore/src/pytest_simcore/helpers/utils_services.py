@@ -1,7 +1,7 @@
 """
     NOTE: avoid creating dependencies
 """
-from typing import Any, Dict, List
+from typing import Any
 
 FAKE_FILE_CONSUMER_SERVICES = [
     # services support one filetype
@@ -51,7 +51,7 @@ FAKE_FILE_CONSUMER_SERVICES = [
 ]
 
 
-def list_fake_file_consumers() -> List[Dict[str, Any]]:
+def list_fake_file_consumers() -> list[dict[str, Any]]:
     consumers = []
     for service in FAKE_FILE_CONSUMER_SERVICES:
         for consumable in service["consumes"]:
@@ -68,7 +68,7 @@ def list_fake_file_consumers() -> List[Dict[str, Any]]:
     return consumers
 
 
-def list_supported_filetypes() -> List[str]:
+def list_supported_filetypes() -> list[str]:
     return sorted(
         {
             consumable.split(":")[0]

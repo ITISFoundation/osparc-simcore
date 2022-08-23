@@ -1,20 +1,27 @@
-import json
+import logging
 from copy import deepcopy
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
-import yaml
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ResourcesDict,
+    ResourceValue,
+    ServiceResourcesDict,
+)
+from servicelib.docker_compose import replace_env_vars_in_compose_spec
+from servicelib.json_serialization import json_dumps
 from settings_library.docker_registry import RegistrySettings
 
-from ._constants import CONTAINER_NAME
-from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
-
-EnvKeyEqValueList = List[str]
-EnvVarsMap = Dict[str, Optional[str]]
+EnvKeyEqValueList = list[str]
+EnvVarsMap = dict[str, Optional[str]]
 
 
-def _inject_proxy_network_configuration(
+logger = logging.getLogger(__name__)
+
+
+def _update_proxy_network_configuration(
     service_spec: ComposeSpecLabel,
     target_container: str,
     dynamic_sidecar_network_name: str,
@@ -36,7 +43,10 @@ def _inject_proxy_network_configuration(
     target_container_spec = service_spec["services"][target_container]
     container_networks = target_container_spec.get("networks", [])
     container_networks.append(dynamic_sidecar_network_name)
-    target_container_spec["networks"] = container_networks
+    # avoid duplicate entries, this is important when the dynamic-sidecar
+    # fails to run docker-compose up, otherwise it will
+    # continue adding lots of entries to this list
+    target_container_spec["networks"] = list(set(container_networks))
 
 
 class _environment_section:
@@ -74,7 +84,7 @@ class _environment_section:
         return envs
 
 
-def _inject_paths_mappings(
+def _update_paths_mappings(
     service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
@@ -87,21 +97,48 @@ def _inject_paths_mappings(
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
         env_vars[
             "DY_SIDECAR_STATE_PATHS"
-        ] = f"{json.dumps([f'{p}' for p in path_mappings.state_paths])}"
+        ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
 
         service_content["environment"] = _environment_section.export_as_list(env_vars)
 
 
-def _replace_env_vars_in_compose_spec(
-    stringified_service_spec: str, resolved_registry_url: str, service_tag: str
-) -> str:
-    stringified_service_spec = stringified_service_spec.replace(
-        MATCH_SIMCORE_REGISTRY, resolved_registry_url
-    )
-    stringified_service_spec = stringified_service_spec.replace(
-        MATCH_SERVICE_VERSION, service_tag
-    )
-    return stringified_service_spec
+def _update_resource_limits_and_reservations(
+    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabel
+) -> None:
+    # example: '2.3' -> 2 ; '3.7' -> 3
+    docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
+
+    for spec_service_key, spec in service_spec["services"].items():
+        resources: ResourcesDict = service_resources[spec_service_key].resources
+        logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
+
+        cpu: ResourceValue = resources["CPU"]
+        memory: ResourceValue = resources["RAM"]
+
+        if docker_compose_major_version >= 3:
+            # compos spec version 3 and beyond
+            deploy = spec.get("deploy", {})
+            resources = deploy.get("resources", {})
+            limits = resources.get("limits", {})
+            reservations = resources.get("reservations", {})
+
+            # assign limits
+            limits["cpus"] = float(cpu.limit)
+            limits["memory"] = f"{memory.limit}"
+            # assing reservations
+            reservations["cpus"] = float(cpu.reservation)
+            reservations["memory"] = f"{memory.reservation}"
+
+            resources["reservations"] = reservations
+            resources["limits"] = limits
+            deploy["resources"] = resources
+            spec["deploy"] = deploy
+        else:
+            # compos spec version 2
+            spec["mem_limit"] = f"{memory.limit}"
+            spec["mem_reservation"] = f"{memory.reservation}"
+            # NOTE: there is no distinction between limit and reservation, taking the higher value
+            spec["cpus"] = float(max(cpu.limit, cpu.reservation))
 
 
 def assemble_spec(
@@ -112,6 +149,7 @@ def assemble_spec(
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
+    service_resources: ServiceResourcesDict,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -131,12 +169,12 @@ def assemble_spec(
         service_spec: ComposeSpecLabel = {
             "version": docker_compose_version,
             "services": {
-                CONTAINER_NAME: {
+                DEFAULT_SINGLE_SERVICE_NAME: {
                     "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
                 }
             },
         }
-        container_name = CONTAINER_NAME
+        container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
         service_spec = compose_spec
         container_name = container_http_entry
@@ -144,19 +182,22 @@ def assemble_spec(
     assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
-    _inject_proxy_network_configuration(
+    _update_proxy_network_configuration(
         service_spec=service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )
 
-    _inject_paths_mappings(service_spec, paths_mapping)
+    _update_paths_mappings(service_spec, paths_mapping)
 
-    stringified_service_spec = yaml.safe_dump(service_spec)
-    stringified_service_spec = _replace_env_vars_in_compose_spec(
-        stringified_service_spec=stringified_service_spec,
-        resolved_registry_url=docker_registry_settings.resolved_registry_url,
-        service_tag=service_tag,
+    _update_resource_limits_and_reservations(
+        service_resources=service_resources, service_spec=service_spec
+    )
+
+    stringified_service_spec = replace_env_vars_in_compose_spec(
+        service_spec=service_spec,
+        replace_simcore_registry=docker_registry_settings.resolved_registry_url,
+        replace_service_version=service_tag,
     )
 
     return stringified_service_spec

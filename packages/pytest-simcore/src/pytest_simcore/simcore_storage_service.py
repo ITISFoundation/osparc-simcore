@@ -3,12 +3,15 @@
 # pylint:disable=redefined-outer-name
 import os
 from copy import deepcopy
-from typing import Dict, Iterable
+from typing import Callable, Iterable
 
 import aiohttp
 import pytest
 import tenacity
 from minio import Minio
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from pydantic import parse_obj_as
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
@@ -16,7 +19,7 @@ from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> Iterable[URL]:
+def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable[URL]:
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
@@ -37,7 +40,7 @@ def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> Iterable
 
 @pytest.fixture(scope="function")
 async def storage_service(
-    minio_service: Minio, storage_endpoint: URL, docker_stack: Dict
+    minio_service: Minio, storage_endpoint: URL, docker_stack: dict
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
@@ -55,3 +58,13 @@ async def wait_till_storage_responsive(storage_endpoint: URL):
             data = await resp.json()
             assert "data" in data
             assert data["data"] is not None
+
+
+@pytest.fixture
+def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
+    def _creator(
+        project_id: ProjectID, node_id: NodeID, file_name: str
+    ) -> SimcoreS3FileID:
+        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
+
+    return _creator

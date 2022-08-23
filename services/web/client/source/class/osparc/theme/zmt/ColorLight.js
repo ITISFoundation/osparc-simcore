@@ -152,7 +152,7 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "#999999",
+    "node-selected-background": "background-main-4",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 

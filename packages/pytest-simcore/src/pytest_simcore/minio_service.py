@@ -3,16 +3,18 @@
 # pylint: disable=unused-variable
 
 import logging
-from typing import Dict, Iterator
+from typing import Any, Iterator
 
 import pytest
-import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
 from pydantic import parse_obj_as
 from tenacity import Retrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
@@ -41,8 +43,8 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 
 @pytest.fixture(scope="module")
 def minio_config(
-    docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module: MonkeyPatch
-) -> Dict[str, str]:
+    docker_stack: dict, testing_environ_vars: dict, monkeypatch_module: MonkeyPatch
+) -> dict[str, Any]:
     assert "pytest-ops_minio" in docker_stack["services"]
 
     config = {
@@ -66,14 +68,14 @@ def minio_config(
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
+def minio_service(minio_config: dict[str, str]) -> Iterator[Minio]:
 
     client = Minio(**minio_config["client"])
 
     for attempt in Retrying(
-        wait=tenacity.wait_fixed(5),
-        stop=tenacity.stop_after_attempt(60),
-        before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(60),
+        before_sleep=before_sleep_log(log, logging.WARNING),
         reraise=True,
     ):
         with attempt:
@@ -96,8 +98,8 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
     _ensure_remove_bucket(client, bucket_name)
 
 
-@pytest.fixture(scope="module")
-def bucket(minio_config: Dict[str, str], minio_service: Minio) -> Iterator[str]:
+@pytest.fixture
+def bucket(minio_config: dict[str, str], minio_service: Minio) -> Iterator[str]:
     bucket_name = minio_config["bucket_name"]
 
     _ensure_remove_bucket(minio_service, bucket_name)

@@ -108,16 +108,6 @@ qx.Class.define("osparc.data.model.Edge", {
       if (node2.getPropsForm()) {
         anyConnected |= this.self().checkAnyPortsConnected(node1, node2);
       }
-      if (node2.isContainer()) {
-        const innerNodes = node2.getInnerNodes();
-        for (const innerNodeId in innerNodes) {
-          node2 = innerNodes[innerNodeId];
-          if (node2.getPropsForm()) {
-            anyConnected |= this.self().checkAnyPortsConnected(node1, node2);
-          }
-          break;
-        }
-      }
       return anyConnected;
     }
   }

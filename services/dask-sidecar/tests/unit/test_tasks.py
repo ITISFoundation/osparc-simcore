@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Dict, Iterable, List
+from typing import Callable, Coroutine, Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
 
@@ -38,9 +38,9 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
-from pydantic import AnyUrl
-from pydantic.tools import parse_obj_as
+from pydantic import AnyUrl, SecretStr
 from pytest_mock.plugin import MockerFixture
+from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
 )
@@ -51,8 +51,8 @@ from simcore_service_dask_sidecar.computational_sidecar.errors import (
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
+from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -138,11 +138,23 @@ class ServiceExampleParam:
     integration_version: version.Version
 
 
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = ["minio"]
+
+
 @pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
-def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampleParam:
+def ubuntu_task(
+    request: FixtureRequest,
+    file_on_s3_server: Callable[..., AnyUrl],
+    s3_remote_file_url: Callable[..., AnyUrl],
+) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
-    integration_version = version.Version(request.param)
+    integration_version = version.Version(request.param)  # type: ignore
     print("Using service integration:", integration_version)
+    # let's have some input files on the file server
+    NUM_FILES = 12
+    list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
+
     # defines the inputs of the task
     input_data = TaskInputData.parse_obj(
         {
@@ -151,19 +163,20 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             "the_input_43": 15.0,
             "the_bool_input_54": False,
             **{
-                f"some_file_input_{index+1}": FileUrl(url=f"{file}")
-                for index, file in enumerate(ftp_server)
+                f"some_file_input_{index+1}": FileUrl(url=file)
+                for index, file in enumerate(list_of_files)
             },
             **{
                 f"some_file_input_with_mapping{index+1}": FileUrl(
-                    url=f"{file}", file_mapping=f"{index+1}/some_file_input"
+                    url=file,
+                    file_mapping=f"{index+1}/some_file_input_{index+1}",
                 )
-                for index, file in enumerate(ftp_server)
+                for index, file in enumerate(list_of_files)
             },
         }
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
-    file_names = [file.path for file in ftp_server]
+    file_names = [file.path for file in list_of_files]
     list_of_commands = [
         "echo User: $(id $(whoami))",
         "echo Inputs:",
@@ -197,7 +210,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "pytest_float": 3.2,
         "pytest_bool": False,
     }
-    output_file_url = next(iter(ftp_server)).with_path("output_file")
+    output_file_url = s3_remote_file_url(file_path="output_file")
     expected_output_keys = TaskOutputDataSchema.parse_obj(
         {
             **{k: {"required": True} for k in jsonable_outputs.keys()},
@@ -255,13 +268,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/subfolder/a_outputfile",
     ]
 
-    log_file_url = parse_obj_as(
-        AnyUrl, f"{next(iter(ftp_server)).with_path('log.dat')}"
-    )
+    log_file_url = s3_remote_file_url(file_path="log.dat")
 
     return ServiceExampleParam(
         docker_basic_auth=DockerBasicAuth(
-            server_address="docker.io", username="pytest", password=""
+            server_address="docker.io", username="pytest", password=SecretStr("")
         ),
         #
         # NOTE: we use sleeper because it defines a user
@@ -281,9 +292,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         expected_output_data=expected_output_data,
         expected_logs=[
             '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
-            "This is the file contents of 'file_1'",
-            "This is the file contents of 'file_2'",
-            "This is the file contents of 'file_3'",
+            "This is the file contents of file #'001'",
+            "This is the file contents of file #'002'",
+            "This is the file contents of file #'003'",
+            "This is the file contents of file #'004'",
+            "This is the file contents of file #'005'",
         ],
         integration_version=integration_version,
     )
@@ -318,6 +331,7 @@ def test_run_computational_sidecar_real_fct(
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
+    s3_settings: S3Settings,
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -333,6 +347,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.output_data_keys,
         ubuntu_task.log_file_url,
         ubuntu_task.command,
+        s3_settings,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -364,18 +379,22 @@ def test_run_computational_sidecar_real_fct(
         assert k in output_data
         assert output_data[k] == v
 
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+
     for k, v in output_data.items():
         assert k in ubuntu_task.expected_output_data
         assert v == ubuntu_task.expected_output_data[k]
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}") as fp:
-                assert fp.details.get("size") > 0
+            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
+                assert fp.details.get("size") > 0  # type: ignore
 
     # check the task has created a log file
-    with fsspec.open(f"{ubuntu_task.log_file_url}", mode="rt") as fp:
-        saved_logs = fp.read()
+    with fsspec.open(
+        f"{ubuntu_task.log_file_url}", mode="rt", **s3_storage_kwargs
+    ) as fp:
+        saved_logs = fp.read()  # type: ignore
     assert saved_logs
     for log in ubuntu_task.expected_logs:
         assert log in saved_logs
@@ -386,6 +405,7 @@ def test_run_multiple_computational_sidecar_dask(
     dask_client: Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
+    s3_settings: S3Settings,
 ):
     NUMBER_OF_TASKS = 50
 
@@ -404,13 +424,15 @@ def test_run_multiple_computational_sidecar_dask(
             ubuntu_task.output_data_keys,
             ubuntu_task.log_file_url,
             ubuntu_task.command,
+            s3_settings,
             resources={},
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
 
     results = dask_client.gather(futures)
-
+    assert results
+    assert not isinstance(results, Coroutine)
     # for result in results:
     # check that the task produce the expected data, not less not more
     for output_data in results:
@@ -420,7 +442,10 @@ def test_run_multiple_computational_sidecar_dask(
 
 
 def test_run_computational_sidecar_dask(
-    dask_client: Client, ubuntu_task: ServiceExampleParam, mocker: MockerFixture
+    dask_client: Client,
+    ubuntu_task: ServiceExampleParam,
+    mocker: MockerFixture,
+    s3_settings: S3Settings,
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -436,6 +461,7 @@ def test_run_computational_sidecar_dask(
         ubuntu_task.output_data_keys,
         ubuntu_task.log_file_url,
         ubuntu_task.command,
+        s3_settings,
         resources={},
     )
 
@@ -459,14 +485,15 @@ def test_run_computational_sidecar_dask(
         assert k in output_data
         assert output_data[k] == v
 
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     for k, v in output_data.items():
         assert k in ubuntu_task.expected_output_data
         assert v == ubuntu_task.expected_output_data[k]
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}") as fp:
-                assert fp.details.get("size") > 0
+            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
+                assert fp.details.get("size") > 0  # type: ignore
 
 
 def test_failing_service_raises_exception(
@@ -475,6 +502,7 @@ def test_failing_service_raises_exception(
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
+    s3_settings: S3Settings,
 ):
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
@@ -485,6 +513,7 @@ def test_failing_service_raises_exception(
             ubuntu_task_fail.output_data_keys,
             ubuntu_task_fail.log_file_url,
             ubuntu_task_fail.command,
+            s3_settings,
         )
 
 
@@ -494,6 +523,7 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_unexpected_output: ServiceExampleParam,
+    s3_settings: S3Settings,
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
@@ -504,4 +534,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
             ubuntu_task_unexpected_output.output_data_keys,
             ubuntu_task_unexpected_output.log_file_url,
             ubuntu_task_unexpected_output.command,
+            s3_settings,
         )

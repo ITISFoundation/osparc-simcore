@@ -27,8 +27,9 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
     * @param plotId {String} Element id to set it as dom attribute
     * @param data {Object} Plotly data
     * @param layout {Object} Plotly layout
+    * @param config {Object} Plotly config
     */
-  construct: function(plotId, data, layout) {
+  construct: function(plotId, data, layout, config = {}) {
     this.base(arguments);
 
     this.__plotId = plotId;
@@ -42,12 +43,18 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
         const {
           emptyData,
           emptyLayout
-        } = osparc.wrapper.Plotly.createEmptyPlot(plotId);
+        } = osparc.wrapper.Plotly.createEmptyPlot(plotId, config);
         if (data) {
           osparc.wrapper.Plotly.setData(plotId, data);
           this.__data = data;
         } else {
           this.__data = emptyData;
+        }
+        if (layout) {
+          osparc.wrapper.Plotly.setLayout(plotId, layout);
+          this.__layout = layout;
+        } else {
+          this.__layout = emptyLayout;
         }
         if (layout) {
           osparc.wrapper.Plotly.setLayout(plotId, layout);

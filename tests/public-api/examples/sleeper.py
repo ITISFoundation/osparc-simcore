@@ -9,6 +9,7 @@
 import os
 import time
 from pathlib import Path
+from zipfile import ZipFile
 
 import osparc
 from dotenv import load_dotenv
@@ -16,7 +17,8 @@ from osparc import UsersApi
 from osparc.api import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
-assert osparc.__version__ == "0.4.3"
+CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
+assert CLIENT_VERSION >= (0, 4, 3)
 
 Path("file_with_number.txt").write_text("3")
 
@@ -83,6 +85,28 @@ with osparc.ApiClient(cfg) as api_client:
     print(f"Job {outputs.job_id} got these results:")
     for output_name, result in outputs.results.items():
         print(output_name, "=", result)
+
+    # download log (NEW on API version 0.4.0 / client version 0.5.0 )
+    if CLIENT_VERSION >= (0, 5, 0):
+        logfile_path: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
+        zip_path = Path(logfile_path)
+        print(
+            f"{zip_path=}",
+            f"{zip_path.exists()=}",
+            f"{zip_path.stat()=}",
+            "\nUnzipping ...",
+        )
+
+        extract_dir = Path("./extracted")
+        extract_dir.mkdir()
+
+        with ZipFile(f"{zip_path}") as fzip:
+            fzip.extractall(f"{extract_dir}")
+
+        logfiles = list(extract_dir.glob("*.log*"))
+        print("Unzipped", logfiles[0], "contains:\n", logfiles[0].read_text())
 
     #
     # Job 19fc28f7-46fb-4e96-9129-5e924801f088 got these results:

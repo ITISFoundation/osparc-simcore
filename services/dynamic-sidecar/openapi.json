@@ -1,9 +1,28 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "FastAPI",
-    "version": "0.1.0"
+    "title": "simcore-service-dynamic-sidecar",
+    "description": " Implements a sidecar service to manage user's dynamic/interactive services",
+    "version": "1.1.1"
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Default server: requests directed to serving url"
+    },
+    {
+      "url": "http://{host}:{port}",
+      "description": "Development server: can configure any base url",
+      "variables": {
+        "host": {
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "default": "8000"
+        }
+      }
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -76,15 +95,56 @@
         "tags": [
           "containers"
         ],
-        "summary": "Runs Docker Compose Up",
-        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text",
-        "operationId": "runs_docker_compose_up_v1_containers_post",
+        "summary": "Run docker-compose up",
+        "operationId": "create_containers_v1_containers_post",
+        "parameters": [
+          {
+            "description": "docker-compose up command timeout run as a background",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "integer",
+              "description": "docker-compose up command timeout run as a background",
+              "default": 3600
+            },
+            "name": "command_timeout",
+            "in": "query"
+          },
+          {
+            "description": "docker-compose config timeout (EXPERIMENTAL)",
+            "required": false,
+            "schema": {
+              "title": "Validation Timeout",
+              "type": "integer",
+              "description": "docker-compose config timeout (EXPERIMENTAL)",
+              "default": 60
+            },
+            "name": "validation_timeout",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainersCreate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Create Containers V1 Containers Post",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
@@ -104,13 +164,13 @@
         "operationId": "runs_docker_compose_down_v1_containers_down_post",
         "parameters": [
           {
-            "description": "docker-compose down command timeout default",
+            "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number",
-              "description": "docker-compose down command timeout default",
-              "default": 10.0
+              "type": "integer",
+              "description": "docker-compose down command timeout default  (EXPERIMENTAL)",
+              "default": 10
             },
             "name": "command_timeout",
             "in": "query"
@@ -224,9 +284,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Get Entrypoint Container Name",
+        "summary": "Get Containers Name",
         "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: name of the network",
-        "operationId": "get_entrypoint_container_name_v1_containers_name_get",
+        "operationId": "get_containers_name_v1_containers_name_get",
         "parameters": [
           {
             "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
@@ -510,6 +570,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Could not find node_uuid in the database"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -537,9 +600,9 @@
             "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number",
+              "type": "integer",
               "description": "docker-compose stop command timeout default",
-              "default": 10.0
+              "default": 10
             },
             "name": "command_timeout",
             "in": "query"
@@ -686,6 +749,19 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "ContainersCreate": {
+        "title": "ContainersCreate",
+        "required": [
+          "docker_compose_yaml"
+        ],
+        "type": "object",
+        "properties": {
+          "docker_compose_yaml": {
+            "title": "Docker Compose Yaml",
+            "type": "string"
           }
         }
       },

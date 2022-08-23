@@ -28,7 +28,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       if (idx !== -1) {
         const theme = validThemes[1-idx];
         qx.theme.manager.Meta.getInstance().setTheme(theme);
-        window.localStorage.setItem("themeName", theme.name);
+        osparc.utils.Utils.localCache.setTheme(theme.name);
       }
     },
 

@@ -13,7 +13,7 @@ class DockerBasicAuth(BaseModel):
                 {
                     "server_address": "docker.io",
                     "username": "admin",
-                    "password": "sfjlskdjoiw",
+                    "password": "123456",
                 }
             ]
         }

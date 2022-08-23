@@ -35,11 +35,11 @@ async def test_db_manager_write_config(
     project_id: str,
     node_uuid: str,
     node_ports_config: None,
-    special_configuration: Callable,
+    create_special_configuration: Callable,
     default_configuration_file: Path,
 ):
     # create an empty config
-    special_configuration()
+    create_special_configuration()
     # read the default config
     json_configuration = default_configuration_file.read_text()
     # write the default config to the database

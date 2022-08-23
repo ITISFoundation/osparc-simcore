@@ -1,13 +1,14 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
-from models_library.projects_nodes_io import UUID_REGEX, BaseFileLink, DownloadLink
+from models_library.basic_regex import UUID_RE
+from models_library.projects_nodes_io import BaseFileLink, DownloadLink
 from models_library.projects_nodes_io import PortLink as BasePortLink
 from pydantic import AnyUrl, Extra, Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
 
 class PortLink(BasePortLink):
-    node_uuid: str = Field(..., regex=UUID_REGEX, alias="nodeUuid")
+    node_uuid: str = Field(..., regex=UUID_RE, alias="nodeUuid")
 
 
 class FileLink(BaseFileLink):
@@ -30,7 +31,25 @@ DataItemValue = Union[
     Dict[str, Any],  # object
 ]
 
-ItemConcreteValue = Union[int, float, bool, str, Path, List[Any], Dict[str, Any]]
-ItemValue = Union[int, float, bool, str, AnyUrl, List[Any], Dict[str, Any]]
+#
+# - the port's value is stored as Optional[DataItemValue]
+#   - order of union is used to parse object upon construction
+# - DataItemValue values are resolved into an ItemValue using Port.get_value()
+# - ItemValue values are resolved into ItemConcreteValue using Port.get()
+# - ItemConcreteValue are the types finally consumed by the actual service port
+#
+SchemaValidatedTypes = Union[
+    StrictBool, StrictInt, StrictFloat, StrictStr, List[Any], Dict[str, Any]
+]
+ItemValue = Union[SchemaValidatedTypes, AnyUrl]
+ItemConcreteValue = Union[SchemaValidatedTypes, Path]
 
-__all__ = ["FileLink", "DownloadLink", "PortLink", "DataItemValue", "ItemConcreteValue"]
+
+__all__: Tuple[str, ...] = (
+    "DataItemValue",
+    "DownloadLink",
+    "FileLink",
+    "ItemConcreteValue",
+    "SchemaValidatedTypes",
+    "PortLink",
+)

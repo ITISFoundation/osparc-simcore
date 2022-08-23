@@ -6,12 +6,18 @@ import logging
 import os
 from typing import NamedTuple
 
-import locust_plugins # necessary to use --check-fail-ratio 
+import locust_plugins
 from dotenv import load_dotenv
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
+
+
+# NOTE: 'import locust_plugins' is necessary to use --check-fail-ratio
+# this assert is added to avoid that pycln pre-commit hook does not
+# remove the import (the tool assumes the import is not necessary)
+assert locust_plugins  # nosec
 
 
 load_dotenv()  # take environment variables from .env

@@ -30,6 +30,46 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    localCache: {
+      setTheme: function(themeName) {
+        window.localStorage.setItem("themeName", themeName);
+      },
+      getTheme: function() {
+        return window.localStorage.getItem("themeName");
+      },
+
+      serviceToFavs: function(serviceKey) {
+        let serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          serviceFavs = JSON.parse(serviceFavs);
+        } else {
+          serviceFavs = {};
+        }
+        if (serviceFavs && (serviceKey in serviceFavs)) {
+          serviceFavs[serviceKey]["hits"]++;
+        } else {
+          serviceFavs[serviceKey] = {
+            hits: 1
+          };
+        }
+        window.localStorage.setItem("services", JSON.stringify(serviceFavs));
+      },
+
+      getFavServices: function() {
+        const serviceFavs = window.localStorage.getItem("services");
+        if (serviceFavs) {
+          return JSON.parse(serviceFavs);
+        }
+        return [];
+      },
+
+      getSortedFavServices: function() {
+        const serviceFavs = this.getFavServices();
+        const favServices = Object.keys().sort((a, b) => serviceFavs[b]["hits"] - serviceFavs[a]["hits"]);
+        return favServices;
+      }
+    },
+
     checkIsOnScreen: function(elem) {
       const isInViewport = element => {
         if (element) {
@@ -192,9 +232,9 @@ qx.Class.define("osparc.utils.Utils", {
     /**
       * @param value {Date Object} Date Object
       */
-    formatTime: function(value) {
+    formatTime: function(value, long = false) {
       const timeFormat = new qx.util.format.DateFormat(
-        qx.locale.Date.getTimeFormat("short")
+        qx.locale.Date.getTimeFormat(long ? "long" : "short")
       );
       const timeStr = timeFormat.format(value);
       return timeStr;
@@ -221,25 +261,25 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLogoPath: function() {
-      let logoPath = null;
+      let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const lightLogo = this.getColorLuminance(textColor) > 0.4;
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logoPath = "osparc/s4l_logo.png";
+          logosPath = lightLogo ? "osparc/s4l_zmt-white.svg" : "osparc/s4l_zmt-black.svg";
           break;
         case "tis": {
-          logoPath = lightLogo ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
+          logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
           break;
         }
         default: {
-          logoPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
       }
-      return logoPath;
+      return logosPath;
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {
@@ -291,6 +331,10 @@ qx.Class.define("osparc.utils.Utils", {
       return JSON.parse(JSON.stringify(src));
     },
 
+    prettifyJson: function(json) {
+      return JSON.stringify(json, undefined, 2);
+    },
+
     getRandomColor: function() {
       let letters = "0123456789ABCDEF";
       let color = "#";
@@ -337,8 +381,8 @@ qx.Class.define("osparc.utils.Utils", {
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getPresignedLink(download, locationId, fileId)
         .then(presignedLinkData => {
-          if (presignedLinkData.presignedLink) {
-            const link = presignedLinkData.presignedLink.link;
+          if (presignedLinkData.resp) {
+            const link = presignedLinkData.resp.link;
             const fileNameFromLink = this.fileNameFromPresignedLink(link);
             fileName = fileNameFromLink ? fileNameFromLink : fileName;
             this.downloadLink(link, "GET", fileName);
@@ -377,14 +421,10 @@ qx.Class.define("osparc.utils.Utils", {
           if (xhr.status == 200) {
             let blob = new Blob([xhr.response]);
             let urlBlob = window.URL.createObjectURL(blob);
-            let downloadAnchorNode = document.createElement("a");
-            downloadAnchorNode.setAttribute("href", urlBlob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
-            downloadAnchorNode.setAttribute("download", fileName);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            this.self().downloadContent(urlBlob, fileName);
             resolve();
           } else {
             reject(xhr);
@@ -394,6 +434,14 @@ qx.Class.define("osparc.utils.Utils", {
         xhr.addEventListener("abort", () => reject(xhr));
         xhr.send();
       });
+    },
+
+    downloadContent: function(content, filename = "file") {
+      let downloadAnchorNode = document.createElement("a");
+      downloadAnchorNode.setAttribute("href", content);
+      downloadAnchorNode.setAttribute("download", filename);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
     },
 
     filenameFromContentDisposition: function(xhr) {

@@ -21,6 +21,22 @@ openapi.json: .env
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 
+DOCKER_API_VERSION ?= 1.41
+.PHONY: directorv2_rest_api_schemas.py
+directorv2_rest_api_schemas.py: openapi.json ## auto-generates pydantic models for Docker REST API models
+	# auto-generates $@ from $<
+	$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
+			--input $< \
+			--output $@ \
+			--field-constraints \
+			--reuse-model \
+			--enum-field-as-literal=all
+
+	# formats
+	@black $@
+	# copy output to src/models_library/generated_models...
+	@mv $@ $(PACKAGES_DIR)/models-library/src/models_library/generated_models/$@
+	# done
 
 # DEVELOPMENT #############
 include .env

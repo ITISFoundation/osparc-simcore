@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Any, Dict, Iterator
+from typing import Any, Iterator
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa
@@ -9,8 +9,8 @@ from simcore_postgres_database.models.base import metadata
 
 @contextmanager
 def migrated_pg_tables_context(
-    postgres_config: Dict[str, Any]
-) -> Iterator[Dict[str, Any]]:
+    postgres_config: dict[str, str],
+) -> Iterator[dict[str, Any]]:
     """
     Within the context, tables are created and dropped
     using migration upgrade/downgrade routines

@@ -1,22 +1,27 @@
 import asyncio
 import logging
 from math import ceil
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Final, Optional, Union, cast
 
 import aiohttp
 from aiohttp import web
+from models_library.api_schemas_storage import DatCoreDatasetName
+from models_library.users import UserID
+from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
-from yarl import URL
+from servicelib.utils import logged_gather
 
 from ..constants import DATCORE_ID, DATCORE_STR
-from ..models import DatasetMetaData, FileMetaData, FileMetaDataEx
+from ..models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
     DatcoreAdapterException,
 )
 
 log = logging.getLogger(__file__)
+
+_MAX_CONCURRENT_REST_CALLS: Final[int] = 10
 
 
 class _DatcoreAdapterResponseError(DatcoreAdapterException):
@@ -36,9 +41,9 @@ async def _request(
     api_secret: str,
     method: str,
     path: str,
-    json: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, Any]] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    json: Optional[dict[str, Any]] = None,
+    params: Optional[dict[str, Any]] = None,
+) -> Union[dict[str, Any], list[dict[str, Any]]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
     session: ClientSession = get_client_session(app)
@@ -74,14 +79,14 @@ async def _retrieve_all_pages(
     api_secret: str,
     method: str,
     path: str,
-    return_type: Type,
+    return_type: type,
     return_type_creator: Callable,
 ):
     page = 1
-    objs: List[return_type] = []
+    objs: list[return_type] = []
     while (
         response := cast(
-            Dict[str, Any],
+            dict[str, Any],
             await _request(
                 app, api_key, api_secret, method, path, params={"page": page}
             ),
@@ -126,25 +131,38 @@ async def check_user_can_connect(
 
 
 async def list_all_datasets_files_metadatas(
-    app: web.Application, api_key: str, api_secret: str
-) -> List[FileMetaDataEx]:
-    all_datasets: List[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
-    get_dataset_files_tasks = [
-        list_all_files_metadatas_in_dataset(app, api_key, api_secret, d.dataset_id)
-        for d in all_datasets
-    ]
-    results = await asyncio.gather(*get_dataset_files_tasks)
-    all_files_of_all_datasets: List[FileMetaDataEx] = []
+    app: web.Application, user_id: UserID, api_key: str, api_secret: str
+) -> list[FileMetaData]:
+    all_datasets: list[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
+    results = await logged_gather(
+        *(
+            list_all_files_metadatas_in_dataset(
+                app,
+                user_id,
+                api_key,
+                api_secret,
+                cast(DatCoreDatasetName, d.dataset_id),
+            )
+            for d in all_datasets
+        ),
+        log=log,
+        max_concurrency=_MAX_CONCURRENT_REST_CALLS,
+    )
+    all_files_of_all_datasets: list[FileMetaData] = []
     for data in results:
         all_files_of_all_datasets += data
     return all_files_of_all_datasets
 
 
 async def list_all_files_metadatas_in_dataset(
-    app: web.Application, api_key: str, api_secret: str, dataset_id: str
-) -> List[FileMetaDataEx]:
-    all_files: List[Dict[str, Any]] = cast(
-        List[Dict[str, Any]],
+    app: web.Application,
+    user_id: UserID,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+) -> list[FileMetaData]:
+    all_files: list[dict[str, Any]] = cast(
+        list[dict[str, Any]],
         await _request(
             app,
             api_key,
@@ -154,20 +172,21 @@ async def list_all_files_metadatas_in_dataset(
         ),
     )
     return [
-        FileMetaDataEx(
-            fmd=FileMetaData(
-                file_uuid=d["path"],
-                location_id=DATCORE_ID,
-                location=DATCORE_STR,
-                bucket_name=d["dataset_id"],
-                object_name=d["path"],
-                file_name=d["name"],
-                file_id=d["package_id"],
-                file_size=d["size"],
-                created_at=d["created_at"],
-                last_modified=d["last_modified_at"],
-                display_file_path=d["name"],
-            ),  # type: ignore
+        FileMetaData(
+            file_uuid=d["path"],
+            location_id=DATCORE_ID,
+            location=DATCORE_STR,
+            bucket_name=d["dataset_id"],
+            object_name=d["path"],
+            file_name=d["name"],
+            file_id=d["package_id"],
+            file_size=d["size"],
+            created_at=d["created_at"],
+            last_modified=d["last_modified_at"],
+            project_id=None,
+            node_id=None,
+            user_id=user_id,
+            is_soft_link=False,
         )
         for d in all_files
     ]
@@ -175,15 +194,15 @@ async def list_all_files_metadatas_in_dataset(
 
 async def list_datasets(
     app: web.Application, api_key: str, api_secret: str
-) -> List[DatasetMetaData]:
-    all_datasets: List[DatasetMetaData] = await _retrieve_all_pages(
+) -> list[DatasetMetaData]:
+    all_datasets: list[DatasetMetaData] = await _retrieve_all_pages(
         app,
         api_key,
         api_secret,
         "GET",
         "/datasets",
         DatasetMetaData,
-        lambda d: DatasetMetaData(d["id"], d["display_name"]),
+        lambda d: DatasetMetaData(dataset_id=d["id"], display_name=d["display_name"]),
     )
 
     return all_datasets
@@ -191,15 +210,15 @@ async def list_datasets(
 
 async def get_file_download_presigned_link(
     app: web.Application, api_key: str, api_secret: str, file_id: str
-) -> URL:
+) -> AnyUrl:
     file_download_data = cast(
-        Dict[str, Any],
+        dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    return file_download_data["link"]
+    return parse_obj_as(AnyUrl, file_download_data["link"])
 
 
 async def delete_file(
     app: web.Application, api_key: str, api_secret: str, file_id: str
-):
+) -> None:
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")

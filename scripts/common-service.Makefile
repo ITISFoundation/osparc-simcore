@@ -126,7 +126,7 @@ _run-test-ci: _check_venv_active
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--asyncio-mode=auto \
-		-m "not travis" \
+		-m "not heavy_load" \
 		$(TEST_TARGET)
 
 

@@ -5,6 +5,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
+from settings_library.catalog import CatalogSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -20,7 +21,7 @@ class _UrlMixin:
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
-            path=f"/{getattr(self, f'{prefix}_VTAG')}",
+            path=f"/{getattr(self, f'{prefix}_VTAG')}",  # NOTE: it ends with /{VTAG}
         )
 
 
@@ -48,17 +49,6 @@ class WebServerSettings(BaseCustomSettings, _UrlMixin, MixinSessionSettings):
         return cls.do_check_valid_fernet_key(v)
 
 
-# TODO: dynamically create types with minimal options?
-class CatalogSettings(BaseCustomSettings, _UrlMixin):
-    CATALOG_HOST: str = "catalog"
-    CATALOG_PORT: int = 8000
-    CATALOG_VTAG: str = "v0"
-
-    @cached_property
-    def base_url(self) -> str:
-        return self._build_url("CATALOG")
-
-
 class StorageSettings(BaseCustomSettings, _UrlMixin):
     STORAGE_HOST: str = "storage"
     STORAGE_PORT: int = 8080
@@ -76,15 +66,13 @@ class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
 
     @cached_property
     def base_url(self) -> str:
-        return self._build_url("DIRECTOR")
+        return self._build_url("DIRECTOR_V2")
 
 
 # MAIN SETTINGS --------------------------------------------
 
 
-class AppSettings(BaseCustomSettings, MixinLoggingSettings):
-    # pylint: disable=no-self-use
-    # pylint: disable=no-self-argument
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # DOCKER
     SC_BOOT_MODE: Optional[BootModeEnum]
@@ -107,12 +95,12 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True
     )
-    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
+    # DIAGNOSTICS
+    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
     )
-
     API_SERVER_REMOTE_DEBUG_PORT: int = 3000
 
     @cached_property

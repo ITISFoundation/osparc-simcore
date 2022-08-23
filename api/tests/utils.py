@@ -1,7 +1,6 @@
 import json
 import sys
 from pathlib import Path
-from typing import List
 
 import yaml
 
@@ -10,23 +9,25 @@ CONVERTED_SUFFIX = "-converted.yaml"
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
 def find_current_repo_folder():
     cpath = Path(current_dir)
     while not any(cpath.glob(".git")):
         cpath = cpath.parent
-        assert cpath!=cpath.parent
+        assert cpath != cpath.parent
     assert cpath.glob("services")
     return cpath
 
-current_repo_dir = find_current_repo_folder()
 
+current_repo_dir = find_current_repo_folder()
 
 
 def specs_folder():
     return current_dir.parent / "specs"
 
-def list_files_in_api_specs(wildcard: str) -> List[str]:
-    """ Helper function to parameterize tests with list of files
+
+def list_files_in_api_specs(wildcard: str) -> list[str]:
+    """Helper function to parameterize tests with list of files
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
 
@@ -38,17 +39,17 @@ def list_files_in_api_specs(wildcard: str) -> List[str]:
     return list(str(p) for p in specs_dir.rglob(wildcard))
 
 
-def list_all_openapi() -> List[str]:
-    """ Lists paths to all 'services/**/api/v*/openapi.y*ml'
-        These are single documents that bundles all parts
+def list_all_openapi() -> list[str]:
+    """Lists paths to all 'services/**/api/v*/openapi.y*ml'
+    These are single documents that bundles all parts
     """
-    return [str(p) for p in current_repo_dir.rglob("api/v*/openapi.y*ml") ]
+    return [str(p) for p in current_repo_dir.rglob("api/v*/openapi.y*ml")]
 
 
 def load_specs(spec_file_path: Path) -> dict:
     assert spec_file_path.exists(), spec_file_path
     with spec_file_path.open() as file_ptr:
-        if ".json" in  spec_file_path.suffix:
+        if ".json" in spec_file_path.suffix:
             schema_specs = json.load(file_ptr)
         else:
             schema_specs = yaml.safe_load(file_ptr)

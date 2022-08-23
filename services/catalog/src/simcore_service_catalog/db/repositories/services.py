@@ -1,24 +1,37 @@
 import logging
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Tuple
+from itertools import chain
+from typing import Any, Iterable, Optional
 
+import packaging.version
 import sqlalchemy as sa
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
+from pydantic import ValidationError
+from simcore_postgres_database.models.groups import GroupType
+from simcore_service_catalog.models.domain.service_specifications import (
+    ServiceSpecificationsAtDB,
+)
+from simcore_service_catalog.models.schemas.services_specifications import (
+    ServiceSpecifications,
+)
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data
+from ...models.domain.group import GroupAtDB
+from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
-    gids: Optional[List[int]] = None,
+    gids: Optional[list[int]] = None,
     execute_access: Optional[bool] = None,
     write_access: Optional[bool] = None,
     combine_access_with_and: Optional[bool] = True,
@@ -66,12 +79,12 @@ class ServicesRepository(BaseRepository):
     async def list_services(
         self,
         *,
-        gids: Optional[List[int]] = None,
+        gids: Optional[list[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
         combine_access_with_and: Optional[bool] = True,
         product_name: Optional[str] = None,
-    ) -> List[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataAtDB]:
         services_in_db = []
 
         async with self.db_engine.connect() as conn:
@@ -94,7 +107,7 @@ class ServicesRepository(BaseRepository):
         major: Optional[int] = None,
         minor: Optional[int] = None,
         limit_count: Optional[int] = None,
-    ) -> List[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataAtDB]:
         """Lists LAST n releases of a given service, sorted from latest first
 
         major, minor is used to filter as major.minor.* or major.*
@@ -140,7 +153,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         *,
-        gids: Optional[List[int]] = None,
+        gids: Optional[list[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
         product_name: Optional[str] = None,
@@ -179,7 +192,7 @@ class ServicesRepository(BaseRepository):
     async def create_service(
         self,
         new_service: ServiceMetaDataAtDB,
-        new_service_access_rights: List[ServiceAccessRightsAtDB],
+        new_service_access_rights: list[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
 
         for access_rights in new_service_access_rights:
@@ -190,13 +203,16 @@ class ServicesRepository(BaseRepository):
                 raise ValueError(
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
-
+        # Set the deprecation datetime to None (will be converted top sql's null) if not given
+        new_service_dict = new_service.dict(by_alias=True)
+        if "deprecated" not in new_service_dict:
+            new_service_dict["deprecated"] = None
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service.dict(by_alias=True))
+                .values(**new_service_dict)
                 .returning(literal_column("*"))
             )
             row = result.first()
@@ -235,7 +251,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: Optional[str] = None,
-    ) -> List[ServiceAccessRightsAtDB]:
+    ) -> list[ServiceAccessRightsAtDB]:
         """
         - If product_name is not specificed, then all are considered in the query
         """
@@ -255,9 +271,9 @@ class ServicesRepository(BaseRepository):
 
     async def list_services_access_rights(
         self,
-        key_versions: Iterable[Tuple[str, str]],
+        key_versions: Iterable[tuple[str, str]],
         product_name: Optional[str] = None,
-    ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
+    ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
@@ -283,7 +299,7 @@ class ServicesRepository(BaseRepository):
         return service_to_access_rights
 
     async def upsert_service_access_rights(
-        self, new_access_rights: List[ServiceAccessRightsAtDB]
+        self, new_access_rights: list[ServiceAccessRightsAtDB]
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
@@ -315,7 +331,7 @@ class ServicesRepository(BaseRepository):
                 )
 
     async def delete_service_access_rights(
-        self, delete_access_rights: List[ServiceAccessRightsAtDB]
+        self, delete_access_rights: list[ServiceAccessRightsAtDB]
     ) -> None:
         async with self.db_engine.begin() as conn:
             for rights in delete_access_rights:
@@ -328,3 +344,100 @@ class ServicesRepository(BaseRepository):
                         & (services_access_rights.c.product_name == rights.product_name)
                     )
                 )
+
+    async def get_service_specifications(
+        self,
+        key: ServiceKey,
+        version: ServiceVersion,
+        groups: tuple[GroupAtDB],
+        allow_use_latest_service_version: bool = False,
+    ) -> Optional[ServiceSpecifications]:
+        """returns the service specifications for service 'key:version' and for 'groups'
+            returns None if nothing found
+
+        :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
+        """
+        logger.debug(
+            "getting specifications from db for %s", f"{key}:{version} for {groups=}"
+        )
+        gid_to_group_map = {group.gid: group for group in groups}
+        group_specs = {
+            GroupType.EVERYONE: None,
+            GroupType.PRIMARY: None,
+            GroupType.STANDARD: {},
+        }
+
+        queried_version = packaging.version.parse(version)
+        # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(
+                sa.select([services_specifications]).where(
+                    (services_specifications.c.service_key == key)
+                    & (
+                        (services_specifications.c.service_version == version)
+                        if not allow_use_latest_service_version
+                        else True
+                    )
+                    & (services_specifications.c.gid.in_(group.gid for group in groups))
+                ),
+            ):
+                try:
+                    logger.debug("found following %s", f"{row=}")
+                    # validate the specs first
+                    db_service_spec = ServiceSpecificationsAtDB.from_orm(row)
+                    db_spec_version = packaging.version.parse(
+                        db_service_spec.service_version
+                    )
+                    if allow_use_latest_service_version and (
+                        db_spec_version > queried_version
+                    ):
+                        # NOTE: in this case we look for the latest version only (e.g <=queried_version)
+                        # and we skip them if they are above
+                        continue
+                    # filter by group type
+                    group = gid_to_group_map[row.gid]
+                    if (group.group_type == GroupType.STANDARD) and _is_newer(
+                        group_specs[group.group_type].get(db_service_spec.gid),
+                        db_service_spec,
+                    ):
+                        group_specs[group.group_type][
+                            db_service_spec.gid
+                        ] = db_service_spec
+                    elif _is_newer(group_specs[group.group_type], db_service_spec):
+                        group_specs[group.group_type] = db_service_spec
+
+                except ValidationError as exc:
+                    logger.warning(
+                        "skipping service specifications for group '%s' as invalid: %s",
+                        f"{row.gid}",
+                        f"{exc}",
+                    )
+
+        if merged_specifications := _merge_specs(
+            group_specs[GroupType.EVERYONE],
+            group_specs[GroupType.STANDARD],
+            group_specs[GroupType.PRIMARY],
+        ):
+            return ServiceSpecifications.parse_obj(merged_specifications)
+
+
+def _is_newer(
+    old: Optional[ServiceSpecificationsAtDB],
+    new: ServiceSpecificationsAtDB,
+):
+    return old is None or (
+        packaging.version.parse(old.service_version)
+        < packaging.version.parse(new.service_version)
+    )
+
+
+def _merge_specs(
+    everyone_spec: Optional[ServiceSpecificationsAtDB],
+    team_specs: dict[GroupID, ServiceSpecificationsAtDB],
+    user_spec: Optional[ServiceSpecificationsAtDB],
+) -> dict[str, Any]:
+    merged_spec = {}
+    for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
+        if spec is not None:
+            merged_spec.update(spec.dict(include={"sidecar"}))
+    return merged_spec

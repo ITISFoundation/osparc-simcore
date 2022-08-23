@@ -2,19 +2,41 @@
 # pylint: disable=unused-argument
 
 import json
+import logging
 import random
-from typing import Any, AsyncIterable, AsyncIterator, Mapping
+import urllib.parse
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+)
 
 import pytest
+import respx
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
-from _pytest.monkeypatch import MonkeyPatch
+from _pytest.logging import LogCaptureFixture
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
+from faker import Faker
+from models_library.generated_models.docker_rest_api import (
+    ServiceSpec as DockerServiceSpec,
+)
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceKeyVersion
 from pydantic.types import NonNegativeInt
+from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -24,6 +46,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
+    ServiceState,
 )
 from yarl import URL
 
@@ -35,17 +58,19 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    return SimcoreServiceLabels(
-        **SimcoreServiceLabels.Config.schema_extra["examples"][1]
+    return SimcoreServiceLabels.parse_obj(
+        SimcoreServiceLabels.Config.schema_extra["examples"][1]
     )
 
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(ServiceDetails.Config.schema_extra["example"])
+    return DynamicServiceCreate.parse_obj(
+        DynamicServiceCreate.Config.schema_extra["example"]
+    )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def dynamic_sidecar_port() -> int:
     return 1222
 
@@ -110,6 +135,7 @@ def cluster_id() -> NonNegativeInt:
 @pytest.fixture
 async def dask_spec_local_cluster(
     monkeypatch: MonkeyPatch,
+    unused_tcp_port_factory: Callable,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
@@ -154,7 +180,13 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {"cls": Scheduler}
+    scheduler = {
+        "cls": Scheduler,
+        "options": {
+            "port": unused_tcp_port_factory(),
+            "dashboard_address": f":{unused_tcp_port_factory()}",
+        },
+    }
 
     async with SpecCluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
@@ -168,11 +200,13 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
-def local_dask_gateway_server_config() -> traitlets.config.Config:
+def local_dask_gateway_server_config(
+    unused_tcp_port_factory: Callable,
+) -> traitlets.config.Config:
     c = traitlets.config.Config()
     c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
-    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
-    c.Proxy.address = "127.0.0.1:0"  # type: ignore
+    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
+    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
     c.ClusterConfig.worker_cmd = [  # type: ignore
@@ -209,3 +243,159 @@ async def local_dask_gateway_server(
     print("--> local dask gateway server switching off...")
     await dask_gateway_server.cleanup()
     print("...done")
+
+
+@pytest.fixture(params=list(FileLinkType))
+def tasks_file_link_type(request) -> FileLinkType:
+    """parametrized fixture on all FileLinkType enum variants"""
+    return request.param
+
+
+# MOCKS the STORAGE service API responses ----------------------------------------
+
+
+@pytest.fixture
+def fake_s3_settings(faker: Faker) -> S3Settings:
+    return S3Settings(
+        S3_ENDPOINT=faker.uri(),
+        S3_ACCESS_KEY=faker.uuid4(),
+        S3_SECRET_KEY=faker.uuid4(),
+        S3_ACCESS_TOKEN=faker.uuid4(),
+        S3_BUCKET_NAME=faker.pystr(),
+    )
+
+
+@pytest.fixture
+def mocked_storage_service_api(
+    fake_s3_settings: S3Settings,
+) -> Iterator[respx.MockRouter]:
+    settings = AppSettings.create_from_envs()
+    assert settings
+    assert settings.DIRECTOR_V2_STORAGE
+
+    # pylint: disable=not-context-manager
+    with respx.mock(  # type: ignore
+        base_url=settings.DIRECTOR_V2_STORAGE.endpoint,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.post(
+            "/simcore-s3:access",
+            name="get_or_create_temporary_s3_access",
+        ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
+
+        yield respx_mock
+
+
+# MOCKS the CATALOG service API responses ----------------------------------------
+
+
+@pytest.fixture
+def mock_service_key_version() -> ServiceKeyVersion:
+    return ServiceKeyVersion(key="simcore/services/dynamic/myservice", version="1.4.5")
+
+
+@pytest.fixture
+def fake_service_specifications(faker: Faker) -> dict[str, Any]:
+    # the service specifications follow the Docker service creation available
+    # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    return {
+        "sidecar": DockerServiceSpec.parse_obj(
+            {
+                "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
+                "TaskTemplate": {
+                    "Placement": {
+                        "Constraints": [
+                            "node.id==2ivku8v2gvtg4",
+                            "node.hostname!=node-2",
+                            "node.platform.os==linux",
+                            "node.labels.security==high",
+                            "engine.labels.operatingsystem==ubuntu-20.04",
+                        ]
+                    },
+                    "Resources": {
+                        "Limits": {
+                            "NanoCPUs": 16 * 10e9,
+                            "MemoryBytes": 10 * 1024**3,
+                        },
+                        "Reservation": {
+                            "NanoCPUs": 136 * 10e9,
+                            "MemoryBytes": 312 * 1024**3,
+                            "GenericResources": [
+                                {
+                                    "NamedResourceSpec": {
+                                        "Kind": "Chipset",
+                                        "Value": "Late2020",
+                                    }
+                                },
+                                {
+                                    "DiscreteResourceSpec": {
+                                        "Kind": "FAKE_RESOURCE",
+                                        "Value": 1 * 1024**3,
+                                    }
+                                },
+                            ],
+                        },
+                    },
+                    "ContainerSpec": {
+                        "Command": ["my", "super", "duper", "service", "command"],
+                        "Env": [f"SOME_FAKE_ADDITIONAL_ENV={faker.pystr().upper()}"],
+                    },
+                },
+            }
+        ).dict(by_alias=True, exclude_unset=True)
+    }
+
+
+@pytest.fixture
+def mocked_catalog_service_api(
+    mock_env: EnvVarsDict,
+    mock_service_key_version: ServiceKeyVersion,
+    fake_service_specifications: dict[str, Any],
+) -> Iterator[respx.MockRouter]:
+    settings = AppSettings.create_from_envs()
+    assert settings
+    assert settings.DIRECTOR_V2_CATALOG
+
+    # pylint: disable=not-context-manager
+    with respx.mock(  # type: ignore
+        base_url=settings.DIRECTOR_V2_CATALOG.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        # health
+        respx_mock.get("/", name="get_health").respond(json="all good ;)")
+
+        # get service specifications
+        quoted_key = urllib.parse.quote(mock_service_key_version.key, safe="")
+        version = mock_service_key_version.version
+        respx_mock.get(
+            f"/services/{quoted_key}/{version}/specifications",
+            name="get_service_specifications",
+        ).respond(json=fake_service_specifications)
+
+        yield respx_mock
+
+
+@pytest.fixture()
+def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(logging.INFO):
+        yield caplog
+
+
+@pytest.fixture
+def mock_docker_api(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecars_to_observe",
+        autospec=True,
+        return_value=[],
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.are_all_services_present",
+        autospec=True,
+        return_value=True,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
+        return_value=(ServiceState.PENDING, ""),
+    )

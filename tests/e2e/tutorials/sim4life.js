@@ -13,11 +13,11 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const templateName = "sim4life";
+const serviceName = "sim4life-dy";
 
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);
   let studyId
 
   try {
@@ -27,12 +27,17 @@ async function runTutorial() {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], startTimeout);
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
+      [workbenchData["nodeIds"][0]],
+      startTimeout,
+      false
+    );
 
-    await tutorial.waitFor(12000, 'Wait for some time');
+    await tutorial.waitFor(35000, 'Wait for some time');
   }
-  catch(err) {
-    tutorial.setTutorialFailed(true);
+  catch (err) {
+    await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {

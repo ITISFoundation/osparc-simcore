@@ -17,8 +17,8 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from sqlalchemy import and_
 
-from . import config
 from .exceptions import NodeNotFound
+from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ async def _get_node_from_db(
     )
     if result.rowcount > 1:
         log.error("the node id %s is not unique", node_uuid)
-    node: RowProxy = await result.fetchone()
+    node: Optional[RowProxy] = await result.first()
     if not node:
         log.error("the node id %s was not found", node_uuid)
         raise NodeNotFound(node_uuid)
@@ -66,13 +66,14 @@ class DBContextManager:
 
     @staticmethod
     async def _create_db_engine() -> aiopg.sa.Engine:
+        settings = NodePortsSettings.create_from_envs()
         dsn = DataSourceName(
             application_name=f"{__name__}_{socket.gethostname()}_{os.getpid()}",
-            database=config.POSTGRES_DB,
-            user=config.POSTGRES_USER,
-            password=config.POSTGRES_PW,
-            host=config.POSTGRES_ENDPOINT.split(":")[0],
-            port=int(config.POSTGRES_ENDPOINT.split(":")[1]),
+            database=settings.POSTGRES_SETTINGS.POSTGRES_DB,
+            user=settings.POSTGRES_SETTINGS.POSTGRES_USER,
+            password=settings.POSTGRES_SETTINGS.POSTGRES_PASSWORD.get_secret_value(),
+            host=settings.POSTGRES_SETTINGS.POSTGRES_HOST,
+            port=settings.POSTGRES_SETTINGS.POSTGRES_PORT,
         )  # type: ignore
 
         engine = await _ensure_postgres_ready(dsn)
