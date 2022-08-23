@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import urllib.parse
 from typing import Awaitable, Callable
 
 import pytest
@@ -12,7 +13,10 @@ from faker import Faker
 from pydantic import BaseModel, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
-from servicelib.aiohttp.long_running_tasks.server import TaskId
+from servicelib.aiohttp.long_running_tasks.server import (
+    TaskId,
+    create_task_name_from_request,
+)
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.json_serialization import json_dumps
 from servicelib.long_running_tasks._task import TaskContext
@@ -68,7 +72,7 @@ def server_routes(
         task_manager = long_running_tasks.server.get_tasks_manager(request.app)
         query_params = parse_request_query_parameters_as(_LongTaskQueryParams, request)
         assert task_manager, "task manager is not initiated!"
-
+        task_name = create_task_name_from_request(request)
         task_id = long_running_tasks.server.start_task(
             task_manager,
             _string_list_task,
@@ -76,7 +80,10 @@ def server_routes(
             sleep_time=query_params.sleep_time,
             fail=query_params.fail,
             task_context=task_context,
+            task_name=task_name,
         )
+        assert task_id
+        assert task_id.startswith(urllib.parse.quote(task_name, safe=""))
         return web.json_response(
             data={"data": task_id},
             status=web.HTTPAccepted.status_code,

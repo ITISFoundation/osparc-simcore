@@ -8,7 +8,9 @@ from typing import Any, Awaitable, Callable
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp.test_utils import TestClient
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -62,7 +64,6 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     project_db_cleaner: None,
 ):
     assert client.app
-
     catalog_subsystem_mock([user_project])
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
@@ -100,6 +101,46 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     ):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_copying_large_project_and_retrieving_copy_task(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    user_project: dict[str, Any],
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable,
+    slow_storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+):
+    assert client.app
+    catalog_subsystem_mock([user_project])
+
+    # initiate a project copy that will last long (simulated by a long running storage)
+    # POST /v0/projects
+    create_url = client.app.router["create_projects"].url_for()
+    assert str(create_url) == f"{API_PREFIX}/projects"
+    create_url = create_url.with_query(from_study=user_project["uuid"])
+    resp = await client.post(f"{create_url}", json={})
+    data, error = await assert_status(resp, expected.accepted)
+    assert not error
+    assert data
+    assert "task_id" in data
+    assert "status_href" in data
+    assert "result_href" in data
+    assert "abort_href" in data
+    # list current tasks
+    list_task_url = client.app.router["list_tasks"].url_for()
+    resp = await client.get(f"{list_task_url}")
+    data, error = await assert_status(resp, expected.ok)
+    assert data
+    assert not error
+    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    assert len(list_of_tasks) == 1
+    task = list_of_tasks[0]
+    assert task.task_name == f"POST {create_url}"
 
 
 @pytest.mark.parametrize(*standard_user_role_response())

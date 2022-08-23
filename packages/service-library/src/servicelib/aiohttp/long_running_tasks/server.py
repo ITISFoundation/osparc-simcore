@@ -14,11 +14,12 @@ from ...long_running_tasks._task import (
     TaskStatus,
     start_task,
 )
-from ._dependencies import get_tasks_manager
+from ._dependencies import create_task_name_from_request, get_tasks_manager
 from ._routes import TaskGet
 from ._server import setup
 
 __all__: tuple[str, ...] = (
+    "create_task_name_from_request",
     "get_tasks_manager",
     "setup",
     "start_task",

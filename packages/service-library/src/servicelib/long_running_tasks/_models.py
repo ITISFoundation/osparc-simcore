@@ -1,9 +1,10 @@
 import logging
+import urllib.parse
 from asyncio import Task
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, confloat
+from pydantic import BaseModel, Field, PositiveFloat, confloat, validator
 
 logger = logging.getLogger(__name__)
 
@@ -93,3 +94,8 @@ class TaskGet(BaseModel):
     status_href: str
     result_href: str
     abort_href: str
+
+    @validator("task_name")
+    @classmethod
+    def unquote_str(cls, v) -> str:
+        return urllib.parse.unquote(v)

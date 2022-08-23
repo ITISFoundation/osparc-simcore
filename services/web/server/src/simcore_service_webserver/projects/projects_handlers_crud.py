@@ -18,9 +18,11 @@ from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
+    create_task_name_from_request,
     get_tasks_manager,
     start_task,
 )
@@ -139,6 +141,8 @@ async def create_projects(request: web.Request):
             query_params=query_params,
             user_id=req_ctx.user_id,
             predefined_project=predefined_project,
+            task_context=jsonable_encoder(req_ctx),
+            task_name=create_task_name_from_request(request),
         )
         status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
         result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
@@ -160,7 +164,9 @@ async def create_projects(request: web.Request):
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
         if task_id:
-            await task_manager.cancel_task(task_id)
+            await task_manager.cancel_task(
+                task_id, with_task_context=jsonable_encoder(req_ctx)
+            )
         raise
 
 
