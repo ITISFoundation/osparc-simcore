@@ -397,7 +397,7 @@ async def _trigger_connected_service_retrieve(
 ) -> None:
     project_id = project["uuid"]
     if await is_project_locked(app, project_id):
-        # NOTE: we log warn since this function is fire&forget and non-critical
+        # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
         log.warning(
             "Skipping service retrieval because project with %s is currently locked."
             "Operation triggered by %s",
