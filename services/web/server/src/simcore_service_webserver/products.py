@@ -44,3 +44,12 @@ def setup_products(app: web.Application):
 
     app.middlewares.append(discover_product_middleware)
     app.on_startup.append(load_products_from_db)
+
+
+# plugin API
+__all__: tuple[str, ...] = (
+    "get_current_product",
+    "get_product_name",
+    "Product",
+    "setup_products",
+)

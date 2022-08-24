@@ -75,6 +75,9 @@ class Product(BaseModel):
         }
 
 
+# PRODUCT repository
+
+
 async def load_products_from_db(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
