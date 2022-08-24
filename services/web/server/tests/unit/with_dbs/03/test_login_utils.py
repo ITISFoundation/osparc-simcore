@@ -26,7 +26,6 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
         print("EMAIL----------")
         print(msg)
         print("---------------")
-        return msg
 
     return mocker.patch(
         "simcore_service_webserver.login.utils.send_mail",
@@ -43,17 +42,23 @@ def app() -> web.Application:
 
 
 @pytest.mark.parametrize(
-    "template_path", list(resources.get_path("templates").rglob("*.html"))
+    "template_path",
+    list(resources.get_path("templates").rglob("*.html")),
+    ids=lambda p: f"{p.parent}/{p.name}",
 )
 def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
     assert template_path.exists()
     subject, body = template_path.read_text().split("\n", 1)
-    assert re.match(r"[a-zA-Z0-9\-_\s]+", subject), "Needs a path"
+    assert (
+        re.match(r"[a-zA-Z0-9\-_\s]+", subject) or "{{subject}}" in subject
+    ), f"Template {template_path} must start with a subject line, got {subject}"
 
 
+@pytest.mark.skip(reason="DEV")
 def test_render_string_from_tmp_file(
     tmp_path: Path, faker: Faker, app: web.Application
 ):
+    """ """
     request = make_mocked_request("GET", "/fake", app=app)
 
     template_path = themed("templates/osparc.io", "registration_email.html")
@@ -146,7 +151,7 @@ async def test_render_and_send_mail(
             "data": json2html.convert(
                 json=json.dumps(data), table_attributes='class="pure-table"'
             ),
-            "subject": "TEST: ",
+            "subject": "TEST",
         },
         attachments=[("test_login_utils.py", bytearray(Path(__file__).read_bytes()))],
     )
