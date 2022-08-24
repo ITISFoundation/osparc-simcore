@@ -23,6 +23,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from tqdm import tqdm
+from tqdm.contrib.logging import tqdm_logging_redirect
 from yarl import URL
 
 from . import exceptions
@@ -99,7 +100,7 @@ async def download_link_to_file(
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
                 file_size = int(response.headers.get("Content-Length", 0)) or None
                 try:
-                    with tqdm(
+                    with tqdm_logging_redirect(
                         desc=f"downloading {url.path} --> {file_path.name}\n",
                         total=file_size,
                         **_TQDM_FILE_OPTIONS,
@@ -195,7 +196,7 @@ async def upload_file_to_presigned_links(
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
-    with tqdm(
+    with tqdm_logging_redirect(
         desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):

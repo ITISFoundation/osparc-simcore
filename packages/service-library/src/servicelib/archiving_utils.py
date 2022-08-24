@@ -11,6 +11,7 @@ from typing import Final, Iterator, Optional, Union
 from servicelib.pools import non_blocking_process_pool_executor
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
+from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 CHUNK_SIZE: Final[int] = 1024 * 8
@@ -101,7 +102,7 @@ def _zipfile_single_file_extract_worker(
         desc = f"decompressing {zip_file_path}:{file_in_archive.filename} -> {destination_path}\n"
         with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
             "wb"
-        ) as dest_fp, tqdm(
+        ) as dest_fp, tqdm_logging_redirect(
             total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
         ) as pbar:
             while chunk := zip_fp.read(CHUNK_SIZE):
@@ -136,7 +137,9 @@ async def unarchive_dir(
     Returns a set with all the paths extracted from archive. It includes
     all tree leafs, which might include files or empty folders
     """
-    with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
+    with zipfile.ZipFile(
+        archive_to_extract, mode="r"
+    ) as zip_file_handler, logging_redirect_tqdm():
         with non_blocking_process_pool_executor(max_workers=max_workers) as pool:
             loop = asyncio.get_event_loop()
 
@@ -167,6 +170,7 @@ async def unarchive_dir(
                 f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=len(tasks),
                 unit="file",
+                miniters=1,
             )
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
@@ -216,8 +220,7 @@ def _add_to_archive(
             for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
         )
         desc = f"compressing {dir_to_compress} -> {destination}"
-
-        with tqdm(
+        with tqdm_logging_redirect(
             desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
         ) as progress_bar, _progress_enabled_zip_write_handler(
             zipfile.ZipFile(destination, "w", compression=compression), progress_bar
