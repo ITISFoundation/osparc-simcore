@@ -169,8 +169,9 @@ async def unarchive_dir(
                 desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
                 f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=len(tasks),
+                **_TQDM_FILE_OPTIONS,
                 unit="file",
-                miniters=1,
+                unit_divisor=1000,
             )
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
