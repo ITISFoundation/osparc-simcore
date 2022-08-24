@@ -79,7 +79,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_create_service_containers,
+            task=task_create_service_containers,
             unique=True,
             settings=settings,
             containers_create=containers_create,
@@ -118,7 +118,7 @@ async def runs_docker_compose_down_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_runs_docker_compose_down,
+            task=task_runs_docker_compose_down,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -153,7 +153,7 @@ async def state_restore_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_restore_state,
+            task=task_restore_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -188,7 +188,7 @@ async def state_save_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_save_state,
+            task=task_save_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -223,7 +223,7 @@ async def ports_inputs_pull_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_inputs_pull,
+            task=task_ports_inputs_pull,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -258,7 +258,7 @@ async def ports_outputs_pull_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_outputs_pull,
+            task=task_ports_outputs_pull,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -293,7 +293,7 @@ async def ports_outputs_push_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_outputs_push,
+            task=task_ports_outputs_push,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -329,7 +329,7 @@ async def containers_restart_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_containers_restart,
+            task=task_containers_restart,
             unique=True,
             app=app,
             settings=settings,

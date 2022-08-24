@@ -18,11 +18,12 @@ from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
+    TaskGet,
     TaskProgress,
     get_tasks_manager,
-    start_task,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -37,6 +38,7 @@ from .. import catalog, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..long_running_tasks import start_task_with_context
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
@@ -129,38 +131,29 @@ async def create_projects(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    task_manager = get_tasks_manager(request.app)
-    task_id = None
+    task_get: Optional[TaskGet] = None
     try:
-        task_id = start_task(
-            task_manager,
+        task_get = start_task_with_context(
+            request,
             _create_projects,
             app=request.app,
             query_params=query_params,
             user_id=req_ctx.user_id,
             predefined_project=predefined_project,
         )
-        status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-        result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-        abort_url = request.app.router["cancel_and_delete_task"].url_for(
-            task_id=task_id
-        )
+
         return web.json_response(
-            data={
-                "data": {
-                    "task_id": task_id,
-                    "status_href": f"{status_url}",
-                    "result_href": f"{result_url}",
-                    "abort_href": f"{abort_url}",
-                }
-            },
+            data={"data": task_get},
             status=web.HTTPAccepted.status_code,
             dumps=json_dumps,
         )
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
-        if task_id:
-            await task_manager.cancel_task(task_id)
+        if task_get:
+            task_manager = get_tasks_manager(request.app)
+            await task_manager.cancel_task(
+                task_get.task_id, with_task_context=jsonable_encoder(req_ctx)
+            )
         raise
 
 
@@ -256,7 +249,7 @@ async def _create_projects(
 
     new_project = {}
     try:
-        task_progress.publish(message="cloning project scaffold", percent=0)
+        task_progress.update(message="cloning project scaffold", percent=0)
         new_project_was_hidden_before_data_was_copied = query_params.hidden
 
         new_project, clone_data_task = await _init_project_from_request(
@@ -275,11 +268,11 @@ async def _create_projects(
                 new_project = predefined_project
 
             # re-validate data
-            task_progress.publish(message="validating project scaffold", percent=0.1)
+            task_progress.update(message="validating project scaffold", percent=0.1)
             await projects_api.validate_project(app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        task_progress.publish(message="storing project scaffold", percent=0.15)
+        task_progress.update(message="storing project scaffold", percent=0.15)
         new_project = await db.add_project(
             new_project,
             user_id,
@@ -288,7 +281,7 @@ async def _create_projects(
         )
 
         # copies the project's DATA IF cloned
-        task_progress.publish(message="copying project data", percent=0.2)
+        task_progress.update(message="copying project data", percent=0.2)
         await _copy_files_from_source_project(
             app,
             db,
@@ -300,19 +293,19 @@ async def _create_projects(
         )
 
         # update the network information in director-v2
-        task_progress.publish(message="updating project network", percent=0.8)
+        task_progress.update(message="updating project network", percent=0.8)
         await director_v2_api.update_dynamic_service_networks_in_project(
             app, UUID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        task_progress.publish(message="updating project pipeline", percent=0.9)
+        task_progress.update(message="updating project pipeline", percent=0.9)
         await director_v2_api.create_or_update_pipeline(
             app, user_id, new_project["uuid"]
         )
 
         # Appends state
-        task_progress.publish(message="retrieving project status", percent=0.95)
+        task_progress.update(message="retrieving project status", percent=0.95)
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
@@ -338,7 +331,8 @@ async def _create_projects(
             f"{user_id=}",
         )
         # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
-        await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
+        if prj_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(app, prj_uuid, user_id)
         raise
 
 

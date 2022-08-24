@@ -1,4 +1,19 @@
 paths:
+  /tasks:
+    get:
+      operationId: list_tasks
+      tags:
+        - tasks
+      responses:
+        "200":
+          description: Returns the list of active tasks (running and/or done)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./components/schemas/task.yaml#/TaskEnveloped"
+
   /tasks/{task_id}:
     parameters:
       - name: task_id

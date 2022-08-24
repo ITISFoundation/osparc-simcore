@@ -10,235 +10,310 @@ How these tests works:
 # pylint: disable=redefined-outer-name
 
 import asyncio
-import subprocess
-import sys
-from pathlib import Path
-from typing import AsyncIterator, Callable, Final
+import json
+from typing import AsyncIterator, Awaitable, Callable, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
-from fastapi import Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.fastapi import long_running_tasks
+from servicelib.long_running_tasks._models import TaskGet, TaskId
+from servicelib.long_running_tasks._task import TaskContext
 from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-
-CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-CURRENT_DIR = CURRENT_FILE.parent
+from yarl import URL
 
 ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
-# UTILS
+
+async def _string_list_task(
+    task_progress: long_running_tasks.server.TaskProgress,
+    num_strings: int,
+    sleep_time: float,
+    fail: bool,
+) -> list[str]:
+    generated_strings = []
+    for index in range(num_strings):
+        generated_strings.append(f"{index}")
+        await asyncio.sleep(sleep_time)
+        task_progress.update(message="generated item", percent=index / num_strings)
+        if fail:
+            raise RuntimeError("We were asked to fail!!")
+
+    return generated_strings
 
 
-def create_mock_app() -> FastAPI:
-    mock_server_app = FastAPI(title="app containing the server")
+@pytest.fixture
+def server_routes() -> APIRouter:
+    routes = APIRouter()
 
-    long_running_tasks.server.setup(mock_server_app)
-
-    @mock_server_app.get("/")
-    def health() -> None:
-        """used to check if application is ready"""
-
-    @mock_server_app.post("/string-list-task", status_code=status.HTTP_202_ACCEPTED)
+    @routes.post(
+        "/string-list-task", response_model=TaskId, status_code=status.HTTP_202_ACCEPTED
+    )
     async def create_string_list_task(
+        num_strings: int,
+        sleep_time: float,
+        fail: bool = False,
         task_manager: long_running_tasks.server.TasksManager = Depends(
             long_running_tasks.server.get_tasks_manager
         ),
     ) -> long_running_tasks.server.TaskId:
-        async def _string_list_task(
-            task_progress: long_running_tasks.server.TaskProgress, items: int
-        ) -> list[str]:
-            generated_strings = []
-            for x in range(items):
-                string = f"{x}"
-                generated_strings.append(string)
-                percent = x / items
-                await asyncio.sleep(ITEM_PUBLISH_SLEEP)
-                task_progress.publish(message="generated item", percent=percent)
-            return generated_strings
-
-        # NOTE: TaskProgress is injected by start_task
         task_id = long_running_tasks.server.start_task(
-            tasks_manager=task_manager, handler=_string_list_task, items=10
+            task_manager,
+            _string_list_task,
+            num_strings=num_strings,
+            sleep_time=sleep_time,
+            fail=fail,
         )
         return task_id
 
-    @mock_server_app.post("/waiting-task", status_code=status.HTTP_202_ACCEPTED)
-    async def create_waiting_task(
-        wait_for: float,
-        task_manager: long_running_tasks.server.TasksManager = Depends(
-            long_running_tasks.server.get_tasks_manager
-        ),
-    ) -> long_running_tasks.server.TaskId:
-        async def _waiting_task(
-            task_progress: long_running_tasks.server.TaskProgress,
-            wait_for: PositiveFloat,
-        ) -> float:
-            task_progress.publish(message="started sleeping", percent=0.0)
-            await asyncio.sleep(wait_for)
-            task_progress.publish(message="finished sleeping", percent=1.0)
-            return 42 + wait_for
-
-        task_id = long_running_tasks.server.start_task(
-            tasks_manager=task_manager,
-            handler=_waiting_task,
-            wait_for=wait_for,
-        )
-        return task_id
-
-    return mock_server_app
-
-
-async def _wait_server_ready(address: AnyHttpUrl) -> None:
-    client = AsyncClient()
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
-    ):
-        with attempt:
-            print(f"Checking if server running at: {address}")
-            response = await client.get(address, timeout=0.1)
-            if response.status_code == status.HTTP_202_ACCEPTED:
-                return
-
-
-# FIXTURES - SERVER
+    return routes
 
 
 @pytest.fixture
-async def run_server(get_unused_port: Callable[[], int]) -> AsyncIterator[AnyHttpUrl]:
-    port = get_unused_port()
-    with subprocess.Popen(
-        [
-            "uvicorn",
-            "--factory",
-            f"{CURRENT_FILE.stem}:create_mock_app",
-            "--port",
-            f"{port}",
-        ],
-        cwd=f"{CURRENT_DIR}",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ) as proc:
-
-        url = parse_obj_as(AnyHttpUrl, f"http://127.0.0.1:{port}")
-        await _wait_server_ready(url)
-        print("\nReady and listening on", proc.args)
-
-        # checks started successfully
-
-        def _process_output() -> str:
-            assert proc.stdout
-            assert proc.stderr
-            stdout_decoded = proc.stdout.read().decode("utf-8")
-            std_err_decoded = proc.stderr.read().decode("utf-8")
-            return f"{stdout_decoded}\n{std_err_decoded}"
-
-        assert not proc.poll(), _process_output()
-
-        yield url
-
-        proc.terminate()
-        print(_process_output())
-
-
-# FIXTURES - CLIENT
-
-
-@pytest.fixture
-def high_status_poll_interval() -> PositiveFloat:
-    # NOTE: polling very fast to capture all the progress updates and to check
-    # that duplicate progress messages do not get sent
-    return ITEM_PUBLISH_SLEEP / 5
-
-
-@pytest.fixture
-async def client_app() -> AsyncIterator[FastAPI]:
-    app = FastAPI()
-
+async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
+    app = FastAPI(title="test app")
+    app.include_router(server_routes)
+    long_running_tasks.server.setup(app)
     long_running_tasks.client.setup(app)
-
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-async def async_client() -> AsyncClient:
-    return AsyncClient()
+async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
 
 
-# TESTS
+@pytest.fixture
+def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[TaskId]]:
+    async def _caller(app: FastAPI, client: AsyncClient, **query_kwargs) -> TaskId:
+        url = URL(app.url_path_for("create_string_list_task")).update_query(
+            num_strings=10, sleep_time=f"{0.2}", **query_kwargs
+        )
+        resp = await client.post(f"{url}")
+        assert resp.status_code == status.HTTP_202_ACCEPTED
+        task_id = parse_obj_as(long_running_tasks.server.TaskId, resp.json())
+        return task_id
+
+    return _caller
+
+
+@pytest.fixture
+def wait_for_task() -> Callable[
+    [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
+]:
+    async def _waiter(
+        app: FastAPI,
+        client: AsyncClient,
+        task_id: TaskId,
+        task_context: TaskContext,
+    ) -> None:
+        status_url = URL(
+            app.url_path_for("get_task_status", task_id=task_id)
+        ).with_query(task_context)
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(60),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                result = await client.get(f"{status_url}")
+                assert result.status_code == status.HTTP_200_OK
+                task_status = long_running_tasks.server.TaskStatus.parse_obj(
+                    result.json()
+                )
+                assert task_status
+                assert task_status.done
+
+    return _waiter
 
 
 async def test_workflow(
-    run_server: AnyHttpUrl,
-    client_app: FastAPI,
-    async_client: AsyncClient,
-    high_status_poll_interval: PositiveFloat,
+    app: FastAPI,
+    client: AsyncClient,
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
 ) -> None:
-    result = await async_client.post(f"{run_server}/string-list-task")
-    assert result.status_code == status.HTTP_202_ACCEPTED
-    task_id = result.json()
+    task_id = await start_long_running_task(app, client)
 
     progress_updates = []
+    status_url = app.url_path_for("get_task_status", task_id=task_id)
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            result = await client.get(f"{status_url}")
+            assert result.status_code == status.HTTP_200_OK
+            task_status = long_running_tasks.server.TaskStatus.parse_obj(result.json())
+            assert task_status
+            progress_updates.append(
+                (task_status.task_progress.message, task_status.task_progress.percent)
+            )
+            print(f"<-- received task status: {task_status.json(indent=2)}")
+            assert task_status.done, "task incomplete"
+            print(
+                f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+            )
 
-    async def progress_handler(
-        message: long_running_tasks.client.ProgressMessage,
-        percent: long_running_tasks.client.ProgressPercent,
-        _: long_running_tasks.client.TaskId,
-    ) -> None:
-        progress_updates.append((message, percent))
-
-    client = long_running_tasks.client.Client(
-        app=client_app, async_client=async_client, base_url=run_server
-    )
-    async with long_running_tasks.client.periodic_task_result(
-        client,
-        task_id,
-        task_timeout=10,
-        progress_callback=progress_handler,
-        status_poll_interval=high_status_poll_interval,
-    ) as result:
-        string_list = result
-        assert string_list == [f"{x}" for x in range(10)]
-
-        assert progress_updates == [
-            ("starting", 0.0),
-            ("generated item", 0.0),
-            ("generated item", 0.1),
-            ("generated item", 0.2),
-            ("generated item", 0.3),
-            ("generated item", 0.4),
-            ("generated item", 0.5),
-            ("generated item", 0.6),
-            ("generated item", 0.7),
-            ("generated item", 0.8),
-            ("finished", 1.0),
-        ]
+    EXPECTED_MESSAGES = [
+        ("starting", 0.0),
+        ("generated item", 0.0),
+        ("generated item", 0.1),
+        ("generated item", 0.2),
+        ("generated item", 0.3),
+        ("generated item", 0.4),
+        ("generated item", 0.5),
+        ("generated item", 0.6),
+        ("generated item", 0.7),
+        ("generated item", 0.8),
+        ("finished", 1.0),
+    ]
+    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+    # now check the result
+    result_url = app.url_path_for("get_task_result", task_id=task_id)
+    result = await client.get(f"{result_url}")
+    # NOTE: this is DIFFERENT than with aiohttp where we return the real result
+    assert result.status_code == status.HTTP_200_OK
+    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
+    assert not task_result.error
+    assert task_result.result == [f"{x}" for x in range(10)]
+    # getting the result again should raise a 404
+    result = await client.get(result_url)
+    assert result.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_error_after_result(
-    run_server: AnyHttpUrl,
-    client_app: FastAPI,
-    async_client: AsyncClient,
-    high_status_poll_interval: PositiveFloat,
+@pytest.mark.parametrize(
+    "method, route_name",
+    [
+        ("GET", "get_task_status"),
+        ("GET", "get_task_result"),
+        ("DELETE", "cancel_and_delete_task"),
+    ],
+)
+async def test_get_task_wrong_task_id_raises_not_found(
+    app: FastAPI, client: AsyncClient, method: str, route_name: str
+):
+    url = app.url_path_for(route_name, task_id="fake_task_id")
+    result = await client.request(method, f"{url}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_failing_task_returns_error(
+    app: FastAPI,
+    client: AsyncClient,
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    wait_for_task: Callable[
+        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
+    ],
 ) -> None:
-    result = await async_client.post(f"{run_server}/string-list-task")
-    assert result.status_code == status.HTTP_202_ACCEPTED
-    task_id = result.json()
+    task_id = await start_long_running_task(app, client, fail=f"{True}")
+    # wait for it to finish
+    await wait_for_task(app, client, task_id, {})
+    # get the result
+    result_url = app.url_path_for("get_task_result", task_id=task_id)
+    result = await client.get(f"{result_url}")
+    assert result.status_code == status.HTTP_200_OK
+    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
 
-    client = long_running_tasks.client.Client(
-        app=client_app, async_client=async_client, base_url=run_server
+    assert not task_result.result
+    assert task_result.error
+    assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
+    assert 'raise RuntimeError("We were asked to fail!!")' in task_result.error
+    # NOTE: this is not yet happening with fastapi version of long running task
+    # assert "errors" in task_result.error
+    # assert len(task_result.error["errors"]) == 1
+    # assert task_result.error["errors"][0]["code"] == "RuntimeError"
+    # assert task_result.error["errors"][0]["message"] == "We were asked to fail!!"
+
+
+async def test_get_results_before_tasks_finishes_returns_404(
+    app: FastAPI,
+    client: AsyncClient,
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+):
+    task_id = await start_long_running_task(app, client)
+
+    result_url = app.url_path_for("get_task_result", task_id=task_id)
+    result = await client.get(f"{result_url}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_cancel_task(
+    app: FastAPI,
+    client: AsyncClient,
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+):
+    task_id = await start_long_running_task(app, client)
+
+    # cancel the task
+    delete_url = app.url_path_for("cancel_and_delete_task", task_id=task_id)
+    result = await client.delete(f"{delete_url}")
+    assert result.status_code == status.HTTP_204_NO_CONTENT
+
+    # it should be gone, so no status
+    result_url = app.url_path_for("get_task_status", task_id=task_id)
+    result = await client.get(f"{result_url}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+    # and also no results
+    result_url = app.url_path_for("get_task_result", task_id=task_id)
+    result = await client.get(f"{result_url}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+    # try cancelling again
+    result = await client.delete(f"{delete_url}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_list_tasks_empty_list(app: FastAPI, client: AsyncClient):
+    # initially empty
+    list_url = app.url_path_for("list_tasks")
+    result = await client.get(f"{list_url}")
+    assert result.status_code == status.HTTP_200_OK
+    list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+    assert list_of_tasks == []
+
+
+async def test_list_tasks(
+    app: FastAPI,
+    client: AsyncClient,
+    start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
+    wait_for_task: Callable[
+        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
+    ],
+):
+    # now start a few tasks
+    NUM_TASKS = 10
+    results = await asyncio.gather(
+        *(start_long_running_task(app, client) for _ in range(NUM_TASKS))
     )
-    with pytest.raises(RuntimeError):
-        async with long_running_tasks.client.periodic_task_result(
-            client,
-            task_id,
-            task_timeout=10,
-            status_poll_interval=high_status_poll_interval,
-        ) as result:
-            string_list = result
-            assert string_list == [f"{x}" for x in range(10)]
-            raise RuntimeError("has no influence")
+
+    # check we have the full list
+    list_url = app.url_path_for("list_tasks")
+    result = await client.get(f"{list_url}")
+    assert result.status_code == status.HTTP_200_OK
+    list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+    assert len(list_of_tasks) == NUM_TASKS
+
+    # now wait for them to finish
+    await asyncio.gather(
+        *(wait_for_task(app, client, task_id, {}) for task_id in results)
+    )
+    # now get the result one by one
+
+    for task_index, task_id in enumerate(results):
+        result_url = app.url_path_for("get_task_result", task_id=task_id)
+        await client.get(f"{result_url}")
+        # the list shall go down one by one
+        result = await client.get(f"{list_url}")
+        assert result.status_code == status.HTTP_200_OK
+        list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+        assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)

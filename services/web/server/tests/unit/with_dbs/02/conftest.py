@@ -25,25 +25,8 @@ from models_library.services_resources import (
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.long_running_tasks.server import (
-    setup as setup_long_running_tasks,
-)
 from simcore_service_webserver import catalog
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.plugin import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.tags import setup_tags
+from simcore_service_webserver.application import create_application
 
 DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
 DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
@@ -73,27 +56,10 @@ def client(
     cfg["resource_manager"][
         "resource_deletion_timeout_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
+    cfg["statics"]["enabled"] = False
 
     monkeypatch_setenv_from_app_config(cfg)
-    app = create_safe_application(cfg)
-
-    # setup app
-
-    assert setup_settings(app)
-    setup_long_running_tasks(app, router_prefix="/tasks")
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    setup_resource_manager(app)
-    setup_garbage_collector(app)
-    setup_socketio(app)
-    setup_director(app)
-    setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
-    setup_products(app)
+    app = create_application()
 
     # server and client
     yield event_loop.run_until_complete(
