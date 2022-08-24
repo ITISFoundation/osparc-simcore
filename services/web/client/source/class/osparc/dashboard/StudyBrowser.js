@@ -471,6 +471,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
       }
+
+      if (this.__studies.length === 0 && osparc.utils.Utils.isProduct("tis")) {
+        const tutorialWindow = new osparc.component.tutorial.ti.Slides();
+        tutorialWindow.center();
+        tutorialWindow.open();
+      }
+
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
