@@ -19,7 +19,7 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
+from pydantic import BaseModel, ByteSize, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskGet,
     TaskProgress,
@@ -43,7 +43,7 @@ from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resourc
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
-from ..storage_api import copy_data_folders_from_project
+from ..storage_api import copy_data_folders_from_project, get_project_total_size
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
@@ -168,6 +168,13 @@ async def _init_project_from_request(
         user_id=user_id,
         include_templates=True,
     )
+
+    # get project total data size
+    project_data_size = get_project_total_size(app, query_params.from_study)
+    if project_data_size > parse_obj_as(ByteSize, "30Gib"):
+        raise web.HTTPForbidden(
+            reason="Source project data size larger than 30Gib, this is not allowed."
+        )
 
     # clone template as user project
     new_project, nodes_map = clone_project_document(

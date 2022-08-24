@@ -4,9 +4,11 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from models_library.projects import ProjectID
+from pydantic import ByteSize
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -19,7 +21,7 @@ log = logging.getLogger(__name__)
 TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
 
 
-def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
+def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
     settings: StorageSettings = get_plugin_settings(app)
     # storage service API endpoint
     endpoint = URL(settings.base_url)
@@ -28,11 +30,17 @@ def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
     return session, endpoint
 
 
+async def get_project_total_size(
+    app: web.Application, project_uuid: ProjectID
+) -> ByteSize:
+    ...
+
+
 async def copy_data_folders_from_project(
     app: web.Application,
-    source_project: Dict,
-    destination_project: Dict,
-    nodes_map: Dict,
+    source_project: dict,
+    destination_project: dict,
+    nodes_map: dict,
     user_id: int,
 ):
     # TODO: optimize if project has actualy data or not before doing the call
@@ -113,7 +121,7 @@ async def is_healthy(app: web.Application) -> bool:
         return False
 
 
-async def get_app_status(app: web.Application) -> Dict[str, Any]:
+async def get_app_status(app: web.Application) -> dict[str, Any]:
     client, api_endpoint = _get_storage_client(app)
 
     data = {}
