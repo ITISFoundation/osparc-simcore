@@ -53,8 +53,8 @@ class Product(BaseModel):
     )
     manual_url: HttpUrl
     manual_extra_url: Optional[HttpUrl] = None
-    issues_login_url: HttpUrl
-    issues_new_url: HttpUrl
+    issues_login_url: Optional[HttpUrl] = None
+    issues_new_url: Optional[HttpUrl] = None
     feedback_form_url: Optional[HttpUrl] = None
 
     class Config:
@@ -71,11 +71,11 @@ class Product(BaseModel):
 
     def to_statics(self) -> dict[str, Any]:
         """
-        Selects public fields from product's info
+        Selects **public** fields from product's info
         and prefixes it with its name to produce
-        items for statics.json
+        items for statics.json (reachable by front-end)
         """
-        # public fields sent to the front-end
+        # SECURITY WARNING: do not expose sensitive information here
         public_selection = self.dict(
             include={
                 "display_name",
@@ -88,7 +88,7 @@ class Product(BaseModel):
             },
             exclude_none=True,
         )
-        # e.g. OsparcDisplayName, OsparcSupportEmail, OsparcManualUrl, ...
+        # keys will be named as e.g. osparcDisplayName, osparcSupportEmail, osparcManualUrl, ...
         return {
             snake_to_camel(f"{self.name}_{key}"): value
             for key, value in public_selection.items()

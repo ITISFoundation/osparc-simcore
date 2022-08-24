@@ -65,16 +65,18 @@ products = sa.Table(
     sa.Column(
         "issues_login_url",
         sa.String,
-        nullable=False,
+        nullable=True,
         server_default="https://github.com/ITISFoundation/osparc-simcore/issues",
-        doc="URL to login in the issue tracker site",
+        doc="URL to login in the issue tracker site"
+        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
     ),
     sa.Column(
         "issues_new_url",
         sa.String,
-        nullable=False,
+        nullable=True,
         server_default="https://github.com/ITISFoundation/osparc-simcore/issues/new",
-        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)",
+        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)"
+        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
     ),
     sa.Column(
         "feedback_form_url",
