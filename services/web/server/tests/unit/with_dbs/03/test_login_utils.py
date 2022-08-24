@@ -48,22 +48,32 @@ def app() -> web.Application:
 def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
     assert template_path.exists()
     subject, body = template_path.read_text().split("\n", 1)
-    assert re.match(r"[a-zA-Z0-9\-_\s]+", subject)
+    assert re.match(r"[a-zA-Z0-9\-_\s]+", subject), "Needs a path"
 
 
-def test_it(tmp_path: Path, faker: Faker, app: web.Application):
+def test_render_string_from_tmp_file(
+    tmp_path: Path, faker: Faker, app: web.Application
+):
     request = make_mocked_request("GET", "/fake", app=app)
 
-    src = themed("templates/osparc.io", "registration_email.html")
-    dst = tmp_path / src.name
-    shutil.copy2(src, dst)
+    template_path = themed("templates/osparc.io", "registration_email.html")
+    copy_path = tmp_path / template_path.name
+    shutil.copy2(template_path, copy_path)
 
-    page = render_string(
-        template_name=f"{dst}",
+    context = {"host": request.host, "link": faker.url(), "name": faker.first_name()}
+
+    expected_page = render_string(
+        template_name=f"{template_path}",
         request=request,
-        context={"host": request.host, "link": faker.url(), "name": faker.first_name()},
+        context=context,
     )
-    print(page)
+    got_page = render_string(
+        template_name=f"{copy_path}",
+        request=request,
+        context=context,
+    )
+
+    assert expected_page == got_page
 
 
 async def test_render_and_send_mail(
