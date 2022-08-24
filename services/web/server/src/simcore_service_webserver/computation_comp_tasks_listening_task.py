@@ -7,7 +7,7 @@ import json
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Dict, List, Optional
+from typing import Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -44,7 +44,7 @@ async def _update_project_state(
     project_uuid: str,
     node_uuid: str,
     new_state: RunningState,
-    node_errors: Optional[List[ErrorDict]],
+    node_errors: Optional[list[ErrorDict]],
 ) -> None:
     project = await projects_api.update_project_node_state(
         app, user_id, project_uuid, node_uuid, new_state
@@ -73,7 +73,7 @@ async def listen(app: web.Application, db_engine: Engine):
                 "received update from database: %s", pformat(notification.payload)
             )
             # get the data and the info on what changed
-            payload: Dict = json.loads(notification.payload)
+            payload: dict = json.loads(notification.payload)
 
             # FIXME: all this should move to rabbitMQ instead of this
             task_data = payload.get("data", {})
@@ -100,6 +100,7 @@ async def listen(app: web.Application, db_engine: Engine):
                 if any(f in task_changes for f in ["outputs", "run_hash"]):
                     new_outputs = task_data.get("outputs", {})
                     new_run_hash = task_data.get("run_hash", None)
+
                     await update_node_outputs(
                         app,
                         the_project_owner,

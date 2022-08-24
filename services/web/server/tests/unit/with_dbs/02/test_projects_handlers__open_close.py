@@ -345,11 +345,11 @@ async def test_close_project(
     fake_services,
 ):
     # POST /v0/projects/{project_id}:close
-    fakes = fake_services(5)
-    assert len(fakes) == 5
+    fake_dynamic_services = fake_services(number_services=5)
+    assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
         "director_v2_core_dynamic_services.get_dynamic_services"
-    ].return_value = fakes
+    ].return_value = fake_dynamic_services
 
     # open project
     client_id = client_session_id_factory()
@@ -391,11 +391,13 @@ async def test_close_project(
                 service_uuid=service["service_uuid"],
                 save_state=True,
             )
-            for service in fakes
+            for service in fake_dynamic_services
         ]
         mocked_director_v2_api[
             "director_v2_core_dynamic_services.stop_dynamic_service"
         ].assert_has_calls(calls)
+
+        # should not be callsed request_retrieve_dyn_service
 
 
 @pytest.mark.parametrize(
