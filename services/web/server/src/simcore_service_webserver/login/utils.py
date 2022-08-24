@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
+from pathlib import Path
 from pprint import pformat
 from typing import Any, Mapping, Optional
 
@@ -107,11 +108,11 @@ async def compose_multipart_mail(
 async def render_and_send_mail(
     request: web.Request,
     to: str,
-    template: str,
+    template: Path,
     context: Mapping[str, Any],
     attachments: Optional[list[tuple[str, bytearray]]] = None,
 ):
-    page = render_string(f"{template}", request, context)
+    page = render_string(template_name=f"{template}", request=request, context=context)
     subject, body = page.split("\n", 1)
 
     if attachments:
@@ -122,7 +123,7 @@ async def render_and_send_mail(
         await compose_mail(request.app, to, subject.strip(), body)
 
 
-def themed(dirname, template):
+def themed(dirname, template) -> Path:
     return resources.get_path(join(dirname, template))
 
 

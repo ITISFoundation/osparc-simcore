@@ -106,8 +106,8 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.THEME, "registration_email.html"),
+            to=email,
+            template=themed(cfg.THEME, "registration_email.html"),
             context={
                 "host": request.host,
                 "link": link,
@@ -450,8 +450,8 @@ async def reset_password(request: web.Request):
         try:
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
+                to=email,
+                template=themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
                 context={
                     "host": request.host,
                     "reason": err.reason,
@@ -467,8 +467,8 @@ async def reset_password(request: web.Request):
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email.html"),
+                to=email,
+                template=themed(cfg.COMMON_THEME, "reset_password_email.html"),
                 context={
                     "host": request.host,
                     "link": link,
@@ -513,8 +513,8 @@ async def change_email(request: web.Request):
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.COMMON_THEME, "change_email_email.html"),
+            to=email,
+            template=themed(cfg.COMMON_THEME, "change_email_email.html"),
             context={
                 "host": request.host,
                 "link": link,
