@@ -32,6 +32,7 @@ from ..node_ports_common.client_session_manager import ClientSessionContextManag
 from . import exceptions, r_clone, storage_client
 from .constants import SIMCORE_LOCATION
 from .file_io_utils import (
+    LogRedirectCB,
     UploadableFileObject,
     download_link_to_file,
     upload_file_to_presigned_links,
@@ -188,6 +189,7 @@ async def download_file_from_s3(
     store_id: Optional[LocationID],
     s3_object: StorageFileID,
     local_folder: Path,
+    log_redirect: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
 ) -> Path:
     """Downloads a file from S3
@@ -225,12 +227,14 @@ async def download_file_from_s3(
             download_link,
             local_folder,
             client_session=session,
+            log_redirect=log_redirect,
         )
 
 
 async def download_file_from_link(
     download_link: URL,
     destination_folder: Path,
+    log_redirect: Optional[LogRedirectCB],
     file_name: Optional[str] = None,
     client_session: Optional[ClientSession] = None,
 ) -> Path:
@@ -248,6 +252,7 @@ async def download_file_from_link(
             download_link,
             local_file_path,
             num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
+            log_redirect=log_redirect,
         )
 
     return local_file_path
@@ -272,6 +277,7 @@ async def upload_file(
     store_name: Optional[LocationName],
     s3_object: StorageFileID,
     file_to_upload: Union[Path, UploadableFileObject],
+    log_redirect: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> tuple[LocationID, ETag]:
@@ -332,6 +338,7 @@ async def upload_file(
                     upload_links,
                     file_to_upload,
                     num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
+                    log_redirect=log_redirect,
                 )
 
             # complete the upload

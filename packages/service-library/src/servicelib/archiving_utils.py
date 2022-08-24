@@ -79,6 +79,10 @@ _TQDM_FILE_OPTIONS = dict(
     colour="yellow",
     miniters=1,
 )
+_TQDM_MULTI_FILES_OPTIONS = _TQDM_FILE_OPTIONS | dict(
+    unit="file",
+    unit_divisor=1000,
+)
 
 
 def _zipfile_single_file_extract_worker(
@@ -169,9 +173,7 @@ async def unarchive_dir(
                 desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
                 f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=len(tasks),
-                **_TQDM_FILE_OPTIONS,
-                unit="file",
-                unit_divisor=1000,
+                **_TQDM_MULTI_FILES_OPTIONS,
             )
 
             # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders

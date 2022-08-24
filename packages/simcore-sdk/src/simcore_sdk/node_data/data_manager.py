@@ -11,6 +11,7 @@ from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 from ..node_ports_common import filemanager
+from ..node_ports_common.filemanager import LogRedirectCB
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,9 @@ async def _push_file(
     project_id: str,
     node_uuid: str,
     file_path: Path,
+    *,
     rename_to: Optional[str],
+    log_redirect: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> None:
     store_id = SIMCORE_LOCATION
@@ -42,6 +45,7 @@ async def _push_file(
         s3_object=s3_object,
         file_to_upload=file_path,
         r_clone_settings=r_clone_settings,
+        log_redirect=log_redirect,
     )
     log.info("%s successfuly uploaded", file_path)
 
@@ -51,13 +55,19 @@ async def push(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    log_redirect: Optional[LogRedirectCB],
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
     archive_exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     if file_or_folder.is_file():
         return await _push_file(
-            user_id, project_id, node_uuid, file_or_folder, rename_to
+            user_id,
+            project_id,
+            node_uuid,
+            file_or_folder,
+            rename_to=rename_to,
+            log_redirect=log_redirect,
         )
     # we have a folder, so we create a compressed file
     with TemporaryDirectory() as tmp_dir_name:
@@ -74,7 +84,13 @@ async def push(
             exclude_patterns=archive_exclude_patterns,
         )
         await _push_file(
-            user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
+            user_id,
+            project_id,
+            node_uuid,
+            archive_file_path,
+            rename_to=None,
+            r_clone_settings=r_clone_settings,
+            log_redirect=log_redirect,
         )
 
 
@@ -83,6 +99,8 @@ async def _pull_file(
     project_id: str,
     node_uuid: str,
     file_path: Path,
+    *,
+    log_redirect: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
@@ -94,6 +112,7 @@ async def _pull_file(
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
+        log_redirect=log_redirect,
     )
     if downloaded_file != destination_path:
         destination_path.unlink(missing_ok=True)
@@ -110,14 +129,24 @@ async def pull(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    log_redirect: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
 ) -> None:
     if file_or_folder.is_file():
-        return await _pull_file(user_id, project_id, node_uuid, file_or_folder, save_to)
+        return await _pull_file(
+            user_id,
+            project_id,
+            node_uuid,
+            file_or_folder,
+            save_to=save_to,
+            log_redirect=log_redirect,
+        )
     # we have a folder, so we need somewhere to extract it to
     with TemporaryDirectory() as tmp_dir_name:
         archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
-        await _pull_file(user_id, project_id, node_uuid, archive_file)
+        await _pull_file(
+            user_id, project_id, node_uuid, archive_file, log_redirect=log_redirect
+        )
         log.info("extracting data from %s", archive_file)
 
         destination_folder = file_or_folder if save_to is None else save_to
