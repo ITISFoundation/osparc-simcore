@@ -113,6 +113,7 @@ async def render_and_send_mail(
     attachments: Optional[list[tuple[str, bytearray]]] = None,
 ):
     page = render_string(template_name=f"{template}", request=request, context=context)
+    # NOTE: Expects first line of the template to be the Subject of the email
     subject, body = page.split("\n", 1)
 
     if attachments:

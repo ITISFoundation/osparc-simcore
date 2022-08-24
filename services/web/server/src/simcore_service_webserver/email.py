@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log
 )
 def setup_email(app: web.Application):
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
+    settings: ApplicationSettings | None = app.get(APP_SETTINGS_KEY)
 
     templates_dir = resources.get_path("templates")
     if not templates_dir.exists():
@@ -42,8 +42,10 @@ def setup_email(app: web.Application):
     # SEE https://github.com/aio-libs/aiohttp-jinja2
     env = aiohttp_jinja2.setup(
         app,
-        loader=jinja_app_loader.Loader(),  # jinja2.FileSystemLoader(tmpl_dir)
-        auto_reload=settings.SC_BOOT_MODE and settings.SC_BOOT_MODE.is_devel_mode(),
+        loader=jinja_app_loader.Loader(),  # jinja2.FileSystemLoader(templates_dir)
+        auto_reload=settings
+        and settings.SC_BOOT_MODE
+        and settings.SC_BOOT_MODE.is_devel_mode(),
     )
     assert env  # nosec
 

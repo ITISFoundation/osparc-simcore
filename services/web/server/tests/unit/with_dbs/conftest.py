@@ -115,7 +115,7 @@ def web_server(
     app = create_application()
 
     # with patched email
-    _path_mail(monkeypatch)
+    _patch_compose_mail(monkeypatch)
 
     disable_static_webserver(app)
 
@@ -459,13 +459,13 @@ async def all_group(client, logged_user) -> dict[str, str]:
 # GENERIC HELPER FUNCTIONS ----------------------------------------------------
 
 
-def _path_mail(monkeypatch):
-    async def send_mail(*args):
+def _patch_compose_mail(monkeypatch):
+    async def print_mail_to_stdout(*args):
         _app, recipient, subject, body = args
         print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
 
     monkeypatch.setattr(
-        simcore_service_webserver.login.utils, "compose_mail", send_mail
+        simcore_service_webserver.login.utils, "compose_mail", print_mail_to_stdout
     )
 
 
