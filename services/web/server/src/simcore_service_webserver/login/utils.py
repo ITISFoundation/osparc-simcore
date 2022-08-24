@@ -1,10 +1,10 @@
+import logging
 import mimetypes
 import random
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from logging import getLogger
 from os.path import join
 from pathlib import Path
 from pprint import pformat
@@ -18,12 +18,13 @@ from aiohttp_jinja2 import render_string
 from passlib import pwd
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
+from simcore_service_webserver.products import get_product_name
 
 from .._resources import resources
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from .settings import LoginOptions, get_plugin_options
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def _to_names(enum_cls, names):
@@ -126,6 +127,23 @@ async def render_and_send_mail(
 
 def themed(dirname, template) -> Path:
     return resources.get_path(join(dirname, template))
+
+
+def get_template_path(request: web.Request, filename: str) -> Path:
+    default_template = themed("templates/common", filename)
+    if not default_template.exists():
+        raise ValueError(f"{filename} is not part of the templates/common")
+
+    try:
+        product_name = get_product_name(request)
+        if (
+            tmpl_path := themed(f"templates/{product_name}", filename)
+        ) and tmpl_path.exists():
+            return tmpl_path
+    except KeyError:
+        pass
+
+    return default_template
 
 
 def flash_response(

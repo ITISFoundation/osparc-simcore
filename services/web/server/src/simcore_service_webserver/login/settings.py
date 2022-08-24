@@ -65,8 +65,6 @@ class LoginSettings(BaseCustomSettings):
 class LoginOptions(BaseModel):
     """These options are NOT directly exposed to the env vars due to security reasons."""
 
-    THEME: str = "templates/osparc.io"
-    COMMON_THEME: str = "templates/common"
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"

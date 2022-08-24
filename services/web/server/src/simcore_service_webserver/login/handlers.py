@@ -42,8 +42,8 @@ from .utils import (
     envelope_response,
     flash_response,
     get_client_ip,
+    get_template_path,
     render_and_send_mail,
-    themed,
 )
 
 log = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ async def register(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     username = email.split("@")[
@@ -107,11 +108,12 @@ async def register(request: web.Request):
         await render_and_send_mail(
             request,
             to=email,
-            template=themed(cfg.THEME, "registration_email.html"),
+            template=get_template_path(request, "registration_email.html"),
             context={
                 "host": request.host,
                 "link": link,
                 "name": email.split("@")[0],
+                "support_email": product.support_email,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
@@ -451,7 +453,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 to=email,
-                template=themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
+                template=get_template_path(request, "reset_password_email_failed.html"),
                 context={
                     "host": request.host,
                     "reason": err.reason,
@@ -468,7 +470,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 to=email,
-                template=themed(cfg.COMMON_THEME, "reset_password_email.html"),
+                template=get_template_path(request, "reset_password_email.html"),
                 context={
                     "host": request.host,
                     "link": link,
@@ -514,7 +516,7 @@ async def change_email(request: web.Request):
         await render_and_send_mail(
             request,
             to=email,
-            template=themed(cfg.COMMON_THEME, "change_email_email.html"),
+            template=get_template_path(request, "change_email_email.html"),
             context={
                 "host": request.host,
                 "link": link,
