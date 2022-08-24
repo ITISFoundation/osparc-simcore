@@ -1,4 +1,4 @@
-// node ti-plan.js [url] [user] [password] [--demo]
+// node ti-plan.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -36,7 +36,7 @@ async function runTutorial() {
 
     // wait for the three services
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    console.log("workbenchData.nodeIds", workbenchData["nodeIds"]);
+    console.log(workbenchData);
     // skipping the second one wchich is the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
