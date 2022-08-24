@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 from models_library.basic_types import (
@@ -236,6 +236,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def get_healthcheck_timeout_in_seconds(cls, v):
         # Ex. HEALTHCHECK --interval=5m --timeout=3s
         if isinstance(v, str):
+            factor = 1  # defaults on s
             if v.endswith("s"):
                 factor = 1
             elif v.endswith("m"):
@@ -249,7 +250,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def is_enabled(self, field_name: str) -> bool:
         return bool(getattr(self, field_name, None))
 
-    def _get_disabled_public_plugins(self) -> List[str]:
+    def _get_disabled_public_plugins(self) -> list[str]:
         plugins_disabled = []
         # NOTE: this list is limited for security reasons. An unbounded list
         # might reveal critical info on the settings of a deploy to the client.
@@ -267,7 +268,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 plugins_disabled.append(field_name)
         return plugins_disabled
 
-    def public_dict(self) -> Dict[str, Any]:
+    def public_dict(self) -> dict[str, Any]:
         """Data publicaly available"""
 
         data = {"invitation_required": False}
@@ -275,9 +276,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             data[
                 "invitation_required"
             ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
-            data[
-                "login_2fa_required"
-            ] = self.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
+            data["login_2fa_required"] = self.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
 
         data.update(
             self.dict(
@@ -294,7 +293,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         )
         return data
 
-    def to_client_statics(self) -> Dict[str, Any]:
+    def to_client_statics(self) -> dict[str, Any]:
         data = self.dict(
             include={
                 "APP_NAME",
