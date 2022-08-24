@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import json
-import re
 import shutil
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -15,9 +14,14 @@ from aiohttp_jinja2 import render_string
 from faker import Faker
 from json2html import json2html
 from pytest_mock import MockerFixture
-from simcore_service_webserver._resources import resources
+from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email import setup_email
-from simcore_service_webserver.login.utils import render_and_send_mail, themed
+from simcore_service_webserver.login.utils import (
+    get_template_path,
+    render_and_send_mail,
+    themed,
+)
+from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture
@@ -41,27 +45,127 @@ def app() -> web.Application:
     return app
 
 
-@pytest.mark.parametrize(
-    "template_path",
-    list(resources.get_path("templates").rglob("*.html")),
-    ids=lambda p: f"{p.parent}/{p.name}",
-)
-def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
-    assert template_path.exists()
-    subject, body = template_path.read_text().split("\n", 1)
-    assert (
-        re.match(r"[a-zA-Z0-9\-_\s]+", subject) or "{{subject}}" in subject
-    ), f"Template {template_path} must start with a subject line, got {subject}"
+def _create_mocked_request(app: web.Application, product_name: str):
+    request = make_mocked_request("GET", "/fake", app=app)
+    request[RQ_PRODUCT_KEY] = product_name
+    return request
+
+
+@pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
+async def test_render_and_send_mail_for_registration(
+    app: web.Application,
+    faker: Faker,
+    mocked_send_email: MagicMock,
+    product_name: str,
+):
+    request = _create_mocked_request(app, product_name)
+    email = faker.email()  # destination email
+    link = faker.url()  # some url link
+
+    await render_and_send_mail(
+        request,
+        to=email,
+        template=get_template_path(request, "registration_email.jinja2"),
+        context={
+            "host": request.host,
+            "link": link,
+            "name": email.split("@")[0],
+        },
+    )
+
+    assert mocked_send_email.called
+    mimetext = mocked_send_email.call_args[0][1]
+    assert mimetext["Subject"]
+    assert mimetext["To"] == email
+
+
+@pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
+async def test_render_and_send_mail_for_password(
+    app: web.Application,
+    faker: Faker,
+    mocked_send_email: MagicMock,
+    product_name: str,
+):
+    request = _create_mocked_request(app, product_name)
+    email = faker.email()  # destination email
+    link = faker.url()  # some url link
+
+    await render_and_send_mail(
+        request,
+        to=email,
+        template=get_template_path(request, "reset_password_email_failed.jinja2"),
+        context={
+            "host": request.host,
+            "reason": faker.text(),
+        },
+    )
+
+    await render_and_send_mail(
+        request,
+        to=email,
+        template=get_template_path(request, "reset_password_email.jinja2"),
+        context={
+            "host": request.host,
+            "link": link,
+        },
+    )
+
+
+@pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
+async def test_render_and_send_mail_to_change_email(
+    app: web.Application,
+    faker: Faker,
+    mocked_send_email: MagicMock,
+    product_name: str,
+):
+    request = _create_mocked_request(app, product_name)
+    email = faker.email()  # destination email
+    link = faker.url()  # some url link
+
+    await render_and_send_mail(
+        request,
+        to=email,
+        template=get_template_path(request, "change_email_email.jinja2"),
+        context={
+            "host": request.host,
+            "link": link,
+        },
+    )
+
+
+@pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
+async def test_render_and_send_mail_for_submission(
+    app: web.Application,
+    faker: Faker,
+    mocked_send_email: MagicMock,
+    product_name: str,
+):
+    request = _create_mocked_request(app, product_name)
+    email = faker.email()  # destination email
+    data = {"name": faker.first_name(), "surname": faker.last_name()}  # some form
+
+    await render_and_send_mail(
+        request,
+        to=email,
+        template=get_template_path(request, "service_submission.jinja2"),
+        context={
+            "user": email,
+            "data": json2html.convert(
+                json=json.dumps(data), table_attributes='class="pure-table"'
+            ),
+            "subject": "TEST",
+        },
+        attachments=[("test_login_utils.py", bytearray(Path(__file__).read_bytes()))],
+    )
 
 
 @pytest.mark.skip(reason="DEV")
 def test_render_string_from_tmp_file(
     tmp_path: Path, faker: Faker, app: web.Application
 ):
-    """ """
     request = make_mocked_request("GET", "/fake", app=app)
 
-    template_path = themed("templates/osparc.io", "registration_email.html")
+    template_path = themed("templates/osparc.io", "registration_email.jinja2")
     copy_path = tmp_path / template_path.name
     shutil.copy2(template_path, copy_path)
 
@@ -79,79 +183,3 @@ def test_render_string_from_tmp_file(
     )
 
     assert expected_page == got_page
-
-
-async def test_render_and_send_mail(
-    app: web.Request, faker: Faker, mocked_send_email: MagicMock
-):
-    request = make_mocked_request("GET", "/fake", app=app)
-
-    THEME: str = "templates/osparc.io"
-    COMMON_THEME: str = "templates/common"
-
-    product = "osparc"
-    assert themed(f"templates/{product}", "registration_email.html")
-
-    email = faker.email()  # destination email
-    link = faker.url()  # some url link
-
-    await render_and_send_mail(
-        request,
-        to=email,
-        template=themed(THEME, "registration_email.html"),
-        context={
-            "host": request.host,
-            "link": link,
-            "name": email.split("@")[0],
-        },
-    )
-
-    assert mocked_send_email.called
-    mimetext = mocked_send_email.call_args[0][1]
-    assert mimetext["Subject"]
-    assert mimetext["To"] == email
-
-    await render_and_send_mail(
-        request,
-        to=email,
-        template=themed(COMMON_THEME, "reset_password_email_failed.html"),
-        context={
-            "host": request.host,
-            "reason": faker.text(),
-        },
-    )
-
-    await render_and_send_mail(
-        request,
-        to=email,
-        template=themed(COMMON_THEME, "reset_password_email.html"),
-        context={
-            "host": request.host,
-            "link": link,
-        },
-    )
-
-    await render_and_send_mail(
-        request,
-        to=email,
-        template=themed(COMMON_THEME, "change_email_email.html"),
-        context={
-            "host": request.host,
-            "link": link,
-        },
-    )
-
-    data = {"name": faker.first_name(), "surname": faker.last_name()}
-    await render_and_send_mail(
-        request,
-        to=email,
-        template=themed(COMMON_THEME, "service_submission.html"),
-        context={
-            "user": email,
-            "data": json2html.convert(
-                json=json.dumps(data), table_attributes='class="pure-table"'
-            ),
-            "subject": "TEST",
-        },
-        attachments=[("test_login_utils.py", bytearray(Path(__file__).read_bytes()))],
-    )

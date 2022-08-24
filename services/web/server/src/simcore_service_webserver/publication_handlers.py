@@ -14,7 +14,7 @@ from .login.utils import themed
 
 log = logging.getLogger(__name__)
 
-EMAIL_TEMPLATE_NAME = "service_submission.html"
+EMAIL_TEMPLATE_NAME = "service_submission.jinja2"
 
 
 @login_required
