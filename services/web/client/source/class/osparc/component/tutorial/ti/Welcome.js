@@ -16,23 +16,15 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.tutorial.ti.Welcome", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.component.tutorial.ti.SlideBase,
 
   construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__populateCard();
+    const title = this.tr("Welcome to TI Planning Tool");
+    this.base(arguments, title);
   },
 
   members: {
-    __populateCard: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: "Welcome to TI Planning Tool",
-        font: "title-14"
-      }));
-
+    _populateCard: function() {
       this._add(new qx.ui.basic.Label().set({
         value: "This is how it works",
         font: "text-14"

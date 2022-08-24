@@ -19,20 +19,12 @@ qx.Class.define("osparc.component.tutorial.ti.S4LPostPro", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__populateCard();
+    const title = this.tr("Sim4Life Post Processing");
+    this.base(arguments, title);
   },
 
   members: {
-    __populateCard: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: "Sim4Life Post Processing",
-        font: "title-14"
-      }));
-
+    _populateCard: function() {
       this._add(new qx.ui.basic.Label().set({
         value: "qwer",
         font: "text-14"

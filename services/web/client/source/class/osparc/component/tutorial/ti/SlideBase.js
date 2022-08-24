@@ -15,20 +15,30 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.PostPro", {
+qx.Class.define("osparc.component.tutorial.ti.SlideBase", {
   extend: qx.ui.core.Widget,
+  type: "abstract",
 
-  construct: function() {
-    const title = this.tr("Post Processing");
-    this.base(arguments, title);
+  construct: function(title) {
+    this.base(arguments, "ti-slides", this.tr("Quick Start"));
+
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    if (title) {
+      this._add(new qx.ui.basic.Label(title).set({
+        font: "title-14"
+      }));
+    }
+
+    this._populateCard();
   },
 
   members: {
+    /**
+      * @abstract
+      */
     _populateCard: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: "asdfasfd",
-        font: "text-14"
-      }));
+      throw new Error("Abstract method called!");
     }
   }
 });
