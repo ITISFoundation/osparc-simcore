@@ -48,13 +48,9 @@ async def discover_product_middleware(request, handler):
         )
         request[RQ_PRODUCT_KEY] = product_name
 
-    # Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
-    elif request.path.startswith("/study/"):
-        product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
-        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
-
-    # Root entrypoint: to serve front-end apps
-    elif request.path == "/":
+    # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
+    # - Root entrypoint: to serve front-end apps
+    elif request.path.startswith("/study/") or request.path == "/":
         product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
         request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
 
