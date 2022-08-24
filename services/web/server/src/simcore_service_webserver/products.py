@@ -10,166 +10,25 @@ At every request to this service API, a middleware discovers which product is th
 
 
 import logging
-from typing import Any, Optional, Pattern
 
-import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.engine import Engine
-from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
-from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Field, HttpUrl, ValidationError, validator
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._constants import (
-    APP_DB_ENGINE_KEY,
-    APP_PRODUCTS_KEY,
-    APP_SETTINGS_KEY,
-    RQ_PRODUCT_FRONTEND_KEY,
-    RQ_PRODUCT_KEY,
-    X_PRODUCT_NAME_HEADER,
-)
-from ._meta import API_VTAG
-from .db_models import products
-from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from ._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
+from .products_db import Product, load_products_from_db
+from .products_middleware import discover_product_middleware
 
 log = logging.getLogger(__name__)
 
 
-class Product(BaseModel):
-    """
-    Pydantic model associated to db_models.Products table
-
-    SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
-    """
-
-    name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
-    display_name: str
-    host_regex: Pattern
-    support_email: str
-    twilio_messaging_sid: Optional[str] = Field(
-        default=None,
-        min_length=34,
-        max_length=34,
-    )
-    manual_url: HttpUrl
-    manual_extra_url: Optional[HttpUrl] = None
-    issues_login_url: Optional[HttpUrl] = None
-    issues_new_url: Optional[HttpUrl] = None
-    feedback_form_url: Optional[HttpUrl] = None
-
-    class Config:
-        orm_mode = True
-
-    @validator("name", pre=True, always=True)
-    @classmethod
-    def validate_name(cls, v):
-        if v not in FRONTEND_APPS_AVAILABLE:
-            raise ValueError(
-                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
-            )
-        return v
-
-    def to_statics(self) -> dict[str, Any]:
-        """
-        Selects **public** fields from product's info
-        and prefixes it with its name to produce
-        items for statics.json (reachable by front-end)
-        """
-        # SECURITY WARNING: do not expose sensitive information here
-        public_selection = self.dict(
-            include={
-                "display_name",
-                "support_email",
-                "manual_url",
-                "manual_extra_url",
-                "issues_new_url",
-                "issues_login_url",
-                "feedback_form_url",
-            },
-            exclude_none=True,
-        )
-        # keys will be named as e.g. osparcDisplayName, osparcSupportEmail, osparcManualUrl, ...
-        return {
-            snake_to_camel(f"{self.name}_{key}"): value
-            for key, value in public_selection.items()
-        }
-
-
-async def load_products_from_db(app: web.Application):
-    """
-    Loads info on products stored in the database into app's storage (i.e. memory)
-    """
-    app_products: dict[str, Product] = {}
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    exclude = {products.c.created, products.c.modified}
-
-    async with engine.acquire() as conn:
-        stmt = sa.select([c for c in products.columns if c not in exclude])
-        async for row in conn.execute(stmt):
-            assert row  # nosec
-            try:
-                name = row.name  # type:ignore
-                app_products[name] = Product.from_orm(row)
-            except ValidationError as err:
-                log.error(
-                    "Invalid product in db '%s'. Skipping product info:\n %s", row, err
-                )
-
-    app[APP_PRODUCTS_KEY] = app_products
-
-
-def discover_product_by_hostname(request: web.Request) -> Optional[str]:
-    for product in request.app[APP_PRODUCTS_KEY].values():
-        if product.host_regex.search(request.host):
-            return product.name
-    return None
-
-
-def discover_product_by_request_header(request: web.Request) -> Optional[str]:
-    requested_product = request.headers.get(X_PRODUCT_NAME_HEADER)
-    if requested_product:
-        for product_name in request.app[APP_PRODUCTS_KEY].keys():
-            if requested_product == product_name:
-                return requested_product
-    return None
+def get_product_name(request: web.Request) -> str:
+    return request[RQ_PRODUCT_KEY]
 
 
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
-    product_name = request[RQ_PRODUCT_KEY]
+    product_name = get_product_name(request)
     return request.app[APP_PRODUCTS_KEY][product_name]
-
-
-@web.middleware
-async def discover_product_middleware(request, handler):
-    """
-    This service can serve to different products
-    Every request needs to reveal which product to serve and store it in request[RQ_PRODUCT_KEY]
-        - request[RQ_PRODUCT_KEY] is set to discovered product in 3 types of entrypoints
-        - if no product discovered, then it is set to default
-    """
-    # API entrypoints: api calls
-    if request.path.startswith(f"/{API_VTAG}"):
-        product_name = (
-            discover_product_by_request_header(request)
-            or discover_product_by_hostname(request)
-            or FRONTEND_APP_DEFAULT
-        )
-        request[RQ_PRODUCT_KEY] = product_name
-
-    # Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
-    elif request.path.startswith("/study/"):
-        product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
-        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
-
-    # Root entrypoint: to serve front-end apps
-    elif request.path == "/":
-        product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
-        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
-
-    response = await handler(request)
-
-    return response
 
 
 @app_module_setup(
