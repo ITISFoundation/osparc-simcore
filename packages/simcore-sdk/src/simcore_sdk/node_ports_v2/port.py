@@ -251,7 +251,7 @@ class Port(BaseServiceIOModel):
                     key=self.key,
                     fileToKeyMap=self.file_to_key_map,
                     value=self.value,
-                    log_redirect=None,
+                    log_redirect=self._node_ports.io_log_redirect_cb,
                 )
                 value = path_concrete_value
 
@@ -262,7 +262,7 @@ class Port(BaseServiceIOModel):
                         key=self.key,
                         fileToKeyMap=self.file_to_key_map,
                         value=self.value,
-                        log_redirect=None,
+                        log_redirect=self._node_ports.io_log_redirect_cb,
                     )
                 )
                 value = path_concrete_value
@@ -316,7 +316,7 @@ class Port(BaseServiceIOModel):
                     project_id=self._node_ports.project_id,
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
-                    log_redirect=None,
+                    log_redirect=self._node_ports.io_log_redirect_cb,
                 )
             else:
                 new_value = converted_value

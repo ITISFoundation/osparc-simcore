@@ -3,7 +3,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Optional, Protocol, Union
+from typing import IO, AsyncGenerator, Optional, Protocol, Union, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -62,6 +62,7 @@ async def _file_chunk_reader(
             yield chunk
 
 
+@runtime_checkable
 class LogRedirectCB(Protocol):
     async def __call__(self, msg: str) -> None:
         ...

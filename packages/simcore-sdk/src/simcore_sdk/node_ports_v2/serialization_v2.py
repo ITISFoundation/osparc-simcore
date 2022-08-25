@@ -1,13 +1,15 @@
+import functools
 import json
 import logging
 from pprint import pformat
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 import pydantic
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import InvalidProtocolError
@@ -20,7 +22,7 @@ _PYDANTIC_NEEDS_ROOT_SPECIFIED = version.parse(pydantic.VERSION) < version.parse
 
 log = logging.getLogger(__name__)
 
-NODE_REQUIRED_KEYS: Set[str] = {
+NODE_REQUIRED_KEYS: set[str] = {
     "schema",
     "inputs",
     "outputs",
@@ -32,6 +34,7 @@ async def load(
     user_id: int,
     project_id: str,
     node_uuid: str,
+    io_log_redirect: Optional[LogRedirectCB],
     auto_update: bool = False,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> Nodeports:
@@ -55,7 +58,7 @@ async def load(
     # convert to our internal node ports
     if _PYDANTIC_NEEDS_ROOT_SPECIFIED:
         _PY_INT = "__root__"
-        node_ports_cfg: Dict[str, Dict[str, Any]] = {
+        node_ports_cfg: dict[str, dict[str, Any]] = {
             "inputs": {_PY_INT: {}},
             "outputs": {_PY_INT: {}},
         }
@@ -71,7 +74,7 @@ async def load(
                 port_value["key"] = key
                 port_value["value"] = port_cfg[port_type].get(key, None)
     else:
-        node_ports_cfg: Dict[str, Dict[str, Any]] = {}
+        node_ports_cfg: dict[str, dict[str, Any]] = {}
         for port_type in ["inputs", "outputs"]:
             # schemas first
             node_ports_cfg[port_type] = port_cfg["schema"][port_type]
@@ -88,9 +91,10 @@ async def load(
         project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=dump,
-        node_port_creator_cb=load,
+        node_port_creator_cb=functools.partial(load, io_log_redirect=io_log_redirect),
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
+        io_log_redirect=io_log_redirect,
     )
     log.debug(
         "created node_ports_v2 object %s",
@@ -110,7 +114,7 @@ async def dump(nodeports: Nodeports) -> None:
         exclude_unset=True,
     )
 
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+    async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         ports = (
             nodeports
             if f"{node_id}" == nodeports.node_uuid
@@ -119,6 +123,7 @@ async def dump(nodeports: Nodeports) -> None:
                 user_id=nodeports.user_id,
                 project_id=nodeports.project_id,
                 node_uuid=f"{node_id}",
+                io_log_redirect=nodeports.io_log_redirect_cb,
             )
         )
 
