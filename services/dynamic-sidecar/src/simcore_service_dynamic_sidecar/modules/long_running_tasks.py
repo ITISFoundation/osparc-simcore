@@ -35,9 +35,9 @@ from ..modules.mounted_fs import MountedVolumes
 logger = logging.getLogger(__name__)
 
 
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.debug(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
+async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
+    logger.debug(msg)
+    await rabbitmq.post_log_message(f"[sidecar] {msg}")
 
 
 # TASKS
@@ -239,6 +239,7 @@ async def task_ports_inputs_pull(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
         port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling inputs")
     progress.update(message="finished inputs pulling", percent=1.0)
@@ -259,6 +260,7 @@ async def task_ports_outputs_pull(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
         port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
     progress.update(message="finished outputs pulling", percent=1.0)
@@ -276,7 +278,9 @@ async def task_ports_outputs_push(
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
     await nodeports.upload_outputs(
-        mounted_volumes.disk_outputs_path, port_keys=port_keys
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
     progress.update(message="finished outputs pushing", percent=1.0)

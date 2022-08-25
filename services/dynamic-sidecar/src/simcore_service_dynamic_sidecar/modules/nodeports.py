@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any, Coroutine, Optional, cast
 
 import magic
+from models_library.projects import ProjectIDStr
 from models_library.projects_nodes import OutputsDict
+from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -19,6 +21,7 @@ from servicelib.file_utils import remove_directory
 from servicelib.pools import async_on_threadpool
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Nodeports, Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_service_dynamic_sidecar.core.settings import (
@@ -55,7 +58,9 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
 
 
 @run_sequentially_in_context()
-async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
+async def upload_outputs(
+    outputs_path: Path, port_keys: list[str], io_log_redirect_cb: LogRedirectCB
+) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
     logger.debug("uploading data to simcore...")
@@ -64,9 +69,10 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     settings: ApplicationSettings = get_settings()
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
+        io_log_redirect=io_log_redirect_cb,
     )
 
     # let's gather the tasks
@@ -143,10 +149,12 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
             )
 
 
-async def dispatch_update_for_directory(directory_path: Path) -> None:
+async def dispatch_update_for_directory(
+    directory_path: Path, io_log_redirect_cb: LogRedirectCB
+) -> None:
     logger.debug("Uploading data for directory %s", directory_path)
     # TODO: how to figure out from directory_path which is the correct target to upload
-    await upload_outputs(directory_path, [])
+    await upload_outputs(directory_path, [], io_log_redirect_cb=io_log_redirect_cb)
 
 
 # INPUTS section
@@ -249,7 +257,10 @@ async def _download_files(
 
 @run_sequentially_in_context()
 async def download_target_ports(
-    port_type_name: PortTypeName, target_path: Path, port_keys: list[str]
+    port_type_name: PortTypeName,
+    target_path: Path,
+    port_keys: list[str],
+    io_log_redirect_cb: LogRedirectCB,
 ) -> ByteSize:
     logger.debug("retrieving data from simcore...")
     start_time = time.perf_counter()
@@ -257,9 +268,10 @@ async def download_target_ports(
     settings: ApplicationSettings = get_settings()
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
+        io_log_redirect=io_log_redirect_cb,
     )
 
     # let's gather all the data
@@ -291,9 +303,3 @@ async def download_target_ports(
         elapsed_time,
     )
     return transferred_bytes
-
-
-__all__: tuple[str, ...] = (
-    "dispatch_update_for_directory",
-    "download_target_ports",
-)
