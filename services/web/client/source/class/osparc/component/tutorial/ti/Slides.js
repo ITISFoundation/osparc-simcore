@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       layout: new qx.ui.layout.VBox(20),
       contentPadding: 15,
       modal: true,
-      width: 700,
+      width: 800,
       height: 800,
       showClose: true,
       showMaximize: false,
