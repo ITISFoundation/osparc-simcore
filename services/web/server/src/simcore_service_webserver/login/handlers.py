@@ -49,6 +49,12 @@ from .utils import (
 log = logging.getLogger(__name__)
 
 
+def _get_user_name(email: str) -> str:
+    username = email.split("@")[0]
+    # TODO: this has to be unique and add this in user registration!
+    return username
+
+
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -64,9 +70,7 @@ async def register(request: web.Request):
     product: Product = get_current_product(request)
 
     email = body.email
-    username = email.split("@")[
-        0
-    ]  # FIXME: this has to be unique and add this in user registration!
+    username = _get_user_name(email)
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
@@ -112,7 +116,7 @@ async def register(request: web.Request):
             context={
                 "host": request.host,
                 "link": link,
-                "name": email.split("@")[0],
+                "name": username,
                 "support_email": product.support_email,
             },
         )
@@ -175,6 +179,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             product_display_name=product.display_name,
+            user_name=_get_user_name(email),
         )
 
         response = flash_response(
@@ -306,6 +311,7 @@ async def login(request: web.Request):
                 twilo_auth=settings.LOGIN_TWILIO,
                 twilio_messaging_sid=product.twilio_messaging_sid,
                 product_display_name=product.display_name,
+                user_name=user["name"],
             )
 
             rsp = envelope_response(
