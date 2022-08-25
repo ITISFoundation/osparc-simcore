@@ -36,10 +36,8 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
     const arrowsLayout = this.__createArrows();
     this.add(arrowsLayout);
 
-    const scrollContainer = new qx.ui.container.Scroll();
     const stack = this.__createStack();
-    scrollContainer.add(stack);
-    this.add(scrollContainer, {
+    this.add(stack, {
       flex: 1
     });
 
@@ -95,7 +93,11 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         new osparc.component.tutorial.ti.ElectrodeSelector(),
         new osparc.component.tutorial.ti.PostPro(),
         new osparc.component.tutorial.ti.S4LPostPro()
-      ].forEach(slide => stack.add(slide));
+      ].forEach(slide => {
+        const slideContainer = new qx.ui.container.Scroll();
+        slideContainer.add(slide);
+        stack.add(slideContainer);
+      });
       return stack;
     },
 

@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
 
       this._add(new qx.ui.basic.Label().set({
         value: this.tr("\
-        Now the Arrow that says 'Next' can be pushed and the optimization will start.\
+        Now the Arrow that says 'Next' can be pushed and the optimization will inmediatly start.\
         "),
         rich: true,
         wrap: true,
