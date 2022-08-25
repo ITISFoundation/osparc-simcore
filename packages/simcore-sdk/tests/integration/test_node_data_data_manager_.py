@@ -141,6 +141,7 @@ async def test_valid_upload_download(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        log_redirect=None,
     )
 
     uploaded_hashes = _get_file_hashes_in_path(content_path)
@@ -152,6 +153,7 @@ async def test_valid_upload_download(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        log_redirect=None,
     )
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
@@ -181,6 +183,7 @@ async def test_valid_upload_download_saved_to(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        log_redirect=None,
     )
 
     uploaded_hashes = _get_file_hashes_in_path(content_path)
@@ -195,6 +198,7 @@ async def test_valid_upload_download_saved_to(
         node_uuid=node_uuid,
         file_or_folder=content_path,
         save_to=new_destination,
+        log_redirect=None,
     )
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)

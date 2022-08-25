@@ -70,7 +70,9 @@ async def test_push_folder(
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
 
-    await data_manager.push(user_id, project_id, node_uuid, test_folder)
+    await data_manager.push(
+        user_id, project_id, node_uuid, test_folder, log_redirect=None
+    )
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
@@ -118,7 +120,9 @@ async def test_push_file(
     assert file_path.exists()
 
     # test push file by file
-    await data_manager.push(user_id, project_id, node_uuid, file_path)
+    await data_manager.push(
+        user_id, project_id, node_uuid, file_path, log_redirect=None
+    )
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
         r_clone_settings=None,
@@ -178,7 +182,9 @@ async def test_pull_folder(
         test_compression_folder
     )
 
-    await data_manager.pull(user_id, project_id, node_uuid, test_folder)
+    await data_manager.pull(
+        user_id, project_id, node_uuid, test_folder, log_redirect=None
+    )
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
@@ -223,7 +229,9 @@ async def test_pull_file(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
 
-    await data_manager.pull(user_id, project_id, node_uuid, file_path)
+    await data_manager.pull(
+        user_id, project_id, node_uuid, file_path, log_redirect=None
+    )
     mock_temporary_directory.assert_not_called()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=file_path.parent,

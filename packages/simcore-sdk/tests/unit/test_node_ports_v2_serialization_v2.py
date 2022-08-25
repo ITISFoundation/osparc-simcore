@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from simcore_sdk.node_ports_v2 import DBManager, exceptions
@@ -16,7 +16,7 @@ async def test_load(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
 ):
     db_manager: DBManager = mock_db_manager(default_configuration)
     node_ports = await load(
@@ -25,6 +25,7 @@ async def test_load(
         project_id=project_id,
         node_uuid=node_uuid,
         auto_update=auto_update,
+        io_log_redirect_cb=None,
     )
     assert node_ports.db_manager == db_manager
     assert node_ports.node_uuid == node_uuid
@@ -48,6 +49,7 @@ async def test_load_with_invalid_cfg(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
+            io_log_redirect_cb=None,
         )
 
 
@@ -56,7 +58,7 @@ async def test_dump(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
 ):
     db_manager: DBManager = mock_db_manager(default_configuration)
     node_ports = await load(
@@ -64,6 +66,7 @@ async def test_dump(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
+        io_log_redirect_cb=None,
     )
 
     await dump(node_ports)
