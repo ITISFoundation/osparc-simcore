@@ -246,6 +246,8 @@ async def download_file_from_link(
     if local_file_path.exists():
         local_file_path.unlink()
 
+    if log_redirect:
+        await log_redirect(f"downloading {local_file_path}, please wait...")
     async with ClientSessionContextManager(client_session) as session:
         await download_link_to_file(
             session,
@@ -254,7 +256,8 @@ async def download_file_from_link(
             num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
             log_redirect=log_redirect,
         )
-
+    if log_redirect:
+        await log_redirect(f"download of {local_file_path} complete.")
     return local_file_path
 
 
@@ -303,7 +306,8 @@ async def upload_file(
         and store_id == SIMCORE_LOCATION
         and isinstance(file_to_upload, Path)
     )
-
+    if log_redirect:
+        await log_redirect(f"uploading {file_to_upload}, please wait...")
     async with ClientSessionContextManager(client_session) as session:
         upload_links = None
         try:
@@ -354,6 +358,8 @@ async def upload_file(
                 await _abort_upload(session, upload_links, reraise_exceptions=False)
                 log.warning("Upload aborted")
             raise exceptions.S3TransferError from exc
+        if log_redirect:
+            await log_redirect(f"upload of {file_to_upload} complete.")
         return store_id, e_tag
 
 
