@@ -114,6 +114,8 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
       const text1 = "<a href=https://www.youtube.com/watch?v=dQw4w9WgXcQ style='color: white' target='_blank'>Youtube video</a>";
       const link1 = new qx.ui.basic.Label(text1).set({
+        allowGrowX: true,
+        textAlign: "center",
         rich : true
       });
       footer.add(link1, {
@@ -122,6 +124,8 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
       const link2 = new qx.ui.basic.Label().set({
         visibility: "excluded",
+        allowGrowX: true,
+        textAlign: "center",
         rich : true
       });
       osparc.data.Resources.get("statics")
@@ -133,6 +137,16 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
           link2.show();
         });
       footer.add(link2, {
+        flex: 1
+      });
+
+      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>License</a>";
+      const link3 = new qx.ui.basic.Label(text3).set({
+        allowGrowX: true,
+        textAlign: "center",
+        rich : true
+      });
+      footer.add(link3, {
         flex: 1
       });
 

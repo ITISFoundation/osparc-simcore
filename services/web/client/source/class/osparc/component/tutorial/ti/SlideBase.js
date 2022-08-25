@@ -24,6 +24,10 @@ qx.Class.define("osparc.component.tutorial.ti.SlideBase", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      padding: 5
+    });
+
     if (title) {
       this._add(new qx.ui.basic.Label(title).set({
         font: "title-14"
