@@ -72,13 +72,13 @@ async def _file_chunk_writer(
     file: Path,
     response: ClientResponse,
     pbar: tqdm,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
-            if pbar.update(len(chunk)) and log_redirect:
-                await log_redirect(f"{pbar}")
+            if pbar.update(len(chunk)) and io_log_redirect_cb:
+                await io_log_redirect_cb(f"{pbar}")
 
 
 log = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ async def download_link_to_file(
     file_path: Path,
     *,
     num_retries: int,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ):
     log.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
@@ -123,7 +123,7 @@ async def download_link_to_file(
                         **_TQDM_FILE_OPTIONS,
                     ) as pbar:
                         await _file_chunk_writer(
-                            file_path, response, pbar, log_redirect
+                            file_path, response, pbar, io_log_redirect_cb
                         )
                         log.debug("Download complete")
                 except ClientPayloadError as exc:
@@ -141,7 +141,7 @@ async def _upload_file_part(
     pbar: tqdm,
     num_retries: int,
     *,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> tuple[int, ETag]:
     log.debug(
         "--> uploading %s of %s, [%s]...",
@@ -176,8 +176,8 @@ async def _upload_file_part(
                 },
             )
             response.raise_for_status()
-            if pbar.update(file_part_size) and log_redirect:
-                await log_redirect(f"{pbar}")
+            if pbar.update(file_part_size) and io_log_redirect_cb:
+                await io_log_redirect_cb(f"{pbar}")
             # NOTE: the response from minio does not contain a json body
             assert response.status == web.HTTPOk.status_code  # nosec
             assert response.headers  # nosec
@@ -202,7 +202,7 @@ async def upload_file_to_presigned_links(
     file_to_upload: Union[Path, UploadableFileObject],
     *,
     num_retries: int,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> list[UploadedPart]:
     file_size = 0
     file_name = ""
@@ -237,7 +237,7 @@ async def upload_file_to_presigned_links(
                     upload_url,
                     pbar,
                     num_retries,
-                    log_redirect=log_redirect,
+                    io_log_redirect_cb=io_log_redirect_cb,
                 )
             )
         try:

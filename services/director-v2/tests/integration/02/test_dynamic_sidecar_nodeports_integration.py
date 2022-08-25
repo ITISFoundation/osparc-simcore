@@ -591,7 +591,7 @@ async def _fetch_data_via_data_manager(
         node_uuid=service_uuid,
         file_or_folder=DY_SERVICES_STATE_PATH,
         save_to=save_to,
-        log_redirect=None,
+        io_log_redirect_cb=None,
     )
 
     return save_to

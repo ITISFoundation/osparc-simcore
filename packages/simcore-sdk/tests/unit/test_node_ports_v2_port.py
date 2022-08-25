@@ -21,6 +21,7 @@ from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -597,6 +598,7 @@ async def test_valid_port(
         project_id: str
         node_uuid: str
         r_clone_settings: Optional[Any] = None
+        io_log_redirect_cb: Optional[LogRedirectCB] = None
 
         @staticmethod
         async def get(key):

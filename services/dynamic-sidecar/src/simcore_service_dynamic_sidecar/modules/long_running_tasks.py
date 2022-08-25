@@ -176,7 +176,7 @@ async def task_restore_state(
                 project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                 node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                 file_or_folder=path,
-                log_redirect=functools.partial(send_message, rabbitmq),
+                io_log_redirect_cb=functools.partial(send_message, rabbitmq),
             )
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
@@ -209,7 +209,7 @@ async def task_save_state(
                 file_or_folder=state_path,
                 r_clone_settings=settings.rclone_settings_for_nodeports,
                 archive_exclude_patterns=mounted_volumes.state_exclude,
-                log_redirect=functools.partial(send_message, rabbitmq),
+                io_log_redirect_cb=functools.partial(send_message, rabbitmq),
             )
         )
 

@@ -169,7 +169,7 @@ async def pull_file_from_store(
     key: str,
     fileToKeyMap: Optional[dict[str, str]],
     value: FileLink,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -180,7 +180,7 @@ async def pull_file_from_store(
         store_name=None,
         s3_object=value.path,
         local_folder=local_path,
-        log_redirect=log_redirect,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
     # if a file alias is present use it to rename the file accordingly
     if fileToKeyMap:
@@ -199,7 +199,7 @@ async def push_file_to_store(
     user_id: UserID,
     project_id: str,
     node_id: str,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
@@ -211,7 +211,7 @@ async def push_file_to_store(
         s3_object=s3_object,
         file_to_upload=file,
         r_clone_settings=r_clone_settings,
-        log_redirect=log_redirect,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)
     return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
@@ -221,7 +221,7 @@ async def pull_file_from_download_link(
     key: str,
     fileToKeyMap: Optional[dict[str, str]],
     value: DownloadLink,
-    log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
@@ -231,7 +231,7 @@ async def pull_file_from_download_link(
 
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_link(
-        URL(f"{value.download_link}"), local_path, log_redirect=log_redirect
+        URL(f"{value.download_link}"), local_path, io_log_redirect_cb=io_log_redirect_cb
     )
 
     # if a file alias is present use it to rename the file accordingly
