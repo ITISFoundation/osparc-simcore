@@ -65,7 +65,7 @@ async def test_render_and_send_mail_for_registration(
     await render_and_send_mail(
         request,
         to=email,
-        template=get_template_path(request, "registration_email.jinja2"),
+        template=await get_template_path(request, "registration_email.jinja2"),
         context={
             "host": request.host,
             "link": link,
@@ -93,7 +93,7 @@ async def test_render_and_send_mail_for_password(
     await render_and_send_mail(
         request,
         to=email,
-        template=get_template_path(request, "reset_password_email_failed.jinja2"),
+        template=await get_template_path(request, "reset_password_email_failed.jinja2"),
         context={
             "host": request.host,
             "reason": faker.text(),
@@ -103,7 +103,7 @@ async def test_render_and_send_mail_for_password(
     await render_and_send_mail(
         request,
         to=email,
-        template=get_template_path(request, "reset_password_email.jinja2"),
+        template=await get_template_path(request, "reset_password_email.jinja2"),
         context={
             "host": request.host,
             "link": link,
@@ -125,7 +125,7 @@ async def test_render_and_send_mail_to_change_email(
     await render_and_send_mail(
         request,
         to=email,
-        template=get_template_path(request, "change_email_email.jinja2"),
+        template=await get_template_path(request, "change_email_email.jinja2"),
         context={
             "host": request.host,
             "link": link,
@@ -147,7 +147,7 @@ async def test_render_and_send_mail_for_submission(
     await render_and_send_mail(
         request,
         to=email,
-        template=get_template_path(request, "service_submission.jinja2"),
+        template=await get_template_path(request, "service_submission.jinja2"),
         context={
             "user": email,
             "data": json2html.convert(

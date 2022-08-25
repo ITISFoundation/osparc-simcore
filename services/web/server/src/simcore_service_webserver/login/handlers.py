@@ -112,7 +112,7 @@ async def register(request: web.Request):
         await render_and_send_mail(
             request,
             to=email,
-            template=get_template_path(request, "registration_email.jinja2"),
+            template=await get_template_path(request, "registration_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,
@@ -459,7 +459,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 to=email,
-                template=get_template_path(
+                template=await get_template_path(
                     request, "reset_password_email_failed.jinja2"
                 ),
                 context={
@@ -478,7 +478,9 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 to=email,
-                template=get_template_path(request, "reset_password_email.jinja2"),
+                template=await get_template_path(
+                    request, "reset_password_email.jinja2"
+                ),
                 context={
                     "host": request.host,
                     "link": link,
@@ -524,7 +526,7 @@ async def change_email(request: web.Request):
         await render_and_send_mail(
             request,
             to=email,
-            template=get_template_path(request, "change_email_email.jinja2"),
+            template=await get_template_path(request, "change_email_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,

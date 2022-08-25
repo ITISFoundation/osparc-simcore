@@ -18,7 +18,7 @@ from aiohttp_jinja2 import render_string
 from passlib import pwd
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
-from simcore_service_webserver.products import get_product_name
+from simcore_service_webserver.products import get_product_template_path
 
 from .._resources import resources
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -129,21 +129,8 @@ def themed(dirname, template) -> Path:
     return resources.get_path(join(dirname, template))
 
 
-def get_template_path(request: web.Request, filename: str) -> Path:
-    default_template = themed("templates/common", filename)
-    if not default_template.exists():
-        raise ValueError(f"{filename} is not part of the templates/common")
-
-    try:
-        product_name = get_product_name(request)
-        if (
-            tmpl_path := themed(f"templates/{product_name}", filename)
-        ) and tmpl_path.exists():
-            return tmpl_path
-    except KeyError:
-        pass
-
-    return default_template
+async def get_template_path(request: web.Request, filename: str) -> Path:
+    return await get_product_template_path(request, filename)
 
 
 def flash_response(
