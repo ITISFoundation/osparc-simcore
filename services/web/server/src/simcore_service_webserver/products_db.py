@@ -1,20 +1,22 @@
 import logging
-from typing import Any, Optional, Pattern
+from typing import Any, AsyncIterator, Optional, Pattern
 
 import sqlalchemy as sa
-from aiohttp import web
 from aiopg.sa.engine import Engine
+from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Field, HttpUrl, ValidationError, validator
+from pydantic import BaseModel, Field, HttpUrl, validator
+from simcore_postgres_database.models.products import jinja2_templates
 
-from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
 from .db_models import products
-from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from .statics_constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
-
+#
+# MODEL
+#
 class Product(BaseModel):
     """
     Pydantic model associated to db_models.Products table
@@ -25,17 +27,26 @@ class Product(BaseModel):
     name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
     display_name: str
     host_regex: Pattern
+
+    # EMAILS/PHONE
     support_email: str
     twilio_messaging_sid: Optional[str] = Field(
         default=None,
         min_length=34,
         max_length=34,
     )
+
+    # MANUALS
     manual_url: HttpUrl
     manual_extra_url: Optional[HttpUrl] = None
+
+    # ISSUE TRACKER
     issues_login_url: Optional[HttpUrl] = None
     issues_new_url: Optional[HttpUrl] = None
     feedback_form_url: Optional[HttpUrl] = None
+
+    # TEMPLATES
+    registration_email_template: Optional[str] = None  # template name
 
     class Config:
         orm_mode = True
@@ -75,34 +86,55 @@ class Product(BaseModel):
         }
 
 
-# PRODUCT repository
+#
+# REPOSITORY
+#
+
+_include_cols = [products.columns[f] for f in Product.__fields__]
 
 
-async def load_products_from_db(app: web.Application):
-    """
-    Loads info on products stored in the database into app's storage (i.e. memory)
-    """
-    app_products: dict[str, Product] = {}
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    exclude = {products.c.created, products.c.modified}
-
+async def get_product(engine: Engine, product_name: str) -> Optional[Product]:
     async with engine.acquire() as conn:
-        stmt = sa.select([c for c in products.columns if c not in exclude])
-        async for row in conn.execute(stmt):
+        result: ResultProxy = conn.execute(
+            sa.select(_include_cols).where(products.c.name == product_name)
+        )
+        row: Optional[RowProxy] = await result.first()
+        return Product.from_orm(row) if row else None
+
+
+async def iter_products(engine: Engine) -> AsyncIterator[RowProxy]:
+    async with engine.acquire() as conn:
+        async for row in conn.execute(sa.select(_include_cols)):
             assert row  # nosec
-            try:
-                name = row.name  # type:ignore
-                app_products[name] = Product.from_orm(row)
+            yield row
 
-                if name not in FRONTEND_APPS_AVAILABLE:
-                    log.warning("There is not front-end registered for this product")
 
-            except ValidationError as err:
-                log.error(
-                    "Invalid product in db '%s'. Skipping product info:\n %s", row, err
-                )
+async def get_template_content(
+    engine: Engine,
+    template_name: str,
+) -> str:
+    async with engine.acquire() as conn:
+        return await conn.scalar(
+            sa.select([jinja2_templates.c.content]).where(
+                jinja2_templates.c.name == template_name
+            )
+        )
 
-    if FRONTEND_APP_DEFAULT not in app_products.keys():
-        log.warning("Default front-end app is not in the products table")
 
-    app[APP_PRODUCTS_KEY] = app_products
+async def get_product_template_content(
+    engine: Engine,
+    product_name: str,
+    product_template: sa.Column = products.c.registration_email_template,
+) -> str:
+    async with engine.acquire() as conn:
+        oj = sa.join(
+            products,
+            jinja2_templates,
+            product_template == jinja2_templates.c.name,
+            isouter=True,
+        )
+        return await conn.scalar(
+            sa.select([jinja2_templates.c.content])
+            .select_from(oj)
+            .where(products.c.name == product_name)
+        )

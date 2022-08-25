@@ -15,8 +15,9 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
-from .products_db import Product, load_products_from_db
-from .products_middleware import discover_product_middleware
+from .products_db import Product
+from .products_events import load_products_on_startup
+from .products_middlewares import discover_product_middleware
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def setup_products(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
     app.middlewares.append(discover_product_middleware)
-    app.on_startup.append(load_products_from_db)
+    app.on_startup.append(load_products_on_startup)
 
 
 # plugin API
