@@ -270,9 +270,12 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 )
 
         # get result GET /{task_id}/result
-        print(f"--> getting project creation result...")
+        print("--> getting project creation result...")
         result = await client.get(f"{result_url}")
         data, error = await assert_status(result, expected_creation_response)
+        if error:
+            assert not data
+            return {}
         assert data
         assert not error
         print(f"<-- result: {data}")
