@@ -29,6 +29,7 @@ from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -205,7 +206,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         side_effect=async_mock,
     )
-    return MockedStorageSubsystem(mock, mock1)
+
+    mock3 = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size",
+        autospec=True,
+        return_value=parse_obj_as(ByteSize, "1Gib"),
+    )
+
+    return MockedStorageSubsystem(mock, mock1, mock3)
 
 
 @pytest.fixture

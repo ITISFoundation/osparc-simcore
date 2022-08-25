@@ -8,11 +8,12 @@ from typing import Any, Awaitable, Callable
 import pytest
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp.test_utils import TestClient
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
+from simcore_service_webserver.application_settings import get_settings
 from simcore_service_webserver.projects.project_models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -248,3 +249,35 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     for node_data in project_workbench.values():
         for field in EXPECTED_DELETED_FIELDS:
             assert field not in node_data
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_copying_too_large_project_returns_422(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    primary_group: dict[str, str],
+    user_project: dict[str, Any],
+    expected: ExpectedResponse,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+):
+    assert client.app
+    app_settings = get_settings(client.app)
+    large_project_total_size = (
+        app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
+    )
+    storage_subsystem_mock.get_project_total_size.return_value = parse_obj_as(
+        ByteSize, large_project_total_size
+    )
+
+    # POST /v0/projects
+    await request_create_project(
+        client,
+        expected.accepted,
+        expected.unprocessable,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+        copy_data=False,
+        as_template=True,
+    )
