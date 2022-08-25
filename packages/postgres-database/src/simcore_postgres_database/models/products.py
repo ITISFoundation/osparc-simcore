@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.sql import func
 
 from .base import metadata
+from .jinja2_templates import jinja2_templates
 
 products = sa.Table(
     "products",
@@ -83,6 +84,18 @@ products = sa.Table(
         sa.String,
         nullable=True,
         doc="URL to a feedback form (e.g. google forms etc)",
+    ),
+    sa.Column(
+        "registration_email_template",
+        sa.String,
+        sa.ForeignKey(
+            jinja2_templates.c.name,
+            name="fk_jinja2_templates_name",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+        doc="Custom jinja2 template for registration email",
     ),
     sa.Column(
         "created",
