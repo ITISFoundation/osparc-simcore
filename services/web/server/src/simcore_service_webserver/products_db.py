@@ -9,6 +9,7 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, Field, HttpUrl, validator
 from simcore_postgres_database.models.products import jinja2_templates
 
+from .db_base_repository import BaseRepository
 from .db_models import products
 from .statics_constants import FRONTEND_APPS_AVAILABLE
 
@@ -85,21 +86,17 @@ class Product(BaseModel):
             for key, value in public_selection.items()
         }
 
+    def get_template_name_for(self, filename: str) -> str:
+        name = filename.removesuffix(".jinja2")
+        if name in self.__fields__.keys():
+            return getattr(self, name, None)
+
 
 #
 # REPOSITORY
 #
 
 _include_cols = [products.columns[f] for f in Product.__fields__]
-
-
-async def get_product(engine: Engine, product_name: str) -> Optional[Product]:
-    async with engine.acquire() as conn:
-        result: ResultProxy = conn.execute(
-            sa.select(_include_cols).where(products.c.name == product_name)
-        )
-        row: Optional[RowProxy] = await result.first()
-        return Product.from_orm(row) if row else None
 
 
 async def iter_products(engine: Engine) -> AsyncIterator[RowProxy]:
@@ -109,32 +106,40 @@ async def iter_products(engine: Engine) -> AsyncIterator[RowProxy]:
             yield row
 
 
-async def get_template_content(
-    engine: Engine,
-    template_name: str,
-) -> str:
-    async with engine.acquire() as conn:
-        return await conn.scalar(
-            sa.select([jinja2_templates.c.content]).where(
-                jinja2_templates.c.name == template_name
+class ProductRepository(BaseRepository):
+    async def get_product(self, product_name: str) -> Optional[Product]:
+        async with self.engine.acquire() as conn:
+            result: ResultProxy = conn.execute(
+                sa.select(_include_cols).where(products.c.name == product_name)
             )
-        )
+            row: Optional[RowProxy] = await result.first()
+            return Product.from_orm(row) if row else None
 
+    async def get_template_content(
+        self,
+        template_name: str,
+    ) -> str:
+        async with self.engine.acquire() as conn:
+            return await conn.scalar(
+                sa.select([jinja2_templates.c.content]).where(
+                    jinja2_templates.c.name == template_name
+                )
+            )
 
-async def get_product_template_content(
-    engine: Engine,
-    product_name: str,
-    product_template: sa.Column = products.c.registration_email_template,
-) -> str:
-    async with engine.acquire() as conn:
-        oj = sa.join(
-            products,
-            jinja2_templates,
-            product_template == jinja2_templates.c.name,
-            isouter=True,
-        )
-        return await conn.scalar(
-            sa.select([jinja2_templates.c.content])
-            .select_from(oj)
-            .where(products.c.name == product_name)
-        )
+    async def get_product_template_content(
+        self,
+        product_name: str,
+        product_template: sa.Column = products.c.registration_email_template,
+    ) -> str:
+        async with self.engine.acquire() as conn:
+            oj = sa.join(
+                products,
+                jinja2_templates,
+                product_template == jinja2_templates.c.name,
+                isouter=True,
+            )
+            return await conn.scalar(
+                sa.select([jinja2_templates.c.content])
+                .select_from(oj)
+                .where(products.c.name == product_name)
+            )

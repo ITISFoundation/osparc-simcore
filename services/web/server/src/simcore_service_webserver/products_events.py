@@ -1,4 +1,6 @@
 import logging
+import tempfile
+from pathlib import Path
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -9,6 +11,23 @@ from .products_db import Product, iter_products
 from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
+
+APP_PRODUCTS_TEMPLATES_DIR_KEY = f"{__name__}.template_dir"
+
+
+async def setup_product_templates(app: web.Application):
+    """
+    builds a directory and download product templates
+    """
+    with tempfile.TemporaryDirectory(
+        suffix=APP_PRODUCTS_TEMPLATES_DIR_KEY
+    ) as templates_dir:
+
+        app[APP_PRODUCTS_TEMPLATES_DIR_KEY] = Path(templates_dir)
+
+        yield
+
+        # cleanup
 
 
 async def load_products_on_startup(app: web.Application):

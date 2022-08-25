@@ -10,26 +10,19 @@ At every request to this service API, a middleware discovers which product is th
 
 
 import logging
+import os.path
+from pathlib import Path
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
-from .products_db import Product
-from .products_events import load_products_on_startup
+from ._resources import resources
+from .products_db import Product, ProductRepository
+from .products_events import APP_PRODUCTS_TEMPLATES_DIR_KEY, load_products_on_startup
 from .products_middlewares import discover_product_middleware
 
 log = logging.getLogger(__name__)
-
-
-def get_product_name(request: web.Request) -> str:
-    return request[RQ_PRODUCT_KEY]
-
-
-def get_current_product(request: web.Request) -> Product:
-    """Returns product associated to current request"""
-    product_name = get_product_name(request)
-    return request.app[APP_PRODUCTS_KEY][product_name]
 
 
 @app_module_setup(
@@ -45,12 +38,56 @@ def setup_products(app: web.Application):
 
     app.middlewares.append(discover_product_middleware)
     app.on_startup.append(load_products_on_startup)
+    app.cleanup_ctx.append()
 
 
-# plugin API
+#
+# helper functions with requests
+#
+
+
+def get_product_name(request: web.Request) -> str:
+    return request[RQ_PRODUCT_KEY]
+
+
+def get_current_product(request: web.Request) -> Product:
+    """Returns product associated to current request"""
+    product_name = get_product_name(request)
+    return request.app[APP_PRODUCTS_KEY][product_name]
+
+
+async def get_product_template_path(request: web.Request, filename: str) -> Path:
+    def _themed(dirname, template) -> Path:
+        return resources.get_path(os.path.join(dirname, template))
+
+    product: Product = get_current_product(request)
+
+    if template_name := product.get_template_name_for(filename):
+        template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+        template_path = template_dir / template_name
+        if not template_path.exists():
+            # cached
+            repo = ProductRepository(request)
+            template_path.write_text(await repo.get_template_content(template_name))
+        return template_path
+
+    # check static resources
+    if (
+        template_path := _themed(f"templates/{product.name}", filename)
+    ) and template_path.exists():
+        return template_path
+
+    default_template = _themed("templates/common", filename)
+    if not default_template.exists():
+        raise ValueError(f"{filename} is not part of the templates/common")
+
+    return default_template
+
+
 __all__: tuple[str, ...] = (
     "get_current_product",
     "get_product_name",
     "Product",
     "setup_products",
+    "get_product_template_path",
 )
