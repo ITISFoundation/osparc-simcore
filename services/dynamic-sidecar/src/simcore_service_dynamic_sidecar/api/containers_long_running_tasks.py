@@ -38,14 +38,10 @@ from ._dependencies import (
 )
 
 logger = logging.getLogger(__name__)
-
-containers_router_tasks = APIRouter(tags=["containers"])
-
-
-# HANDLERS
+router = APIRouter()
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers",
     summary=dedent(
         """
@@ -83,7 +79,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_create_service_containers,
+            task=task_create_service_containers,
             unique=True,
             settings=settings,
             containers_create=containers_create,
@@ -98,7 +94,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers:down",
     summary="Remove the previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
@@ -122,7 +118,7 @@ async def runs_docker_compose_down_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_runs_docker_compose_down,
+            task=task_runs_docker_compose_down,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -133,7 +129,7 @@ async def runs_docker_compose_down_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers/state:restore",
     summary="Restores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
@@ -157,7 +153,7 @@ async def state_restore_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_restore_state,
+            task=task_restore_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -168,7 +164,7 @@ async def state_restore_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers/state:save",
     summary="Stores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
@@ -192,7 +188,7 @@ async def state_save_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_save_state,
+            task=task_save_state,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -203,7 +199,7 @@ async def state_save_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers/ports/inputs:pull",
     summary="Pull input ports data",
     status_code=status.HTTP_202_ACCEPTED,
@@ -227,7 +223,7 @@ async def ports_inputs_pull_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_inputs_pull,
+            task=task_ports_inputs_pull,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -238,7 +234,7 @@ async def ports_inputs_pull_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers/ports/outputs:pull",
     summary="Pull output ports data",
     status_code=status.HTTP_202_ACCEPTED,
@@ -262,7 +258,7 @@ async def ports_outputs_pull_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_outputs_pull,
+            task=task_ports_outputs_pull,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -273,7 +269,7 @@ async def ports_outputs_pull_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers/ports/outputs:push",
     summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
@@ -297,7 +293,7 @@ async def ports_outputs_push_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_ports_outputs_push,
+            task=task_ports_outputs_push,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -308,7 +304,7 @@ async def ports_outputs_push_task(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
-@containers_router_tasks.post(
+@router.post(
     "/containers:restart",
     summary="Restarts previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
@@ -333,7 +329,7 @@ async def containers_restart_task(
     try:
         task_id = start_task(
             tasks_manager,
-            handler=task_containers_restart,
+            task=task_containers_restart,
             unique=True,
             app=app,
             settings=settings,

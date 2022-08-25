@@ -263,6 +263,7 @@ async function deleteFirstStudy(page, studyName) {
   // filter out the cards that are not studies
   [
     "newStudyBtn",
+    "newPlanButton",
     "studiesLoading"
   ].forEach(notAStudy => {
     const idx = children.indexOf(notAStudy);

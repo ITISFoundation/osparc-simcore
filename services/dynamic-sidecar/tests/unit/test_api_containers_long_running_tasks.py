@@ -37,7 +37,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.api import containers_tasks
+from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 FAST_STATUS_POLL: Final[float] = 0.1
@@ -71,12 +71,14 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
     # searching by name since all start with _task
     tasks_names = [
         x[0]
-        for x in getmembers(containers_tasks, isfunction)
+        for x in getmembers(containers_long_running_tasks, isfunction)
         if x[0].startswith("task")
     ]
 
     for task_name in tasks_names:
-        mocker.patch.object(containers_tasks, task_name, new=_just_log_task)
+        mocker.patch.object(
+            containers_long_running_tasks, task_name, new=_just_log_task
+        )
 
     yield None
 
