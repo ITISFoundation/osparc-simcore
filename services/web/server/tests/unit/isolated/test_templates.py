@@ -26,7 +26,7 @@ def app() -> web.Application:
 @pytest.mark.parametrize(
     "template_path",
     list(resources.get_path("templates").rglob("*.jinja2")),
-    ids=lambda p: f"{p.parent}/{p.name}",
+    ids=lambda p: p.name,
 )
 def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
     assert template_path.exists()
