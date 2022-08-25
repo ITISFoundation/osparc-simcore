@@ -219,9 +219,12 @@ qx.Class.define("osparc.utils.Utils", {
       );
 
       let dateStr = null;
-      if (value.getDate() === (new Date()).getDate()) {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (today.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
-      } else if (value.getDate() === (new Date()).getDate() - 1) {
+      } else if (yesterday.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
       } else {
         dateStr = dateFormat.format(value);
