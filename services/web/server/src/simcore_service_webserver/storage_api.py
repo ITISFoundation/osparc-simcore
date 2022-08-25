@@ -7,8 +7,11 @@ from pprint import pformat
 from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from models_library.api_schemas_storage import FileLocationArray, FileMetaDataGet
+from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from pydantic import ByteSize
+from models_library.users import UserID
+from pydantic import ByteSize, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -30,10 +33,47 @@ def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
     return session, endpoint
 
 
+async def get_storage_locations(
+    app: web.Application, user_id: UserID
+) -> FileLocationArray:
+    log.debug("getting %s accessible locations...", f"{user_id=}")
+    session, api_endpoint = _get_storage_client(app)
+    locations_url = (api_endpoint / "locations").with_query(user_id=user_id)
+    async with session.get(f"{locations_url}") as response:
+        response.raise_for_status()
+        locations_enveloped = Envelope[FileLocationArray].parse_obj(
+            await response.json()
+        )
+        assert locations_enveloped.data  # nosec
+        log.info("%s can access %s", f"{user_id=}", f"{locations_enveloped.data=}")
+        return locations_enveloped.data
+
+
 async def get_project_total_size(
-    app: web.Application, project_uuid: ProjectID
+    app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> ByteSize:
-    ...
+    log.debug("getting %s total size for %s", f"{project_uuid=}", f"{user_id=}")
+    user_accessible_locations = await get_storage_locations(app, user_id)
+    session, api_endpoint = _get_storage_client(app)
+
+    project_size_bytes = 0
+    for location in user_accessible_locations:
+        files_metadata_url = (
+            api_endpoint / "locations" / f"{location.id}" / "files" / "metadata"
+        ).with_query(user_id=user_id, uuid_filter=f"{project_uuid}")
+        async with session.get(f"{files_metadata_url}") as response:
+            response.raise_for_status()
+            list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
+                await response.json()
+            )
+            assert list_of_files_enveloped.data  # nosec
+        for file_metadata in list_of_files_enveloped.data:
+            project_size_bytes += file_metadata.file_size
+    project_size = parse_obj_as(ByteSize, project_size_bytes)
+    log.info(
+        "%s total size is %s", f"{project_uuid}", f"{project_size.human_readable()}"
+    )
+    return project_size
 
 
 async def copy_data_folders_from_project(
@@ -45,7 +85,7 @@ async def copy_data_folders_from_project(
 ):
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
-    log.debug("Coying %d nodes", len(nodes_map))
+    log.debug("Copying %d nodes", len(nodes_map))
 
     # /simcore-s3/folders:
     url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)

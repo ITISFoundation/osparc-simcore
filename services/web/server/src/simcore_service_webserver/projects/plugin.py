@@ -53,7 +53,7 @@ def _create_routes(tag, specs, *handlers_module):
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
-    assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS is True  # nosec
+    assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS  # nosec
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]

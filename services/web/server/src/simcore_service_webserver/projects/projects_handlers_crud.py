@@ -19,7 +19,7 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, ByteSize, Extra, Field, NonNegativeInt, parse_obj_as
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskGet,
     TaskProgress,
@@ -37,6 +37,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from .. import catalog, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..long_running_tasks import start_task_with_context
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
@@ -169,12 +170,17 @@ async def _init_project_from_request(
         include_templates=True,
     )
 
-    # get project total data size
-    project_data_size = get_project_total_size(app, query_params.from_study)
-    if project_data_size > parse_obj_as(ByteSize, "30Gib"):
-        raise web.HTTPForbidden(
-            reason="Source project data size larger than 30Gib, this is not allowed."
+    if max_bytes := get_settings(app).WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES:
+        # get project total data size
+        project_data_size = await get_project_total_size(
+            app, user_id, ProjectID(query_params.from_study)
         )
+        if project_data_size >= max_bytes:
+            raise web.HTTPUnprocessableEntity(
+                reason=f"Source project data size is {project_data_size.human_readable()}."
+                f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
+                "TIP: Please reduce the study size or contact application support."
+            )
 
     # clone template as user project
     new_project, nodes_map = clone_project_document(
