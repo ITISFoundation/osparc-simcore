@@ -26,14 +26,14 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
   members: {
     _populateCard: function() {
       const text1 = this.tr("\
-        After pressing New Plan, three panels will be shown\
+        After pressing New Plan, three panels will be shown.\
       ");
       const label1 = osparc.component.tutorial.ti.Slides.createLabel(text1);
       this._add(label1);
 
       const text2 = this.tr("\
-        In a first step, the relevant species, stimulation target, and potential electrode locations \
-        (currently required to narrow down the huge exposure configuration search space) are selected.\
+        In a first step, the relevant species, stimulation target, electrode shapes, electrode dimensions and \
+        potential electrode locations (currently required to narrow down the huge exposure configuration search space) are selected.\
       ");
       const label2 = osparc.component.tutorial.ti.Slides.createLabel(text2);
       this._add(label2);
@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
       this._add(image);
 
       const text4 = this.tr("\
-        After finishing the set up, click on the big button on the top right to submit the configuration.\
+        After finishing the set up, the big button on the top right will turn blue and by clicking on it you will submit the configuration.\
       ");
       const label4 = osparc.component.tutorial.ti.Slides.createLabel(text4);
       this._add(label4);

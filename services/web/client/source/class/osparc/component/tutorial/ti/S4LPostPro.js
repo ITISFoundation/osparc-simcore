@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.tutorial.ti.S4LPostPro", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.component.tutorial.ti.SlideBase,
 
   construct: function() {
     const title = this.tr("Sim4Life Post Processing");
@@ -25,10 +25,20 @@ qx.Class.define("osparc.component.tutorial.ti.S4LPostPro", {
 
   members: {
     _populateCard: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: "qwer",
-        font: "text-14"
-      }));
+      const text1 = this.tr("\
+        Finally, and optionally, exposure conditions-of-interest can be visualized and analyzed freely, using the web-version of the \
+        Sim4Life (ZMT Zurich MedTech AG) computational life sciences platform.\
+      ");
+      const label1 = osparc.component.tutorial.ti.Slides.createLabel(text1);
+      this._add(label1);
+
+      const image1 = new qx.ui.basic.Image("osparc/tutorial/ti/PostProS4L.gif").set({
+        alignX: "center",
+        scale: true,
+        width: 737,
+        height: 443
+      });
+      this._add(image1);
     }
   }
 });
