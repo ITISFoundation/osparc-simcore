@@ -40,13 +40,13 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 
 @pytest.fixture
 def app() -> web.Application:
-    app = web.Application()
-    assert setup_email(app)
-    return app
+    app_ = web.Application()
+    assert setup_email(app_)
+    return app_
 
 
-def _create_mocked_request(app: web.Application, product_name: str):
-    request = make_mocked_request("GET", "/fake", app=app)
+def _create_mocked_request(app_: web.Application, product_name: str):
+    request = make_mocked_request("GET", "/fake", app=app_)
     request[RQ_PRODUCT_KEY] = product_name
     return request
 
