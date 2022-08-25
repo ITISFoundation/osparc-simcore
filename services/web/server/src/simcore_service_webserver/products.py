@@ -13,6 +13,7 @@ import logging
 import os.path
 from pathlib import Path
 
+import aiofiles
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
@@ -67,8 +68,15 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
         template_path = template_dir / template_name
         if not template_path.exists():
             # cached
-            repo = ProductRepository(request)
-            template_path.write_text(await repo.get_template_content(template_name))
+            try:
+                repo = ProductRepository(request)
+                async with aiofiles.open(template_path, "wt") as fh:
+                    await fh.write(await repo.get_template_content(template_name))
+            except Exception:
+                if template_path.exists():
+                    template_path.unlink()
+                raise
+
         return template_path
 
     # check static resources
