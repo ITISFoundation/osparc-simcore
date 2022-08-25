@@ -34,7 +34,7 @@ async def load(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    io_log_redirect: Optional[LogRedirectCB],
+    io_log_redirect_cb: Optional[LogRedirectCB],
     auto_update: bool = False,
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> Nodeports:
@@ -91,10 +91,12 @@ async def load(
         project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=dump,
-        node_port_creator_cb=functools.partial(load, io_log_redirect=io_log_redirect),
+        node_port_creator_cb=functools.partial(
+            load, io_log_redirect_cb=io_log_redirect_cb
+        ),
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
-        io_log_redirect=io_log_redirect,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
     log.debug(
         "created node_ports_v2 object %s",
@@ -123,7 +125,7 @@ async def dump(nodeports: Nodeports) -> None:
                 user_id=nodeports.user_id,
                 project_id=nodeports.project_id,
                 node_uuid=f"{node_id}",
-                io_log_redirect=nodeports.io_log_redirect_cb,
+                io_log_redirect_cb=nodeports.io_log_redirect_cb,
             )
         )
 

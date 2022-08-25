@@ -9,7 +9,6 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
 from ..modules import directory_watcher
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import get_application, get_mounted_volumes
@@ -35,11 +34,6 @@ class AttachContainerToNetworkItem(_BaseNetworkItem):
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
-
-
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.debug(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
 #

@@ -76,6 +76,10 @@ async def push(
         archive_file_path = (
             Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
         )
+        if log_redirect:
+            await log_redirect(
+                f"archiving {file_or_folder} into {archive_file_path}, please wait..."
+            )
         await archive_dir(
             dir_to_compress=file_or_folder,
             destination=archive_file_path,
@@ -83,6 +87,10 @@ async def push(
             store_relative_path=True,
             exclude_patterns=archive_exclude_patterns,
         )
+        if log_redirect:
+            await log_redirect(
+                f"archiving {file_or_folder} into {archive_file_path} completed."
+            )
         await _push_file(
             user_id,
             project_id,
@@ -117,7 +125,7 @@ async def _pull_file(
     if downloaded_file != destination_path:
         destination_path.unlink(missing_ok=True)
         move(f"{downloaded_file}", destination_path)
-    log.info("%s successfuly pulled", destination_path)
+    log.info("completed pull of %s.", destination_path)
 
 
 def _get_archive_name(path: Path) -> str:
@@ -147,13 +155,19 @@ async def pull(
         await _pull_file(
             user_id, project_id, node_uuid, archive_file, log_redirect=log_redirect
         )
-        log.info("extracting data from %s", archive_file)
 
         destination_folder = file_or_folder if save_to is None else save_to
+        if log_redirect:
+            await log_redirect(
+                f"unarchiving {archive_file} into {destination_folder}, please wait..."
+            )
         await unarchive_dir(
             archive_to_extract=archive_file, destination_folder=destination_folder
         )
-        log.info("extraction completed")
+        if log_redirect:
+            await log_redirect(
+                f"unarchiving {archive_file} into {destination_folder} completed."
+            )
 
 
 async def exists(

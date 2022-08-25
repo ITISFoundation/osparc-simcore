@@ -24,7 +24,7 @@ async def ports(
     *,
     db_manager: Optional[DBManager] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-    io_log_redirect: Optional[LogRedirectCB] = None
+    io_log_redirect_cb: Optional[LogRedirectCB] = None
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
@@ -39,7 +39,7 @@ async def ports(
         node_uuid=node_uuid,
         auto_update=True,
         r_clone_settings=r_clone_settings,
-        io_log_redirect=io_log_redirect,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
 
 

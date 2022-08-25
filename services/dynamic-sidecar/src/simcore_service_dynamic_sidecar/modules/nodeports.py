@@ -59,7 +59,9 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
 
 @run_sequentially_in_context()
 async def upload_outputs(
-    outputs_path: Path, port_keys: list[str], io_log_redirect_cb: LogRedirectCB
+    outputs_path: Path,
+    port_keys: list[str],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
@@ -72,7 +74,7 @@ async def upload_outputs(
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
-        io_log_redirect=io_log_redirect_cb,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
 
     # let's gather the tasks
@@ -150,7 +152,7 @@ async def upload_outputs(
 
 
 async def dispatch_update_for_directory(
-    directory_path: Path, io_log_redirect_cb: LogRedirectCB
+    directory_path: Path, io_log_redirect_cb: Optional[LogRedirectCB]
 ) -> None:
     logger.debug("Uploading data for directory %s", directory_path)
     # TODO: how to figure out from directory_path which is the correct target to upload
@@ -271,7 +273,7 @@ async def download_target_ports(
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
-        io_log_redirect=io_log_redirect_cb,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
 
     # let's gather all the data

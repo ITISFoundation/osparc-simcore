@@ -21,7 +21,7 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.rabbitmq import RabbitMQ
+from ..core.rabbitmq import RabbitMQ, send_message
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult, assemble_container_names
 from ..core.validation import validate_compose_spec
@@ -33,11 +33,6 @@ from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
 
 logger = logging.getLogger(__name__)
-
-
-async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
-    logger.debug(msg)
-    await rabbitmq.post_log_message(f"[sidecar] {msg}")
 
 
 # TASKS
