@@ -47,6 +47,20 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
     this.__setSlideIdx(0);
   },
 
+  statics: {
+    createLabel: function(text) {
+      const label = new qx.ui.basic.Label().set({
+        rich: true,
+        wrap: true,
+        font: "text-14"
+      });
+      if (text) {
+        label.setValue(text);
+      }
+      return label;
+    }
+  },
+
   members: {
     __currentIdx: null,
     __prevBtn: null,
