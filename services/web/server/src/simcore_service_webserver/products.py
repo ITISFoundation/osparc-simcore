@@ -61,29 +61,34 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
     def _themed(dirname, template) -> Path:
         return resources.get_path(os.path.join(dirname, template))
 
-    product: Product = get_current_product(request)
+    try:
+        product: Product = get_current_product(request)
 
-    if template_name := product.get_template_name_for(filename):
-        template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
-        template_path = template_dir / template_name
-        if not template_path.exists():
-            # cached
-            try:
-                repo = ProductRepository(request)
-                async with aiofiles.open(template_path, "wt") as fh:
-                    await fh.write(await repo.get_template_content(template_name))
-            except Exception:
-                if template_path.exists():
-                    template_path.unlink()
-                raise
+        if template_name := product.get_template_name_for(filename):
+            template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+            template_path = template_dir / template_name
+            if not template_path.exists():
+                # cached
+                try:
+                    repo = ProductRepository(request)
+                    async with aiofiles.open(template_path, "wt") as fh:
+                        await fh.write(await repo.get_template_content(template_name))
+                except Exception:
+                    if template_path.exists():
+                        template_path.unlink()
+                    raise
 
-        return template_path
+            return template_path
 
-    # check static resources
-    if (
-        template_path := _themed(f"templates/{product.name}", filename)
-    ) and template_path.exists():
-        return template_path
+        # check static resources
+        if (
+            template_path := _themed(f"templates/{product.name}", filename)
+        ) and template_path.exists():
+            return template_path
+
+    except KeyError:
+        # undefined product
+        pass
 
     default_template = _themed("templates/common", filename)
     if not default_template.exists():
