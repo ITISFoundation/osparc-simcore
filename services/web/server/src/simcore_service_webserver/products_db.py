@@ -86,10 +86,11 @@ class Product(BaseModel):
             for key, value in public_selection.items()
         }
 
-    def get_template_name_for(self, filename: str) -> str:
+    def get_template_name_for(self, filename: str) -> Optional[str]:
         name = filename.removesuffix(".jinja2")
         if name in self.__fields__.keys():
             return getattr(self, name, None)
+        return None
 
 
 #
