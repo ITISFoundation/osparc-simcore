@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from aiohttp import ClientSession
 from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -75,8 +75,8 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
 
 
 @pytest.fixture(scope="module")
-def node_uuid() -> str:
-    return f"{uuid4()}"
+def node_uuid() -> NodeIDStr:
+    return NodeIDStr(f"{uuid4()}")
 
 
 @pytest.fixture(scope="session")

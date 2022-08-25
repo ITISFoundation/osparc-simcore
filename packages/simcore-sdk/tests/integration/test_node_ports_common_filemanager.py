@@ -319,6 +319,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="",  # type: ignore
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):
@@ -328,6 +329,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="file_id",  # type: ignore
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -338,6 +340,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="",  # type: ignore
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
     with pytest.raises(exceptions.S3InvalidPathError):
@@ -372,6 +375,7 @@ async def test_invalid_store(
             store_name=store,  # type: ignore
             s3_object=file_id,
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -382,6 +386,7 @@ async def test_invalid_store(
             store_name=store,  # type: ignore
             s3_object=file_id,
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
 

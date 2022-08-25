@@ -179,6 +179,7 @@ async def mock_download_file(
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
+        io_log_redirect_cb: Optional[LogRedirectCB],
         file_name: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
     ) -> Path:
@@ -196,6 +197,7 @@ async def mock_download_file(
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.download_file_from_link",
         side_effect=mock_download_file_from_link,
+        autospec=True,
     )
 
 

@@ -17,7 +17,7 @@ from uuid import uuid4
 import np_helpers
 import pytest
 import sqlalchemy as sa
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, NodeIDStr
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
@@ -145,7 +145,7 @@ async def option_r_clone_settings(
 async def test_default_configuration(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     default_configuration: dict[str, Any],
     option_r_clone_settings: Optional[RCloneSettings],
 ):
@@ -164,7 +164,7 @@ async def test_default_configuration(
 async def test_invalid_ports(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     option_r_clone_settings: Optional[RCloneSettings],
 ):
@@ -202,7 +202,7 @@ async def test_invalid_ports(
 async def test_port_value_accessors(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
@@ -259,7 +259,7 @@ async def test_port_file_accessors(
     config_value: dict[str, str],
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     e_tag: str,
     option_r_clone_settings: Optional[RCloneSettings],
 ):  # pylint: disable=W0613, W0621
@@ -321,7 +321,7 @@ async def test_port_file_accessors(
 async def test_adding_new_ports(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: Optional[RCloneSettings],
@@ -372,7 +372,7 @@ async def test_adding_new_ports(
 async def test_removing_ports(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: Optional[RCloneSettings],
@@ -423,7 +423,7 @@ async def test_removing_ports(
 async def test_get_value_from_previous_node(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_2nodes_configuration: Callable,
     create_node_link: Callable,
     item_type: str,
@@ -466,7 +466,7 @@ async def test_get_file_from_previous_node(
     create_2nodes_configuration: Callable,
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_node_link: Callable,
     create_store_link: Callable,
     item_type: str,
@@ -520,7 +520,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     create_2nodes_configuration: Callable,
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_node_link: Callable,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,
@@ -580,7 +580,7 @@ async def test_file_mapping(
     create_special_configuration: Callable,
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     s3_simcore_location: LocationID,
     create_store_link: Callable,
     postgres_db: sa.engine.Engine,
@@ -668,7 +668,7 @@ def port_count() -> int:
 async def test_regression_concurrent_port_update_fails(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     int_item_value: int,
     parallel_int_item_value: int,
@@ -721,7 +721,7 @@ async def test_regression_concurrent_port_update_fails(
 async def test_batch_update_inputs_outputs(
     user_id: int,
     project_id: str,
-    node_uuid: str,
+    node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     port_count: int,
     option_r_clone_settings: Optional[RCloneSettings],

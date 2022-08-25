@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import functools
 from typing import Any
 
 import pytest
@@ -31,7 +32,8 @@ async def test_load(
     assert node_ports.node_uuid == node_uuid
     # pylint: disable=comparison-with-callable
     assert node_ports.save_to_db_cb == dump
-    assert node_ports.node_port_creator_cb == load
+    assert isinstance(node_ports.node_port_creator_cb, functools.partial)
+    assert node_ports.node_port_creator_cb.keywords == {"io_log_redirect_cb": None}
     assert node_ports.auto_update == auto_update
 
 
