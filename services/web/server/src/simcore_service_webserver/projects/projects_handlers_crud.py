@@ -37,13 +37,14 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from .. import catalog, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..long_running_tasks import start_task_with_context
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
-from ..storage_api import copy_data_folders_from_project
+from ..storage_api import copy_data_folders_from_project, get_project_total_size
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
@@ -168,6 +169,18 @@ async def _init_project_from_request(
         user_id=user_id,
         include_templates=True,
     )
+
+    if max_bytes := get_settings(app).WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES:
+        # get project total data size
+        project_data_size = await get_project_total_size(
+            app, user_id, ProjectID(query_params.from_study)
+        )
+        if project_data_size >= max_bytes:
+            raise web.HTTPUnprocessableEntity(
+                reason=f"Source project data size is {project_data_size.human_readable()}."
+                f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
+                "TIP: Please reduce the study size or contact application support."
+            )
 
     # clone template as user project
     new_project, nodes_map = clone_project_document(
