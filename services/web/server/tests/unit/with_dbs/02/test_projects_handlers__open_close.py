@@ -298,6 +298,8 @@ async def test_open_project(
     expected,
     mocked_director_v2_api,
     mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services,
+    mock_catalog_api: None,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -417,6 +419,7 @@ async def test_get_active_project(
     expected,
     socketio_client_factory: Callable,
     mocked_director_v2_api,
+    mock_catalog_api: None,
 ):
     # login with socket using client session id
     client_id1 = client_session_id_factory()
@@ -513,6 +516,7 @@ async def test_project_node_lifetime(
     expected_response_on_Delete,
     mocked_director_v2_api,
     storage_subsystem_mock,
+    mock_catalog_api: None,
     mocker,
     faker: Faker,
 ):
@@ -673,6 +677,11 @@ def client_on_running_server_factory(
     event_loop.run_until_complete(finalize())
 
 
+@pytest.fixture
+def clean_redis_table(redis_client):
+    """this just ensures the redis table is cleaned up between test runs"""
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client: TestClient,
@@ -685,6 +694,10 @@ async def test_open_shared_project_2_users_locked(
     expected: ExpectedResponse,
     mocker,
     disable_gc_manual_guest_users,
+    mocked_director_v2_api,
+    mock_orphaned_services,
+    mock_catalog_api: None,
+    clean_redis_table,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()
@@ -862,6 +875,10 @@ async def test_open_shared_project_at_same_time(
     user_role: UserRole,
     expected: ExpectedResponse,
     disable_gc_manual_guest_users,
+    mocked_director_v2_api,
+    mock_orphaned_services,
+    mock_catalog_api: None,
+    clean_redis_table,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
     # log client 1
@@ -943,7 +960,10 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     user_role: UserRole,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_orphaned_services,
+    mock_catalog_api: None,
     disable_gc_manual_guest_users,
+    clean_redis_table,
 ):
     """Simulating a refresh goes as follows:
     The user opens a project, then hit the F5 refresh page.

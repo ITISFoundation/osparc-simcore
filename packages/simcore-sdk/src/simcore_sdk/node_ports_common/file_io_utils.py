@@ -3,7 +3,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Union
+from typing import IO, AsyncGenerator, Optional, Protocol, Union, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -23,6 +23,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from tqdm import tqdm
+from tqdm.contrib.logging import tqdm_logging_redirect
 from yarl import URL
 
 from . import exceptions
@@ -61,11 +62,23 @@ async def _file_chunk_reader(
             yield chunk
 
 
-async def _file_chunk_writer(file: Path, response: ClientResponse, pbar: tqdm):
+@runtime_checkable
+class LogRedirectCB(Protocol):
+    async def __call__(self, msg: str) -> None:
+        ...
+
+
+async def _file_chunk_writer(
+    file: Path,
+    response: ClientResponse,
+    pbar: tqdm,
+    io_log_redirect_cb: Optional[LogRedirectCB],
+):
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
-            pbar.update(len(chunk))
+            if pbar.update(len(chunk)) and io_log_redirect_cb:
+                await io_log_redirect_cb(f"{pbar}")
 
 
 log = logging.getLogger(__name__)
@@ -79,7 +92,12 @@ _TQDM_FILE_OPTIONS = dict(
 
 
 async def download_link_to_file(
-    session: ClientSession, url: URL, file_path: Path, *, num_retries: int
+    session: ClientSession,
+    url: URL,
+    file_path: Path,
+    *,
+    num_retries: int,
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ):
     log.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
@@ -99,12 +117,14 @@ async def download_link_to_file(
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
                 file_size = int(response.headers.get("Content-Length", 0)) or None
                 try:
-                    with tqdm(
+                    with tqdm_logging_redirect(
                         desc=f"downloading {url.path} --> {file_path.name}\n",
                         total=file_size,
                         **_TQDM_FILE_OPTIONS,
                     ) as pbar:
-                        await _file_chunk_writer(file_path, response, pbar)
+                        await _file_chunk_writer(
+                            file_path, response, pbar, io_log_redirect_cb
+                        )
                         log.debug("Download complete")
                 except ClientPayloadError as exc:
                     raise exceptions.TransferError(url) from exc
@@ -120,6 +140,8 @@ async def _upload_file_part(
     upload_url: AnyUrl,
     pbar: tqdm,
     num_retries: int,
+    *,
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> tuple[int, ETag]:
     log.debug(
         "--> uploading %s of %s, [%s]...",
@@ -154,7 +176,8 @@ async def _upload_file_part(
                 },
             )
             response.raise_for_status()
-            pbar.update(file_part_size)
+            if pbar.update(file_part_size) and io_log_redirect_cb:
+                await io_log_redirect_cb(f"{pbar}")
             # NOTE: the response from minio does not contain a json body
             assert response.status == web.HTTPOk.status_code  # nosec
             assert response.headers  # nosec
@@ -179,6 +202,7 @@ async def upload_file_to_presigned_links(
     file_to_upload: Union[Path, UploadableFileObject],
     *,
     num_retries: int,
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> list[UploadedPart]:
     file_size = 0
     file_name = ""
@@ -195,7 +219,7 @@ async def upload_file_to_presigned_links(
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
-    with tqdm(
+    with tqdm_logging_redirect(
         desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
@@ -213,6 +237,7 @@ async def upload_file_to_presigned_links(
                     upload_url,
                     pbar,
                     num_retries,
+                    io_log_redirect_cb=io_log_redirect_cb,
                 )
             )
         try:

@@ -121,6 +121,7 @@ async def upload_file(
             StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
         ),
         file_to_upload=UploadableFileObject(file.file, file.filename, file_size),
+        io_log_redirect_cb=None,
     )
 
     file_meta.checksum = entity_tag

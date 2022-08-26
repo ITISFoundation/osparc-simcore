@@ -31,7 +31,7 @@ from models_library.projects_networks import (
     NetworksWithAliases,
     ProjectsNetworks,
 )
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -424,7 +424,7 @@ async def _get_mapped_nodeports_values(
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
             project_id=project_id,
-            node_uuid=str(node_uuid),
+            node_uuid=NodeIDStr(node_uuid),
             db_manager=db_manager,
         )
         result[str(node_uuid)] = InputsOutputs(
@@ -591,6 +591,7 @@ async def _fetch_data_via_data_manager(
         node_uuid=service_uuid,
         file_or_folder=DY_SERVICES_STATE_PATH,
         save_to=save_to,
+        io_log_redirect_cb=None,
     )
 
     return save_to

@@ -33,6 +33,7 @@ from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
 from .login.settings import LoginSettings
+from .projects.projects_settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
@@ -169,12 +170,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="tracing plugin"
     )
 
+    WEBSERVER_PROJECTS: Optional[ProjectsSettings] = Field(
+        auto_default_from_env=True, description="projects plugin"
+    )
+
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
-    WEBSERVER_PROJECTS: bool = True
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True

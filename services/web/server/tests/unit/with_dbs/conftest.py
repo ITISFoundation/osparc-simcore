@@ -29,6 +29,7 @@ from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -86,7 +87,6 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
-
     # fills ports on the fly
     cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["storage"]["port"] = unused_tcp_port_factory()
@@ -96,21 +96,35 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 
 
 @pytest.fixture
+def app_environment(
+    app_cfg: ConfigDict,
+    monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
+) -> dict[str, str]:
+    """overridable fixture that defines the ENV for the webserver application
+    based on legacy application config files.
+
+    override like so:
+    @pytest.fixture
+    def app_environment(app_environment: dict[str, str], monkeypatch: MonkeyPatch) -> dict[str, str]:
+        monkeypatch.setenv("MODIFIED_ENV", "VALUE")
+        return app_environment | {"MODIFIED_ENV":"VALUE"}
+    """
+    print("+ web_server:")
+    cfg = deepcopy(app_cfg)
+    return monkeypatch_setenv_from_app_config(cfg)
+
+
+@pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
+    app_environment,
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
     monkeypatch: MonkeyPatch,
-    monkeypatch_setenv_from_app_config: Callable,
     disable_static_webserver: Callable,
 ) -> TestServer:
-
-    print("+ web_server:")
-    cfg = deepcopy(app_cfg)
-    monkeypatch_setenv_from_app_config(cfg)
-
     # original APP
     app = create_application()
 
@@ -120,7 +134,7 @@ def web_server(
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=cfg["main"]["port"])
+        aiohttp_server(app, port=app_cfg["main"]["port"])
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
@@ -205,7 +219,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         side_effect=async_mock,
     )
-    return MockedStorageSubsystem(mock, mock1)
+
+    mock3 = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size",
+        autospec=True,
+        return_value=parse_obj_as(ByteSize, "1Gib"),
+    )
+
+    return MockedStorageSubsystem(mock, mock1, mock3)
 
 
 @pytest.fixture

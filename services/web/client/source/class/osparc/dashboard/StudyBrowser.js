@@ -471,6 +471,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
       }
+
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 

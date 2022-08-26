@@ -18,6 +18,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
@@ -129,7 +130,9 @@ async def logged_user(client, user_role: UserRole) -> AsyncIterator[UserInfoDict
 
 
 @pytest.fixture
-def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
+def monkeypatch_setenv_from_app_config(
+    monkeypatch: MonkeyPatch,
+) -> Callable[[ConfigDict], dict[str, str]]:
     # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
@@ -270,9 +273,12 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 )
 
         # get result GET /{task_id}/result
-        print(f"--> getting project creation result...")
+        print("--> getting project creation result...")
         result = await client.get(f"{result_url}")
         data, error = await assert_status(result, expected_creation_response)
+        if error:
+            assert not data
+            return {}
         assert data
         assert not error
         print(f"<-- result: {data}")
