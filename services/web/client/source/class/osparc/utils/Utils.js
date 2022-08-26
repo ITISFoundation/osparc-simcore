@@ -184,6 +184,10 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    getProductName: function() {
+      return qx.core.Environment.get("product.name");
+    },
+
     isProduct: function(productName) {
       const product = qx.core.Environment.get("product.name");
       return (productName === product);

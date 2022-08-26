@@ -4,30 +4,33 @@ qx.Class.define("osparc.navigation.Manuals", {
 
   statics: {
     getManuals: function(statics) {
-      let manuals = [];
-      if (statics && statics.osparcManualUrl) {
-        manuals.push({
-          label: qx.locale.Manager.tr("User Manual"),
-          icon: "@FontAwesome5Solid/book/22",
-          url: statics.osparcManualUrl
-        });
-      }
-
-      if (osparc.utils.Utils.isInZ43() && statics && statics.osparcManualExtraUrl) {
-        manuals.push({
-          label: qx.locale.Manager.tr("Z43 Manual"),
-          icon: "@FontAwesome5Solid/book-medical/22",
-          url: statics.osparcManualExtraUrl
-        });
-      }
-
-      if (osparc.utils.Utils.isProduct("tis") && statics && statics.tisManualUrl) {
-        // "TI Planning Tool Manual" only
-        manuals = [{
-          label: qx.locale.Manager.tr("TI Planning Tool Manual"),
-          icon: "@FontAwesome5Solid/book/22",
-          url: statics.tisManualUrl
-        }];
+      const productName = osparc.utils.Utils.getProductName();
+      const manualUrlKey = productName + "ManualUrl";
+      const manualExtraUrlKey = productName + "ManualExtraUrl";
+      const manuals = [];
+      switch (productName) {
+        case "osparc":
+        case "s4l":
+          manuals.push({
+            label: qx.locale.Manager.tr("User Manual"),
+            icon: "@FontAwesome5Solid/book/22",
+            url: statics[manualUrlKey]
+          });
+          if (osparc.utils.Utils.isInZ43() && statics && manualExtraUrlKey in statics) {
+            manuals.push({
+              label: qx.locale.Manager.tr("Z43 Manual"),
+              icon: "@FontAwesome5Solid/book-medical/22",
+              url: statics[manualExtraUrlKey]
+            });
+          }
+          break;
+        case "tis":
+          manuals.push({
+            label: qx.locale.Manager.tr("TI Planning Tool Manual"),
+            icon: "@FontAwesome5Solid/book/22",
+            url: statics[manualUrlKey]
+          });
+          break;
       }
 
       return manuals;
