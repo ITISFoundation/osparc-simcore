@@ -290,19 +290,19 @@ async def _create_projects(
         )
 
         # update the network information in director-v2
-        task_progress.update(message="updating project network", percent=0.8)
+        task_progress.update(message="updating project network", percent=0.9)
         await director_v2_api.update_dynamic_service_networks_in_project(
             app, UUID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        task_progress.update(message="updating project pipeline", percent=0.9)
+        task_progress.update(message="updating project pipeline", percent=0.95)
         await director_v2_api.create_or_update_pipeline(
             app, user_id, new_project["uuid"]
         )
 
         # Appends state
-        task_progress.update(message="retrieving project status", percent=0.95)
+        task_progress.update(message="retrieving project status", percent=0.99)
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
