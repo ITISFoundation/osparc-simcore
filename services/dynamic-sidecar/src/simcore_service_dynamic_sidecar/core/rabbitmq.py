@@ -187,6 +187,11 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
                 await self._queues_worker
 
 
+async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
+    log.debug(msg)
+    await rabbitmq.post_log_message(f"[sidecar] {msg}")
+
+
 def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq = RabbitMQ(app)
