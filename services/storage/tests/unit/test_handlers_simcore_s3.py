@@ -111,6 +111,9 @@ async def _request_copy_folders(
         stop=stop_after_delay(60),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
+        before_sleep=lambda retry_state: print(
+            f"<-- Retrying in {retry_state.next_action.sleep} seconds as it raised: '{retry_state.outcome.exception()}'"
+        ),
     ):
         with attempt:
             response = await client.get(task_get.status_href)
