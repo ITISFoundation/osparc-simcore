@@ -152,8 +152,9 @@ async def _init_project_from_request(
         user_id=user_id,
         include_templates=True,
     )
-
-    if max_bytes := get_settings(app).WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES:
+    settings = get_settings(app).WEBSERVER_PROJECTS
+    assert settings  # nosec
+    if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
         project_data_size = await get_project_total_size(
             app, user_id, ProjectID(query_params.from_study)
