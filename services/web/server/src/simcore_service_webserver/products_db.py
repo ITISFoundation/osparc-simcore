@@ -47,7 +47,9 @@ class Product(BaseModel):
     feedback_form_url: Optional[HttpUrl] = None
 
     # TEMPLATES
-    registration_email_template: Optional[str] = None  # template name
+    registration_email_template: Optional[str] = Field(
+        None, x_template_name="registration_email"
+    )
 
     class Config:
         orm_mode = True
@@ -87,9 +89,10 @@ class Product(BaseModel):
         }
 
     def get_template_name_for(self, filename: str) -> Optional[str]:
-        name = filename.removesuffix(".jinja2")
-        if name in self.__fields__.keys():
-            return getattr(self, name, None)
+        template_name = filename.removesuffix(".jinja2")
+        for field in self.__fields__.values():
+            if field.field_info.extra.get("x_template_name") == template_name:
+                return getattr(self, field.name)
         return None
 
 
