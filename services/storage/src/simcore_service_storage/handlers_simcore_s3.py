@@ -7,6 +7,7 @@ from aiohttp.web import RouteTableDef
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -20,6 +21,7 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 # Exclusive for simcore-s3 storage -----------------------
 from . import sts
 from ._meta import api_vtag
+from .long_running_tasks import start_long_running_task
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -47,6 +49,25 @@ async def get_or_create_temporary_s3_access(request: web.Request):
     return {"data": s3_settings.dict()}
 
 
+async def _copy_folders_from_project(
+    task_progress: TaskProgress,
+    app: web.Application,
+    query_params: StorageQueryParamsBase,
+    body: FoldersBody,
+) -> web.Response:
+    dsm = cast(
+        SimcoreS3DataManager,
+        get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
+    )
+    await dsm.deep_copy_project_simcore_s3(
+        query_params.user_id, body.source, body.destination, body.nodes_map
+    )
+
+    raise web.HTTPCreated(
+        text=json.dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
+    )
+
+
 @routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")  # type: ignore
 async def copy_folders_from_project(request: web.Request):
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
@@ -55,17 +76,12 @@ async def copy_folders_from_project(request: web.Request):
         "received call to create_folders_from_project with %s",
         f"{body=}, {query_params=}",
     )
-
-    dsm = cast(
-        SimcoreS3DataManager,
-        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
-    )
-    await dsm.deep_copy_project_simcore_s3(
-        query_params.user_id, body.source, body.destination, body.nodes_map
-    )
-
-    raise web.HTTPCreated(
-        text=json.dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
+    return await start_long_running_task(
+        request,
+        _copy_folders_from_project,
+        app=request.app,
+        query_params=query_params,
+        body=body,
     )
 
 
