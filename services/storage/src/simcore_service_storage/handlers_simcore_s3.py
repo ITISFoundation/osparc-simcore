@@ -60,7 +60,11 @@ async def _copy_folders_from_project(
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
     )
     await dsm.deep_copy_project_simcore_s3(
-        query_params.user_id, body.source, body.destination, body.nodes_map
+        query_params.user_id,
+        body.source,
+        body.destination,
+        body.nodes_map,
+        task_progress=task_progress,
     )
 
     raise web.HTTPCreated(

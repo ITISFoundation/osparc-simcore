@@ -121,7 +121,9 @@ async def _request_copy_folders(
             assert data
             assert not error
             task_status = parse_obj_as(TaskStatus, data)
-            assert task_status.done, "task is not complete yet"
+            assert (
+                task_status.done
+            ), f"task is not complete yet: {task_status.task_progress=}"
     response = await client.get(task_get.result_href)
     data, error = await assert_status(response, expected_result)
     if error:

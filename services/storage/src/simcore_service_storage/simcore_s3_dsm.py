@@ -1,4 +1,5 @@
 import datetime
+import functools
 import logging
 import tempfile
 import urllib.parse
@@ -22,6 +23,11 @@ from models_library.projects_nodes_io import (
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.long_running_tasks.server import (
+    ProgressMessage,
+    ProgressPercent,
+    TaskProgress,
+)
 from servicelib.utils import logged_gather
 from simcore_service_storage import db_tokens
 from simcore_service_storage.s3 import get_s3_client
@@ -68,6 +74,15 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _update_progress(
+    task_progress: Optional[TaskProgress],
+    message: Optional[ProgressMessage],
+    progress: Optional[ProgressPercent],
+) -> None:
+    if task_progress:
+        task_progress.update(message=message, percent=progress)
 
 
 @dataclass
@@ -407,6 +422,7 @@ class SimcoreS3DataManager(BaseDataManager):
         src_project: dict[str, Any],
         dst_project: dict[str, Any],
         node_mapping: dict[NodeID, NodeID],
+        task_progress: Optional[TaskProgress] = None,
     ) -> None:
         src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
         dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
@@ -440,8 +456,19 @@ class SimcoreS3DataManager(BaseDataManager):
             src_project_files: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
-
+        src_project_total_data_size = parse_obj_as(
+            ByteSize,
+            functools.reduce(
+                lambda a, b: a + b, [f.file_size for f in src_project_files], 0
+            ),
+        )
         # Step 3.1: copy: files referenced from file_metadata
+        _update_progress(
+            task_progress,
+            f"Copying from {src_project_uuid=} to {dst_project_uuid=} [0/{len(src_project_files)}"
+            f" files - 0/{src_project_total_data_size.human_readable()}]",
+            0,
+        )
         copy_tasks: deque[Awaitable] = deque()
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
@@ -475,8 +502,14 @@ class SimcoreS3DataManager(BaseDataManager):
                     if int(output.get("store", self.location_id)) == DATCORE_ID
                 ]
             )
-        for task in copy_tasks:
+        for task_id, task in enumerate(copy_tasks):
             await task
+            _update_progress(
+                task_progress,
+                f"Copying from {src_project_uuid=} to {dst_project_uuid=} [{task_id+1}/{len(copy_tasks)}"
+                f" files - 0/{src_project_total_data_size.human_readable()}]",
+                (task_id + 1) / len(copy_tasks),
+            )
         # NOTE: running this in parallel tends to block while testing. not sure why?
         # await asyncio.gather(*copy_tasks)
 
