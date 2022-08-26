@@ -20,7 +20,7 @@ qx.Class.define("osparc.component.tutorial.ti.SlideBase", {
   type: "abstract",
 
   construct: function(title) {
-    this.base(arguments, "ti-slides", this.tr("Quick Start"));
+    this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
