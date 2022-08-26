@@ -31,15 +31,22 @@ qx.Class.define("osparc.utils.Utils", {
 
   statics: {
     localCache: {
+      setLocalStorageItem: function(key, value) {
+        window.localStorage.setItem(key, value);
+      },
+      getLocalStorageItem: function(name) {
+        return window.localStorage.getItem(name);
+      },
+
       setTheme: function(themeName) {
-        window.localStorage.setItem("themeName", themeName);
+        this.setLocalStorageItem("themeName", themeName);
       },
       getTheme: function() {
-        return window.localStorage.getItem("themeName");
+        return this.getLocalStorageItem("themeName");
       },
 
       serviceToFavs: function(serviceKey) {
-        let serviceFavs = window.localStorage.getItem("services");
+        let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
           serviceFavs = JSON.parse(serviceFavs);
         } else {
@@ -52,11 +59,11 @@ qx.Class.define("osparc.utils.Utils", {
             hits: 1
           };
         }
-        window.localStorage.setItem("services", JSON.stringify(serviceFavs));
+        this.setLocalStorageItem("services", JSON.stringify(serviceFavs));
       },
 
       getFavServices: function() {
-        const serviceFavs = window.localStorage.getItem("services");
+        const serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
           return JSON.parse(serviceFavs);
         }
