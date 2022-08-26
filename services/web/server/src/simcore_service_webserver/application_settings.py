@@ -170,7 +170,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="tracing plugin"
     )
 
-    WEBSERVER_PROJECTS: ProjectsSettings = Field(
+    WEBSERVER_PROJECTS: Optional[ProjectsSettings] = Field(
         auto_default_from_env=True, description="projects plugin"
     )
 
