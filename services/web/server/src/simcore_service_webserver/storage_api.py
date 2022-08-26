@@ -4,7 +4,7 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Any
+from typing import Any, AsyncGenerator, Union
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from models_library.api_schemas_storage import FileLocationArray, FileMetaDataGet
@@ -14,7 +14,12 @@ from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskStatus
+from servicelib.aiohttp.long_running_tasks.server import (
+    ProgressMessage,
+    ProgressPercent,
+    TaskGet,
+    TaskStatus,
+)
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -87,7 +92,9 @@ async def copy_data_folders_from_project(
     destination_project: dict,
     nodes_map: dict,
     user_id: UserID,
-):
+) -> AsyncGenerator[
+    Union[tuple[ProgressMessage, ProgressPercent], dict[str, Any]], None
+]:
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
     log.debug("Copying %d nodes", len(nodes_map))
@@ -118,6 +125,10 @@ async def copy_data_folders_from_project(
                 resp.raise_for_status()
                 copy_status = Envelope[TaskStatus].parse_obj(await resp.json())
                 if not copy_status.done:
+                    yield (
+                        copy_status.data.task_progress.message,
+                        copy_status.data.task_progress.percent,
+                    )
                     raise TryAgain
     async with client.get(storage_copy_long_running_task.data.result_href) as resp:
         resp.raise_for_status()
