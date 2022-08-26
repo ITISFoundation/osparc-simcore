@@ -181,8 +181,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     showPreparingInputs: function() {
       const title = this.tr("Preparing Inputs");
-      const width = 600;
-      const height = 500;
+      const width = 650;
+      const height = 600;
       osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
     },
 
