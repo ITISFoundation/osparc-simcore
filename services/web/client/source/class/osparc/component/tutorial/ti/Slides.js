@@ -85,6 +85,13 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         flex: 1
       });
 
+      const slideCounter = this.__slideCounter = new qx.ui.basic.Label();
+      arrowsLayout.add(slideCounter);
+
+      arrowsLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
         label: this.tr("Next"),
         icon: "@FontAwesome5Solid/arrow-right/20",
@@ -123,6 +130,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         this.__prevBtn.setEnabled(idx !== 0);
         this.__nextBtn.setEnabled(idx !== selectables.length-1);
       }
+      this.__slideCounter.setValue(`${idx+1}/${selectables.length}`);
     },
 
     __createFooter: function() {
@@ -163,6 +171,17 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         rich : true
       });
       footer.add(link3, {
+        flex: 1
+      });
+
+      const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
+        value: osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart") === "true"
+      });
+      dontShowCB.addListener("changeValue", e => {
+        const dontShow = e.getData();
+        osparc.utils.Utils.localCache.setLocalStorageItem("tiDontShowQuickStart", Boolean(dontShow));
+      });
+      footer.add(dontShowCB, {
         flex: 1
       });
 
