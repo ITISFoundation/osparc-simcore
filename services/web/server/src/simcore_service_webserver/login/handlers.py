@@ -7,6 +7,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.users import UserRole
 
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
@@ -286,7 +287,7 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    if settings.LOGIN_2FA_REQUIRED:
+    if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
         product: Product = get_current_product(request)
 
         if not user["phone"]:
