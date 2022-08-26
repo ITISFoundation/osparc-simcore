@@ -60,7 +60,7 @@ qx.Class.define("osparc.CookiePolicy", {
           const text = this.tr("This website applies cookies to personalize your \
           experience and to make our site easier to navigate. By visiting \
           the site, you are agreeing to this use and to our \
-          <a href=https://itis.swiss/meta-navigation/privacy-policy/ target='_blank'>Privacy Policy.</a>");
+          <a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy.</a>");
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
