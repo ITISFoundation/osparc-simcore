@@ -7,6 +7,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.users import UserRole
 
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
@@ -42,11 +43,17 @@ from .utils import (
     envelope_response,
     flash_response,
     get_client_ip,
+    get_template_path,
     render_and_send_mail,
-    themed,
 )
 
 log = logging.getLogger(__name__)
+
+
+def _get_user_name(email: str) -> str:
+    username = email.split("@")[0]
+    # TODO: this has to be unique and add this in user registration!
+    return username
 
 
 async def register(request: web.Request):
@@ -61,11 +68,10 @@ async def register(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
-    username = email.split("@")[
-        0
-    ]  # FIXME: this has to be unique and add this in user registration!
+    username = _get_user_name(email)
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
@@ -106,12 +112,13 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.THEME, "registration_email.html"),
+            to=email,
+            template=await get_template_path(request, "registration_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,
-                "name": email.split("@")[0],
+                "name": username,
+                "support_email": product.support_email,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
@@ -173,6 +180,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             product_display_name=product.display_name,
+            user_name=_get_user_name(email),
         )
 
         response = flash_response(
@@ -279,7 +287,7 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    if settings.LOGIN_2FA_REQUIRED:
+    if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
         product: Product = get_current_product(request)
 
         if not user["phone"]:
@@ -304,6 +312,7 @@ async def login(request: web.Request):
                 twilo_auth=settings.LOGIN_TWILIO,
                 twilio_messaging_sid=product.twilio_messaging_sid,
                 product_display_name=product.display_name,
+                user_name=user["name"],
             )
 
             rsp = envelope_response(
@@ -450,8 +459,10 @@ async def reset_password(request: web.Request):
         try:
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
+                to=email,
+                template=await get_template_path(
+                    request, "reset_password_email_failed.jinja2"
+                ),
                 context={
                     "host": request.host,
                     "reason": err.reason,
@@ -467,8 +478,10 @@ async def reset_password(request: web.Request):
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email.html"),
+                to=email,
+                template=await get_template_path(
+                    request, "reset_password_email.jinja2"
+                ),
                 context={
                     "host": request.host,
                     "link": link,
@@ -513,8 +526,8 @@ async def change_email(request: web.Request):
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.COMMON_THEME, "change_email_email.html"),
+            to=email,
+            template=await get_template_path(request, "change_email_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,

@@ -240,6 +240,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def get_healthcheck_timeout_in_seconds(cls, v):
         # Ex. HEALTHCHECK --interval=5m --timeout=3s
         if isinstance(v, str):
+            factor = 1  # defaults on s
             if v.endswith("s"):
                 factor = 1
             elif v.endswith("m"):
