@@ -24,7 +24,10 @@ qx.Class.define("osparc.CookiePolicy", {
 
   construct: function() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox());
+
+    const grid = new qx.ui.layout.Grid(5, 10);
+    grid.setColumnFlex(0, 1);
+    this._setLayout(grid);
 
     this.__buildLayout();
   },
@@ -56,36 +59,62 @@ qx.Class.define("osparc.CookiePolicy", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "text": {
-          const text = this.tr("This website applies cookies to personalize your \
-          experience and to make our site easier to navigate. By visiting \
-          the site, you are agreeing to this use and to our \
-          <a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy.</a>");
+        case "cookie-text": {
+          const color = qx.theme.manager.Color.getInstance().resolve("text");
+          const textLink = `<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`;
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink;
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
           this._add(control, {
-            flex: 1
+            column: 0,
+            row: 0
           });
           break;
         }
+        case "accept-cookie":
+          control = new qx.ui.form.CheckBox().set({
+            value: true
+          });
+          this._add(control, {
+            column: 1,
+            row: 0
+          });
+          break;
+        case "license-text": {
+          const licenseLink = osparc.navigation.Manuals.getLicenseLink();
+          const color = qx.theme.manager.Color.getInstance().resolve("text");
+          const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
+          const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ") + textLink;
+          control = new qx.ui.basic.Label(text).set({
+            rich : true
+          });
+          this._add(control, {
+            column: 0,
+            row: 1
+          });
+          break;
+        }
+        case "accept-license":
+          control = new qx.ui.form.CheckBox().set({
+            value: true
+          });
+          this._add(control, {
+            column: 1,
+            row: 1
+          });
+          break;
         case "control-buttons": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           })).set({
             padding: 2
           });
-          this._add(control);
-          break;
-        }
-        case "decline-button": {
-          const ctrlBtns = this.getChildControl("control-buttons");
-          control = new qx.ui.form.Button(this.tr("Decline")).set({
-            visibility: "excluded",
-            allowGrowX: false
+          this._add(control, {
+            column: 0,
+            row: 2,
+            colSpan: 2
           });
-          osparc.utils.Utils.setIdToWidget(control, "declineCookiesBtn");
-          ctrlBtns.add(control);
           break;
         }
         case "accept-button": {
@@ -102,17 +131,24 @@ qx.Class.define("osparc.CookiePolicy", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("text");
+      const checkButtons = [];
+      this.getChildControl("cookie-text");
+      const acceptCookie = this.getChildControl("accept-cookie");
+      checkButtons.push(acceptCookie);
 
-      const declineBtn = this.getChildControl("decline-button");
-      declineBtn.addListener("execute", () => {
-        this.fireEvent("cookiesDeclined");
-      }, this);
+      if (osparc.utils.Utils.isProduct("tis")) {
+        this.getChildControl("license-text");
+        const acceptLicense = this.getChildControl("accept-license");
+        checkButtons.push(acceptLicense);
+      }
 
       const acceptBtn = this.getChildControl("accept-button");
-      acceptBtn.addListener("execute", () => {
-        this.fireEvent("cookiesAccepted");
-      }, this);
+      const evalAcceptButton = () => {
+        acceptBtn.setEnabled(checkButtons.every(checkButton => checkButton.getValue()));
+      };
+      checkButtons.forEach(checkButton => checkButton.addListener("changeValue", () => evalAcceptButton()));
+      acceptBtn.addListener("execute", () => this.fireEvent("cookiesAccepted"), this);
+      evalAcceptButton();
     }
   }
 });
