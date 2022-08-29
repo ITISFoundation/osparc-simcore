@@ -61,10 +61,8 @@ qx.Class.define("osparc.CookiePolicy", {
       switch (id) {
         case "cookie-text": {
           const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const text = this.tr(`This website applies cookies to personalize your \
-          experience and to make our site easier to navigate. By visiting \
-          the site, you are agreeing to this use and to our \
-          <a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`);
+          const textLink = `<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`;
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink;
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
@@ -76,7 +74,7 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         case "accept-cookie":
           control = new qx.ui.form.CheckBox().set({
-            value: true
+            value: false
           });
           this._add(control, {
             column: 1,
@@ -84,8 +82,10 @@ qx.Class.define("osparc.CookiePolicy", {
           });
           break;
         case "license-text": {
+          const licenseLink = osparc.navigation.Manuals.getLicenseLink();
           const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const text = this.tr(`<a href=https://itisfoundation.github.io/ti-planning-tool-manual/#/docs/support/license style='color: ${color}' target='_blank'>License</a>`);
+          const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
+          const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ") + textLink;
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
@@ -97,7 +97,7 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         case "accept-license":
           control = new qx.ui.form.CheckBox().set({
-            value: true
+            value: false
           });
           this._add(control, {
             column: 1,
@@ -148,6 +148,7 @@ qx.Class.define("osparc.CookiePolicy", {
       };
       checkButtons.forEach(checkButton => checkButton.addListener("changeValue", () => evalAcceptButton()));
       acceptBtn.addListener("execute", () => this.fireEvent("cookiesAccepted"), this);
+      evalAcceptButton();
     }
   }
 });
