@@ -65,8 +65,10 @@ async def test_long_running_task_request(
         wait_interval_s=0.01,
     ):
         print(f"<-- received {task=}")
+        if task.done():
+            assert await task.result() == [f"{x}" for x in range(10)]
+
     assert task is not None
-    assert await task.result() == [f"{x}" for x in range(10)]
 
 
 async def test_long_running_task_request_timeout(

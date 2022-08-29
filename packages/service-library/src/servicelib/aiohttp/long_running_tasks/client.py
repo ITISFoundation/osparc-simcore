@@ -105,7 +105,10 @@ class LRTask:
     progress: TaskProgress
     _result: Optional[Coroutine[Any, Any, Any]] = None
 
-    async def result(self):
+    def done(self) -> bool:
+        return self._result is not None
+
+    async def result(self) -> Any:
         if not self._result:
             raise ValueError("No result ready!")
         return await self._result
