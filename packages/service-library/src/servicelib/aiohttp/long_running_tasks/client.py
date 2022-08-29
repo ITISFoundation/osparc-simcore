@@ -103,7 +103,12 @@ _HOUR: Final[int] = 60 * _MINUTE
 @dataclass(frozen=True)
 class LRTask:
     progress: TaskProgress
-    result: Optional[Coroutine[Any, Any, Any]] = None
+    _result: Optional[Coroutine[Any, Any, Any]] = None
+
+    async def result(self):
+        if not self._result:
+            raise ValueError("No result ready!")
+        return await self._result
 
 
 async def long_running_task_request(
@@ -124,7 +129,7 @@ async def long_running_task_request(
             yield LRTask(progress=task_progress)
         assert last_progress  # nosec
         yield LRTask(
-            progress=last_progress, result=_task_result(session, task.result_href)
+            progress=last_progress, _result=_task_result(session, task.result_href)
         )
 
     except (asyncio.CancelledError, asyncio.TimeoutError):

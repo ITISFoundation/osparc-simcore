@@ -64,10 +64,9 @@ async def test_long_running_task_request(
         json=None,
         wait_interval_s=0.01,
     ):
-        print(f"<-- received {task.progress=}, {task.result=}")
+        print(f"<-- received {task=}")
     assert task is not None
-    assert task.result
-    assert await task.result == [f"{x}" for x in range(10)]
+    assert await task.result() == [f"{x}" for x in range(10)]
 
 
 async def test_long_running_task_request_timeout(
@@ -85,7 +84,7 @@ async def test_long_running_task_request_timeout(
             wait_interval_s=0.5,
             wait_timeout_s=2,
         ):
-            print(f"<-- received {task.progress=}, {task.result=}")
+            print(f"<-- received {task=}")
 
     # check the task was properly aborted by the client
     list_url = client.app.router["list_tasks"].url_for()
@@ -108,8 +107,7 @@ async def test_long_running_task_request_error(
         json=None,
         wait_interval_s=0.01,
     ):
-        print(f"<-- received {task.progress=}, {task.result=}")
+        print(f"<-- received {task=}")
     assert task is not None
-    assert task.result
     with pytest.raises(ClientResponseError):
-        await task.result
+        await task.result()
