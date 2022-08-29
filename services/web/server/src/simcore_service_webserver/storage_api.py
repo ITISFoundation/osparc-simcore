@@ -66,7 +66,7 @@ async def get_project_total_size(
             list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
                 await response.json()
             )
-            assert list_of_files_enveloped.data  # nosec
+            assert list_of_files_enveloped.data is not None # nosec
         for file_metadata in list_of_files_enveloped.data:
             project_size_bytes += file_metadata.file_size
     project_size = parse_obj_as(ByteSize, project_size_bytes)
