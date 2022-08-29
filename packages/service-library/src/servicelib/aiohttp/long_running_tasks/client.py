@@ -108,13 +108,13 @@ class LRTask:
 async def long_running_task_request(
     session: ClientSession,
     url: URL,
-    data: Optional[RequestBody] = None,
+    json: Optional[RequestBody] = None,
     wait_timeout_s: int = 1 * _HOUR,
     wait_interval_s: float = 1,
 ) -> AsyncGenerator[LRTask, None]:
     task = None
     try:
-        task = await _start(session, url, data)
+        task = await _start(session, url, json)
         last_progress = None
         async for task_progress in _wait_for_completion(
             session, task.task_id, task.status_href, wait_timeout_s, wait_interval_s

@@ -61,7 +61,7 @@ async def test_long_running_task_request(
     async for task in long_running_task_request(
         client,
         url.with_query(num_strings=10, sleep_time=0.1),
-        data=None,
+        json=None,
         wait_interval_s=0.01,
     ):
         print(f"<-- received {task.progress=}, {task.result=}")
@@ -81,7 +81,7 @@ async def test_long_running_task_request_timeout(
         async for task in long_running_task_request(
             client,
             url.with_query(num_strings=10, sleep_time=1),
-            data=None,
+            json=None,
             wait_interval_s=0.5,
             wait_timeout_s=2,
         ):
@@ -105,7 +105,7 @@ async def test_long_running_task_request_error(
     async for task in long_running_task_request(
         client,
         url.with_query(num_strings=10, sleep_time=0.1, fail=f"{True}"),
-        data=None,
+        json=None,
         wait_interval_s=0.01,
     ):
         print(f"<-- received {task.progress=}, {task.result=}")
