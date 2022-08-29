@@ -166,34 +166,31 @@ async def unarchive_dir(
                 destination_folder=destination_folder,
             )
 
-            tasks: list[asyncio.Task] = [
-                asyncio.ensure_future(
-                    event_loop.run_in_executor(
-                        process_pool,
-                        # ---------
-                        _zipfile_single_file_extract_worker,
-                        archive_to_extract,
-                        zip_entry,
-                        destination_folder,
-                        zip_entry.is_dir(),
-                    )
+            futures: list[asyncio.Future] = [
+                event_loop.run_in_executor(
+                    process_pool,
+                    # ---------
+                    _zipfile_single_file_extract_worker,
+                    archive_to_extract,
+                    zip_entry,
+                    destination_folder,
+                    zip_entry.is_dir(),
                 )
                 for zip_entry in zip_file_handler.infolist()
             ]
 
             try:
-
                 extracted_paths: list[Path] = await tqdm_asyncio.gather(
-                    *tasks,
-                    desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
+                    *futures,
+                    desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
                     f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
-                    total=len(tasks),
+                    total=len(futures),
                     **_TQDM_MULTI_FILES_OPTIONS,
                 )
 
             except Exception as err:
 
-                for t in tasks:
+                for t in futures:
                     t.cancel()
 
                 raise ArchiveError(
