@@ -3,6 +3,21 @@ qx.Class.define("osparc.navigation.Manuals", {
   type: "static",
 
   statics: {
+    getLicenseLink: function() {
+      let licenseLink = null;
+      const productName = osparc.utils.Utils.getProductName();
+      switch (productName) {
+        case "osparc":
+        case "s4l":
+          licenseLink = "http://docs.osparc.io/#/docs/support/license";
+          break;
+        case "tis":
+          licenseLink = "https://itisfoundation.github.io/ti-planning-tool-manual/#/docs/support/license";
+          break;
+      }
+      return licenseLink;
+    },
+
     getManuals: function(statics) {
       const productName = osparc.utils.Utils.getProductName();
       const manualUrlKey = productName + "ManualUrl";
