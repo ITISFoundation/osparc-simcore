@@ -100,8 +100,10 @@ def incoming_compose_file(
     return result
 
 
-# NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
 def test_inject_backend_networking(incoming_compose_file: str):
+    """
+    NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
+    """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     _inject_backend_networking(parsed_compose_spec)
     assert _DEFAULT_BACKEND_NETWORK_NAME in parsed_compose_spec["networks"]
