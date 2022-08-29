@@ -116,7 +116,9 @@ def _zipfile_single_file_extract_worker(
 
 
 class ArchiveError(Exception):
-    pass
+    """
+    Error raised while archiving or unarchiving
+    """
 
 
 def ensure_destination_subdirectories_exist(
