@@ -1,10 +1,14 @@
 import logging
+import string
 from typing import Any, AsyncIterator, Optional, Pattern
 
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
+from models_library.basic_regex import (
+    PUBLIC_VARIABLE_NAME_RE,
+    TWILIO_ALPHANUMERIC_SENDER_ID_RE,
+)
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, Field, HttpUrl, validator
 from simcore_postgres_database.models.products import jinja2_templates
@@ -14,6 +18,7 @@ from .db_models import products
 from .statics_constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
+
 
 #
 # MODEL
@@ -27,6 +32,9 @@ class Product(BaseModel):
 
     name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
     display_name: str
+    short_name: Optional[str] = Field(
+        None, regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE, min_length=2, max_length=11
+    )
     host_regex: Pattern
 
     # EMAILS/PHONE
@@ -53,6 +61,23 @@ class Product(BaseModel):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "examples": [
+                {
+                    # fake mandatory
+                    "name": "osparc",
+                    "host_regex": r"([\.-]{0,1}osparc[\.-])",
+                    "twilio_messaging_sid": "1" * 34,
+                    "registration_email_template": "osparc_registration_email",
+                    # defaults from sqlalchemy table
+                    **{
+                        c.name: c.server_default.arg
+                        for c in products.columns
+                        if c.server_default and isinstance(c.server_default.arg, str)
+                    },
+                },
+            ]
+        }
 
     @validator("name", pre=True, always=True)
     @classmethod
@@ -62,6 +87,10 @@ class Product(BaseModel):
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             )
         return v
+
+    @property
+    def twilio_alpha_numeric_sender_id(self) -> str:
+        return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
     def to_statics(self) -> dict[str, Any]:
         """
@@ -89,6 +118,7 @@ class Product(BaseModel):
         }
 
     def get_template_name_for(self, filename: str) -> Optional[str]:
+        """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
         for field in self.__fields__.values():
             if field.field_info.extra.get("x_template_name") == template_name:
@@ -100,6 +130,7 @@ class Product(BaseModel):
 # REPOSITORY
 #
 
+# NOTE: This also asserts that all model fields are in sync with sqlalchemy columns
 _include_cols = [products.columns[f] for f in Product.__fields__]
 
 
