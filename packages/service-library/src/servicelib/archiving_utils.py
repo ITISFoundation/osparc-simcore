@@ -6,7 +6,7 @@ import zipfile
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Final, Iterator, Optional, Union
+from typing import Final, Iterator, Optional
 
 from servicelib.pools import non_blocking_process_pool_executor
 from tqdm import tqdm
@@ -115,6 +115,10 @@ def _zipfile_single_file_extract_worker(
             return destination_path
 
 
+class ArchiveError(Exception):
+    pass
+
+
 def ensure_destination_subdirectories_exist(
     zip_file_handler: zipfile.ZipFile, destination_folder: Path
 ) -> None:
@@ -140,12 +144,16 @@ async def unarchive_dir(
 
     Returns a set with all the paths extracted from archive. It includes
     all tree leafs, which might include files or empty folders
+
+    ::raise ArchiveError
     """
     with zipfile.ZipFile(
         archive_to_extract, mode="r"
     ) as zip_file_handler, logging_redirect_tqdm():
-        with non_blocking_process_pool_executor(max_workers=max_workers) as pool:
-            loop = asyncio.get_event_loop()
+        with non_blocking_process_pool_executor(
+            max_workers=max_workers
+        ) as process_pool:
+            event_loop = asyncio.get_event_loop()
 
             # running in process poll is not ideal for concurrency issues
             # to avoid race conditions all subdirectories where files will be extracted need to exist
@@ -157,31 +165,48 @@ async def unarchive_dir(
             )
 
             tasks = [
-                loop.run_in_executor(
-                    pool,
-                    _zipfile_single_file_extract_worker,
-                    archive_to_extract,
-                    zip_entry,
-                    destination_folder,
-                    zip_entry.is_dir(),
+                asyncio.create_task(
+                    event_loop.run_in_executor(
+                        process_pool,
+                        # ---------
+                        _zipfile_single_file_extract_worker,
+                        archive_to_extract,
+                        zip_entry,
+                        destination_folder,
+                        zip_entry.is_dir(),
+                    )
                 )
                 for zip_entry in zip_file_handler.infolist()
             ]
 
-            extracted_paths: list[Path] = await tqdm_asyncio.gather(
-                *tasks,
-                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
-                f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
-                total=len(tasks),
-                **_TQDM_MULTI_FILES_OPTIONS,
-            )
+            try:
 
-            # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
-            return {
-                p
-                for p in extracted_paths
-                if p.is_file() or (p.is_dir() and not any(p.glob("*")))
-            }
+                extracted_paths: list[Path] = await tqdm_asyncio.gather(
+                    *tasks,
+                    desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(tasks)} file{'s' if len(tasks) > 1 else ''}"
+                    f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                    total=len(tasks),
+                    **_TQDM_MULTI_FILES_OPTIONS,
+                )
+
+            except Exception as err:
+
+                for t in tasks:
+                    t.cancel()
+
+                raise ArchiveError(
+                    f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
+                    f"Details: {err}"
+                ) from err
+
+            else:
+
+                # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
+                return {
+                    p
+                    for p in extracted_paths
+                    if p.is_file() or (p.is_dir() and not any(p.glob("*")))
+                }
 
 
 @contextmanager
@@ -215,39 +240,33 @@ def _add_to_archive(
     compress: bool,
     store_relative_path: bool,
     exclude_patterns: Optional[set[str]] = None,
-) -> Optional[Exception]:
-    try:
-        compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-        folder_size_bytes = sum(
-            file.stat().st_size
-            for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
-        )
-        desc = f"compressing {dir_to_compress} -> {destination}"
-        with tqdm_logging_redirect(
-            desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
-        ) as progress_bar, _progress_enabled_zip_write_handler(
-            zipfile.ZipFile(destination, "w", compression=compression), progress_bar
-        ) as zip_file_handler:
-            for file_to_add in _iter_files_to_compress(
-                dir_to_compress, exclude_patterns
-            ):
-                progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
-                file_name_in_archive = (
-                    _strip_directory_from_path(file_to_add, dir_to_compress)
-                    if store_relative_path
-                    else file_to_add
-                )
+):
+    compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
+    folder_size_bytes = sum(
+        file.stat().st_size
+        for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+    )
+    desc = f"compressing {dir_to_compress} -> {destination}"
+    with tqdm_logging_redirect(
+        desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
+    ) as progress_bar, _progress_enabled_zip_write_handler(
+        zipfile.ZipFile(destination, "w", compression=compression), progress_bar
+    ) as zip_file_handler:
+        for file_to_add in _iter_files_to_compress(dir_to_compress, exclude_patterns):
+            progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
+            file_name_in_archive = (
+                _strip_directory_from_path(file_to_add, dir_to_compress)
+                if store_relative_path
+                else file_to_add
+            )
 
-                # because surrogates are not allowed in zip files,
-                # replacing them will ensure errors will not happen.
-                escaped_file_name_in_archive = _strip_undecodable_in_path(
-                    file_name_in_archive
-                )
+            # because surrogates are not allowed in zip files,
+            # replacing them will ensure errors will not happen.
+            escaped_file_name_in_archive = _strip_undecodable_in_path(
+                file_name_in_archive
+            )
 
-                zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
-    except Exception as e:  # pylint: disable=broad-except
-        return e
-    return None
+            zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
 
 
 async def archive_dir(
@@ -265,22 +284,28 @@ async def archive_dir(
 
     The **exclude_patterns** is a set of patterns created using
     Unix shell-style wildcards to exclude files and directories.
-    """
-    with non_blocking_process_pool_executor(max_workers=1) as pool:
-        add_to_archive_error: Union[
-            None, Exception
-        ] = await asyncio.get_event_loop().run_in_executor(
-            pool,
-            _add_to_archive,
-            dir_to_compress,
-            destination,
-            compress,
-            store_relative_path,
-            exclude_patterns,
-        )
 
-        if isinstance(add_to_archive_error, Exception):
-            raise add_to_archive_error
+    ::raise ArchiveError
+    """
+    with non_blocking_process_pool_executor(max_workers=1) as process_pool:
+        event_loop = asyncio.get_event_loop()
+
+        try:
+            await event_loop.run_in_executor(
+                process_pool,
+                # ---------
+                _add_to_archive,
+                dir_to_compress,
+                destination,
+                compress,
+                store_relative_path,
+                exclude_patterns,
+            )
+        except Exception as err:
+            raise ArchiveError(
+                f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
+                f"Details: {err}"
+            ) from err
 
 
 def is_leaf_path(p: Path) -> bool:
@@ -347,6 +372,7 @@ class PrunableFolder:
 
 __all__ = (
     "archive_dir",
+    "ArchiveError",
     "PrunableFolder",
     "unarchive_dir",
 )
