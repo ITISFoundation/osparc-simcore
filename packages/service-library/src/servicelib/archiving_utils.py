@@ -166,8 +166,8 @@ async def unarchive_dir(
                 destination_folder=destination_folder,
             )
 
-            tasks = [
-                asyncio.create_task(
+            tasks: list[asyncio.Task] = [
+                asyncio.ensure_future(
                     event_loop.run_in_executor(
                         process_pool,
                         # ---------
