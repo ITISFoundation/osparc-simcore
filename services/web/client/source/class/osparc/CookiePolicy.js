@@ -74,7 +74,7 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         case "accept-cookie":
           control = new qx.ui.form.CheckBox().set({
-            value: false
+            value: true
           });
           this._add(control, {
             column: 1,
@@ -97,7 +97,7 @@ qx.Class.define("osparc.CookiePolicy", {
         }
         case "accept-license":
           control = new qx.ui.form.CheckBox().set({
-            value: false
+            value: true
           });
           this._add(control, {
             column: 1,
