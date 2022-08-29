@@ -205,6 +205,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         .then(resp => {
           const resources = resp["data"];
           this._resourcesContainer.nextRequest = resp["_links"]["next"];
+          this._addResourcesToList(resources);
+
           if (osparc.utils.Utils.isProduct("tis")) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
             if (dontShow !== "true" && templates === false && resources.length === 0 && this._resourcesContainer.nextRequest === null) {
@@ -214,7 +216,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               tutorialWindow.open();
             }
           }
-          this._addResourcesToList(resources);
         })
         .catch(err => {
           console.error(err);
