@@ -100,10 +100,12 @@ async def test_jinja2_templates_table(
             {
                 "name": "s4l",
                 "host_regex": r"(^s4l[\.-])|(^sim4life\.)",
+                "short_name": "s4l web",
                 "registration_email_template": registration_email_template,
             },
             {
                 "name": "tis",
+                "short_name": "TIP",
                 "host_regex": r"(^ti.[\.-])|(^ti-solution\.)",
             },
         ]:
@@ -114,13 +116,15 @@ async def test_jinja2_templates_table(
 
         # prints those products having customized templates
         j = products.join(jinja2_templates)
-        stmt = sa.select([products.c.name, jinja2_templates.c.name]).select_from(j)
+        stmt = sa.select(
+            [products.c.name, jinja2_templates.c.name, products.c.short_name]
+        ).select_from(j)
 
         result: ResultProxy = await conn.execute(stmt)
         assert result.rowcount == 2
         assert await result.fetchall() == [
-            ("osparc", "registration_email.jinja2"),
-            ("s4l", "registration_email.jinja2"),
+            ("s4l", "registration_email.jinja2", "s4l web"),
+            ("osparc", "registration_email.jinja2", "osparc"),
         ]
 
         assert (
