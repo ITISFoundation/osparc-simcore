@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, AsyncGenerator, Coroutine, Final, Optional
 
 from aiohttp import ClientConnectionError, ClientSession, web
+from pydantic import Json
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -13,7 +14,7 @@ from yarl import URL
 from ..rest_responses import unwrap_envelope
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
-RequestBody = dict[str, Any]
+RequestBody = Json
 
 
 @retry(
@@ -22,9 +23,9 @@ RequestBody = dict[str, Any]
     reraise=True,
 )
 async def _start(
-    session: ClientSession, request: URL, data: Optional[RequestBody]
+    session: ClientSession, request: URL, json: Optional[RequestBody]
 ) -> TaskGet:
-    async with session.post(request, data=data) as response:
+    async with session.post(request, json=json) as response:
         response.raise_for_status()
         data, error = unwrap_envelope(await response.json())
     assert not error  # nosec
