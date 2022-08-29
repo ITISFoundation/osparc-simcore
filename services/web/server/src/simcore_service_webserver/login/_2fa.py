@@ -80,6 +80,7 @@ async def send_sms_code(
     twilo_auth: TwilioSettings,
     twilio_messaging_sid: str,
     product_display_name: str,
+    user_name: str = "user",
 ):
     def sender():
         log.info(
@@ -92,8 +93,9 @@ async def send_sms_code(
         client = Client(twilo_auth.TWILIO_ACCOUNT_SID, twilo_auth.TWILIO_AUTH_TOKEN)
         message = client.messages.create(
             messaging_service_sid=twilio_messaging_sid,
+            from_=product_display_name,
             to=phone_number,
-            body=f"Dear {product_display_name} user, your verification code is {code}",
+            body=f"Dear {user_name[:20].capitalize().strip()}, your verification code is {code}",
         )
 
         log.debug(

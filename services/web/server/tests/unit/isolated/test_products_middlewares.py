@@ -9,11 +9,9 @@ from simcore_service_webserver._constants import (
     RQ_PRODUCT_KEY,
     X_PRODUCT_NAME_HEADER,
 )
-from simcore_service_webserver.products import (
-    FRONTEND_APP_DEFAULT,
-    Product,
-    discover_product_middleware,
-)
+from simcore_service_webserver.products import Product
+from simcore_service_webserver.products_middlewares import discover_product_middleware
+from simcore_service_webserver.statics_constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 
 
