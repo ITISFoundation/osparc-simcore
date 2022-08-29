@@ -118,6 +118,25 @@ async def long_running_task_request(
     wait_timeout_s: int = 1 * _HOUR,
     wait_interval_s: float = 1,
 ) -> AsyncGenerator[LRTask, None]:
+    """Will use the passed `ClientSession` to call an oSparc long
+    running task `url` passing `json` as request body.
+    NOTE: this follows the usual aiohttp client syntax, and will raise the same errors
+
+    :param session: The client to use
+    :type session: ClientSession
+    :param url: The url to call. NOTE: the endpoint must follow oSparc long running task server syntax (202, then status, result urls)
+    :type url: URL
+    :param json: optional body as dictionary, defaults to None
+    :type json: Optional[RequestBody], optional
+    :param wait_timeout_s: after this timeout is reached and no result is ready will raise asyncio.TimeoutError, defaults to 1*_HOUR
+    :type wait_timeout_s: int, optional
+    :param wait_interval_s: will check for result every `wait_interval` seconds, defaults to 1
+    :type wait_interval_s: float, optional
+    :return: a task containing the final result
+    :rtype: AsyncGenerator[LRTask, None]
+    :yield: a task containing the current TaskProgress
+    :rtype: Iterator[AsyncGenerator[LRTask, None]]
+    """
     task = None
     try:
         task = await _start(session, url, json)
