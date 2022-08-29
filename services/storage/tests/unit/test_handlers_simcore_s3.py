@@ -26,10 +26,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp.long_running_tasks.client import (
-    LRTask,
-    long_running_task_request,
-)
+from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
@@ -83,7 +80,7 @@ async def _request_copy_folders(
     user_id: UserID,
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
-    nodes_map: dict[str, Any],
+    nodes_map: dict[NodeID, NodeID],
     expected_result: type[web.HTTPException],
 ) -> dict[str, Any]:
     assert client.app
@@ -92,7 +89,6 @@ async def _request_copy_folders(
         .url_for()
         .with_query(user_id=user_id)
     )
-    lr_task: Optional[LRTask] = None
     async for lr_task in long_running_task_request(
         client,
         url,
@@ -103,10 +99,10 @@ async def _request_copy_folders(
         ),
     ):
         print(f"<-- current state is {lr_task.progress=}")
-    assert lr_task
-    assert lr_task.result
+        if lr_task.done():
+            return await lr_task.result()
 
-    return await lr_task.result()
+    assert False, "Copy folders failed!"
 
 
 async def test_copy_folders_from_non_existing_project(
