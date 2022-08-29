@@ -138,6 +138,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           });
           this.getMenu().add(control);
           break;
+        case "license":
+          control = new qx.ui.menu.Button(this.tr("License"));
+          control.addListener("execute", () => window.open(osparc.navigation.Manuals.getLicenseLink()));
+          this.getMenu().add(control);
+          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About"));
           control.addListener("execute", () => osparc.About.getInstance().open());
@@ -162,6 +167,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("quick-start");
       }
       this.getMenu().addSeparator();
+      this.getChildControl("license");
       this.getChildControl("about");
       this.getMenu().addSeparator();
       this.getChildControl("logout");
@@ -181,6 +187,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             this.getChildControl("quick-start");
           }
           this.getMenu().addSeparator();
+          this.getChildControl("license");
           this.getChildControl("about");
           this.getMenu().addSeparator();
           this.getChildControl("logout");
