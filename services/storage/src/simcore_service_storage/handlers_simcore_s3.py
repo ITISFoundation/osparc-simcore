@@ -7,7 +7,10 @@ from aiohttp.web import RouteTableDef
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.aiohttp.long_running_tasks.server import (
+    TaskProgress,
+    start_long_running_task,
+)
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -21,7 +24,6 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 # Exclusive for simcore-s3 storage -----------------------
 from . import sts
 from ._meta import api_vtag
-from .long_running_tasks import start_long_running_task
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -83,6 +85,7 @@ async def copy_folders_from_project(request: web.Request):
     return await start_long_running_task(
         request,
         _copy_folders_from_project,
+        task_context={},
         app=request.app,
         query_params=query_params,
         body=body,

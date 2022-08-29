@@ -26,16 +26,15 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskStatus
+from servicelib.aiohttp.long_running_tasks.client import (
+    LRTask,
+    long_running_task_request,
+)
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
-from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
@@ -93,44 +92,21 @@ async def _request_copy_folders(
         .url_for()
         .with_query(user_id=user_id)
     )
-    response = await client.post(
-        f"{url}",
+    lr_task: Optional[LRTask] = None
+    async for lr_task in long_running_task_request(
+        client,
+        url,
         json=jsonable_encoder(
             FoldersBody(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
             )
         ),
-    )
-    data, error = await assert_status(response, web.HTTPAccepted)
-    assert not error
-    assert data
-    task_get = parse_obj_as(TaskGet, data)
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-        before_sleep=lambda retry_state: print(
-            f"<-- Retrying in {retry_state.next_action.sleep} seconds as it raised: '{retry_state.outcome.exception()}'"
-        ),
     ):
-        with attempt:
-            response = await client.get(task_get.status_href)
-            data, error = await assert_status(response, web.HTTPOk)
-            assert data
-            assert not error
-            task_status = parse_obj_as(TaskStatus, data)
-            assert (
-                task_status.done
-            ), f"task is not complete yet: {task_status.task_progress=}"
-    response = await client.get(task_get.result_href)
-    data, error = await assert_status(response, expected_result)
-    if error:
-        assert not data
-    else:
-        assert data is not None
-    return data
+        print(f"<-- current state is {lr_task.progress=}")
+    assert lr_task
+    assert lr_task.result
+
+    return await lr_task.result()
 
 
 async def test_copy_folders_from_non_existing_project(
