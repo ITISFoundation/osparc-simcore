@@ -274,7 +274,7 @@ qx.Class.define("osparc.Application", {
             if (!osparc.CookiePolicy.areCookiesAccepted()) {
               const cookiePolicy = new osparc.CookiePolicy();
               const title = this.tr("Cookie Policy");
-              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 360, 140).set({
+              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, 180).set({
                 clickAwayClose: false,
                 resizable: false,
                 showClose: false
