@@ -12,6 +12,7 @@ import pytest
 from models_library.basic_regex import (
     DATE_RE,
     PUBLIC_VARIABLE_NAME_RE,
+    TWILIO_ALPHANUMERIC_SENDER_ID_RE,
     UUID_RE,
     VERSION_RE,
 )
@@ -148,3 +149,21 @@ def test_variable_names_regex(string_under_test, expected_match):
         assert variable_re.match(string_under_test)
     else:
         assert not variable_re.match(string_under_test)
+
+
+@pytest.mark.parametrize(
+    "sample, expected",
+    [
+        ("0123456789a", VALID),
+        ("A12b4567 9a", VALID),
+        ("01234567890", INVALID),  #  they may NOT be only numerals.
+        ("0123456789a1", INVALID),  # may be up to 11 characters long
+        ("0-23456789a", INVALID),  # '-' is invalid
+    ],
+)
+def test_TWILIO_ALPHANUMERIC_SENDER_ID_RE(sample, expected):
+    #   Alphanumeric Sender IDs may be up to 11 characters long.
+    #   Accepted characters include both upper- and lower-case Ascii letters,
+    #   the digits 0 through 9, and the space character.
+
+    assert_match_and_get_capture(TWILIO_ALPHANUMERIC_SENDER_ID_RE, sample, expected)
