@@ -5,7 +5,7 @@ from inspect import signature
 
 import pytest
 from simcore_service_dynamic_sidecar.core.validation import (
-    DEFAULT_BACKEND_NETWORK_NAME,
+    _DEFAULT_BACKEND_NETWORK_NAME,
     _inject_backend_networking,
     parse_compose_spec,
 )
@@ -104,12 +104,12 @@ def incoming_compose_file(
 def test_inject_backend_networking(incoming_compose_file: str):
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     _inject_backend_networking(parsed_compose_spec)
-    assert DEFAULT_BACKEND_NETWORK_NAME in parsed_compose_spec["networks"]
+    assert _DEFAULT_BACKEND_NETWORK_NAME in parsed_compose_spec["networks"]
     assert (
-        DEFAULT_BACKEND_NETWORK_NAME
+        _DEFAULT_BACKEND_NETWORK_NAME
         in parsed_compose_spec["services"]["iseg-app"]["networks"]
     )
     assert (
-        DEFAULT_BACKEND_NETWORK_NAME
+        _DEFAULT_BACKEND_NETWORK_NAME
         in parsed_compose_spec["services"]["iseg-web"]["networks"]
     )

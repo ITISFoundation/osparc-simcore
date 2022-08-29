@@ -125,7 +125,7 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-DEFAULT_BACKEND_NETWORK_NAME = "__backend__"
+_DEFAULT_BACKEND_NETWORK_NAME = "__backend__"
 
 
 def _inject_backend_networking(parsed_compose_spec: dict[str, Any]) -> None:
@@ -137,20 +137,20 @@ def _inject_backend_networking(parsed_compose_spec: dict[str, Any]) -> None:
 
     networks = parsed_compose_spec.setdefault("networks", {})
     if not networks:
-        parsed_compose_spec["networks"] = {DEFAULT_BACKEND_NETWORK_NAME: None}
+        parsed_compose_spec["networks"] = {_DEFAULT_BACKEND_NETWORK_NAME: None}
     else:
-        networks[DEFAULT_BACKEND_NETWORK_NAME] = None
+        networks[_DEFAULT_BACKEND_NETWORK_NAME] = None
 
     for service_content in parsed_compose_spec["services"].values():
         service_networks = service_content.setdefault("networks", [])
         if isinstance(service_networks, list):
-            service_networks.append(DEFAULT_BACKEND_NETWORK_NAME)
+            service_networks.append(_DEFAULT_BACKEND_NETWORK_NAME)
         elif not service_networks:
             # if network is set without entries
-            service_content["networks"] = [DEFAULT_BACKEND_NETWORK_NAME]
+            service_content["networks"] = [_DEFAULT_BACKEND_NETWORK_NAME]
         else:
             # if the network is set as a dictionary (rather non official but works)
-            service_networks[DEFAULT_BACKEND_NETWORK_NAME] = None
+            service_networks[_DEFAULT_BACKEND_NETWORK_NAME] = None
 
 
 def parse_compose_spec(compose_file_content: str) -> Any:
