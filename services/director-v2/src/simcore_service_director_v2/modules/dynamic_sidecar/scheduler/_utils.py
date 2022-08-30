@@ -200,9 +200,6 @@ async def save_and_remove_user_created_services(
         scheduler_data.service_name,
     )
 
-    # if a project network for the current project has no more
-    # containers attached to it (because the last service which
-    # was using it was removed), also removed the network
     used_projects_networks = await get_projects_networks_containers(
         project_id=scheduler_data.project_id
     )

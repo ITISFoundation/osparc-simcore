@@ -454,13 +454,18 @@ async def get_projects_networks_containers(
     return {x["Name"]: _count_containers(x) for x in filtered_networks}
 
 
-async def try_to_remove_network(network_name: str) -> None:
+async def try_to_remove_network(network_name: str) -> bool:
     async with docker_client() as client:
         network = await client.networks.get(network_name)
+
+        # if a project network for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
         try:
             return await network.delete()
         except aiodocker.exceptions.DockerError:
             log.warning("Could not remove network %s", network_name)
+            return False
 
 
 async def _update_service_spec(
