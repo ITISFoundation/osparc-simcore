@@ -8,6 +8,7 @@ RETRY_WAIT_SECS = 2
 MAX_CHUNK_SIZE = 1024
 MINUTE = 60
 
+
 APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY  # app-storage-key for config object
 
 # DSM locations
@@ -44,7 +45,7 @@ MAX_CONCURRENT_S3_TASKS: Final[int] = 4
 APP_OPENAPI_SPECS_KEY = (
     application_keys.APP_OPENAPI_SPECS_KEY
 )  # app-storage-key for openapi specs object
-
+MAX_CONCURRENT_REST_CALLS: Final[int] = 10
 
 # DATABASE ----------------------------
 APP_DB_ENGINE_KEY = f"{__name__}.db_engine"

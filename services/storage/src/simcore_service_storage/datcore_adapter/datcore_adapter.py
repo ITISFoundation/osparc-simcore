@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from math import ceil
-from typing import Any, Callable, Final, Optional, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 import aiohttp
 from aiohttp import web
@@ -12,7 +12,7 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
 from servicelib.utils import logged_gather
 
-from ..constants import DATCORE_ID, DATCORE_STR
+from ..constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
 from ..models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
@@ -20,8 +20,6 @@ from .datcore_adapter_exceptions import (
 )
 
 log = logging.getLogger(__file__)
-
-_MAX_CONCURRENT_REST_CALLS: Final[int] = 10
 
 
 class _DatcoreAdapterResponseError(DatcoreAdapterException):
@@ -146,7 +144,7 @@ async def list_all_datasets_files_metadatas(
             for d in all_datasets
         ),
         log=log,
-        max_concurrency=_MAX_CONCURRENT_REST_CALLS,
+        max_concurrency=MAX_CONCURRENT_REST_CALLS,
     )
     all_files_of_all_datasets: list[FileMetaData] = []
     for data in results:
