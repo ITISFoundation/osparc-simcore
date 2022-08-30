@@ -7,12 +7,10 @@ import asyncio
 import json
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Optional
-from uuid import UUID
+from typing import Any, Coroutine, Optional
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
-from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
@@ -98,7 +96,7 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    from_study: Optional[UUIDStr] = Field(
+    from_study: Optional[ProjectID] = Field(
         None,
         description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
@@ -142,14 +140,18 @@ async def create_projects(request: web.Request):
     )
 
 
-async def _init_project_from_request(
-    app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
-) -> tuple[ProjectDict, ProjectDict, NodesMap]:
-    if not query_params.from_study:
-        return {}, {}, {}
+async def _prepare_project_copy(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    src_project_uuid: ProjectID,
+    as_template: bool,
+    deep_copy: bool,
+    task_progress: TaskProgress,
+) -> tuple[ProjectDict, Optional[Coroutine[Any, Any, None]]]:
     source_project = await projects_api.get_project_for_user(
         app,
-        project_uuid=query_params.from_study,
+        project_uuid=f"{src_project_uuid}",
         user_id=user_id,
         include_templates=True,
     )
@@ -157,9 +159,7 @@ async def _init_project_from_request(
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
-        project_data_size = await get_project_total_size(
-            app, user_id, ProjectID(query_params.from_study)
-        )
+        project_data_size = await get_project_total_size(app, user_id, src_project_uuid)
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
                 reason=f"Source project data size is {project_data_size.human_readable()}."
@@ -171,35 +171,37 @@ async def _init_project_from_request(
     new_project, nodes_map = clone_project_document(
         source_project,
         forced_copy_project_id=None,
-        clean_output_data=(query_params.copy_data == False),
+        clean_output_data=(deep_copy == False),
     )
     # remove template/study access rights
     new_project["accessRights"] = {}
-    if not query_params.as_template:
+    if not as_template:
         new_project["name"] = default_copy_project_name(source_project["name"])
-    # the project is to be hidden until the data is copied
-    query_params.hidden = query_params.copy_data
 
-    return source_project, new_project, nodes_map
+    copy_file_coro = None
+    if deep_copy and len(nodes_map) > 0:
+        copy_file_coro = _copy_files_from_source_project(
+            app,
+            source_project,
+            new_project,
+            nodes_map,
+            user_id,
+            task_progress,
+        )
+    return new_project, copy_file_coro
 
 
 async def _copy_files_from_source_project(
     app: web.Application,
-    db: ProjectDBAPI,
-    query_params: _ProjectCreateParams,
     source_project: ProjectDict,
     new_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
     task_progress: TaskProgress,
-    progress_objective: float,
 ):
-    if not all([query_params.from_study, query_params.copy_data, len(nodes_map) > 0]):
-        return
-    assert query_params.from_study  # nosec
-
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     needs_lock_source_project: bool = (
-        await db.get_project_type(parse_obj_as(ProjectID, query_params.from_study))
+        await db.get_project_type(parse_obj_as(ProjectID, source_project["uuid"]))
         != ProjectTypeDB.TEMPLATE
     )
 
@@ -208,7 +210,7 @@ async def _copy_files_from_source_project(
             await stack.enter_async_context(
                 projects_api.lock_with_notification(
                     app,
-                    query_params.from_study,
+                    source_project["uuid"],
                     ProjectStatus.CLONING,
                     user_id,
                     await get_user_name(app, user_id),
@@ -222,8 +224,7 @@ async def _copy_files_from_source_project(
                 message=long_running_task.progress.message,
                 percent=(
                     starting_value
-                    + long_running_task.progress.percent
-                    * (progress_objective - starting_value)
+                    + long_running_task.progress.percent * (1.0 - starting_value)
                 ),
             )
             if long_running_task.done():
@@ -247,71 +248,62 @@ async def _create_projects(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = {}
+    copy_file_coro = None
     try:
-        task_progress.update(message="cloning project scaffold", percent=0)
+        task_progress.update(message="creating project document")
         new_project_was_hidden_before_data_was_copied = query_params.hidden
+        if query_params.from_study:
+            # 1. prepare copy
+            new_project, copy_file_coro = await _prepare_project_copy(
+                app,
+                user_id=user_id,
+                src_project_uuid=query_params.from_study,
+                as_template=query_params.as_template,
+                deep_copy=query_params.copy_data,
+                task_progress=task_progress,
+            )
 
-        source_project, new_project, nodes_map = await _init_project_from_request(
-            app, query_params, user_id
-        )
-
-        # overrides with body
         if predefined_project:
+            # 2. overrides with optional body and re-validate
             if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
-                    non_null_value = predefined_project.get(key)
-                    if non_null_value:
+                    if non_null_value := predefined_project.get(key):
                         new_project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
                 new_project = predefined_project
-
-            # re-validate data
-            task_progress.update(message="validating project scaffold", percent=0.1)
             await projects_api.validate_project(app, new_project)
 
-        # update metadata (uuid, timestamps, ownership) and save
-        task_progress.update(message="storing project scaffold", percent=0.15)
+        # 3. save new project in DB
         new_project = await db.add_project(
             new_project,
             user_id,
             force_as_template=query_params.as_template,
-            hidden=query_params.hidden,
+            hidden=query_params.copy_data,
         )
 
-        # copies the project's DATA IF cloned
-        task_progress.update(message="copying project data", percent=0.2)
-        await _copy_files_from_source_project(
-            app,
-            db,
-            query_params,
-            source_project,
-            new_project,
-            nodes_map,
-            user_id,
-            task_progress,
-            progress_objective=0.9,
-        )
-        # unhide the project if needed since it is now complete
+        # 4. deep copy source project's files
+        if copy_file_coro:
+            # NOTE: storage needs to have access to the new project prior to copying files
+            await copy_file_coro
+
+        # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
             await db.update_project_without_checking_permissions(
                 new_project, new_project["uuid"], hidden=False
             )
 
         # update the network information in director-v2
-        task_progress.update(message="updating project network", percent=0.9)
         await director_v2_api.update_dynamic_service_networks_in_project(
-            app, UUID(new_project["uuid"])
+            app, ProjectID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        task_progress.update(message="updating project pipeline", percent=0.95)
         await director_v2_api.create_or_update_pipeline(
             app, user_id, new_project["uuid"]
         )
 
         # Appends state
-        task_progress.update(message="retrieving project status", percent=0.99)
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
@@ -319,7 +311,6 @@ async def _create_projects(
             app=app,
         )
 
-        log.debug("project created successfuly")
         raise web.HTTPCreated(
             text=json_dumps({"data": new_project}),
             content_type=MIMETYPE_APPLICATION_JSON,
