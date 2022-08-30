@@ -91,7 +91,7 @@ async def _apply_observation_cycle(
         )
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
-            can_save=scheduler_data.dynamic_sidecar.can_save_state,
+            can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
         )
     await get_dynamic_sidecar_service_health(app, scheduler_data)
 

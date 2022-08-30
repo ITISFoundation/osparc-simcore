@@ -143,7 +143,8 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    run_id: UUID = Field(  # LOCKED_IN
+    # IMMUTABLE - placed in the wrong place
+    run_id: UUID = Field(
         default_factory=uuid4,
         description=(
             "Used to discriminate between dynamic-sidecar docker resources "
@@ -152,17 +153,23 @@ class DynamicSidecar(BaseModel):
             "For now used by anonymous volumes involved in data sharing"
         ),
     )
+    hostname: str = Field(..., description="docker hostname for this service")
+
+    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
+
+    @property
+    def endpoint(self) -> AnyHttpUrl:
+        """endpoint where all the services are exposed"""
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
+
+    # MUTABLE
 
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
     )
-
-    hostname: str = Field(
-        ..., description="docker hostname for this service"
-    )  # LOCKED_IN
-
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")  # LOCKED_IN
 
     is_available: bool = Field(
         False,
@@ -253,23 +260,7 @@ class DynamicSidecar(BaseModel):
         None, description="used for starting the proxy"
     )
 
-    @property
-    def can_save_state(self) -> bool:
-        """
-        Keeps track of the current state of the application, if it was starte successfully
-        the state of the service can be saved when stopping the service
-        """
-        # TODO: implement when adding save status hooks
-        return False
-
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
-
-    @property
-    def endpoint(self) -> AnyHttpUrl:  # LOCKED_IN
-        """endpoint where all the services are exposed"""
-        return parse_obj_as(
-            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
-        )
 
     @property
     def are_containers_ready(self) -> bool:
