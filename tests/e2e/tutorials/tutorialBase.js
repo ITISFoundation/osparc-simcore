@@ -117,6 +117,12 @@ class TutorialBase {
     }
   }
 
+  async closeQuickStart() {
+    await this.takeScreenshot("preCloseQuickStart");
+    await auto.closeQuickStart(this.__page);
+    await this.takeScreenshot("postCloseQuickStart");
+  }
+
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);
