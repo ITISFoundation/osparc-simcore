@@ -141,6 +141,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
       const text1 = "<a href=https://www.youtube.com/watch?v=dQw4w9WgXcQ style='color: white' target='_blank'>Youtube video</a>";
       const link1 = new qx.ui.basic.Label(text1).set({
+        visibility: "excluded", // remove this when the video is available
         allowGrowX: true,
         textAlign: "center",
         rich : true
@@ -167,7 +168,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         flex: 1
       });
 
-      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>License</a>";
+      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
       const link3 = new qx.ui.basic.Label(text3).set({
         allowGrowX: true,
         textAlign: "center",
