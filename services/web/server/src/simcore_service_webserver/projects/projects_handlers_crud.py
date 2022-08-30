@@ -130,7 +130,7 @@ async def create_projects(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    return start_long_running_task(
+    return await start_long_running_task(
         request,
         _create_projects,
         task_context=jsonable_encoder(req_ctx),
