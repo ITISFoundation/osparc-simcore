@@ -179,7 +179,7 @@ async def register_phone(request: web.Request):
             code=code,
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
-            product_display_name=product.display_name,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             user_name=_get_user_name(email),
         )
 
@@ -311,7 +311,7 @@ async def login(request: web.Request):
                 code=code,
                 twilo_auth=settings.LOGIN_TWILIO,
                 twilio_messaging_sid=product.twilio_messaging_sid,
-                product_display_name=product.display_name,
+                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
                 user_name=user["name"],
             )
 

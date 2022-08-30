@@ -28,6 +28,15 @@ products = sa.Table(
         doc="Human readable name of the product or display name",
     ),
     sa.Column(
+        "short_name",
+        sa.String,
+        nullable=False,
+        server_default="osparc",
+        doc="Alphanumeric name up to 11 characters long with characters "
+        "include both upper- and lower-case Ascii letters, the digits 0 through 9, "
+        "and the space character. They may not be only numerals.",
+    ),
+    sa.Column(
         "host_regex",
         sa.String,
         nullable=False,
