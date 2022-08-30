@@ -14,6 +14,7 @@ from typing import (
     Iterator,
     Mapping,
 )
+from uuid import UUID
 
 import pytest
 import respx
@@ -76,7 +77,13 @@ def dynamic_sidecar_port() -> int:
 
 
 @pytest.fixture
+def run_id(faker: Faker) -> UUID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
+    run_id: UUID,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
@@ -85,6 +92,7 @@ def scheduler_data_from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
         port=dynamic_sidecar_port,
+        run_id=run_id,
     )
 
 

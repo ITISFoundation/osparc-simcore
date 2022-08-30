@@ -73,11 +73,11 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 def mock_containers_docker_status(
     scheduler_data: SchedulerData,
 ) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(httpx.Response(200, json={}))

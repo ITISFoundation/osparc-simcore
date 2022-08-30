@@ -179,12 +179,12 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        scheduler_data.docker_node_id = await get_service_placement(
+        scheduler_data.dynamic_sidecar.docker_node_id = await get_service_placement(
             dynamic_sidecar_id, dynamic_sidecar_settings
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
-            node_id=scheduler_data.docker_node_id,
+            node_id=scheduler_data.dynamic_sidecar.docker_node_id,
         )
 
         # update service_port and assing it to the status
@@ -221,7 +221,7 @@ class GetStatus(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         try:
             containers_inspect: dict[
@@ -273,7 +273,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -322,10 +322,10 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
-            assert scheduler_data.docker_node_id  # nosec
+            assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
             try:
                 async with node_rights_manager.acquire(
-                    scheduler_data.docker_node_id,
+                    scheduler_data.dynamic_sidecar.docker_node_id,
                     resource_name=RESOURCE_STATE_AND_INPUTS,
                 ):
                     await _pull_outputs_and_state()
@@ -334,7 +334,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 logger.debug(
                     "Skip saving service state for %s. Docker node %s is busy. Will try later.",
                     scheduler_data.node_uuid,
-                    scheduler_data.docker_node_id,
+                    scheduler_data.dynamic_sidecar.docker_node_id,
                 )
                 return
         else:
@@ -365,7 +365,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
@@ -489,7 +489,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
         logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         projects_networks_repository: ProjectsNetworksRepository = cast(
             ProjectsNetworksRepository,

@@ -70,18 +70,18 @@ def _mock_containers_docker_status(
     else:
         mocked_params["side_effect"] = expected_response
 
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(**mocked_params)
 
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/health"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/health"
             ),
             name="health",
         ).respond(json=dict(is_healthy=True, error=None))
@@ -196,7 +196,7 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 
 @pytest.fixture
 def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(get_url(service_endpoint, "/health"), name="is_healthy").respond(
             json=dict(is_healthy=True)

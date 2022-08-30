@@ -94,11 +94,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def run_id(scheduler_data: SchedulerData) -> UUID:
-    return scheduler_data.dynamic_sidecar.run_id
-
-
-@pytest.fixture
 def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -114,16 +109,15 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     '["DISPLAY=${DISPLAY}"], "volumes": '
                     '["/tmp/.X11-unix:/tmp/.X11-unix"]}}}',
                     "container_http_entry": "rt-web",
-                    "docker_node_id": None,
+                    "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "port": 1222,
+                    "run_id": f"{run_id}",
                     "dynamic_sidecar": {
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
                         "dynamic_sidecar_network_id": None,
-                        "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                         "is_available": False,
                         "is_project_network_attached": False,
-                        "port": 1222,
-                        "run_id": f"{run_id}",
                         "service_environment_prepared": False,
                         "service_removal_state": {
                             "can_remove": False,
@@ -133,6 +127,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "status": {"current": "ok", "info": ""},
                         "swarm_network_id": None,
                         "swarm_network_name": None,
+                        "docker_node_id": None,
                         "was_compose_spec_submitted": False,
                         "was_dynamic_sidecar_started": False,
                         "were_containers_created": False,

@@ -242,7 +242,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             docker_statuses: Optional[
                 dict[str, dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+                dynamic_sidecar_endpoint=scheduler_data.endpoint
             )
         except ClientHttpError:
             # error fetching docker_statues, probably someone should check
@@ -283,7 +283,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
@@ -312,7 +312,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         await dynamic_sidecar_client.attach_service_containers_to_project_network(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_endpoint=scheduler_data.endpoint,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             project_network=project_network,
             project_id=scheduler_data.project_id,
@@ -333,7 +333,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         await dynamic_sidecar_client.detach_service_containers_from_project_network(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_endpoint=scheduler_data.endpoint,
             project_network=project_network,
             project_id=scheduler_data.project_id,
         )
@@ -350,9 +350,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             self.app
         )
 
-        await dynamic_sidecar_client.restart_containers(
-            scheduler_data.dynamic_sidecar.endpoint
-        )
+        await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)
 
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)

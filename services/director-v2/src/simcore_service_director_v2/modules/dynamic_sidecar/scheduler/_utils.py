@@ -103,7 +103,7 @@ async def save_and_remove_user_created_services(
 
     async def _remove_containers_save_state_and_outputs() -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
 
         try:
             await dynamic_sidecar_client.stop_service(dynamic_sidecar_endpoint)
@@ -169,10 +169,10 @@ async def save_and_remove_user_created_services(
 
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
         node_rights_manager = NodeRightsManager.instance(app)
-        assert scheduler_data.docker_node_id  # nosec
+        assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
         try:
             async with node_rights_manager.acquire(
-                scheduler_data.docker_node_id,
+                scheduler_data.dynamic_sidecar.docker_node_id,
                 resource_name=RESOURCE_STATE_AND_INPUTS,
             ):
                 await _remove_containers_save_state_and_outputs()
@@ -181,7 +181,7 @@ async def save_and_remove_user_created_services(
             logger.debug(
                 "Skip saving service state for %s. Docker node %s is busy. Will try later.",
                 scheduler_data.node_uuid,
-                scheduler_data.docker_node_id,
+                scheduler_data.dynamic_sidecar.docker_node_id,
             )
             return
     else:

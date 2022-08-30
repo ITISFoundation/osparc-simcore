@@ -143,29 +143,6 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    # IMMUTABLE - placed in the wrong place
-    run_id: UUID = Field(
-        default_factory=uuid4,
-        description=(
-            "Used to discriminate between dynamic-sidecar docker resources "
-            "generated during different runs. Sometimes artifacts remain in the"
-            "system after an error. This helps avoiding collisions."
-            "For now used by anonymous volumes involved in data sharing"
-        ),
-    )
-    hostname: str = Field(..., description="docker hostname for this service")
-
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
-
-    @property
-    def endpoint(self) -> AnyHttpUrl:
-        """endpoint where all the services are exposed"""
-        return parse_obj_as(
-            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
-        )
-
-    # MUTABLE
-
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
@@ -260,15 +237,16 @@ class DynamicSidecar(BaseModel):
         None, description="used for starting the proxy"
     )
 
-    # consider adding containers for healthchecks but this is more difficult and it depends on each service
+    docker_node_id: Optional[str] = Field(
+        None,
+        description=(
+            "contains node id of the docker node where all services "
+            "and created containers are started"
+        ),
+    )
 
-    @property
-    def are_containers_ready(self) -> bool:
-        """returns: True if all containers are in running state"""
-        return all(
-            docker_container_inspect.status == DockerStatus.RUNNING
-            for docker_container_inspect in self.containers_inspect
-        )
+    class Config:
+        validate_assignment = True
 
 
 class DynamicSidecarNames(BaseModel):
@@ -327,6 +305,24 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ...,
         description="Name of the current dynamic-sidecar being observed",
     )
+    run_id: UUID = Field(
+        default_factory=uuid4,
+        description=(
+            "Used to discriminate between dynamic-sidecar docker resources "
+            "generated during different runs. Sometimes artifacts remain in the"
+            "system after an error. This helps avoiding collisions."
+            "For now used by anonymous volumes involved in data sharing"
+        ),
+    )
+    hostname: str = Field(..., description="docker hostname for this service")
+    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
+
+    @property
+    def endpoint(self) -> AnyHttpUrl:
+        """endpoint where all the services are exposed"""
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
@@ -358,22 +354,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ..., description="service resources used to enforce limits"
     )
 
-    request_dns: Optional[str] = Field(
+    request_dns: str = Field(
         None, description="used when configuring the CORS options on the proxy"
     )
-    request_scheme: Optional[str] = Field(
+    request_scheme: str = Field(
         None, description="used when configuring the CORS options on the proxy"
     )
-    proxy_service_name: Optional[str] = Field(
-        None, description="service name given to the proxy"
-    )
-    docker_node_id: Optional[str] = Field(
-        None,
-        description=(
-            "contains node id of the docker node where all services "
-            "and created containers are started"
-        ),
-    )
+    proxy_service_name: str = Field(None, description="service name given to the proxy")
 
     @classmethod
     def from_http_request(
@@ -384,11 +371,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         port: Optional[int],
         request_dns: Optional[str] = None,
         request_scheme: Optional[str] = None,
+        run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
         dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
 
         obj_dict = dict(
             service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
+            hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
+            port=port,
             node_uuid=service.node_uuid,
             project_id=service.project_id,
             user_id=service.user_id,
@@ -404,11 +394,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_dns=request_dns,
             request_scheme=request_scheme,
             proxy_service_name=dynamic_sidecar_names.proxy_service_name,
-            dynamic_sidecar=dict(
-                hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
-                port=port,
-            ),
+            dynamic_sidecar={},
         )
+        if run_id:
+            obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)
 
     @classmethod

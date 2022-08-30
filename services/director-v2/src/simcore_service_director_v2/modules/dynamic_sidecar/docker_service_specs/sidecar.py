@@ -46,7 +46,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
-        "DY_SIDECAR_RUN_ID": f"{scheduler_data.dynamic_sidecar.run_id}",
+        "DY_SIDECAR_RUN_ID": f"{scheduler_data.run_id}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
@@ -130,7 +130,7 @@ def get_dynamic_sidecar_spec(
                 compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
-                run_id=scheduler_data.dynamic_sidecar.run_id,
+                run_id=scheduler_data.run_id,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -144,7 +144,7 @@ def get_dynamic_sidecar_spec(
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.dynamic_sidecar.run_id,
+                    run_id=scheduler_data.run_id,
                     r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
@@ -155,7 +155,7 @@ def get_dynamic_sidecar_spec(
                     compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.dynamic_sidecar.run_id,
+                    run_id=scheduler_data.run_id,
                 )
             )
 
