@@ -195,6 +195,11 @@ async def save_and_remove_user_created_services(
     # remove network
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
+
+    # NOTE: when adding volume removal, check that:
+    # `scheduler_data.dynamic_sidecar.was_data_saved_when_closing` was
+    # set to True before removing data otherwise do nothing
+
     logger.debug(
         "Removed dynamic-sidecar created services for '%s'",
         scheduler_data.service_name,
