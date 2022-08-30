@@ -191,11 +191,10 @@ async def _copy_files_from_source_project(
     new_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
-    new_project_was_hidden_before_data_was_copied: bool,
     task_progress: TaskProgress,
     progress_objective: float,
 ):
-    if not all([query_params.from_study, query_params.copy_data]):
+    if not all([query_params.from_study, query_params.copy_data, len(nodes_map) > 0]):
         return
     assert query_params.from_study  # nosec
 
@@ -219,7 +218,6 @@ async def _copy_files_from_source_project(
         async for long_running_task in copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
         ):
-
             task_progress.update(
                 message=long_running_task.progress.message,
                 percent=(
@@ -230,12 +228,6 @@ async def _copy_files_from_source_project(
             )
             if long_running_task.done():
                 await long_running_task.result()
-
-    # unhide the project if needed since it is now complete
-    if not new_project_was_hidden_before_data_was_copied:
-        await db.update_project_without_checking_permissions(
-            new_project, new_project["uuid"], hidden=False
-        )
 
 
 async def _create_projects(
@@ -297,10 +289,14 @@ async def _create_projects(
             new_project,
             nodes_map,
             user_id,
-            new_project_was_hidden_before_data_was_copied,
             task_progress,
             progress_objective=0.9,
         )
+        # unhide the project if needed since it is now complete
+        if not new_project_was_hidden_before_data_was_copied:
+            await db.update_project_without_checking_permissions(
+                new_project, new_project["uuid"], hidden=False
+            )
 
         # update the network information in director-v2
         task_progress.update(message="updating project network", percent=0.9)
