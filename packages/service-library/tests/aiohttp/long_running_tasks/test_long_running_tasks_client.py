@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 from typing import Callable, Optional
@@ -6,8 +7,10 @@ from typing import Callable, Optional
 import pytest
 from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp.long_running_tasks import client as lr_client
 from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
     long_running_task_request,
@@ -59,15 +62,23 @@ async def test_long_running_task_request_raises_400(
             ...
 
 
+@pytest.fixture
+def short_poll_interval(monkeypatch: MonkeyPatch):
+    monkeypatch.setattr(
+        lr_client,
+        "_DEFAULT_POLL_INTERVAL_S",
+        0.01,
+    )
+
+
 async def test_long_running_task_request(
-    client: TestClient, long_running_task_url: URL
+    short_poll_interval, client: TestClient, long_running_task_url: URL
 ):
     task: Optional[LRTask] = None
     async for task in long_running_task_request(
         client.session,
         long_running_task_url.with_query(num_strings=10, sleep_time=0.1),
         json=None,
-        wait_interval_s=0.01,
     ):
         print(f"<-- received {task=}")
         if task.done():
@@ -86,8 +97,7 @@ async def test_long_running_task_request_timeout(
             client.session,
             long_running_task_url.with_query(num_strings=10, sleep_time=1),
             json=None,
-            wait_interval_s=0.5,
-            wait_timeout_s=2,
+            client_timeout=2,
         ):
             print(f"<-- received {task=}")
 
@@ -110,7 +120,6 @@ async def test_long_running_task_request_error(
             num_strings=10, sleep_time=0.1, fail=f"{True}"
         ),
         json=None,
-        wait_interval_s=0.01,
     ):
         print(f"<-- received {task=}")
     assert task is not None

@@ -8,7 +8,7 @@ from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed, wait_random_exponential
+from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..rest_responses import unwrap_envelope
@@ -18,8 +18,7 @@ RequestBody = Json
 
 _MINUTE: Final[int] = 60
 _HOUR: Final[int] = 60 * _MINUTE
-
-
+_DEFAULT_POLL_INTERVAL_S: Final[float] = 1
 _DEFAULT_AIOHTTP_RETRY_POLICY = dict(
     retry=retry_if_exception_type(ClientConnectionError),
     wait=wait_random_exponential(max=20),
@@ -47,11 +46,10 @@ async def _wait_for_completion(
     task_id: TaskId,
     status_url: URL,
     wait_timeout_s: int,
-    wait_interval_s: float,
 ) -> AsyncGenerator[TaskProgress, None]:
     try:
+
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(wait_interval_s),
             stop=stop_after_delay(wait_timeout_s),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
@@ -65,6 +63,13 @@ async def _wait_for_completion(
                 task_status = TaskStatus.parse_obj(data)
                 yield task_status.task_progress
                 if not task_status.done:
+                    await asyncio.sleep(
+                        float(
+                            response.headers.get(
+                                "retry-after", _DEFAULT_POLL_INTERVAL_S
+                            )
+                        )
+                    )
                     raise TryAgain(
                         f"{task_id=}, {task_status.started=} has "
                         f"status: '{task_status.task_progress.message}'"
@@ -115,27 +120,14 @@ async def long_running_task_request(
     session: ClientSession,
     url: URL,
     json: Optional[RequestBody] = None,
-    wait_timeout_s: int = 1 * _HOUR,
-    wait_interval_s: float = 1,
+    client_timeout: int = 1 * _HOUR,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `ClientSession` to call an oSparc long
     running task `url` passing `json` as request body.
     NOTE: this follows the usual aiohttp client syntax, and will raise the same errors
 
-    :param session: The client to use
-    :type session: ClientSession
-    :param url: The url to call. NOTE: the endpoint must follow oSparc long running task server syntax (202, then status, result urls)
-    :type url: URL
-    :param json: optional body as dictionary, defaults to None
-    :type json: Optional[RequestBody], optional
-    :param wait_timeout_s: after this timeout is reached and no result is ready will raise asyncio.TimeoutError, defaults to 1*_HOUR
-    :type wait_timeout_s: int, optional
-    :param wait_interval_s: will check for result every `wait_interval` seconds, defaults to 1
-    :type wait_interval_s: float, optional
-    :return: a task containing the final result
-    :rtype: AsyncGenerator[LRTask, None]
-    :yield: a task containing the current TaskProgress
-    :rtype: Iterator[AsyncGenerator[LRTask, None]]
+    Raises:
+        [https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions]
     """
     task = None
     try:
@@ -145,8 +137,7 @@ async def long_running_task_request(
             session,
             task.task_id,
             url.with_path(task.status_href, encoded=True),
-            wait_timeout_s,
-            wait_interval_s,
+            client_timeout,
         ):
             last_progress = task_progress
             yield LRTask(progress=task_progress)
