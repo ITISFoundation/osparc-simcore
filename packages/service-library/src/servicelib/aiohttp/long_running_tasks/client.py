@@ -8,7 +8,7 @@ from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
+from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
 from ..rest_responses import unwrap_envelope
@@ -16,12 +16,19 @@ from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
 RequestBody = Json
 
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
 
-@retry(
+
+_DEFAULT_AIOHTTP_RETRY_POLICY = dict(
     retry=retry_if_exception_type(ClientConnectionError),
-    wait=wait_exponential(min=1, max=10),
+    wait=wait_random_exponential(max=20),
+    stop=stop_after_delay(30),
     reraise=True,
 )
+
+
+@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _start(
     session: ClientSession, request: URL, json: Optional[RequestBody]
 ) -> TaskGet:
@@ -68,11 +75,7 @@ async def _wait_for_completion(
         ) from exc
 
 
-@retry(
-    retry=retry_if_exception_type(ClientConnectionError),
-    wait=wait_exponential(min=1, max=10),
-    reraise=True,
-)
+@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _task_result(session: ClientSession, result_href: str) -> Any:
     async with session.get(result_href) as response:
         response.raise_for_status()
@@ -83,21 +86,13 @@ async def _task_result(session: ClientSession, result_href: str) -> Any:
             return data
 
 
-@retry(
-    retry=retry_if_exception_type(ClientConnectionError),
-    wait=wait_exponential(min=1, max=10),
-    reraise=True,
-)
+@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _abort_task(session: ClientSession, abort_href: str) -> None:
     async with session.delete(abort_href) as response:
         response.raise_for_status()
         data, error = unwrap_envelope(await response.json())
         assert not error  # nosec
         assert not data  # nosec
-
-
-_MINUTE: Final[int] = 60
-_HOUR: Final[int] = 60 * _MINUTE
 
 
 @dataclass(frozen=True)
