@@ -13,7 +13,7 @@ from typing import Any, Awaitable, Callable, Optional
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
+from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
 from faker import Faker
@@ -81,7 +81,6 @@ async def _request_copy_folders(
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
-    expected_result: type[web.HTTPException],
 ) -> dict[str, Any]:
     assert client.app
     url = (
@@ -121,23 +120,29 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    await _request_copy_folders(
-        client,
-        user_id,
-        incorrect_src_project,
-        dst_project,
-        nodes_map={},
-        expected_result=web.HTTPNotFound,
-    )
+    with pytest.raises(
+        ClientResponseError, match=f"{incorrect_src_project['uuid']} was not found"
+    ) as exc_info:
+        await _request_copy_folders(
+            client,
+            user_id,
+            incorrect_src_project,
+            dst_project,
+            nodes_map={},
+        )
+    assert exc_info.value.status == web.HTTPNotFound.status_code
 
-    await _request_copy_folders(
-        client,
-        user_id,
-        src_project,
-        incorrect_dst_project,
-        nodes_map={},
-        expected_result=web.HTTPNotFound,
-    )
+    with pytest.raises(
+        ClientResponseError, match=f"{incorrect_dst_project['uuid']} was not found"
+    ) as exc_info:
+        await _request_copy_folders(
+            client,
+            user_id,
+            src_project,
+            incorrect_dst_project,
+            nodes_map={},
+        )
+    assert exc_info.value.status == web.HTTPNotFound.status_code
 
 
 async def test_copy_folders_from_empty_project(
@@ -157,7 +162,6 @@ async def test_copy_folders_from_empty_project(
         src_project,
         dst_project,
         nodes_map={},
-        expected_result=web.HTTPCreated,
     )
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
@@ -264,7 +268,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         src_project,
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-        expected_result=web.HTTPCreated,
     )
     assert data == jsonable_encoder(
         await _get_updated_project(aiopg_engine, dst_project["uuid"])
@@ -309,7 +312,6 @@ async def test_copy_folders_from_valid_project(
         src_project,
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-        expected_result=web.HTTPCreated,
     )
     assert data == jsonable_encoder(
         await _get_updated_project(aiopg_engine, dst_project["uuid"])
@@ -359,7 +361,6 @@ async def _create_and_delete_folders_from_project(
         project,
         destination_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-        expected_result=web.HTTPCreated,
     )
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
