@@ -106,7 +106,6 @@ async def docker_compose_create(
     (Re)creates, starts, and attaches to containers for a service
 
     - does NOT build images
-    - runs in DETACHED mode, i.e. runs containers in the background, prints new container names
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """

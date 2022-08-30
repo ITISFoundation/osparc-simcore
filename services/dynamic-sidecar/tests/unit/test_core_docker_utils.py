@@ -1,14 +1,21 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import AsyncIterable
+from typing import AsyncIterable, AsyncIterator
 from uuid import UUID
 
 import aiodocker
 import pytest
+from _pytest.fixtures import FixtureRequest
 from faker import Faker
-from simcore_service_dynamic_sidecar.core.docker_utils import get_volume_by_label
+from pydantic import PositiveInt
+from simcore_service_dynamic_sidecar.core.docker_utils import (
+    get_user_service_container_count,
+    get_volume_by_label,
+)
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
+
+# FIXTURES
 
 
 @pytest.fixture(scope="session")
@@ -39,16 +46,54 @@ async def volume_with_label(volume_name: str, run_id: str) -> AsyncIterable[None
         await volume.delete()
 
 
+@pytest.fixture(params=[0, 1, 2, 3])
+def container_count(request: FixtureRequest) -> PositiveInt:
+    return request.param
+
+
+@pytest.fixture
+def container_names(container_count: PositiveInt) -> list[str]:
+    return [f"container_test_{i}" for i in range(container_count)]
+
+
+@pytest.fixture
+async def started_services(container_names: list[str]) -> AsyncIterator[None]:
+    async with aiodocker.Docker() as docker_client:
+        started_containers = []
+        for container_name in container_names:
+            container = await docker_client.containers.create(
+                config={"Image": "busybox:latest"},
+                name=container_name,
+            )
+            started_containers.append(container)
+
+        yield
+
+        for container in started_containers:
+            await container.stop()
+            await container.delete()
+
+
+# TESTS
+
+
 async def test_volume_with_label(
     volume_with_label: None, volume_name: str, run_id: UUID
-) -> None:
+):
     assert await get_volume_by_label(volume_name, run_id)
 
 
-async def test_volume_label_missing(run_id: UUID) -> None:
+async def test_volume_label_missing(run_id: UUID):
     with pytest.raises(VolumeNotFoundError) as exc_info:
         await get_volume_by_label("not_exist", run_id)
 
     error_msg = f"{exc_info.value}"
     assert f"{run_id}" in error_msg
     assert "not_exist" in error_msg
+
+
+async def test_get_user_service_container_count(
+    started_services: None, container_names: list[str], container_count: PositiveInt
+):
+    found_containers = await get_user_service_container_count(container_names)
+    assert found_containers == container_count
