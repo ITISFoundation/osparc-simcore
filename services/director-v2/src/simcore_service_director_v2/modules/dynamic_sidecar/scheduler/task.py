@@ -16,6 +16,7 @@ import logging
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
+from math import floor
 from typing import Optional
 from uuid import UUID
 
@@ -23,7 +24,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, PositiveInt
 from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
@@ -109,6 +110,14 @@ async def _apply_observation_cycle(
         )
 
 
+def _get_30_second_modulo_divisor(wait_interval: float) -> PositiveInt:
+    """
+    returns a divisor to figure out if 30 seconds have
+    passed based on the cycle count
+    """
+    return max(1, int(floor(30 / wait_interval)))
+
+
 ServiceName = str
 
 
@@ -173,10 +182,10 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
-    async def finish_service_removal(self, node_uuid: NodeID) -> None:
+    async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
         """
         directly invoked from RemoveMarkedService once it's finished
-        removes the service from the observation cycle
+        and removes the service from the observation cycle
         """
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
@@ -355,6 +364,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
+        dynamic_scheduler: DynamicServicesSchedulerSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
 
         async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
@@ -379,11 +391,15 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                     # After manual intervention service can now be removed
                     # from tracking.
+
+                    modulo_divisor = _get_30_second_modulo_divisor(
+                        dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+                    )
                     if (
                         # trigger every ~30 seconds to reduce pressure on
                         # docker swarm engine API.
                         # NOTE: do not change below order
-                        self._observation_counter % 6 == 0
+                        self._observation_counter % modulo_divisor == 0
                         and await is_dynamic_sidecar_stack_missing(
                             scheduler_data.node_uuid, dynamic_sidecar_settings
                         )

@@ -211,7 +211,7 @@ async def save_and_remove_user_created_services(
         ]
     )
 
-    await app.state.dynamic_sidecar_scheduler.finish_service_removal(
+    await app.state.dynamic_sidecar_scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()

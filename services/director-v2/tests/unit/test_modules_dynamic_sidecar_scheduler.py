@@ -110,7 +110,7 @@ async def _assert_get_dynamic_services_mocked(
 
         await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
         assert scheduler_data.service_name in scheduler._to_observe
-        await scheduler.finish_service_removal(scheduler_data.node_uuid)
+        await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
         assert scheduler_data.service_name not in scheduler._to_observe
 
 
@@ -274,7 +274,7 @@ async def test_scheduler_add_remove(
 
     await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
     assert scheduler_data.service_name in scheduler._to_observe
-    await scheduler.finish_service_removal(scheduler_data.node_uuid)
+    await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
     assert scheduler_data.service_name not in scheduler._to_observe
 
 
