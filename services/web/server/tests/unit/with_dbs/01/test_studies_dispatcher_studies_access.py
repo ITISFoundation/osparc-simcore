@@ -12,17 +12,20 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import AsyncIterator, Callable, Dict
+from typing import AsyncIterator, Callable
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from servicelib.aiohttp.long_running_tasks.client import LRTask
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
@@ -92,7 +95,7 @@ def app_cfg(
 @pytest.fixture
 async def published_project(
     client, fake_project, tests_data_dir: Path
-) -> AsyncIterator[Dict]:
+) -> AsyncIterator[dict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
@@ -143,20 +146,18 @@ async def _get_user_projects(client):
     return projects
 
 
-def _assert_same_projects(got: Dict, expected: Dict):
+def _assert_same_projects(got: dict, expected: dict):
     # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # TODO: validate workbench!
-    exclude = set(
-        [
-            "creationDate",
-            "lastChangeDate",
-            "prjOwner",
-            "uuid",
-            "workbench",
-            "accessRights",
-            "ui",
-        ]
-    )
+    exclude = {
+        "creationDate",
+        "lastChangeDate",
+        "prjOwner",
+        "uuid",
+        "workbench",
+        "accessRights",
+        "ui",
+    }
     for key in expected.keys():
         if key not in exclude:
             assert got[key] == expected[key], "Failed in %s" % key
@@ -221,7 +222,7 @@ def mocks_on_projects_api(mocker) -> None:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(storage_subsystem_mock, mocker):
+async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
     """
     Mocks functions that require storage client
     """
@@ -230,7 +231,8 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker):
 
     # Mocks copy_data_folders_from_project BUT under studies_access
     mock = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project"
+        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project",
+        autospec=True,
     )
 
     async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
@@ -238,7 +240,16 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker):
             f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
-        return dst_prj
+
+        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+
+        async def _mock_result():
+            return None
+
+        yield LRTask(
+            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            _result=_mock_result(),
+        )
 
     mock.side_effect = _mock_copy_data_from_project
 
