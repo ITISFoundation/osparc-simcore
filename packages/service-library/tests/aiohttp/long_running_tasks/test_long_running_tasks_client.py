@@ -13,6 +13,7 @@ from servicelib.aiohttp.long_running_tasks.client import (
     long_running_task_request,
 )
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from yarl import URL
 
 
 @pytest.fixture
@@ -39,28 +40,32 @@ def client(
     )
 
 
-async def test_long_running_task_request_raises_400(
-    client: TestClient, long_running_task_entrypoint: str
-):
+@pytest.fixture
+def long_running_task_url(client: TestClient, long_running_task_entrypoint: str) -> URL:
     assert client.app
-    url = client.app.router[long_running_task_entrypoint].url_for()
+    return client.make_url(
+        f"{client.app.router[long_running_task_entrypoint].url_for()}"
+    )
 
+
+async def test_long_running_task_request_raises_400(
+    client: TestClient, long_running_task_url: URL
+):
     # missing parameters raises
     with pytest.raises(ClientResponseError):
-        async for _ in long_running_task_request(client, url, None):
+        async for _ in long_running_task_request(
+            client.session, long_running_task_url, None
+        ):
             ...
 
 
 async def test_long_running_task_request(
-    client: TestClient, long_running_task_entrypoint: str
+    client: TestClient, long_running_task_url: URL
 ):
-    assert client.app
-    url = client.app.router[long_running_task_entrypoint].url_for()
-
     task: Optional[LRTask] = None
     async for task in long_running_task_request(
-        client,
-        url.with_query(num_strings=10, sleep_time=0.1),
+        client.session,
+        long_running_task_url.with_query(num_strings=10, sleep_time=0.1),
         json=None,
         wait_interval_s=0.01,
     ):
@@ -72,16 +77,14 @@ async def test_long_running_task_request(
 
 
 async def test_long_running_task_request_timeout(
-    client: TestClient, long_running_task_entrypoint: str
+    client: TestClient, long_running_task_url: URL
 ):
     assert client.app
-    url = client.app.router[long_running_task_entrypoint].url_for()
-
     task: Optional[LRTask] = None
     with pytest.raises(asyncio.TimeoutError):
         async for task in long_running_task_request(
-            client,
-            url.with_query(num_strings=10, sleep_time=1),
+            client.session,
+            long_running_task_url.with_query(num_strings=10, sleep_time=1),
             json=None,
             wait_interval_s=0.5,
             wait_timeout_s=2,
@@ -97,15 +100,15 @@ async def test_long_running_task_request_timeout(
 
 
 async def test_long_running_task_request_error(
-    client: TestClient, long_running_task_entrypoint: str
+    client: TestClient, long_running_task_url: URL
 ):
     assert client.app
-    url = client.app.router[long_running_task_entrypoint].url_for()
-
     task: Optional[LRTask] = None
     async for task in long_running_task_request(
-        client,
-        url.with_query(num_strings=10, sleep_time=0.1, fail=f"{True}"),
+        client.session,
+        long_running_task_url.with_query(
+            num_strings=10, sleep_time=0.1, fail=f"{True}"
+        ),
         json=None,
         wait_interval_s=0.01,
     ):
