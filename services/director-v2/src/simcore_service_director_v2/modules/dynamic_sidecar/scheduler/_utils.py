@@ -34,13 +34,6 @@ from ..docker_api import (
 logger = logging.getLogger(__name__)
 
 
-# NOTE regarding locking resources
-# A node can end up with all the services from a single study.
-# When the study is closed/opened all the services will try to
-# upload/download their data. This causes a lot of disk
-# and network stress (especially for low power nodes like in AWS).
-# Some nodes collapse under load or behave unexpectedly.
-
 # Used to ensure no more that X services per node pull or push data
 # Locking is applied when:
 # - study is being opened (state and outputs are pulled)
