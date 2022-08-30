@@ -3,28 +3,23 @@
 """
 import asyncio
 import logging
-from pprint import pformat
-from typing import Any, AsyncGenerator, Union
+from typing import Any, AsyncGenerator
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from models_library.api_schemas_storage import FileLocationArray, FileMetaDataGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.long_running_tasks.server import (
-    ProgressMessage,
-    ProgressPercent,
-    TaskGet,
-    TaskStatus,
+from servicelib.aiohttp.long_running_tasks.client import (
+    LRTask,
+    long_running_task_request,
 )
-from servicelib.aiohttp.rest_responses import unwrap_envelope
-from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.projects_utils import NodesMap
 from yarl import URL
 
 from .storage_settings import StorageSettings, get_plugin_settings
@@ -76,7 +71,7 @@ async def get_project_total_size(
             list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
                 await response.json()
             )
-            assert list_of_files_enveloped.data is not None # nosec
+            assert list_of_files_enveloped.data is not None  # nosec
         for file_metadata in list_of_files_enveloped.data:
             project_size_bytes += file_metadata.file_size
     project_size = parse_obj_as(ByteSize, project_size_bytes)
@@ -88,61 +83,73 @@ async def get_project_total_size(
 
 async def copy_data_folders_from_project(
     app: web.Application,
-    source_project: dict,
-    destination_project: dict,
-    nodes_map: dict,
+    source_project: ProjectDict,
+    destination_project: ProjectDict,
+    nodes_map: NodesMap,
     user_id: UserID,
-) -> AsyncGenerator[
-    Union[tuple[ProgressMessage, ProgressPercent], dict[str, Any]], None
-]:
+) -> AsyncGenerator[LRTask, None]:
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
     log.debug("Copying %d nodes", len(nodes_map))
 
     # /simcore-s3/folders:
     url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
-    async with client.post(
+    async for task in long_running_task_request(
+        client,
         url,
-        json={
-            "source": source_project,
-            "destination": destination_project,
-            "nodes_map": nodes_map,
-        },
-        ssl=False,
-    ) as resp:
-        resp.raise_for_status()
-        storage_copy_long_running_task = Envelope[TaskGet].parse_obj(await resp.json())
-
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(2),
-        stop=stop_after_delay(TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+        json=jsonable_encoder(
+            {
+                "source": source_project,
+                "destination": destination_project,
+                "nodes_map": nodes_map,
+            }
+        ),
+        wait_timeout_s=TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
+        wait_interval_s=0.5,
     ):
-        with attempt:
-            async with client.get(
-                storage_copy_long_running_task.data.status_href
-            ) as resp:
-                resp.raise_for_status()
-                copy_status = Envelope[TaskStatus].parse_obj(await resp.json())
-                if not copy_status.done:
-                    yield (
-                        copy_status.data.task_progress.message,
-                        copy_status.data.task_progress.percent,
-                    )
-                    raise TryAgain
-    async with client.get(storage_copy_long_running_task.data.result_href) as resp:
-        resp.raise_for_status()
-        payload = await resp.json()
-        # FIXME: relying on storage to change the project is not a good idea since
-        # it is not storage responsibility to deal with projects
-        updated_project, error = unwrap_envelope(payload)
-    if error:
-        msg = "Cannot copy project data in storage: %s" % pformat(error)
-        log.error(msg)
-        # TODO: should reconstruct error and rethrow same exception as storage service?
-        raise web.HTTPServiceUnavailable(reason=msg)
+        yield task
+    # async with client.post(
+    #     url,
+    #     json={
+    #         "source": source_project,
+    #         "destination": destination_project,
+    #         "nodes_map": nodes_map,
+    #     },
+    #     ssl=False,
+    # ) as resp:
+    #     resp.raise_for_status()
+    #     storage_copy_long_running_task = Envelope[TaskGet].parse_obj(await resp.json())
 
-    return updated_project
+    # async for attempt in AsyncRetrying(
+    #     reraise=True,
+    #     wait=wait_fixed(2),
+    #     stop=stop_after_delay(TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+    # ):
+    #     with attempt:
+    #         async with client.get(
+    #             storage_copy_long_running_task.data.status_href
+    #         ) as resp:
+    #             resp.raise_for_status()
+    #             copy_status = Envelope[TaskStatus].parse_obj(await resp.json())
+    #             if not copy_status.done:
+    #                 yield (
+    #                     copy_status.data.task_progress.message,
+    #                     copy_status.data.task_progress.percent,
+    #                 )
+    #                 raise TryAgain
+    # async with client.get(storage_copy_long_running_task.data.result_href) as resp:
+    #     resp.raise_for_status()
+    #     payload = await resp.json()
+    #     # FIXME: relying on storage to change the project is not a good idea since
+    #     # it is not storage responsibility to deal with projects
+    #     updated_project, error = unwrap_envelope(payload)
+    # if error:
+    #     msg = "Cannot copy project data in storage: %s" % pformat(error)
+    #     log.error(msg)
+    #     # TODO: should reconstruct error and rethrow same exception as storage service?
+    #     raise web.HTTPServiceUnavailable(reason=msg)
+
+    # return updated_project
 
 
 async def _delete(session, target_url):

@@ -112,6 +112,7 @@ _run-test-dev: _check_venv_active
 		--failed-first \
 		--pdb \
 		--asyncio-mode=auto \
+		--keep-docker-up \
 		$(TEST_TARGET)
 
 

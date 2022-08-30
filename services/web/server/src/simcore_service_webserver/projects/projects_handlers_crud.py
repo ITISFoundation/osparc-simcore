@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Awaitable, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from aiohttp import web
@@ -50,6 +50,7 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
+    NodesMap,
     any_node_inputs_changed,
     clone_project_document,
     default_copy_project_name,
@@ -143,9 +144,9 @@ async def create_projects(request: web.Request):
 
 async def _init_project_from_request(
     app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
-) -> tuple[ProjectDict, Optional[Awaitable[None]]]:
+) -> tuple[ProjectDict, ProjectDict, NodesMap]:
     if not query_params.from_study:
-        return {}, None
+        return {}, {}, {}
     source_project = await projects_api.get_project_for_user(
         app,
         project_uuid=query_params.from_study,
@@ -178,29 +179,24 @@ async def _init_project_from_request(
         new_project["name"] = default_copy_project_name(source_project["name"])
     # the project is to be hidden until the data is copied
     query_params.hidden = query_params.copy_data
-    # TODO: this should be made long running as well
-    clone_data_task = (
-        copy_data_folders_from_project(
-            app, source_project, new_project, nodes_map, user_id
-        )
-        if query_params.copy_data
-        else None
-    )
-    return new_project, clone_data_task
+
+    return source_project, new_project, nodes_map
 
 
 async def _copy_files_from_source_project(
     app: web.Application,
     db: ProjectDBAPI,
     query_params: _ProjectCreateParams,
+    source_project: ProjectDict,
     new_project: ProjectDict,
+    nodes_map: NodesMap,
     user_id: UserID,
-    clone_data_task: Optional[Awaitable[None]],
     new_project_was_hidden_before_data_was_copied: bool,
+    task_progress: TaskProgress,
+    progress_objective: float,
 ):
-    if not all([clone_data_task, query_params.from_study, query_params.copy_data]):
+    if not all([query_params.from_study, query_params.copy_data]):
         return
-    assert clone_data_task  # nosec
     assert query_params.from_study  # nosec
 
     needs_lock_source_project: bool = (
@@ -219,7 +215,21 @@ async def _copy_files_from_source_project(
                     await get_user_name(app, user_id),
                 )
             )
-        await clone_data_task
+        starting_value = task_progress.percent
+        async for long_running_task in copy_data_folders_from_project(
+            app, source_project, new_project, nodes_map, user_id
+        ):
+
+            task_progress.update(
+                message=long_running_task.progress.message,
+                percent=(
+                    starting_value
+                    + long_running_task.progress.percent
+                    * (progress_objective - starting_value)
+                ),
+            )
+            if long_running_task.done():
+                await long_running_task.result()
 
     # unhide the project if needed since it is now complete
     if not new_project_was_hidden_before_data_was_copied:
@@ -249,7 +259,7 @@ async def _create_projects(
         task_progress.update(message="cloning project scaffold", percent=0)
         new_project_was_hidden_before_data_was_copied = query_params.hidden
 
-        new_project, clone_data_task = await _init_project_from_request(
+        source_project, new_project, nodes_map = await _init_project_from_request(
             app, query_params, user_id
         )
 
@@ -283,10 +293,13 @@ async def _create_projects(
             app,
             db,
             query_params,
+            source_project,
             new_project,
+            nodes_map,
             user_id,
-            clone_data_task,
             new_project_was_hidden_before_data_was_copied,
+            task_progress,
+            progress_objective=0.9,
         )
 
         # update the network information in director-v2
