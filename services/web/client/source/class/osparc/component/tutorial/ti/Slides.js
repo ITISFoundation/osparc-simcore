@@ -33,6 +33,9 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       resizable: false
     });
 
+    const closeBtn = this.getChildControl("close-button");
+    osparc.utils.Utils.setIdToWidget(closeBtn, "tipQSWindowCloseBtn");
+
     const arrowsLayout = this.__createArrows();
     this.add(arrowsLayout);
 
