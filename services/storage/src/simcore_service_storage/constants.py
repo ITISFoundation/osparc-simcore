@@ -37,6 +37,8 @@ MAX_LINK_CHUNK_BYTE_SIZE: Final[dict[LinkType, ByteSize]] = {
     LinkType.S3: S3_MAX_FILE_SIZE,
 }
 
+MAX_CONCURRENT_S3_TASKS: Final[int] = 4
+
 
 # REST API ----------------------------
 APP_OPENAPI_SPECS_KEY = (
@@ -46,7 +48,7 @@ APP_OPENAPI_SPECS_KEY = (
 
 # DATABASE ----------------------------
 APP_DB_ENGINE_KEY = f"{__name__}.db_engine"
-
+MAX_CONCURRENT_DB_TASKS: Final[int] = 2
 
 # DATA STORAGE MANAGER ----------------------------------
 APP_DSM_KEY = f"{__name__}.DSM"

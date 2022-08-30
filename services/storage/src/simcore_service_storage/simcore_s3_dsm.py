@@ -23,20 +23,16 @@ from models_library.projects_nodes_io import (
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.long_running_tasks.server import (
-    ProgressMessage,
-    ProgressPercent,
-    TaskProgress,
-)
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
-from simcore_service_storage import db_tokens
-from simcore_service_storage.s3 import get_s3_client
 
-from . import db_file_meta_data, db_projects
+from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     DATCORE_ID,
+    MAX_CONCURRENT_DB_TASKS,
+    MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
     SIMCORE_S3_ID,
@@ -65,6 +61,8 @@ from .models import (
     UploadID,
     UploadLinks,
 )
+from .s3 import get_s3_client
+from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
 from .utils import (
     convert_db_to_model,
@@ -74,15 +72,6 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def _update_progress(
-    task_progress: Optional[TaskProgress],
-    message: Optional[ProgressMessage],
-    progress: Optional[ProgressPercent],
-) -> None:
-    if task_progress:
-        task_progress.update(message=message, percent=progress)
 
 
 @dataclass
@@ -427,6 +416,7 @@ class SimcoreS3DataManager(BaseDataManager):
         src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
         dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
         # Step 1: check access rights (read of src and write of dst)
+        update_task_progress(task_progress, "Checking project access rights...")
         async with self.engine.acquire() as conn:
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
                 if not await db_projects.project_exists(conn, prj_uuid):
@@ -447,10 +437,8 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
         # Step 2: start copying by listing what to copy
-        logger.debug(
-            "Copying all items from  %s to %s",
-            f"{self.simcore_bucket_name=}:{src_project_uuid=}",
-            f"{self.simcore_bucket_name=}:{dst_project_uuid=}",
+        update_task_progress(
+            task_progress, f"Getting all files of project '{src_project_uuid}'..."
         )
         async with self.engine.acquire() as conn:
             src_project_files: list[
@@ -463,22 +451,12 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
         )
         # Step 3.1: copy: files referenced from file_metadata
-        @dataclass
-        class _TransferedData:
-            total_bytes_copied: int = 0
-
-            def copy_transfer_cb(self, copied_bytes: int):
-                self.total_bytes_copied += copied_bytes
-                _update_progress(
-                    task_progress,
-                    f"Copying from {src_project_uuid=} to {dst_project_uuid=}: [{len(src_project_files)}"
-                    f" files - {parse_obj_as(ByteSize,self.total_bytes_copied).human_readable()}/{src_project_total_data_size.human_readable()}]",
-                    self.total_bytes_copied / src_project_total_data_size,
-                )
-
         copy_tasks: deque[Awaitable] = deque()
-        transfered_data = _TransferedData()
-        transfered_data.copy_transfer_cb(0)
+        s3_transfered_data_cb = S3TransferDataCB(
+            task_progress,
+            src_project_total_data_size,
+            task_progress_message_prefix=f"Copying {len(src_project_files)} files of project '{src_project_uuid}'",
+        )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
                 raise NotImplementedError(
@@ -494,7 +472,7 @@ class SimcoreS3DataManager(BaseDataManager):
                         SimcoreS3FileID(
                             f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/')[-1]}"
                         ),
-                        bytes_transfered_cb=transfered_data.copy_transfer_cb,
+                        bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
                     )
                 )
         # Step 3.2: copy files referenced from file-picker from DAT-CORE
@@ -507,16 +485,15 @@ class SimcoreS3DataManager(BaseDataManager):
                         dest_project_id=dst_project_uuid,
                         dest_node_id=NodeID(node_id),
                         file_storage_link=output,
-                        bytes_transfered_cb=transfered_data.copy_transfer_cb,
+                        bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
                     )
                     for output in node.get("outputs", {}).values()
                     if int(output.get("store", self.location_id)) == DATCORE_ID
                 ]
             )
-        for task in copy_tasks:
-            await task
-        # NOTE: running this in parallel tends to block while testing. not sure why?
-        # await asyncio.gather(*copy_tasks)
+        await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
+        # ensure the full size is reported
+        s3_transfered_data_cb.finalize_transfer()
 
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
@@ -628,7 +605,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             reraise=False,
             log=logger,
-            max_concurrency=2,
+            max_concurrency=MAX_CONCURRENT_DB_TASKS,
         )
         list_of_fmds_to_delete = [
             expired_fmd
@@ -648,7 +625,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     if fmd.user_id is not None
                 ),
                 log=logger,
-                max_concurrency=2,
+                max_concurrency=MAX_CONCURRENT_DB_TASKS,
             )
             logger.warning(
                 "pending/incomplete uploads of [%s] removed",
@@ -718,7 +695,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
                 for upload_id, file_id in list_of_invalid_uploads
             ),
-            max_concurrency=2,
+            max_concurrency=MAX_CONCURRENT_S3_TASKS,
         )
         logger.warning(
             "Dangling multipart uploads '%s', were aborted. "
