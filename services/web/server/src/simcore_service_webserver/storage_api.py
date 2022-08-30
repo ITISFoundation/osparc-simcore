@@ -101,8 +101,7 @@ async def copy_data_folders_from_project(
                 "nodes_map": nodes_map,
             }
         ),
-        wait_timeout_s=TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
-        wait_interval_s=0.5,
+        client_timeout=TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
     ):
         yield lr_task
 
