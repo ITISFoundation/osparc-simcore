@@ -203,7 +203,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/verify-phone-number:
@@ -235,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-register:
@@ -271,7 +271,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/login:
@@ -296,12 +296,6 @@ paths:
       responses:
         '200':
           description: Succesfully logged in
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
-        '202':
-          description: 'Accepted, but 2 Factor Authentication required'
           content:
             application/json:
               schema:
@@ -336,6 +330,12 @@ paths:
                   error:
                     nullable: true
                     default: null
+        '202':
+          description: 'Accepted, but 2 Factor Authentication required'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/validate-code-login:
@@ -366,7 +366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/logout:
@@ -389,7 +389,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/reset-password:
@@ -416,7 +416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         '503':
           description: failed to send confirmation email
           content:
@@ -457,7 +457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
@@ -490,7 +490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
@@ -537,7 +537,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/202/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
@@ -2470,12 +2470,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:
