@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Optional
 
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
@@ -28,7 +28,7 @@ from .port_validation import validate_port_content
 log = logging.getLogger(__name__)
 
 
-TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
+TYPE_TO_PYTYPE: dict[str, type[ItemConcreteValue]] = {
     "integer": int,
     "number": float,
     "boolean": bool,
@@ -59,7 +59,7 @@ def can_parse_as(v, *types) -> bool:
 
 class Port(BaseServiceIOModel):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
-    widget: Optional[Dict[str, Any]] = None
+    widget: Optional[dict[str, Any]] = None
     default_value: Optional[DataItemValue] = Field(None, alias="defaultValue")
 
     value: Optional[DataItemValue] = None
@@ -73,7 +73,7 @@ class Port(BaseServiceIOModel):
     value_concrete: Optional[ItemConcreteValue] = Field(None, exclude=True)
 
     # Types expected in _value_concrete
-    _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
+    _py_value_type: tuple[type[ItemConcreteValue], ...] = PrivateAttr()
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     # Reference to the `NodePorts` instance that contains this port
@@ -87,7 +87,7 @@ class Port(BaseServiceIOModel):
 
     @validator("value", always=True)
     @classmethod
-    def check_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
+    def check_value(cls, v: DataItemValue, values: dict[str, Any]) -> DataItemValue:
 
         if (
             v is not None
@@ -251,6 +251,7 @@ class Port(BaseServiceIOModel):
                     key=self.key,
                     fileToKeyMap=self.file_to_key_map,
                     value=self.value,
+                    io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                 )
                 value = path_concrete_value
 
@@ -261,6 +262,7 @@ class Port(BaseServiceIOModel):
                         key=self.key,
                         fileToKeyMap=self.file_to_key_map,
                         value=self.value,
+                        io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     )
                 )
                 value = path_concrete_value
@@ -314,6 +316,7 @@ class Port(BaseServiceIOModel):
                     project_id=self._node_ports.project_id,
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
+                    io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                 )
             else:
                 new_value = converted_value
@@ -331,7 +334,6 @@ class Port(BaseServiceIOModel):
         """
         await self._set(new_concrete_value=new_value)
         await self._node_ports.save_to_db_cb(self._node_ports)
-        
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
         """set the value on the port using an item-value

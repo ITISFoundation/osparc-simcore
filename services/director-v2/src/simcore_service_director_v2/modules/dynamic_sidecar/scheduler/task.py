@@ -7,10 +7,6 @@ self._to_observe is protected by an asyncio Lock
 1. a background task runs every X seconds and adds all the current scheduled services in an asyncio.Queue
 2. a second background task processes the entries in the Queue and starts a task per service
   a. if the service is already under "observation" then it will skip this cycle
-3. a third background task dealing with ensuring no `volumes removal services`
-    remain in the system in case the director-v2:
-    - is restarted before while the service is running
-    - an error occurs while removing one such services
 """
 
 import asyncio
@@ -30,7 +26,11 @@ from models_library.service_settings_labels import RestartPolicy
 from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
-from ....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
+from ....core.settings import (
+    DynamicServicesSchedulerSettings,
+    DynamicServicesSettings,
+    DynamicSidecarSettings,
+)
 from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
 from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
@@ -41,12 +41,13 @@ from ..api_client import (
     ClientHttpError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
+    get_dynamic_sidecar_service_health,
 )
 from ..docker_api import (
+    are_all_services_present,
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
     is_dynamic_sidecar_stack_missing,
-    remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
@@ -55,17 +56,64 @@ from ..errors import (
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
-from ._task_utils import apply_observation_cycle
 from ._utils import save_and_remove_user_created_services
+from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
+
+
+async def _apply_observation_cycle(
+    app: FastAPI, scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData
+) -> None:
+    """
+    fetches status for service and then processes all the registered events
+    and updates the status back
+    """
+    dynamic_services_settings: DynamicServicesSettings = (
+        app.state.settings.DYNAMIC_SERVICES
+    )
+    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
+    initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
+
+    if (  # do not refactor, second part of "and condition" is skiped most times
+        scheduler_data.dynamic_sidecar.were_containers_created
+        and not await are_all_services_present(
+            node_uuid=scheduler_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
+        )
+    ):
+        # NOTE: once marked for removal the observation cycle needs
+        # to continue in order for the service to be removed
+        logger.warning(
+            "Removing service %s from observation", scheduler_data.service_name
+        )
+        await scheduler.mark_service_for_removal(
+            node_uuid=scheduler_data.node_uuid,
+            can_save=scheduler_data.dynamic_sidecar.can_save_state,
+        )
+    await get_dynamic_sidecar_service_health(app, scheduler_data)
+
+    for dynamic_scheduler_event in REGISTERED_EVENTS:
+        if await dynamic_scheduler_event.will_trigger(
+            app=app, scheduler_data=scheduler_data
+        ):
+            # event.action will apply changes to the output_scheduler_data
+            await dynamic_scheduler_event.action(app, scheduler_data)
+
+    # check if the status of the services has changed from OK
+    if initial_status != scheduler_data.dynamic_sidecar.status:
+        logger.info(
+            "Service %s overall status changed to %s",
+            scheduler_data.service_name,
+            scheduler_data.dynamic_sidecar.status,
+        )
 
 
 ServiceName = str
 
 
 @dataclass
-class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
+class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     app: FastAPI
 
     _lock: Lock = field(default_factory=Lock)
@@ -76,7 +124,6 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
     _keep_running: bool = False
     _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
-    _cleanup_volume_removal_services_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
@@ -361,7 +408,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
             try:
-                await apply_observation_cycle(self.app, self, scheduler_data)
+                await _apply_observation_cycle(self.app, self, scheduler_data)
                 logger.debug("completed observation cycle of %s", f"{service_name=}")
             except asyncio.CancelledError:  # pylint: disable=try-except-raise
                 raise  # pragma: no cover
@@ -465,34 +512,6 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
         for scheduler_data in services_to_observe:
             await self.add_service(scheduler_data)
 
-    async def _cleanup_volume_removal_services(self) -> None:
-        settings: DynamicServicesSchedulerSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-
-        logger.debug(
-            "dynamic-sidecars cleanup pending volume removal services every %s seconds",
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-        )
-        while await asyncio.sleep(
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-            True,
-        ):
-            logger.debug("Removing pending volume removal services...")
-
-            try:
-                await remove_pending_volume_removal_services(dynamic_sidecar_settings)
-            except asyncio.CancelledError:
-                logger.info("Stopped pending volume removal services task")
-                raise
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Unexpected error while cleaning up pending volume removal services"
-                )
-
     async def start(self) -> None:
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
@@ -505,10 +524,6 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
             name="dynamic-scheduler-trigger-obs-queue",
         )
 
-        self._cleanup_volume_removal_services_task = asyncio.create_task(
-            self._cleanup_volume_removal_services(),
-            name="dynamic-scheduler-cleanup-volume-removal-services",
-        )
         await self._discover_running_services()
 
     async def shutdown(self):
@@ -516,12 +531,6 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
         self._keep_running = False
         self._inverse_search_mapping = {}
         self._to_observe = {}
-
-        if self._cleanup_volume_removal_services_task is not None:
-            self._cleanup_volume_removal_services_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._cleanup_volume_removal_services_task
-            self._cleanup_volume_removal_services_task = None
 
         if self._scheduler_task is not None:
             self._scheduler_task.cancel()

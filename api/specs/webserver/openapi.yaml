@@ -326,8 +326,8 @@ paths:
     $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_details"
 
   # TASKS --------------------------------------------------------------------------
-  # /tasks:
-  #   $ref: "./openapi-tasks.yaml#/paths/~1tasks"
+  /tasks:
+    $ref: "./openapi-tasks.yaml#/paths/~1tasks"
 
   /tasks/{task_id}:
     $ref: "./openapi-tasks.yaml#/paths/~1tasks~1{task_id}"

@@ -10,14 +10,7 @@ from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, Union
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses
-from models_library.projects_access import Owner
-from models_library.projects_state import (
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    ProjectStatus,
-    RunningState,
-)
+from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -25,109 +18,7 @@ from models_library.services_resources import (
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.long_running_tasks.server import (
-    setup as setup_long_running_tasks,
-)
 from simcore_service_webserver import catalog
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.plugin import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.tags import setup_tags
-
-DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
-DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
-
-
-@pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    mocked_director_v2_api,
-    mock_orphaned_services,
-    mock_catalog_api: None,
-    redis_client,
-    monkeypatch_setenv_from_app_config: Callable,
-):
-
-    # config app
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-    cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
-
-    monkeypatch_setenv_from_app_config(cfg)
-    app = create_safe_application(cfg)
-
-    # setup app
-
-    assert setup_settings(app)
-    setup_long_running_tasks(app, router_prefix="/tasks")
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    setup_resource_manager(app)
-    setup_garbage_collector(app)
-    setup_socketio(app)
-    setup_director(app)
-    setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
-    setup_products(app)
-
-    # server and client
-    yield event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
-    )
-
-    # teardown here ...
-
-
-@pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> None:
-    """
-    All projects in this module are UNLOCKED
-
-    Emulates that it found logged_user as the SOLE user of this project
-    and returns the  ProjectState indicating his as owner
-    """
-    nameparts = logged_user["name"].split(".") + [""]
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False,
-            owner=Owner(
-                user_id=logged_user["id"],
-                first_name=nameparts[0],
-                last_name=nameparts[1],
-            ),
-            status=ProjectStatus.CLOSED,
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=state,
-    )
 
 
 @pytest.fixture

@@ -7,11 +7,8 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.long_running_tasks.server import (
-    setup as setup_long_running_tasks,
-)
 
-from ._meta import API_VTAG, WELCOME_GC_MSG, WELCOME_MSG
+from ._meta import WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
@@ -26,6 +23,7 @@ from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
 from .login.plugin import setup_login
+from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling import setup_meta_modeling
 from .products import setup_products
 from .projects.plugin import setup_projects
@@ -64,13 +62,16 @@ def create_application() -> web.Application:
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
-    setup_long_running_tasks(app, router_prefix=f"/{API_VTAG}/tasks")
-    setup_statics(app)
     setup_db(app)
+    setup_long_running_tasks(app)
     setup_redis(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+
+    # front-end products
+    setup_products(app)
+    setup_statics(app)
 
     # monitoring
     setup_diagnostics(app)
@@ -107,7 +108,6 @@ def create_application() -> web.Application:
     setup_tags(app)
 
     setup_publications(app)
-    setup_products(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)

@@ -9,7 +9,6 @@ from typing import Union, get_args, get_origin
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
-from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 
 def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
@@ -19,7 +18,6 @@ def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
 
 def test_class_appstate_decorator_class(mock_environment_with_envdevel: EnvVarsDict):
     app = create_app()
-    app.state.shared_store = SharedStore()  # emulate on_startup event
     app_state = AppState(app)
 
     # ensure exposed properties are init after creation

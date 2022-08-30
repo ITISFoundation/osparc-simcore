@@ -31,15 +31,22 @@ qx.Class.define("osparc.utils.Utils", {
 
   statics: {
     localCache: {
+      setLocalStorageItem: function(key, value) {
+        window.localStorage.setItem(key, value);
+      },
+      getLocalStorageItem: function(name) {
+        return window.localStorage.getItem(name);
+      },
+
       setTheme: function(themeName) {
-        window.localStorage.setItem("themeName", themeName);
+        this.setLocalStorageItem("themeName", themeName);
       },
       getTheme: function() {
-        return window.localStorage.getItem("themeName");
+        return this.getLocalStorageItem("themeName");
       },
 
       serviceToFavs: function(serviceKey) {
-        let serviceFavs = window.localStorage.getItem("services");
+        let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
           serviceFavs = JSON.parse(serviceFavs);
         } else {
@@ -52,11 +59,11 @@ qx.Class.define("osparc.utils.Utils", {
             hits: 1
           };
         }
-        window.localStorage.setItem("services", JSON.stringify(serviceFavs));
+        this.setLocalStorageItem("services", JSON.stringify(serviceFavs));
       },
 
       getFavServices: function() {
-        const serviceFavs = window.localStorage.getItem("services");
+        const serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
           return JSON.parse(serviceFavs);
         }
@@ -177,6 +184,10 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    getProductName: function() {
+      return qx.core.Environment.get("product.name");
+    },
+
     isProduct: function(productName) {
       const product = qx.core.Environment.get("product.name");
       return (productName === product);
@@ -219,9 +230,12 @@ qx.Class.define("osparc.utils.Utils", {
       );
 
       let dateStr = null;
-      if (value.getDate() === (new Date()).getDate()) {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (today.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
-      } else if (value.getDate() === (new Date()).getDate() - 1) {
+      } else if (yesterday.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
       } else {
         dateStr = dateFormat.format(value);

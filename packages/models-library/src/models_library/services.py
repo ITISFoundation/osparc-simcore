@@ -7,7 +7,6 @@ NOTE: to dump json-schema from CLI use
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional, Union
-from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -60,8 +59,6 @@ FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
-
-RunID = UUID
 
 
 class ServiceType(str, Enum):

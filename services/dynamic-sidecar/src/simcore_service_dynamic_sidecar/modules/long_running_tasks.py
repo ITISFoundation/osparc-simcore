@@ -1,3 +1,4 @@
+import functools
 import logging
 from collections import deque
 from typing import Any, Awaitable, Final, Optional
@@ -6,6 +7,10 @@ from fastapi import FastAPI
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from tenacity import retry
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 
 from ..core.docker_compose_utils import (
     docker_compose_create,
@@ -16,9 +21,9 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.rabbitmq import RabbitMQ
+from ..core.rabbitmq import RabbitMQ, send_message
 from ..core.settings import ApplicationSettings
-from ..core.utils import assemble_container_names
+from ..core.utils import CommandResult, assemble_container_names
 from ..core.validation import validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
@@ -30,15 +35,26 @@ from ..modules.mounted_fs import MountedVolumes
 logger = logging.getLogger(__name__)
 
 
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.debug(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
-
-
 # TASKS
 
 # NOTE: most services have only 1 "working" directory
 CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
+_MINUTE: Final[int] = 60
+
+
+@retry(
+    wait=wait_random_exponential(),
+    stop=stop_after_delay(5 * _MINUTE),
+    retry=retry_if_result(lambda result: result.success is False),
+    reraise=False,
+)
+async def _retry_docker_compose_start(
+    compose_spec: str, settings: ApplicationSettings
+) -> CommandResult:
+    # NOTE: sometimes the system is not capable of starting
+    # the containers as soon as they are created. This might
+    # happen due to the docker engine's load.
+    return await docker_compose_start(compose_spec, settings)
 
 
 async def task_create_service_containers(
@@ -51,7 +67,7 @@ async def task_create_service_containers(
     application_health: ApplicationHealth,
     rabbitmq: RabbitMQ,
 ) -> list[str]:
-    progress.publish(message="validating service spec", percent=0)
+    progress.update(message="validating service spec", percent=0)
 
     shared_store.compose_spec = await validate_compose_spec(
         settings=settings,
@@ -59,7 +75,6 @@ async def task_create_service_containers(
         mounted_volumes=mounted_volumes,
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
-    await shared_store.persist_to_disk()
 
     logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
@@ -68,17 +83,17 @@ async def task_create_service_containers(
 
     with directory_watcher_disabled(app):
         # removes previous pending containers
-        progress.publish(message="cleanup previous used resources")
+        progress.update(message="cleanup previous used resources")
         await docker_compose_rm(shared_store.compose_spec, settings)
 
-        progress.publish(message="pulling images", percent=0.01)
+        progress.update(message="pulling images", percent=0.01)
         await docker_compose_pull(shared_store.compose_spec, settings)
 
-        progress.publish(message="creating and starting containers", percent=0.90)
+        progress.update(message="creating and starting containers", percent=0.90)
         await docker_compose_create(shared_store.compose_spec, settings)
 
-        progress.publish(message="ensure containers are started", percent=0.95)
-        r = await docker_compose_start(shared_store.compose_spec, settings)
+        progress.update(message="ensure containers are started", percent=0.95)
+        r = await _retry_docker_compose_start(shared_store.compose_spec, settings)
 
     message = f"Finished docker-compose start with output\n{r.message}"
 
@@ -93,7 +108,7 @@ async def task_create_service_containers(
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
         await send_message(rabbitmq, "could not start service containers")
 
-    progress.publish(message="done", percent=1)
+    progress.update(message="done", percent=1)
 
     return shared_store.container_names
 
@@ -107,7 +122,7 @@ async def task_runs_docker_compose_down(
     if shared_store.compose_spec is None:
         raise RuntimeError("No compose-spec was found")
 
-    progress.publish(message="running docker-compose-down", percent=0)
+    progress.update(message="running docker-compose-down", percent=0)
     result = await docker_compose_down(shared_store.compose_spec, settings)
     if not result.success:
         logger.warning(
@@ -116,16 +131,16 @@ async def task_runs_docker_compose_down(
         )
         raise RuntimeError(result.message)
 
-    progress.publish(message="stopping logs", percent=0.9)
+    progress.update(message="stopping logs", percent=0.9)
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    progress.publish(message="removing pending resources", percent=0.95)
+    progress.update(message="removing pending resources", percent=0.95)
     await docker_compose_rm(shared_store.compose_spec, settings)
 
     # removing compose-file spec
-    await shared_store.clear()
-    progress.publish(message="done", percent=1)
+    shared_store.clear()
+    progress.update(message="done", percent=1)
 
 
 async def task_restore_state(
@@ -134,7 +149,7 @@ async def task_restore_state(
     mounted_volumes: MountedVolumes,
     rabbitmq: RabbitMQ,
 ) -> None:
-    progress.publish(message="checking files", percent=0.0)
+    progress.update(message="checking files", percent=0.0)
     # first check if there are files (no max concurrency here, these are just quick REST calls)
     existing_files: list[bool] = await logged_gather(
         *(
@@ -149,7 +164,7 @@ async def task_restore_state(
         reraise=True,
     )
 
-    progress.publish(message="Downloading state", percent=0.05)
+    progress.update(message="Downloading state", percent=0.05)
     await send_message(
         rabbitmq,
         f"Downloading state files for {existing_files}...",
@@ -161,6 +176,7 @@ async def task_restore_state(
                 project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                 node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                 file_or_folder=path,
+                io_log_redirect_cb=functools.partial(send_message, rabbitmq),
             )
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
@@ -170,7 +186,7 @@ async def task_restore_state(
     )
 
     await send_message(rabbitmq, "Finished state downloading")
-    progress.publish(message="state restored", percent=1)
+    progress.update(message="state restored", percent=1)
 
 
 async def task_save_state(
@@ -181,7 +197,7 @@ async def task_save_state(
 ) -> None:
     awaitables: deque[Awaitable[Optional[Any]]] = deque()
 
-    progress.publish(message="starting state save", percent=0.0)
+    progress.update(message="starting state save", percent=0.0)
 
     for state_path in mounted_volumes.disk_state_paths():
         await send_message(rabbitmq, f"Saving state for {state_path}")
@@ -193,14 +209,15 @@ async def task_save_state(
                 file_or_folder=state_path,
                 r_clone_settings=settings.rclone_settings_for_nodeports,
                 archive_exclude_patterns=mounted_volumes.state_exclude,
+                io_log_redirect_cb=functools.partial(send_message, rabbitmq),
             )
         )
 
-    progress.publish(message="state save scheduled", percent=0.1)
+    progress.update(message="state save scheduled", percent=0.1)
     await logged_gather(*awaitables, max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE)
 
     await send_message(rabbitmq, "Finished state saving")
-    progress.publish(message="finished state save", percent=0.1)
+    progress.update(message="finished state save", percent=0.1)
 
 
 async def task_ports_inputs_pull(
@@ -209,7 +226,7 @@ async def task_ports_inputs_pull(
     mounted_volumes: MountedVolumes,
     rabbitmq: RabbitMQ,
 ) -> int:
-    progress.publish(message="starting inputs pulling", percent=0.0)
+    progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
@@ -217,9 +234,10 @@ async def task_ports_inputs_pull(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
         port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling inputs")
-    progress.publish(message="finished inputs pulling", percent=1.0)
+    progress.update(message="finished inputs pulling", percent=1.0)
     return int(transferred_bytes)
 
 
@@ -229,7 +247,7 @@ async def task_ports_outputs_pull(
     mounted_volumes: MountedVolumes,
     rabbitmq: RabbitMQ,
 ) -> int:
-    progress.publish(message="starting outputs pulling", percent=0.0)
+    progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
 
     await send_message(rabbitmq, f"Pulling output for {port_keys}")
@@ -237,9 +255,10 @@ async def task_ports_outputs_pull(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
         port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
-    progress.publish(message="finished outputs pulling", percent=1.0)
+    progress.update(message="finished outputs pulling", percent=1.0)
     return int(transferred_bytes)
 
 
@@ -249,15 +268,17 @@ async def task_ports_outputs_push(
     mounted_volumes: MountedVolumes,
     rabbitmq: RabbitMQ,
 ) -> None:
-    progress.publish(message="starting outputs pushing", percent=0.0)
+    progress.update(message="starting outputs pushing", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
     await nodeports.upload_outputs(
-        mounted_volumes.disk_outputs_path, port_keys=port_keys
+        mounted_volumes.disk_outputs_path,
+        port_keys=port_keys,
+        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
-    progress.publish(message="finished outputs pushing", percent=1.0)
+    progress.update(message="finished outputs pushing", percent=1.0)
 
 
 async def task_containers_restart(
@@ -267,14 +288,14 @@ async def task_containers_restart(
     shared_store: SharedStore,
     rabbitmq: RabbitMQ,
 ) -> None:
-    progress.publish(message="starting containers restart", percent=0.0)
+    progress.update(message="starting containers restart", percent=0.0)
     if shared_store.compose_spec is None:
         raise RuntimeError("No spec for docker-compose command was found")
 
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
-    progress.publish(message="stopped log fetching", percent=0.1)
+    progress.update(message="stopped log fetching", percent=0.1)
 
     result = await docker_compose_restart(shared_store.compose_spec, settings)
 
@@ -284,13 +305,13 @@ async def task_containers_restart(
         )
         raise RuntimeError(result.message)
 
-    progress.publish(message="containers restarted", percent=0.8)
+    progress.update(message="containers restarted", percent=0.8)
 
     for container_name in shared_store.container_names:
         await start_log_fetching(app, container_name)
 
-    progress.publish(message="started log fetching", percent=0.9)
+    progress.update(message="started log fetching", percent=0.9)
 
     await send_message(rabbitmq, "Service was restarted please reload the UI")
     await rabbitmq.send_event_reload_iframe()
-    progress.publish(message="started log fetching", percent=1.0)
+    progress.update(message="started log fetching", percent=1.0)

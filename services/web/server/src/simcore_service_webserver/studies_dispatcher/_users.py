@@ -8,16 +8,15 @@
 
 """
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from pydantic import BaseModel
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..login.handlers import ACTIVE, GUEST
 from ..login.storage import AsyncpgStorage, get_plugin_storage
-from ..login.utils import get_client_ip, get_random_string
+from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager_client
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
@@ -35,7 +34,7 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
+async def _get_authorized_user(request: web.Request) -> Optional[dict]:
     # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
     user_id = await authorized_userid(request)
     if user_id is not None:
@@ -99,7 +98,7 @@ async def _create_temporary_user(request: web.Request):
                 "created_ip": get_client_ip(request),
             }
         )
-        user: Dict = await get_user(request.app, usr["id"])
+        user: dict = await get_user(request.app, usr["id"])
 
         # (2) read details above
         await redis_locks_client.lock(

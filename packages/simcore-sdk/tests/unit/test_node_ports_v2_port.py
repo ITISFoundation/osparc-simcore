@@ -21,6 +21,7 @@ from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -178,6 +179,7 @@ async def mock_download_file(
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
+        io_log_redirect_cb: Optional[LogRedirectCB],
         file_name: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
     ) -> Path:
@@ -195,6 +197,7 @@ async def mock_download_file(
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.download_file_from_link",
         side_effect=mock_download_file_from_link,
+        autospec=True,
     )
 
 
@@ -597,6 +600,7 @@ async def test_valid_port(
         project_id: str
         node_uuid: str
         r_clone_settings: Optional[Any] = None
+        io_log_redirect_cb: Optional[LogRedirectCB] = None
 
         @staticmethod
         async def get(key):

@@ -10,8 +10,8 @@ from settings_library.twilio import TwilioSettings
 
 from .._constants import APP_SETTINGS_KEY
 
-_DAYS = 1.0
-_MINUTES = 1.0 / 24.0 / 60.0
+_DAYS = 1.0  # in days
+_MINUTES = 1.0 / 24.0 / 60.0  # in days
 
 
 APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
@@ -65,8 +65,6 @@ class LoginSettings(BaseCustomSettings):
 class LoginOptions(BaseModel):
     """These options are NOT directly exposed to the env vars due to security reasons."""
 
-    THEME: str = "templates/osparc.io"
-    COMMON_THEME: str = "templates/common"
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"

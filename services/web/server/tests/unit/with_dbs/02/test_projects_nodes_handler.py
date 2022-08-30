@@ -69,6 +69,9 @@ async def test_get_node_resources(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
     mock_catalog_service_api_responses: None,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_orphaned_services,
+    mock_catalog_api: None,
     expected: type[web.HTTPException],
 ):
     assert client.app

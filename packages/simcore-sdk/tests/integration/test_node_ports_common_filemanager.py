@@ -69,6 +69,7 @@ async def test_valid_upload_download(
         s3_object=file_id,
         file_to_upload=file_path,
         r_clone_settings=optional_r_clone,
+        io_log_redirect_cb=None,
     )
     assert store_id == s3_simcore_location
     assert e_tag
@@ -85,6 +86,7 @@ async def test_valid_upload_download(
         store_name=None,
         s3_object=file_id,
         local_folder=download_folder,
+        io_log_redirect_cb=None,
     )
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
@@ -122,6 +124,7 @@ async def test_valid_upload_download_using_file_object(
                 file_object, file_path.name, file_path.stat().st_size
             ),
             r_clone_settings=optional_r_clone,
+            io_log_redirect_cb=None,
         )
     assert store_id == s3_simcore_location
     assert e_tag
@@ -138,6 +141,7 @@ async def test_valid_upload_download_using_file_object(
         store_name=None,
         s3_object=file_id,
         local_folder=download_folder,
+        io_log_redirect_cb=None,
     )
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
@@ -186,6 +190,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
             s3_object=file_id,
             file_to_upload=file_path,
             r_clone_settings=optional_r_clone,
+            io_log_redirect_cb=None,
         )
     with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.get_file_metadata(
@@ -221,6 +226,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         s3_object=file_id,
         file_to_upload=file_path,
         r_clone_settings=optional_r_clone,
+        io_log_redirect_cb=None,
     )
     assert store_id == s3_simcore_location
     assert e_tag
@@ -249,6 +255,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
             s3_object=file_id,
             file_to_upload=file_path,
             r_clone_settings=optional_r_clone,
+            io_log_redirect_cb=None,
         )
     # the file shall be back to its original state
     old_store_id, old_e_tag = await filemanager.get_file_metadata(
@@ -278,6 +285,7 @@ async def test_invalid_file_path(
             store_name=None,
             s3_object=file_id,
             file_to_upload=Path(tmpdir) / "some other file.txt",
+            io_log_redirect_cb=None,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -288,6 +296,7 @@ async def test_invalid_file_path(
             store_name=None,
             s3_object=file_id,
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
 
@@ -310,6 +319,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="",  # type: ignore
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):
@@ -319,6 +329,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="file_id",  # type: ignore
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -329,6 +340,7 @@ async def test_errors_upon_invalid_file_identifiers(
             store_name=None,
             s3_object="",  # type: ignore
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
     with pytest.raises(exceptions.S3InvalidPathError):
@@ -340,6 +352,7 @@ async def test_errors_upon_invalid_file_identifiers(
                 Path("invisible.txt"), project_id, f"{uuid4()}"
             ),
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
 
@@ -362,6 +375,7 @@ async def test_invalid_store(
             store_name=store,  # type: ignore
             s3_object=file_id,
             file_to_upload=file_path,
+            io_log_redirect_cb=None,
         )
 
     download_folder = Path(tmpdir) / "downloads"
@@ -372,6 +386,7 @@ async def test_invalid_store(
             store_name=store,  # type: ignore
             s3_object=file_id,
             local_folder=download_folder,
+            io_log_redirect_cb=None,
         )
 
 
@@ -403,6 +418,7 @@ async def test_valid_metadata(
         store_name=None,
         s3_object=file_id,
         file_to_upload=file_path,
+        io_log_redirect_cb=None,
     )
     assert store_id == s3_simcore_location
     assert e_tag
@@ -460,6 +476,7 @@ async def test_delete_File(
         store_name=None,
         s3_object=file_id,
         file_to_upload=file_path,
+        io_log_redirect_cb=None,
     )
     assert store_id == s3_simcore_location
     assert e_tag

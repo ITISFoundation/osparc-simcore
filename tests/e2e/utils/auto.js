@@ -84,17 +84,11 @@ async function __dashboardServicesBrowser(page) {
   await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]');
 }
 
-async function dashboardNewStudy(page) {
-  console.log("Creating New Study");
+async function dashboardNewPlan(page) {
+  console.log("Creating New Plan");
 
   await __dashboardStudiesBrowser(page);
-  await utils.waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
-
-  await page.waitForSelector('[osparc-test-id="newStudyTitleFld"]');
-  await page.type('[osparc-test-id="newStudyTitleFld"]', 'puppeteering study');
-  await page.type('[osparc-test-id="newStudyDescFld"]', 'this is puppeteer creating a new study');
-
-  await page.click('[osparc-test-id="newStudySubmitBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
 }
 
 async function toDashboard(page) {
@@ -269,6 +263,7 @@ async function deleteFirstStudy(page, studyName) {
   // filter out the cards that are not studies
   [
     "newStudyBtn",
+    "newPlanButton",
     "studiesLoading"
   ].forEach(notAStudy => {
     const idx = children.indexOf(notAStudy);
@@ -367,7 +362,7 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardNewStudy,
+  dashboardNewPlan,
   dashboardOpenFirstTemplate,
   dashboardOpenService,
   showLogger,

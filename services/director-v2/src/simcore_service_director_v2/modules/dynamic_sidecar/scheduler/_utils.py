@@ -28,10 +28,8 @@ from ..docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     try_to_remove_network,
 )
-from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
 
@@ -202,33 +200,6 @@ async def save_and_remove_user_created_services(
     )
     # remove network
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
-
-    # NOTE: if data was correctly saved it is safe to remove the volumes
-    # In case of manual support intervention this will be an issue.
-    if scheduler_data.dynamic_sidecar.was_data_saved_when_closing:
-        # Remove all dy-sidecar associated volumes from node
-        unique_volume_names = [
-            DynamicSidecarVolumesPathsResolver.source(
-                path=volume_path,
-                node_uuid=scheduler_data.node_uuid,
-                run_id=scheduler_data.dynamic_sidecar.run_id,
-            )
-            for volume_path in [
-                DY_SIDECAR_SHARED_STORE_PATH,
-                scheduler_data.paths_mapping.inputs_path,
-                scheduler_data.paths_mapping.outputs_path,
-            ]
-            + scheduler_data.paths_mapping.state_paths
-        ]
-        assert scheduler_data.docker_node_id  # nosec
-        await remove_volumes_from_node(
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            volume_names=unique_volume_names,
-            docker_node_id=scheduler_data.docker_node_id,
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_uuid=scheduler_data.node_uuid,
-        )
 
     logger.debug(
         "Removed dynamic-sidecar created services for '%s'",

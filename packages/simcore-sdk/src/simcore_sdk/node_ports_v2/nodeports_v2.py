@@ -1,12 +1,16 @@
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Optional, Type
+from typing import Any, Callable, Coroutine, Optional
 
+from models_library.projects import ProjectIDStr
+from models_library.projects_nodes_io import NodeIDStr
+from models_library.users import UserID
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.dbmanager import DBManager
@@ -26,15 +30,17 @@ class Nodeports(BaseModel):
     internal_inputs: InputsList = Field(..., alias="inputs")
     internal_outputs: OutputsList = Field(..., alias="outputs")
     db_manager: DBManager
-    user_id: int
-    project_id: str
-    node_uuid: str
+    user_id: UserID
+    project_id: ProjectIDStr
+    node_uuid: NodeIDStr
     save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[
-        [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
+        [DBManager, UserID, ProjectIDStr, NodeIDStr],
+        Coroutine[Any, Any, type["Nodeports"]],
     ]
     auto_update: bool = False
     r_clone_settings: Optional[RCloneSettings] = None
+    io_log_redirect_cb: Optional[LogRedirectCB]
 
     class Config:
         arbitrary_types_allowed = True
@@ -107,7 +113,7 @@ class Nodeports(BaseModel):
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 
-    async def _node_ports_creator_cb(self, node_uuid: str) -> Type["Nodeports"]:
+    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
         return await self.node_port_creator_cb(
             self.db_manager, self.user_id, self.project_id, node_uuid
         )
@@ -125,7 +131,7 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def set_multiple(self, port_values: Dict[str, ItemConcreteValue]) -> None:
+    async def set_multiple(self, port_values: dict[str, ItemConcreteValue]) -> None:
         """
         Sets the provided values to the respective input or output ports
         Only supports port_key by name, not able to distinguish between inputs
