@@ -91,7 +91,6 @@ async def copy_data_folders_from_project(
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
     log.debug("Copying %d nodes", len(nodes_map))
-
     # /simcore-s3/folders:
     url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
     async for task in long_running_task_request(
@@ -108,48 +107,6 @@ async def copy_data_folders_from_project(
         wait_interval_s=0.5,
     ):
         yield task
-    # async with client.post(
-    #     url,
-    #     json={
-    #         "source": source_project,
-    #         "destination": destination_project,
-    #         "nodes_map": nodes_map,
-    #     },
-    #     ssl=False,
-    # ) as resp:
-    #     resp.raise_for_status()
-    #     storage_copy_long_running_task = Envelope[TaskGet].parse_obj(await resp.json())
-
-    # async for attempt in AsyncRetrying(
-    #     reraise=True,
-    #     wait=wait_fixed(2),
-    #     stop=stop_after_delay(TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
-    # ):
-    #     with attempt:
-    #         async with client.get(
-    #             storage_copy_long_running_task.data.status_href
-    #         ) as resp:
-    #             resp.raise_for_status()
-    #             copy_status = Envelope[TaskStatus].parse_obj(await resp.json())
-    #             if not copy_status.done:
-    #                 yield (
-    #                     copy_status.data.task_progress.message,
-    #                     copy_status.data.task_progress.percent,
-    #                 )
-    #                 raise TryAgain
-    # async with client.get(storage_copy_long_running_task.data.result_href) as resp:
-    #     resp.raise_for_status()
-    #     payload = await resp.json()
-    #     # FIXME: relying on storage to change the project is not a good idea since
-    #     # it is not storage responsibility to deal with projects
-    #     updated_project, error = unwrap_envelope(payload)
-    # if error:
-    #     msg = "Cannot copy project data in storage: %s" % pformat(error)
-    #     log.error(msg)
-    #     # TODO: should reconstruct error and rethrow same exception as storage service?
-    #     raise web.HTTPServiceUnavailable(reason=msg)
-
-    # return updated_project
 
 
 async def _delete(session, target_url):
