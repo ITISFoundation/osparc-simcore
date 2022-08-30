@@ -83,20 +83,17 @@ async def _request_copy_folders(
     nodes_map: dict[NodeID, NodeID],
 ) -> dict[str, Any]:
     assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=user_id)
+    url = client.make_url(
+        f"{(client.app.router['copy_folders_from_project'].url_for().with_query(user_id=user_id))}"
     )
     async for lr_task in long_running_task_request(
-        client,
+        client.session,
         url,
         json=jsonable_encoder(
             FoldersBody(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
             )
         ),
-        wait_interval_s=0.2,
     ):
         print(f"<-- current state is {lr_task.progress=}")
         if lr_task.done():
