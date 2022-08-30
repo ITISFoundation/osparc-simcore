@@ -88,14 +88,12 @@ async def copy_data_folders_from_project(
     nodes_map: NodesMap,
     user_id: UserID,
 ) -> AsyncGenerator[LRTask, None]:
-    # TODO: optimize if project has actualy data or not before doing the call
-    client, api_endpoint = _get_storage_client(app)
+    session, api_endpoint = _get_storage_client(app)
     log.debug("Copying %d nodes", len(nodes_map))
     # /simcore-s3/folders:
-    url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
-    async for task in long_running_task_request(
-        client,
-        url,
+    async for lr_task in long_running_task_request(
+        session,
+        (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id),
         json=jsonable_encoder(
             {
                 "source": source_project,
@@ -106,7 +104,7 @@ async def copy_data_folders_from_project(
         wait_timeout_s=TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
         wait_interval_s=0.5,
     ):
-        yield task
+        yield lr_task
 
 
 async def _delete(session, target_url):
