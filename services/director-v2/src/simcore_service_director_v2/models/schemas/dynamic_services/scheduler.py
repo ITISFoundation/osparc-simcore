@@ -38,6 +38,7 @@ MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 DockerId = constr(max_length=25, regex=r"[A-Za-z0-9]{25}")
 ServiceId = DockerId
 NetworkId = DockerId
+ServiceName = constr(strip_whitespace=True, min_length=2)
 
 logger = logging.getLogger()
 
@@ -142,7 +143,7 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    run_id: UUID = Field(
+    run_id: UUID = Field(  # LOCKED_IN
         default_factory=uuid4,
         description=(
             "Used to discriminate between dynamic-sidecar docker resources "
@@ -157,9 +158,11 @@ class DynamicSidecar(BaseModel):
         description="status of the service sidecar also with additional information",
     )
 
-    hostname: str = Field(..., description="docker hostname for this service")
+    hostname: str = Field(
+        ..., description="docker hostname for this service"
+    )  # LOCKED_IN
 
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
+    port: PositiveInt = Field(8000, description="dynamic-sidecar port")  # LOCKED_IN
 
     is_available: bool = Field(
         False,
@@ -262,7 +265,7 @@ class DynamicSidecar(BaseModel):
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
 
     @property
-    def endpoint(self) -> AnyHttpUrl:
+    def endpoint(self) -> AnyHttpUrl:  # LOCKED_IN
         """endpoint where all the services are exposed"""
         return parse_obj_as(
             AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
@@ -329,7 +332,7 @@ class DynamicSidecarNames(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    service_name: constr(strip_whitespace=True, min_length=2) = Field(
+    service_name: ServiceName = Field(
         ...,
         description="Name of the current dynamic-sidecar being observed",
     )

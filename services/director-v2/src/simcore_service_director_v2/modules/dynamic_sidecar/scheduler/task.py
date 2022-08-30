@@ -37,6 +37,7 @@ from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
+    ServiceName,
 )
 from ..api_client import (
     ClientHttpError,
@@ -116,9 +117,6 @@ def _get_30_second_modulo_divisor(wait_interval: float) -> PositiveInt:
     passed based on the cycle count
     """
     return max(1, int(floor(30 / wait_interval)))
-
-
-ServiceName = str
 
 
 @dataclass
