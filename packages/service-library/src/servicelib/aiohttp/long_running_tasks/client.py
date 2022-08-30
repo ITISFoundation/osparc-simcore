@@ -30,9 +30,9 @@ _DEFAULT_AIOHTTP_RETRY_POLICY = dict(
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _start(
-    session: ClientSession, request: URL, json: Optional[RequestBody]
+    session: ClientSession, url: URL, json: Optional[RequestBody]
 ) -> TaskGet:
-    async with session.post(request, json=json) as response:
+    async with session.post(url, json=json) as response:
         response.raise_for_status()
         data, error = unwrap_envelope(await response.json())
     assert not error  # nosec
@@ -41,10 +41,11 @@ async def _start(
     return task
 
 
+@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _wait_for_completion(
     session: ClientSession,
     task_id: TaskId,
-    status_url: str,
+    status_url: URL,
     wait_timeout_s: int,
     wait_interval_s: float,
 ) -> AsyncGenerator[TaskProgress, None]:
@@ -53,6 +54,7 @@ async def _wait_for_completion(
             wait=wait_fixed(wait_interval_s),
             stop=stop_after_delay(wait_timeout_s),
             reraise=True,
+            retry=retry_if_exception_type(TryAgain),
         ):
             with attempt:
                 async with session.get(status_url) as response:
@@ -76,8 +78,8 @@ async def _wait_for_completion(
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
-async def _task_result(session: ClientSession, result_href: str) -> Any:
-    async with session.get(result_href) as response:
+async def _task_result(session: ClientSession, result_url: URL) -> Any:
+    async with session.get(result_url) as response:
         response.raise_for_status()
         if response.status != web.HTTPNoContent.status_code:
             data, error = unwrap_envelope(await response.json())
@@ -87,8 +89,8 @@ async def _task_result(session: ClientSession, result_href: str) -> Any:
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
-async def _abort_task(session: ClientSession, abort_href: str) -> None:
-    async with session.delete(abort_href) as response:
+async def _abort_task(session: ClientSession, abort_url: URL) -> None:
+    async with session.delete(abort_url) as response:
         response.raise_for_status()
         data, error = unwrap_envelope(await response.json())
         assert not error  # nosec
@@ -140,16 +142,21 @@ async def long_running_task_request(
         task = await _start(session, url, json)
         last_progress = None
         async for task_progress in _wait_for_completion(
-            session, task.task_id, task.status_href, wait_timeout_s, wait_interval_s
+            session,
+            task.task_id,
+            url.with_path(task.status_href),
+            wait_timeout_s,
+            wait_interval_s,
         ):
             last_progress = task_progress
             yield LRTask(progress=task_progress)
         assert last_progress  # nosec
         yield LRTask(
-            progress=last_progress, _result=_task_result(session, task.result_href)
+            progress=last_progress,
+            _result=_task_result(session, url.with_path(task.result_href)),
         )
 
     except (asyncio.CancelledError, asyncio.TimeoutError):
         if task:
-            await _abort_task(session, task.abort_href)
+            await _abort_task(session, url.with_path(task.abort_href))
         raise
