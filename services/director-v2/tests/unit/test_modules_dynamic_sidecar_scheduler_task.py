@@ -132,7 +132,7 @@ def error_raised_by_saving_state(request: FixtureRequest) -> bool:
 @dataclass
 class UseCase:
     can_save: bool
-    skip_sidecar_monitor_and_removal: bool
+    wait_for_manual_intervention_after_error: bool
     outcome_service_removed: bool
 
 
@@ -140,22 +140,22 @@ class UseCase:
     params=[
         UseCase(
             can_save=False,
-            skip_sidecar_monitor_and_removal=False,
+            wait_for_manual_intervention_after_error=False,
             outcome_service_removed=True,
         ),
         UseCase(
             can_save=False,
-            skip_sidecar_monitor_and_removal=True,
+            wait_for_manual_intervention_after_error=True,
             outcome_service_removed=False,
         ),
         UseCase(
             can_save=True,
-            skip_sidecar_monitor_and_removal=False,
+            wait_for_manual_intervention_after_error=False,
             outcome_service_removed=True,
         ),
         UseCase(
             can_save=True,
-            skip_sidecar_monitor_and_removal=True,
+            wait_for_manual_intervention_after_error=True,
             outcome_service_removed=False,
         ),
     ]
@@ -185,8 +185,8 @@ def mocked_dynamic_scheduler_events(
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                     use_case.can_save
                 )
-                scheduler_data.dynamic_sidecar.skip_sidecar_monitor_and_removal = (
-                    use_case.skip_sidecar_monitor_and_removal
+                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
+                    use_case.wait_for_manual_intervention_after_error
                 )
             raise RuntimeError("Failed as planned")
 

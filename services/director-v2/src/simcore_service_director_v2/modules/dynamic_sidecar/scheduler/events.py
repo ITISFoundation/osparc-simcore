@@ -48,15 +48,16 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import EntrypointContainerNotFoundError
-from ._utils import RESOURCE_STATE_AND_INPUTS, save_and_remove_user_created_services
-from .abc import DynamicSchedulerEvent
-from .events_utils import (
+from ._utils import (
+    RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
     disabled_directory_watcher,
     fetch_repo_outside_of_request,
     get_director_v0_client,
     parse_containers_inspect,
+    save_and_remove_user_created_services,
 )
+from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
 

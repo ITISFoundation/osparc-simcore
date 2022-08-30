@@ -162,8 +162,9 @@ async def save_and_remove_user_created_services(
                 # user data can be manually saved and manual
                 # cleanup of the dynamic-sidecar is required
 
-                # NOTE: explicitly ask to wait for manual intervention.
-                scheduler_data.dynamic_sidecar.skip_sidecar_monitor_and_removal = True
+                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
+                    True
+                )
                 raise e
 
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:

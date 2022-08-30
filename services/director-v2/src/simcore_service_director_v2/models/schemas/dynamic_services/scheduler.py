@@ -223,7 +223,7 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    skip_sidecar_monitor_and_removal: bool = Field(
+    wait_for_manual_intervention_after_error: bool = Field(
         False,
         description=(
             "Marks the sidecar as untouchable since there was an error and "

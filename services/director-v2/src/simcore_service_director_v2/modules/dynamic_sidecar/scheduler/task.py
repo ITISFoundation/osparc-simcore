@@ -370,7 +370,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
                 # 4. service started, and failed on closing -> it cannot be removed safely
 
-                if scheduler_data.dynamic_sidecar.skip_sidecar_monitor_and_removal:
+                if (
+                    scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error
+                ):
                     # use-cases: 3, 4
                     # Since user data is important and must be saved, take no further
                     # action and wait for manual intervention from support.
