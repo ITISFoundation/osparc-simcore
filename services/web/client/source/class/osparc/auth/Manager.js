@@ -152,7 +152,17 @@ qx.Class.define("osparc.auth.Manager", {
               loginCbk.call(context, resp.data);
             })
             .catch(err => failCbk.call(context, err.message));
+        } else {
+          const resp = JSON.parse(xhr.responseText);
+          if ("error" in resp && resp["error"]) {
+            failCbk.call(context, resp["error"]["message"]);
+          } else {
+            failCbk.call(context, this.tr("Login failed"));
+          }
         }
+      };
+      xhr.onerror = () => {
+        failCbk.call(context, this.tr("Login failed"));
       };
       xhr.open("POST", url, true);
       xhr.setRequestHeader("Content-Type", "application/json");
