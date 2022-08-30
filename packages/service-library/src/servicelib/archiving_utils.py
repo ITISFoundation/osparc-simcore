@@ -147,6 +147,9 @@ async def unarchive_dir(
     Returns a set with all the paths extracted from archive. It includes
     all tree leafs, which might include files or empty folders
 
+
+    WARNING: Does not guarantees state of ``destination_folder`` after error
+
     ::raise ArchiveError
     """
     with zipfile.ZipFile(
@@ -284,6 +287,8 @@ async def archive_dir(
     The **exclude_patterns** is a set of patterns created using
     Unix shell-style wildcards to exclude files and directories.
 
+    destination: Path deleted if errors
+
     ::raise ArchiveError
     """
     with non_blocking_process_pool_executor(max_workers=1) as process_pool:
@@ -301,10 +306,18 @@ async def archive_dir(
                 exclude_patterns,
             )
         except Exception as err:
+            if destination.is_file():
+                destination.unlink(missing_ok=True)
+
             raise ArchiveError(
                 f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
                 f"Details: {err}"
             ) from err
+
+        except BaseException:
+            if destination.is_file():
+                destination.unlink(missing_ok=True)
+            raise
 
 
 def is_leaf_path(p: Path) -> bool:
