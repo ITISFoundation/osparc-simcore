@@ -97,6 +97,7 @@ async def _request_copy_folders(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
             )
         ),
+        wait_interval_s=0.2,
     ):
         print(f"<-- current state is {lr_task.progress=}")
         if lr_task.done():
