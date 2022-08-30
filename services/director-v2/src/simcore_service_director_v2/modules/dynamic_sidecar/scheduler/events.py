@@ -230,7 +230,10 @@ class GetStatus(DynamicSchedulerEvent):
                 dynamic_sidecar_endpoint
             )
         except BaseClientHTTPError:
-            if scheduler_data.dynamic_sidecar.were_containers_created:
+            were_service_containers_detected_before = (
+                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
+            )
+            if were_service_containers_detected_before:
                 # Containers disappeared after they were started.
                 # for now just mark as error and remove the sidecar
                 # NOTE: this is the correct place where to try and
