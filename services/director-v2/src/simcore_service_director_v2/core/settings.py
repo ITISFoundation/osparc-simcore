@@ -447,6 +447,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
+    DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS: bool = Field(
+        False,
+        description="if enabled state is saved via rclone volumes",
+    )
+
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: str = ""

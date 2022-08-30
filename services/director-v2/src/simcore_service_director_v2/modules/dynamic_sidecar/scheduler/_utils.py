@@ -138,7 +138,7 @@ async def save_and_remove_user_created_services(
 
                 # When enabled no longer uploads state via nodeports
                 # It uses rclone mounted volumes for this task.
-                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS:
                     tasks.append(
                         dynamic_sidecar_client.save_service_state(
                             dynamic_sidecar_endpoint

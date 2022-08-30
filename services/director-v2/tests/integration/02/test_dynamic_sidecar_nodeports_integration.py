@@ -277,7 +277,7 @@ def _is_docker_r_clone_plugin_installed() -> bool:
         "false",
     },
 )
-def dev_features_enabled(request) -> str:
+def dev_feature_r_clone_enabled(request) -> str:
     if request.param == "true" and not _is_docker_r_clone_plugin_installed():
         pytest.skip("Required docker plugin `rclone` not installed.")
     return request.param
@@ -288,7 +288,7 @@ def mock_env(
     monkeypatch: MonkeyPatch,
     redis_service: RedisSettings,
     network_name: str,
-    dev_features_enabled: str,
+    dev_feature_r_clone_enabled: str,
     rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
     minio_config: dict[str, Any],
@@ -328,7 +328,9 @@ def mock_env(
     monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
     monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
     monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
-    monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS", dev_feature_r_clone_enabled
+    )
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
@@ -1001,7 +1003,7 @@ async def test_nodeports_integration(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS:
         await sleep_for(
             WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
             "Waiting for rclone to sync data from the docker volume",
@@ -1015,7 +1017,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_from_container(
             dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
         )
@@ -1028,7 +1030,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
@@ -1051,7 +1053,7 @@ async def test_nodeports_integration(
 
     await _wait_for_dy_services_to_fully_stop(async_client)
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS:
         await sleep_for(
             WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
             "Waiting for rclone to sync data from the docker volume",
@@ -1065,7 +1067,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_via_data_manager(
             dir_tag="dy",
             user_id=current_user["id"],
@@ -1083,7 +1085,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_via_data_manager(
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
@@ -1111,7 +1113,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_from_container(
             dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
         )
@@ -1124,7 +1126,7 @@ async def test_nodeports_integration(
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
