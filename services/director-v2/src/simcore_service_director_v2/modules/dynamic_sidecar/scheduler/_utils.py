@@ -64,9 +64,7 @@ async def disabled_directory_watcher(
         )
 
 
-def fetch_repo_outside_of_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
-) -> BaseRepository:
+def get_repository(app: FastAPI, repo_type: Type[BaseRepository]) -> BaseRepository:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 

@@ -52,8 +52,8 @@ from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
     disabled_directory_watcher,
-    fetch_repo_outside_of_request,
     get_director_v0_client,
+    get_repository,
     parse_containers_inspect,
     save_and_remove_user_created_services,
 )
@@ -99,7 +99,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
         # fetching project form DB and fetching user settings
         projects_repository = cast(
-            ProjectsRepository, fetch_repo_outside_of_request(app, ProjectsRepository)
+            ProjectsRepository, get_repository(app, ProjectsRepository)
         )
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
@@ -496,7 +496,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
 
         projects_networks_repository: ProjectsNetworksRepository = cast(
             ProjectsNetworksRepository,
-            fetch_repo_outside_of_request(app, ProjectsNetworksRepository),
+            get_repository(app, ProjectsNetworksRepository),
         )
 
         projects_networks: ProjectsNetworks = (
