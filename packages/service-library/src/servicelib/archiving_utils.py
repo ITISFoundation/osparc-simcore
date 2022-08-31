@@ -1,6 +1,7 @@
 import asyncio
 import fnmatch
 import logging
+import shutil
 import types
 import zipfile
 from contextlib import contextmanager
@@ -16,6 +17,12 @@ from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 CHUNK_SIZE: Final[int] = 1024 * 8
 log = logging.getLogger(__name__)
+
+
+class ArchiveError(Exception):
+    """
+    Error raised while archiving or unarchiving
+    """
 
 
 def _human_readable_size(size, decimal_places=3):
@@ -115,13 +122,7 @@ def _zipfile_single_file_extract_worker(
             return destination_path
 
 
-class ArchiveError(Exception):
-    """
-    Error raised while archiving or unarchiving
-    """
-
-
-def ensure_destination_subdirectories_exist(
+def _ensure_destination_subdirectories_exist(
     zip_file_handler: zipfile.ZipFile, destination_folder: Path
 ) -> None:
     # assemble full destination paths
@@ -148,7 +149,7 @@ async def unarchive_dir(
     all tree leafs, which might include files or empty folders
 
 
-    WARNING: Does not guarantees state of ``destination_folder`` after error
+    NOTE: ``destination_folder`` is fully deleted after error
 
     ::raise ArchiveError
     """
@@ -164,7 +165,7 @@ async def unarchive_dir(
             # to avoid race conditions all subdirectories where files will be extracted need to exist
             # creating them before the extraction is under way avoids the issue
             # the following avoids race conditions while unzippin in parallel
-            ensure_destination_subdirectories_exist(
+            _ensure_destination_subdirectories_exist(
                 zip_file_handler=zip_file_handler,
                 destination_folder=destination_folder,
             )
@@ -193,8 +194,15 @@ async def unarchive_dir(
 
             except Exception as err:
 
-                for t in futures:
-                    t.cancel()
+                for f in futures:
+                    f.cancel()
+
+                # give a chance to event-loop context switch since some futures
+                # might be operating in 'destination_folder'
+                await asyncio.sleep(0.1)
+
+                if destination_folder.exists() and destination_folder.is_dir():
+                    shutil.rmtree(destination_folder, ignore_errors=True)
 
                 raise ArchiveError(
                     f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
@@ -385,6 +393,7 @@ class PrunableFolder:
 __all__ = (
     "archive_dir",
     "ArchiveError",
+    "is_leaf_path",
     "PrunableFolder",
     "unarchive_dir",
 )
