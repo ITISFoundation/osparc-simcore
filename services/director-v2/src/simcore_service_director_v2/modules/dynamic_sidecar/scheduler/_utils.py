@@ -199,7 +199,7 @@ async def save_and_remove_user_created_services(
     # set to True before removing data otherwise do nothing
 
     logger.debug(
-        "Removed dynamic-sidecar created services for '%s'",
+        "Removed dynamic-sidecar services and crated container for '%s'",
         scheduler_data.service_name,
     )
 
