@@ -219,7 +219,7 @@ class DynamicSidecar(BaseModel):
     )
     were_state_and_outputs_saved: bool = Field(
         False,
-        description="marked as True if sidecar managed to store the data when it was closing",
+        description="set True if the dy-sidecar saves the state and uploads the outputs",
     )
 
     # below had already been validated and
