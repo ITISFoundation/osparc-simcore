@@ -143,7 +143,7 @@ class ServicesRepository(BaseRepository):
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
         return sorted(
-            releases, key=lambda x: [int(v) for v in x.version.split(".")], reverse=True
+            releases, key=lambda x: packaging.version.parse(x.version), reverse=True
         )
 
     async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
