@@ -72,10 +72,12 @@ async def _retry_docker_compose_create(
     compose_spec_dict = parse_compose_spec(compose_spec)
     container_names = list(compose_spec_dict["services"].keys())
 
-    expected_containers = len(container_names)
-    found_containers = await get_running_containers_count_from_names(container_names)
+    expected_num_containers = len(container_names)
+    actual_num_containers = await get_running_containers_count_from_names(
+        container_names
+    )
 
-    return expected_containers == found_containers
+    return expected_num_containers == actual_num_containers
 
 
 async def task_create_service_containers(
