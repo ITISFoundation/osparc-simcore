@@ -2,9 +2,9 @@ import os
 from functools import cached_property
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Iterator
-from uuid import UUID
 
 from fastapi import FastAPI
+from models_library.services import RunID
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 from ..core.docker_utils import get_volume_by_label
@@ -92,24 +92,24 @@ class MountedVolumes:
         set(self.disk_state_paths())
 
     @staticmethod
-    async def _get_bind_path_from_label(label: str, run_id: UUID) -> Path:
+    async def _get_bind_path_from_label(label: str, run_id: RunID) -> Path:
         volume_details = await get_volume_by_label(label=label, run_id=run_id)
         return Path(volume_details["Mountpoint"])
 
-    async def get_inputs_docker_volume(self, run_id: UUID) -> str:
+    async def get_inputs_docker_volume(self, run_id: RunID) -> str:
         bind_path: Path = await self._get_bind_path_from_label(
             self.volume_name_inputs, run_id
         )
         return f"{bind_path}:{self.inputs_path}"
 
-    async def get_outputs_docker_volume(self, run_id: UUID) -> str:
+    async def get_outputs_docker_volume(self, run_id: RunID) -> str:
         bind_path: Path = await self._get_bind_path_from_label(
             self.volume_name_outputs, run_id
         )
         return f"{bind_path}:{self.outputs_path}"
 
     async def iter_state_paths_to_docker_volumes(
-        self, run_id: UUID
+        self, run_id: RunID
     ) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths

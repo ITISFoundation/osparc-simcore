@@ -7,13 +7,13 @@
 import logging
 import sys
 from pathlib import Path
-from uuid import UUID
 
 import pytest
 import simcore_service_dynamic_sidecar
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.services import RunID
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import (
@@ -113,7 +113,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> RunID:
     return faker.uuid4(cast_to=None)
 
 
@@ -129,7 +129,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: UUID,
+    run_id: RunID,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 

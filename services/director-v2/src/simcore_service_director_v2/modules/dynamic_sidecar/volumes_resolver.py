@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import RunID
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
@@ -92,7 +92,7 @@ class DynamicSidecarVolumesPathsResolver:
         compose_namespace: str,
         path: Path,
         node_uuid: NodeID,
-        run_id: UUID,
+        run_id: RunID,
     ) -> dict[str, Any]:
         """
         mounts local directories form the host where the service
@@ -119,7 +119,7 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
-        run_id: UUID,
+        run_id: RunID,
         r_clone_settings: RCloneSettings,
     ) -> dict[str, Any]:
         return {

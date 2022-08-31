@@ -4,11 +4,11 @@
 
 import os
 from pathlib import Path
-from uuid import UUID
 
 import pytest
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
+from models_library.services import RunID
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
     MountedVolumes,
@@ -55,7 +55,7 @@ async def test_expected_paths_and_volumes(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     compose_namespace: str,
-    run_id: UUID,
+    run_id: RunID,
 ):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))

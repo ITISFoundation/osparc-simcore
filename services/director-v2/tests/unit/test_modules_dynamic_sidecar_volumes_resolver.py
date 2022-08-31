@@ -7,6 +7,7 @@ from uuid import UUID
 
 import pytest
 from faker import Faker
+from models_library.services import RunID
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
@@ -37,13 +38,13 @@ def state_paths() -> list[Path]:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> RunID:
     return faker.uuid4(cast_to=None)
 
 
 @pytest.fixture
 def expected_volume_config(
-    swarm_stack_name: str, node_uuid: UUID, run_id: UUID
+    swarm_stack_name: str, node_uuid: UUID, run_id: RunID
 ) -> Callable[[str, str], dict[str, Any]]:
     def _callable(source: str, target: str) -> dict[str, Any]:
         return {
@@ -71,7 +72,7 @@ def test_expected_paths(
     node_uuid: UUID,
     state_paths: list[Path],
     expected_volume_config: Callable[[str, str], dict[str, Any]],
-    run_id: UUID,
+    run_id: RunID,
 ) -> None:
     fake = Faker()
 

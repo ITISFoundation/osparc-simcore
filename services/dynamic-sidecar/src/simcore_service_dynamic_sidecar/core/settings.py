@@ -2,11 +2,11 @@ import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, cast
-from uuid import UUID
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -89,7 +89,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
-    DY_SIDECAR_RUN_ID: UUID
+    DY_SIDECAR_RUN_ID: RunID
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

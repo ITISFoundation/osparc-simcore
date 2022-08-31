@@ -4,7 +4,6 @@
 
 
 from typing import Any, cast
-from uuid import UUID
 
 import pytest
 import respx
@@ -14,7 +13,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import ServiceKeyVersion
+from models_library.services import RunID, ServiceKeyVersion
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -94,7 +93,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
+def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {

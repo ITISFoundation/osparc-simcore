@@ -14,7 +14,6 @@ from typing import (
     Iterator,
     Mapping,
 )
-from uuid import UUID
 
 import pytest
 import respx
@@ -30,7 +29,7 @@ from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKeyVersion
+from models_library.services import RunID, ServiceKeyVersion
 from pydantic.types import NonNegativeInt
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
@@ -77,13 +76,13 @@ def dynamic_sidecar_port() -> int:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> RunID:
     return faker.uuid4(cast_to=None)
 
 
 @pytest.fixture
 def scheduler_data_from_http_request(
-    run_id: UUID,
+    run_id: RunID,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
