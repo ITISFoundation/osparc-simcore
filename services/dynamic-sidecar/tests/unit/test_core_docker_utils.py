@@ -10,7 +10,7 @@ from _pytest.fixtures import FixtureRequest
 from faker import Faker
 from pydantic import PositiveInt
 from simcore_service_dynamic_sidecar.core.docker_utils import (
-    get_user_service_container_count,
+    get_running_containers_count_from_names,
     get_volume_by_label,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
@@ -92,8 +92,8 @@ async def test_volume_label_missing(run_id: UUID):
     assert "not_exist" in error_msg
 
 
-async def test_get_user_service_container_count(
+async def test_get_running_containers_count_from_names(
     started_services: None, container_names: list[str], container_count: PositiveInt
 ):
-    found_containers = await get_user_service_container_count(container_names)
+    found_containers = await get_running_containers_count_from_names(container_names)
     assert found_containers == container_count

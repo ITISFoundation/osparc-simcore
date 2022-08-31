@@ -21,7 +21,7 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import get_user_service_container_count
+from ..core.docker_utils import get_running_containers_count_from_names
 from ..core.rabbitmq import RabbitMQ, send_message
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult, assemble_container_names
@@ -73,7 +73,7 @@ async def _retry_docker_compose_create(
     container_names = list(compose_spec_dict["services"].keys())
 
     expected_containers = len(container_names)
-    found_containers = await get_user_service_container_count(container_names)
+    found_containers = await get_running_containers_count_from_names(container_names)
 
     return expected_containers == found_containers
 

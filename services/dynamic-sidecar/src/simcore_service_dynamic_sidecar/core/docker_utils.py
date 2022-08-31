@@ -43,7 +43,9 @@ async def get_volume_by_label(label: str, run_id: UUID) -> dict[str, Any]:
         return volume_details  # type: ignore
 
 
-async def get_user_service_container_count(container_names: list[str]) -> PositiveInt:
+async def get_running_containers_count_from_names(
+    container_names: list[str],
+) -> PositiveInt:
     if len(container_names) == 0:
         return 0
 
