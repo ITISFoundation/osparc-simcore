@@ -24,7 +24,7 @@ from fastapi import FastAPI
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from pydantic import AnyHttpUrl, PositiveInt
+from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
 from ....core.settings import (
