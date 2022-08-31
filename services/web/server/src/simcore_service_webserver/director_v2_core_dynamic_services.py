@@ -128,7 +128,7 @@ async def stop_dynamic_service(
         app,
         "DELETE",
         url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-            save_state="true" if save_state else "false",
+            can_save="true" if save_state else "false",
         ),
         expected_status=web.HTTPNoContent,
         timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,

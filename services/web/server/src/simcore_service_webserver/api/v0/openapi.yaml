@@ -36,6 +36,9 @@ tags:
       Grouping the paths and operations that perform changes on the TAG entity.
       Tags are customized visual elements that help the user group and quickly identify different items
       on the interface. They can also be used for searching and filtering purposes.
+  - name: tasks
+    description: |
+      Asynchronously running tasks
   - name: node
     description: |
       The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
@@ -154,8 +157,11 @@ paths:
                     properties:
                       invitation_required:
                         type: boolean
+                      login_2fa_required:
+                        type: boolean
                     example:
                       invitation_required: true
+                      login_2fa_required: false
                   error:
                     nullable: true
                     default: null
@@ -194,6 +200,74 @@ paths:
       responses:
         '200':
           description: User has been succesfully registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/verify-phone-number:
+    post:
+      summary: user tries to verify phone number for 2 Factor Authentication when registering
+      tags:
+        - authentication
+      operationId: auth_verify_2fa_phone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - phone
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
+              example:
+                email: foo@mymail.com
+                phone: '+41123456789'
+      responses:
+        '202':
+          description: 'Accepted, SMS sent'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/validate-code-register:
+    post:
+      summary: user enters 2 Factor Authentication code when registering
+      tags:
+        - authentication
+      operationId: auth_validate_2fa_register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - phone
+                - code
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
+                code:
+                  type: string
+              example:
+                email: foo@mymail.com
+                phone: '+41123456789'
+                code: '1234'
+      responses:
+        '200':
+          description: Succesfully validated
           content:
             application/json:
               schema:
@@ -256,6 +330,43 @@ paths:
                   error:
                     nullable: true
                     default: null
+        '202':
+          description: 'Accepted, but 2 Factor Authentication required'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/validate-code-login:
+    post:
+      summary: user enters 2 Factor Authentication code when login in
+      tags:
+        - authentication
+      operationId: auth_validate_2fa_login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+              properties:
+                email:
+                  type: string
+                code:
+                  type: string
+              example:
+                email: foo@mymail.com
+                code: '1234'
+      responses:
+        '200':
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/logout:
@@ -1754,7 +1865,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
@@ -1766,16 +1877,17 @@ paths:
       summary: Create new project
       operationId: create_projects
       parameters:
-        - name: from_template
+        - name: from_study
           in: query
           schema:
             type: string
-          description: 'Option to create a project from existing template: from_template={template_uuid}'
+          description: 'Option to create a project from existing template or study: from_study={study_uuid}'
         - name: as_template
           in: query
           schema:
-            type: string
-          description: 'Option to create a template from existing project: as_template={study_uuid}'
+            type: boolean
+            default: false
+          description: 'Option to create a template from existing project: as_template=true'
         - name: copy_data
           in: query
           schema:
@@ -2329,8 +2441,52 @@ paths:
                   title: Quality
                   description: Object containing Quality Assessment related data
       responses:
-        '201':
+        '202':
           description: project created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      task_id:
+                        type: string
+                      status_href:
+                        type: string
+                      result_href:
+                        type: string
+                    required:
+                      - task_id
+                      - status_href
+                      - result_href
+                  error:
+                    nullable: true
+                    default: null
+          links:
+            CreationStatus:
+              operationId: get_task_status
+              parameters:
+                task_id: $response.body#/data/task_id
+            CreationResult:
+              operationId: get_task_result
+              description: Returns 201 if creation succeeded
+              parameters:
+                task_id: $response.body#/data/task_id
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /projects/active:
+    get:
+      tags:
+        - project
+      summary: Gets active project
+      operationId: get_active_project
+      responses:
+        '200':
+          description: returns active project
           content:
             application/json:
               schema:
@@ -2348,21 +2504,6 @@ paths:
                   error:
                     nullable: true
                     default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /projects/active:
-    get:
-      tags:
-        - project
-      summary: Gets active project
-      operationId: get_active_project
-      responses:
-        '200':
-          description: returns active project
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_id}':
@@ -2383,7 +2524,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -2408,7 +2549,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -2445,7 +2586,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_id}/state':
@@ -2862,15 +3003,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -2906,7 +3039,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
@@ -3092,7 +3233,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -3106,7 +3247,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_uuid}/checkpoint/{ref_id}/iterations':
@@ -4844,7 +4985,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
@@ -5223,6 +5364,89 @@ paths:
                   error:
                     nullable: true
                     default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /tasks:
+    get:
+      operationId: list_tasks
+      tags:
+        - tasks
+      responses:
+        '200':
+          description: Returns the list of active tasks (running and/or done)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/~1projects/post/responses/202/content/application~1json/schema'
+  '/tasks/{task_id}':
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: get_task_status
+      tags:
+        - tasks
+      responses:
+        '200':
+          description: Returns the task status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - task_progress
+                      - done
+                      - started
+                    properties:
+                      task_progress:
+                        type: number
+                        minimum: 0
+                        maximum: 1
+                      done:
+                        type: boolean
+                      started:
+                        type: string
+                        pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
+                        example: '2018-07-01T11:13:43Z'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      operationId: cancel_and_delete_task
+      description: Aborts and remove the task
+      tags:
+        - tasks
+      responses:
+        '204':
+          description: Task was successfully aborted
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/tasks/{task_id}/result':
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: get_task_result
+      tags:
+        - tasks
+      responses:
+        2XX:
+          description: Retrieve the task result and returns directly its HTTP code
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:

@@ -121,97 +121,6 @@ async def test_get_containers(
     assert_responses(mock_response, response)
 
 
-async def test_post_containers(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_202_ACCEPTED)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers(
-        dynamic_sidecar_endpoint, compose_spec="some_fake_compose_as_str"
-    )
-    assert_responses(mock_response, response)
-
-
-async def test_post_containers_down(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_200_OK)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers:down",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_down(dynamic_sidecar_endpoint)
-    assert_responses(mock_response, response)
-
-
-async def test_post_containers_state_save(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_204_NO_CONTENT)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/state:save",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_state_save(dynamic_sidecar_endpoint)
-    assert_responses(mock_response, response)
-
-
-async def test_post_containers_state_restore(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_204_NO_CONTENT)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/state:restore",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_state_restore(dynamic_sidecar_endpoint)
-    assert_responses(mock_response, response)
-
-
-@pytest.mark.parametrize("port_keys", [None, ["1", "2"], []])
-async def test_post_containers_ports_inputs_pull(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-    port_keys: Optional[list[str]],
-) -> None:
-    mock_response = Response(status.HTTP_200_OK)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/inputs:pull",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_ports_inputs_pull(
-        dynamic_sidecar_endpoint, port_keys=port_keys
-    )
-    assert_responses(mock_response, response)
-
-
 @pytest.mark.parametrize("is_enabled", [False, True])
 async def test_post_patch_containers_directory_watcher(
     thin_client: ThinDynamicSidecarClient,
@@ -254,48 +163,6 @@ async def test_post_containers_ports_outputs_dirs(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize("port_keys", [None, ["1", "2"], []])
-async def test_post_containers_ports_outputs_pull(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-    port_keys: Optional[list[str]],
-) -> None:
-    mock_response = Response(status.HTTP_200_OK)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/outputs:pull",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_ports_outputs_pull(
-        dynamic_sidecar_endpoint, port_keys=port_keys
-    )
-    assert_responses(mock_response, response)
-
-
-@pytest.mark.parametrize("port_keys", [None, ["1", "2"], []])
-async def test_post_containers_ports_outputs_push(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-    port_keys: Optional[list[str]],
-) -> None:
-    mock_response = Response(status.HTTP_204_NO_CONTENT)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/outputs:push",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_ports_outputs_push(
-        dynamic_sidecar_endpoint, port_keys=port_keys
-    )
-    assert_responses(mock_response, response)
-
-
 @pytest.mark.parametrize("dynamic_sidecar_network_name", ["test_nw_name"])
 async def test_get_containers_name(
     thin_client: ThinDynamicSidecarClient,
@@ -319,23 +186,6 @@ async def test_get_containers_name(
         dynamic_sidecar_endpoint,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )
-    assert_responses(mock_response, response)
-
-
-async def test_post_containers_restart(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_204_NO_CONTENT)
-    mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers:restart",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.post_containers_restart(dynamic_sidecar_endpoint)
     assert_responses(mock_response, response)
 
 
@@ -381,4 +231,78 @@ async def test_post_containers_networks_detach(
     response = await thin_client.post_containers_networks_detach(
         dynamic_sidecar_endpoint, container_id=container_id, network_id="network_id"
     )
+    assert_responses(mock_response, response)
+
+
+@pytest.mark.parametrize(
+    "handler_name, mock_endpoint, extra_kwargs",
+    [
+        pytest.param(
+            "post_containers_tasks",
+            "/containers",
+            dict(compose_spec="some_fake_compose_as_str"),
+            id="post_containers_tasks",
+        ),
+        pytest.param(
+            "post_containers_tasks_down",
+            "/containers:down",
+            {},
+            id="down",
+        ),
+        pytest.param(
+            "post_containers_tasks_state_restore",
+            "/containers/state:restore",
+            {},
+            id="state_restore",
+        ),
+        pytest.param(
+            "post_containers_tasks_state_save",
+            "/containers/state:save",
+            {},
+            id="state_save",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_inputs_pull",
+            "/containers/ports/inputs:pull",
+            {},
+            id="ports_inputs_pull",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_outputs_pull",
+            "/containers/ports/outputs:pull",
+            {},
+            id="ports_outputs_pull",
+        ),
+        pytest.param(
+            "post_containers_tasks_ports_outputs_push",
+            "/containers/ports/outputs:push",
+            {},
+            id="ports_outputs_push",
+        ),
+        pytest.param(
+            "post_containers_tasks_restart",
+            "/containers:restart",
+            {},
+            id="restart",
+        ),
+    ],
+)
+async def test_post_containers_tasks(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+    handler_name: str,
+    mock_endpoint: str,
+    extra_kwargs: dict[str, Any],
+) -> None:
+    mock_response = Response(status.HTTP_202_ACCEPTED, json="mocked_task_id")
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}{mock_endpoint}",
+        mock_response,
+        None,
+    )
+
+    thin_client_handler = getattr(thin_client, handler_name)
+    response = await thin_client_handler(dynamic_sidecar_endpoint, **extra_kwargs)
     assert_responses(mock_response, response)

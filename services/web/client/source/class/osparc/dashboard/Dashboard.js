@@ -86,17 +86,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createMainViewLayout: function() {
+      const permissions = osparc.data.Permissions.getInstance();
       const tabs = [{
         label: this.tr("STUDIES"),
         buildLayout: this.__createStudyBrowser
       }];
-      if (!osparc.utils.Utils.isProduct("tis")) {
+      if (permissions.canDo("dashboard.templates.read")) {
         tabs.push({
           label: this.tr("TEMPLATES"),
           buildLayout: this.__createTemplateBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("tis")) {
+      if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
@@ -138,7 +139,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
       preResourcePromises.push(store.getServicesOnly(true));
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+      if (permissions.canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
       Promise.all(preResourcePromises)

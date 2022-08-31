@@ -1,16 +1,17 @@
 from datetime import timedelta
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 from aiohttp import web
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.twilio import TwilioSettings
 
 from .._constants import APP_SETTINGS_KEY
 
-_DAYS = 1.0
-_MINUTES = 1.0 / 24.0 / 60.0
+_DAYS = 1.0  # in days
+_MINUTES = 1.0 / 24.0 / 60.0  # in days
 
 
 APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
@@ -24,6 +25,7 @@ class LoginSettings(BaseCustomSettings):
             "WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
         ],
     )
+
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
         ...,
         env=[
@@ -32,13 +34,38 @@ class LoginSettings(BaseCustomSettings):
         ],
     )
 
+    LOGIN_TWILIO: Optional[TwilioSettings] = Field(
+        auto_default_from_env=True,
+        description="Twilio service settings. Used to send SMS for 2FA",
+    )
+
+    LOGIN_2FA_REQUIRED: bool = Field(
+        default=False,
+        description="Enforces two-factor-authentication for all user's during login",
+    )
+
+    @validator("LOGIN_2FA_REQUIRED")
+    @classmethod
+    def login_2fa_needs_email_registration(cls, v, values):
+        # NOTE: this constraint ensures that a phone is registered in current workflow
+        if v and not values.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
+            raise ValueError("Cannot enable 2FA w/o email confirmation")
+        return v
+
+    @validator("LOGIN_2FA_REQUIRED")
+    @classmethod
+    def login_2fa_needs_sms_service(cls, v, values):
+        if v and values.get("LOGIN_TWILIO") is None:
+            raise ValueError(
+                "Cannot enable 2FA w/o twilio settings which is used to send SMS"
+            )
+        return v
+
 
 class LoginOptions(BaseModel):
     """These options are NOT directly exposed to the env vars due to security reasons."""
 
-    THEME: str = "templates/osparc.io"
-    COMMON_THEME: str = "templates/common"
-    PASSWORD_LEN: Tuple[PositiveInt, PositiveInt] = (6, 30)
+    PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
 
@@ -65,6 +92,7 @@ class LoginOptions(BaseModel):
     # TODO: translation?
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
+    MSG_2FA_CODE_SENT: str = "Code sent by SMS to {phone_number}"
     MSG_ACTIVATED: str = "Your account is activated"
     MSG_UNKNOWN_EMAIL: str = "This email is not registered"
     MSG_WRONG_PASSWORD: str = "Wrong password"

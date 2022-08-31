@@ -14,11 +14,8 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Dict,
     Final,
-    List,
     Optional,
-    Tuple,
     cast,
 )
 
@@ -53,10 +50,10 @@ async def create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: Dict[str, Any],
+    task_max_resources: dict[str, Any],
 ) -> DockerContainerConfig:
 
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
@@ -147,7 +144,7 @@ PROGRESS_REGEXP = re.compile(
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
 
-async def parse_line(line: str) -> Tuple[LogType, str, str]:
+async def parse_line(line: str) -> tuple[LogType, str, str]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # default return as log

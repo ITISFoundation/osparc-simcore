@@ -272,10 +272,10 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
     return service_state, message
 
 
-async def is_dynamic_sidecar_missing(
+async def is_dynamic_sidecar_stack_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
-    """Used to check if the service should be created"""
+    """Check if the proxy and the dynamic-sidecar are absent"""
     filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",

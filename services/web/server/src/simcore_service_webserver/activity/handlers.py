@@ -4,6 +4,7 @@ from collections import defaultdict
 import aiohttp
 import aiohttp.web
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
@@ -86,6 +87,6 @@ async def get_status(request: aiohttp.web.Request):
         res[node_id]["limits"] = limits
 
     if not res:
-        raise aiohttp.web.HTTPNoContent
+        raise aiohttp.web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     return dict(res)

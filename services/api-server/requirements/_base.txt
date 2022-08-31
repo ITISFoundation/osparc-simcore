@@ -49,8 +49,6 @@ anyio==3.6.1
     #   watchgod
 asgiref==3.5.2
     # via uvicorn
-async-asgi-testclient==1.4.11
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -174,7 +172,6 @@ markupsafe==2.1.1
 multidict==6.0.2
     # via
     #   aiohttp
-    #   async-asgi-testclient
     #   yarl
 opentracing==2.4.0
     # via
@@ -257,9 +254,7 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 requests==2.27.1
-    # via
-    #   async-asgi-testclient
-    #   fastapi
+    # via fastapi
 rfc3986==1.5.0
     # via httpx
 six==1.16.0
@@ -317,7 +312,7 @@ typer==0.4.1
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   aiodebug
     #   pydantic

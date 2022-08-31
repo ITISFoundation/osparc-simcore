@@ -11,6 +11,7 @@ from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 from ..node_ports_common import filemanager
+from ..node_ports_common.filemanager import LogRedirectCB
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,9 @@ async def _push_file(
     project_id: str,
     node_uuid: str,
     file_path: Path,
+    *,
     rename_to: Optional[str],
+    io_log_redirect_cb: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
 ) -> None:
     store_id = SIMCORE_LOCATION
@@ -40,8 +43,9 @@ async def _push_file(
         store_id=store_id,
         store_name=None,
         s3_object=s3_object,
-        local_file_path=file_path,
+        file_to_upload=file_path,
         r_clone_settings=r_clone_settings,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
     log.info("%s successfuly uploaded", file_path)
 
@@ -51,13 +55,19 @@ async def push(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    io_log_redirect_cb: Optional[LogRedirectCB],
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
     archive_exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     if file_or_folder.is_file():
         return await _push_file(
-            user_id, project_id, node_uuid, file_or_folder, rename_to
+            user_id,
+            project_id,
+            node_uuid,
+            file_or_folder,
+            rename_to=rename_to,
+            io_log_redirect_cb=io_log_redirect_cb,
         )
     # we have a folder, so we create a compressed file
     with TemporaryDirectory() as tmp_dir_name:
@@ -66,6 +76,10 @@ async def push(
         archive_file_path = (
             Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
         )
+        if io_log_redirect_cb:
+            await io_log_redirect_cb(
+                f"archiving {file_or_folder} into {archive_file_path}, please wait..."
+            )
         await archive_dir(
             dir_to_compress=file_or_folder,
             destination=archive_file_path,
@@ -73,8 +87,18 @@ async def push(
             store_relative_path=True,
             exclude_patterns=archive_exclude_patterns,
         )
+        if io_log_redirect_cb:
+            await io_log_redirect_cb(
+                f"archiving {file_or_folder} into {archive_file_path} completed."
+            )
         await _push_file(
-            user_id, project_id, node_uuid, archive_file_path, None, r_clone_settings
+            user_id,
+            project_id,
+            node_uuid,
+            archive_file_path,
+            rename_to=None,
+            r_clone_settings=r_clone_settings,
+            io_log_redirect_cb=io_log_redirect_cb,
         )
 
 
@@ -83,6 +107,8 @@ async def _pull_file(
     project_id: str,
     node_uuid: str,
     file_path: Path,
+    *,
+    io_log_redirect_cb: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
@@ -94,11 +120,12 @@ async def _pull_file(
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
     if downloaded_file != destination_path:
         destination_path.unlink(missing_ok=True)
         move(f"{downloaded_file}", destination_path)
-    log.info("%s successfuly pulled", destination_path)
+    log.info("completed pull of %s.", destination_path)
 
 
 def _get_archive_name(path: Path) -> str:
@@ -110,21 +137,41 @@ async def pull(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    io_log_redirect_cb: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
 ) -> None:
     if file_or_folder.is_file():
-        return await _pull_file(user_id, project_id, node_uuid, file_or_folder, save_to)
+        return await _pull_file(
+            user_id,
+            project_id,
+            node_uuid,
+            file_or_folder,
+            save_to=save_to,
+            io_log_redirect_cb=io_log_redirect_cb,
+        )
     # we have a folder, so we need somewhere to extract it to
     with TemporaryDirectory() as tmp_dir_name:
         archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
-        await _pull_file(user_id, project_id, node_uuid, archive_file)
-        log.info("extracting data from %s", archive_file)
+        await _pull_file(
+            user_id,
+            project_id,
+            node_uuid,
+            archive_file,
+            io_log_redirect_cb=io_log_redirect_cb,
+        )
 
         destination_folder = file_or_folder if save_to is None else save_to
+        if io_log_redirect_cb:
+            await io_log_redirect_cb(
+                f"unarchiving {archive_file} into {destination_folder}, please wait..."
+            )
         await unarchive_dir(
             archive_to_extract=archive_file, destination_folder=destination_folder
         )
-        log.info("extraction completed")
+        if io_log_redirect_cb:
+            await io_log_redirect_cb(
+                f"unarchiving {archive_file} into {destination_folder} completed."
+            )
 
 
 async def exists(

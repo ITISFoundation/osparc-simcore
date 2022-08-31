@@ -1,16 +1,29 @@
-# module acting as root for all routes
+""" Module to collect, tag and prefix all routes under 'main_router'
+
+Setup and register all routes here form different modules
+"""
 
 from fastapi import APIRouter
 
 from .._meta import API_VTAG
-from .containers import containers_router
-from .containers_extension import containers_router as containers_router_extension
-from .health import health_router
+from . import containers, containers_extension, containers_long_running_tasks, health
 
-# setup and register all routes here form different modules
 main_router = APIRouter()
-main_router.include_router(health_router)
-main_router.include_router(containers_router, prefix=f"/{API_VTAG}")
-main_router.include_router(containers_router_extension, prefix=f"/{API_VTAG}")
+main_router.include_router(health.router)
+main_router.include_router(
+    containers.router,
+    tags=["containers"],
+    prefix=f"/{API_VTAG}",
+)
+main_router.include_router(
+    containers_extension.router,
+    tags=["containers"],
+    prefix=f"/{API_VTAG}",
+)
+main_router.include_router(
+    containers_long_running_tasks.router,
+    tags=["containers"],
+    prefix=f"/{API_VTAG}",
+)
 
 __all__: tuple[str, ...] = ("main_router",)

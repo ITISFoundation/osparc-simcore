@@ -31,13 +31,13 @@ qx.Class.define("osparc.utils.issue.Fogbugz", {
     getNewIssueUrl: function(staticsData) {
       const product = qx.core.Environment.get("product.name");
 
-      let urlHead = staticsData.fogbugzNewcaseUrl;
+      let urlHead = staticsData.osparcIssuesNewUrl;
       switch (product) {
         case "s4l":
-          urlHead = staticsData.s4lFogbugzNewcaseUrl;
+          urlHead = staticsData.s4lIssuesNewUrl;
           break;
         case "tis":
-          urlHead = staticsData.tisFogbugzNewcaseUrl;
+          urlHead = staticsData.tisIssuesNewUrl;
           break;
       }
 

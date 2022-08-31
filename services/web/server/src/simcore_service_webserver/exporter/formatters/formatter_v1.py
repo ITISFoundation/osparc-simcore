@@ -191,8 +191,9 @@ async def upload_file_to_storage(
             store_id=link_and_path.storage_type,
             store_name=None,
             s3_object=link_and_path.relative_path_to_file,
-            local_file_path=link_and_path.storage_path_to_file,
+            file_to_upload=link_and_path.storage_path_to_file,
             client_session=session,
+            io_log_redirect_cb=None,
         )
         return (link_and_path, e_tag)
     except (

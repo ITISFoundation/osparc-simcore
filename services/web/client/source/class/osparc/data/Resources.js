@@ -25,7 +25,7 @@
  *       studyData
  *     }
  *   }
- *   osparc.data.Resources.fetch("studies", "post", params)
+ *   osparc.data.Resources.fetch("studies", "getOne", params)
  *     .then(study => {
  *       // study contains the new updated study
  *       // This code will execute if the call succeeds
@@ -92,7 +92,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           postToTemplate: {
             method: "POST",
-            url: statics.API + "/projects?as_template={study_id}&copy_data={copy_data}"
+            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}"
           },
           open: {
             method: "POST",
@@ -104,20 +104,22 @@ qx.Class.define("osparc.data.Resources", {
           },
           duplicate: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}:duplicate"
+            // url: statics.API + "/projects/{studyId}:duplicate"
+            // supports copy_data
+            url: statics.API + "/projects?from_study={studyId}"
           },
           state: {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/state"
           },
-          post: {
+          postNewStudy: {
             method: "POST",
             url: statics.API + "/projects"
           },
-          postFromTemplate: {
+          postNewStudyFromTemplate: {
             method: "POST",
-            url: statics.API + "/projects?from_template={templateId}"
+            url: statics.API + "/projects?from_study={templateId}"
           },
           put: {
             method: "PUT",
@@ -543,17 +545,29 @@ qx.Class.define("osparc.data.Resources", {
       "auth": {
         useCache: false,
         endpoints: {
+          postRegister: {
+            method: "POST",
+            url: statics.API + "/auth/register"
+          },
+          postVerifyPhoneNumber: {
+            method: "POST",
+            url: statics.API + "/auth/verify-phone-number"
+          },
+          postValidationCodeRegister: {
+            method: "POST",
+            url: statics.API + "/auth/validate-code-register"
+          },
           postLogin: {
             method: "POST",
             url: statics.API + "/auth/login"
           },
+          postValidationCodeLogin: {
+            method: "POST",
+            url: statics.API + "/auth/validate-code-login"
+          },
           postLogout: {
             method: "POST",
             url: statics.API + "/auth/logout"
-          },
-          postRegister: {
-            method: "POST",
-            url: statics.API + "/auth/register"
           },
           postRequestResetPassword: {
             method: "POST",
@@ -741,7 +755,7 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
-          } else if (useCache) {
+          } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
             } else {

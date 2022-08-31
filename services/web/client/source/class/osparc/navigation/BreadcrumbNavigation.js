@@ -54,6 +54,7 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
+      osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
       btn.addListener("execute", e => {
         if (btn.getValue()) {
           // Unselected button clicked

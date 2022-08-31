@@ -38,7 +38,7 @@ class WebApiUser(HttpUser):
 
         # WARNING: this template needs to be created and shared with everybody
         self.client.post(
-            f"/v0/projects?from_template={os.environ['TEMPLATE_PROJECT_ID']}",
+            f"/v0/projects?from_study={os.environ['TEMPLATE_PROJECT_ID']}",
             json={
                 "uuid": "",
                 "name": f"TEST #{self.count}",

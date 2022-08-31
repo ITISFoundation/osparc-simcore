@@ -181,8 +181,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     showPreparingInputs: function() {
       const title = this.tr("Preparing Inputs");
-      const width = 600;
-      const height = 500;
+      const width = 650;
+      const height = 600;
       osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
     },
 
@@ -339,6 +339,24 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         node.getStatus().addListener("changeRunning", () => updateProgress(), this);
         node.getStatus().addListener("changeProgress", () => updateProgress(), this);
       }
+
+      node.bind("outputs", this._outputsBtn, "label", {
+        converter: outputsData => {
+          let outputCounter = 0;
+          Object.keys(outputsData).forEach(outKey => {
+            const outValue = osparc.data.model.Node.getOutput(outputsData, outKey);
+            if (![null, undefined, ""].includes(outValue)) {
+              outputCounter++;
+            }
+          });
+          return `(${outputCounter})`;
+        }
+      });
+      this._outputsBtn.addListener("changeLabel", () => {
+        // make it "blink"
+        this._outputsBtn.setTextColor("ready-green");
+        setTimeout(() => this._outputsBtn.setTextColor("text"), 1000);
+      });
 
       this._addLogger();
     }

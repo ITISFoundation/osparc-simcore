@@ -4,6 +4,7 @@
 import asyncio
 import json
 import logging
+from contextlib import asynccontextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Callable
 from unittest.mock import Mock
 
@@ -43,9 +44,9 @@ logger = logging.getLogger(__name__)
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
-    "rabbit",
     "migration",
     "postgres",
+    "rabbit",
     "redis",
 ]
 pytest_simcore_ops_services_selection = [
@@ -205,17 +206,27 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.DynamicSidecarClient"
     )
     for function_name, return_value in [
-        ("service_save_state", None),
-        ("service_restore_state", None),
-        ("service_pull_output_ports", 42),
-        ("service_outputs_create_dirs", None),
-        ("service_push_output_ports", None),
+        ("pull_service_output_ports", None),
+        ("restore_service_state", None),
+        ("push_service_output_ports", None),
+        ("save_service_state", None),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
             side_effect=lambda *args, **kwargs: return_value,
         )
+
+    # also patch the long_running_tasks client context mangers handling the above
+    # requests
+    @asynccontextmanager
+    async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
+        yield
+
+    mocker.patch(
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client._public.periodic_task_result",
+        side_effect=_mocked_context_manger,
+    )
 
 
 @pytest.fixture

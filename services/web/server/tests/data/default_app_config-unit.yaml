@@ -56,7 +56,8 @@ meta_modeling:
 products:
   enabled: true
 projects:
-  enabled: false
+  enabled: true
+  projects_max_copy_size_bytes: 5368709120
 publications:
   enabled: true
 remote_debug:

@@ -444,11 +444,18 @@ async function takeScreenshot(page, captureName = "") {
 function extractWorkbenchData(data) {
   const workbenchData = {
     studyId: null,
-    nodeIds: []
+    nodeIds: [],
+    keyVersions: []
   };
   workbenchData.studyId = data["uuid"];
   if ("workbench" in data) {
-    workbenchData.nodeIds = Object.keys(data["workbench"]);
+    Object.keys(data["workbench"]).forEach(nodeId => {
+      workbenchData.nodeIds.push(nodeId);
+      const nodeKey = data["workbench"][nodeId]["key"];
+      const nodeVersion = data["workbench"][nodeId]["version"];
+      workbenchData.keyVersions.push(`${nodeKey}::${nodeVersion}`);
+    })
+    
   }
   return workbenchData;
 }

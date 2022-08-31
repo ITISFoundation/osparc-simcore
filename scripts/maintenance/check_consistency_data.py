@@ -11,7 +11,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
 import aiopg
 import typer
@@ -66,7 +66,7 @@ async def managed_docker_compose(
         )
 
 
-async def _get_projects_nodes(pool) -> Dict[str, Any]:
+async def _get_projects_nodes(pool) -> dict[str, Any]:
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             await cursor.execute(
@@ -97,39 +97,39 @@ async def _get_projects_nodes(pool) -> Dict[str, Any]:
 
 
 async def _get_files_from_project_nodes(
-    pool, project_uuid: str, node_ids: List[str]
-) -> Set[Tuple[str, int, datetime]]:
+    pool, project_uuid: str, node_ids: list[str]
+) -> set[tuple[str, int, datetime]]:
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             array = str([f"{project_uuid}/{n}%" for n in node_ids])
             await cursor.execute(
-                "SELECT file_uuid, file_size, last_modified"
+                "SELECT file_id, file_size, last_modified"
                 ' FROM "file_meta_data"'
-                f" WHERE file_meta_data.file_uuid LIKE any (array{array}) AND location_id = '0'"
+                f" WHERE file_meta_data.file_id LIKE any (array{array}) AND location_id = '0'"
             )
 
             # here we got all the files for that project uuid/node_ids combination
             file_rows = await cursor.fetchall()
             return {
-                (file_uuid, file_size, parser.parse(last_modified or "2000-01-01"))
-                for file_uuid, file_size, last_modified in file_rows
+                (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
+                for file_id, file_size, last_modified in file_rows
             }
 
 
 async def _get_all_invalid_files_from_file_meta_data(
     pool,
-) -> Set[Tuple[str, int, datetime]]:
+) -> set[tuple[str, int, datetime]]:
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             await cursor.execute(
-                'SELECT file_uuid, file_size, last_modified FROM "file_meta_data" '
+                'SELECT file_id, file_size, last_modified FROM "file_meta_data" '
                 "WHERE file_meta_data.file_size < 1 OR file_meta_data.entity_tag IS NULL"
             )
             # here we got all the files for that project uuid/node_ids combination
             file_rows = await cursor.fetchall()
             return {
-                (file_uuid, file_size, parser.parse(last_modified or "2000-01-01"))
-                for file_uuid, file_size, last_modified in file_rows
+                (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
+                for file_id, file_size, last_modified in file_rows
             }
 
 
@@ -166,7 +166,7 @@ async def _get_files_from_s3_backend(
     s3_bucket: str,
     project_uuid: str,
     progress,
-) -> Set[Tuple[str, int, datetime]]:
+) -> set[tuple[str, int, datetime]]:
     s3_file_entries = set()
     try:
         # TODO: this could probably run faster if we maintain the client, and run successive commands in there
@@ -245,12 +245,12 @@ async def main_async(
             all_invalid_files_in_file_meta_data = (
                 await _get_all_invalid_files_from_file_meta_data(pool)
             )
-    db_file_entries: Set[Tuple[str, int, datetime]] = set().union(
+    db_file_entries: set[tuple[str, int, datetime]] = set().union(
         *all_sets_of_file_entries
     )
     db_file_entries_path = Path.cwd() / f"{s3_endpoint}_db_file_entries.csv"
     write_file(
-        db_file_entries_path, db_file_entries, ["file_uuid", "size", "last modified"]
+        db_file_entries_path, db_file_entries, ["file_id", "size", "last modified"]
     )
     typer.secho(
         f"processed {len(project_nodes)} projects, found {len(db_file_entries)} file entries, saved in {db_file_entries_path}",
@@ -264,7 +264,7 @@ async def main_async(
         write_file(
             db_file_meta_data_invalid_entries_path,
             all_invalid_files_in_file_meta_data,
-            ["file_uuid", "size", "last modified"],
+            ["file_id", "size", "last modified"],
         )
         typer.secho(
             f"processed {len(all_invalid_files_in_file_meta_data)} INVALID file entries, saved in {db_file_meta_data_invalid_entries_path}",
@@ -294,18 +294,18 @@ async def main_async(
     write_file(
         s3_file_entries_path,
         s3_file_entries,
-        fieldnames=["file_uuid", "size", "last_modified"],
+        fieldnames=["file_id", "size", "last_modified"],
     )
     typer.echo(
         f"processed {len(project_nodes)} projects, found {len(s3_file_entries)} file entries, saved in {s3_file_entries_path}"
     )
 
     # ---------------------- COMPARISON ---------------------------------------------------------------------
-    db_file_uuids = {db_file_uuid for db_file_uuid, _, _ in db_file_entries}
-    s3_file_uuids = {s3_file_uuid for s3_file_uuid, _, _ in s3_file_entries}
-    common_files_uuids = db_file_uuids.intersection(s3_file_uuids)
-    s3_missing_files_uuids = db_file_uuids.difference(s3_file_uuids)
-    db_missing_files_uuids = s3_file_uuids.difference(db_file_uuids)
+    db_file_ids = {db_file_id for db_file_id, _, _ in db_file_entries}
+    s3_file_ids = {s3_file_id for s3_file_id, _, _ in s3_file_entries}
+    common_files_uuids = db_file_ids.intersection(s3_file_ids)
+    s3_missing_files_uuids = db_file_ids.difference(s3_file_ids)
+    db_missing_files_uuids = s3_file_ids.difference(db_file_ids)
     typer.secho(
         f"{len(common_files_uuids)} files are the same in both system",
         fg=typer.colors.BLUE,
@@ -321,17 +321,17 @@ async def main_async(
     consistent_files_path = Path.cwd() / f"{s3_endpoint}_consistent_files.csv"
     s3_missing_files_path = Path.cwd() / f"{s3_endpoint}_s3_missing_files.csv"
     db_missing_files_path = Path.cwd() / f"{s3_endpoint}_db_missing_files.csv"
-    db_file_map: Dict[str, Tuple[int, datetime]] = {
+    db_file_map: dict[str, tuple[int, datetime]] = {
         e[0]: e[1:] for e in db_file_entries
     }
 
     def order_by_owner(
-        list_of_files_uuids: Set[str],
-    ) -> Dict[Tuple[str, str, str], List[Tuple[str, int, datetime]]]:
+        list_of_files_uuids: set[str],
+    ) -> dict[tuple[str, str, str], list[tuple[str, int, datetime]]]:
         files_by_owner = defaultdict(list)
-        for file_uuid in list_of_files_uuids:
+        for file_id in list_of_files_uuids:
             # project_id/node_id/file
-            prj_uuid = file_uuid.split("/")[0]
+            prj_uuid = file_id.split("/")[0]
             prj_data = project_nodes[prj_uuid]
             files_by_owner[
                 (
@@ -339,7 +339,7 @@ async def main_async(
                     prj_data["name"],
                     prj_data["email"],
                 )
-            ].append(file_uuid)
+            ].append(file_id)
         return files_by_owner
 
     def write_to_file(path: Path, files_by_owner):

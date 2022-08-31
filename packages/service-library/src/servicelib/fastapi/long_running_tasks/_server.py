@@ -3,10 +3,10 @@ from typing import Final
 from fastapi import APIRouter, FastAPI
 from pydantic import PositiveFloat
 
+from ...long_running_tasks._errors import BaseLongRunningError
+from ...long_running_tasks._task import TasksManager
 from ._error_handlers import base_long_running_error_handler
-from ._errors import BaseLongRunningError
 from ._routes import router
-from ._task import TaskManager
 
 _MINUTE: Final[PositiveFloat] = 60
 
@@ -35,7 +35,7 @@ def setup(
         app.include_router(main_router)
 
         # add components to state
-        app.state.long_running_task_manager = TaskManager(
+        app.state.long_running_task_manager = TasksManager(
             stale_task_check_interval_s=stale_task_check_interval_s,
             stale_task_detect_timeout_s=stale_task_detect_timeout_s,
         )
@@ -45,7 +45,7 @@ def setup(
 
     async def on_shutdown() -> None:
         if app.state.long_running_task_manager:
-            task_manager: TaskManager = app.state.long_running_task_manager
+            task_manager: TasksManager = app.state.long_running_task_manager
             await task_manager.close()
 
     app.add_event_handler("startup", on_startup)

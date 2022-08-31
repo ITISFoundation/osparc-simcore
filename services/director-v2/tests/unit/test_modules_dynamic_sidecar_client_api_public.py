@@ -30,7 +30,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public impo
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
-    NodeportsDidNotFindNodeError,
 )
 
 # FIXTURES
@@ -128,10 +127,15 @@ async def test_is_healthy_times_out(
     retry_count: int,
 ) -> None:
     assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
-    for i, log_message in enumerate(caplog_info_level.messages):
-        assert log_message.startswith(
-            f"[{i+1}/{retry_count}]Retry. Unexpected ConnectError"
-        )
+    # check if the right amount of messages was captured by the logs
+    unexpected_counter = 1
+    for log_message in caplog_info_level.messages:
+        if log_message.startswith("Retrying"):
+            assert "as it raised" in log_message
+            continue
+        assert log_message.startswith("Unexpected error")
+        assert log_message.endswith(f"(attempt [{unexpected_counter}/{retry_count}])")
+        unexpected_counter += 1
 
 
 @pytest.mark.parametrize(
@@ -206,73 +210,6 @@ async def test_containers_docker_status_api_error(
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
 
 
-async def test_start_service_creation(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
-    docker_compose_reply = "a mocked docker compose plain string reply"
-    with get_patched_client(
-        "post_containers",
-        return_value=Response(
-            status_code=status.HTTP_200_OK, content=docker_compose_reply
-        ),
-    ) as client:
-        assert (
-            await client.start_service_creation(
-                dynamic_sidecar_endpoint, compose_spec="mock compose spec"
-            )
-            == None
-        )
-
-
-async def test_begin_service_destruction(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
-    docker_compose_reply = "a mocked docker compose plain string reply"
-    with get_patched_client(
-        "post_containers_down",
-        return_value=Response(
-            status_code=status.HTTP_200_OK, content=docker_compose_reply
-        ),
-    ) as client:
-        assert await client.begin_service_destruction(dynamic_sidecar_endpoint) == None
-
-
-async def test_service_save_state(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
-    with get_patched_client(
-        "post_containers_state_save",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert await client.service_save_state(dynamic_sidecar_endpoint) == None
-
-
-async def test_service_restore_state(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
-    with get_patched_client(
-        "post_containers_state_restore",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert await client.service_restore_state(dynamic_sidecar_endpoint) == None
-
-
-@pytest.mark.parametrize("port_keys", [None, ["1", [""], [""]]])
-async def test_service_pull_input_ports(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    port_keys: Optional[list[str]],
-) -> None:
-    with get_patched_client(
-        "post_containers_ports_inputs_pull",
-        return_value=Response(status_code=status.HTTP_200_OK, content="42"),
-    ) as client:
-        assert (
-            await client.service_pull_input_ports(dynamic_sidecar_endpoint, port_keys)
-            == 42
-        )
-
-
 async def test_service_disable_dir_watcher(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -315,85 +252,6 @@ async def test_service_outputs_create_dirs(
         )
 
 
-@pytest.mark.parametrize("port_keys", [None, ["1", [""], [""]]])
-async def test_service_pull_output_ports(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    port_keys: Optional[list[str]],
-) -> None:
-    with get_patched_client(
-        "post_containers_ports_outputs_pull",
-        return_value=Response(status_code=status.HTTP_200_OK, content="42"),
-    ) as client:
-        assert (
-            await client.service_pull_output_ports(dynamic_sidecar_endpoint, port_keys)
-            == 42
-        )
-
-
-@pytest.mark.parametrize("port_keys", [None, ["1", [""], [""]]])
-async def test_service_push_output_ports_ok(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    port_keys: Optional[list[str]],
-) -> None:
-    with get_patched_client(
-        "post_containers_ports_outputs_push",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert (
-            await client.service_push_output_ports(dynamic_sidecar_endpoint, port_keys)
-            == None
-        )
-
-
-@pytest.mark.parametrize("port_keys", [None, ["1", [""], [""]]])
-@pytest.mark.parametrize(
-    "side_effect, expected_error",
-    [
-        pytest.param(
-            UnexpectedStatusError(
-                Response(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    json={
-                        "code": "dynamic_sidecar.nodeports.node_not_found",
-                        "node_uuid": "mock_node_uuid",
-                    },
-                    request=AsyncMock(),
-                ),
-                status.HTTP_204_NO_CONTENT,
-            ),
-            NodeportsDidNotFindNodeError,
-            id="NodeportsDidNotFindNodeError",
-        ),
-        pytest.param(
-            UnexpectedStatusError(
-                Response(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    json={"code": "other"},
-                    request=AsyncMock(),
-                ),
-                status.HTTP_204_NO_CONTENT,
-            ),
-            UnexpectedStatusError,
-            id="UnexpectedStatusError",
-        ),
-    ],
-)
-async def test_service_push_output_ports_api_fail(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    port_keys: Optional[list[str]],
-    side_effect: UnexpectedStatusError,
-    expected_error: type[Exception],
-) -> None:
-    with get_patched_client(
-        "post_containers_ports_outputs_push", side_effect=side_effect
-    ) as client:
-        with pytest.raises(expected_error):
-            await client.service_push_output_ports(dynamic_sidecar_endpoint, port_keys)
-
-
 @pytest.mark.parametrize("dynamic_sidecar_network_name", ["a_test_network"])
 async def test_get_entrypoint_container_name_ok(
     get_patched_client: Callable,
@@ -429,17 +287,6 @@ async def test_get_entrypoint_container_name_api_not_found(
             await client.get_entrypoint_container_name(
                 dynamic_sidecar_endpoint, dynamic_sidecar_network_name
             )
-
-
-async def test_restart_containers(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-) -> None:
-    with get_patched_client(
-        "post_containers_restart",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert await client.restart_containers(dynamic_sidecar_endpoint) == None
 
 
 @pytest.mark.parametrize("network_aliases", [[], ["an-alias"], ["alias-1", "alias-2"]])

@@ -116,13 +116,17 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const login = new osparc.auth.ui.LoginView();
       const register = new osparc.auth.ui.RegistrationView();
+      const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
+      const loginSMSCode = new osparc.auth.ui.LoginSMSCodeView();
 
       pages.add(login);
       pages.add(register);
+      pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
+      pages.add(loginSMSCode);
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
@@ -157,10 +161,39 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
+      login.addListener("toVerifyPhone", e => {
+        verifyPhoneNumber.set({
+          userEmail: e.getData()
+        });
+        pages.setSelection([verifyPhoneNumber]);
+        login.resetValues();
+      }, this);
+
+      login.addListener("toSMSCode", e => {
+        const msg = e.getData();
+        const startIdx = msg.indexOf("+");
+        loginSMSCode.set({
+          userEmail: login.getEmail(),
+          userPhoneNumber: msg.substring(startIdx, msg.length)
+        });
+        pages.setSelection([loginSMSCode]);
+        login.resetValues();
+      }, this);
+
+      loginSMSCode.addListener("done", msg => {
+        login.resetValues();
+        this.fireDataEvent("done", msg);
+      }, this);
+
       register.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
       });
+
+      verifyPhoneNumber.addListener("done", msg => {
+        login.resetValues();
+        this.fireDataEvent("done", msg);
+      }, this);
 
       [resetRequest, reset].forEach(srcPage => {
         srcPage.addListener("done", msg => {
@@ -180,28 +213,35 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
 
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      if (platformVersion) {
-        let text = platformVersion.name + " " + platformVersion.version;
-        const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
-          textColor: "text-darker"
-        });
-        versionLinkLayout.add(versionLink);
+      let text = platformVersion.name + " " + platformVersion.version;
+      const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
+        textColor: "text-darker"
+      });
+      versionLinkLayout.add(versionLink);
 
-        const separator = new qx.ui.basic.Label("::");
-        versionLinkLayout.add(separator);
-        osparc.utils.LibVersions.getPlatformName()
-          .then(platformName => {
-            text += platformName.length ? ` (${platformName})` : " (production)";
-          })
-          .finally(() => {
-            versionLink.setValue(text);
-          });
-      }
+      const separator = new qx.ui.basic.Label("::");
+      versionLinkLayout.add(separator);
+
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          text += platformName.length ? ` (${platformName})` : " (production)";
+        })
+        .finally(() => {
+          versionLink.setValue(text);
+        });
 
       const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
         textColor: "text-darker"
       });
       versionLinkLayout.add(organizationLink);
+
+      if (osparc.utils.Utils.isProduct("tis")) {
+        versionLink.exclude();
+        separator.exclude();
+        organizationLink.set({
+          textAlign: "center"
+        });
+      }
 
       return versionLinkLayout;
     }

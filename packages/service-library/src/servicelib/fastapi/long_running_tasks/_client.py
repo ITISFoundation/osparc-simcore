@@ -1,16 +1,112 @@
-from typing import Any, Optional
+import asyncio
+import functools
+import logging
+import warnings
+from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient
-from pydantic import AnyHttpUrl, BaseModel, PositiveFloat, parse_obj_as
+from httpx import AsyncClient, HTTPError
+from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from tenacity import RetryCallState
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
-from ._errors import GenericClientError, TaskClientResultError
-from ._models import TaskId, TaskResult, TaskStatus
+from ...long_running_tasks._errors import GenericClientError, TaskClientResultError
+from ...long_running_tasks._models import (
+    ClientConfiguration,
+    TaskId,
+    TaskResult,
+    TaskStatus,
+)
+
+logger = logging.getLogger(__name__)
 
 
-class ClientConfiguration(BaseModel):
-    router_prefix: str
-    default_timeout: PositiveFloat
+def _before_sleep_log(
+    request_function: Callable[..., Awaitable[Any]],
+    args: Any,
+    kwargs: dict[str, Any],
+    *,
+    exc_info: bool = False,
+) -> Callable[[RetryCallState], None]:
+    """Before call strategy that logs to some logger the attempt."""
+
+    def log_it(retry_state: "RetryCallState") -> None:
+        assert retry_state.outcome  # nosec
+        if retry_state.outcome.failed:
+            ex = retry_state.outcome.exception()
+            verb, value = "raised", f"{ex.__class__.__name__}: {ex}"
+
+            if exc_info:
+                local_exc_info = retry_state.outcome.exception()
+            else:
+                local_exc_info = False
+        else:
+            verb, value = "returned", retry_state.outcome.result()
+            local_exc_info = False  # exc_info does not apply when no exception
+
+        assert retry_state.next_action  # nosec
+        logger.warning(
+            "Retrying '%s %s %s' in %s seconds as it %s %s. %s",
+            request_function.__name__,
+            f"{args=}",
+            f"{kwargs=}",
+            retry_state.next_action.sleep,
+            verb,
+            value,
+            retry_state.retry_object.statistics,
+            exc_info=local_exc_info,
+        )
+
+    return log_it
+
+
+def _after_log(
+    request_function: Callable[..., Awaitable[Any]],
+    args: Any,
+    kwargs: dict[str, Any],
+    *,
+    sec_format: str = "%0.3f",
+) -> Callable[[RetryCallState], None]:
+    """After call strategy that logs to some logger the finished attempt."""
+
+    def log_it(retry_state: RetryCallState) -> None:
+        logger.error(
+            "Failed call to '%s %s %s' after %s(s), this was the %s time calling it.",
+            request_function.__name__,
+            f"{args=}",
+            f"{kwargs=}",
+            sec_format % retry_state.seconds_since_start,
+            retry_state.attempt_number,
+        )
+
+    return log_it
+
+
+def retry_on_http_errors(
+    request_func: Callable[..., Awaitable[Any]]
+) -> Callable[..., Awaitable[Any]]:
+    """
+    Will retry the request on `httpx.HTTPError`.
+    """
+    assert asyncio.iscoroutinefunction(request_func)
+
+    @functools.wraps(request_func)
+    async def request_wrapper(zelf: "Client", *args, **kwargs) -> Any:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(max_attempt_number=3),
+            wait=wait_exponential(min=1),
+            retry=retry_if_exception_type(HTTPError),
+            before_sleep=_before_sleep_log(request_func, args, kwargs),
+            after=_after_log(request_func, args, kwargs),
+            reraise=True,
+        ):
+            with attempt:
+                return await request_func(zelf, *args, **kwargs)
+
+    return request_wrapper
 
 
 class Client:
@@ -39,6 +135,7 @@ class Client:
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
 
+    @retry_on_http_errors
     async def get_task_status(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> TaskStatus:
@@ -57,6 +154,7 @@ class Client:
 
         return TaskStatus.parse_obj(result.json())
 
+    @retry_on_http_errors
     async def get_task_result(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
     ) -> Optional[Any]:
@@ -78,22 +176,36 @@ class Client:
             raise TaskClientResultError(message=task_result.error)
         return task_result.result
 
+    @retry_on_http_errors
     async def cancel_and_delete_task(
         self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
-    ) -> bool:
+    ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
-        if result.status_code != status.HTTP_200_OK:
+
+        if result.status_code == status.HTTP_200_OK:
+            warnings.warn(
+                "returning a 200 when cancelling a task has been deprecated with PR#3236"
+                "and will be removed after 11.2022"
+                "please do close your studies at least once before that date, so that the dy-sidecar"
+                "get replaced",
+                category=DeprecationWarning,
+            )
+            return
+
+        if result.status_code not in (
+            status.HTTP_204_NO_CONTENT,
+            status.HTTP_404_NOT_FOUND,
+        ):
             raise GenericClientError(
                 action="cancelling_and_removing_task",
                 task_id=task_id,
                 status=result.status_code,
                 body=result.text,
             )
-        return result.json()
 
 
 def setup(

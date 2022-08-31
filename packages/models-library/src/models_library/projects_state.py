@@ -55,7 +55,7 @@ class ProjectStatus(str, Enum):
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
     owner: Optional[Owner] = Field(
-        None, description="If locked, the user that owns the lock"
+        default=None, description="If locked, the user that owns the lock"
     )
     status: ProjectStatus = Field(..., description="The status of the project")
 

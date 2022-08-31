@@ -73,6 +73,12 @@ users = sa.Table(
     sa.Column("id", sa.BigInteger, nullable=False),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("email", sa.String, nullable=False),
+    sa.Column(
+        "phone",
+        sa.String,
+        nullable=True,  # since 2FA can be configured optional
+        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
+    ),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
         "primary_gid",
@@ -103,6 +109,11 @@ users = sa.Table(
     #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
+    sa.UniqueConstraint(
+        "phone",
+        name="user_phone_unique_constraint",
+        # cannot use same phone for two users
+    ),
 )
 
 # ------------------------ TRIGGERS
