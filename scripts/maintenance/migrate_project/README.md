@@ -17,10 +17,10 @@ Build the image locally
 make build
 ```
 
-Create a configuration file 
+Create a configuration file
 
 ```
-make empty-config-file 
+make empty-config-file
 ```
 
 Fill up the `cfg.json` with data. Also refer to `src/models.py` on how to fill up the file.
@@ -32,3 +32,10 @@ make migrate
 ```
 
 It will copy 1 file at a time, so this operation might take a bit.
+
+
+
+### Possible future enhancements:
+- Assign new random UUIDv6() during copying to prevent clashes and allow flexible duplicate-copying of projects
+- Integrate Postgres Migration (allow copying with down/upgrade)
+- Allow retry if copying fails (e.g. due to network issues): Check if files already present are identical, if so, continue
