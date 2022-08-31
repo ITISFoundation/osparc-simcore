@@ -20,6 +20,8 @@ from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.long_running_tasks.client import LRTask
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.long_running_tasks.server import (
     setup as setup_long_running_tasks,
 )
@@ -106,14 +108,27 @@ async def storage_subsystem_mock(mocker):
     """
     # requests storage to copy data
 
+    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+        print(
+            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"with {len(nodes_map)} s3 objects by user={user_id}"
+        )
+
+        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+
+        async def _mock_result():
+            return None
+
+        yield LRTask(
+            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            _result=_mock_result(),
+        )
+
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project"
+        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        autospec=True,
+        side_effect=_mock_copy_data_from_project,
     )
-
-    async def _mock_copy_data_from_project(*args):
-        return args[2]
-
-    mock.side_effect = _mock_copy_data_from_project
 
     # requests storage to delete data
     mock1 = mocker.patch(
