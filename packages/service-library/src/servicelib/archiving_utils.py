@@ -193,14 +193,13 @@ async def unarchive_dir(
                 )
 
             except Exception as err:
-
                 for f in futures:
                     f.cancel()
 
-                # give a chance to event-loop context switch since some futures
-                # might be operating in 'destination_folder'
-                await asyncio.sleep(0.1)
+                # wait until all tasks are cancelled.
+                await asyncio.gather(*futures, return_exceptions=True)
 
+                # now we can cleanup
                 if destination_folder.exists() and destination_folder.is_dir():
                     shutil.rmtree(destination_folder, ignore_errors=True)
 
