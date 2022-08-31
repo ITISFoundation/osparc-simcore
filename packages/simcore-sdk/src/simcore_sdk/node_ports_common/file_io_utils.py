@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedP
 from pydantic import AnyUrl
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
+from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -105,7 +106,8 @@ async def download_link_to_file(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
+        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
+        after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
             async with session.get(url) as response:
@@ -165,7 +167,8 @@ async def _upload_file_part(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
+        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
+        after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
             async with session.put(
