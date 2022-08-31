@@ -446,7 +446,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
-    DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS: bool = Field(
+    DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(
         False,
         description=(
             "Under development feature. If enabled state "

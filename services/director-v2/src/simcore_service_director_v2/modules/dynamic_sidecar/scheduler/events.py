@@ -292,7 +292,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                 ]
                 # When enabled no longer downloads state via nodeports
                 # S3 is used to store state paths
-                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS:
+                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
                     tasks.append(
                         dynamic_sidecar_client.restore_service_state(
                             dynamic_sidecar_endpoint
