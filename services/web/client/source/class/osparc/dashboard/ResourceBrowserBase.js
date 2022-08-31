@@ -209,7 +209,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
           if (osparc.utils.Utils.isProduct("tis")) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
-            if (dontShow !== "true" && templates === false && resources.length === 0 && this._resourcesContainer.nextRequest === null) {
+            if (dontShow === "true") {
+              return;
+            }
+            if (templates === false && resources.length === 0 && this._resourcesContainer.nextRequest === null) {
               // there are no studies
               const tutorialWindow = new osparc.component.tutorial.ti.Slides();
               tutorialWindow.center();

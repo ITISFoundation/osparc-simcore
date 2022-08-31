@@ -11,6 +11,15 @@ async function acceptCookies(page) {
     .catch(() => console.log("Accept Cookies button not found"));
 }
 
+async function closeQuickStart(page) {
+  const id = '[osparc-test-id=quickStartWindowCloseBtn]';
+  await page.waitForSelector(id, {
+    timeout: 5000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("Quick Start window not found"));
+}
+
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
 
@@ -357,6 +366,7 @@ async function downloadSelectedFile(page) {
 
 module.exports = {
   acceptCookies,
+  closeQuickStart,
   register,
   logIn,
   logOut,
