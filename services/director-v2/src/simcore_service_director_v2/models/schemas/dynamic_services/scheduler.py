@@ -217,7 +217,7 @@ class DynamicSidecar(BaseModel):
             "important data might be lost. awaits for manual intervention."
         ),
     )
-    was_data_saved_when_closing: bool = Field(
+    were_state_and_outputs_saved: bool = Field(
         False,
         description="marked as True if sidecar managed to store the data when it was closing",
     )

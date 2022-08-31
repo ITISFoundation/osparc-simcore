@@ -146,7 +146,7 @@ async def save_and_remove_user_created_services(
                     )
 
                 await logged_gather(*tasks, max_concurrency=2)
-                scheduler_data.dynamic_sidecar.was_data_saved_when_closing = True
+                scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
                 logger.info("Ports data pushed by dynamic-sidecar")
             except (BaseClientHTTPError, TaskClientResultError) as e:
@@ -196,7 +196,7 @@ async def save_and_remove_user_created_services(
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
     # NOTE: when adding volume removal, check that:
-    # `scheduler_data.dynamic_sidecar.was_data_saved_when_closing` was
+    # `scheduler_data.dynamic_sidecar.were_state_and_outputs_saved` was
     # set to True before removing data otherwise do nothing
 
     logger.debug(
