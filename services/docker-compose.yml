@@ -424,6 +424,15 @@ services:
         "-c",
         "shared_buffers=256MB"
       ]
+    deploy:
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.tcp.routers.${SWARM_STACK_NAME}_postgres.entrypoints=postgres
+        - traefik.tcp.routers.${SWARM_STACK_NAME}_postgres.rule=HostSNI(`*`)
+        - traefik.tcp.routers.${SWARM_STACK_NAME}_postgres.tls=false
+        - traefik.tcp.services.${SWARM_STACK_NAME}_postgres.loadBalancer.server.port=5432
+        - traefik.tcp.routers.${SWARM_STACK_NAME}_postgres.service=${SWARM_STACK_NAME}_postgres
 
   redis:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
@@ -478,6 +487,7 @@ services:
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
+      - "--entrypoints.postgres.address=:5432"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
       - "--providers.docker.swarmMode=true"
