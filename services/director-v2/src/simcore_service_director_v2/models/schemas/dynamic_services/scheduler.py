@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
+from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
@@ -12,15 +13,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    Extra,
-    Field,
-    PositiveInt,
-    constr,
-    parse_obj_as,
-)
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 
 from ..constants import (
@@ -314,7 +307,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     )
     hostname: str = Field(..., description="docker hostname for this service")
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
+    port: PortInt = Field(8000, description="dynamic-sidecar port")
 
     @property
     def endpoint(self) -> AnyHttpUrl:
@@ -340,7 +333,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="required for Traefik to correctly route requests to the spawned container",
     )
 
-    service_port: PositiveInt = Field(
+    service_port: PortInt = Field(
         TEMPORARY_PORT_NUMBER,
         description=(
             "port where the service is exposed defined by the service; "
@@ -367,7 +360,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         cls,
         service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
-        port: Optional[int],
+        port: Optional[PortInt],
         request_dns: Optional[str] = None,
         request_scheme: Optional[str] = None,
         run_id: Optional[UUID] = None,
