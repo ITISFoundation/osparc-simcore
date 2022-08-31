@@ -168,29 +168,29 @@ async def _upload_file_part(
         before_sleep=before_sleep_log(log, logging.WARNING),
     ):
         with attempt:
-            response = await session.put(
+            async with session.put(
                 upload_url,
                 data=file_uploader,
                 headers={
                     "Content-Length": f"{file_part_size}",
                 },
-            )
-            response.raise_for_status()
-            if pbar.update(file_part_size) and io_log_redirect_cb:
-                await io_log_redirect_cb(f"{pbar}")
-            # NOTE: the response from minio does not contain a json body
-            assert response.status == web.HTTPOk.status_code  # nosec
-            assert response.headers  # nosec
-            assert "Etag" in response.headers  # nosec
-            received_e_tag = json.loads(response.headers["Etag"])
-            log.info(
-                "--> completed upload %s of %s, [%s], %s",
-                f"{file_part_size=}",
-                f"{file_to_upload=}",
-                f"{part_index+1}/{num_parts}",
-                f"{received_e_tag=}",
-            )
-            return (part_index, received_e_tag)
+            ) as response:
+                response.raise_for_status()
+                if pbar.update(file_part_size) and io_log_redirect_cb:
+                    await io_log_redirect_cb(f"{pbar}")
+                # NOTE: the response from minio does not contain a json body
+                assert response.status == web.HTTPOk.status_code  # nosec
+                assert response.headers  # nosec
+                assert "Etag" in response.headers  # nosec
+                received_e_tag = json.loads(response.headers["Etag"])
+                log.info(
+                    "--> completed upload %s of %s, [%s], %s",
+                    f"{file_part_size=}",
+                    f"{file_to_upload=}",
+                    f"{part_index+1}/{num_parts}",
+                    f"{received_e_tag=}",
+                )
+                return (part_index, received_e_tag)
     raise exceptions.S3TransferError(
         f"Unexpected error while transferring {file_to_upload} to {upload_url}"
     )
