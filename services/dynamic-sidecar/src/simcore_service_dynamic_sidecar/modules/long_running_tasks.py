@@ -62,7 +62,7 @@ async def _retry_docker_compose_start(
     wait=wait_random_exponential(),
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result is False),
-    reraise=False,
+    reraise=True,
 )
 async def _retry_docker_compose_create(
     compose_spec: str, settings: ApplicationSettings
