@@ -243,7 +243,7 @@ class DynamicSidecar(BaseModel):
         validate_assignment = True
 
 
-class DynamicSidecarNames(BaseModel):
+class DynamicSidecarNamesHelper(BaseModel):
     """
     Service naming schema:
     NOTE: name is max 63 characters
@@ -281,7 +281,7 @@ class DynamicSidecarNames(BaseModel):
     )
 
     @classmethod
-    def make(cls, node_uuid: UUID) -> "DynamicSidecarNames":
+    def make(cls, node_uuid: UUID) -> "DynamicSidecarNamesHelper":
         return cls(
             service_name_dynamic_sidecar=assemble_service_name(
                 DYNAMIC_SIDECAR_SERVICE_PREFIX, node_uuid
@@ -349,10 +349,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
 
     request_dns: str = Field(
-        None, description="used when configuring the CORS options on the proxy"
+        ..., description="used when configuring the CORS options on the proxy"
     )
     request_scheme: str = Field(
-        None, description="used when configuring the CORS options on the proxy"
+        ..., description="used when configuring the CORS options on the proxy"
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
@@ -362,16 +362,16 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         cls,
         service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
-        port: Optional[PortInt],
-        request_dns: Optional[str] = None,
-        request_scheme: Optional[str] = None,
+        port: PortInt,
+        request_dns: str,
+        request_scheme: str,
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
-        dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
+        names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
-            service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
-            hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
+            service_name=names_helper.service_name_dynamic_sidecar,
+            hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
             node_uuid=service.node_uuid,
             project_id=service.project_id,
@@ -383,11 +383,11 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
             restart_policy=simcore_service_labels.restart_policy,
-            dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
-            simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
+            dynamic_sidecar_network_name=names_helper.dynamic_sidecar_network_name,
+            simcore_traefik_zone=names_helper.simcore_traefik_zone,
             request_dns=request_dns,
             request_scheme=request_scheme,
-            proxy_service_name=dynamic_sidecar_names.proxy_service_name,
+            proxy_service_name=names_helper.proxy_service_name,
             dynamic_sidecar={},
         )
         if run_id:

@@ -81,16 +81,30 @@ def run_id(faker: Faker) -> RunID:
 
 
 @pytest.fixture
+def request_dns() -> str:
+    return "test-endpoint"
+
+
+@pytest.fixture
+def request_scheme() -> str:
+    return "http"
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
     run_id: RunID,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
+    request_dns: str,
+    request_scheme: str,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
         port=dynamic_sidecar_port,
+        request_dns=request_dns,
+        request_scheme=request_scheme,
         run_id=run_id,
     )
 
