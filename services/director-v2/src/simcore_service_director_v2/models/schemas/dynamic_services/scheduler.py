@@ -309,10 +309,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     run_id: RunID = Field(
         default_factory=uuid4,
         description=(
-            "Used to discriminate between dynamic-sidecar docker resources "
-            "generated during different runs. Sometimes artifacts remain in the"
-            "system after an error. This helps avoiding collisions."
-            "For now used by anonymous volumes involved in data sharing"
+            "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
+            "subsequent exact same services will have a different run_id)"
         ),
     )
     hostname: str = Field(..., description="docker hostname for this service")
