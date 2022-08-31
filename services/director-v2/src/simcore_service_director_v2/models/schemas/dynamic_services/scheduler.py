@@ -306,7 +306,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "subsequent exact same services will have a different run_id)"
         ),
     )
-    hostname: str = Field(..., description="docker hostname for this service")
+    hostname: str = Field(
+        ..., description="dy-sidecar's service hostname (provided by docker-swarm)"
+    )
     port: PortInt = Field(8000, description="dynamic-sidecar port")
 
     @property
