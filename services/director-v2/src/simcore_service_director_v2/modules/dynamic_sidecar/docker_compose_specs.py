@@ -117,6 +117,7 @@ def _update_resource_limits_and_reservations(
 
         nano_cpu_limits: float = 0.0
         mem_limits: str = "0"
+        _NANO = 10**9  #  cpu's in nano-cpu's
 
         if docker_compose_major_version >= 3:
             # compos spec version 3 and beyond
@@ -137,7 +138,7 @@ def _update_resource_limits_and_reservations(
             deploy["resources"] = resources
             spec["deploy"] = deploy
 
-            nano_cpu_limits = limits["cpus"] * 10**9
+            nano_cpu_limits = limits["cpus"]
             mem_limits = limits["memory"]
         else:
             # compos spec version 2
@@ -146,14 +147,21 @@ def _update_resource_limits_and_reservations(
             # NOTE: there is no distinction between limit and reservation, taking the higher value
             spec["cpus"] = float(max(cpu.limit, cpu.reservation))
 
-            nano_cpu_limits = spec["cpus"] * 10**9
+            nano_cpu_limits = spec["cpus"]
             mem_limits = spec["mem_limit"]
 
         # Update env vars for services that need to know the current resources specs
         environment = spec.get("environment", [])
 
+        # remove any already existing env var
+        environment = [
+            e
+            for e in environment
+            if all(i not in e for i in [CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY])
+        ]
+
         resource_limits = [
-            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits)}",
+            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits*_NANO)}",
             f"{MEM_RESOURCE_LIMIT_KEY}={mem_limits}",
         ]
 
