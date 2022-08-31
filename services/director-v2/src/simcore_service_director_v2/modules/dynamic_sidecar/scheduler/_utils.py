@@ -45,17 +45,20 @@ RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 async def disabled_directory_watcher(
     dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
 ) -> AsyncIterator[None]:
+    """
+    The following will happen when using this context manager:
+    - Disables file system event watcher while writing
+        to the outputs directory to avoid data being pushed
+        via nodeports upon change.
+    - Enables file system event watcher so data from outputs
+        can be again synced via nodeports upon change.
+    """
     try:
-        # disable file system event watcher while writing
-        # to the outputs directory to avoid data being pushed
-        # via nodeports upon change
         await dynamic_sidecar_client.service_disable_dir_watcher(
             dynamic_sidecar_endpoint
         )
         yield
     finally:
-        # enable file system event watcher so data from outputs
-        # can be again synced via nodeports upon change
         await dynamic_sidecar_client.service_enable_dir_watcher(
             dynamic_sidecar_endpoint
         )
