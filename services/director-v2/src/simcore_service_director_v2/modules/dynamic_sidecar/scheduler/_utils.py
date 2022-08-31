@@ -93,7 +93,7 @@ def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> 
     )
 
 
-async def save_and_remove_user_created_services(
+async def attempt_user_create_services_removal_and_data_saving(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     # invoke container cleanup at this point

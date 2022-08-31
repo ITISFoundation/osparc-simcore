@@ -58,7 +58,7 @@ from ..errors import (
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
-from ._utils import save_and_remove_user_created_services
+from ._utils import attempt_user_create_services_removal_and_data_saving
 from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
@@ -111,12 +111,10 @@ async def _apply_observation_cycle(
         )
 
 
-def _get_30_second_modulo_divisor(wait_interval: float) -> PositiveInt:
-    """
-    returns a divisor to figure out if 30 seconds have
-    passed based on the cycle count
-    """
-    return max(1, int(floor(30 / wait_interval)))
+def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
+    # divisor to figure out if 30 seconds have passed based on the cycle count
+    modulo_divisor = max(1, int(floor(30 / wait_interval)))
+    return observation_counter % modulo_divisor == 0
 
 
 @dataclass
@@ -388,14 +386,13 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                     # After manual intervention service can now be removed
                     # from tracking.
 
-                    modulo_divisor = _get_30_second_modulo_divisor(
-                        dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
-                    )
                     if (
-                        # trigger every ~30 seconds to reduce pressure on
+                        # NOTE: do not change below order, reduces pressure on the
                         # docker swarm engine API.
-                        # NOTE: do not change below order
-                        self._observation_counter % modulo_divisor == 0
+                        _trigger_every_30_seconds(
+                            self._observation_counter,
+                            dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+                        )
                         and await is_dynamic_sidecar_stack_missing(
                             scheduler_data.node_uuid, dynamic_sidecar_settings
                         )
@@ -409,7 +406,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                         scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                             False
                         )
-                        await save_and_remove_user_created_services(
+                        await attempt_user_create_services_removal_and_data_saving(
                             self.app, scheduler_data
                         )
 
@@ -417,7 +414,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await save_and_remove_user_created_services(self.app, scheduler_data)
+                await attempt_user_create_services_removal_and_data_saving(
+                    self.app, scheduler_data
+                )
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

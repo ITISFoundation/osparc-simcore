@@ -51,11 +51,11 @@ from ..errors import EntrypointContainerNotFoundError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
+    attempt_user_create_services_removal_and_data_saving,
     disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
     parse_containers_inspect,
-    save_and_remove_user_created_services,
 )
 from .abc import DynamicSchedulerEvent
 
@@ -244,7 +244,7 @@ class GetStatus(DynamicSchedulerEvent):
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.
             logger.warning(
-                "No container present for %s. Usually not an issue.",
+                "No container present for %s. Please investigate.",
                 scheduler_data.service_name,
             )
             return
@@ -540,7 +540,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        await save_and_remove_user_created_services(app, scheduler_data)
+        await attempt_user_create_services_removal_and_data_saving(app, scheduler_data)
 
 
 # register all handlers defined in this module here
