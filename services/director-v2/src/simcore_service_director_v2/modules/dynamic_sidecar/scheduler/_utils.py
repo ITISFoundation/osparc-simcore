@@ -127,9 +127,7 @@ async def save_and_remove_user_created_services(
         ):
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
 
-            logger.info(
-                "Calling into dynamic-sidecar to save state and pushing data to nodeports"
-            )
+            logger.info("Calling into dynamic-sidecar to save: state and output ports")
             try:
                 tasks = [
                     dynamic_sidecar_client.push_service_output_ports(
@@ -149,12 +147,12 @@ async def save_and_remove_user_created_services(
                 await logged_gather(*tasks, max_concurrency=2)
                 scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
-                logger.info("Ports data pushed by dynamic-sidecar")
+                logger.info("dynamic-sidecar saved: state and output ports")
             except (BaseClientHTTPError, TaskClientResultError) as e:
                 logger.error(
                     (
                         "Could not contact dynamic-sidecar to save service "
-                        "state or upload outputs %s\n%s"
+                        "state or output ports %s\n%s"
                     ),
                     scheduler_data.service_name,
                     f"{e}",
