@@ -44,7 +44,7 @@ _MINUTE: Final[int] = 60
 
 
 @retry(
-    wait=wait_random_exponential(),
+    wait=wait_random_exponential(max=30),
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result.success is False),
     reraise=False,
@@ -59,7 +59,7 @@ async def _retry_docker_compose_start(
 
 
 @retry(
-    wait=wait_random_exponential(),
+    wait=wait_random_exponential(max=30),
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result is False),
     reraise=True,
