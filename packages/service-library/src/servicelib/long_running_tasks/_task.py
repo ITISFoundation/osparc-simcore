@@ -422,4 +422,5 @@ def start_task(
         task_progress=task_progress,
         task_context=task_context or {},
     )
+
     return tracked_task.task_id
