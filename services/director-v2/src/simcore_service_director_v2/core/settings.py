@@ -448,7 +448,10 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS: bool = Field(
         False,
-        description="if enabled state is saved via rclone volumes",
+        description=(
+            "Under development feature. If enabled state "
+            "is saved using rclone docker volumes."
+        ),
     )
 
     # for passing self-signed certificate to spawned services
