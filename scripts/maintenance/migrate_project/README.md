@@ -1,17 +1,26 @@
 # project migration
 
 Built on top of the existing `postgres-database` package.
-It is used to migrate a user's project and eventually (hidden projects, generated via the api).
 
-If a file's or project's unique identifier already exist in the destination database, the process will not continue.
+It is used to migrate a user's project. Currently, this does not work for hidden projects, generated via the api.
 
-**NOTE:** data sync is done using `rclone`, currently it is assumed that the data source is a `MINIO S3 backend` and the destination is an `AWS S3 backend`.
+It uses low-level direct access to pgSQL and S3. Data sync is done using `rclone`. Therefore, this script might become outdated upon database changes in osparc-simcore.
 
 
-Any doubts? Ask **ANE**.
+# IMPORTANT PITFALLS:
+- Currently, this does not work for hidden projects, generated via the api.
+- No postgres database version migration is performed atm. This migration only works for identical source and target RDBs.
+- If a file's or project's UUID already exist in the destination database (colision), this script will fail with an error.
+- Supported S3 providers are `CEPH`, `AWS`, `MINIO`
+
+
+# Maintainers:
+ANE, DK
+
+
 # How to use
 
-Build the image locally
+1. Build the image locally
 
 ```
 make build
@@ -20,7 +29,7 @@ make build
 Create a configuration file
 
 ```
-make empty-config-file
+make create-empty-config-file
 ```
 
 Fill up the `cfg.json` with data. Also refer to `src/models.py` on how to fill up the file.
@@ -31,7 +40,7 @@ Finally start the process
 make migrate
 ```
 
-It will copy 1 file at a time, so this operation might take a bit.
+This operation might take a bit.
 
 
 

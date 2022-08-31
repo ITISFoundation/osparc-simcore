@@ -15,10 +15,16 @@ class DBConfig(BaseModel):
 
 class S3Config(BaseModel):
     endpoint: str = "https://s3.amazonaws.com"
-    provider: str = "AWS"
+    provider: str = Field(
+        ...,
+        description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS"',
+    )
     access_key: str
     secret_key: str
-    bucket: str
+    bucket: str = Field(
+        ...,
+        description="S3 Bucket Name",
+    )
 
 
 class SourceConfig(BaseModel):
