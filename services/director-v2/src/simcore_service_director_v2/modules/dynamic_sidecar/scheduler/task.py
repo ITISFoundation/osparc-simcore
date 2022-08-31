@@ -77,7 +77,7 @@ async def _apply_observation_cycle(
     # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
-    if (  # do not refactor, second part of "and condition" is skiped most times
+    if (  # do not refactor, second part of "and condition" is skipped most times
         scheduler_data.dynamic_sidecar.were_containers_created
         and not await are_all_services_present(
             node_uuid=scheduler_data.node_uuid,

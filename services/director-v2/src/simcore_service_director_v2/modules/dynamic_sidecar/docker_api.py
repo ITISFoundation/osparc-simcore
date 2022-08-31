@@ -305,7 +305,6 @@ async def are_all_services_present(
         node_uuid, dynamic_sidecar_settings
     )
     if len(stack_services) != 2:
-        log.warning("Expected 2 services found %s", stack_services)
         return False
 
     return True
