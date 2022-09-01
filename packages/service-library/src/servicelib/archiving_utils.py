@@ -15,8 +15,10 @@ from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 from .file_utils import remove_directory
 from .pools import non_blocking_process_pool_executor
 
-MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
-CHUNK_SIZE: Final[int] = 1024 * 8
+_MIN: Final[int] = 60  # secs
+_MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
+_CHUNK_SIZE: Final[int] = 1024 * 8
+
 log = logging.getLogger(__name__)
 
 
@@ -117,7 +119,7 @@ def _zipfile_single_file_extract_worker(
         ) as dest_fp, tqdm_logging_redirect(
             total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
         ) as pbar:
-            while chunk := zip_fp.read(CHUNK_SIZE):
+            while chunk := zip_fp.read(_CHUNK_SIZE):
                 dest_fp.write(chunk)
                 pbar.update(len(chunk))
             return destination_path
@@ -141,7 +143,7 @@ async def unarchive_dir(
     archive_to_extract: Path,
     destination_folder: Path,
     *,
-    max_workers: int = MAX_UNARCHIVING_WORKER_COUNT,
+    max_workers: int = _MAX_UNARCHIVING_WORKER_COUNT,
 ) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
@@ -197,8 +199,10 @@ async def unarchive_dir(
                 for f in futures:
                     f.cancel()
 
-                # wait until all tasks are cancelled.
-                await asyncio.gather(*futures, return_exceptions=True)
+                # wait until all tasks are cancelled
+                await asyncio.wait(
+                    *futures, timeout=2 * _MIN, return_when=asyncio.ALL_COMPLETED
+                )
 
                 # now we can cleanup
                 if destination_folder.exists() and destination_folder.is_dir():
