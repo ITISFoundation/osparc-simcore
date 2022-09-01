@@ -22,7 +22,7 @@ _DEFAULT_POLL_INTERVAL_S: Final[float] = 1
 _DEFAULT_AIOHTTP_RETRY_POLICY = dict(
     retry=retry_if_exception_type(ClientConnectionError),
     wait=wait_random_exponential(max=20),
-    stop=stop_after_delay(30),
+    stop=stop_after_delay(60),
     reraise=True,
 )
 
