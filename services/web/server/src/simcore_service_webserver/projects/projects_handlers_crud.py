@@ -171,7 +171,7 @@ async def _prepare_project_copy(
     new_project, nodes_map = clone_project_document(
         source_project,
         forced_copy_project_id=None,
-        clean_output_data=(deep_copy == False),
+        clean_output_data=(deep_copy is False),
     )
     # remove template/study access rights
     new_project["accessRights"] = {}
