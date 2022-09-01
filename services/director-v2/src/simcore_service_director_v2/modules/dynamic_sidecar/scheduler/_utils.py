@@ -107,6 +107,8 @@ async def cleanup_sidecar_stack_and_resources(
     # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
 
     if scheduler_data.docker_node_id is None:
+        # TODO: also refactor to take care of above when merging PR
+        # https://github.com/ITISFoundation/osparc-simcore/pull/3272
         # NOTE: this is triggered once if the dy-sidecar was never started
         # usually due to lack of resources. It is safe to assume no volumes
         # were created, so no cleanup is required.
