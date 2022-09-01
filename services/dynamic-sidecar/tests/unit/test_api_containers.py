@@ -6,6 +6,7 @@ import asyncio
 import json
 import random
 from inspect import signature
+from pathlib import Path
 from typing import Any, AsyncIterable, Final, Iterator
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -125,7 +126,14 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
 
 
 @pytest.fixture
+def app(app: FastAPI) -> FastAPI:
+    app.state.shared_store = SharedStore()  # emulate on_startup event
+    return app
+
+
+@pytest.fixture
 def test_client(
+    ensure_shared_store_dir: Path,
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers,
@@ -273,10 +281,7 @@ def test_ensure_api_vtag_is_v1():
     assert API_VTAG == "v1"
 
 
-async def test_start_same_space_twice(
-    compose_spec: str,
-    test_client: TestClient,
-):
+async def test_start_same_space_twice(compose_spec: str, test_client: TestClient):
     settings = test_client.application.state.settings
 
     settings_1 = settings.copy(
