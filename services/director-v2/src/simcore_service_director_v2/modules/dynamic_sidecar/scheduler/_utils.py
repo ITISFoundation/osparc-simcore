@@ -1,3 +1,4 @@
+import logging
 from collections import deque
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Type
@@ -18,6 +19,8 @@ from ..docker_api import (
     remove_volumes_from_node,
 )
 from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
+
+logger = logging.getLevelName(__name__)
 
 
 @asynccontextmanager
@@ -96,12 +99,23 @@ async def cleanup_sidecar_stack_and_resources(
         ]
         + scheduler_data.paths_mapping.state_paths
     ]
-    assert scheduler_data.docker_node_id  # nosec
+
     # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
     # it does not remove the volumes. Is this something we want?
     # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
     # otherwise keep them in place!!!!!
     # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
+
+    if scheduler_data.docker_node_id is None:
+        # NOTE: this is triggered once if the dy-sidecar was never started
+        # usually due to lack of resources. It is safe to assume no volumes
+        # were created, so no cleanup is required.
+        logger.warning(
+            "Skipped volume removal for %s, since a docker_node_id was not found.",
+            scheduler_data.node_uuid,
+        )
+        return
+
     await remove_volumes_from_node(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         volume_names=unique_volume_names,
