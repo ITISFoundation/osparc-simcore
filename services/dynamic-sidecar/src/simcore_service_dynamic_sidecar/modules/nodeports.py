@@ -144,11 +144,9 @@ async def upload_outputs(
         logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
     finally:
         # clean up possible compressed files
-        for file_path in temp_paths:
-            await async_on_threadpool(
-                # pylint: disable=cell-var-from-loop
-                lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
-            )
+        for dirpath in temp_paths:
+            assert dirpath.is_dir()  # nosec
+            await remove_directory(dirpath, ignore_errors=True)
 
 
 async def dispatch_update_for_directory(
