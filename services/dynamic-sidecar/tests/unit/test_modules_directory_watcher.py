@@ -66,7 +66,7 @@ async def test_run_observer(
     tmp_path: Path,
 ) -> None:
 
-    directory_watcher_observers = DirectoryWatcherObservers()
+    directory_watcher_observers = DirectoryWatcherObservers(io_log_redirect_cb=None)
     directory_watcher_observers.observe_directory(tmp_path)
 
     directory_watcher_observers.start()

@@ -2,11 +2,12 @@ import asyncio
 import inspect
 import logging
 import traceback
+import urllib.parse
 from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Awaitable, Callable
+from typing import Any, Optional, Protocol
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -48,6 +49,7 @@ def _mark_task_to_remove_if_required(
 
 
 TrackedTaskGroupDict = dict[TaskId, TrackedTask]
+TaskContext = dict[str, Any]
 
 
 class TasksManager:
@@ -116,9 +118,11 @@ class TasksManager:
                 logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
-                    self.get_task_status(task_id).json(),
+                    self.get_task_status(task_id, with_task_context=None).json(),
                 )
-                await self.remove_task(task_id, reraise_errors=False)
+                await self.remove_task(
+                    task_id, with_task_context=None, reraise_errors=False
+                )
 
     @staticmethod
     def _create_task_id(task_name: TaskName) -> str:
@@ -132,8 +136,27 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
+    def list_tasks(self, with_task_context: Optional[TaskContext]) -> list[TrackedTask]:
+        tasks = []
+        for task_group in self._tasks_groups.values():
+            if not with_task_context:
+                tasks.extend(task_group.values())
+            else:
+                tasks.extend(
+                    [
+                        task
+                        for task in task_group.values()
+                        if task.task_context == with_task_context
+                    ]
+                )
+        return tasks
+
     def add_task(
-        self, task_name: TaskName, task: Task, task_progress: TaskProgress
+        self,
+        task_name: TaskName,
+        task: Task,
+        task_progress: TaskProgress,
+        task_context: TaskContext,
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
@@ -145,27 +168,35 @@ class TasksManager:
             task=task,
             task_name=task_name,
             task_progress=task_progress,
+            task_context=task_context,
         )
         self._tasks_groups[task_name][task_id] = tracked_task
 
         return tracked_task
 
-    def _get_tracked_task(self, task_id: TaskId) -> TrackedTask:
+    def _get_tracked_task(
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+    ) -> TrackedTask:
         for tasks in self._tasks_groups.values():
             if task_id in tasks:
-                tracked_task = tasks[task_id]
-                return tracked_task
+                if with_task_context and (
+                    tasks[task_id].task_context != with_task_context
+                ):
+                    raise TaskNotFoundError(task_id=task_id)
+                return tasks[task_id]
 
         raise TaskNotFoundError(task_id=task_id)
 
-    def get_task_status(self, task_id: TaskId) -> TaskStatus:
+    def get_task_status(
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+    ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
         form the progress
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task: TrackedTask = self._get_tracked_task(task_id)
+        tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
         tracked_task.last_status_check = datetime.utcnow()
 
         task = tracked_task.task
@@ -179,7 +210,9 @@ class TasksManager:
             )
         )
 
-    def get_task_result(self, task_id: TaskId) -> Any:
+    def get_task_result(
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+    ) -> Any:
         """
         returns: the result of the task
 
@@ -187,7 +220,7 @@ class TasksManager:
         raises TaskCancelledError if the task was cancelled
         raises TaskNotCompletedError if the task is not completed
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, with_task_context)
 
         try:
             return tracked_task.task.result()
@@ -204,7 +237,7 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, {})
 
         if not tracked_task.task.done():
             raise TaskNotCompletedError(task_id=task_id)
@@ -227,13 +260,15 @@ class TasksManager:
 
         return TaskResult(result=tracked_task.task.result(), error=None)
 
-    async def cancel_task(self, task_id: TaskId) -> None:
+    async def cancel_task(
+        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+    ) -> None:
         """
         cancels the task
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task = self._get_tracked_task(task_id)
+        tracked_task = self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
     async def _cancel_asyncio_task(
@@ -268,11 +303,15 @@ class TasksManager:
             ) from e
 
     async def remove_task(
-        self, task_id: TaskId, *, reraise_errors: bool = True
+        self,
+        task_id: TaskId,
+        with_task_context: Optional[TaskContext],
+        *,
+        reraise_errors: bool = True,
     ) -> None:
         """cancels and removes task"""
         try:
-            tracked_task = self._get_tracked_task(task_id)
+            tracked_task = self._get_tracked_task(task_id, with_task_context)
         except TaskNotFoundError:
             if reraise_errors:
                 raise
@@ -296,37 +335,63 @@ class TasksManager:
 
         for task_id in task_ids_to_remove:
             # when closing we do not care about pending errors
-            await self.remove_task(task_id, reraise_errors=False)
+            await self.remove_task(task_id, None, reraise_errors=False)
 
         await self._cancel_asyncio_task(
             self._stale_tasks_monitor_task, "stale_monitor", reraise_errors=False
         )
 
 
+class TaskProtocol(Protocol):
+    # NOTE: when using **kwargs pyright complains. this might be a bug that should be fixed soon
+    async def __call__(self, task_progress: TaskProgress, *task_kwargs: Any) -> Any:
+        ...
+
+    @property
+    def __name__(self) -> str:
+        ...
+
+
 def start_task(
     tasks_manager: TasksManager,
-    handler: Callable[..., Awaitable],
+    task: TaskProtocol,
     *,
     unique: bool = False,
-    **kwargs,
+    task_context: Optional[TaskContext] = None,
+    task_name: Optional[str] = None,
+    **task_kwargs,
 ) -> TaskId:
     """
-    Creates a task from a given callable to an async function.
+    Creates a background task from an async function.
 
-    A task will be created out of it by injecting a `TaskProgress` as the first
-    positional argument and adding all `kwargs` as named parameters.
+    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
+    positional argument and adding all `handler_kwargs` as named parameters.
 
-    NOTE: the first progress update will be (message='', percent=0.0)
-    NOTE: the `handler` name must be unique in the module, otherwise when using
+    NOTE: the progress is automatically bounded between 0 and 1
+    NOTE: the `task` name must be unique in the module, otherwise when using
         the unique parameter is True, it will not be able to distinguish between
         them.
+
+    Args:
+        tasks_manager (TasksManager): the tasks manager
+        task (TaskProtocol): the tasks to be run in the background
+        unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
+        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
+        task_name (Optional[str], optional): optional task name. Defaults to None.
+
+    Raises:
+        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
+
+    Returns:
+        TaskId: the task unique identifier
     """
 
-    # NOTE: Composing the task_name out of the handler's module and it's name
+    # NOTE: If not task name is given, it will be composed of the handler's module and it's name
     # to keep the urls shorter and more meaningful.
-    handler_module = inspect.getmodule(handler)
+    handler_module = inspect.getmodule(task)
     handler_module_name = handler_module.__name__ if handler_module else ""
-    task_name = f"{handler_module_name}.{handler.__name__}"
+    task_name = task_name or f"{handler_module_name}.{task.__name__}"
+    task_name = urllib.parse.quote(task_name, safe="")
 
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
@@ -335,11 +400,27 @@ def start_task(
         managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    task_progress = TaskProgress()
-    awaitable = handler(task_progress, **kwargs)
-    task = asyncio.create_task(awaitable)
+    task_progress = TaskProgress.create()
+
+    # bind the task with progress 0 and 1
+    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
+        progress.update(message="starting", percent=0)
+        try:
+            return await handler(progress, **task_kwargs)
+        finally:
+            # TODO: change that signature. it actually does not publish anything
+            # and it can raise if percent is <0 or >1!! -> simplify
+            progress.update(message="finished", percent=1)
+
+    async_task = asyncio.create_task(
+        _progress_task(task_progress, task), name=f"{task_name}"
+    )
 
     tracked_task = tasks_manager.add_task(
-        task_name=task_name, task=task, task_progress=task_progress
+        task_name=task_name,
+        task=async_task,
+        task_progress=task_progress,
+        task_context=task_context or {},
     )
+
     return tracked_task.task_id

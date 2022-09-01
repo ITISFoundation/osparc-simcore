@@ -9,7 +9,6 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..core.rabbitmq import RabbitMQ
 from ..modules import directory_watcher
 from ..modules.mounted_fs import MountedVolumes
 from ._dependencies import get_application, get_mounted_volumes
@@ -37,23 +36,13 @@ class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
 
 
-async def send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.debug(message)
-    await rabbitmq.post_log_message(f"[sidecar] {message}")
-
-
 #
 # HANDLERS ------------------
 #
-# - ANE: importing the `containers_router` router from .containers
-# and generating the openapi spec, will not add the below entrypoints
-# we need to create a new one in order for all the APIs to be
-# detected as before
-#
-containers_router_extension = APIRouter(tags=["containers"])
+router = APIRouter()
 
 
-@containers_router_extension.patch(
+@router.patch(
     "/containers/directory-watcher",
     summary="Enable/disable directory-watcher event propagation",
     response_class=Response,
@@ -69,7 +58,7 @@ async def toggle_directory_watcher(
         directory_watcher.disable_directory_watcher(app)
 
 
-@containers_router_extension.post(
+@router.post(
     "/containers/ports/outputs/dirs",
     summary=(
         "Creates the output directories declared by the docker images's labels. "
@@ -91,7 +80,7 @@ async def create_output_dirs(
             dir_to_create.mkdir(parents=True, exist_ok=True)
 
 
-@containers_router_extension.post(
+@router.post(
     "/containers/{id}/networks:attach",
     summary="attach container to a network, if not already attached",
     response_class=Response,
@@ -132,7 +121,7 @@ async def attach_container_to_network(
         )
 
 
-@containers_router_extension.post(
+@router.post(
     "/containers/{id}/networks:detach",
     summary="detach container from a network, if not already detached",
     response_class=Response,

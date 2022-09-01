@@ -583,8 +583,6 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save
                 and scheduler_data.dynamic_sidecar.were_containers_created
             ):
-                dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-
                 logger.info(
                     "Calling into dynamic-sidecar to save state and pushing data to nodeports"
                 )

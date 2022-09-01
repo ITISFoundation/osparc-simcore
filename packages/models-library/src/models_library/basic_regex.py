@@ -43,3 +43,11 @@ S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
 # Datcore file ID
 DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"
 DATCORE_DATASET_NAME_RE = rf"^N:dataset:{UUID_RE_BASE}$"
+
+
+TWILIO_ALPHANUMERIC_SENDER_ID_RE = r"(?!^\d+$)^[a-zA-Z0-9\s]{2,11}$"
+#   Alphanumeric Sender IDs may be up to 11 characters long.
+#   Accepted characters include both upper- and lower-case Ascii letters,
+#   the digits 0 through 9, and the space character.
+#   They may not be only numerals.
+# SEE # https://www.twilio.com/docs/glossary/what-alphanumeric-sender-id

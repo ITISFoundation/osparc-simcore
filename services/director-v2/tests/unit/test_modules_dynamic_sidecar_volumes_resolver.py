@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 from uuid import UUID
 
 import pytest
@@ -32,7 +32,7 @@ def node_uuid(faker: Faker) -> UUID:
 
 
 @pytest.fixture
-def state_paths() -> List[Path]:
+def state_paths() -> list[Path]:
     return [Path(f"/tmp/asd/asd/{x}") for x in range(10)]
 
 
@@ -44,8 +44,8 @@ def run_id(faker: Faker) -> UUID:
 @pytest.fixture
 def expected_volume_config(
     swarm_stack_name: str, node_uuid: UUID, run_id: UUID
-) -> Callable[[str, str], Dict[str, Any]]:
-    def _callable(source: str, target: str) -> Dict[str, Any]:
+) -> Callable[[str, str], dict[str, Any]]:
+    def _callable(source: str, target: str) -> dict[str, Any]:
         return {
             "Target": target,
             "Type": "volume",
@@ -69,8 +69,8 @@ def test_expected_paths(
     swarm_stack_name: str,
     compose_namespace: str,
     node_uuid: UUID,
-    state_paths: List[Path],
-    expected_volume_config: Callable[[str, str], Dict[str, Any]],
+    state_paths: list[Path],
+    expected_volume_config: Callable[[str, str], dict[str, Any]],
     run_id: UUID,
 ) -> None:
     fake = Faker()

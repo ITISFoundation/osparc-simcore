@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 from typing import Any, Callable
@@ -100,6 +101,7 @@ async def test_delete_project(
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
+    mock_catalog_api: None,
     client,
     logged_user,
     user_project,

@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Type
+from typing import Any, AsyncIterator, Deque, Optional
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
@@ -34,7 +34,7 @@ async def disabled_directory_watcher(
 
 
 def fetch_repo_outside_of_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
+    app: FastAPI, repo_type: type[BaseRepository]
 ) -> BaseRepository:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
@@ -45,8 +45,8 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
+    containers_inspect: Optional[dict[str, Any]]
+) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
@@ -58,7 +58,7 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def all_containers_running(containers_inspect: list[DockerContainerInspect]) -> bool:
     return len(containers_inspect) > 0 and all(
-        (x.status == DockerStatus.RUNNING for x in containers_inspect)
+        x.status == DockerStatus.RUNNING for x in containers_inspect
     )

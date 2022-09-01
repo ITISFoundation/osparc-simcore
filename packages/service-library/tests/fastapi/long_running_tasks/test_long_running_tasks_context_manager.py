@@ -46,16 +46,12 @@ async def _assert_task_removed(
 
 
 async def a_test_task(task_progress: TaskProgress) -> int:
-    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
-    task_progress.publish(message="finished", percent=1.0)
     return 42
 
 
 async def a_failing_test_task(task_progress: TaskProgress) -> None:
-    task_progress.publish(message="starting", percent=0.0)
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
-    task_progress.publish(message="finished", percent=1.0)
     raise RuntimeError("I am failing as requested")
 
 
@@ -67,14 +63,14 @@ def user_routes() -> APIRouter:
     async def create_task_user_defined_route(
         tasks_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(tasks_manager, handler=a_test_task)
+        task_id = start_task(tasks_manager, task=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
         task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager, handler=a_failing_test_task)
+        task_id = start_task(task_manager, task=a_failing_test_task)
         return task_id
 
     return router

@@ -181,8 +181,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     showPreparingInputs: function() {
       const title = this.tr("Preparing Inputs");
-      const width = 600;
-      const height = 500;
+      const width = 650;
+      const height = 600;
       osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
     },
 
@@ -344,7 +344,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         converter: outputsData => {
           let outputCounter = 0;
           Object.keys(outputsData).forEach(outKey => {
-            if (outputsData[outKey] && "value" in outputsData[outKey]) {
+            const outValue = osparc.data.model.Node.getOutput(outputsData, outKey);
+            if (![null, undefined, ""].includes(outValue)) {
               outputCounter++;
             }
           });

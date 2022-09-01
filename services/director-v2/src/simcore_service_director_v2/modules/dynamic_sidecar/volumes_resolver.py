@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 from models_library.projects import ProjectID
@@ -16,7 +16,7 @@ def _get_s3_volume_driver_config(
     project_id: ProjectID,
     node_uuid: NodeID,
     storage_directory_name: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     assert "/" not in storage_directory_name  # no sec
     driver_config = {
         "Name": "rclone",
@@ -93,7 +93,7 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         node_uuid: NodeID,
         run_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
@@ -121,7 +121,7 @@ class DynamicSidecarVolumesPathsResolver:
         node_uuid: NodeID,
         run_id: UUID,
         r_clone_settings: RCloneSettings,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "Target": cls.target(path),
             "Type": "volume",

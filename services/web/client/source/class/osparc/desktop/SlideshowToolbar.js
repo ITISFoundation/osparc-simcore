@@ -100,6 +100,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           break;
         case "breadcrumbs-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
+          osparc.utils.Utils.setIdToWidget(control, "appModeButtons");
           control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
           const scroll = this.getChildControl("breadcrumbs-scroll");
           scroll.add(control);
