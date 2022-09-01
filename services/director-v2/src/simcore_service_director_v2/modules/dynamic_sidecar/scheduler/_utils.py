@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Type
+from typing import Any, AsyncIterator, Optional, Type
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
@@ -55,9 +55,9 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
-    results: Deque[DockerContainerInspect] = deque()
+    containers_inspect: Optional[dict[str, Any]]
+) -> list[DockerContainerInspect]:
+    results: deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
         return []
@@ -68,7 +68,7 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def all_containers_running(containers_inspect: list[DockerContainerInspect]) -> bool:
     return len(containers_inspect) > 0 and all(
         (x.status == DockerStatus.RUNNING for x in containers_inspect)
     )
