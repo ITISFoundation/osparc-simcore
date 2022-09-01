@@ -1,7 +1,6 @@
 import asyncio
 import fnmatch
 import logging
-import shutil
 import types
 import zipfile
 from contextlib import contextmanager
@@ -9,10 +8,12 @@ from functools import partial
 from pathlib import Path
 from typing import Final, Iterator, Optional
 
-from servicelib.pools import non_blocking_process_pool_executor
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
+
+from .file_utils import remove_directory
+from .pools import non_blocking_process_pool_executor
 
 MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 CHUNK_SIZE: Final[int] = 1024 * 8
@@ -201,7 +202,7 @@ async def unarchive_dir(
 
                 # now we can cleanup
                 if destination_folder.exists() and destination_folder.is_dir():
-                    shutil.rmtree(destination_folder, ignore_errors=True)
+                    await remove_directory(destination_folder, ignore_errors=True)
 
                 raise ArchiveError(
                     f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
@@ -249,7 +250,7 @@ def _add_to_archive(
     compress: bool,
     store_relative_path: bool,
     exclude_patterns: Optional[set[str]] = None,
-):
+) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
     folder_size_bytes = sum(
         file.stat().st_size
