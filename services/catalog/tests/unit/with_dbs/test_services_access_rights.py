@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable, List
+from typing import Callable
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
@@ -81,8 +81,8 @@ def test_reduce_access_rights():
 
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
-    user_groups_ids: List[int],
-    products_names: List[str],
+    user_groups_ids: list[int],
+    products_names: list[str],
     services_db_tables_injector: Callable,
     service_catalog_faker: Callable,
     mocker,
@@ -112,14 +112,21 @@ async def test_auto_upgrade_policy(
     new_service_metadata = ServiceDockerData.parse_obj(
         ServiceDockerData.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
-    new_service_metadata.version = "1.0.1"
+    new_service_metadata.version = "1.0.11"
 
-    # we two versions of the service in the database
+    # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
         [
             service_catalog_faker(
                 new_service_metadata.key,
-                "0.5.0",
+                "1.0.1",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+            service_catalog_faker(
+                new_service_metadata.key,
+                "1.0.9",
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
@@ -128,14 +135,14 @@ async def test_auto_upgrade_policy(
             # which were released in two different product
             service_catalog_faker(
                 new_service_metadata.key,
-                "1.0.0",
+                "1.0.10",
                 team_access="x",
                 everyone_access=None,
                 product=target_product,
             ),
             service_catalog_faker(
                 new_service_metadata.key,
-                "1.0.0",
+                "1.0.10",
                 team_access="x",
                 everyone_access=None,
                 product=products_names[-1],

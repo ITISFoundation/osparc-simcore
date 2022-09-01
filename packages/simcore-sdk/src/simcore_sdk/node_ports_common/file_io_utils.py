@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedP
 from pydantic import AnyUrl
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
+from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -105,7 +106,8 @@ async def download_link_to_file(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
+        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
+        after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
             async with session.get(url) as response:
@@ -165,32 +167,33 @@ async def _upload_file_part(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING),
+        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
+        after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
-            response = await session.put(
+            async with session.put(
                 upload_url,
                 data=file_uploader,
                 headers={
                     "Content-Length": f"{file_part_size}",
                 },
-            )
-            response.raise_for_status()
-            if pbar.update(file_part_size) and io_log_redirect_cb:
-                await io_log_redirect_cb(f"{pbar}")
-            # NOTE: the response from minio does not contain a json body
-            assert response.status == web.HTTPOk.status_code  # nosec
-            assert response.headers  # nosec
-            assert "Etag" in response.headers  # nosec
-            received_e_tag = json.loads(response.headers["Etag"])
-            log.info(
-                "--> completed upload %s of %s, [%s], %s",
-                f"{file_part_size=}",
-                f"{file_to_upload=}",
-                f"{part_index+1}/{num_parts}",
-                f"{received_e_tag=}",
-            )
-            return (part_index, received_e_tag)
+            ) as response:
+                response.raise_for_status()
+                if pbar.update(file_part_size) and io_log_redirect_cb:
+                    await io_log_redirect_cb(f"{pbar}")
+                # NOTE: the response from minio does not contain a json body
+                assert response.status == web.HTTPOk.status_code  # nosec
+                assert response.headers  # nosec
+                assert "Etag" in response.headers  # nosec
+                received_e_tag = json.loads(response.headers["Etag"])
+                log.info(
+                    "--> completed upload %s of %s, [%s], %s",
+                    f"{file_part_size=}",
+                    f"{file_to_upload=}",
+                    f"{part_index+1}/{num_parts}",
+                    f"{received_e_tag=}",
+                )
+                return (part_index, received_e_tag)
     raise exceptions.S3TransferError(
         f"Unexpected error while transferring {file_to_upload} to {upload_url}"
     )
