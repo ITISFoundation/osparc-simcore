@@ -3,14 +3,15 @@ import logging
 import os
 import shutil
 import sys
-import tempfile
 import time
 from collections import deque
+from contextlib import AsyncExitStack
 from enum import Enum
 from pathlib import Path
 from typing import Any, Coroutine, Optional, cast
 
 import magic
+from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
@@ -78,75 +79,68 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    temp_paths: deque[Path] = deque()
-    ports_values: dict[str, ItemConcreteValue] = {}
+    ports_values: dict[str, Optional[ItemConcreteValue]] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
-    for port in (await PORTS.outputs).values():
-        logger.debug("Checking port %s", port.key)
-        if port_keys and port.key not in port_keys:
-            continue
-        logger.debug(
-            "uploading data to port '%s' with value '%s'...", port.key, port.value
-        )
-        if _FILE_TYPE_PREFIX in port.property_type:
-            src_folder = outputs_path / port.key
-            files_and_folders_list = list(src_folder.rglob("*"))
-            logger.debug("Discovered files to upload %s", files_and_folders_list)
-
-            if not files_and_folders_list:
-                ports_values[port.key] = None
+    async with AsyncExitStack() as stack:
+        for port in (await PORTS.outputs).values():
+            logger.debug("Checking port %s", port.key)
+            if port_keys and port.key not in port_keys:
                 continue
-
-            if len(files_and_folders_list) == 1 and (
-                files_and_folders_list[0].is_file()
-                or files_and_folders_list[0].is_symlink()
-            ):
-                # special case, direct upload
-                ports_values[port.key] = files_and_folders_list[0]
-                continue
-
-            # generic case let's create an archive
-            # only the filtered out files will be zipped
-            tmp_folder = Path(tempfile.mkdtemp())
-            tmp_file = tmp_folder / f"{src_folder.stem}.zip"
-            temp_paths.append(tmp_folder)
-
-            # when having multiple directories it is important to
-            # run the compression in parallel to guarantee better performance
-            archiving_tasks.append(
-                archive_dir(
-                    dir_to_compress=src_folder,
-                    destination=tmp_file,
-                    compress=False,
-                    store_relative_path=True,
-                )
+            logger.debug(
+                "uploading data to port '%s' with value '%s'...", port.key, port.value
             )
-            ports_values[port.key] = tmp_file
-        else:
-            data_file = outputs_path / _KEY_VALUE_FILE_NAME
-            if data_file.exists():
-                data = json.loads(data_file.read_text())
-                if port.key in data and data[port.key] is not None:
-                    ports_values[port.key] = data[port.key]
-                else:
-                    logger.debug("Port %s not found in %s", port.key, data)
-            else:
-                logger.debug("No file %s to fetch port values from", data_file)
+            if _FILE_TYPE_PREFIX in port.property_type:
+                src_folder = outputs_path / port.key
+                files_and_folders_list = list(src_folder.rglob("*"))
+                logger.debug("Discovered files to upload %s", files_and_folders_list)
 
-    try:
+                if not files_and_folders_list:
+                    ports_values[port.key] = None
+                    continue
+
+                if len(files_and_folders_list) == 1 and (
+                    files_and_folders_list[0].is_file()
+                    or files_and_folders_list[0].is_symlink()
+                ):
+                    # special case, direct upload
+                    ports_values[port.key] = files_and_folders_list[0]
+                    continue
+
+                # generic case let's create an archive
+                # only the filtered out files will be zipped
+                tmp_folder = await stack.enter_async_context(AioTemporaryDirectory())
+                tmp_file = tmp_folder / f"{src_folder.stem}.zip"
+
+                # when having multiple directories it is important to
+                # run the compression in parallel to guarantee better performance
+                archiving_tasks.append(
+                    archive_dir(
+                        dir_to_compress=src_folder,
+                        destination=tmp_file,
+                        compress=False,
+                        store_relative_path=True,
+                    )
+                )
+                ports_values[port.key] = tmp_file
+            else:
+                data_file = outputs_path / _KEY_VALUE_FILE_NAME
+                if data_file.exists():
+                    data = json.loads(data_file.read_text())
+                    if port.key in data and data[port.key] is not None:
+                        ports_values[port.key] = data[port.key]
+                    else:
+                        logger.debug("Port %s not found in %s", port.key, data)
+                else:
+                    logger.debug("No file %s to fetch port values from", data_file)
+
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
         await PORTS.set_multiple(ports_values)
 
-        elapsed_time = time.perf_counter() - start_time
-        total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
-        logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
-    finally:
-        # clean up possible compressed files
-        for dirpath in temp_paths:
-            assert dirpath.is_dir()  # nosec
-            await remove_directory(dirpath, ignore_errors=True)
+    elapsed_time = time.perf_counter() - start_time
+    total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
+    logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
 
 
 async def dispatch_update_for_directory(
