@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
       const label2 = osparc.component.tutorial.ti.Slides.createLabel(text2);
       this._add(label2);
 
-      const image = new qx.ui.basic.Image("osparc/tutorial/ti/ElectrodeSelector.gif").set({
+      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/electrode_selector.gif").set({
         alignX: "center",
         scale: true,
         width: 737,
