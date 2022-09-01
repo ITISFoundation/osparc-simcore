@@ -61,7 +61,7 @@ class TaskProgress(BaseModel):
     @validator("percent")
     @classmethod
     def round_value_to_3_digit(cls, v):
-        return round(v + 0.0005, 3)
+        return round(v, 3)
 
 
 class TrackedTask(BaseModel):
