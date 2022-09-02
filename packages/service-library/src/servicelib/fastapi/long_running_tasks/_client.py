@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 import warnings
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Final, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
@@ -20,6 +20,8 @@ from ...long_running_tasks._models import (
     TaskResult,
     TaskStatus,
 )
+
+DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +214,7 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    http_requests_timeout: PositiveFloat = 15,
+    http_requests_timeout: PositiveFloat = DEFAULT_HTTP_REQUESTS_TIMEOUT,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on

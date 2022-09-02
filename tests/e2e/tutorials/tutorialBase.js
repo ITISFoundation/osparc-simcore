@@ -180,7 +180,7 @@ class TutorialBase {
 
   async checkFirstStudyId(studyId) {
     await this.__page.waitForSelector('[osparc-test-id="studiesList"]');
-    await this.waitFor(1000);
+    await this.waitFor(5000, "Wait for studies to be loaded");
     const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
     console.log("checkFirstStudyId", studyId);
     console.log(studies);
