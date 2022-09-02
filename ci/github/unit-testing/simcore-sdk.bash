@@ -23,7 +23,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/simcore-sdk
-  make tests-unit
+  make tests-unit-ci
   popd
 }
 
