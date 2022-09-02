@@ -58,6 +58,11 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
     return sys.getsizeof(value)
 
 
+_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
+    "TEST: test_nodeports_integration DO NOT REMOVE"
+)
+
+
 @run_sequentially_in_context()
 async def upload_outputs(
     outputs_path: Path,
@@ -141,6 +146,7 @@ async def upload_outputs(
     elapsed_time = time.perf_counter() - start_time
     total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
     logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
+    logger.debug(_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE)
 
 
 async def dispatch_update_for_directory(
