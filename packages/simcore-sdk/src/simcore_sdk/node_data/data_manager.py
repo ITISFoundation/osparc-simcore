@@ -7,6 +7,7 @@ from typing import Optional, Union
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import parse_obj_as
 from servicelib.archiving_utils import archive_dir, unarchive_dir
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
@@ -70,8 +71,9 @@ async def push(
             io_log_redirect_cb=io_log_redirect_cb,
         )
     # we have a folder, so we create a compressed file
-    with TemporaryDirectory() as tmp_dir_name:
-        log.info("compressing %s into %s...", file_or_folder.name, tmp_dir_name)
+    with log_catch(log), log_context(
+        log, logging.INFO, "pushing %s", file_or_folder
+    ), TemporaryDirectory() as tmp_dir_name:
         # compress the files
         archive_file_path = (
             Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"

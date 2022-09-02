@@ -9,6 +9,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
@@ -99,6 +100,7 @@ def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
+    config_all_loggers()
 
 
 def create_base_app() -> FastAPI:
@@ -122,6 +124,7 @@ def create_base_app() -> FastAPI:
     long_running_tasks.server.setup(app)
 
     app.include_router(main_router)
+
     return app
 
 
