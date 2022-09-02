@@ -112,6 +112,7 @@ _run-test-dev: _check_venv_active
 		--failed-first \
 		--pdb \
 		--asyncio-mode=auto \
+		--keep-docker-up \
 		$(TEST_TARGET)
 
 
@@ -127,6 +128,7 @@ _run-test-ci: _check_venv_active
 		--durations=10 \
 		--asyncio-mode=auto \
 		-m "not heavy_load" \
+		--keep-docker-up \
 		$(TEST_TARGET)
 
 
