@@ -7,10 +7,13 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list -v
+  .venv/bin/pip list -v
 }
 
 # isolated = these tests are (IMO) real unit tests, they do not need any dependencies and were already in the root test/unit folder before
@@ -26,6 +29,8 @@ test_isolated() {
 }
 
 test_with_db() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
   make test-ci-unit test-subfolder="with_dbs/$1"
