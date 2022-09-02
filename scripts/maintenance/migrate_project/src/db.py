@@ -54,12 +54,12 @@ def _get_hidden_project(connection: Connection, prj_owner: int) -> ResultProxy:
 
 
 def _get_file_meta_data_without_soft_links(
-    connection: Connection, user_id: int, project_id: UUID
+    connection: Connection, node_uuid: str, project_id: UUID
 ) -> ResultProxy:
     return connection.execute(
         select([file_meta_data]).where(
             and_(
-                file_meta_data.c.user_id == f"{user_id}",
+                file_meta_data.c.node_id == f"{node_uuid}",
                 file_meta_data.c.project_id == f"{project_id}",
                 file_meta_data.c.is_soft_link != True,
             )
@@ -128,22 +128,29 @@ def get_project_and_files_to_migrate(
 
     # check file_meta_data in the projects to migrate
     for project in projects_to_migrate:
-        user_id = project["prj_owner"]
         project_id = project["uuid"]
 
-        files_metadata_cursor = _get_file_meta_data_without_soft_links(
-            connection=src_conn, user_id=user_id, project_id=project_id
-        )
-        for result in files_metadata_cursor:
-            file_meta_data = dict(result.items())
-            object_name = file_meta_data["object_name"]
+        # Since multiple users can generate files in the project
+        # and nodes can be deleted we copy over all the files that
+        # are available in the current node.
+        node_uuids = project["workbench"].keys()
+        already_processed_file: set[str] = set()
+        for node_uuid in node_uuids:
+            for result in _get_file_meta_data_without_soft_links(
+                connection=src_conn, node_uuid=node_uuid, project_id=project_id
+            ):
+                file_meta_data = dict(result.items())
+                object_name = file_meta_data["object_name"]
+                if object_name in already_processed_file:
+                    continue
+                already_processed_file.add(object_name)
 
-            if _meta_data_exists_in_destination(dst_conn, object_name):
-                _red_message(f"SKIPPING, sync for {_file_summary(file_meta_data)}")
-                skipped_files_meta_data.append(file_meta_data)
-                continue
+                if _meta_data_exists_in_destination(dst_conn, object_name):
+                    _red_message(f"SKIPPING, sync for {_file_summary(file_meta_data)}")
+                    skipped_files_meta_data.append(file_meta_data)
+                    continue
 
-            files_meta_data_to_migrate.append(file_meta_data)
+                files_meta_data_to_migrate.append(file_meta_data)
 
     if len(skipped_projects) > 0:
         _red_message("SKIPPED projects count %s" % len(skipped_projects))
