@@ -23,7 +23,7 @@ install() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/director
-  make install-ci
+  pip3 install -r requirements/ci.txt
   popd
   .venv/bin/pip list --verbose
 }
