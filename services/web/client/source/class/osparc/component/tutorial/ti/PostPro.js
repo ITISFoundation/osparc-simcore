@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.tutorial.ti.PostPro", {
       const text2 = this.tr("\
         These metrics are reported in the Post Processing analysis environment for each electrode pair in the combination in \
         a sorted tabular form that can be used to inspect the stimulation performances. By clicking on each pair, slice views \
-        of the maximum amplitude modulation (MAP) are created within the head are produced.<br>\
+        of the maximum amplitude modulation (MAP) within the head are produced.<br>\
         Pressing the `Load` button on the right, the selected configuration will be loaded.\
       ");
       const label2 = osparc.component.tutorial.ti.Slides.createLabel(text2);
