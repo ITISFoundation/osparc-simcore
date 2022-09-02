@@ -21,10 +21,11 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import get_running_containers_count_from_names
 from ..core.rabbitmq import RabbitMQ, send_message
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult, assemble_container_names
-from ..core.validation import validate_compose_spec
+from ..core.validation import parse_compose_spec, validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
@@ -43,7 +44,7 @@ _MINUTE: Final[int] = 60
 
 
 @retry(
-    wait=wait_random_exponential(),
+    wait=wait_random_exponential(max=30),
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result.success is False),
     reraise=False,
@@ -55,6 +56,28 @@ async def _retry_docker_compose_start(
     # the containers as soon as they are created. This might
     # happen due to the docker engine's load.
     return await docker_compose_start(compose_spec, settings)
+
+
+@retry(
+    wait=wait_random_exponential(max=30),
+    stop=stop_after_delay(5 * _MINUTE),
+    retry=retry_if_result(lambda result: result is False),
+    reraise=True,
+)
+async def _retry_docker_compose_create(
+    compose_spec: str, settings: ApplicationSettings
+) -> bool:
+    await docker_compose_create(compose_spec, settings)
+
+    compose_spec_dict = parse_compose_spec(compose_spec)
+    container_names = list(compose_spec_dict["services"].keys())
+
+    expected_num_containers = len(container_names)
+    actual_num_containers = await get_running_containers_count_from_names(
+        container_names
+    )
+
+    return expected_num_containers == actual_num_containers
 
 
 async def task_create_service_containers(
@@ -91,7 +114,7 @@ async def task_create_service_containers(
         await docker_compose_pull(shared_store.compose_spec, settings)
 
         progress.update(message="creating and starting containers", percent=0.90)
-        await docker_compose_create(shared_store.compose_spec, settings)
+        await _retry_docker_compose_create(shared_store.compose_spec, settings)
 
         progress.update(message="ensure containers are started", percent=0.95)
         r = await _retry_docker_compose_start(shared_store.compose_spec, settings)

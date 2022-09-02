@@ -39,8 +39,8 @@ qx.Class.define("osparc.component.tutorial.ti.Dashboard", {
       const image = new qx.ui.basic.Image("osparc/tutorial/ti/Dashboard.png").set({
         alignX: "center",
         scale: true,
-        width: 737,
-        height: 360
+        width: 738,
+        height: 235
       });
       this._add(image);
 
