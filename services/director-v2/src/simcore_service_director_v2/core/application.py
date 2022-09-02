@@ -86,10 +86,11 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
     assert settings  # nosec
+
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
@@ -103,8 +104,17 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
-
     app.state.settings = settings
+
+    app.include_router(api_router)
+    return app
+
+
+def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+    app = create_base_app(settings)
+    if settings is None:
+        settings = app.state.settings
+    assert settings  # nosec
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
@@ -148,8 +158,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     _set_exception_handlers(app)
-
-    app.include_router(api_router)
 
     config_all_loggers()
 
