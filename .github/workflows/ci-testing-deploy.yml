@@ -968,7 +968,7 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/service-library/coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1018,7 +1018,7 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/settings-library/coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1120,7 +1120,7 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v3
         with:

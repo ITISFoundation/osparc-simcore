@@ -97,7 +97,6 @@ test-dev[all]: ## runs unit tests  w/ all extras
 		-vv \
 		$(CURDIR)/tests
 
-PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 
 .PHONY: test-ci[all]
 test-ci[all]: ## runs unit tests  w/ all extras
@@ -114,5 +113,4 @@ test-ci[all]: ## runs unit tests  w/ all extras
     --log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
-		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(CURDIR)/tests
