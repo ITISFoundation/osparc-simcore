@@ -7,13 +7,18 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/director-v2
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list --verbose
+  .venv/bin/pip list --verbose
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   # tests without DB can be safely run in parallel
   pushd services/director-v2
   make test-ci-unit pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"

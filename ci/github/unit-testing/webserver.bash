@@ -24,6 +24,8 @@ install() {
 # As the plan is to strip the webserver into small micro-services I did not create now a super fancy classification but merely split the tests in ~equivalent test times.
 
 test_isolated() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
   make test-ci-unit test-subfolder=isolated
 }

@@ -14,19 +14,23 @@ install() {
   python -m ensurepip
 
   echo "INFO:" "$(pip --version)" "@" "$(command -v pip)"
-
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   # NOTE: pip<22.0 for python 3.6
   pip3 install --upgrade \
     pip~=21.0 \
     wheel \
     setuptools
   pushd services/director
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/director
   make test-ci-unit
   popd

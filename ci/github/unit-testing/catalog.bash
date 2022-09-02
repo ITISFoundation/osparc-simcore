@@ -7,13 +7,18 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/catalog
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list --verbose
+  .venv/bin/pip list --verbose
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/catalog
   make test-ci-unit
   popd

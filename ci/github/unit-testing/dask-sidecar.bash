@@ -7,13 +7,18 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/dask-sidecar
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/dask-sidecar
   make test-ci-unit
   popd
