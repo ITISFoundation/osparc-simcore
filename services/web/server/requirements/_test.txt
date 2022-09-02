@@ -167,10 +167,12 @@ pytest==7.1.2
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
+    #   pytest-forked
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
+    #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.19.0
@@ -179,6 +181,8 @@ pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==1.0.0
     # via -r requirements/_test.in
+pytest-forked==1.4.0
+    # via pytest-xdist
 pytest-icdiff==0.6
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
@@ -188,6 +192,8 @@ pytest-mock==3.8.2
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.5
+    # via -r requirements/_test.in
+pytest-xdist==2.5.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
