@@ -27,7 +27,7 @@ test_isolated() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/web/server
-  make test-ci-unit test-subfolder=isolated
+  make test-ci-unit test-subfolder=isolated pytest-parameters="--numprocesses=auto"
 }
 
 test_with_db() {
