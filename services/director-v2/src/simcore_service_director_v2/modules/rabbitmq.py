@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict
 
 import aio_pika
 from fastapi import FastAPI
@@ -41,11 +40,11 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-_MESSAGE_TO_EXCHANGE_MAP = {
-    LoggerRabbitMessage: "log",
-    ProgressRabbitMessage: "progress",
-    InstrumentationRabbitMessage: "instrumentation",
-}
+_MESSAGE_TO_EXCHANGE_MAP = [
+    (LoggerRabbitMessage, "log"),
+    (ProgressRabbitMessage, "progress"),
+    (InstrumentationRabbitMessage, "instrumentation"),
+]
 
 
 @dataclass
@@ -53,7 +52,7 @@ class RabbitMQClient:
     app: FastAPI
     connection: aio_pika.RobustConnection
     channel: aio_pika.RobustChannel
-    exchanges: Dict[str, aio_pika.RobustExchange]
+    exchanges: dict[str, aio_pika.RobustExchange]
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RabbitMQClient":
@@ -87,7 +86,7 @@ class RabbitMQClient:
         message: RabbitMessageTypes,
     ) -> None:
         def get_exchange(message) -> aio_pika.Exchange:
-            for message_type, exchange_name in _MESSAGE_TO_EXCHANGE_MAP.items():
+            for message_type, exchange_name in _MESSAGE_TO_EXCHANGE_MAP:
                 if isinstance(message, message_type):
                     assert exchange_name in self.exchanges  # nosec
                     return self.exchanges[exchange_name]
