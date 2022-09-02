@@ -136,7 +136,6 @@ _run-test-ci: _check_venv_active
 		--verbose \
 		-m "not heavy_load" \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
 		$(TEST_TARGET)
 
 
