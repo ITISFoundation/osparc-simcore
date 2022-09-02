@@ -27,7 +27,7 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.11.7
+astroid==2.12.5
     # via pylint
 async-timeout==4.0.2
     # via
@@ -49,7 +49,7 @@ certifi==2022.6.15
     # via
     #   minio
     #   requests
-charset-normalizer==2.1.0
+charset-normalizer==2.1.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -58,7 +58,7 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==6.4.3
+coverage==6.4.4
     # via
     #   -r requirements/_test.in
     #   coveralls
@@ -67,13 +67,13 @@ coveralls==3.3.1
     # via -r requirements/_test.in
 dill==0.3.5.1
     # via pylint
-docker==5.0.3
+docker==6.0.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==13.15.1
+faker==14.2.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -82,7 +82,7 @@ frozenlist==1.3.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==1.1.2
+greenlet==1.1.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -103,7 +103,7 @@ jmespath==1.0.1
     #   botocore
 lazy-object-proxy==1.7.1
     # via astroid
-mako==1.2.1
+mako==1.2.2
     # via
     #   -c requirements/_base.txt
     #   alembic
@@ -125,6 +125,7 @@ multidict==6.0.2
 packaging==21.3
     # via
     #   -c requirements/_base.txt
+    #   docker
     #   pytest
     #   pytest-sugar
 platformdirs==2.5.2
@@ -141,7 +142,7 @@ py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.14.5
+pylint==2.15.0
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
@@ -211,7 +212,7 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-tomlkit==0.11.3
+tomlkit==0.11.4
     # via pylint
 typing-extensions==4.3.0
     # via
@@ -219,13 +220,14 @@ typing-extensions==4.3.0
     #   aioitertools
     #   astroid
     #   pylint
-urllib3==1.26.11
+urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
+    #   docker
     #   minio
     #   requests
-websocket-client==1.3.3
+websocket-client==1.4.0
     # via docker
 wrapt==1.14.1
     # via
@@ -235,6 +237,3 @@ yarl==1.8.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

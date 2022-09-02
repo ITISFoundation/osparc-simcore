@@ -1,10 +1,8 @@
-import typer
 import asyncio
-import httpx
-from httpx import Response
-from typing import Dict, List
-from collections import deque
 
+import httpx
+import typer
+from httpx import Response
 
 PREFIX_SERVICES_COMPUTATIONAL = "simcore/services/comp"
 PREFIX_SERVICES_DYNAMIC = "simcore/services/dynamic"
@@ -26,13 +24,13 @@ async def _httpx_request(
 
 async def _compile_registry_report(
     registry: str, user: str, password: str
-) -> Dict[str, List[str]]:
+) -> dict[str, list[str]]:
     response = await _httpx_request(registry, user, password, "_catalog")
     repositories = response.json()["repositories"]
 
     progressbar = typer.progressbar(length=len(repositories), label="fetching tags")
 
-    async def _get_tag(repository: str) -> Dict:
+    async def _get_tag(repository: str) -> dict:
         response = await _httpx_request(
             registry, user, password, f"{repository}/tags/list"
         )
@@ -48,7 +46,7 @@ async def _compile_registry_report(
 
 
 def _format(
-    repo_tags: Dict[str, List[str]], header_name: str, header_color: str
+    repo_tags: dict[str, list[str]], header_name: str, header_color: str
 ) -> str:
     service_header = typer.style(header_name, fg=typer.colors.WHITE, bg=header_color)
     service_list = "\n".join(f"- {k} {v}" for k, v in repo_tags.items())
@@ -56,9 +54,9 @@ def _format(
 
 
 def _format_print(
-    computational: Dict[str, List[str]],
-    dynamic: Dict[str, List[str]],
-    other: Dict[str, List[str]],
+    computational: dict[str, list[str]],
+    dynamic: dict[str, list[str]],
+    other: dict[str, list[str]],
 ) -> None:
     message = "\nListing services\n"
 
@@ -72,10 +70,10 @@ def _format_print(
     typer.echo(message)
 
 
-def _format_repositories(repository_tags: Dict[str, List[str]]) -> None:
-    computational: Dict[str, List[str]] = {}
-    dynamic: Dict[str, List[str]] = {}
-    other: Dict[str, List[str]] = {}
+def _format_repositories(repository_tags: dict[str, list[str]]) -> None:
+    computational: dict[str, list[str]] = {}
+    dynamic: dict[str, list[str]] = {}
+    other: dict[str, list[str]] = {}
 
     for repo, tags in repository_tags.items():
         if repo.startswith(PREFIX_SERVICES_COMPUTATIONAL):
