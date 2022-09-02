@@ -16,6 +16,7 @@ on:
       - "**.js"
       - "**/requirements/*.txt"
       - "**.json"
+      - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
   pull_request:
     branches:
@@ -31,6 +32,7 @@ on:
       - "**.js"
       - "**/requirements/*.txt"
       - "**.json"
+      - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
 
 env:
