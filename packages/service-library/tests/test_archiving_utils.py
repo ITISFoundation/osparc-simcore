@@ -240,6 +240,31 @@ def assert_unarchived_paths(
 # TESTS
 
 
+@pytest.mark.skip(reason="DEV:only for manual tessting")
+async def test_archiving_utils_against_sample(
+    osparc_simcore_root_dir: Path, tmp_path: Path
+):
+    """
+    ONLY for manual testing
+    User MUST provide a sample of a zip file in ``sample_path``
+    """
+    sample_path = osparc_simcore_root_dir / "keep.ignore" / "workspace.zip"
+    destination = tmp_path / "unzipped"
+
+    extracted_paths = await unarchive_dir(sample_path, destination)
+    assert extracted_paths
+
+    for p in extracted_paths:
+        assert isinstance(p, Path), p
+
+    await archive_dir(
+        dir_to_compress=destination,
+        destination=tmp_path / "test_it.zip",
+        compress=True,
+        store_relative_path=True,
+    )
+
+
 @pytest.mark.parametrize(
     "compress,store_relative_path",
     itertools.product([True, False], repeat=2),

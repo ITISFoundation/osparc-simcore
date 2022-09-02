@@ -33,6 +33,9 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       resizable: false
     });
 
+    const closeBtn = this.getChildControl("close-button");
+    osparc.utils.Utils.setIdToWidget(closeBtn, "quickStartWindowCloseBtn");
+
     const arrowsLayout = this.__createArrows();
     this.add(arrowsLayout);
 
@@ -136,7 +139,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
     __createFooter: function() {
       const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const text1 = "<a href=https://www.youtube.com/watch?v=dQw4w9WgXcQ style='color: white' target='_blank'>Youtube video</a>";
+      const text1 = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
       const link1 = new qx.ui.basic.Label(text1).set({
         allowGrowX: true,
         textAlign: "center",
@@ -164,7 +167,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         flex: 1
       });
 
-      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>License</a>";
+      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
       const link3 = new qx.ui.basic.Label(text3).set({
         allowGrowX: true,
         textAlign: "center",
