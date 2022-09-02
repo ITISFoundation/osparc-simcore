@@ -17,7 +17,6 @@ It uses low-level direct access to pgSQL and S3. Data sync is done using `rclone
 # Maintainers:
 ANE, DK
 
-
 # How to use
 
 1. Build the image locally
@@ -36,6 +35,8 @@ Fill up the `cfg.json` with data. Also refer to `src/models.py` on how to fill u
 
 Finally start the process
 
+
+**NOTE: due to bug with the storage service, you might want to scale storage to 0 when running this script.** (You will get errors with multipart uploads if since storage will try to remove the files If this is no longer the case please remove this message.)
 ```
 make migrate
 ```
