@@ -102,7 +102,8 @@ TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
-	pytest -vv \
+	pytest \
+		--asyncio-mode=auto \
 		--color=yes \
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
@@ -111,16 +112,17 @@ _run-test-dev: _check_venv_active
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
-		--pdb \
-		--asyncio-mode=auto \
 		--keep-docker-up \
+		--pdb \
+		-vv \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 
 
 _run-test-ci: _check_venv_active
 	# runs tests for CI (e.g. w/o pdb but w/ converage)
-	pytest -v \
+	pytest \
+		--asyncio-mode=auto \
 		--color=yes \
 		--cov-append \
 		--cov-config=.coveragerc \
@@ -128,10 +130,13 @@ _run-test-ci: _check_venv_active
 		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
-		--asyncio-mode=auto \
-		-m "not heavy_load" \
 		--keep-docker-up \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--verbose \
+		-m "not heavy_load" \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
 		$(TEST_TARGET)
 
 
