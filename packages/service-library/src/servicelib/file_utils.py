@@ -25,4 +25,4 @@ async def remove_directory(
     if only_children:
         await asyncio.gather(*[_rm(child, ignore_errors) for child in path.glob("*")])
     else:
-        shutil.rmtree(path, ignore_errors=ignore_errors)
+        await _shutil_rmtree(path, ignore_errors=ignore_errors)

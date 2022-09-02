@@ -139,9 +139,8 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
     __createFooter: function() {
       const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const text1 = "<a href=https://www.youtube.com/watch?v=dQw4w9WgXcQ style='color: white' target='_blank'>Youtube video</a>";
+      const text1 = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
       const link1 = new qx.ui.basic.Label(text1).set({
-        visibility: "excluded", // remove this when the video is available
         allowGrowX: true,
         textAlign: "center",
         rich : true

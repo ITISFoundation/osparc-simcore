@@ -240,7 +240,7 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isTester: function() {
-      return this.getRole() === "tester";
+      return ["admin", "tester"].includes(this.getRole());
     }
   }
 });
