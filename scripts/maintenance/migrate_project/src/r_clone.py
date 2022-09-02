@@ -1,5 +1,7 @@
 from pathlib import Path
 from subprocess import CompletedProcess, run
+from tenacity import retry
+from tenacity.stop import stop_after_attempt
 
 DESTINATION = "dst"
 SOURCE = "src"
@@ -54,6 +56,7 @@ def assemble_config_file(
     return conf_path
 
 
+@retry(stop=stop_after_attempt(3))
 def sync_file(
     config_path: Path, s3_object: str, source_bucket: str, destination_bucket: str
 ) -> None:
@@ -72,6 +75,12 @@ def sync_file(
         "rclone",
         "--config",
         config_path,
+        "--low-level-retries",
+        "3",
+        "--retries",
+        "3",
+        "--transfers",
+        "1",
         "sync",
         f"{SOURCE}:{source_path.parent}",
         f"{DESTINATION}:{destination_path.parent}",
