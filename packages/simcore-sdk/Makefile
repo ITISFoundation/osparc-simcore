@@ -16,7 +16,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
-.PHONY: tests-unit tests-integration tests
+.PHONY: tests-unit tests-unit-ci tests-integration tests
 tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest \
