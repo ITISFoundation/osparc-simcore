@@ -21,38 +21,14 @@ install() {
 # As the plan is to strip the webserver into small micro-services I did not create now a super fancy classification but merely split the tests in ~equivalent test times.
 
 test_isolated() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_webserver \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/web/server/tests/unit/isolated
+  pushd services/web/server
+  make test-ci-unit test-subfolder=isolated
 }
 
 test_with_db() {
+  pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_webserver \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    "services/web/server/tests/unit/with_dbs/$1"
+  make test-ci-unit test-subfolder="with_dbs/$1"
 }
 
 # Check if the function exists (bash specific)

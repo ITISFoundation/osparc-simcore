@@ -15,38 +15,11 @@ install() {
 
 test() {
   # tests without DB can be safely run in parallel
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_director_v2 \
-    --durations=10 \
-    --ignore-glob=**/with_dbs/** \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --numprocesses=auto \
-    --verbose \
-    -m "not heavy_load" \
-    services/director-v2/tests/unit
-
+  pushd services/director-v2
+  make test-ci-unit pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
   # these tests cannot be run in parallel
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_director_v2 \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/director-v2/tests/unit/with_dbs
+  make test-ci-unit test-subfolder=with_dbs
+  popd
 }
 
 # Check if the function exists (bash specific)

@@ -14,21 +14,9 @@ install() {
 }
 
 test() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_datcore_adapter \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --numprocesses=auto \
-    --verbose \
-    -m "not heavy_load" \
-    services/datcore-adapter/tests/unit
+  pushd services/datcore-adapter
+  make test-ci-unit pytest-parameters="--numprocesses=auto"
+  popd
 }
 
 # Check if the function exists (bash specific)
