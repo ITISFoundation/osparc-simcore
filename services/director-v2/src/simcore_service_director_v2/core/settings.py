@@ -365,7 +365,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         Field(
             30 * MINS,
             description="interval at which cleaning of unused dy-sidecar "
-            "docker volume removal services is used",
+            "docker volume removal services is executed",
         )
     )
 
