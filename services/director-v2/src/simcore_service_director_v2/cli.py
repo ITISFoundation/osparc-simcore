@@ -11,7 +11,10 @@ from fastapi import FastAPI
 from models_library.projects import NodeIDStr, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyHttpUrl, parse_obj_as
-from servicelib.fastapi.long_running_tasks.client import ClientConfiguration
+from servicelib.fastapi.long_running_tasks.client import (
+    ClientConfiguration,
+    DEFAULT_HTTP_REQUESTS_TIMEOUT,
+)
 from settings_library.utils_cli import create_settings_command
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
@@ -61,7 +64,7 @@ async def _initialized_app() -> AsyncIterator[FastAPI]:
         )
 
         app.state.long_running_client_configuration = ClientConfiguration(
-            router_prefix="", default_timeout=15
+            router_prefix="", default_timeout=DEFAULT_HTTP_REQUESTS_TIMEOUT
         )
 
         yield app
