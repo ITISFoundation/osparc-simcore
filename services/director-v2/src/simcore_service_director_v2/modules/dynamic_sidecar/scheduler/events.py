@@ -149,7 +149,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # Each time a new dynamic-sidecar service is created
         # generate a new `run_id` to avoid resource collisions
-        scheduler_data.dynamic_sidecar.run_id = uuid4()
+        scheduler_data.run_id = uuid4()
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
