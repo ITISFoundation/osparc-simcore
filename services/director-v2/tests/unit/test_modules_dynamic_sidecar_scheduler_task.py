@@ -13,12 +13,14 @@ import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pytest import FixtureRequest
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
@@ -61,6 +63,7 @@ def mock_env(
 
 @pytest.fixture
 def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> SchedulerData:
+    scheduler_data_from_http_request.docker_node_id = "test_docker_node_id"
     return scheduler_data_from_http_request
 
 
@@ -169,16 +172,23 @@ def mocked_dynamic_scheduler_events(
     return counter
 
 
+@pytest.fixture
+def mock_remove_calls(mocker: MockerFixture) -> None:
+    mocker.patch.object(_utils, "remove_volumes_from_node")
+
+
 # TESTS
 
 
 async def test_skip_observation_cycle_after_error(
+    docker_swarm: None,
     minimal_app: FastAPI,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: ACounter,
     error_raised_by_saving_state: bool,
     use_case: UseCase,
+    mock_remove_calls: None,
 ):
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again

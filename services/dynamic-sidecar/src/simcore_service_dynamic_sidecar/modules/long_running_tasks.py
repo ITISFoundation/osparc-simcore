@@ -98,6 +98,7 @@ async def task_create_service_containers(
         mounted_volumes=mounted_volumes,
     )
     shared_store.container_names = assemble_container_names(shared_store.compose_spec)
+    await shared_store.persist_to_disk()
 
     logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
@@ -162,7 +163,7 @@ async def task_runs_docker_compose_down(
     await docker_compose_rm(shared_store.compose_spec, settings)
 
     # removing compose-file spec
-    shared_store.clear()
+    await shared_store.clear()
     progress.update(message="done", percent=1)
 
 

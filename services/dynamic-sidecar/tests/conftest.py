@@ -7,6 +7,7 @@
 import logging
 import sys
 from pathlib import Path
+from typing import Iterator
 from uuid import UUID
 
 import pytest
@@ -14,6 +15,7 @@ import simcore_service_dynamic_sidecar
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.services import RunID
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import (
@@ -65,6 +67,11 @@ def project_slug_dir() -> Path:
 def dy_volumes(tmp_path: Path) -> Path:
     """mount folder on the sidecar (path withn the sidecar)"""
     return tmp_path / "dy-volumes"
+
+
+@pytest.fixture
+def shared_store_dir(tmp_path: Path) -> Path:
+    return tmp_path / "shared-store"
 
 
 @pytest.fixture
@@ -121,6 +128,7 @@ def run_id(faker: Faker) -> UUID:
 def mock_environment(
     monkeypatch: MonkeyPatch,
     dy_volumes: Path,
+    shared_store_dir: Path,
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
@@ -129,7 +137,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: UUID,
+    run_id: RunID,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -140,6 +148,7 @@ def mock_environment(
     envs["SC_BOOT_MODE"] = "production"
     envs["SC_BUILD_TARGET"] = "production"
     envs["DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR"] = f"{dy_volumes}"
+    envs["DYNAMIC_SIDECAR_SHARED_STORE_DIR"] = f"{shared_store_dir}"
 
     # envs on container
     envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
@@ -182,3 +191,17 @@ def mock_environment_with_envdevel(
     env_file = project_slug_dir / ".env-devel"
     envs = setenvs_from_envfile(monkeypatch, env_file.read_text())
     return envs
+
+
+@pytest.fixture
+def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
+    shared_store_dir.mkdir(parents=True, exist_ok=True)
+    assert shared_store_dir.exists() is True
+
+    yield shared_store_dir
+
+    # remove files and dir
+    for f in shared_store_dir.glob("*"):
+        f.unlink()
+    shared_store_dir.rmdir()
+    assert shared_store_dir.exists() is False

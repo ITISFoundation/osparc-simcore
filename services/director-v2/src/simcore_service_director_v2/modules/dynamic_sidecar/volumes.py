@@ -1,14 +1,18 @@
 import os
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import RunID
+from models_library.users import UserID
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
+from ...models.schemas.constants import DY_SIDECAR_NAMED_VOLUME_PREFIX
 from .errors import DynamicSidecarError
+
+DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
 
 
 def _get_s3_volume_driver_config(
@@ -17,7 +21,7 @@ def _get_s3_volume_driver_config(
     node_uuid: NodeID,
     storage_directory_name: str,
 ) -> dict[str, Any]:
-    assert "/" not in storage_directory_name  # no sec
+    assert "/" not in storage_directory_name  # nosec
     driver_config = {
         "Name": "rclone",
         "Options": {
@@ -62,7 +66,7 @@ def _get_s3_volume_driver_config(
             f"Unexpected, all {S3Provider.__name__} should be covered"
         )
 
-    assert extra_options is not None  # no sec
+    assert extra_options is not None  # nosec
     driver_config["Options"].update(extra_options)
 
     return driver_config
@@ -73,7 +77,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def target(cls, path: Path) -> str:
-        """returns path relative to `/dy-volumes`"""
+        """Returns a folder path within `/dy-volumes` folder"""
         target_path = cls.BASE_PATH / path.relative_to("/")
         return f"{target_path}"
 
@@ -82,54 +86,94 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
-    def source(cls, compose_namespace: str, path: Path) -> str:
-        return f"{compose_namespace}{cls._volume_name(path)}"
+    def source(cls, path: Path, node_uuid: NodeID, run_id: RunID) -> str:
+        """Returns a valid and unique volume name that is composed out of identifiers, namely
+            - relative target path
+            - node_uuid
+            - run_id
+
+        Guarantees that the volume name is unique between runs while also
+        taking into consideration the limit for the volume name's length
+        (255 characters).
+
+        SEE examples in `tests/unit/test_modules_dynamic_sidecar_volumes_resolver.py`
+        """
+        # NOTE: issues can occur when the paths of the mounted outputs, inputs
+        # and state folders are very long and share the same subdirectory path.
+        # Reversing volume name to prevent these issues from happening.
+        reversed_volume_name = cls._volume_name(path)[::-1]
+        unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}_{node_uuid}_{reversed_volume_name}"
+        return unique_name[:255]
 
     @classmethod
     def mount_entry(
         cls,
         swarm_stack_name: str,
-        compose_namespace: str,
         path: Path,
         node_uuid: NodeID,
-        run_id: UUID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
     ) -> dict[str, Any]:
         """
-        mounts local directories form the host where the service
-        dynamic-sidecar) is running.
+        Creates specification for mount to be added to containers created as part of a service
         """
         return {
+            "Source": cls.source(path, node_uuid, run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(compose_namespace, path),
+                    "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
+                    "study_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 }
             },
         }
 
     @classmethod
+    def mount_shared_store(
+        cls,
+        run_id: RunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+    ) -> dict[str, Any]:
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=DY_SIDECAR_SHARED_STORE_PATH,
+            node_uuid=node_uuid,
+            run_id=run_id,
+            project_id=project_id,
+            user_id=user_id,
+        )
+
+    @classmethod
     def mount_r_clone(
         cls,
         swarm_stack_name: str,
-        compose_namespace: str,
         path: Path,
-        project_id: ProjectID,
         node_uuid: NodeID,
-        run_id: UUID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
         r_clone_settings: RCloneSettings,
     ) -> dict[str, Any]:
         return {
+            "Source": cls.source(path, node_uuid, run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(compose_namespace, path),
+                    "source": cls.source(path, node_uuid, run_id),
                     "run_id": f"{run_id}",
-                    "uuid": f"{node_uuid}",
+                    "node_uuid": f"{node_uuid}",
+                    "study_id": f"{project_id}",
+                    "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 },
                 "DriverConfig": _get_s3_volume_driver_config(
