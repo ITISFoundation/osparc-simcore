@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from typing import AsyncIterable, AsyncIterator
-from uuid import UUID
 
 import aiodocker
 import pytest

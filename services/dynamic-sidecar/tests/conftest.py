@@ -8,7 +8,6 @@ import logging
 import sys
 from pathlib import Path
 from typing import Iterator
-from uuid import UUID
 
 import pytest
 import simcore_service_dynamic_sidecar
