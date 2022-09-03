@@ -196,35 +196,8 @@ async def attempt_user_create_services_removal_and_data_saving(
     # remove network
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
-    # NOTE: when adding volume removal, check that:
-    # `scheduler_data.dynamic_sidecar.were_state_and_outputs_saved` was
-    # set to True before removing data otherwise do nothing
-
     if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
-        # Remove all dy-sidecar associated volumes from node
-        unique_volume_names = [
-            DynamicSidecarVolumesPathsResolver.source(
-                path=volume_path,
-                node_uuid=scheduler_data.node_uuid,
-                run_id=scheduler_data.run_id,
-            )
-            for volume_path in [
-                DY_SIDECAR_SHARED_STORE_PATH,
-                scheduler_data.paths_mapping.inputs_path,
-                scheduler_data.paths_mapping.outputs_path,
-            ]
-            + scheduler_data.paths_mapping.state_paths
-        ]
-
-        # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
-        # it does not remove the volumes. Is this something we want?
-        # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
-        # otherwise keep them in place!!!!!
-        # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
-
         if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            # TODO: also refactor to take care of above when merging PR
-            # https://github.com/ITISFoundation/osparc-simcore/pull/3272
             # NOTE: this is triggered once if the dy-sidecar was never started
             # usually due to lack of resources. It is safe to assume no volumes
             # were created, so no cleanup is required.
@@ -233,6 +206,20 @@ async def attempt_user_create_services_removal_and_data_saving(
                 scheduler_data.node_uuid,
             )
         else:
+            # Remove all dy-sidecar associated volumes from node
+            unique_volume_names = [
+                DynamicSidecarVolumesPathsResolver.source(
+                    path=volume_path,
+                    node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.run_id,
+                )
+                for volume_path in [
+                    DY_SIDECAR_SHARED_STORE_PATH,
+                    scheduler_data.paths_mapping.inputs_path,
+                    scheduler_data.paths_mapping.outputs_path,
+                ]
+                + scheduler_data.paths_mapping.state_paths
+            ]
             await remove_volumes_from_node(
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
                 volume_names=unique_volume_names,
