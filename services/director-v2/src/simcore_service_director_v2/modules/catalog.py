@@ -14,8 +14,6 @@ from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
-_MINUTE = 60
-
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
     if not settings:

@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from typing import AsyncIterable, AsyncIterator
-from uuid import UUID
 
 import aiodocker
 import pytest
@@ -79,12 +78,12 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
 
 
 async def test_volume_with_label(
-    volume_with_label: None, volume_name: str, run_id: UUID
-):
+    volume_with_label: None, volume_name: str, run_id: RunID
+) -> None:
     assert await get_volume_by_label(volume_name, run_id)
 
 
-async def test_volume_label_missing(run_id: RunID):
+async def test_volume_label_missing(run_id: RunID) -> None:
     with pytest.raises(VolumeNotFoundError) as exc_info:
         await get_volume_by_label("not_exist", run_id)
 

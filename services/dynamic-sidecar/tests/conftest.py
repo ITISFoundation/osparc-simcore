@@ -8,7 +8,6 @@ import logging
 import sys
 from pathlib import Path
 from typing import Iterator
-from uuid import UUID
 
 import pytest
 import simcore_service_dynamic_sidecar
@@ -120,7 +119,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> RunID:
     return faker.uuid4(cast_to=None)
 
 

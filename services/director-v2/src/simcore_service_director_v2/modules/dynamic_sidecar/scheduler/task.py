@@ -20,6 +20,7 @@ import logging
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
+from math import floor
 from typing import Optional
 from uuid import UUID
 
@@ -36,6 +37,7 @@ from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
+    ServiceName,
 )
 from ..api_client import (
     ClientHttpError,
@@ -45,6 +47,7 @@ from ..api_client import (
 from ..docker_api import (
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
+    is_dynamic_sidecar_stack_missing,
     remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
@@ -55,16 +58,21 @@ from ..errors import (
     GenericDockerError,
 )
 from ._task_utils import apply_observation_cycle
-from ._utils import cleanup_sidecar_stack_and_resources
+from ._utils import attempt_user_create_services_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
-
 
 ServiceName = str
 
 
+def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
+    # divisor to figure out if 30 seconds have passed based on the cycle count
+    modulo_divisor = max(1, int(floor(30 / wait_interval)))
+    return observation_counter % modulo_divisor == 0
+
+
 @dataclass
-class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
+class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     app: FastAPI
 
     _lock: Lock = field(default_factory=Lock)
@@ -78,6 +86,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
     _cleanup_volume_removal_services_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
+    _observation_counter: int = 0
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -124,10 +133,10 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
-    async def finish_service_removal(self, node_uuid: NodeID) -> None:
+    async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
         """
         directly invoked from RemoveMarkedService once it's finished
-        removes the service from the observation cycle
+        and removes the service from the observation cycle
         """
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
@@ -186,7 +195,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
             docker_statuses: Optional[
                 dict[str, dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+                dynamic_sidecar_endpoint=scheduler_data.endpoint
             )
         except ClientHttpError:
             # error fetching docker_statues, probably someone should check
@@ -227,7 +236,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
@@ -256,7 +265,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
         )
 
         await dynamic_sidecar_client.attach_service_containers_to_project_network(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_endpoint=scheduler_data.endpoint,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             project_network=project_network,
             project_id=scheduler_data.project_id,
@@ -277,7 +286,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
         )
 
         await dynamic_sidecar_client.detach_service_containers_from_project_network(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_endpoint=scheduler_data.endpoint,
             project_network=project_network,
             project_id=scheduler_data.project_id,
         )
@@ -294,21 +303,22 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
             self.app
         )
 
-        await dynamic_sidecar_client.restart_containers(
-            scheduler_data.dynamic_sidecar.endpoint
-        )
+        await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)
 
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
 
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        dynamic_scheduler: DynamicServicesSchedulerSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
 
         async def _observing_single_service(service_name: str) -> None:
             scheduler_data: SchedulerData = self._to_observe[service_name]
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
 
             if (
                 scheduler_data.dynamic_sidecar.status.current
@@ -321,27 +331,46 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                 #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
                 # 4. service started, and failed on closing -> it cannot be removed safely
 
-                failed_while_saving_state_and_outputs = (
-                    scheduler_data.dynamic_sidecar.service_removal_state.can_save
-                    and scheduler_data.dynamic_sidecar.were_containers_created
-                )
-                if failed_while_saving_state_and_outputs:
+                if (
+                    scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error
+                ):
                     # use-cases: 3, 4
                     # Since user data is important and must be saved, take no further
                     # action and wait for manual intervention from support.
+
+                    # After manual intervention service can now be removed
+                    # from tracking.
+
+                    if (
+                        # NOTE: do not change below order, reduces pressure on the
+                        # docker swarm engine API.
+                        _trigger_every_30_seconds(
+                            self._observation_counter,
+                            dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+                        )
+                        and await is_dynamic_sidecar_stack_missing(
+                            scheduler_data.node_uuid, dynamic_sidecar_settings
+                        )
+                    ):
+                        # if both proxy and sidecar ar missing at this point it
+                        # is safe to assume that user manually removed them from
+                        # Portainer after cleaning up.
+
+                        # NOTE: saving will fail since there is no dy-sidecar,
+                        # and the save was taken care of by support. Disabling it.
+                        scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
+                            False
+                        )
+                        await attempt_user_create_services_removal_and_data_saving(
+                            self.app, scheduler_data
+                        )
+
                     return
 
                 # use-cases: 1, 2
-                await cleanup_sidecar_stack_and_resources(
-                    dynamic_sidecar_settings, scheduler_data
-                )
-
-                await self.finish_service_removal(scheduler_data.node_uuid)
-
-                logger.warning(
-                    "cleaned up %s service after error without saving "
-                    "any data (it was not required).",
-                    scheduler_data.node_uuid,
+                # Cleanup all resources related to the dynamic-sidecar.
+                await attempt_user_create_services_removal_and_data_saving(
+                    self.app, scheduler_data
                 )
                 return
 
@@ -433,6 +462,7 @@ class DynamicSidecarsScheduler:  # pylint:disable=too-many-instance-attributes
                 )
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
+            self._observation_counter += 1
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""

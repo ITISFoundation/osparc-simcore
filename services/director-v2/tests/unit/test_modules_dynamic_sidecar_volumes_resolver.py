@@ -35,7 +35,7 @@ def state_paths() -> List[Path]:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> UUID:
+def run_id(faker: Faker) -> RunID:
     return faker.uuid4(cast_to=None)
 
 

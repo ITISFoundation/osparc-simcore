@@ -209,10 +209,10 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             scheduler_data
         ) in scheduler._to_observe.values():  # pylint: disable=protected-access
             if scheduler_data.service_name == service_name:
-                scheduler_data.dynamic_sidecar.hostname = f"{get_localhost_ip()}"
-                scheduler_data.dynamic_sidecar.port = published_port
+                scheduler_data.hostname = f"{get_localhost_ip()}"
+                scheduler_data.port = published_port
 
-                endpoint = scheduler_data.dynamic_sidecar.endpoint
+                endpoint = scheduler_data.endpoint
                 assert endpoint == f"http://{get_localhost_ip()}:{published_port}"
                 break
 

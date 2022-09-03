@@ -254,10 +254,9 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
     return service_state, message
 
 
-async def is_dynamic_sidecar_stack_missing(
+async def _get_dynamic_sidecar_stack_services(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> bool:
-    """Check if the proxy and the dynamic-sidecar are absent"""
+) -> list[Mapping]:
     filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -265,8 +264,17 @@ async def is_dynamic_sidecar_stack_missing(
         ]
     }
     async with docker_client() as client:
-        stack_services = await client.services.list(filters=filters)
-        return len(stack_services) == 0
+        return await client.services.list(filters=filters)
+
+
+async def is_dynamic_sidecar_stack_missing(
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> bool:
+    """Check if the proxy and the dynamic-sidecar are absent"""
+    stack_services = await _get_dynamic_sidecar_stack_services(
+        node_uuid, dynamic_sidecar_settings
+    )
+    return len(stack_services) == 0
 
 
 async def are_all_services_present(
@@ -275,20 +283,13 @@ async def are_all_services_present(
     """
     The dynamic-sidecar stack always expects to have 2 running services
     """
-    async with docker_client() as client:
-        stack_services = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
-                ]
-            }
-        )
-        if len(stack_services) != 2:
-            log.warning("Expected 2 services found %s", stack_services)
-            return False
+    stack_services = await _get_dynamic_sidecar_stack_services(
+        node_uuid, dynamic_sidecar_settings
+    )
+    if len(stack_services) != 2:
+        return False
 
-        return True
+    return True
 
 
 async def remove_dynamic_sidecar_stack(
@@ -437,8 +438,12 @@ async def get_projects_networks_containers(
 async def try_to_remove_network(network_name: str) -> None:
     async with docker_client() as client:
         network = await client.networks.get(network_name)
+
+        # if a project network for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
         try:
-            return await network.delete()
+            await network.delete()
         except aiodocker.exceptions.DockerError:
             log.warning("Could not remove network %s", network_name)
 
