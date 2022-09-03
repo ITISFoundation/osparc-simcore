@@ -198,9 +198,6 @@ async def attempt_user_create_services_removal_and_data_saving(
 
     if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
         if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            # NOTE: this is triggered once if the dy-sidecar was never started
-            # usually due to lack of resources. It is safe to assume no volumes
-            # were created, so no cleanup is required.
             logger.warning(
                 "Skipped volume removal for %s, since a docker_node_id was not found.",
                 scheduler_data.node_uuid,
