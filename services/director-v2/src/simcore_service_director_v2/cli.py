@@ -23,9 +23,7 @@ from .modules import db, director_v0, dynamic_sidecar
 from .modules.db.repositories.projects import ProjectsRepository
 from .modules.director_v0 import DirectorV0Client
 from .modules.dynamic_sidecar import api_client
-from .modules.dynamic_sidecar.scheduler.events_utils import (
-    fetch_repo_outside_of_request,
-)
+from .modules.dynamic_sidecar.scheduler._utils import fetch_repo_outside_of_request
 from .modules.projects_networks import requires_dynamic_sidecar
 
 DEFAULT_NODE_SAVE_RETRY: Final[int] = 3
