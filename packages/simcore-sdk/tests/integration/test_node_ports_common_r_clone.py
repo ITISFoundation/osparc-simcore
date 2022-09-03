@@ -3,6 +3,7 @@
 
 import asyncio
 import filecmp
+import re
 import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -88,7 +89,7 @@ def _fake_upload_file_link(
         urls=[
             parse_obj_as(
                 AnyUrl,
-                f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote( s3_object, safe='')}",
+                f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
             )
         ],
         links=FileUploadLinks(
@@ -96,6 +97,21 @@ def _fake_upload_file_link(
             complete_upload=parse_obj_as(AnyUrl, "https://www.fakecomplete.com"),
         ),
     )
+
+
+def test_s3_url_quote_and_unquote():
+    """This test was added to validate quotation operations in _fake_upload_file_link
+    against unquotation operation in
+
+    """
+    src = "53a35372-d44d-4d2e-8319-b40db5f31ce0/2f67d5cb-ea9c-4f8c-96ef-eae8445a0fe7/6fa73b0f-4006-46c6-9847-967b45ff3ae7.bin"
+    # as in _fake_upload_file_link
+    url = f"s3://simcore/{urllib.parse.quote(src)}"
+
+    # as in sync_local_to_s3
+    unquoted_url = urllib.parse.unquote(url)
+    truncated_url = re.sub(r"^s3://", "", unquoted_url)
+    assert truncated_url == f"simcore/{src}"
 
 
 # TESTS

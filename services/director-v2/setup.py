@@ -57,6 +57,11 @@ SETUP = dict(
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
     extras_require={"test": TEST_REQUIREMENTS},
+    entry_points={
+        "console_scripts": [
+            "simcore-service-director-v2=simcore_service_director_v2.cli:main",
+        ],
+    },
 )
 
 

@@ -9,7 +9,6 @@ import os
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
-from pprint import pformat
 from typing import Any, AsyncIterable, Callable, Iterable, Iterator, cast
 from uuid import uuid4
 
@@ -60,8 +59,11 @@ from simcore_service_director_v2.models.schemas.constants import (
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from starlette import status
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from utils import (
-    SEPARATOR,
     assert_all_services_running,
     assert_retrieve_service,
     assert_services_reply_200,
@@ -682,7 +684,7 @@ async def _wait_for_dy_services_to_fully_stop(
     to_observe = (
         director_v2_client._transport.app.state.dynamic_sidecar_scheduler._to_observe
     )
-
+    # TODO: ANE please use tenacity
     for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
         print(
             f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
@@ -729,27 +731,6 @@ def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     }
 
 
-LINE_PARTS_TO_MATCH = [
-    (0, "INFO:simcore_service_dynamic_sidecar.modules.nodeports:Uploaded"),
-    (2, "bytes"),
-    (3, "in"),
-    (5, "seconds"),
-]
-
-
-def _is_matching_line_in_logs(logs: list[str]) -> bool:
-    for line in logs:
-        if LINE_PARTS_TO_MATCH[0][1] in line:
-            print("".join(logs))
-
-            line_parts = line.strip().split(" ")
-            for position, value in LINE_PARTS_TO_MATCH:
-                assert line_parts[position] == value
-
-            return True
-    return False
-
-
 async def _print_dynamic_sidecars_containers_logs_and_get_containers(
     dynamic_services_urls: dict[str, str]
 ) -> list[str]:
@@ -780,17 +761,9 @@ async def _print_dynamic_sidecars_containers_logs_and_get_containers(
     return containers_names
 
 
-async def _print_container_inspect(container_id: str) -> None:
-    async with aiodocker.Docker() as docker_client:
-        container = await docker_client.containers.get(container_id)
-        container_inspect = await container.show()
-        print(f"Container {container_id} inspect:\n{pformat(container_inspect)}")
-
-
-async def _print_all_docker_volumes() -> None:
-    async with aiodocker.Docker() as docker_client:
-        docker_volumes = await docker_client.volumes.list()
-        print(f"Detected volumes:\n{pformat(docker_volumes)}")
+_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
+    "TEST: test_nodeports_integration DO NOT REMOVE"
+)
 
 
 async def _assert_retrieve_completed(
@@ -808,50 +781,24 @@ async def _assert_retrieve_completed(
     # look at dynamic-sidecar's logs to be sure when nodeports
     # have been uploaded
     async with aiodocker.Docker() as docker_client:
-        container: DockerContainer = await docker_client.containers.get(container_id)
-
-        for i in range(TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED):
-            logs = await container.log(stdout=True, stderr=True)
-
-            if _is_matching_line_in_logs(logs):
-                break
-
-            if i == TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED - 1:
-                print(SEPARATOR)
-                print(f"Dumping information for service_uuid={service_uuid}")
-                print(SEPARATOR)
-
-                print("".join(logs))
-                print(SEPARATOR)
-
-                containers_names = (
-                    await _print_dynamic_sidecars_containers_logs_and_get_containers(
-                        dynamic_services_urls
-                    )
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+            stop=stop_after_delay(TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED),
+            wait=wait_fixed(0.5),
+        ):
+            with attempt:
+                print(
+                    f"--> checking container logs of {service_uuid=}, [attempt {attempt.retry_state.attempt_number}]..."
                 )
-                print(SEPARATOR)
+                container: DockerContainer = await docker_client.containers.get(
+                    container_id
+                )
 
-                # inspect dynamic-sidecar container
-                await _print_container_inspect(container_id=container_id)
-                print(SEPARATOR)
-
-                # inspect spawned container
-                for container_name in containers_names:
-                    await _print_container_inspect(container_id=container_name)
-                    print(SEPARATOR)
-
-                await _print_all_docker_volumes()
-                print(SEPARATOR)
-
-                assert False, "Timeout reached"
-
-            print(
-                f"Sleeping {i+1}/{TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED} "
-                f"before searching logs from {service_uuid} again"
-            )
-            await asyncio.sleep(1)
-
-        print(f"Nodeports outputs upload finish detected for {service_uuid}")
+                logs = " ".join(await container.log(stdout=True, stderr=True))
+                assert (
+                    _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
+                ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
 # TESTS
@@ -968,21 +915,12 @@ async def test_nodeports_integration(
         dynamic_services_urls
     )
 
-    await _assert_retrieve_completed(
-        director_v2_client=async_client,
-        service_uuid=services_node_uuids.dy,
-        dynamic_services_urls=dynamic_services_urls,
-    )
-
-    # NOTE: Waits a bit for the DB to write the changes in
-    # comp_task for the upstream service.
-    await asyncio.sleep(2)
-
-    await _assert_retrieve_completed(
-        director_v2_client=async_client,
-        service_uuid=services_node_uuids.dy_compose_spec,
-        dynamic_services_urls=dynamic_services_urls,
-    )
+    for service_uuid in (services_node_uuids.dy, services_node_uuids.dy_compose_spec):
+        await _assert_retrieve_completed(
+            director_v2_client=async_client,
+            service_uuid=service_uuid,
+            dynamic_services_urls=dynamic_services_urls,
+        )
 
     # STEP 3
     # pull data via nodeports

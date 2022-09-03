@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Any, Final, Optional, cast
+from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -39,6 +40,9 @@ from ..docker_api import (
     get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
+    try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -48,10 +52,9 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import EntrypointContainerNotFoundError
-from ._utils import (
-    RESOURCE_STATE_AND_INPUTS,
+from .abc import DynamicSchedulerEvent
+from .events_utils import (
     all_containers_running,
-    attempt_user_create_services_removal_and_data_saving,
     disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
@@ -145,6 +148,10 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # start dynamic-sidecar and run the proxy on the same node
 
+        # Each time a new dynamic-sidecar service is created
+        # generate a new `run_id` to avoid resource collisions
+        scheduler_data.dynamic_sidecar.run_id = uuid4()
+
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
@@ -184,7 +191,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
-            node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+            docker_node_id=scheduler_data.docker_node_id,
         )
 
         # update service_port and assing it to the status

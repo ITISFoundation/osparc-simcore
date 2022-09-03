@@ -29,7 +29,9 @@ from ..docker_api import (
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
     try_to_remove_network,
+    remove_volumes_from_node,
 )
+from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +199,48 @@ async def attempt_user_create_services_removal_and_data_saving(
     # NOTE: when adding volume removal, check that:
     # `scheduler_data.dynamic_sidecar.were_state_and_outputs_saved` was
     # set to True before removing data otherwise do nothing
+
+    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
+        # Remove all dy-sidecar associated volumes from node
+        unique_volume_names = [
+            DynamicSidecarVolumesPathsResolver.source(
+                path=volume_path,
+                node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.run_id,
+            )
+            for volume_path in [
+                DY_SIDECAR_SHARED_STORE_PATH,
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        ]
+
+        # TODO: CHECK THAT manually removing the dy-sidecar, when it is running,
+        # it does not remove the volumes. Is this something we want?
+        # put a state that keeps track of when data was saved and if that is True, volumes can be removed,
+        # otherwise keep them in place!!!!!
+        # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
+
+        if scheduler_data.docker_node_id is None:
+            # TODO: also refactor to take care of above when merging PR
+            # https://github.com/ITISFoundation/osparc-simcore/pull/3272
+            # NOTE: this is triggered once if the dy-sidecar was never started
+            # usually due to lack of resources. It is safe to assume no volumes
+            # were created, so no cleanup is required.
+            logger.warning(
+                "Skipped volume removal for %s, since a docker_node_id was not found.",
+                scheduler_data.node_uuid,
+            )
+        else:
+            await remove_volumes_from_node(
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                volume_names=unique_volume_names,
+                docker_node_id=scheduler_data.docker_node_id,
+                user_id=scheduler_data.user_id,
+                project_id=scheduler_data.project_id,
+                node_uuid=scheduler_data.node_uuid,
+            )
 
     logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",

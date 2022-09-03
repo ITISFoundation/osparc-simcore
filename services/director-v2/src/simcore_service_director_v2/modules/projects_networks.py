@@ -48,7 +48,7 @@ def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName
     return parse_obj_as(DockerNetworkName, network_name)
 
 
-async def _requires_dynamic_sidecar(
+async def requires_dynamic_sidecar(
     service_key: str,
     service_version: str,
     director_v0_client: DirectorV0Client,
@@ -189,7 +189,7 @@ async def _get_networks_with_aliases_for_default_network(
     for node_uuid, node_content in new_workbench.items():
 
         # only add dynamic-sidecar nodes
-        if not await _requires_dynamic_sidecar(
+        if not await requires_dynamic_sidecar(
             service_key=node_content.key,
             service_version=node_content.version,
             director_v0_client=director_v0_client,
