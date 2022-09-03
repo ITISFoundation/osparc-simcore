@@ -18,12 +18,12 @@ from tenacity.wait import wait_random_exponential
 from .core.application import create_base_app
 from .core.settings import AppSettings
 from .meta import PROJECT_NAME
-from .models.schemas.dynamic_services import DynamicSidecarNames
+from .models.schemas.dynamic_services import DynamicSidecarNamesHelper
 from .modules import db, director_v0, dynamic_sidecar
 from .modules.db.repositories.projects import ProjectsRepository
 from .modules.director_v0 import DirectorV0Client
 from .modules.dynamic_sidecar import api_client
-from .modules.dynamic_sidecar.scheduler._utils import fetch_repo_outside_of_request
+from .modules.dynamic_sidecar.scheduler._utils import get_repository
 from .modules.projects_networks import requires_dynamic_sidecar
 
 DEFAULT_NODE_SAVE_RETRY: Final[int] = 3
@@ -52,7 +52,7 @@ async def _initialized_app() -> AsyncIterator[FastAPI]:
 def _get_dynamic_sidecar_endpoint(
     settings: AppSettings, node_id: NodeIDStr
 ) -> AnyHttpUrl:
-    dynamic_sidecar_names = DynamicSidecarNames.make(UUID(node_id))
+    dynamic_sidecar_names = DynamicSidecarNamesHelper.make(UUID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
     return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
@@ -80,7 +80,7 @@ async def _save_node_state(
 
 async def _async_project_save_state(project_id: ProjectID, retry_save: int) -> None:
     async with _initialized_app() as app:
-        projects_repository: ProjectsRepository = fetch_repo_outside_of_request(
+        projects_repository: ProjectsRepository = get_repository(
             app, ProjectsRepository
         )
         project_at_db = await projects_repository.get_project(project_id)

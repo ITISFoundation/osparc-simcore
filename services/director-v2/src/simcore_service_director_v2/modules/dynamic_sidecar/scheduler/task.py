@@ -57,13 +57,18 @@ from ..errors import (
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
+from ._task_utils import apply_observation_cycle
 from ._utils import attempt_user_create_services_removal_and_data_saving
-from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
 
-
 ServiceName = str
+
+
+def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
+    # divisor to figure out if 30 seconds have passed based on the cycle count
+    modulo_divisor = max(1, int(floor(30 / wait_interval)))
+    return observation_counter % modulo_divisor == 0
 
 
 @dataclass

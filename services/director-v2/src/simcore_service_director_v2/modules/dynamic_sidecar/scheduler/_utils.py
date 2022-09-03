@@ -28,8 +28,8 @@ from ..docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    try_to_remove_network,
     remove_volumes_from_node,
+    try_to_remove_network,
 )
 from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
@@ -222,7 +222,7 @@ async def attempt_user_create_services_removal_and_data_saving(
         # otherwise keep them in place!!!!!
         # fix when merging this to https://github.com/ITISFoundation/osparc-simcore/pull/3272
 
-        if scheduler_data.docker_node_id is None:
+        if scheduler_data.dynamic_sidecar.docker_node_id is None:
             # TODO: also refactor to take care of above when merging PR
             # https://github.com/ITISFoundation/osparc-simcore/pull/3272
             # NOTE: this is triggered once if the dy-sidecar was never started
@@ -236,7 +236,7 @@ async def attempt_user_create_services_removal_and_data_saving(
             await remove_volumes_from_node(
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
                 volume_names=unique_volume_names,
-                docker_node_id=scheduler_data.docker_node_id,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
                 user_id=scheduler_data.user_id,
                 project_id=scheduler_data.project_id,
                 node_uuid=scheduler_data.node_uuid,

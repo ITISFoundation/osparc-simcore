@@ -93,11 +93,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def run_id(scheduler_data: SchedulerData) -> UUID:
-    return scheduler_data.dynamic_sidecar.run_id
-
-
-@pytest.fixture
 def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},

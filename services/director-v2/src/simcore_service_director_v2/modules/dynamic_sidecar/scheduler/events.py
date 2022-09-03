@@ -9,6 +9,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -40,9 +41,6 @@ from ..docker_api import (
     get_service_placement,
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
-    remove_dynamic_sidecar_network,
-    remove_dynamic_sidecar_stack,
-    try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -52,9 +50,10 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import EntrypointContainerNotFoundError
-from .abc import DynamicSchedulerEvent
-from .events_utils import (
+from ._utils import (
+    RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
+    attempt_user_create_services_removal_and_data_saving,
     disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
@@ -108,7 +107,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             project_id=scheduler_data.project_id
         )
 
-        node_uuid_str = str(scheduler_data.node_uuid)
+        node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
         node: Optional[Node] = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
@@ -191,7 +190,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
-            docker_node_id=scheduler_data.docker_node_id,
+            docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
         )
 
         # update service_port and assing it to the status
@@ -515,7 +514,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
             network_name,
             container_aliases,
         ) in projects_networks.networks_with_aliases.items():
-            network_alias = container_aliases.get(f"{scheduler_data.node_uuid}")
+            network_alias = container_aliases.get(NodeIDStr(scheduler_data.node_uuid))
             if network_alias is not None:
                 await dynamic_sidecar_client.attach_service_containers_to_project_network(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,

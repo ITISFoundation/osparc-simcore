@@ -114,7 +114,7 @@ def get_dynamic_sidecar_spec(
         DynamicSidecarVolumesPathsResolver.mount_shared_store(
             swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
             node_uuid=scheduler_data.node_uuid,
-            run_id=scheduler_data.dynamic_sidecar.run_id,
+            run_id=scheduler_data.run_id,
             project_id=scheduler_data.project_id,
             user_id=scheduler_data.user_id,
         ),
