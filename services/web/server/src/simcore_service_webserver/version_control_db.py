@@ -1,12 +1,13 @@
 import json
 import logging
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectIDStr
 from pydantic.types import NonNegativeInt, PositiveInt
 from servicelib.json_serialization import json_dumps
@@ -38,7 +39,6 @@ from .version_control_models import (
     CommitProxy,
     RefID,
     RepoProxy,
-    SHA1Str,
     TagProxy,
 )
 from .version_control_tags import parse_workcopy_project_tag_name
@@ -76,9 +76,9 @@ class VersionControlRepository(BaseRepository):
                 connection,
                 readonly={"id", "created", "modified"},
                 # pylint: disable=no-member
-                writeonce=set(
+                writeonce={
                     c for c in projects_vc_commits.columns.keys() if c != "message"
-                ),
+                },
             )
 
     class TagsOrm(BaseOrm[int]):
@@ -153,7 +153,7 @@ class VersionControlRepository(BaseRepository):
 
     async def _update_state(
         self, repo_id: int, conn: SAConnection
-    ) -> Tuple[RepoProxy, Optional[CommitProxy], ProjectProxy]:
+    ) -> tuple[RepoProxy, Optional[CommitProxy], ProjectProxy]:
 
         head_commit: Optional[CommitProxy] = await self._get_HEAD_commit(repo_id, conn)
 
@@ -214,12 +214,12 @@ class VersionControlRepository(BaseRepository):
         self,
         offset: NonNegativeInt = 0,
         limit: Optional[PositiveInt] = None,
-    ) -> Tuple[List[RowProxy], NonNegativeInt]:
+    ) -> tuple[list[RowProxy], NonNegativeInt]:
 
         async with self.engine.acquire() as conn:
             repo_orm = self.ReposOrm(conn)
 
-            rows: List[RowProxy]
+            rows: list[RowProxy]
             rows, total_count = await repo_orm.fetch_page(
                 "project_uuid", offset=offset, limit=limit
             )
@@ -342,7 +342,7 @@ class VersionControlRepository(BaseRepository):
             if commit:
                 assert isinstance(commit, RowProxy)  # nosec
 
-                tags: List[TagProxy] = (
+                tags: list[TagProxy] = (
                     await self.TagsOrm(conn)
                     .set_filter(commit_id=commit.id, hidden=False)
                     .fetch_all("name message")
@@ -355,13 +355,13 @@ class VersionControlRepository(BaseRepository):
         repo_id: int,
         offset: NonNegativeInt = 0,
         limit: Optional[PositiveInt] = None,
-    ) -> Tuple[List[CommitLog], NonNegativeInt]:
+    ) -> tuple[list[CommitLog], NonNegativeInt]:
 
         async with self.engine.acquire() as conn:
             commits_orm = self.CommitsOrm(conn).set_filter(repo_id=repo_id)
             tags_orm = self.TagsOrm(conn)
 
-            commits: List[CommitProxy]
+            commits: list[CommitProxy]
             commits, total_count = await commits_orm.fetch_page(
                 offset=offset,
                 limit=limit,
@@ -371,7 +371,7 @@ class VersionControlRepository(BaseRepository):
 
             logs = []
             for commit in commits:
-                tags: List[TagProxy]
+                tags: list[TagProxy]
                 tags = await tags_orm.set_filter(commit_id=commit.id).fetch_all()
                 logs.append((commit, tags))
 
@@ -405,7 +405,7 @@ class VersionControlRepository(BaseRepository):
 
     async def as_repo_and_commit_ids(
         self, project_uuid: UUID, ref_id: RefID
-    ) -> Tuple[int, CommitID]:
+    ) -> tuple[int, CommitID]:
         """Translates (project-uuid, ref-id) to (repo-id, commit-id)
 
         :return: tuple with repo and commit identifiers
@@ -513,7 +513,7 @@ class VersionControlRepository(BaseRepository):
 
     async def get_snapshot_content(
         self, repo_id: int, commit_id: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         async with self.engine.acquire() as conn:
 
             if (
@@ -530,7 +530,7 @@ class VersionControlRepository(BaseRepository):
 
         raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
 
-    async def get_workbench_view(self, repo_id: int, commit_id: int) -> Dict[str, Any]:
+    async def get_workbench_view(self, repo_id: int, commit_id: int) -> dict[str, Any]:
         async with self.engine.acquire() as conn:
             if (
                 commit := await self.CommitsOrm(conn)

@@ -9,15 +9,15 @@
     more fine grained concepts as tags and commits directly
 """
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
 
-from .version_control_db import CommitLog, VersionControlRepository
+from .version_control_db import VersionControlRepository
 from .version_control_errors import CleanRequiredError
-from .version_control_models import Checkpoint, RefID, WorkbenchView
+from .version_control_models import Checkpoint, CommitLog, RefID, WorkbenchView
 
 CFG = {"arbitrary_types_allowed": True}
 
@@ -29,7 +29,7 @@ async def list_repos(
     *,
     offset: NonNegativeInt = 0,
     limit: Optional[PositiveInt] = None,
-) -> Tuple[List[RowProxy], PositiveInt]:
+) -> tuple[list[RowProxy], PositiveInt]:
 
     # NOTE: this layer does NOT add much .. why not use vc_repo directly?
     repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
@@ -44,13 +44,13 @@ async def list_checkpoints(
     *,
     offset: NonNegativeInt = 0,
     limit: Optional[PositiveInt] = None,
-) -> Tuple[List[Checkpoint], PositiveInt]:
+) -> tuple[list[Checkpoint], PositiveInt]:
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if not repo_id:
         return [], 0
 
-    logs: List[CommitLog]
+    logs: list[CommitLog]
     logs, total_number_of_commits = await vc_repo.log(
         repo_id, offset=offset, limit=limit
     )

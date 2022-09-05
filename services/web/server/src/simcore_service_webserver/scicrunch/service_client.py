@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-from typing import Any, List, MutableMapping, Optional
+from typing import Any, MutableMapping, Optional
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
@@ -14,7 +14,7 @@ from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from ._resolver import ResolvedItem, resolve_rrid
-from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
+from ._rest import autocomplete_by_name, get_resource_fields
 from .errors import (
     InvalidRRID,
     ScicrunchAPIError,
@@ -22,7 +22,7 @@ from .errors import (
     ScicrunchServiceError,
     map_to_scicrunch_error,
 )
-from .models import ResearchResource, normalize_rrid_tags
+from .models import ResearchResource, ResourceHit, normalize_rrid_tags
 from .settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ class SciCrunch:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
             raise ScicrunchServiceError("Failed to connect scicrunch service") from err
 
-    async def search_resource(self, name_as: str) -> List[ResourceHit]:
+    async def search_resource(self, name_as: str) -> list[ResourceHit]:
         # Safe: returns empty string if fails!
         # Might be slow and timeout!
         # Might be good to know that scicrunch.org is not reachable and cannot perform search now?

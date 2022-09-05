@@ -8,7 +8,8 @@ from models_library.generics import Envelope
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from . import users_api
-from .login.decorators import RQT_USERID_KEY, login_required
+from ._constants import RQT_USERID_KEY
+from .login.decorators import login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError

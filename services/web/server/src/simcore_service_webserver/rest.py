@@ -6,7 +6,6 @@
 
 """
 import logging
-from typing import Tuple
 
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
@@ -91,4 +90,7 @@ def setup_rest(app: web.Application):
         )
 
 
-__all__: Tuple[str, ...] = ("setup_rest",)
+__all__: tuple[str, ...] = (
+    "HealthCheck",
+    "setup_rest",
+)

@@ -5,10 +5,10 @@ from aiohttp import web
 from yarl import URL
 
 from . import catalog_client
-from ._constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
+from ._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY, X_PRODUCT_NAME_HEADER
 from .catalog_client import to_backend_service
 from .catalog_settings import get_plugin_settings
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .security_decorators import permission_required
 
 logger = logging.getLogger(__name__)

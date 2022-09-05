@@ -4,15 +4,16 @@ This module takes care of sending events to the connected webclient through the 
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Sequence, TypedDict
+from typing import Any, Sequence, TypedDict
 
 from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio import AsyncServer
 
 from ..resource_manager.websocket_manager import managed_resource
-from .server import AsyncServer, get_socket_server
+from .server import get_socket_server
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ SOCKET_IO_EVENT: str = "event"
 
 class SocketMessageDict(TypedDict):
     event_type: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 async def send_messages(
@@ -33,7 +34,7 @@ async def send_messages(
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
-    socket_ids: List[str] = []
+    socket_ids: list[str] = []
     with managed_resource(user_id, None, app) as rt:
         socket_ids = await rt.find_socket_ids()
 

@@ -12,14 +12,14 @@ from servicelib.aiohttp.rest_responses import create_error_response, get_http_er
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ._constants import RQ_PRODUCT_KEY
+from ._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
 from .director_v2_core_computations import ComputationsApi
 from .director_v2_exceptions import DirectorServiceError
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .security_decorators import permission_required
-from .version_control_db import CommitID
+from .version_control_models import CommitID
 
 log = logging.getLogger(__name__)
 

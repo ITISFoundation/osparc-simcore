@@ -10,8 +10,6 @@ from .director_v2_abc import (
     set_project_run_policy,
 )
 from .director_v2_core_computations import (
-    ClusterAccessForbidden,
-    ClusterNotFoundError,
     create_cluster,
     create_or_update_pipeline,
     delete_cluster,
@@ -26,7 +24,6 @@ from .director_v2_core_computations import (
     update_cluster,
 )
 from .director_v2_core_dynamic_services import (
-    DirectorServiceError,
     get_dynamic_service_state,
     get_dynamic_services,
     request_retrieve_dyn_service,
@@ -38,6 +35,11 @@ from .director_v2_core_dynamic_services import (
     update_dynamic_service_networks_in_project,
 )
 from .director_v2_core_utils import is_healthy
+from .director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    DirectorServiceError,
+)
 
 # director-v2 module internal API
 __all__: tuple[str, ...] = (

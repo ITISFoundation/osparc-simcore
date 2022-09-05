@@ -32,10 +32,10 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2_api
-from .._constants import RQ_PRODUCT_KEY
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import api_version_prefix as VTAG
 from ..application_settings import get_settings
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission

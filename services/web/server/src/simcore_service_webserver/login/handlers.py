@@ -9,6 +9,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import UserRole
 
+from .._constants import RQT_USERID_KEY
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
 from ..security_api import check_password, encrypt_password, forget, remember
@@ -22,7 +23,7 @@ from ._2fa import (
     set_2fa_code,
 )
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .registration import check_invitation, check_registration
 from .settings import (
     LoginOptions,

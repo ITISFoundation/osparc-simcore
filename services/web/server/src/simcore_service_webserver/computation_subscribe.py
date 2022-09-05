@@ -21,9 +21,10 @@ from servicelib.aiohttp.monitor_services import (
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from servicelib.utils import logged_gather
+from settings_library.rabbit import RabbitSettings
 from tenacity import retry
 
-from .computation_settings import RabbitSettings, get_plugin_settings
+from .computation_settings import get_plugin_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (

@@ -10,8 +10,9 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
 
+from .._constants import RQT_USERID_KEY
 from ..security_api import check_permission
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .utils import get_random_string
 
 log = logging.getLogger(__name__)

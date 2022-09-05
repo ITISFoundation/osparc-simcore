@@ -9,3 +9,6 @@ def get_plugin_settings(app: web.Application) -> SMTPSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, SMTPSettings)  # nosec
     return settings
+
+
+__all__: tuple[str, ...] = ("SMTPSettings",)

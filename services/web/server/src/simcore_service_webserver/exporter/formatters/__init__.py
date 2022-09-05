@@ -8,7 +8,10 @@ from .formatter_v2 import FormatterV2
 from .models import ManifestFile
 
 # maps manifest version to available formatters
-_FORMATTERS_MAPPINGS: Dict[str, BaseFormatter] = {"1": FormatterV1, "2": FormatterV2}
+_FORMATTERS_MAPPINGS = {
+    "1": FormatterV1,
+    "2": FormatterV2,
+}
 
 
 async def validate_manifest(unzipped_root_folder: Path) -> BaseFormatter:
@@ -23,12 +26,18 @@ async def validate_manifest(unzipped_root_folder: Path) -> BaseFormatter:
 
     if manifest_from_file.version not in _FORMATTERS_MAPPINGS:
         raise ExporterException(
-            (
-                f"Version {manifest_from_file.version} is not supported by this deployment. "
-                "The project you are trying to import might be exported in a newer version, "
-                "or this deployment is using an older version."
-            )
+            f"Version {manifest_from_file.version} is not supported by this deployment. "
+            "The project you are trying to import might be exported in a newer version, "
+            "or this deployment is using an older version."
         )
 
-    formatter_cls: BaseFormatter = _FORMATTERS_MAPPINGS[manifest_from_file.version]
+    formatter_cls = _FORMATTERS_MAPPINGS[manifest_from_file.version]
     return formatter_cls(root_folder=unzipped_root_folder)
+
+
+__all__: tuple[str, ...] = (
+    "BaseFormatter",
+    "FormatterV1",
+    "FormatterV2",
+    "validate_manifest",
+)

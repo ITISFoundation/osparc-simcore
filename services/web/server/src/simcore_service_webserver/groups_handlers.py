@@ -2,22 +2,23 @@
 
 import json
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from aiohttp import web
 
 from . import groups_api
+from ._constants import RQT_USERID_KEY
 from .groups_classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .groups_exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .scicrunch.db import ResearchResourceRepository
-from .scicrunch.errors import ScicrunchError
+from .scicrunch.errors import InvalidRRID, ScicrunchError
 from .scicrunch.models import ResearchResource, ResourceHit
-from .scicrunch.service_client import InvalidRRID, SciCrunch
+from .scicrunch.service_client import SciCrunch
 from .security_decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
@@ -281,7 +282,7 @@ async def search_scicrunch_resources(request: web.Request):
         guess_name = str(request.query["guess_name"]).strip()
 
         scicrunch = SciCrunch.get_instance(request.app)
-        hits: List[ResourceHit] = await scicrunch.search_resource(guess_name)
+        hits: list[ResourceHit] = await scicrunch.search_resource(guess_name)
 
         return [hit.dict() for hit in hits]
 

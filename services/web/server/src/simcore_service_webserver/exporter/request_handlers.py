@@ -5,8 +5,8 @@ from aiohttp import web
 from aiohttp.web_request import FileField
 from models_library.projects_state import ProjectStatus
 
-from .._constants import RQ_PRODUCT_KEY
-from ..login.decorators import RQT_USERID_KEY, login_required
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ..login.decorators import login_required
 from ..projects.project_lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security_decorators import permission_required

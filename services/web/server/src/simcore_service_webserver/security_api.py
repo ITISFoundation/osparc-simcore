@@ -14,7 +14,8 @@ from aiohttp_security.api import (
     remember,
 )
 
-from .security_authorization import AuthorizationPolicy, RoleBasedAccessModel
+from .security_access_model import RoleBasedAccessModel
+from .security_authorization import AuthorizationPolicy
 from .security_roles import UserRole
 
 log = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def clean_auth_policy_cache(app: web.Application) -> None:
 
 
 __all__: tuple[str, ...] = (
+    "encrypt_password",
     "authorized_userid",
     "check_permission",
     "encrypt_password",

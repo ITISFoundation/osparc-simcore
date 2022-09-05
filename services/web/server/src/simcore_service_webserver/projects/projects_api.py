@@ -43,6 +43,7 @@ from servicelib.aiohttp.application_keys import (
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.models.users import UserRole
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
@@ -57,15 +58,10 @@ from ..socketio.events import (
     send_group_messages,
     send_messages,
 )
-from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_api import UserNameDict, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete
-from .project_lock import (
-    UserNameDict,
-    get_project_locked_state,
-    is_project_locked,
-    lock_project,
-)
+from .project_lock import get_project_locked_state, is_project_locked, lock_project
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port

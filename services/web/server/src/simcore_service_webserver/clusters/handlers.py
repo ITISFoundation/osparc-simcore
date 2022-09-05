@@ -7,6 +7,7 @@ from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.json_serialization import json_dumps
 
 from .. import director_v2_api
+from .._constants import RQT_USERID_KEY
 from .._meta import api_version_prefix
 from ..director_v2_exceptions import (
     ClusterAccessForbidden,
@@ -15,7 +16,7 @@ from ..director_v2_exceptions import (
     DirectorServiceError,
 )
 from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..security_decorators import permission_required
 
 logger = logging.getLogger(__name__)

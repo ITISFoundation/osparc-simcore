@@ -16,7 +16,7 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Any
 
 import typer
 from aiohttp import web
@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 def _setup_app_from_settings(
     settings: ApplicationSettings,
-) -> Tuple[web.Application, Dict]:
+) -> tuple[web.Application, dict[str, Any]]:
 
     # NOTE: keeping an equivalent config allows us
     # to keep some of the code from the previous

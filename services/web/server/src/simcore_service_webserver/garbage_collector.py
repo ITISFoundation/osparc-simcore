@@ -6,7 +6,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .garbage_collector_settings import get_plugin_settings
 from .garbage_collector_task import run_background_task
 from .login.plugin import setup_login_storage
-from .projects.plugin import setup_projects_db, setup_projects_model_schema
+from .projects.project_models import setup_projects_model_schema
+from .projects.projects_db import setup_projects_db
 from .socketio.plugin import setup_socketio_server
 from .users_garbage_collector_tasks import create_background_task_for_trial_accounts
 

@@ -12,9 +12,8 @@ from aiohttp import web
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
-from ..db_models import UserStatus
+from ..db_models import ConfirmationAction, UserStatus
 from ._confirmation import (
-    ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,

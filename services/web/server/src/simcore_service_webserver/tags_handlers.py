@@ -3,8 +3,9 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy import and_
 
+from ._constants import RQT_USERID_KEY
 from .db_models import tags
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .security_api import check_permission
 
 

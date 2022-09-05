@@ -10,9 +10,9 @@ from servicelib.aiohttp.long_running_tasks._server import (
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
 
-from ._constants import RQ_PRODUCT_KEY
+from ._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ._meta import API_VTAG
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 
 
 class _RequestContext(BaseModel):

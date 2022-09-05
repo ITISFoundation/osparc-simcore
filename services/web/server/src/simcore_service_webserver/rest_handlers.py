@@ -7,8 +7,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.rest_utils import extract_and_validate
 
+from ._constants import APP_SETTINGS_KEY
 from ._meta import api_version_prefix
-from .application_settings import APP_SETTINGS_KEY
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)

@@ -1,5 +1,3 @@
-# pylint:disable=unused-import
-
 from typing import Final
 
 from servicelib.aiohttp.application_keys import (
@@ -23,3 +21,20 @@ X_PRODUCT_NAME_HEADER: Final[str] = "X-Simcore-Products-Name"
 
 # main index route name = front-end
 INDEX_RESOURCE_NAME: Final[str] = "statics.index"
+
+
+__all__: tuple[str, ...] = (
+    "APP_CONFIG_KEY",
+    "APP_DB_ENGINE_KEY",
+    "APP_JSONSCHEMA_SPECS_KEY",
+    "APP_OPENAPI_SPECS_KEY",
+    "APP_PRODUCTS_KEY",
+    "APP_SETTINGS_KEY",
+    "INDEX_RESOURCE_NAME",
+    "RQ_PRODUCT_FRONTEND_KEY",
+    "RQ_PRODUCT_KEY",
+    "RQT_USERID_KEY",
+    "X_PRODUCT_NAME_HEADER",
+)
+
+# nopycln: file

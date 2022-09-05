@@ -24,9 +24,10 @@ from .version_control_core import (
     list_repos_safe,
     update_checkpoint_safe,
 )
-from .version_control_db import HEAD, VersionControlRepository
+from .version_control_db import VersionControlRepository
 from .version_control_handlers_base import handle_request_errors
 from .version_control_models import (
+    HEAD,
     Checkpoint,
     CheckpointAnnotations,
     CheckpointApiModel,

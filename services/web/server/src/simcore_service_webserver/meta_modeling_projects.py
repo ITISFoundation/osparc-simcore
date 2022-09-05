@@ -20,8 +20,9 @@ from .meta_modeling_iterations import (
     get_or_create_runnable_projects,
     get_runnable_projects_ids,
 )
-from .meta_modeling_version_control import CommitID, VersionControlForMetaModeling
+from .meta_modeling_version_control import VersionControlForMetaModeling
 from .projects.projects_handlers_crud import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
+from .version_control_models import CommitID
 
 log = logging.getLogger(__name__)
 

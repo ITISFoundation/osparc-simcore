@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Iterator
 
 import orjson
 from aiohttp import web
@@ -15,7 +15,7 @@ from pint import UnitRegistry
 from pydantic import ValidationError
 
 from . import catalog_client
-from ._constants import RQ_PRODUCT_KEY
+from ._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ._meta import api_version_prefix
 from .catalog_models import (
     ServiceInputGet,
@@ -28,7 +28,7 @@ from .catalog_models import (
     replace_service_input_outputs,
 )
 from .catalog_units import can_connect
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 
@@ -131,7 +131,7 @@ async def update_service_handler(request: Request):
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
-        update_data: Dict[str, Any] = await request.json(loads=orjson.loads)
+        update_data: dict[str, Any] = await request.json(loads=orjson.loads)
 
     # Evaluate and return validated model
     data = await update_service(service_key, service_version, update_data, ctx)
@@ -344,7 +344,7 @@ async def list_services(ctx: _RequestContext):
 
 async def get_service(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -357,7 +357,7 @@ async def get_service(
 async def update_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    update_data: Dict[str, Any],
+    update_data: dict[str, Any],
     ctx: _RequestContext,
 ):
     service = await catalog_client.update_service(
@@ -412,7 +412,7 @@ async def get_compatible_inputs_given_source_output(
     from_service_version: ServiceVersion,
     from_output_key: ServiceOutputKey,
     ctx: _RequestContext,
-) -> List[ServiceInputKey]:
+) -> list[ServiceInputKey]:
     """
         Filters inputs of this service that match a given service output
 
@@ -432,7 +432,7 @@ async def get_compatible_inputs_given_source_output(
     # N inputs
     service_inputs = await list_service_inputs(service_key, service_version, ctx)
 
-    def iter_service_inputs() -> Iterator[Tuple[ServiceInputKey, ServiceInput]]:
+    def iter_service_inputs() -> Iterator[tuple[ServiceInputKey, ServiceInput]]:
         for service_input in service_inputs:
             yield service_input.key_id, ServiceInput.construct(
                 **service_input.dict(include=ServiceInput.__fields__.keys())
@@ -451,7 +451,7 @@ async def list_service_outputs(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     ctx: _RequestContext,
-) -> List[ServiceOutputGet]:
+) -> list[ServiceOutputGet]:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -488,12 +488,12 @@ async def get_compatible_outputs_given_target_input(
     to_service_version: ServiceVersion,
     to_input_key: ServiceInputKey,
     ctx: _RequestContext,
-) -> List[ServiceOutputKey]:
+) -> list[ServiceOutputKey]:
 
     # N outputs
     service_outputs = await list_service_outputs(service_key, service_version, ctx)
 
-    def iter_service_outputs() -> Iterator[Tuple[ServiceOutputKey, ServiceOutput]]:
+    def iter_service_outputs() -> Iterator[tuple[ServiceOutputKey, ServiceOutput]]:
         for service_output in service_outputs:
             yield service_output.key_id, ServiceOutput.construct(
                 **service_output.dict(include=ServiceOutput.__fields__.keys())
