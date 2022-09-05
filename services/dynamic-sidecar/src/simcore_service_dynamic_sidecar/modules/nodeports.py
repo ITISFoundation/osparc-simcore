@@ -145,10 +145,10 @@ async def upload_outputs(
             await logged_gather(*archiving_tasks)
         await PORTS.set_multiple(ports_values)
 
-    elapsed_time = time.perf_counter() - start_time
-    total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
-    logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
-    logger.debug(_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE)
+        elapsed_time = time.perf_counter() - start_time
+        total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
+        logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
+        logger.debug(_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE)
 
 
 async def dispatch_update_for_directory(
