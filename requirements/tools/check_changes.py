@@ -6,7 +6,7 @@ import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple, Optional, Set
+from typing import Literal, NamedTuple, Optional
 
 from packaging.version import Version
 
@@ -15,7 +15,7 @@ REPODIR = (HERE / ".." / "..").resolve()
 
 
 @contextmanager
-def printing_table(columns: List[str]):
+def printing_table(columns: list[str]):
     print("|" + "|".join(columns) + "|")
     print("|" + "|".join(["-" * len(c) for c in columns]) + "|")
 
@@ -146,8 +146,8 @@ def main_changes_stats() -> None:
             # TODO: where are these libraries?
             # TODO: are they first dependencies?
             # TODO: if major, get link to release notes
-            from_versions = set(str(v) for v in before[name])
-            to_versions = set(str(v) for v in after[name])
+            from_versions = {str(v) for v in before[name]}
+            to_versions = {str(v) for v in after[name]}
 
             used_packages = []
             if req_paths := lib2reqs.get(name):
@@ -183,10 +183,10 @@ def main_changes_stats() -> None:
 
 
 ## Stats on installed packages (i.e. defined in txt files)
-DEPENDENCY = re.compile(r"([\w_-]+)==([0-9\.-]+)")
+DEPENDENCY = re.compile(r"([\w_-]+)==([0-9\.-post]+)")
 
 
-def parse_dependencies_in_reqfile(reqfile: Path) -> Dict[str, Version]:
+def parse_dependencies_in_reqfile(reqfile: Path) -> dict[str, Version]:
     name2version = {}
     for name, version in DEPENDENCY.findall(reqfile.read_text()):
         # TODO: typing-extensions==4.0.1 ; python_version < "3.9" might intro multiple versions
@@ -198,12 +198,12 @@ def parse_dependencies_in_reqfile(reqfile: Path) -> Dict[str, Version]:
 class ReqFile(NamedTuple):
     path: Path
     target: Literal["base", "test", "tool", "other"]
-    dependencies: Dict[str, Version]
+    dependencies: dict[str, Version]
 
 
 def parse_dependencies(
-    repodir: Path, *, exclude: Optional[Set] = None
-) -> List[ReqFile]:
+    repodir: Path, *, exclude: Optional[set] = None
+) -> list[ReqFile]:
     reqs = []
     exclude = exclude or set()
     for reqfile in repodir.rglob("**/requirements/_*.txt"):
@@ -229,7 +229,7 @@ def parse_dependencies(
     return reqs
 
 
-def repo_wide_changes(exclude: Optional[Set] = None) -> None:
+def repo_wide_changes(exclude: Optional[set] = None) -> None:
     reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format

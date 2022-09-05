@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import typer
-from httpx import URL, AsyncClient, Timeout, codes
+from httpx import URL, AsyncClient, HTTPStatusError, Timeout, codes
 from pydantic import EmailStr, SecretStr
 
 DEFAULT_TIMEOUT = Timeout(30.0)
@@ -20,7 +20,7 @@ async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
 
 async def get_project_for_user(
     client: AsyncClient, project_id: str
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     path = f"/projects/{project_id}"
     r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
@@ -31,7 +31,7 @@ async def get_project_for_user(
 
 async def get_all_projects_for_user(
     client: AsyncClient, next_link: Optional[str] = None
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     path = next_link if next_link else "/projects"
     r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
@@ -50,7 +50,7 @@ async def delete_project(client: AsyncClient, project_id: str, progressbar):
     progressbar.update(1)
     if r.status_code != codes.NO_CONTENT:
         typer.secho(
-            f"deleting project {project_id} failed with status {r.status_code}",
+            f"deleting project {project_id} failed with status {r.status_code}: {r.reason_phrase}",
             fg=typer.colors.RED,
         )
 
@@ -90,7 +90,15 @@ async def clean(
                         for prj in all_projects
                     ]
                 )
-            typer.secho(f"completed projects deletion", fg=typer.colors.YELLOW)
+            typer.secho("completed projects deletion", fg=typer.colors.YELLOW)
+    except HTTPStatusError as exc:
+        typer.secho(
+            f"Responded with error  {exc.response.text}, [{type(exc)}]",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        return 1
+
     except Exception as exc:  # pylint: disable=broad-except
         typer.secho(
             f"Unexpected issue: {exc}, [{type(exc)}]", fg=typer.colors.RED, err=True

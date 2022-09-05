@@ -4,7 +4,6 @@
 
 
 from typing import Any, cast
-from uuid import UUID
 
 import pytest
 import respx
@@ -14,7 +13,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import ServiceKeyVersion
+from models_library.services import RunID, ServiceKeyVersion
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -94,12 +93,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def run_id(scheduler_data: SchedulerData) -> UUID:
-    return scheduler_data.dynamic_sidecar.run_id
-
-
-@pytest.fixture
-def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
+def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -114,16 +108,15 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     '["DISPLAY=${DISPLAY}"], "volumes": '
                     '["/tmp/.X11-unix:/tmp/.X11-unix"]}}}',
                     "container_http_entry": "rt-web",
-                    "docker_node_id": None,
+                    "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "port": 1222,
+                    "run_id": f"{run_id}",
                     "dynamic_sidecar": {
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
                         "dynamic_sidecar_network_id": None,
-                        "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                         "is_available": False,
                         "is_project_network_attached": False,
-                        "port": 1222,
-                        "run_id": f"{run_id}",
                         "service_environment_prepared": False,
                         "service_removal_state": {
                             "can_remove": False,
@@ -133,6 +126,7 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "status": {"current": "ok", "info": ""},
                         "swarm_network_id": None,
                         "swarm_network_name": None,
+                        "docker_node_id": None,
                         "was_compose_spec_submitted": False,
                         "was_dynamic_sidecar_started": False,
                         "were_containers_created": False,
@@ -148,8 +142,8 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                     },
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "request_dns": None,
-                    "request_scheme": None,
+                    "request_dns": "test-endpoint",
+                    "request_scheme": "http",
                     "restart_policy": "on-inputs-downloaded",
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
@@ -244,50 +238,77 @@ def expected_dynamic_sidecar_spec(run_id: UUID) -> dict[str, Any]:
                         "Type": "bind",
                     },
                     {
-                        "Target": "/dy-volumes/tmp/inputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
+                        "Target": "/dy-volumes/shared-store",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_inputs",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
+                            }
+                        },
+                    },
+                    {
+                        "Target": "/dy-volumes/tmp/inputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                                "run_id": f"{run_id}",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
+                                "swarm_stack_name": "test_swarm_name",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp/outputs",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_outputs",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp/save_1",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_1",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },
                     {
                         "Target": "/dy-volumes/tmp_save_2",
+                        "Source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                         "Type": "volume",
                         "VolumeOptions": {
                             "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": f"{run_id}",
-                                "source": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa_tmp_save_2",
+                                "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
-                                "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "user_id": "234",
                             }
                         },
                     },

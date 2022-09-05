@@ -2,7 +2,6 @@
 
 SHELL := /bin/bash
 
-CFG_NAME	:= cfg.json
 REPO_DIR	:= $(CURDIR)/../../..
 IMAGE_NAME	:= migrate-utils
 TAG			:= latest
@@ -24,13 +23,13 @@ build: ## Builds docker container for the migration. Run this first.
 debug-shell: ## Runs a bash inside the container that performs the migrate. For manual interventions and debuging.
 	docker run --interactive --tty --rm ${IMAGE_NAME}:${TAG} bash
 
-.PHONY: create-empty-config-file
-create-empty-config-file:	## creates an empty configuration file to fill up
+.PHONY: cfg.template.json
+cfg.template.json:	## creates an empty configuration file to fill up
 	docker run --interactive --tty --rm \
 	${IMAGE_NAME}:${TAG} python models.py > ${CFG_NAME}
 
 .PHONE: migrate
-migrate: ## Performs migrate (a.k.a. copying) of a study from one deployment to another. Run `make build` first
-	docker run --interactive --tty --rm \
+migrate: cfg.json ## Performs migrate (a.k.a. copying) of a study from one deployment to another. Run `make build` first. Supported S3 providers are `CEPH`, `AWS`, `MINIO`.
+	docker run -it --rm \
 	-v ${PWD}/${CFG_NAME}:/tmp/cfg.json \
 	${IMAGE_NAME}:${TAG} python cli.py --config /tmp/cfg.json

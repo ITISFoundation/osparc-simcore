@@ -1,12 +1,8 @@
-# wraps all calls to underlying docker engine
-
-
 import asyncio
 import json
 import logging
 import time
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -18,20 +14,22 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.constants import (
+from ....core.settings import DynamicSidecarSettings
+from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ...models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
-from ...utils.dict_utils import get_leaf_key_paths, nested_update
-from .docker_states import TASK_STATES_RUNNING, extract_task_state
-from .errors import DynamicSidecarError, GenericDockerError
+from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ....utils.dict_utils import get_leaf_key_paths, nested_update
+from ..docker_states import TASK_STATES_RUNNING, extract_task_state
+from ..errors import DynamicSidecarError, GenericDockerError
+from ._utils import docker_client
 
 NO_PENDING_OVERWRITE = {
     ServiceState.FAILED,
@@ -39,25 +37,8 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
+
 log = logging.getLogger(__name__)
-
-
-class _RetryError(Exception):
-    pass
-
-
-@asynccontextmanager
-async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
-    client = None
-    try:
-        client = aiodocker.Docker()
-        yield client
-    except aiodocker.exceptions.DockerError as e:
-        message = "Unexpected error from docker client"
-        raise GenericDockerError(message, e) from e
-    finally:
-        if client is not None:
-            await client.close()
 
 
 async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
@@ -225,13 +206,14 @@ async def get_service_placement(
         target_statuses=TASK_STATES_RUNNING,
     )
 
-    if "NodeID" not in task:
+    docker_node_id = task.get("NodeID", None)
+    if not docker_node_id:
         raise DynamicSidecarError(
             f"Could not find an assigned NodeID for service_id={service_id}. "
             f"Last task inspect result: {task}"
         )
 
-    return task["NodeID"]
+    return docker_node_id
 
 
 async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]:
@@ -272,10 +254,9 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
     return service_state, message
 
 
-async def is_dynamic_sidecar_stack_missing(
+async def _get_dynamic_sidecar_stack_services(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> bool:
-    """Check if the proxy and the dynamic-sidecar are absent"""
+) -> list[Mapping]:
     filters = {
         "label": [
             f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -283,8 +264,17 @@ async def is_dynamic_sidecar_stack_missing(
         ]
     }
     async with docker_client() as client:
-        stack_services = await client.services.list(filters=filters)
-        return len(stack_services) == 0
+        return await client.services.list(filters=filters)
+
+
+async def is_dynamic_sidecar_stack_missing(
+    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+) -> bool:
+    """Check if the proxy and the dynamic-sidecar are absent"""
+    stack_services = await _get_dynamic_sidecar_stack_services(
+        node_uuid, dynamic_sidecar_settings
+    )
+    return len(stack_services) == 0
 
 
 async def are_all_services_present(
@@ -293,20 +283,13 @@ async def are_all_services_present(
     """
     The dynamic-sidecar stack always expects to have 2 running services
     """
-    async with docker_client() as client:
-        stack_services = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
-                ]
-            }
-        )
-        if len(stack_services) != 2:
-            log.warning("Expected 2 services found %s", stack_services)
-            return False
+    stack_services = await _get_dynamic_sidecar_stack_services(
+        node_uuid, dynamic_sidecar_settings
+    )
+    if len(stack_services) != 2:
+        return False
 
-        return True
+    return True
 
 
 async def remove_dynamic_sidecar_stack(
@@ -455,8 +438,12 @@ async def get_projects_networks_containers(
 async def try_to_remove_network(network_name: str) -> None:
     async with docker_client() as client:
         network = await client.networks.get(network_name)
+
+        # if a project network for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
         try:
-            return await network.delete()
+            await network.delete()
         except aiodocker.exceptions.DockerError:
             log.warning("Could not remove network %s", network_name)
 
@@ -481,7 +468,7 @@ async def _update_service_spec(
             # waits exponentially to a max of `stop_delay` seconds
             stop=stop_after_delay(stop_delay),
             wait=wait_exponential(min=1),
-            retry=retry_if_exception_type(_RetryError),
+            retry=retry_if_exception_type(TryAgain),
             reraise=True,
         ):
             with attempt:
@@ -509,7 +496,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise _RetryError() from e
+                        raise TryAgain() from e
                     raise e
 
 
@@ -531,11 +518,13 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             )
 
 
-async def constrain_service_to_node(service_name: str, node_id: str) -> None:
+async def constrain_service_to_node(service_name: str, docker_node_id: str) -> None:
     await _update_service_spec(
         service_name,
         update_in_service_spec={
-            "TaskTemplate": {"Placement": {"Constraints": [f"node.id == {node_id}"]}}
+            "TaskTemplate": {
+                "Placement": {"Constraints": [f"node.id == {docker_node_id}"]}
+            }
         },
     )
-    log.info("Constraining service %s to node %s", service_name, node_id)
+    log.info("Constraining service %s to node %s", service_name, docker_node_id)

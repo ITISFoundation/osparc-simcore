@@ -54,7 +54,7 @@ def _get_hidden_project(connection: Connection, prj_owner: int) -> ResultProxy:
 
 
 def _get_file_meta_data_without_soft_links(
-    connection: Connection, node_uuid: str, project_id: UUID
+    connection: Connection, node_uuid: UUID, project_id: UUID
 ) -> ResultProxy:
     return connection.execute(
         select([file_meta_data]).where(

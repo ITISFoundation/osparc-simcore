@@ -211,7 +211,7 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
         "attach": mocker.patch(f"{class_base}.attach_project_network", AsyncMock()),
         "detach": mocker.patch(f"{class_base}.detach_project_network", AsyncMock()),
         "requires_dynamic_sidecar": mocker.patch(
-            "simcore_service_director_v2.modules.projects_networks._requires_dynamic_sidecar",
+            "simcore_service_director_v2.modules.projects_networks.requires_dynamic_sidecar",
             requires_dynamic_sidecar_mock,
         ),
     }

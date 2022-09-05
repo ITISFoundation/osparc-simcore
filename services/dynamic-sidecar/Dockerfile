@@ -55,6 +55,12 @@ RUN curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CL
   rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
   rclone --version
 
+# create direcotry to persist SharedStore data accessiable
+# between dynamic-sidecar reboots
+ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="/shared-store"
+RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
+  chown -R scu:scu "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}"
+
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #

@@ -40,7 +40,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import
     DynamicSchedulerEvent,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
-    _apply_observation_cycle,
+    apply_observation_cycle,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -70,18 +70,18 @@ def _mock_containers_docker_status(
     else:
         mocked_params["side_effect"] = expected_response
 
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(**mocked_params)
 
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/health"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/health"
             ),
             name="health",
         ).respond(json=dict(is_healthy=True, error=None))
@@ -110,7 +110,7 @@ async def _assert_get_dynamic_services_mocked(
 
         await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
         assert scheduler_data.service_name in scheduler._to_observe
-        await scheduler.finish_service_removal(scheduler_data.node_uuid)
+        await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
         assert scheduler_data.service_name not in scheduler._to_observe
 
 
@@ -196,7 +196,7 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 
 @pytest.fixture
 def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(get_url(service_endpoint, "/health"), name="is_healthy").respond(
             json=dict(is_healthy=True)
@@ -250,7 +250,7 @@ async def manually_trigger_scheduler(
     scheduler_data: SchedulerData,
 ) -> Callable[[], Awaitable[None]]:
     async def _triggerer() -> None:
-        await _apply_observation_cycle(minimal_app, scheduler, scheduler_data)
+        await apply_observation_cycle(minimal_app, scheduler, scheduler_data)
 
     return _triggerer
 
@@ -274,7 +274,7 @@ async def test_scheduler_add_remove(
 
     await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
     assert scheduler_data.service_name in scheduler._to_observe
-    await scheduler.finish_service_removal(scheduler_data.node_uuid)
+    await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
     assert scheduler_data.service_name not in scheduler._to_observe
 
 
