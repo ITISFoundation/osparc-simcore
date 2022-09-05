@@ -18,19 +18,19 @@ endif
 
 .PHONY: build
 build: ## Builds docker container for the migration. Run this first.
-	docker build -t ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
+	docker build -tag ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
 
 .PHONY: shell
 debug-shell: ## Runs a bash inside the container that performs the migrate. For manual interventions and debuging.
-	docker run -it --rm ${IMAGE_NAME}:${TAG} bash
+	docker run --interactive --tty --rm ${IMAGE_NAME}:${TAG} bash
 
 .PHONY: create-empty-config-file
 create-empty-config-file:	## creates an empty configuration file to fill up
-	docker run -it --rm \
+	docker run --interactive --tty --rm \
 	${IMAGE_NAME}:${TAG} python models.py > ${CFG_NAME}
 
 .PHONE: migrate
 migrate: ## Performs migrate (a.k.a. copying) of a study from one deployment to another. Run `make build` first
-	docker run -it --rm \
+	docker run --interactive --tty --rm \
 	-v ${PWD}/${CFG_NAME}:/tmp/cfg.json \
 	${IMAGE_NAME}:${TAG} python cli.py --config /tmp/cfg.json
