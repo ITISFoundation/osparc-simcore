@@ -812,7 +812,7 @@ class ProjectDBAPI:
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):
-                result.update(row.as_tuple())  # type: ignore
+                result.update(row.as_tuple())
         return result
 
     async def list_all_projects_by_uuid_for_user(self, user_id: int) -> list[str]:

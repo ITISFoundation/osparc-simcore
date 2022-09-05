@@ -1,5 +1,5 @@
 import io
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -13,7 +13,7 @@ from .rest_constants import RESPONSE_MODEL_POLICY
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
     route: RouteDef
-    for route in routes:  # type: ignore
+    for route in routes:
         route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
 
 
@@ -28,7 +28,7 @@ def get_routes_view(routes: RouteTableDef) -> str:
 def create_url_for_function(request: web.Request) -> Callable:
     app = request.app
 
-    def url_for(route_name: str, **params: Dict[str, Any]) -> str:
+    def url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:
             rel_url: URL = app.router[route_name].url_for(
@@ -55,7 +55,7 @@ def create_url_for_function(request: web.Request) -> Callable:
 
 
 def envelope_json_response(
-    obj: Any, status_cls: Type[HTTPException] = web.HTTPOk
+    obj: Any, status_cls: type[HTTPException] = web.HTTPOk
 ) -> web.Response:
     # TODO: replace all envelope functionality form packages/service-library/src/servicelib/aiohttp/rest_responses.py
     # TODO: Remove middleware to envelope handler responses at packages/service-library/src/servicelib/aiohttp/rest_middlewares.py: envelope_middleware_factory and use instead this

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
@@ -17,7 +17,7 @@ BranchProxy = RowProxy
 CommitProxy = RowProxy
 RepoProxy = RowProxy
 TagProxy = RowProxy
-CommitLog = Tuple[CommitProxy, List[TagProxy]]
+CommitLog = tuple[CommitProxy, list[TagProxy]]
 
 
 HEAD = f"{__file__}/ref/HEAD"
@@ -33,15 +33,15 @@ class Checkpoint(BaseModel):
     id: CheckpointID
     checksum: SHA1Str
     created_at: datetime
-    tags: Tuple[str, ...]
+    tags: tuple[str, ...]
     # TODO: so front-end can proper break tree branches
     # branches: Tuple[str, ...] = tuple()
 
     message: Optional[str] = None
-    parents_ids: Tuple[PositiveInt, ...] = None  # type: ignore
+    parents_ids: tuple[PositiveInt, ...] = None
 
     @classmethod
-    def from_commit_log(cls, commit: RowProxy, tags: List[RowProxy]) -> "Checkpoint":
+    def from_commit_log(cls, commit: RowProxy, tags: list[RowProxy]) -> "Checkpoint":
         return cls(
             id=commit.id,
             checksum=commit.snapshot_checksum,
@@ -60,8 +60,8 @@ class WorkbenchView(BaseModel):
 
     # FIXME: Tmp replacing UUIDS by str due to a problem serializing to json UUID keys
     # in the response https://github.com/samuelcolvin/pydantic/issues/2096#issuecomment-814860206
-    workbench: Dict[str, Node]
-    ui: Dict[str, Any] = {}
+    workbench: dict[str, Node]
+    ui: dict[str, Any] = {}
 
 
 # API models ---------------

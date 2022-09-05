@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -44,7 +44,7 @@ DEFAULT_GROUP_OWNER_ACCESS_RIGHTS: AccessRightsDict = {
 
 async def list_user_groups(
     app: web.Application, user_id: int
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     """returns the user groups
     Returns:
         Tuple[List[Dict[str, str]]] -- [returns the user primary group, standard groups and the all group]
@@ -98,7 +98,7 @@ async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
 
 async def get_user_group(
     app: web.Application, user_id: int, gid: int
-) -> Dict[str, str]:
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group: RowProxy = await _get_user_group(conn, user_id, gid)
@@ -107,8 +107,8 @@ async def get_user_group(
 
 
 async def create_user_group(
-    app: web.Application, user_id: int, new_group: Dict
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, new_group: dict
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
@@ -138,8 +138,8 @@ async def create_user_group(
 
 
 async def update_user_group(
-    app: web.Application, user_id: int, gid: int, new_group_values: Dict[str, str]
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, gid: int, new_group_values: dict[str, str]
+) -> dict[str, str]:
     new_values = {
         k: v for k, v in convert_groups_schema_to_db(new_group_values).items() if v
     }
@@ -177,7 +177,7 @@ async def delete_user_group(app: web.Application, user_id: int, gid: int) -> Non
 
 async def list_users_in_group(
     app: web.Application, user_id: int, gid: int
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
@@ -197,7 +197,7 @@ async def list_users_in_group(
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
-    user: Dict = await get_user(app, user_id)
+    user: dict = await get_user(app, user_id)
 
     # auto add user to the groups with the right rules
     engine = app[APP_DB_ENGINE_KEY]
@@ -256,7 +256,7 @@ async def add_user_in_group(
             sa.select([sa.func.count()]).where(users.c.id == new_user_id)
         )
         if not users_count:
-            raise UserInGroupNotFoundError(new_user_id, gid)  # type: ignore
+            raise UserInGroupNotFoundError(new_user_id, gid)
         # add the new user to the group now
         user_access_rights = DEFAULT_GROUP_READ_ACCESS_RIGHTS
         if access_rights:
@@ -287,7 +287,7 @@ async def _get_user_in_group_permissions(
 
 async def get_user_in_group(
     app: web.Application, user_id: int, gid: int, the_user_id_in_group: int
-) -> Dict[str, str]:
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
@@ -306,8 +306,8 @@ async def update_user_in_group(
     user_id: int,
     gid: int,
     the_user_id_in_group: int,
-    new_values_for_user_in_group: Dict,
-) -> Dict[str, str]:
+    new_values_for_user_in_group: dict,
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:

@@ -304,7 +304,7 @@ async def _upload_files_to_storage(
     shuffled_data: ShuffledData,
 ) -> list[tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
-    client_timeout = ClientTimeout(  # type: ignore
+    client_timeout = ClientTimeout(
         total=UPLOAD_HTTP_TIMEOUT, connect=None, sock_connect=5
     )
     async with ClientSession(timeout=client_timeout) as session:

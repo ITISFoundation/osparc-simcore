@@ -26,7 +26,7 @@ from .director_v2_settings import get_client_session
 log = logging.getLogger(__name__)
 
 
-SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
+SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
 DEFAULT_RETRY_POLICY = dict(
     wait=wait_random(0, 1),

@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from aiohttp import web
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
@@ -116,7 +115,7 @@ async def _create_checkpoint_handler(request: web.Request):
 
     checkpoint: Checkpoint = await create_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         **_body.dict(include={"tag", "message"}),
     )
 
@@ -145,11 +144,11 @@ async def _list_checkpoints_handler(request: web.Request):
     _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
     _offset = int(request.query.get("offset", 0))
 
-    checkpoints: List[Checkpoint]
+    checkpoints: list[Checkpoint]
 
     checkpoints, total = await list_checkpoints_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         offset=_offset,
         limit=_limit,
     )
@@ -207,7 +206,7 @@ async def _get_checkpoint_handler(request: web.Request):
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
@@ -241,7 +240,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
 
     checkpoint: Checkpoint = await update_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
         **_body.dict(include={"tag", "message"}, exclude_none=True),
     )
@@ -272,7 +271,7 @@ async def _checkout_handler(request: web.Request):
 
     checkpoint: Checkpoint = await checkout_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
@@ -304,13 +303,13 @@ async def _view_project_workbench_handler(request: web.Request):
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
     view: WorkbenchView = await get_workbench_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=checkpoint.id,
     )
 

@@ -39,7 +39,7 @@ async def load_products_on_startup(app: web.Application):
 
     async for row in iter_products(engine):
         try:
-            name = row.name  # type:ignore
+            name = row.name
             app_products[name] = Product.from_orm(row)
 
             if name not in FRONTEND_APPS_AVAILABLE:
