@@ -172,6 +172,7 @@ async def copy_study_to_account(
         )
 
         # remove template access rights
+        # TODO: PC: what should I do with this stuff? can we re-use the same entrypoint?
         # FIXME: temporary fix until. Unify access management while cloning a project. Right not, at least two workflows have different implementations
         project["accessRights"] = {}
 
@@ -184,13 +185,20 @@ async def copy_study_to_account(
 
         # add project model + copy data TODO: guarantee order and atomicity
         await db.add_project(project, user["id"], force_project_uuid=True)
-        await copy_data_folders_from_project(
+        async for lr_task in copy_data_folders_from_project(
             request.app,
             template_project,
             project,
             nodes_map,
             user["id"],
-        )
+        ):
+            log.info(
+                "copying %s into %s for %s: %s",
+                f"{template_project['uuid']=}",
+                f"{project['uuid']}",
+                f"{user['id']}",
+                f"{lr_task.progress=}",
+            )
 
     return project_uuid
 
