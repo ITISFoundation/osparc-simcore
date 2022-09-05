@@ -16,9 +16,11 @@ RUN pip install --upgrade pip \
     && pip install mypy==0.971 \
                   pydantic[email]==1.9.2 \
                   types-aiofiles==0.8.10 \
+                  types-attrs \
                   types-PyYAML==6.0.11 \
-                  types-ujson \
-                  types-setuptools
+                  types-redis \
+                  types-setuptools \
+                  types-ujson
 ENTRYPOINT ["mypy"]
 EOF
 
