@@ -4,8 +4,7 @@
 # pylint: disable=no-member
 
 import asyncio
-from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List, Tuple
 from unittest.mock import call
 
 import aiodocker
@@ -18,7 +17,6 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     create_container_config,
     managed_container,
     parse_line,
-    to_datetime,
 )
 
 
@@ -38,7 +36,7 @@ def service_version() -> str:
 
 
 @pytest.fixture()
-def command() -> list[str]:
+def command() -> List[str]:
     return ["sh", "-c", "some_app"]
 
 
@@ -55,10 +53,10 @@ async def test_create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: list[str],
+    command: List[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: dict[str, Any],
+    task_max_resources: Dict[str, Any],
 ):
 
     container_config = await create_container_config(
@@ -95,14 +93,6 @@ async def test_create_container_config(
             },
         }
     )
-
-
-@pytest.mark.parametrize(
-    "docker_time, expected_datetime",
-    [("2020-10-09T12:28:14.771034099Z", datetime(2020, 10, 9, 12, 28, 14, 771034))],
-)
-def test_to_datetime(docker_time: str, expected_datetime: datetime):
-    assert to_datetime(docker_time) == expected_datetime
 
 
 @pytest.mark.parametrize(
@@ -198,7 +188,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
         ),
     ],
 )
-async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):
+async def test_parse_line(log_line: str, expected_parsing: Tuple[LogType, str, str]):
     assert await parse_line(log_line) == expected_parsing
 
 
@@ -214,7 +204,7 @@ async def test_managed_container_always_removes_container(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: list[str],
+    command: List[str],
     comp_volume_mount_point: str,
     mocker: MockerFixture,
     exception_type: Exception,

@@ -144,9 +144,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __replaceNewStudyWithNewPlanButton: function(mode = "grid") {
-      if (!osparc.data.Permissions.getInstance().isTester()) {
-        this._resourcesContainer.remove(this.__newStudyBtn);
-      }
       osparc.data.Resources.get("templates")
         .then(templates => {
           // replace if a "TI Planning Tool" template exists

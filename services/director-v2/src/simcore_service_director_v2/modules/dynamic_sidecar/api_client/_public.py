@@ -402,7 +402,7 @@ async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     api_client = get_dynamic_sidecar_client(app)
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
 
     # update service health
     is_healthy = await api_client.is_healthy(service_endpoint)

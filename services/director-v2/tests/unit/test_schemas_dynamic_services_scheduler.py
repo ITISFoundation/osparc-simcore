@@ -60,7 +60,7 @@ def test_nested_compare(fake_scheduler_data: str) -> None:
         to_change.version = "2.0.5"
 
     with assert_copy_has_changes(scheduler_data) as to_change:
-        to_change.dynamic_sidecar.port = 333333
+        to_change.port = 333333
 
     with assert_copy_has_changes(scheduler_data) as to_change:
         to_change.dynamic_sidecar.status.info = "some info"

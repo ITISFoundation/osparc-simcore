@@ -4,22 +4,16 @@ from enum import Enum
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
+from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
+from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    Extra,
-    Field,
-    PositiveInt,
-    constr,
-    parse_obj_as,
-)
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 
 from ..constants import (
@@ -38,6 +32,7 @@ MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 DockerId = constr(max_length=25, regex=r"[A-Za-z0-9]{25}")
 ServiceId = DockerId
 NetworkId = DockerId
+ServiceName = constr(strip_whitespace=True, min_length=2)
 
 logger = logging.getLogger()
 
@@ -142,24 +137,10 @@ class ServiceRemovalState(BaseModel):
 
 
 class DynamicSidecar(BaseModel):
-    run_id: UUID = Field(
-        default_factory=uuid4,
-        description=(
-            "Used to discriminate between dynamic-sidecar docker resources "
-            "generated during different runs. Sometimes artifacts remain in the"
-            "system after an error. This helps avoiding collisions."
-            "For now used by anonymous volumes involved in data sharing"
-        ),
-    )
-
     status: Status = Field(
         Status.create_as_initially_ok(),
         description="status of the service sidecar also with additional information",
     )
-
-    hostname: str = Field(..., description="docker hostname for this service")
-
-    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
 
     is_available: bool = Field(
         False,
@@ -223,6 +204,18 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
+    wait_for_manual_intervention_after_error: bool = Field(
+        False,
+        description=(
+            "Marks the sidecar as untouchable since there was an error and "
+            "important data might be lost. awaits for manual intervention."
+        ),
+    )
+    were_state_and_outputs_saved: bool = Field(
+        False,
+        description="set True if the dy-sidecar saves the state and uploads the outputs",
+    )
+
     # below had already been validated and
     # used only to start the proxy
     dynamic_sidecar_id: Optional[ServiceId] = Field(
@@ -238,34 +231,19 @@ class DynamicSidecar(BaseModel):
         None, description="used for starting the proxy"
     )
 
-    @property
-    def can_save_state(self) -> bool:
-        """
-        Keeps track of the current state of the application, if it was starte successfully
-        the state of the service can be saved when stopping the service
-        """
-        # TODO: implement when adding save status hooks
-        return False
+    docker_node_id: Optional[str] = Field(
+        None,
+        description=(
+            "contains node id of the docker node where all services "
+            "and created containers are started"
+        ),
+    )
 
-    # consider adding containers for healthchecks but this is more difficult and it depends on each service
-
-    @property
-    def endpoint(self) -> AnyHttpUrl:
-        """endpoint where all the services are exposed"""
-        return parse_obj_as(
-            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
-        )
-
-    @property
-    def are_containers_ready(self) -> bool:
-        """returns: True if all containers are in running state"""
-        return all(
-            docker_container_inspect.status == DockerStatus.RUNNING
-            for docker_container_inspect in self.containers_inspect
-        )
+    class Config:
+        validate_assignment = True
 
 
-class DynamicSidecarNames(BaseModel):
+class DynamicSidecarNamesHelper(BaseModel):
     """
     Service naming schema:
     NOTE: name is max 63 characters
@@ -303,7 +281,7 @@ class DynamicSidecarNames(BaseModel):
     )
 
     @classmethod
-    def make(cls, node_uuid: UUID) -> "DynamicSidecarNames":
+    def make(cls, node_uuid: UUID) -> "DynamicSidecarNamesHelper":
         return cls(
             service_name_dynamic_sidecar=assemble_service_name(
                 DYNAMIC_SIDECAR_SERVICE_PREFIX, node_uuid
@@ -317,10 +295,28 @@ class DynamicSidecarNames(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    service_name: constr(strip_whitespace=True, min_length=2) = Field(
+    service_name: ServiceName = Field(
         ...,
         description="Name of the current dynamic-sidecar being observed",
     )
+    run_id: RunID = Field(
+        default_factory=uuid4,
+        description=(
+            "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
+            "subsequent exact same services will have a different run_id)"
+        ),
+    )
+    hostname: str = Field(
+        ..., description="dy-sidecar's service hostname (provided by docker-swarm)"
+    )
+    port: PortInt = Field(8000, description="dynamic-sidecar port")
+
+    @property
+    def endpoint(self) -> AnyHttpUrl:
+        """endpoint where all the services are exposed"""
+        return parse_obj_as(
+            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        )
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
@@ -339,7 +335,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="required for Traefik to correctly route requests to the spawned container",
     )
 
-    service_port: PositiveInt = Field(
+    service_port: PortInt = Field(
         TEMPORARY_PORT_NUMBER,
         description=(
             "port where the service is exposed defined by the service; "
@@ -352,22 +348,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ..., description="service resources used to enforce limits"
     )
 
-    request_dns: Optional[str] = Field(
-        None, description="used when configuring the CORS options on the proxy"
+    request_dns: str = Field(
+        ..., description="used when configuring the CORS options on the proxy"
     )
-    request_scheme: Optional[str] = Field(
-        None, description="used when configuring the CORS options on the proxy"
+    request_scheme: str = Field(
+        ..., description="used when configuring the CORS options on the proxy"
     )
-    proxy_service_name: Optional[str] = Field(
-        None, description="service name given to the proxy"
-    )
-    docker_node_id: Optional[str] = Field(
-        None,
-        description=(
-            "contains node id of the docker node where all services "
-            "and created containers are started"
-        ),
-    )
+    proxy_service_name: str = Field(None, description="service name given to the proxy")
 
     @classmethod
     def from_http_request(
@@ -375,14 +362,17 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         cls,
         service: "DynamicServiceCreate",
         simcore_service_labels: SimcoreServiceLabels,
-        port: Optional[int],
-        request_dns: Optional[str] = None,
-        request_scheme: Optional[str] = None,
+        port: PortInt,
+        request_dns: str,
+        request_scheme: str,
+        run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
-        dynamic_sidecar_names = DynamicSidecarNames.make(service.node_uuid)
+        names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
-            service_name=dynamic_sidecar_names.service_name_dynamic_sidecar,
+            service_name=names_helper.service_name_dynamic_sidecar,
+            hostname=names_helper.service_name_dynamic_sidecar,
+            port=port,
             node_uuid=service.node_uuid,
             project_id=service.project_id,
             user_id=service.user_id,
@@ -393,16 +383,15 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
             restart_policy=simcore_service_labels.restart_policy,
-            dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
-            simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
+            dynamic_sidecar_network_name=names_helper.dynamic_sidecar_network_name,
+            simcore_traefik_zone=names_helper.simcore_traefik_zone,
             request_dns=request_dns,
             request_scheme=request_scheme,
-            proxy_service_name=dynamic_sidecar_names.proxy_service_name,
-            dynamic_sidecar=dict(
-                hostname=dynamic_sidecar_names.service_name_dynamic_sidecar,
-                port=port,
-            ),
+            proxy_service_name=names_helper.proxy_service_name,
+            dynamic_sidecar={},
         )
+        if run_id:
+            obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)
 
     @classmethod

@@ -11,7 +11,7 @@ from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
 from .._namespace import get_compose_namespace
-from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
+from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 from .settings import update_service_params_from_settings
 
@@ -46,7 +46,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
-        "DY_SIDECAR_RUN_ID": f"{scheduler_data.dynamic_sidecar.run_id}",
+        "DY_SIDECAR_RUN_ID": f"{scheduler_data.run_id}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
@@ -97,6 +97,9 @@ def get_dynamic_sidecar_spec(
     The dynamic-sidecar is responsible for managing the lifecycle
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
+
+    returns: the compose the request body for service creation
+    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
@@ -107,7 +110,14 @@ def get_dynamic_sidecar_spec(
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
             "Type": "bind",
-        }
+        },
+        DynamicSidecarVolumesPathsResolver.mount_shared_store(
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            node_uuid=scheduler_data.node_uuid,
+            run_id=scheduler_data.run_id,
+            project_id=scheduler_data.project_id,
+            user_id=scheduler_data.user_id,
+        ),
     ]
 
     # Docker does not allow mounting of subfolders from volumes as the following:
@@ -127,24 +137,25 @@ def get_dynamic_sidecar_spec(
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                compose_namespace=compose_namespace,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
-                run_id=scheduler_data.dynamic_sidecar.run_id,
+                run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
         # for now only enable this with dev features enabled
-        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                    compose_namespace=compose_namespace,
                     path=path_to_mount,
-                    project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.dynamic_sidecar.run_id,
+                    run_id=scheduler_data.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
                     r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
@@ -152,10 +163,11 @@ def get_dynamic_sidecar_spec(
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
-                    compose_namespace=compose_namespace,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.dynamic_sidecar.run_id,
+                    run_id=scheduler_data.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
                 )
             )
 
