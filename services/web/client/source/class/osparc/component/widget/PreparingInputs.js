@@ -21,6 +21,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   construct: function(monitoredNodes = []) {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "AppMode_PreparingInputsView");
+
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const text = this.tr("In order to move to this step, we need to prepare some inputs for you.<br>This might take a while, so enjoy checking the logs down here:");
