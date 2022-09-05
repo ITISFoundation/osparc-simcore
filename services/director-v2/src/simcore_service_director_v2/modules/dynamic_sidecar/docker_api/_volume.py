@@ -115,15 +115,8 @@ async def remove_volumes_from_node(
                         task_state == "complete"
                         and task_status["ContainerStatus"]["ExitCode"] == 0
                     ):
-                        # recover logs from command for a simpler debugging
-                        container_id = task_status["ContainerStatus"]["ContainerID"]
-                        container = await client.containers.get(container_id)
-                        container_logs = await container.log(stdout=True, stderr=True)
                         log.error(
-                            "Service %s, %s output: %s",
-                            service_id,
-                            f"{task_status=}",
-                            "\n".join(container_logs),
+                            "Service %s status: %s", service_id, f"{task_status=}"
                         )
                         # NOTE: above implies the volumes will remain in the system and
                         # have to be manually removed.
