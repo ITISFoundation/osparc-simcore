@@ -18,7 +18,7 @@
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyId, nodeId) {
+  construct: function (studyId, nodeId) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -76,7 +76,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   },
 
   statics: {
-    openStudy: function(studyId) {
+    openStudy: function (studyId) {
       const params = {
         url: {
           "studyId": studyId
@@ -88,12 +88,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   },
 
   members: {
-    __initLoadingPage: function() {
+    __initLoadingPage: function () {
       const loadingPage = new osparc.ui.message.Loading("Starting viewer");
       this.setLoadingPage(loadingPage);
     },
 
-    __initIFrame: function() {
+    __initIFrame: function () {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe().set({
@@ -102,7 +102,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this.setIFrame(iframe);
     },
 
-    __nodeState: function() {
+    __nodeState: function () {
       const params = {
         url: {
           "studyId": this.getStudyId(),
@@ -114,7 +114,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         .catch(() => osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
     },
 
-    __onNodeState: function(data) {
+    __onNodeState: function (data) {
       const serviceState = data["service_state"];
       if (serviceState) {
         this.getLoadingPage().setHeader(serviceState + " viewer");
@@ -165,7 +165,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       }
     },
 
-    __waitForServiceReady: function(srvUrl) {
+    __waitForServiceReady: function (srvUrl) {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
@@ -178,15 +178,15 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       pingRequest.send();
     },
 
-    __serviceReadyIn: function(srvUrl) {
+    __serviceReadyIn: function (srvUrl) {
       this.setServiceUrl(srvUrl);
       this.__retrieveInputs();
     },
 
-    __retrieveInputs: function() {
+    __retrieveInputs: function () {
       const srvUrl = this.getServiceUrl();
       if (srvUrl) {
-        const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudyId(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
+        const urlRetrieve = osparc.utils.Utils.computeServiceRetrieveUrl(this.getStudyId(), this.getNodeId());
         const updReq = new qx.io.request.Xhr();
         const reqData = {
           "port_keys": []
@@ -204,7 +204,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       }
     },
 
-    __iFrameChanged: function() {
+    __iFrameChanged: function () {
       this._removeAll();
 
       const loadingPage = this.getLoadingPage();
@@ -215,7 +215,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         iFrameView = loadingPage;
       } else {
         this.getLayoutParent().set({
-          zIndex: iFrame.getZIndex()-1
+          zIndex: iFrame.getZIndex() - 1
         });
         iFrameView = iFrame;
       }

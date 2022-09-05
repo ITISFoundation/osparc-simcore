@@ -1015,7 +1015,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         const srvUrl = this.getServiceUrl();
         if (srvUrl) {
-          const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudy().getUuid(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
+          const urlRetrieve = osparc.utils.Utils.computeServiceRetrieveUrl(this.getStudy().getUuid(), this.getNodeId());
           const updReq = new qx.io.request.Xhr();
           const reqData = {
             "port_keys": portKey ? [portKey] : []

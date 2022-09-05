@@ -268,6 +268,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     Sets up the environment on the host required by the service.
     - restores service state
+    - pulls outputs
     """
 
     @classmethod

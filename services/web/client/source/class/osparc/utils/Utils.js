@@ -128,12 +128,7 @@ qx.Class.define("osparc.utils.Utils", {
       return data;
     },
 
-    computeServiceRetrieveUrl: function(srvUrl) {
-      const urlRetrieve = srvUrl + "/retrieve";
-      return urlRetrieve.replace("//retrieve", "/retrieve");
-    },
-
-    computeServiceV2RetrieveUrl: function(studyId, nodeId) {
+    computeServiceRetrieveUrl: function(studyId, nodeId) {
       const urlBase = window.location.protocol + "//" + window.location.host + "/v0";
       return urlBase + "/projects/" + studyId + "/nodes/" + nodeId + ":retrieve";
     },
