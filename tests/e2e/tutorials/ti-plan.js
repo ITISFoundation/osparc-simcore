@@ -40,13 +40,38 @@ async function runTutorial() {
     // wait for the three services
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
-    // skipping the second one wchich is the optimizer
+
+    // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
       [workbenchData["nodeIds"][0], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3]],
       startTimeout,
       false
     );
+
+
+    // Make Electrode Selector selection
+    const iframeHandles = await tutorial.getIframe();
+    let iframes = [];
+    for (let i = 0; i < iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes.push(frame);
+    }
+    const electrodeSelectorIframe = iframes.find(iframe => iframe._url.includes(workbenchData["nodeIds"][0]));
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Start"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_FPZ"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Stop"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1-_Start"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_FP2"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1-_Stop"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2+_Start"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_O1"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2+_Stop"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2-_Start"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_OZ"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2-_Stop"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="FinishSetUp"]');
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
