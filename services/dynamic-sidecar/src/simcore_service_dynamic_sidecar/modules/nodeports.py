@@ -114,7 +114,9 @@ async def upload_outputs(
 
                 # generic case let's create an archive
                 # only the filtered out files will be zipped
-                tmp_folder = Path(await stack.enter_async_context(AioTemporaryDirectory()))
+                tmp_folder = Path(
+                    await stack.enter_async_context(AioTemporaryDirectory())
+                )
                 tmp_file = tmp_folder / f"{src_folder.stem}.zip"
 
                 # when having multiple directories it is important to
