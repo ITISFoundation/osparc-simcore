@@ -13,7 +13,7 @@ install() {
   pushd services/web/server
   make install-ci
   popd
-  .venv/bin/pip list -v
+  .venv/bin/pip list --verbose
 }
 
 # isolated = these tests are (IMO) real unit tests, they do not need any dependencies and were already in the root test/unit folder before
@@ -28,6 +28,7 @@ test_isolated() {
   source .venv/bin/activate
   pushd services/web/server
   make test-ci-unit test-subfolder=isolated pytest-parameters="--numprocesses=auto"
+  popd
 }
 
 test_with_db() {
@@ -36,6 +37,7 @@ test_with_db() {
   pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
   make test-ci-unit test-subfolder="with_dbs/$1"
+  popd
 }
 
 # Check if the function exists (bash specific)
