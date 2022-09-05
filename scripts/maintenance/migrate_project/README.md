@@ -7,6 +7,10 @@ It is used to migrate a user's project. Currently, this does not work for hidden
 It uses low-level direct access to pgSQL and S3. Data sync is done using `rclone`. Therefore, this script might become outdated upon database changes in osparc-simcore.
 
 
+# TIP - What to do before you run the script:
+1. Make sure the storage microservice of simcore will not garbage-collect multipart-upload-links while this script is running. For example, pause the storage microservice or set the garbage colelction interval very high.
+2. Create a valid `cfg.json`. To get a template for this, run `make cfg.template.json`
+
 # IMPORTANT PITFALLS:
 - Currently, this does not work for hidden projects, generated via the api.
 - No postgres database version migration is performed atm. This migration only works for identical source and target RDBs.
@@ -28,15 +32,15 @@ make build
 Create a configuration file
 
 ```
-make create-empty-config-file
+make cfg.template.json
 ```
 
-Fill up the `cfg.json` with data. Also refer to `src/models.py` on how to fill up the file.
+Fill up the file `cfg.json` with data. Also refer to `src/models.py` on how to fill up the file.
 
 Finally start the process
 
 
-**NOTE: due to bug with the storage service, you might want to scale storage to 0 when running this script.** (You will get errors with multipart uploads if since storage will try to remove the files If this is no longer the case please remove this message.)
+**NOTE: Due to simcore-storage service actively garbage-colelting dangling multipart upload links, you might want to scale storage to 0 when running this script.** (You will get errors with multipart uploads if since storage will try to remove the files If this is no longer the case please remove this message.)
 ```
 make migrate
 ```
