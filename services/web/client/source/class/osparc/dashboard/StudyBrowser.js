@@ -369,21 +369,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newStudyBtnClicked: function() {
       this.__newStudyBtn.setValue(false);
       const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
-      let title = minStudyData.name;
-      const existingTitles = this.__studies.map(study => study.name);
-      if (existingTitles.includes(title)) {
-        let cont = 1;
-        while (existingTitles.includes(`${title} (${cont})`)) {
-          cont++;
-        }
-        title += ` (${cont})`;
-      }
+      const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this.__studies);
       minStudyData["name"] = title;
       minStudyData["description"] = "";
       this.__createStudy(minStudyData, null);
     },
 
     __newPlanBtnClicked: function(templateData) {
+      const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this.__studies);
+      templateData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
       osparc.utils.Study.createStudyFromTemplate(templateData)
         .then(studyId => {
