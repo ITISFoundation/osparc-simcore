@@ -159,9 +159,6 @@ async def dispatch_update_for_directory(
     await upload_outputs(directory_path, [], io_log_redirect_cb=io_log_redirect_cb)
 
 
-# INPUTS section
-
-
 def _is_zip_file(file_path: Path) -> bool:
     mime_type = magic.from_file(file_path, mime=True)
     return f"{mime_type}" == "application/zip"
