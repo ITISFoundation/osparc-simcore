@@ -168,7 +168,7 @@ async def register_phone(request: web.Request):
 
         if await db.get_user({"phone": phone}):
             raise web.HTTPUnauthorized(
-                reason="Invalid phone number: one phone number per account allowed",
+                reason="Cannot register this phone number because it is already assigned to an active user",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -189,15 +189,19 @@ async def register_phone(request: web.Request):
         )
         return response
 
-    except Exception as e:
+    except web.HTTPException:
+        raise
+
+    except Exception as e:  # Unexpected errors -> 503
         error_code = create_error_code(e)
         log.exception(
             "Phone registration unexpectedly failed [%s]",
             f"{error_code}",
             extra={"error_code": error_code},
         )
+
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently cannot register phone, please try again later ({error_code})",
+            reason=f"Currently our system cannot register phones ({error_code})",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from e
 
