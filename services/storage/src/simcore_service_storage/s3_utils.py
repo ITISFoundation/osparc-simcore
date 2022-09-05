@@ -1,11 +1,19 @@
 import functools
 import logging
-from typing import Final
+from dataclasses import dataclass
+from typing import Final, Optional
 
 from botocore import exceptions as botocore_exc
 from pydantic import ByteSize, parse_obj_as
+from servicelib.aiohttp.long_running_tasks.server import (
+    ProgressMessage,
+    ProgressPercent,
+    TaskProgress,
+)
 
 from .exceptions import S3AccessError, S3BucketInvalidError, S3KeyNotFoundError
+
+logger = logging.getLogger(__name__)
 
 # this is artifically defined, if possible we keep a maximum number of requests for parallel
 # uploading. If that is not possible then we create as many upload part as the max part size allows
@@ -76,3 +84,38 @@ def s3_exception_handler(log: logging.Logger):
         return wrapper
 
     return decorator
+
+
+def update_task_progress(
+    task_progress: Optional[TaskProgress],
+    message: Optional[ProgressMessage] = None,
+    progress: Optional[ProgressPercent] = None,
+) -> None:
+    logger.debug("%s [%s]", message or "", progress or "n/a")
+    if task_progress:
+        task_progress.update(message=message, percent=progress)
+
+
+@dataclass
+class S3TransferDataCB:
+    task_progress: Optional[TaskProgress]
+    total_bytes_to_transfer: ByteSize
+    task_progress_message_prefix: str = ""
+    _total_bytes_copied: int = 0
+
+    def __post_init__(self):
+        self.copy_transfer_cb(0)
+
+    def finalize_transfer(self):
+        self.copy_transfer_cb(self.total_bytes_to_transfer - self._total_bytes_copied)
+
+    def copy_transfer_cb(self, copied_bytes: int):
+        self._total_bytes_copied += copied_bytes
+        if self.total_bytes_to_transfer != 0:
+            update_task_progress(
+                self.task_progress,
+                f"{self.task_progress_message_prefix} - "
+                f"{parse_obj_as(ByteSize,self._total_bytes_copied).human_readable()}"
+                f"/{self.total_bytes_to_transfer.human_readable()}]",
+                self._total_bytes_copied / self.total_bytes_to_transfer,
+            )

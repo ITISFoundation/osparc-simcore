@@ -19,9 +19,11 @@ from .services import PROPERTY_KEY_RE
 NodeID = UUID
 
 
-class NodeIDStr(ConstrainedStr):
+class UUIDStr(ConstrainedStr):
     regex: Optional[Pattern[str]] = re.compile(UUID_RE)
 
+
+NodeIDStr = UUIDStr
 
 LocationID = int
 LocationName = str

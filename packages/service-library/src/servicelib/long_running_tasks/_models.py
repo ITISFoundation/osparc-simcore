@@ -4,7 +4,14 @@ from asyncio import Task
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, confloat, validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveFloat,
+    confloat,
+    validate_arguments,
+    validator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +37,7 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = Field(default="")
     percent: ProgressPercent = Field(default=0.0)
 
+    @validate_arguments
     def update(
         self,
         *,
@@ -49,6 +57,11 @@ class TaskProgress(BaseModel):
     @classmethod
     def create(cls) -> "TaskProgress":
         return cls.parse_obj(dict(message="", percent=0.0))
+
+    @validator("percent")
+    @classmethod
+    def round_value_to_3_digit(cls, v):
+        return round(v, 3)
 
 
 class TrackedTask(BaseModel):

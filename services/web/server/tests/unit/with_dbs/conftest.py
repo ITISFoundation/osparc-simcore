@@ -33,6 +33,8 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.long_running_tasks.client import LRTask
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
@@ -205,8 +207,21 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     Patched functions are exposed within projects but call storage subsystem
     """
 
-    async def _mock_copy_data_from_project(*args):
-        return args[2]
+    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+        print(
+            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"with {len(nodes_map)} s3 objects by user={user_id}"
+        )
+
+        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+
+        async def _mock_result():
+            return None
+
+        yield LRTask(
+            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            _result=_mock_result(),
+        )
 
     mock = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
