@@ -1,7 +1,8 @@
 import jsondiff
 from aiohttp import web
+from simcore_postgres_database.models.users import UserRole
 
-from ..security_api import UserRole, get_access_model
+from ..security_api import get_access_model
 
 
 async def can_update_node_inputs(context):
