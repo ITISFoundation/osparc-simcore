@@ -15,10 +15,11 @@ import docker
 import pytest
 import yaml
 from docker.errors import APIError
-from tenacity import Retrying
+from tenacity import Retrying, TryAgain
 from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_fixed, wait_random_exponential
 
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.typing_env import EnvVarsDict
@@ -87,6 +88,7 @@ def assert_service_is_running(service):
         f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, "
         f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
+    print(f"{service_name=} is up and running")
 
 
 def _fetch_and_print_services(
@@ -100,6 +102,7 @@ def _fetch_and_print_services(
         service = {}
         with suppress(Exception):
             # trims dicts (more info in dumps)
+            assert service_obj.attrs
             service = copy_from_dict(
                 service_obj.attrs,
                 include={
@@ -212,52 +215,57 @@ def docker_stack(
             lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
         )
     )
-    print(
-        "WARNING: migration service detected before updating stack, it will be force-updated"
-    )
+    for migration_service in filter(
+        lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+    ):
+        print(
+            "WARNING: migration service detected before updating stack, it will be force-updated"
+        )
+        migration_service.force_update()  # type: ignore
+        print(f"forced updated {migration_service.name}.")  # type: ignore
 
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
-        try:
-            subprocess.run(
-                [
-                    "docker",
-                    "stack",
-                    "deploy",
-                    "--with-registry-auth",
-                    "--prune",
-                    "--compose-file",
-                    f"{compose_file.name}",
-                    f"{stack_name}",
-                ],
-                check=True,
-                cwd=compose_file.parent,
-                capture_output=True,
-            )
-        except subprocess.CalledProcessError as err:
-            print(
-                "docker_stack failed",
-                f"{' '.join(err.cmd)}",
-                f"returncode={err.returncode}",
-                f"stdout={err.stdout}",
-                f"stderr={err.stderr}",
-                "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
-            )
-            raise
+        for attempt in Retrying(
+            stop=stop_after_delay(60),
+            wait=wait_random_exponential(max=5),
+            retry=retry_if_exception_type(TryAgain),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    subprocess.run(
+                        [
+                            "docker",
+                            "stack",
+                            "deploy",
+                            "--with-registry-auth",
+                            "--compose-file",
+                            f"{compose_file.name}",
+                            f"{stack_name}",
+                        ],
+                        check=True,
+                        cwd=compose_file.parent,
+                        capture_output=True,
+                    )
+                except subprocess.CalledProcessError as err:
+                    if "update out of sequence" in err.stderr:
+                        raise TryAgain from err
+                    print(
+                        "docker_stack failed",
+                        f"{' '.join(err.cmd)}",
+                        f"returncode={err.returncode}",
+                        f"stdout={err.stdout}",
+                        f"stderr={err.stderr}",
+                        "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
+                    )
+                    raise
 
         stacks_deployed[key] = {
             "name": stack_name,
             "compose": yaml.safe_load(compose_file.read_text()),
         }
-
-    if migration_service_was_running_before:
-        print("force updating migration service...")
-        for migration_service in filter(
-            lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
-        ):
-            migration_service.force_update()  # type: ignore
-        print("force updating migration service completed.")
 
     # All SELECTED services ready
     # - notice that the timeout is set for all services in both stacks
