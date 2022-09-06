@@ -19,7 +19,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
+from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
@@ -816,7 +816,7 @@ class ProjectDBAPI:
         return result
 
     async def list_all_projects_by_uuid_for_user(self, user_id: int) -> list[str]:
-        result = deque()
+        result: deque[str] = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
@@ -840,13 +840,13 @@ class ProjectDBAPI:
             updated_values = _convert_to_db_names(project_data)
             if hidden is not None:
                 updated_values["hidden"] = hidden
-            result = await conn.execute(
+            result: ResultProxy = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**updated_values)
                 .where(projects.c.uuid == project_uuid)
             )
-            return result.rowcount == 1
+            return int(result.rowcount) == 1
 
     async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
         async with self.engine.acquire() as conn:
