@@ -230,7 +230,7 @@ def current_user(registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable,
+    project: Callable[..., ProjectAtDB],
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
 ) -> ProjectAtDB:
@@ -366,15 +366,10 @@ async def cleanup_services_and_networks(
 
         project_id = f"{current_study.uuid}"
 
-        scheduler_interval = (
-            initialized_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
-        )
         # sleep enough to ensure the observation cycle properly stopped the service
-        await asyncio.sleep(2 * scheduler_interval)
         await ensure_network_cleanup(docker_client, project_id)
 
         # remove pending volumes for service
-        # NOTE: might require to sleep a bit before doing it
         for node_uuid in workbench_dynamic_services:
             await ensure_volume_cleanup(docker_client, node_uuid)
 
@@ -414,9 +409,6 @@ async def projects_networks_db(
             constraint=projects_networks.primary_key, set_=row_data
         )
         await conn.execute(upsert_snapshot)
-
-
-# UTILS
 
 
 async def _get_mapped_nodeports_values(
@@ -799,9 +791,6 @@ async def _assert_retrieve_completed(
                 assert (
                     _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
-
-
-# TESTS
 
 
 async def test_nodeports_integration(
