@@ -18,7 +18,7 @@ def main(config: Path = typer.Option(..., exists=True)):
     typer.echo(f"Detected settings:\n{settings.json(indent=2)}\n")
 
     r_clone_config_path = assemble_config_file(
-        # souce
+        # source
         source_access_key=settings.source.s3.access_key,
         source_secret_key=settings.source.s3.secret_key,
         source_endpoint=settings.source.s3.endpoint,
