@@ -122,7 +122,10 @@ async def download_link_to_file(
                     with tqdm_logging_redirect(
                         desc=f"downloading {url.path} --> {file_path.name}\n",
                         total=file_size,
-                        **_TQDM_FILE_OPTIONS,
+                        **(
+                            _TQDM_FILE_OPTIONS
+                            | dict(miniters=(file_size / 100) if file_size else 1)
+                        ),
                     ) as pbar:
                         await _file_chunk_writer(
                             file_path, response, pbar, io_log_redirect_cb
@@ -223,7 +226,9 @@ async def upload_file_to_presigned_links(
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm_logging_redirect(
-        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
+        desc=f"uploading {file_name}\n",
+        total=file_size,
+        **(_TQDM_FILE_OPTIONS | dict(miniters=(file_size / 100))),
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (

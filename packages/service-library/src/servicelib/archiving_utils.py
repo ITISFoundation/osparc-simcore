@@ -117,7 +117,9 @@ def _zipfile_single_file_extract_worker(
         with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
             "wb"
         ) as dest_fp, tqdm_logging_redirect(
-            total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
+            total=file_in_archive.file_size,
+            desc=desc,
+            **(_TQDM_FILE_OPTIONS | dict(miniters=(file_in_archive.file_size / 100))),
         ) as pbar:
             while chunk := zip_fp.read(_CHUNK_SIZE):
                 dest_fp.write(chunk)
@@ -262,7 +264,9 @@ def _add_to_archive(
     )
     desc = f"compressing {dir_to_compress} -> {destination}"
     with tqdm_logging_redirect(
-        desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
+        desc=f"{desc}\n",
+        total=folder_size_bytes,
+        **(_TQDM_FILE_OPTIONS | dict(miniters=(folder_size_bytes / 100))),
     ) as progress_bar, _progress_enabled_zip_write_handler(
         zipfile.ZipFile(destination, "w", compression=compression), progress_bar
     ) as zip_file_handler:
