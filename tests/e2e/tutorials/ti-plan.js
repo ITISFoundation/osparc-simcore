@@ -63,11 +63,11 @@ async function runTutorial() {
       const grp = selection[i];
       await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grp[0]}_Start"]`);
       await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${grp[1]}"]`);
-      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grp[0]}_Stop"]`);
     }
+    await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="FinishSetUp"]`);
 
     // Run optimizer
-    await tutorial.waitAndClick("AppMode_PreviousBtn");
+    await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.waitFor(5000, "Running Optimizer");
     await tutorial.waitForStudyDone(studyId, 120000);
   }
