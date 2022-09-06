@@ -24,6 +24,10 @@ def test_twilio_settings_within_envdevel(
                 "TWILIO_ACCOUNT_SID": "fake-account",
                 "TWILIO_AUTH_TOKEN": "fake-token",
                 "TWILIO_MESSAGING_SID": "x" * 34,
+                "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": "[41, 34, 55]",
             },
         )
-        TwilioSettings.create_from_envs()
+        settings = TwilioSettings.create_from_envs()
+
+        assert settings.is_alphanumeric_supported("+41 456 789 156")
+        assert not settings.is_alphanumeric_supported(" +1 123456 789 456 ")
