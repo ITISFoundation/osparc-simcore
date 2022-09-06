@@ -78,8 +78,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
 class ProjectPathParams(BaseModel):
@@ -248,7 +248,7 @@ async def _create_projects(
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    new_project = {}
+    new_project: dict[str, Any] = {}
     copy_file_coro = None
     try:
         task_progress.update(message="creating new study...")
