@@ -207,10 +207,14 @@ def docker_stack(
 
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
-    for migration_service in filter(
-        lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
-    ):
-        migration_service.force_update()  # type: ignore
+    migration_service_was_running_before = any(
+        filter(
+            lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+        )
+    )
+    print(
+        "WARNING: migration service detected before updating stack, it will be force-updated"
+    )
 
     # make up-version
     stacks_deployed: dict[str, dict] = {}
@@ -222,6 +226,7 @@ def docker_stack(
                     "stack",
                     "deploy",
                     "--with-registry-auth",
+                    "--prune",
                     "--compose-file",
                     f"{compose_file.name}",
                     f"{stack_name}",
@@ -245,6 +250,14 @@ def docker_stack(
             "name": stack_name,
             "compose": yaml.safe_load(compose_file.read_text()),
         }
+
+    if migration_service_was_running_before:
+        print("force updating migration service...")
+        for migration_service in filter(
+            lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+        ):
+            migration_service.force_update()  # type: ignore
+        print("force updating migration service completed.")
 
     # All SELECTED services ready
     # - notice that the timeout is set for all services in both stacks
