@@ -59,6 +59,7 @@ async function runTutorial() {
     }
     const electrodeSelectorIframe = iframes.find(iframe => iframe._url.includes(workbenchData["nodeIds"][0]));
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Start"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_FPZ"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Stop"]');
