@@ -639,7 +639,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/dask-task-models-library/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -868,7 +868,7 @@ jobs:
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
           ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/postgres-database/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -918,7 +918,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/service-integration/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1068,7 +1068,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/models-library/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1186,7 +1186,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1252,7 +1252,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1318,7 +1318,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1387,7 +1387,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
@@ -1455,7 +1455,7 @@ jobs:
         run: |
           curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
       - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
