@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, AnyStr, Match, Optional, TypedDict, Union
 from uuid import UUID, uuid1, uuid5
 
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey
 from pydantic import parse_obj_as
 from servicelib.decorators import safe_return
@@ -28,12 +29,15 @@ class NodeDict(TypedDict, total=False):
     outputs: Optional[dict[str, Any]]
 
 
+NodesMap = dict[NodeIDStr, NodeIDStr]
+
+
 def clone_project_document(
-    project: dict,
+    project: ProjectDict,
     *,
     forced_copy_project_id: Optional[UUID] = None,
     clean_output_data: bool = False,
-) -> tuple[dict, dict]:
+) -> tuple[ProjectDict, NodesMap]:
     project_copy = deepcopy(project)
 
     # Update project id
@@ -49,10 +53,10 @@ def clone_project_document(
     project_copy["uuid"] = str(project_copy_uuid)
 
     # Workbench nodes shall be unique within the project context
-    def _create_new_node_uuid(old_uuid):
-        return str(uuid5(project_copy_uuid, str(old_uuid)))
+    def _create_new_node_uuid(old_uuid) -> NodeIDStr:
+        return NodeIDStr(uuid5(project_copy_uuid, str(old_uuid)))
 
-    nodes_map = {}
+    nodes_map: NodesMap = {}
     for node_uuid in project.get("workbench", {}).keys():
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
@@ -65,7 +69,7 @@ def clone_project_document(
                 parts = node.split("/")
                 node = "/".join(_replace_uuids(part) for part in parts)
             else:
-                node = project_map.get(node, nodes_map.get(node, node))
+                node = project_map.get(node, nodes_map.get(NodeIDStr(node), node))
         elif isinstance(node, list):
             node = [_replace_uuids(item) for item in node]
         elif isinstance(node, dict):

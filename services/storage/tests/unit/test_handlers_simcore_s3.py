@@ -13,7 +13,7 @@ from typing import Any, Awaitable, Callable, Optional
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
+from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
 from faker import Faker
@@ -26,6 +26,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects
@@ -74,6 +75,33 @@ async def test_simcore_s3_access_returns_default(client: TestClient):
     assert received_settings
 
 
+async def _request_copy_folders(
+    client: TestClient,
+    user_id: UserID,
+    source_project: dict[str, Any],
+    dst_project: dict[str, Any],
+    nodes_map: dict[NodeID, NodeID],
+) -> dict[str, Any]:
+    assert client.app
+    url = client.make_url(
+        f"{(client.app.router['copy_folders_from_project'].url_for().with_query(user_id=user_id))}"
+    )
+    async for lr_task in long_running_task_request(
+        client.session,
+        url,
+        json=jsonable_encoder(
+            FoldersBody(
+                source=source_project, destination=dst_project, nodes_map=nodes_map
+            )
+        ),
+    ):
+        print(f"<-- current state is {lr_task.progress=}")
+        if lr_task.done():
+            return await lr_task.result()
+
+    assert False, "Copy folders failed!"
+
+
 async def test_copy_folders_from_non_existing_project(
     client: TestClient,
     user_id: UserID,
@@ -81,11 +109,7 @@ async def test_copy_folders_from_non_existing_project(
     faker: Faker,
 ):
     assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=user_id)
-    )
+
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
     incorrect_src_project["uuid"] = faker.uuid4()
@@ -93,29 +117,29 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    response = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(
-                source=incorrect_src_project, destination=dst_project, nodes_map={}
-            )
-        ),
-    )
-    data, error = await assert_status(response, web.HTTPNotFound)
-    assert error
-    assert not data
+    with pytest.raises(
+        ClientResponseError, match=f"{incorrect_src_project['uuid']} was not found"
+    ) as exc_info:
+        await _request_copy_folders(
+            client,
+            user_id,
+            incorrect_src_project,
+            dst_project,
+            nodes_map={},
+        )
+    assert exc_info.value.status == web.HTTPNotFound.status_code
 
-    response = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(
-                source=src_project, destination=incorrect_dst_project, nodes_map={}
-            )
-        ),
-    )
-    data, error = await assert_status(response, web.HTTPNotFound)
-    assert error
-    assert not data
+    with pytest.raises(
+        ClientResponseError, match=f"{incorrect_dst_project['uuid']} was not found"
+    ) as exc_info:
+        await _request_copy_folders(
+            client,
+            user_id,
+            src_project,
+            incorrect_dst_project,
+            nodes_map={},
+        )
+    assert exc_info.value.status == web.HTTPNotFound.status_code
 
 
 async def test_copy_folders_from_empty_project(
@@ -125,25 +149,17 @@ async def test_copy_folders_from_empty_project(
     aiopg_engine: Engine,
     storage_s3_client: StorageS3Client,
 ):
-    assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=user_id)
-    )
-
     # we will copy from src to dst
     src_project = await create_project()
     dst_project = await create_project()
 
-    response = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(source=src_project, destination=dst_project, nodes_map={})
-        ),
+    data = await _request_copy_folders(
+        client,
+        user_id,
+        src_project,
+        dst_project,
+        nodes_map={},
     )
-    data, error = await assert_status(response, web.HTTPCreated)
-    assert not error
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
     async with aiopg_engine.acquire() as conn:
@@ -235,12 +251,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
     ],
 ):
-    assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=user_id)
-    )
     # 1. create a src project with 1 large file
     src_project, src_projects_list = await random_project_with_files(
         num_nodes=1, file_sizes=(parse_obj_as(ByteSize, "210Mib"),)
@@ -249,18 +259,13 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
     # copy the project files
-    response = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(
-                source=src_project,
-                destination=dst_project,
-                nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-            )
-        ),
+    data = await _request_copy_folders(
+        client,
+        user_id,
+        src_project,
+        dst_project,
+        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    data, error = await assert_status(response, web.HTTPCreated)
-    assert not error
     assert data == jsonable_encoder(
         await _get_updated_project(aiopg_engine, dst_project["uuid"])
     )
@@ -292,31 +297,19 @@ async def test_copy_folders_from_valid_project(
         ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
     ],
 ):
-    assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=user_id)
-    )
-
     # 1. create a src project with some files
     src_project, src_projects_list = await random_project_with_files()
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
     # copy the project files
-    response = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(
-                source=src_project,
-                destination=dst_project,
-                nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-            )
-        ),
+    data = await _request_copy_folders(
+        client,
+        user_id,
+        src_project,
+        dst_project,
+        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    data, error = await assert_status(response, web.HTTPCreated)
-    assert not error
     assert data == jsonable_encoder(
         await _get_updated_project(aiopg_engine, dst_project["uuid"])
     )
@@ -359,24 +352,13 @@ async def _create_and_delete_folders_from_project(
     await project_db_creator(**destination_project)
 
     # creating a copy
-    assert client.app
-    url = (
-        client.app.router["copy_folders_from_project"]
-        .url_for()
-        .with_query(user_id=f"{user_id}")
+    data = await _request_copy_folders(
+        client,
+        user_id,
+        project,
+        destination_project,
+        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    resp = await client.post(
-        f"{url}",
-        json=jsonable_encoder(
-            FoldersBody(
-                source=project,
-                destination=destination_project,
-                nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-            )
-        ),
-    )
-
-    data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
     for key in data:
@@ -391,6 +373,7 @@ async def _create_and_delete_folders_from_project(
     project_id = data["uuid"]
 
     # list data to check all is here
+    assert client.app
     if check_list_files:
         url = (
             client.app.router["get_files_metadata"]
