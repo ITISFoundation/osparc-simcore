@@ -694,7 +694,9 @@ async def upload_file_with_aioboto3_managed_transfer(
         file_name = faker.file_name()
         file = create_file_of_size(file_size, file_name)
         file_id = create_simcore_file_id(uuid4(), uuid4(), file_name)
-        response = await storage_s3_client.upload_file(storage_s3_bucket, file, file_id)
+        response = await storage_s3_client.upload_file(
+            storage_s3_bucket, file, file_id, bytes_transfered_cb=None
+        )
         # there is no response from aioboto3...
         assert not response
         # check the object is uploaded
@@ -743,7 +745,7 @@ async def test_upload_file_invalid_raises(
     file_id = create_simcore_file_id(uuid4(), uuid4(), file.name)
     with pytest.raises(S3BucketInvalidError):
         await storage_s3_client.upload_file(
-            S3BucketName("pytestinvalidbucket"), file, file_id
+            S3BucketName("pytestinvalidbucket"), file, file_id, bytes_transfered_cb=None
         )
 
 
@@ -767,7 +769,9 @@ async def test_copy_file(
     )
     dst_file_name = faker.file_name()
     dst_file_uuid = create_simcore_file_id(uuid4(), uuid4(), dst_file_name)
-    await storage_s3_client.copy_file(storage_s3_bucket, src_file_uuid, dst_file_uuid)
+    await storage_s3_client.copy_file(
+        storage_s3_bucket, src_file_uuid, dst_file_uuid, bytes_transfered_cb=None
+    )
 
     # check the object is uploaded
     response = await storage_s3_client.client.list_objects_v2(Bucket=storage_s3_bucket)
@@ -799,11 +803,17 @@ async def test_copy_file_invalid_raises(
     dst_file_uuid = create_simcore_file_id(uuid4(), uuid4(), dst_file_name)
     with pytest.raises(S3BucketInvalidError):
         await storage_s3_client.copy_file(
-            S3BucketName("pytestinvalidbucket"), src_file_uuid, dst_file_uuid
+            S3BucketName("pytestinvalidbucket"),
+            src_file_uuid,
+            dst_file_uuid,
+            bytes_transfered_cb=None,
         )
     with pytest.raises(S3KeyNotFoundError):
         await storage_s3_client.copy_file(
-            storage_s3_bucket, SimcoreS3FileID("missing_file_uuid"), dst_file_uuid
+            storage_s3_bucket,
+            SimcoreS3FileID("missing_file_uuid"),
+            dst_file_uuid,
+            bytes_transfered_cb=None,
         )
 
 

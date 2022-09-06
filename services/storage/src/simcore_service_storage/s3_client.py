@@ -5,7 +5,7 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, cast
+from typing import Callable, Optional, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -244,7 +244,11 @@ class StorageS3Client:
 
     @s3_exception_handler(log)
     async def copy_file(
-        self, bucket: S3BucketName, src_file: SimcoreS3FileID, dst_file: SimcoreS3FileID
+        self,
+        bucket: S3BucketName,
+        src_file: SimcoreS3FileID,
+        dst_file: SimcoreS3FileID,
+        bytes_transfered_cb: Optional[Callable[[int], None]],
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)
 
@@ -252,12 +256,15 @@ class StorageS3Client:
         :type src_file: SimcoreS3FileID
         :type dst_file: SimcoreS3FileID
         """
-        await self.client.copy(
+        copy_options = dict(
             CopySource={"Bucket": bucket, "Key": src_file},
             Bucket=bucket,
             Key=dst_file,
             Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
         )
+        if bytes_transfered_cb:
+            copy_options |= dict(Callback=bytes_transfered_cb)
+        await self.client.copy(**copy_options)
 
     @s3_exception_handler(log)
     async def list_files(
@@ -278,7 +285,11 @@ class StorageS3Client:
 
     @s3_exception_handler(log)
     async def upload_file(
-        self, bucket: S3BucketName, file: Path, file_id: SimcoreS3FileID
+        self,
+        bucket: S3BucketName,
+        file: Path,
+        file_id: SimcoreS3FileID,
+        bytes_transfered_cb: Optional[Callable[[int], None]],
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)
 
@@ -286,12 +297,14 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        await self.client.upload_file(
-            f"{file}",
+        upload_options = dict(
             Bucket=bucket,
             Key=file_id,
             Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
         )
+        if bytes_transfered_cb:
+            upload_options |= dict(Callback=bytes_transfered_cb)
+        await self.client.upload_file(f"{file}", **upload_options)
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:

@@ -22,7 +22,7 @@ _DEFAULT_POLL_INTERVAL_S: Final[float] = 1
 _DEFAULT_AIOHTTP_RETRY_POLICY = dict(
     retry=retry_if_exception_type(ClientConnectionError),
     wait=wait_random_exponential(max=20),
-    stop=stop_after_delay(30),
+    stop=stop_after_delay(60),
     reraise=True,
 )
 
@@ -45,12 +45,12 @@ async def _wait_for_completion(
     session: ClientSession,
     task_id: TaskId,
     status_url: URL,
-    wait_timeout_s: int,
+    client_timeout: int,
 ) -> AsyncGenerator[TaskProgress, None]:
     try:
 
         async for attempt in AsyncRetrying(
-            stop=stop_after_delay(wait_timeout_s),
+            stop=stop_after_delay(client_timeout),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
         ):
@@ -78,7 +78,7 @@ async def _wait_for_completion(
     except TryAgain as exc:
         # this is a timeout
         raise asyncio.TimeoutError(
-            f"Long running task {task_id}, calling to {status_url} timed-out after {wait_timeout_s} seconds"
+            f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
         ) from exc
 
 

@@ -85,7 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/task.yaml#/TaskEnveloped"
+                $ref: "../common/schemas/task.yaml#/TaskEnveloped"
           links:
             CreationStatus:
               operationId: get_task_status
