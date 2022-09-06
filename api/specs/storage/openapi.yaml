@@ -23,11 +23,19 @@ servers:
         enum:
           - v0
         default: v0
+tags:
+  - name: maintenance
+  - name: location
+  - name: dataset
+  - name: file
+  - name: tasks
 paths:
   /:
     get:
       summary: Service health-check endpoint
       description: Some general information on the API and state of the service behind
+      tags:
+        - maintenance
       operationId: health_check
       responses:
         "200":
@@ -43,6 +51,8 @@ paths:
     get:
       summary: checks status of self and connected services
       operationId: get_status
+      tags:
+        - maintenance
       responses:
         "200":
           description: returns app status check
@@ -51,6 +61,8 @@ paths:
     get:
       summary: Lists available storage locations
       operationId: get_storage_locations
+      tags:
+        - location
       parameters:
         - name: user_id
           in: query
@@ -71,6 +83,8 @@ paths:
     post:
       summary: Manually triggers the synchronisation of the file meta data table in the database
       operationId: synchronise_meta_data_table
+      tags:
+        - location
       parameters:
         - name: location_id
           in: path
@@ -103,6 +117,8 @@ paths:
     get:
       summary: Lists all dataset's metadata
       operationId: get_datasets_metadata
+      tags:
+        - dataset
       parameters:
         - name: location_id
           in: path
@@ -128,6 +144,8 @@ paths:
     get:
       summary: Lists all file's metadata
       operationId: get_files_metadata
+      tags:
+        - file
       parameters:
         - name: location_id
           in: path
@@ -158,6 +176,8 @@ paths:
     get:
       summary: Get dataset metadata
       operationId: get_files_metadata_dataset
+      tags:
+        - dataset
       parameters:
         - name: location_id
           in: path
@@ -188,6 +208,8 @@ paths:
     get:
       summary: Get file metadata
       operationId: get_file_metadata
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -218,6 +240,8 @@ paths:
     get:
       summary: Gets download link for file at location
       operationId: download_file
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -256,6 +280,8 @@ paths:
     put:
       summary: Returns upload object
       operationId: upload_file
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -316,6 +342,8 @@ paths:
     delete:
       summary: Deletes file
       operationId: delete_file
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -342,6 +370,8 @@ paths:
     post:
       summary: Asks the server to abort the upload and revert to the last valid version if any
       operationId: abort_upload_file
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -368,6 +398,8 @@ paths:
     post:
       summary: Asks the server to complete the upload
       operationId: complete_upload_file
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -427,6 +459,8 @@ paths:
     post:
       summary: Check for upload completion
       operationId: is_completed_upload_file
+      tags:
+        - file
       parameters:
         - name: future_id
           in: path
@@ -462,6 +496,8 @@ paths:
     post:
       summary: Returns the temporary access credentials for the user storage space
       operationId: get_or_create_temporary_s3_access
+      tags:
+        - file
       parameters:
         - name: user_id
           in: query
@@ -482,6 +518,8 @@ paths:
     post:
       summary: Returns metadata for all files matching a pattern
       operationId: search_files_starting_with
+      tags:
+        - file
       parameters:
         - name: user_id
           in: query
@@ -508,6 +546,8 @@ paths:
     post:
       summary: Deep copies of all data from source to destination project in s3
       operationId: copy_folders_from_project
+      tags:
+        - file
       parameters:
         - name: user_id
           in: query
@@ -543,6 +583,8 @@ paths:
     delete:
       summary: Deletes all objects within a node_id or within a project_id if node_id is omitted
       operationId: delete_folders_of_project
+      tags:
+        - file
       parameters:
         - name: folder_id
           in: path
@@ -567,6 +609,8 @@ paths:
     post:
       summary: Copy as soft link
       operationId: copy_as_soft_link
+      tags:
+        - file
       parameters:
         - name: file_id
           in: path
@@ -595,6 +639,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FileMetaEnvelope"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /tasks:
+    get:
+      operationId: list_tasks
+      tags:
+        - tasks
+      responses:
+        "200":
+          description: Returns the list of active tasks (running and/or done)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "../common/schemas/task.yaml#/TaskEnveloped"
+  /tasks/{task_id}:
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: get_task_status
+      tags:
+        - tasks
+      responses:
+        "200":
+          description: Returns the task status
+          content:
+            application/json:
+              schema:
+                $ref: "../common/schemas/task.yaml#/TaskStatusEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    delete:
+      operationId: cancel_and_delete_task
+      description: Aborts and remove the task
+      tags:
+        - tasks
+      responses:
+        "204":
+          description: Task was successfully aborted
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /tasks/{task_id}/result:
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: get_task_result
+      tags:
+        - tasks
+      responses:
+        "2XX":
+          description: Retrieve the task result and returns directly its HTTP code
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 components:

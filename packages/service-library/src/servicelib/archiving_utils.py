@@ -201,7 +201,7 @@ async def unarchive_dir(
 
                 # wait until all tasks are cancelled
                 await asyncio.wait(
-                    *futures, timeout=2 * _MIN, return_when=asyncio.ALL_COMPLETED
+                    futures, timeout=2 * _MIN, return_when=asyncio.ALL_COMPLETED
                 )
 
                 # now we can cleanup
