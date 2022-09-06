@@ -329,7 +329,7 @@ def mock_env(
     monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
     monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
     monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
-    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
+    monkeypatch.setenv("S3_SECURE", f"{minio_config['client']['secure']}")
     monkeypatch.setenv(
         "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED", dev_feature_r_clone_enabled
     )
