@@ -15,7 +15,7 @@ import docker
 import pytest
 import yaml
 from docker.errors import APIError
-from tenacity import Retrying, TryAgain
+from tenacity import Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -46,6 +46,12 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
     return True
 
 
+@retry(
+    wait=wait_fixed(5),
+    stop=stop_after_delay(8 * MINUTE),
+    before_sleep=before_sleep_log(log, logging.WARNING),
+    reraise=True,
+)
 def assert_service_is_running(service):
     """Checks that a number of tasks of this service are in running state"""
 
@@ -88,6 +94,8 @@ def assert_service_is_running(service):
         f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, "
         f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
+
+    print(f"--> {service_name} is up and running!!")
 
 
 def _fetch_and_print_services(
@@ -270,24 +278,19 @@ def docker_stack(
     # - notice that the timeout is set for all services in both stacks
     # - TODO: the time to deploy will depend on the number of services selected
     try:
-        from tenacity._asyncio import AsyncRetrying
 
         async def _check_all_services_are_running():
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(5),
-                stop=stop_after_delay(8 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.INFO),
-                reraise=True,
-            ):
-                with attempt:
-                    await asyncio.gather(
-                        *[
-                            asyncio.get_event_loop().run_in_executor(
-                                None, assert_service_is_running, service
-                            )
-                            for service in docker_client.services.list()
-                        ]
+            done, pending = await asyncio.wait(
+                [
+                    asyncio.get_event_loop().run_in_executor(
+                        None, assert_service_is_running, service
                     )
+                    for service in docker_client.services.list()
+                ],
+                return_when=asyncio.FIRST_EXCEPTION,
+            )
+            assert done, f"no services ready, they all failed! [{pending}]"
+            assert not pending, f"some service did not start correctly [{pending}]"
 
         asyncio.run(_check_all_services_are_running())
 
