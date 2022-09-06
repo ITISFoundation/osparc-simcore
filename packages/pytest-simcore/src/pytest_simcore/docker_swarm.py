@@ -88,7 +88,6 @@ def assert_service_is_running(service):
         f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, "
         f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
-    print(f"{service_name=} is up and running")
 
 
 def _fetch_and_print_services(
@@ -250,7 +249,7 @@ def docker_stack(
                         capture_output=True,
                     )
                 except subprocess.CalledProcessError as err:
-                    if "update out of sequence" in err.stderr:
+                    if b"update out of sequence" in err.stderr:
                         raise TryAgain from err
                     print(
                         "docker_stack failed",
