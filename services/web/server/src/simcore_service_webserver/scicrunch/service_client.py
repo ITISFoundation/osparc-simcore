@@ -65,6 +65,7 @@ class SciCrunch:
         if obj is None:
             session = get_client_session(app)
             app[f"{__name__}.{cls.__name__}"] = obj = cls(session, settings)
+        assert isinstance(obj, cls)  # nosec
         return obj
 
     @classmethod
@@ -74,6 +75,7 @@ class SciCrunch:
             raise ScicrunchConfigError(
                 reason="Services on scicrunch.org are currently disabled"
             )
+        assert isinstance(obj, cls)  # nosec
         return obj
 
     # MEMBERS --------
