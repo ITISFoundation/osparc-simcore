@@ -4,7 +4,7 @@
 
 import json
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 from aiohttp import web
 from models_library.projects_nodes import NodeID
@@ -119,9 +119,7 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_state: Union[
-            dict, list
-        ] = await director_v2_api.get_dynamic_service_state(
+        service_state = await director_v2_api.get_dynamic_service_state(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
@@ -131,6 +129,7 @@ async def get_node(request: web.Request) -> web.Response:
 
         # LEGACY-service NODE STATE
         return web.json_response({"data": service_state["data"]}, dumps=json_dumps)
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
