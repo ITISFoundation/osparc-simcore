@@ -21,7 +21,8 @@ class TwilioSettings(BaseCustomSettings):
         [
             "41",
         ],
-        description="list of country-codes supporting alphanumeric sender ID",
+        description="list of country-codes supporting/registered for alphanumeric sender ID"
+        "See https://support.twilio.com/hc/en-us/articles/223133767-International-support-for-Alphanumeric-Sender-ID",
     )
 
     def is_alphanumeric_supported(self, phone_number: str) -> bool:
