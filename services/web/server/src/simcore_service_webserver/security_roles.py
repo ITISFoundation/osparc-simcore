@@ -5,6 +5,8 @@
 """
 
 
+from typing import Union
+
 from simcore_postgres_database.models.users import UserRole
 
 # A role defines a set of operations that the user *can* perform
@@ -17,7 +19,10 @@ from simcore_postgres_database.models.users import UserRole
 # NOTE: DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
 #       If only needed to discrimiate a resource use `resource.sub_resource.*`
 #
-ROLES_PERMISSIONS = {
+CanList = list[str]
+InheritList = list[UserRole]
+
+ROLES_PERMISSIONS: dict[UserRole, dict[str, Union[CanList, InheritList]]] = {
     UserRole.ANONYMOUS: {
         "can": []  # Add only permissions here to handles that do not require login.
         # Anonymous user can only access
