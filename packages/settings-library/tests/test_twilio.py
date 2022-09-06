@@ -23,7 +23,6 @@ def test_twilio_settings_within_envdevel(
             {
                 "TWILIO_ACCOUNT_SID": "fake-account",
                 "TWILIO_AUTH_TOKEN": "fake-token",
-                "TWILIO_MESSAGING_SID": "x" * 34,
             },
         )
         settings = TwilioSettings.create_from_envs()
@@ -42,7 +41,6 @@ def test_twilio_settings_with_country_codes(
             {
                 "TWILIO_ACCOUNT_SID": "fake-account",
                 "TWILIO_AUTH_TOKEN": "fake-token",
-                "TWILIO_MESSAGING_SID": "x" * 34,
             },
         )
         settings = TwilioSettings.create_from_envs()
@@ -57,7 +55,6 @@ def test_twilio_settings_with_country_codes(
             {
                 "TWILIO_ACCOUNT_SID": "fake-account",
                 "TWILIO_AUTH_TOKEN": "fake-token",
-                "TWILIO_MESSAGING_SID": "x" * 34,
                 "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": "[1, 34]",
             },
         )
