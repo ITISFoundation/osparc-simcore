@@ -205,6 +205,13 @@ def docker_stack(
         ),
     ]
 
+    # NOTE: if the migration service was already running prior to this call it must
+    # be force updated so that it does its job. else it remains and tests will fail
+    for migration_service in filter(
+        lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+    ):
+        migration_service.force_update()  # type: ignore
+
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
