@@ -406,8 +406,12 @@ class TutorialBase {
     }
   }
 
+  async waitAndClick(osparcTestId) {
+    await utils.waitAndClick(this.__page, `[osparc-test-id=${osparcTestId}]`);
+  }
+
   async closeNodeFiles() {
-    await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+    await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
   async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
