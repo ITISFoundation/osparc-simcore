@@ -64,4 +64,5 @@ def test_twilio_settings_with_country_codes(
         settings = TwilioSettings.create_from_envs()
 
         assert not settings.is_alphanumeric_supported("+41 456 789 156")
-        assert settings.is_alphanumeric_supported(" +1 123456 789 456 ")
+        assert settings.is_alphanumeric_supported(" 001 123456 789 456 ")
+        assert settings.is_alphanumeric_supported("+1 123456 789 456 ")
