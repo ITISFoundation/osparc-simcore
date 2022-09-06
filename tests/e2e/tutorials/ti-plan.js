@@ -53,19 +53,18 @@ async function runTutorial() {
     const electrodeSelectorIframe = await tutorial.getIframe(workbenchData["nodeIds"][0]);
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
-    const selection = {
-      "E1+": ["FPZ"],
-      "E1-": ["FP2"],
-      "E2+": ["O1"],
-      "E2-": ["OZ"],
-    };
-    Object.keys(selection).forEach(async grpKey => {
-      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grpKey}_Start"]`);
-      selection[grpKey].forEach(async electrodeId => {
-        await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${electrodeId}"]`);
-      });
-      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grpKey}_Stop"]`);
-    });
+    const selection = [
+      ["E1+", "FT9"],
+      ["E1-", "FT7"],
+      ["E2+", "T9"],
+      ["E2-", "T7"],
+    ];
+    for (let i = 0; i < selection.length; i++) {
+      const grp = selection[i];
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grp[0]}_Start"]`);
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${grp[1]}"]`);
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grp[0]}_Stop"]`);
+    }
 
     // Run optimizer
     await tutorial.waitAndClick("AppMode_PreviousBtn");
