@@ -60,19 +60,19 @@ async function runTutorial() {
     const electrodeSelectorIframe = iframes.find(iframe => iframe._url.includes(workbenchData["nodeIds"][0]));
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Start"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_FPZ"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1+_Stop"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1-_Start"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_FP2"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E1-_Stop"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2+_Start"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_O1"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2+_Stop"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2-_Start"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="Electrode_OZ"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="ElectrodeGroup_E2-_Stop"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="FinishSetUp"]');
+    const selection = {
+      "E1+": ["FPZ"],
+      "E1-": ["FP2"],
+      "E2+": ["O1"],
+      "E2-": ["OZ"],
+    };
+    Object.keys(selection).forEach(async grpKey => {
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grpKey}_Start"]`);
+      selection[grpKey].forEach(async electrodeId => {
+        await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${electrodeId}"]`);
+      });
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grpKey}_Stop"]`);
+    });
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
