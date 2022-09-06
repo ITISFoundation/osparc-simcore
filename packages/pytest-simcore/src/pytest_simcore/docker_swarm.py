@@ -221,6 +221,7 @@ def docker_stack(
                 ],
                 check=True,
                 cwd=compose_file.parent,
+                capture_output=True,
             )
         except subprocess.CalledProcessError as err:
             print(
