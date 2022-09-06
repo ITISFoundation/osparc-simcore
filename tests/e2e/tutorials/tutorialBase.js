@@ -297,6 +297,7 @@ class TutorialBase {
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
+    console.log("waitForServices timeout:", timeout);
     if (nodeIds.length < 1) {
       return;
     }
@@ -389,8 +390,24 @@ class TutorialBase {
     await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
-  async getIframe() {
+  async __getIframeHandles() {
     return await this.__page.$$("iframe");
+  }
+
+  async __getIframes() {
+    const iframeHandles = await this.__getIframeHandles();
+    const iframes = [];
+    for (let i = 0; i < iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes.push(frame);
+    }
+    return iframes;
+  }
+
+  async getIframe(nodeId) {
+    const iframes = await this.__getIframes();
+    const nodeIframe = iframes.find(iframe => iframe._url.includes(nodeId));
+    return nodeIframe;
   }
 
   async openNodeFiles(nodePosInTree = 0) {

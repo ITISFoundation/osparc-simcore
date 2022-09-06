@@ -38,15 +38,8 @@ async function runTutorial() {
       await tutorial.openNode(j);
       await tutorial.waitFor(35000);
 
-
       // Run the jlab nbook
-      const iframeHandles = await tutorial.getIframe();
-      let iframes2 = [];
-      for (let i = 0; i < iframeHandles.length; i++) {
-        const frame = await iframeHandles[i].contentFrame();
-        iframes2.push(frame);
-      }
-      const jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][j]));
+      const jLabIframe = await tutorial.getIframe(workbenchData["nodeIds"][j]);
 
       await tutorial.takeScreenshot("before_nb_selection");
       const input2outputFileSelector = '[title~="jl_notebook.ipynb"]';

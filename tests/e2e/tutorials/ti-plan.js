@@ -49,15 +49,8 @@ async function runTutorial() {
       false
     );
 
-
     // Make Electrode Selector selection
-    const iframeHandles = await tutorial.getIframe();
-    let iframes = [];
-    for (let i = 0; i < iframeHandles.length; i++) {
-      const frame = await iframeHandles[i].contentFrame();
-      iframes.push(frame);
-    }
-    const electrodeSelectorIframe = iframes.find(iframe => iframe._url.includes(workbenchData["nodeIds"][0]));
+    const electrodeSelectorIframe = await tutorial.getIframe(workbenchData["nodeIds"][0]);
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
     const selection = {
@@ -73,6 +66,11 @@ async function runTutorial() {
       });
       await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grpKey}_Stop"]`);
     });
+
+    // Run optimizer
+    await tutorial.waitAndClick("AppMode_PreviousBtn");
+    await tutorial.waitFor(5000, "Running Optimizer");
+    await tutorial.waitForStudyDone(studyId, 120000);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
