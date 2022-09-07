@@ -82,13 +82,12 @@ async function runTutorial() {
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_before");
     const postProIframe = await tutorial.getIframe(workbenchData["nodeIds"][2]);
-    const btnClass = "button";
-    const buttons = await postProIframe.$$(btnClass);
+    const buttons = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     // Click "Load Analysis" button
     await buttons[0].click();
     await tutorial.takeScreenshot("postpro_loadAnalysis");
     await tutorial.waitFor(10000, "Loading anaylsis");
-    const buttons2 = await postProIframe.$$(btnClass);
+    const buttons2 = await utils.getButtonsWithText(postProIframe, "Load");
     console.log(buttons2);
   }
   catch (err) {
