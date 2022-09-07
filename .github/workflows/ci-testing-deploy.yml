@@ -1714,7 +1714,7 @@ jobs:
         integration-test-director-v2-02,
         integration-test-simcore-sdk,
       ]
-    name: codeclimate coverage
+    name: coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
