@@ -27,8 +27,16 @@ def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = No
     logging.root.setLevel(level)
     config_all_loggers()
 
-    # aiohttp access log-levels
+    # Enforces same log-level to aiohttp & gunicorn access loggers
+    #
+    # NOTE: gunicorn access_log is hard-coded to INFO (SEE https://github.com/benoitc/gunicorn/blob/master/gunicorn/glogging.py#L200)
+    # and the option passed through command line is for access_log.
+    # Our changes in root do not affect this config because
+    # they are not applied globally but only upon setup_logging ...
+    #
+    gunicorn_access_log = logging.getLogger("gunicorn.access")
     access_logger.setLevel(level)
+    gunicorn_access_log.setLevel(level)
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
@@ -41,12 +49,3 @@ def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = No
     if slow_duration:
         # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
         log_slow_callbacks.enable(abs(slow_duration))
-
-
-def test_logger_propagation(logger: logging.Logger):
-    msg = f"TESTING %s log with {logger}"
-    logger.critical(msg, "critical")
-    logger.error(msg, "error")
-    logger.info(msg, "info")
-    logger.warning(msg, "warning")
-    logger.debug(msg, "debug")
