@@ -73,10 +73,23 @@ async function runTutorial() {
     await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.waitFor(5000, "Running Optimizer");
     await tutorial.takeScreenshot("optimizer_before");
-    // one permutation should take less than 90"
-    await tutorial.waitForStudyDone(studyId, 150000);
+    // one permutation should take less than 180"
+    await tutorial.waitForStudyDone(studyId, 240000);
     await tutorial.takeScreenshot("optimizer_after");
     await tutorial.waitAndClick("preparingInputsCloseBtn");
+    await tutorial.waitFor(5000, "Optimizer Finished");
+
+    // Load Post Pro Analysis
+    await tutorial.takeScreenshot("postpro_before");
+    const postProIframe = await tutorial.getIframe(workbenchData["nodeIds"][2]);
+    const btnClass = "button";
+    const buttons = await postProIframe.$$(btnClass);
+    // Click "Load Analysis" button
+    await buttons[0].click();
+    await tutorial.takeScreenshot("postpro_loadAnalysis");
+    await tutorial.waitFor(10000, "Loading anaylsis");
+    const buttons2 = await postProIframe.$$(btnClass);
+    console.log(buttons2);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
