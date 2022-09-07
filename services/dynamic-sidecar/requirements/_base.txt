@@ -169,6 +169,9 @@ jaeger-client==4.8.0
     # via fastapi-contrib
 jsonschema==3.2.0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   docker-compose

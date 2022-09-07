@@ -157,6 +157,9 @@ jsondiff==2.0.0
     # via -r requirements/_base.in
 jsonschema==3.2.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
@@ -179,7 +182,11 @@ openapi-core==0.12.0
 openapi-schema-validator==0.2.3
     # via openapi-spec-validator
 openapi-spec-validator==0.4.0
-    # via openapi-core
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   openapi-core
 openpyxl==3.0.9
     # via -r requirements/_base.in
 orjson==3.7.2
