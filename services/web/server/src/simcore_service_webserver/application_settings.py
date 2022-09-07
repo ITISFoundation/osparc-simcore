@@ -82,9 +82,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
-    WEBSERVER_LOG_LEVEL: LogLevel = Field(
+    WEBSERVER_LOGLEVEL: LogLevel = Field(
         LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        # NOTE: suffix '_LOGLEVEL' is used overall
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
@@ -228,9 +229,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @cached_property
     def log_level(self) -> int:
-        return getattr(logging, self.WEBSERVER_LOG_LEVEL.upper())
+        return getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
 
-    @validator("WEBSERVER_LOG_LEVEL")
+    @validator("WEBSERVER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value) -> str:
         return cls.validate_log_level(value)
