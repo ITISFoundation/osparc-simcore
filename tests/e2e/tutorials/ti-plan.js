@@ -50,6 +50,7 @@ async function runTutorial() {
     );
 
     // Make Electrode Selector selection
+    await tutorial.takeScreenshot("electrodeSelector_before");
     const electrodeSelectorIframe = await tutorial.getIframe(workbenchData["nodeIds"][0]);
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
@@ -65,11 +66,17 @@ async function runTutorial() {
       await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${grp[1]}"]`);
     }
     await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="FinishSetUp"]`);
+    await tutorial.waitFor(5000, "Finish Electrode Selector SetUp");
+    await tutorial.takeScreenshot("electrodeSelector_after");
 
     // Run optimizer
     await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.waitFor(5000, "Running Optimizer");
-    await tutorial.waitForStudyDone(studyId, 120000);
+    await tutorial.takeScreenshot("optimizer_before");
+    // one permutation should take less than 90"
+    await tutorial.waitForStudyDone(studyId, 150000);
+    await tutorial.takeScreenshot("optimizer_after");
+    await tutorial.waitAndClick("preparingInputsCloseBtn");
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

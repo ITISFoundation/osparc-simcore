@@ -289,7 +289,8 @@ class TutorialBase {
     if (appModeButtonsAllIds.length < 1) {
       throw ("appModeButtons not found");
     }
-    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("appModeButton_"));
+    console.log("appModeButtonsAllIds", appModeButtonsAllIds);
+    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("AppMode_StepBtn"));
     if (appModeButtonIds.length < 1) {
       throw ("appModeButtons filtered not found");
     }
