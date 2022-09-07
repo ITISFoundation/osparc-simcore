@@ -26,7 +26,6 @@ attrs==21.4.0
     #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   jsonschema
-    #   openapi-schema-validator
     #   pytest
     #   pytest-docker
 certifi==2022.6.15
@@ -66,10 +65,6 @@ idna==3.3
     #   -c requirements/_fastapi.txt
     #   requests
     #   yarl
-importlib-resources==5.9.0
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   openapi-spec-validator
 iniconfig==1.1.1
     # via pytest
 isort==5.10.1
@@ -77,18 +72,12 @@ isort==5.10.1
 jsonschema==4.15.0
     # via
     #   -c requirements/_aiohttp.txt
-    #   jsonschema-spec
     #   openapi-schema-validator
-    #   openapi-spec-validator
-jsonschema-spec==0.1.1
-    # via
-    #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
 lazy-object-proxy==1.7.1
     # via
     #   -c requirements/_aiohttp.txt
     #   astroid
-    #   openapi-spec-validator
 mccabe==0.7.0
     # via pylint
 multidict==6.0.2
@@ -96,11 +85,11 @@ multidict==6.0.2
     #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   yarl
-openapi-schema-validator==0.3.3
+openapi-schema-validator==0.2.3
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.5.1
+openapi-spec-validator==0.4.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
@@ -108,10 +97,6 @@ packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-pathable==0.4.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   jsonschema-spec
 platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
@@ -120,7 +105,7 @@ py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.15.0
+pylint==2.15.2
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via packaging
@@ -167,7 +152,6 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
-    #   jsonschema-spec
     #   openapi-spec-validator
 requests==2.28.1
     # via coveralls
@@ -191,11 +175,9 @@ tomlkit==0.11.4
     # via pylint
 typing-extensions==4.3.0
     # via
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   astroid
-    #   jsonschema-spec
     #   pylint
 urllib3==1.26.12
     # via
@@ -207,7 +189,6 @@ yarl==1.8.1
     # via
     #   -c requirements/_aiohttp.txt
     #   aiohttp
-zipp==3.8.1
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   importlib-resources
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
