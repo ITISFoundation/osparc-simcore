@@ -40,13 +40,36 @@ async function runTutorial() {
     // wait for the three services
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
-    // skipping the second one wchich is the optimizer
+
+    // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
       [workbenchData["nodeIds"][0], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3]],
       startTimeout,
       false
     );
+
+    // Make Electrode Selector selection
+    const electrodeSelectorIframe = await tutorial.getIframe(workbenchData["nodeIds"][0]);
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
+    const selection = [
+      ["E1+", "FT9"],
+      ["E1-", "FT7"],
+      ["E2+", "T9"],
+      ["E2-", "T7"],
+    ];
+    for (let i = 0; i < selection.length; i++) {
+      const grp = selection[i];
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="ElectrodeGroup_${grp[0]}_Start"]`);
+      await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="Electrode_${grp[1]}"]`);
+    }
+    await utils.waitAndClick(electrodeSelectorIframe, `[osparc-test-id="FinishSetUp"]`);
+
+    // Run optimizer
+    await tutorial.waitAndClick("AppMode_NextBtn");
+    await tutorial.waitFor(5000, "Running Optimizer");
+    await tutorial.waitForStudyDone(studyId, 120000);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

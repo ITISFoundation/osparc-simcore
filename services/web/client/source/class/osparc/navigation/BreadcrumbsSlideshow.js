@@ -75,6 +75,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       const node = study.getWorkbench().getNode(nodeId);
       if (node && nodeId in slideshow) {
         const pos = slideshow[nodeId].position;
+        osparc.utils.Utils.setIdToWidget(btn, "AppMode_StepBtn_"+(pos+1));
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}: ${val}`
         });
