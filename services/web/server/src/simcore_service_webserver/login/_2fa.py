@@ -87,7 +87,7 @@ async def send_sms_code(
         "to": phone_number,
         "body": f"Dear {user_name[:20].capitalize().strip()}, your verification code is {code}",
     }
-    if twilo_auth.is_alpha_numeric_supported(phone_number):
+    if twilo_auth.is_alphanumeric_supported(phone_number):
         create_kwargs["from_"] = twilio_alpha_numeric_sender
 
     def _sender():
