@@ -29,7 +29,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

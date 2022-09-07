@@ -38,7 +38,7 @@ aiopg==1.3.3
     #   -r requirements/_base.in
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in

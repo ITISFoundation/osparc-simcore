@@ -10,7 +10,7 @@ aiohttp==3.8.1
     #   pytest-aiohttp
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

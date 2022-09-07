@@ -64,7 +64,7 @@ aiosmtplib==1.1.6
     # via -r requirements/_base.in
 aiozipkin==1.1.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
