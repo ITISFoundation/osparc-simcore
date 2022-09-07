@@ -22,19 +22,19 @@ except ImportError:
     from enum import Enum
     from pathlib import PurePath
     from types import GeneratorType
-    from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+    from typing import Any, Callable, Optional, Union
 
     from pydantic import BaseModel
     from pydantic.json import ENCODERS_BY_TYPE
 
-    SetIntStr = Set[Union[int, str]]
-    DictIntStrAny = Dict[Union[int, str], Any]
+    SetIntStr = set[Union[int, str]]
+    DictIntStrAny = dict[Union[int, str], Any]
 
     def generate_encoders_by_class_tuples(
-        type_encoder_map: Dict[Any, Callable[[Any], Any]]
-    ) -> Dict[Callable[[Any], Any], Tuple[Any, ...]]:
-        encoders_by_class_tuples: Dict[
-            Callable[[Any], Any], Tuple[Any, ...]
+        type_encoder_map: dict[Any, Callable[[Any], Any]]
+    ) -> dict[Callable[[Any], Any], tuple[Any, ...]]:
+        encoders_by_class_tuples: dict[
+            Callable[[Any], Any], tuple[Any, ...]
         ] = defaultdict(tuple)
         for type_, encoder in type_encoder_map.items():
             encoders_by_class_tuples[encoder] += (type_,)
@@ -50,7 +50,7 @@ except ImportError:
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        custom_encoder: Optional[Dict[Any, Callable[[Any], Any]]] = None,
+        custom_encoder: Optional[dict[Any, Callable[[Any], Any]]] = None,
         sqlalchemy_safe: bool = True,
     ) -> Any:
         custom_encoder = custom_encoder or {}
@@ -70,8 +70,8 @@ except ImportError:
             if custom_encoder:
                 encoder.update(custom_encoder)
             obj_dict = obj.dict(
-                include=include,  # type: ignore # in Pydantic
-                exclude=exclude,  # type: ignore # in Pydantic
+                include=include,
+                exclude=exclude,
                 by_alias=by_alias,
                 exclude_unset=exclude_unset,
                 exclude_none=exclude_none,
@@ -152,7 +152,7 @@ except ImportError:
             if isinstance(obj, classes_tuple):
                 return encoder(obj)
 
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         try:
             data = dict(obj)
         except Exception as e:

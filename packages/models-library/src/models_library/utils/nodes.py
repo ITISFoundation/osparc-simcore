@@ -7,7 +7,7 @@ from typing import Any, Callable, Coroutine
 from pydantic import BaseModel
 
 from ..projects import Project
-from ..projects_nodes_io import NodeID, PortLink
+from ..projects_nodes_io import NodeID, NodeIDStr, PortLink
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def project_node_io_payload_cb(
 
     async def node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         node_io_payload = {"inputs": None, "outputs": None}
-        node = project.workbench.get(str(node_id))
+        node = project.workbench.get(NodeIDStr(node_id))
         if node:
             node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
 
@@ -36,7 +36,7 @@ async def compute_node_hash(
     node_payload = deepcopy(await get_node_io_payload_cb(node_id))
     assert all(k in node_payload for k in ["inputs", "outputs"])  # nosec
 
-    resolved_payload = {}
+    resolved_payload: dict[str, Any] = {}
 
     for port_type in ["inputs", "outputs"]:
         port_type_payloads = node_payload.get(port_type)
