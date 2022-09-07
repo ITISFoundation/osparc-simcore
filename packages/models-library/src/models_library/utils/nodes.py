@@ -2,23 +2,22 @@ import hashlib
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Coroutine, Dict
+from typing import Any, Callable, Coroutine
 
 from pydantic import BaseModel
 
 from ..projects import Project
-from ..projects_nodes import NodeID
-from ..projects_nodes_io import PortLink
+from ..projects_nodes_io import NodeID, PortLink
 
 logger = logging.getLogger(__name__)
 
 
 def project_node_io_payload_cb(
     project: Project,
-) -> Callable[[NodeID], Coroutine[Any, Any, Dict[str, Any]]]:
+) -> Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]]:
     """callback fct to use together with compute_node_hash when a Project as input"""
 
-    async def node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+    async def node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         node_io_payload = {"inputs": None, "outputs": None}
         node = project.workbench.get(str(node_id))
         if node:
@@ -31,7 +30,7 @@ def project_node_io_payload_cb(
 
 async def compute_node_hash(
     node_id: NodeID,
-    get_node_io_payload_cb: Callable[[NodeID], Coroutine[Any, Any, Dict[str, Any]]],
+    get_node_io_payload_cb: Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]],
 ) -> str:
     # resolve the port links if any and get only the payload
     node_payload = deepcopy(await get_node_io_payload_cb(node_id))

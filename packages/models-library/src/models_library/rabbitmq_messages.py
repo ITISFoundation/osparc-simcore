@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ class RabbitMessageBase(BaseModel):
 
 
 class LoggerRabbitMessage(RabbitMessageBase):
-    messages: List[str]
+    messages: list[str]
 
 
 class EventRabbitMessage(RabbitMessageBase):

@@ -1,19 +1,20 @@
-from typing import Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
-from .projects_nodes import NodeID, NodeState
+from .projects_nodes import NodeState
+from .projects_nodes_io import NodeID
 from .projects_state import RunningState
 
 
 class PipelineDetails(BaseModel):
-    adjacency_list: Dict[NodeID, List[NodeID]] = Field(
+    adjacency_list: dict[NodeID, list[NodeID]] = Field(
         ...,
         description="The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}",
     )
-    node_states: Dict[NodeID, NodeState] = Field(
+    node_states: dict[NodeID, NodeState] = Field(
         ..., description="The states of each of the computational nodes in the pipeline"
     )
 
