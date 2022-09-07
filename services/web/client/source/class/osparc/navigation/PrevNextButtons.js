@@ -80,6 +80,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         icon: this.self().PREV_BUTTON,
         ...this.self().BUTTON_OPTIONS
       });
+      osparc.utils.Utils.setIdToWidget(prvsBtn, "AppMode_PreviousBtn");
       prvsBtn.addListener("execute", () => this.__prevPressed(), this);
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
@@ -87,6 +88,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         icon: this.self().NEXT_BUTTON,
         ...this.self().BUTTON_OPTIONS
       });
+      osparc.utils.Utils.setIdToWidget(nextBtn, "AppMode_NextBtn");
       nextBtn.addListener("execute", () => this.__nextPressed(), this);
 
       const runBtn = this.__runBtn = new qx.ui.form.Button().set({

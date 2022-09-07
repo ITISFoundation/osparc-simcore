@@ -83,7 +83,9 @@ qx.Class.define("osparc.auth.ui.LoginSMSCodeView", {
         flex: 1
       });
       resendCodeBtn.addListener("execute", () => {
-        osparc.auth.ui.VerifyPhoneNumberView.restartResendTimer(this.__resendCodeBtn, this.tr("Resend code"));
+        const msg = this.tr("Not yet implemented. Please, reload the page instead");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        // osparc.auth.ui.VerifyPhoneNumberView.restartResendTimer(this.__resendCodeBtn, this.tr("Resend code"));
       }, this);
       this.add(resendLayout);
     },
