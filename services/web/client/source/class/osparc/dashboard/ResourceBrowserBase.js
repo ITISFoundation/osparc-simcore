@@ -212,7 +212,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             if (dontShow === "true") {
               return;
             }
-            if (templates === false && resources.length === 0 && this._resourcesContainer.nextRequest === null) {
+            if (templates === false && "_meta" in resp && resp["_meta"]["total"] === 0) {
               // there are no studies
               const tutorialWindow = new osparc.component.tutorial.ti.Slides();
               tutorialWindow.center();
