@@ -27,7 +27,7 @@ async-timeout==4.0.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   redis
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -102,7 +102,7 @@ jsonschema==3.2.0
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.7.1
     # via
     #   -c requirements/_base.txt
     #   astroid
