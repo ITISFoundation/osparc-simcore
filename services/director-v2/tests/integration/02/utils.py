@@ -34,7 +34,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 PROXY_BOOT_TIME = 30
-SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
+SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 60
 SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
@@ -113,7 +113,9 @@ async def _get_service_published_port(
                 services = list(
                     filter(lambda s: s["Spec"]["Name"] == service_name, services)
                 )
-                assert len(services) == 1, f"{service_name=} is not running!"
+                assert (
+                    len(services) == 1
+                ), f"Docker service '{service_name=}' was not found among [{[s.name for s in services]}]!"
                 service = services[0]
                 # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
                 # Example:
