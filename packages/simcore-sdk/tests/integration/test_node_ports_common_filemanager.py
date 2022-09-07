@@ -19,6 +19,7 @@ from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager
 from simcore_sdk.node_ports_common.r_clone import RCloneFailedError
+from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -58,6 +59,8 @@ async def test_valid_upload_download(
     file_size: ByteSize,
     create_file_of_size: Callable[[ByteSize, str], Path],
     optional_r_clone: Optional[RCloneSettings],
+    simcore_services_ready: None,
+    storage_service: URL,
 ):
     file_path = create_file_of_size(file_size, "test.test")
 

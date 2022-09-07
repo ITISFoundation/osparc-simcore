@@ -40,6 +40,11 @@ def _human_readable_size(size, decimal_places=3):
     return f"{human_readable_file_size:.{decimal_places}f}{unit}"
 
 
+def _compute_tqdm_miniters(byte_size: int) -> float:
+    """ensures tqdm minimal iteration is 1 %"""
+    return min(byte_size / 100, 1.0)
+
+
 def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
@@ -117,7 +122,12 @@ def _zipfile_single_file_extract_worker(
         with zf.open(name=file_in_archive) as zip_fp, destination_path.open(
             "wb"
         ) as dest_fp, tqdm_logging_redirect(
-            total=file_in_archive.file_size, desc=desc, **_TQDM_FILE_OPTIONS
+            total=file_in_archive.file_size,
+            desc=desc,
+            **(
+                _TQDM_FILE_OPTIONS
+                | dict(miniters=_compute_tqdm_miniters(file_in_archive.file_size))
+            ),
         ) as pbar:
             while chunk := zip_fp.read(_CHUNK_SIZE):
                 dest_fp.write(chunk)
@@ -262,7 +272,12 @@ def _add_to_archive(
     )
     desc = f"compressing {dir_to_compress} -> {destination}"
     with tqdm_logging_redirect(
-        desc=f"{desc}\n", total=folder_size_bytes, **_TQDM_FILE_OPTIONS
+        desc=f"{desc}\n",
+        total=folder_size_bytes,
+        **(
+            _TQDM_FILE_OPTIONS
+            | dict(miniters=_compute_tqdm_miniters(folder_size_bytes))
+        ),
     ) as progress_bar, _progress_enabled_zip_write_handler(
         zipfile.ZipFile(destination, "w", compression=compression), progress_bar
     ) as zip_file_handler:
