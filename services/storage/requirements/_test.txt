@@ -154,7 +154,7 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.7.1
     # via
     #   -c requirements/_base.txt
     #   astroid

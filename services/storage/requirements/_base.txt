@@ -106,7 +106,7 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.7.1
     # via openapi-core
 mako==1.2.0
     # via alembic
