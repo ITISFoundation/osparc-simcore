@@ -7,6 +7,8 @@ IFS=$'\n\t'
 
 image_name="$(basename "$0"):latest"
 
+echo Building image $image_name ...
+
 # NOTE: latest pydantic version (1.10.0) creates a invalid issue in mypy.
 # using mypy 0.971 (compiled: yes)
 # simcore_service_dynamic_sidecar/models/shared_store.py:12:47: error: Incompatible types in assignment (expression has type "List[_T]", variable has type "List[str]")
@@ -24,7 +26,7 @@ RUN pip install --upgrade pip \
 ENTRYPOINT ["mypy"]
 EOF
 
-target_path=$(realpath "${1:-Please give target path as argument}")
+target_path=$(realpath "${1:-ERROR Please give target path as argument}")
 cd "$(dirname "$0")"
 default_mypy_config="$(git rev-parse --show-toplevel)/mypy.ini"
 mypy_config=$(realpath "${2:-${default_mypy_config}}")
