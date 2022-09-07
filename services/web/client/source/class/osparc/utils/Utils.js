@@ -77,6 +77,19 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    getUniqueStudyName: function(preferredName, list) {
+      let title = preferredName;
+      const existingTitles = list.map(study => study.name);
+      if (existingTitles.includes(title)) {
+        let cont = 1;
+        while (existingTitles.includes(`${title} (${cont})`)) {
+          cont++;
+        }
+        title += ` (${cont})`;
+      }
+      return title;
+    },
+
     checkIsOnScreen: function(elem) {
       const isInViewport = element => {
         if (element) {
