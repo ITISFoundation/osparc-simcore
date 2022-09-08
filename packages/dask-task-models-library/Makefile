@@ -23,7 +23,7 @@ tests: ## runs unit tests
 		--color=yes \
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
-		--cov=settings_library \
+		--cov=dask_task_models_library \
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
