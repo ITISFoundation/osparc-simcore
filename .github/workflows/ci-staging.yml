@@ -19,7 +19,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
