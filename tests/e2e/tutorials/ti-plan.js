@@ -90,7 +90,7 @@ async function runTutorial() {
     // Click on the first "Load" button
     const buttonsLoad = await utils.getButtonsWithText(postProIframe, "Load");
     await buttonsLoad[1].click();
-    await tutorial.waitFor(20000, "Loading Fields");
+    await tutorial.waitFor(30000, "Loading Fields");
     await tutorial.takeScreenshot("postpro_load_field");
     // Click on the "Add to Report" buttons
     const buttonsAddToReport = await utils.getButtonsWithText(postProIframe, "Add to Report");
