@@ -71,6 +71,9 @@ DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(f
 
 
 def config_all_loggers():
+    """
+    Applies common configuration to ALL registered loggers
+    """
     the_manager: logging.Manager = logging.Logger.manager
 
     loggers = [logging.getLogger()] + [
@@ -90,6 +93,26 @@ def set_logging_handler(
 
     for handler in logger.handlers:
         handler.setFormatter(formatter_base(fmt))
+
+
+def test_logger_propagation(logger: logging.Logger):
+    """log propagation and levels can sometimes be daunting to get it right.
+
+    This function uses the `logger`` passed as argument to log the same message at different levels
+
+    This should help to visually test a given configuration
+
+    USAGE:
+        from servicelib.logging_utils import test_logger_propagation
+        for n in ("aiohttp.access", "gunicorn.access"):
+            test_logger_propagation(logging.getLogger(n))
+    """
+    msg = f"TESTING %s log using {logger=}"
+    logger.critical(msg, "critical")
+    logger.error(msg, "error")
+    logger.info(msg, "info")
+    logger.warning(msg, "warning")
+    logger.debug(msg, "debug")
 
 
 def _log_arguments(

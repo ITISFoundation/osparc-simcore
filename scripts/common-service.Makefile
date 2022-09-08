@@ -42,15 +42,16 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
 
+TEST_SUBFOLDER := $(if $(test-subfolder),/$(test-subfolder),)
 test-dev-unit test-ci-unit: _check_venv_active
 	# Targets tests/unit folder
-	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit
+	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_SUBFOLDER)
 
 test-dev-integration test-ci-integration:
 	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration
+	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration$(TEST_SUBFOLDER)
 
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
@@ -98,10 +99,11 @@ info: ## displays service info
 .PHONY: _run-test-dev _run-test-ci
 
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
-
+PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
-	pytest -vv \
+	pytest \
+		--asyncio-mode=auto \
 		--color=yes \
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
@@ -110,14 +112,17 @@ _run-test-dev: _check_venv_active
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--pdb \
-		--asyncio-mode=auto \
+		-vv \
+		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 
 
 _run-test-ci: _check_venv_active
 	# runs tests for CI (e.g. w/o pdb but w/ converage)
-	pytest -v \
+	pytest \
+		--asyncio-mode=auto \
 		--color=yes \
 		--cov-append \
 		--cov-config=.coveragerc \
@@ -125,8 +130,12 @@ _run-test-ci: _check_venv_active
 		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
-		--asyncio-mode=auto \
+		--keep-docker-up \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--verbose \
 		-m "not heavy_load" \
+		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 
 

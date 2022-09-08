@@ -7,27 +7,21 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/api-server
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list --verbose
+  .venv/bin/pip list --verbose
 }
 
 test() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_api_server \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/api-server/tests/unit
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/api-server
+  make test-ci-unit
+  popd
 }
 
 # Check if the function exists (bash specific)

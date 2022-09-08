@@ -15,7 +15,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthCheckEnveloped'
+                $ref: "#/components/schemas/HealthCheckEnveloped"
                 #$ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
   /dict:
     get:
@@ -169,7 +169,7 @@ components:
           type: string
           example: 1dfcfdc
 
-# RESPONSES -------------------------------------------------------
+  # RESPONSES -------------------------------------------------------
   responses:
     EnvelopedDataResponse:
       description: foo

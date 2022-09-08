@@ -7,10 +7,13 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 # isolated = these tests are (IMO) real unit tests, they do not need any dependencies and were already in the root test/unit folder before
@@ -21,38 +24,20 @@ install() {
 # As the plan is to strip the webserver into small micro-services I did not create now a super fancy classification but merely split the tests in ~equivalent test times.
 
 test_isolated() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_webserver \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/web/server/tests/unit/isolated
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/web/server
+  make test-ci-unit test-subfolder=isolated pytest-parameters="--numprocesses=auto"
+  popd
 }
 
 test_with_db() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_webserver \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    "services/web/server/tests/unit/with_dbs/$1"
+  make test-ci-unit test-subfolder="with_dbs/$1"
+  popd
 }
 
 # Check if the function exists (bash specific)
