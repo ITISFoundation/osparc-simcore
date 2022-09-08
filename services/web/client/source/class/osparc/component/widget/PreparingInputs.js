@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   construct: function(monitoredNodes = []) {
     this.base(arguments);
 
-    osparc.utils.Utils.setIdToWidget(this, "AppMode_PreparingInputsView");
+    osparc.utils.Utils.setIdToWidget(this, "preparingInputsView");
 
     this._setLayout(new qx.ui.layout.VBox(10));
 

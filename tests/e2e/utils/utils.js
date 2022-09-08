@@ -518,6 +518,11 @@ async function clickLoggerTitle(page) {
   await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
+async function getButtonsWithText(page, text) {
+  const buttons = await page.$x(`//button[contains(text(), '${text}')]`);
+  return buttons;
+}
+
 
 module.exports = {
   makeRequest,
@@ -552,4 +557,5 @@ module.exports = {
   waitUntilVisible,
   isElementVisible,
   clickLoggerTitle,
+  getButtonsWithText,
 }
