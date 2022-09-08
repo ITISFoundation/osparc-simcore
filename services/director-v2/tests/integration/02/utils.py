@@ -34,7 +34,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 PROXY_BOOT_TIME = 30
-SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 60
+SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 120
 SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
@@ -93,11 +93,7 @@ async def ensure_network_cleanup(
                     assert delete_result is True
 
 
-async def _get_service_published_port(
-    service_name: str, target_port: Optional[int] = None
-) -> int:
-    # it takes a bit of time for the port to be auto generated
-    # keep trying until it is there
+async def _wait_for_service(service_name: str) -> None:
     async with aiodocker.Docker() as docker_client:
         async for attempt in AsyncRetrying(
             wait=wait_fixed(1),
@@ -106,79 +102,86 @@ async def _get_service_published_port(
             retry=retry_if_exception_type(AssertionError),
         ):
             with attempt:
-                print(
-                    f"--> getting {service_name=} published port... (attempt {attempt.retry_state.attempt_number}) "
+                print(f"--> waiting for {service_name=} to be started... (attempt {attempt.retry_state.attempt_number})")
+                services = await docker_client.services.list(filters={"name": service_name})
+                assert len(services) == 1, f"Docker service {service_name=} is missing"
+                print(f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})")
+
+async def _get_service_published_port(
+    service_name: str, target_port: Optional[int] = None
+) -> int:
+    # it takes a bit of time for the port to be auto generated
+    # keep trying until it is there
+    async with aiodocker.Docker() as docker_client:
+        print(
+            f"--> getting {service_name=} published port for {target_port=}..."
+        )
+        services = await docker_client.services.list(filters={"name": service_name})
+        assert (
+            len(services) == 1
+        ), f"Docker service '{service_name=}' was not found!, did you wait for the service to be up?"
+        service = services[0]
+        # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
+        # Example:
+        # [
+        #   {
+        #     "Spec": {
+        #      "Name": "hopeful_cori"
+        #
+        assert service["Spec"]["Name"] == service_name
+        #
+        #     "Endpoint": {
+        #       "Spec": {
+        #         "Mode": "vip",
+        #         "Ports": [
+        #           {
+        #             "Protocol": "tcp",
+        #             "TargetPort": 6379,
+        #             "PublishedPort": 30001
+        #           }
+        #         ]
+        #       },
+        #       "Ports": [
+        #         {
+        #           "Protocol": "tcp",
+        #           "TargetPort": 6379,
+        #           "PublishedPort": 30001
+        #         }
+        #       ],
+        #
+        #   ...
+        #
+        #   }
+        # ]
+        assert "Endpoint" in service
+        ports = service["Endpoint"].get("Ports", [])
+
+        if target_port:
+            try:
+                published_port = next(
+                    p["PublishedPort"]
+                    for p in ports
+                    if p.get("TargetPort") == target_port
                 )
-                services = await docker_client.services.list()
-                services = list(
-                    filter(lambda s: s["Spec"]["Name"] == service_name, services)
-                )
-                assert (
-                    len(services) == 1
-                ), f"Docker service '{service_name=}' was not found among [{[s.name for s in services]}]!"
-                service = services[0]
-                # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
-                # Example:
-                # [
-                #   {
-                #     "Spec": {
-                #      "Name": "hopeful_cori"
-                #
-                assert service["Spec"]["Name"] == service_name
-                #
-                #     "Endpoint": {
-                #       "Spec": {
-                #         "Mode": "vip",
-                #         "Ports": [
-                #           {
-                #             "Protocol": "tcp",
-                #             "TargetPort": 6379,
-                #             "PublishedPort": 30001
-                #           }
-                #         ]
-                #       },
-                #       "Ports": [
-                #         {
-                #           "Protocol": "tcp",
-                #           "TargetPort": 6379,
-                #           "PublishedPort": 30001
-                #         }
-                #       ],
-                #
-                #   ...
-                #
-                #   }
-                # ]
-                assert "Endpoint" in service
-                ports = service["Endpoint"].get("Ports", [])
+            except StopIteration as e:
+                raise RuntimeError(
+                    f"Cannot find {target_port} in {ports=} for {service_name=}"
+                ) from e
+        else:
+            assert (
+                len(ports) == 1
+            ), f"number of ports in {service_name=} is not 1!"
+            published_port = ports[0]["PublishedPort"]
 
-                if target_port:
-                    try:
-                        published_port = next(
-                            p["PublishedPort"]
-                            for p in ports
-                            if p.get("TargetPort") == target_port
-                        )
-                    except StopIteration as e:
-                        raise RuntimeError(
-                            f"Cannot find {target_port} in {ports=} for {service_name=}"
-                        ) from e
-                else:
-                    assert (
-                        len(ports) == 1
-                    ), f"number of ports in {service_name=} is not 1!"
-                    published_port = ports[0]["PublishedPort"]
+        assert (
+            published_port is not None
+        ), f"published port of {service_name=} is not set!"
 
-                assert (
-                    published_port is not None
-                ), f"published port of {service_name=} is not set!"
+        print(
+            f"--> found {service_name=} {published_port=}"
+        )
+        return published_port
 
-                print(
-                    f"--> found {service_name=} {published_port=}, statistics: {json.dumps(attempt.retry_state.retry_object.statistics)}"
-                )
-                return published_port
-
-    pytest.fail(f"no published port found for {service_name=}")
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
@@ -194,6 +197,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
     assert app.state
     settings: AppSettings = app.state.settings
+    await _wait_for_service(service_name)
 
     published_port = await _get_service_published_port(
         service_name,
@@ -282,6 +286,7 @@ async def assert_start_service(
     result = await director_v2_client.post(
         "/v2/dynamic_services", json=data, headers=headers, follow_redirects=True
     )
+    result.raise_for_status()
     assert result.status_code == httpx.codes.CREATED, result.text
 
 
