@@ -145,6 +145,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         backgroundColor: "transparent",
         toolTipText: this.tr("Outputs")
       });
+      osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
 
       return header;
