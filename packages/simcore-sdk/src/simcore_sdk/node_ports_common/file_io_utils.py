@@ -38,6 +38,11 @@ class UploadableFileObject:
     file_size: int
 
 
+def _compute_tqdm_miniters(byte_size: int) -> float:
+    """ensures tqdm minimal iteration is 1 %"""
+    return min(byte_size / 100, 1.0)
+
+
 async def _file_object_chunk_reader(
     file_object: IO, *, offset: int, total_bytes_to_read: int
 ) -> AsyncGenerator[bytes, None]:
@@ -122,7 +127,14 @@ async def download_link_to_file(
                     with tqdm_logging_redirect(
                         desc=f"downloading {url.path} --> {file_path.name}\n",
                         total=file_size,
-                        **_TQDM_FILE_OPTIONS,
+                        **(
+                            _TQDM_FILE_OPTIONS
+                            | dict(
+                                miniters=_compute_tqdm_miniters(file_size)
+                                if file_size
+                                else 1
+                            )
+                        ),
                     ) as pbar:
                         await _file_chunk_writer(
                             file_path, response, pbar, io_log_redirect_cb
@@ -223,7 +235,9 @@ async def upload_file_to_presigned_links(
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
     with tqdm_logging_redirect(
-        desc=f"uploading {file_name}\n", total=file_size, **_TQDM_FILE_OPTIONS
+        desc=f"uploading {file_name}\n",
+        total=file_size,
+        **(_TQDM_FILE_OPTIONS | dict(miniters=_compute_tqdm_miniters(file_size))),
     ) as pbar:
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (

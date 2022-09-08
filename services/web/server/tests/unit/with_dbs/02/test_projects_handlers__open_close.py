@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-statements
+# pylint:disable=too-many-arguments
 
 import asyncio
 import json

@@ -7,33 +7,29 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/dynamic-sidecar
-  pip3 install -r requirements/ci.txt -r requirements/_tools.txt
+  make install-ci
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 codestyle() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/dynamic-sidecar
   make codestyle-ci
   popd
 }
 
 test() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_dynamic_sidecar \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/dynamic-sidecar/tests/unit
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/dynamic-sidecar
+  make test-ci-unit
+  popd
 }
 
 # Check if the function exists (bash specific)
