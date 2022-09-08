@@ -20,7 +20,7 @@ anyio==3.5.0
     #   watchgod
 asgiref==3.5.0
     # via uvicorn
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt

@@ -18,6 +18,7 @@ on:
       - "**.json"
       - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
+      - "ci/**"
   pull_request:
     branches:
       - "*"
@@ -34,7 +35,7 @@ on:
       - "**.json"
       - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
-
+      - "ci/**"
 env:
   # secrets can be set in settings/secrets on github
   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}

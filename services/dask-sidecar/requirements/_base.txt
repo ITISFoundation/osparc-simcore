@@ -38,7 +38,7 @@ async-generator==1.10
     # via nbclient
 async-timeout==4.0.2
     # via aiohttp
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp

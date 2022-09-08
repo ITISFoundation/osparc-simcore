@@ -1,5 +1,8 @@
 """ Tests OpenAPI validation middlewares
 
+How to spec NULLABLE OBJECTS?
+SEE https://stackoverflow.com/questions/40920441/how-to-specify-a-property-can-be-null-or-a-reference-with-swagger
+
 
     SEE https://github.com/p1c2u/openapi-core
 """
@@ -7,8 +10,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+
+import jsonschema
+import openapi_spec_validator
 import pytest
 from aiohttp import web
+from packaging.version import Version
 from servicelib.aiohttp import openapi
 from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.rest_middlewares import (
@@ -65,6 +72,21 @@ def client(event_loop, aiohttp_client, specs):
     ],
 )
 async def test_validate_handlers(path, client, specs):
+
+    assert Version(openapi_spec_validator.__version__) < Version("0.5.0") and Version(
+        jsonschema.__version__
+    ) < Version(
+        "4.0"
+    ), """
+    we have a very old version of openapi-core that is causing further troubles
+    specifically when we want to have nullable objects. For that reason we have constraint
+    these libraries and we can do nothing until we do not deprecate or fully upgrade openapi!
+    SEE how to specify nullable object in https://stackoverflow.com/questions/40920441/how-to-specify-a-property-can-be-null-or-a-reference-with-swagger
+
+    If these libraries are upgraded, the test_validate_handlers[/dict] will fail because he cannot validate that `error=None`, i.e.
+    that the property 'error' is a nullable object!
+    """
+
     base = openapi.get_base_path(specs)
     response = await client.get(base + path)
     payload = await response.json()
