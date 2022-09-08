@@ -9,7 +9,6 @@ from typing import Any, Optional
 
 import aiodocker
 import httpx
-import pytest
 from fastapi import FastAPI
 from models_library.projects import Node
 from models_library.services_resources import (
@@ -102,10 +101,17 @@ async def _wait_for_service(service_name: str) -> None:
             retry=retry_if_exception_type(AssertionError),
         ):
             with attempt:
-                print(f"--> waiting for {service_name=} to be started... (attempt {attempt.retry_state.attempt_number})")
-                services = await docker_client.services.list(filters={"name": service_name})
+                print(
+                    f"--> waiting for {service_name=} to be started... (attempt {attempt.retry_state.attempt_number})"
+                )
+                services = await docker_client.services.list(
+                    filters={"name": service_name}
+                )
                 assert len(services) == 1, f"Docker service {service_name=} is missing"
-                print(f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})")
+                print(
+                    f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})"
+                )
+
 
 async def _get_service_published_port(
     service_name: str, target_port: Optional[int] = None
@@ -113,9 +119,7 @@ async def _get_service_published_port(
     # it takes a bit of time for the port to be auto generated
     # keep trying until it is there
     async with aiodocker.Docker() as docker_client:
-        print(
-            f"--> getting {service_name=} published port for {target_port=}..."
-        )
+        print(f"--> getting {service_name=} published port for {target_port=}...")
         services = await docker_client.services.list(filters={"name": service_name})
         assert (
             len(services) == 1
@@ -168,20 +172,15 @@ async def _get_service_published_port(
                     f"Cannot find {target_port} in {ports=} for {service_name=}"
                 ) from e
         else:
-            assert (
-                len(ports) == 1
-            ), f"number of ports in {service_name=} is not 1!"
+            assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
             published_port = ports[0]["PublishedPort"]
 
         assert (
             published_port is not None
         ), f"published port of {service_name=} is not set!"
 
-        print(
-            f"--> found {service_name=} {published_port=}"
-        )
+        print(f"--> found {service_name=} {published_port=}")
         return published_port
-
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
