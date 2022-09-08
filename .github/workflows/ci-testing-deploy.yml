@@ -1737,10 +1737,10 @@ jobs:
           ./cc-test-reporter before-build
       - name: sum all coverage
         run: |
-          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines) --debug
+          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines) --debug --output summed_codeclimate.json
       - name: show coverage
         run: |
-          ./cc-test-reporter show-coverage
+          ./cc-test-reporter show-coverage summed_codeclimate.json
       - name: upload coverages
         run: |
           ./cc-test-reporter upload-coverage
