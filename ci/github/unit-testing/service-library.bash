@@ -9,27 +9,21 @@ IFS=$'\n\t'
 # TODO: add STEPS where pip-sync individual extras and test separately
 install_all() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/service-library
-  pip3 install -r "requirements/ci[all].txt"
+  make "install-ci[all]"
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 test_all() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=servicelib \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    packages/service-library/tests
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd packages/service-library
+  make "test-ci[all]"
+  popd
 }
 
 # Check if the function exists (bash specific)
