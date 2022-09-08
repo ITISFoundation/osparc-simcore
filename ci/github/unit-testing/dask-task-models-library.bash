@@ -10,7 +10,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd packages/service-library
+  pushd packages/dask-task-models-library
   make install-ci
   popd
   .venv/bin/pip list --verbose
@@ -25,7 +25,7 @@ codestyle() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd packages/service-library
+  pushd packages/dask-task-models-library
   make tests-ci
   popd
 }
