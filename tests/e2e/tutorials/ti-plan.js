@@ -111,7 +111,7 @@ async function runTutorial() {
 
     const outFiles = [
       "temp_ti_field.cache",
-      "temp_report.pdf"
+      "TIP_report.pdf"
     ];
     await tutorial.checkNodeOutputsAppMode(workbenchData["nodeIds"][2], outFiles, true, false);
 
