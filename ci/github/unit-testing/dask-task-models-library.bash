@@ -17,6 +17,8 @@ install() {
 }
 
 codestyle() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/dask-task-models-library
   make codestyle-ci
   popd
