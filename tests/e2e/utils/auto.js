@@ -345,7 +345,7 @@ async function openNodeFilesAppMode(page) {
   await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]');
 }
 
-async function checkDataProducedByNode(page, nFiles = 1, itemSuffix = 'NodeFiles') {
+async function checkDataProducedByNode(page, nFiles = 1) {
   console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
   const iconsContent = await page.waitForSelector('[osparc-test-id="FolderViewerIconsContent"]', {
     timeout: 5000
