@@ -1,5 +1,5 @@
 """
-All entrypoints used for operations, for insteance
+All entrypoints used for operations, for instance
 service health-check, diagnostics, debugging, status, etc
 """
 
