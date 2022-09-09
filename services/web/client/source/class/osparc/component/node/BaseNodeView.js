@@ -145,6 +145,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         backgroundColor: "transparent",
         toolTipText: this.tr("Outputs")
       });
+      osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
 
       return header;
@@ -183,7 +184,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const title = this.tr("Preparing Inputs");
       const width = 650;
       const height = 600;
-      osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
+      const win = osparc.ui.window.Window.popUpInWindow(this.__preparingInputs, title, width, height);
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "preparingInputsCloseBtn");
     },
 
     __openNodeDataManager: function() {
