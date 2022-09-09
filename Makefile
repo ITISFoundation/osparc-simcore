@@ -51,6 +51,7 @@ export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
