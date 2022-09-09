@@ -270,7 +270,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const selection = this._resourcesContainer.getSelection();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmWindow(selection.length > 1);
+          const win = this.__createConfirmWindow(selection.map(button => button.getTitle()));
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -581,7 +581,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       deleteButton.addListener("execute", () => {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmWindow(false);
+          const win = this.__createConfirmWindow([studyData.name]);
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -817,8 +817,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __createConfirmWindow: function(isMulti) {
-      const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
+    __createConfirmWindow: function(studyNames) {
+      const msg = studyNames.length > 1 ? this.tr(`Are you sure you want to delete ${studyNames.length} studies?`) : this.tr(`Are you sure you want to delete ${studyNames[0]}?`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
