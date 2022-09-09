@@ -3,7 +3,7 @@ All entrypoints used for operations, for instance
 service health-check, diagnostics, debugging, status, etc
 """
 
-import datetime
+from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse

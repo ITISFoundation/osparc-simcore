@@ -5,16 +5,17 @@ from contextlib import suppress
 from typing import Final
 
 import pkg_resources
+from packaging.version import Version
 
-_current_distribution = pkg_resources.get_distribution("simcore_service_autoscaling")
+_current_distribution = pkg_resources.get_distribution("simcore-service-autoscaling")
 
-PROJECT_NAME: Final[str] = _current_distribution.project_name
+__version__: str = _current_distribution.version
 
-API_VERSION: Final[str] = _current_distribution.version
-MAJOR, MINOR, PATCH = _current_distribution.version.split(".")
-API_VTAG: Final[str] = f"v{MAJOR}"
 
-__version__: Final[str] = API_VERSION
+APP_NAME: Final[str] = _current_distribution.project_name
+API_VERSION: str = __version__
+VERSION: Final[str] = Version(__version__)
+API_VTAG: str = f"v{VERSION.major}"
 
 
 def get_summary() -> str:
@@ -29,3 +30,23 @@ def get_summary() -> str:
 
 
 SUMMARY: Final[str] = get_summary()
+
+
+# https://patorjk.com/software/taag/#p=testall&f=Avatar&t=Autoscaling
+APP_STARTED_BANNER_MSG = r"""
+                _                      _ _
+     /\        | |                    | (_)
+    /  \  _   _| |_ ___  ___  ___ __ _| |_ _ __   __ _
+   / /\ \| | | | __/ _ \/ __|/ __/ _` | | | '_ \ / _` |
+  / ____ \ |_| | || (_) \__ \ (_| (_| | | | | | | (_| |
+ /_/    \_\__,_|\__\___/|___/\___\__,_|_|_|_| |_|\__, |
+                                                  __/ |
+                                                 |___/       {}
+""".format(
+    f"v{__version__}"
+)
+
+
+APP_FINISHED_BANNER_MSG = "{:=^100}".format(
+    f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉"
+)

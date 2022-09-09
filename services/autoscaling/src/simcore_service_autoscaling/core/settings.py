@@ -6,9 +6,11 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.settings.base import BaseCustomSettings
 from pydantic import Field, PositiveInt
+from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
+
+from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
