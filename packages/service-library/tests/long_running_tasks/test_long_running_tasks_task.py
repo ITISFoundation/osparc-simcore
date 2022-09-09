@@ -119,6 +119,20 @@ async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
     assert result
 
 
+async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksManager):
+    task_id = start_task(
+        tasks_manager,
+        a_background_task,
+        raise_when_finished=False,
+        total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
+        fire_and_forget=True,
+    )
+    await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
+    # the task shall still be present
+    status = tasks_manager.get_task_status(task_id, with_task_context=None)
+    assert not status.done, "task was removed although it is fire and forget"
+
+
 async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager):
     task_id = start_task(
         tasks_manager,
