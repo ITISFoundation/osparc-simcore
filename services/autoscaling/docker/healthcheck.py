@@ -20,21 +20,20 @@ import os
 import sys
 from urllib.request import urlopen
 
-SUCCESS, UNHEALTHY = 0, 1
+SUCCESS, UNHEALTHY = os.EX_OK, os.EX_UNAVAILABLE
 
-# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
-ok = "debug" in os.environ.get("SC_BOOT_MODE").lower()
 
-# Queries host
-ok = (
-    ok
-    or urlopen(
+def health_check():
+    # Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
+    if "debug" in os.environ.get("SC_BOOT_MODE").lower():
+        return True
+
+    with urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
         )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
+    ) as f:
+        return f.getcode() == 200
 
 
-sys.exit(SUCCESS if ok else UNHEALTHY)
+sys.exit(SUCCESS if health_check() else UNHEALTHY)
