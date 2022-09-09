@@ -18,22 +18,24 @@ Q&A:
 
 import os
 import sys
+from contextlib import suppress
 from urllib.request import urlopen
 
-SUCCESS, UNHEALTHY = os.EX_OK, os.EX_UNAVAILABLE
+# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
+SC_BOOT_MODE = os.environ.get("SC_BOOT_MODE", "")
+
+# Adds a base-path if defined in environ
+SIMCORE_NODE_BASEPATH = os.environ.get("SIMCORE_NODE_BASEPATH", "")
 
 
-def health_check():
-    # Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
-    if "debug" in os.environ.get("SC_BOOT_MODE").lower():
+def is_service_healthy() -> bool:
+    if "debug" in SC_BOOT_MODE.lower():
         return True
 
-    with urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ) as f:
-        return f.getcode() == 200
+    with suppress(Exception):
+        with urlopen(f"{sys.argv[1]}{SIMCORE_NODE_BASEPATH}") as f:
+            return f.getcode() == 200
+    return False
 
 
-sys.exit(SUCCESS if health_check() else UNHEALTHY)
+sys.exit(os.EX_OK if is_service_healthy() else os.EX_UNAVAILABLE)
