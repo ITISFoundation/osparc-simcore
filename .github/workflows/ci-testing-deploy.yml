@@ -376,6 +376,56 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-autoscaling:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] autoscaling"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.7.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/autoscaling/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/autoscaling.bash install
+      - name: test
+        run: ./ci/github/unit-testing/autoscaling.bash test
+      - uses: codecov/codecov-action@v3.1.0
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/autoscaling/coverage.xml
+      - name: store codeclimate coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-catalog:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
@@ -1751,6 +1801,7 @@ jobs:
     needs:
       [
         unit-test-api-server,
+        unit-test-autoscaling,
         unit-test-api,
         unit-test-catalog,
         unit-test-dask-sidecar,
