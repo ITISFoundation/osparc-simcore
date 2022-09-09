@@ -44,6 +44,7 @@ async def start_long_running_task(
     request: web.Request,
     task: TaskProtocol,
     *,
+    fire_and_forget: bool = False,
     task_context: TaskContext,
     **task_kwargs: Any,
 ) -> web.Response:
@@ -54,6 +55,7 @@ async def start_long_running_task(
         task_id = start_task(
             task_manager,
             task,
+            fire_and_forget=fire_and_forget,
             task_context=task_context,
             task_name=task_name,
             **task_kwargs,
