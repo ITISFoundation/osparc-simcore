@@ -189,10 +189,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       osparc.utils.Utils.setIdToWidget(closeBtn, "preparingInputsCloseBtn");
     },
 
-    __openNodeDataManager: function() {
-      this.self().openNodeDataManager(this.getNode());
-    },
-
     __openServiceDetails: function() {
       const node = this.getNode();
       const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
