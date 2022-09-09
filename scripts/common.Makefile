@@ -38,6 +38,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 # relevant repo folders
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
 PACKAGES_DIR := $(abspath $(REPO_BASE_DIR)/packages)
+SERVICES_DIR := $(abspath $(REPO_BASE_DIR)/services)
 
 # virtual env
 EXPECTED_PYTHON_VERSION := $(shell cat $(REPO_BASE_DIR)/requirements/PYTHON_VERSION)
