@@ -24,7 +24,9 @@ filelock==3.8.0
 identify==2.5.5
     # via pre-commit
 isort==5.10.1
-    # via -r requirements/../../../requirements/devenv.txt
+    # via
+    #   -c requirements/_test.txt
+    #   -r requirements/../../../requirements/devenv.txt
 mypy-extensions==0.4.3
     # via black
 nodeenv==1.7.0
@@ -41,6 +43,7 @@ pip-tools==6.8.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==2.5.2
     # via
+    #   -c requirements/_test.txt
     #   black
     #   virtualenv
 pre-commit==2.20.0
@@ -66,6 +69,7 @@ tomli==2.0.1
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
 virtualenv==20.16.5
     # via pre-commit
