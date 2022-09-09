@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import (
@@ -39,7 +40,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_USER_NAME: Optional[str] = None
 
     # RUNTIME  -----------------------------------------------------------
+    AUTOSCALING_DEBUG: bool = Field(
+        False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
+    )
 
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
+
+    @cached_property
+    def LOG_LEVEL(self):
+        return self.AUTOSCALING_LOGLEVEL

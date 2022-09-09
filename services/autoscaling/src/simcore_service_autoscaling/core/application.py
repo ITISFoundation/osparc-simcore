@@ -20,7 +20,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     logger.debug("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(
-        debug=settings.debug,
+        debug=settings.AUTOSCALING_DEBUG,
         title=APP_NAME,
         description="Service to auto-scale swarm",
         version=API_VERSION,
