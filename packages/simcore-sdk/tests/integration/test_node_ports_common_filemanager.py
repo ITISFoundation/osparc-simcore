@@ -170,7 +170,6 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
     "file_size",
     [
         _file_size("10Mib"),
-        _file_size("101Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -206,7 +205,6 @@ async def test_failed_upload_is_properly_removed_from_storage(
     "file_size",
     [
         _file_size("10Mib"),
-        _file_size("101Mib"),
     ],
     ids=byte_size_ids,
 )
