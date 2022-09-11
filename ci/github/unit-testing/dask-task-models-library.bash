@@ -7,35 +7,29 @@ IFS=$'\n\t'
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/dask-task-models-library
-  pip3 install \
-      --requirement requirements/ci.txt \
-      --requirement requirements/_tools.txt
+  make install-ci
   popd
-  pip list --verbose
+  .venv/bin/pip list --verbose
 }
 
 codestyle() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/dask-task-models-library
   make codestyle-ci
   popd
 }
 
 test() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=dask_task_models_library \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    packages/dask-task-models-library/tests
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd packages/dask-task-models-library
+  make tests-ci
+  popd
 }
 
 # Check if the function exists (bash specific)
