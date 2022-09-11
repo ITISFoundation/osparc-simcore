@@ -1743,7 +1743,7 @@ jobs:
           ./cc-test-reporter show-coverage summed_codeclimate.json
       - name: upload coverages
         run: |
-          ./cc-test-reporter upload-coverage --input upload-coverage
+          ./cc-test-reporter upload-coverage --input summed_codeclimate.json
 
   deploy:
     name: deploy to dockerhub
