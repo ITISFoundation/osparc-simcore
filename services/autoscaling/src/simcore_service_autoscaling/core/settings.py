@@ -7,7 +7,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -51,3 +51,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
+
+    @validator("AUTOSCALING_LOGLEVEL")
+    @classmethod
+    def valid_log_level(cls, value) -> str:
+        return cls.validate_log_level(value)
