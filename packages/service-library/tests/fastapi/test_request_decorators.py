@@ -72,27 +72,34 @@ def server_lifetime(port: int) -> Iterator[ServerInfo]:
         # checks started successfully
         assert proc.stdout
         assert not proc.poll(), proc.stdout.read().decode("utf-8")
-
+        print("server is up and waiting for requests...")
         yield ServerInfo(url, proc)
-
+        print("server is closing...")
         proc.terminate()
+        print("server terminated")
 
 
 def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
 
     with server_lifetime(port=get_unused_port()) as server:
         url, proc = server
-        print()
+        print("--> testing server")
         response = requests.get(f"{server.url}/example?wait=0", timeout=2)
         print(response.url, "->", response.text)
         response.raise_for_status()
+        print("<-- server responds")
 
+        print("--> testing server correctly cancels")
         with pytest.raises(requests.exceptions.ReadTimeout):
-            response = requests.get(f"{server.url}/example?wait=2", timeout=1)
+            response = requests.get(f"{server.url}/example?wait=2", timeout=0.5)
+        print("<-- testing server correctly cancels done")
 
-        response = requests.get(f"{server.url}/example?wait=1", timeout=2)
+        print("--> testing server again")
+        # NOTE: the timeout here appears to be sensitive. if it is set <5 the test hangs from time to time
+        response = requests.get(f"{server.url}/example?wait=1", timeout=5)
         print(response.url, "->", response.text)
         response.raise_for_status()
+        print("<-- testing server again done")
 
         # kill service
         server.proc.terminate()

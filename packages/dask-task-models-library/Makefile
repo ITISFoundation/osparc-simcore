@@ -15,10 +15,35 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests
+.PHONY: tests tests-ci
 tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--cov-config=../../.coveragerc --cov=dask_task_models_library --cov-report=term-missing \
-	--asyncio-mode=auto \
-	--pdb $(CURDIR)/tests
+	@pytest \
+		--asyncio-mode=auto \
+		--color=yes \
+		--cov-config=../../.coveragerc \
+		--cov-report=term-missing \
+		--cov=dask_task_models_library \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		-vv \
+		$(CURDIR)/tests
+
+tests-ci: ## runs unit tests
+	# running unit tests
+	@pytest \
+		--asyncio-mode=auto \
+		--color=yes \
+		--cov-append \
+		--cov-config=../../.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=dask_task_models_library \
+		--durations=10 \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --verbose \
+    -m "not heavy_load" \
+		$(CURDIR)/tests
