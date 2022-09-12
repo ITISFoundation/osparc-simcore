@@ -9,7 +9,7 @@ import json
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
+from typing import Any, Callable, NamedTuple, Union
 
 import pytest
 import sqlalchemy as sa
@@ -84,16 +84,16 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPOk]]
+    ok: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPOk]]
     created: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPCreated]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPCreated]
     ]
     no_content: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNoContent]
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNoContent]
     ]
     forbidden: Union[
-        Type[web.HTTPUnauthorized],
-        Type[web.HTTPForbidden],
+        type[web.HTTPUnauthorized],
+        type[web.HTTPForbidden],
     ]
     # pylint: disable=no-member
     def __str__(self) -> str:
@@ -101,7 +101,7 @@ class ExpectedResponse(NamedTuple):
         return f"{self.__class__.__name__}({items})"
 
 
-def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
+def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:
     return (
         "user_role,expected",
         [
@@ -145,9 +145,6 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
     )
 
 
-# FIXTURES ----------------------------------------------------------------------------
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
@@ -156,7 +153,7 @@ def client(
     redis_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,
-    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
+    app_config: dict[str, Any],  ## waits until swarm with *_services are up
     mocker: MockerFixture,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
@@ -200,7 +197,7 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def fake_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
+def fake_workbench_adjacency_list(tests_data_dir: Path) -> dict[str, Any]:
     file_path = tests_data_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
@@ -210,8 +207,8 @@ def fake_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
 def _assert_db_contents(
     project_id: str,
     postgres_session: sa.orm.session.Session,
-    fake_workbench_payload: Dict[str, Any],
-    fake_workbench_adjacency_list: Dict[str, Any],
+    fake_workbench_payload: dict[str, Any],
+    fake_workbench_adjacency_list: dict[str, Any],
     check_outputs: bool,
 ):
     # pylint: disable=no-member
@@ -251,7 +248,7 @@ NodeIdStr = str
 def _get_computational_tasks_from_db(
     project_id: str,
     postgres_session: sa.orm.session.Session,
-) -> Dict[NodeIdStr, Any]:
+) -> dict[NodeIdStr, Any]:
     # this check is only there to check the comp_pipeline is there
     assert (
         postgres_session.query(comp_pipeline)
@@ -275,7 +272,7 @@ def _get_computational_tasks_from_db(
 def _get_project_workbench_from_db(
     project_id: str,
     postgres_session: sa.orm.session.Session,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
     project_in_db = (
@@ -338,10 +335,10 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             print(
                 f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
             )
-            comp_tasks_in_db: Dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
+            comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
                 project_id, postgres_session
             )
-            workbench_in_db: Dict[NodeIdStr, Any] = _get_project_workbench_from_db(
+            workbench_in_db: dict[NodeIdStr, Any] = _get_project_workbench_from_db(
                 project_id, postgres_session
             )
             for node_id, node_values in comp_tasks_in_db.items():
@@ -370,16 +367,15 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             )
 
 
-# TESTS ------------------------------------------
 @pytest.mark.skip(reason="FIXME: still not bullet proof")
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_stop_computation(
     client: TestClient,
-    sleeper_service: Dict[str, str],
+    sleeper_service: dict[str, str],
     postgres_session: sa.orm.session.Session,
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
-    fake_workbench_adjacency_list: Dict[str, Any],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    fake_workbench_adjacency_list: dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -447,11 +443,11 @@ async def test_start_stop_computation(
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_run_pipeline_and_check_state(
     client: TestClient,
-    sleeper_service: Dict[str, str],
+    sleeper_service: dict[str, str],
     postgres_session: sa.orm.session.Session,
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
-    fake_workbench_adjacency_list: Dict[str, Any],
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    fake_workbench_adjacency_list: dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -537,7 +533,7 @@ async def test_run_pipeline_and_check_state(
                 f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
     assert pipeline_state == RunningState.SUCCESS
-    comp_tasks_in_db: Dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
+    comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
         project_id, postgres_session
     )
     assert all(  # pylint: disable=use-a-generator

@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 import pytest
 from faker import Faker
@@ -33,7 +33,7 @@ def assert_same_fields(model_cls, reference_model_cls):
     assert got_fields == expected_fields
 
 
-def _trim_descriptions(schema: Dict):
+def _trim_descriptions(schema: dict):
     data = {}
     for key in schema:
         if key not in ("description", "title"):
@@ -171,9 +171,6 @@ class UserListItem(BaseModel):
     # parses from User
 
 
-# FIXTURES ---------------------------------------------------------------
-
-
 @pytest.fixture
 def fake_user(faker: Faker) -> User:
     """a fake domain model of a User resource"""
@@ -183,9 +180,6 @@ def fake_user(faker: Faker) -> User:
         username=faker.user_name(),
         password_hash=faker.md5(),
     )
-
-
-# TESTS ------------------------------------------------------------------
 
 
 def test_build_UserCreate_model():
@@ -264,7 +258,7 @@ def test_build_UserGet_model(fake_user: User):
 
     assert _trim_descriptions(UserGet.schema()) == _trim_descriptions(_UserGet.schema())
 
-    payload_user: Dict = (
+    payload_user: dict = (
         Envelope[_UserGet].parse_data(fake_user).dict(exclude_unset=True)
     )
 

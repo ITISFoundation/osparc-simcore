@@ -35,9 +35,6 @@ def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
     return kwargs
 
 
-# FIXTURES --------------------------------------------------------------------------------
-
-
 @pytest.fixture
 def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
     main = typer.Typer(name="app")
@@ -84,9 +81,6 @@ def export_as_dict() -> Callable:
         )
 
     return _export
-
-
-# TESTS -----------------------------------------------------------------------------------
 
 
 def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):

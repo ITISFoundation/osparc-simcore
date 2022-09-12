@@ -707,9 +707,6 @@ SESSION_WORKFLOW = (
 )
 
 
-# FIXTURES ----------------------
-
-
 @pytest.fixture
 def project_workflow_captures() -> tuple[HttpApiCallCapture, ...]:
     return tuple(deepcopy(c) for c in SESSION_WORKFLOW)

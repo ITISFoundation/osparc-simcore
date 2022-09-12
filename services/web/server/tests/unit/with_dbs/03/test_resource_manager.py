@@ -80,9 +80,6 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     await assert_status(resp, web.HTTPNoContent)
 
 
-# FIXTURES -----------------------------------------------------------------------------
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
@@ -189,9 +186,6 @@ async def empty_user_project2(
 @pytest.fixture(autouse=True)
 async def director_v2_mock(director_v2_service_mock) -> aioresponses:
     return director_v2_service_mock
-
-
-# TESTS -----------------------------------------------------------------------------
 
 
 async def test_anonymous_websocket_connection(

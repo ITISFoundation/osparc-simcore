@@ -18,7 +18,6 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 
-# UTILS -------------------------
 
 mock_app = FastAPI(title="Disconnect example")
 
@@ -39,9 +38,6 @@ async def example(
     except asyncio.CancelledError:
         print(MESSAGE_ON_HANDLER_CANCELLATION)
         raise
-
-
-# FIXTURES ---------------------
 
 
 class ServerInfo(NamedTuple):

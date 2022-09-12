@@ -14,7 +14,6 @@ from settings_library.basic_types import PortInt
 # HELPERS --------------------------------------------------------------------------------
 
 
-# FIXTURES --------------------------------------------------------------------------------------
 #
 # NOTE: Pydantic models are returned by function-scoped fixture such that every
 #       test starts with a fresh Model class (notice that pydanctic classes involve meta-operations
@@ -96,7 +95,6 @@ def model_classes_factory() -> Callable:
     return _create_classes
 
 
-# TESTS --------------------------------------------------------------------------------------
 #
 # NOTE: Tests below are progressive to understand and validate the construction mechanism
 #       implemented in BaseCustomSettings.

@@ -57,9 +57,6 @@ def _resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
     return schema
 
 
-# TESTS --------------
-
-
 def test_validate_port_content():
     #  unit = {"freq": "Hz", "distances": ["m", "mm"], "other": {"distances": "mm", "frequency": "Hz" }}
     #  unit = "MHz" <-- we start here

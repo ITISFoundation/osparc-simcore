@@ -152,9 +152,6 @@ async def _publish_in_rabbit(
     return (log_messages, progress_messages, instrumentation_messages)
 
 
-# FIXTURES ------------------------------------------------------------------------------------
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
@@ -290,7 +287,6 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
-# TESTS ------------------------------------------------------------------------------------
 #
 #   publisher ---> (rabbitMQ)  ---> webserver --- (socketio) ---> front-end pages
 #

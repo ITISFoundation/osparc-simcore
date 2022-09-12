@@ -79,9 +79,6 @@ def e_tag() -> str:
     return "1212132546546321-1"
 
 
-# FIXTURES --------------------------------------------------------------------------------------
-
-
 @pytest.fixture
 def symlink_to_file_with_data() -> Iterator[Path]:
     file_name: Path = this_node_file_name()
@@ -236,9 +233,6 @@ class PortParams(NamedTuple):
     new_value: Union[int, float, bool, str, Path, None]
     exp_new_value: Union[int, float, bool, str, Path, FileLink, None]
     exp_new_get_value: Union[int, float, bool, str, Path, None]
-
-
-# TESTS --------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(

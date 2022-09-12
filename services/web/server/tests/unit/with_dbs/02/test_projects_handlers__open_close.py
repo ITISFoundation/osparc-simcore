@@ -204,7 +204,6 @@ async def _delete_project(client, project: dict) -> ClientResponse:
     return resp
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
 @pytest.mark.parametrize(*standard_role_response())
 @pytest.mark.parametrize(
     "share_rights",

@@ -79,9 +79,6 @@ class MyBody(BaseModel):
         return cls(x=faker.pyint(), y=faker.pybool(), z=Sub.create_fake(faker))
 
 
-# FIXTURES ----------------------------------
-
-
 @pytest.fixture
 def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     """
@@ -158,9 +155,6 @@ def query_params(faker: Faker) -> MyRequestQueryParams:
 @pytest.fixture
 def body(faker: Faker) -> MyBody:
     return MyBody.create_fake(faker)
-
-
-# TESTS ------------------------------------------------------
 
 
 async def test_parse_request_as(

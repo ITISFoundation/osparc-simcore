@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import itertools
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from models_library.function_services_catalog.services import demo_units
@@ -15,7 +15,7 @@ from simcore_service_webserver.catalog_units import can_connect
 # HELPERS ----------
 
 
-def create_port_data(schema: Dict[str, Any]):
+def create_port_data(schema: dict[str, Any]):
     description = schema.pop("description", schema["title"])
 
     return {
@@ -26,7 +26,7 @@ def create_port_data(schema: Dict[str, Any]):
     }
 
 
-def upgrade_port_data(old_port) -> Dict[str, Any]:
+def upgrade_port_data(old_port) -> dict[str, Any]:
     _type = old_port["type"]
     if _type in ("number", "integer", "string"):
         # creates schema from old data
@@ -42,15 +42,9 @@ def upgrade_port_data(old_port) -> Dict[str, Any]:
     return old_port
 
 
-# FIXTURES -----------------
-
-
 @pytest.fixture(scope="module")
 def unit_registry():
     return UnitRegistry()
-
-
-# TESTS -----------------
 
 
 def test_can_connect_for_gh_osparc_issues_442(unit_registry: UnitRegistry):

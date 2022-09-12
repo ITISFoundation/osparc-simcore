@@ -33,8 +33,6 @@ async def fake_user_api_keys(client, logged_user):
         await crud.delete_api_key(name)
 
 
-# TESTS ---------
-
 USER_ACCESS_PARAMETERS = [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),

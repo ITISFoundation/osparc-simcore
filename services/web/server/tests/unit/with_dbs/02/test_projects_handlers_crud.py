@@ -150,7 +150,6 @@ async def _replace_project(
     return data
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "user_role,expected",
     [

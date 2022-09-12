@@ -35,9 +35,6 @@ async def wait_till_rabbit_responsive(url: str) -> None:
     await connection.close()
 
 
-# FIXTURES ------------------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="function")
 async def rabbit_settings(
     docker_stack: dict, testing_environ_vars: dict  # stack is up

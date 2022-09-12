@@ -118,9 +118,6 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize(
     "limit, offset, expected_error_msg",
     [

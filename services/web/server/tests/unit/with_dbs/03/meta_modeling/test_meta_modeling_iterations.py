@@ -39,8 +39,6 @@ REQUEST_MODEL_POLICY = {
     "exclude_unset": True,
 }
 
-# FIXTURES ----------------------------------
-
 
 @pytest.fixture
 async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict):
@@ -52,9 +50,6 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
     async with engine.acquire() as conn:
         # cascade deletes everything except projects_vc_snapshot
         await conn.execute(projects.delete())
-
-
-# TESTS ----------------------------------
 
 
 @pytest.mark.acceptance_test

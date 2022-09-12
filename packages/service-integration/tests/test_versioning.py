@@ -12,8 +12,6 @@ from service_integration.versioning import (
     bump_version_string,
 )
 
-# TESTS ------------------------------------------
-
 
 def test_pep404_compare_versions():
     # TODO: replace pkg_resources with https://importlib-metadata.readthedocs.io/en/latest/index.html so it is standard in 3.8

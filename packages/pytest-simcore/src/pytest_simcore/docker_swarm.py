@@ -142,9 +142,6 @@ def _fetch_and_print_services(
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
 
 
-# FIXTURES --------------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="session")
 def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()

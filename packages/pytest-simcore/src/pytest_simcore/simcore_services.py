@@ -101,9 +101,6 @@ class ServiceHealthcheckEndpoint:
         return obj
 
 
-# FIXTURES --------------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="module")
 def services_endpoint(
     core_services_selection: list[str],

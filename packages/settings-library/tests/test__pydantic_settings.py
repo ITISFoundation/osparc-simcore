@@ -36,9 +36,6 @@ def assert_field_specs(
         assert field.default is None
 
 
-# FIXTURES --------------------------------------------------------------------------------------
-
-
 class Settings(BaseSettings):
     VALUE: int
     VALUE_DEFAULT: int = 42
@@ -60,9 +57,6 @@ class Settings(BaseSettings):
             if isinstance(v, str) and v.lower() in ("null", "none"):
                 return None
         return v
-
-
-# TESTS --------------------------------------------------------------------------------------
 
 
 def test_fields_declarations():

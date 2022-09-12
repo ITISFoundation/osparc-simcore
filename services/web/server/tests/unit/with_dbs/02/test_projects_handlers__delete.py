@@ -30,9 +30,6 @@ async def _request_delete_project(
     await assert_status(resp, expected)
 
 
-# TESTS -----------------------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize(*standard_role_response())
 async def test_delete_project(
     client: TestClient,

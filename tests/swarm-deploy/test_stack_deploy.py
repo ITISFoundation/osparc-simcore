@@ -116,7 +116,7 @@ async def assert_service_is_running(
     assert False  # never reached
 
 
-## FIXTURES ----------------------------------------------------------------------
+#
 
 
 @pytest.fixture
@@ -172,7 +172,7 @@ def docker_stack_core_and_ops(
         subprocess.run(f"docker stack ps {stack_name}", shell=True, check=False)
 
 
-## TESTS ----------------------------------------------------------------------
+#
 
 
 async def test_core_services_running(
