@@ -30,7 +30,7 @@ tests: ## runs unit tests
 		-vv \
 		$(CURDIR)/tests
 
-tests-ci: ## runs unit tests
+tests-ci: ## runs unit tests [ci-mode]
 	# running unit tests
 	@pytest \
 		--color=yes \
