@@ -32,7 +32,7 @@ def downgrade():
         "CREATE TYPE userstatus AS ENUM('CONFIRMATION_PENDING', 'ACTIVE', 'BANNED')"
     )
     op.execute(
-        "ALTER TABLE transactions ALTER COLUMN status TYPE userstatus USING "
+        "ALTER TABLE users ALTER COLUMN status TYPE userstatus USING "
         "status::text::userstatus"
     )
     op.execute("DROP TYPE userstatus_old")
