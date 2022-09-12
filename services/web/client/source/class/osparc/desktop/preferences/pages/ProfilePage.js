@@ -87,6 +87,16 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
+      const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+        paddingLeft: 16
+      });
+      expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
+      const expirationDate = new qx.ui.basic.Label("asdf");
+      expirationLayout.add(expirationDate);
+      const infoExtension = new osparc.ui.hint.InfoHint(this.tr("Please contact this email"));
+      expirationLayout.add(infoExtension);
+      box.add(expirationLayout);
+
       const img = new qx.ui.basic.Image().set({
         decorator: new qx.ui.decoration.Decorator().set({
           radius: 50
@@ -100,16 +110,16 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "firstName": null,
         "lastName": null,
         "email": null,
-        "role": null
+        "role": null,
+        "expirationDate": "2099-12-31T22:59:59.999Z"
       };
 
       if (qx.core.Environment.get("qx.debug")) {
-        raw = {
-          "firstName": "Bizzy",
-          "lastName": "Zastrow",
-          "email": "bizzy@itis.ethz.ch",
-          "role": "Tester"
-        };
+        raw.firstName = "Bizzy";
+        raw.lastName = "Zastrow";
+        raw.email = "bizzy@itis.swiss";
+        raw.role = "User";
+        raw.expirationDate = "2099-12-31T22:59:59.999Z";
       }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
@@ -122,6 +132,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       });
       controller.addTarget(lastName, "value", "lastName", true);
       controller.addTarget(role, "value", "role", false);
+      controller.addTarget(expirationDate, "value", "expirationDate", false, {
+        converter: data => osparc.utils.Utils.formatDateAndTime(new Date(data))
+      });
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
           return osparc.utils.Avatar.getUrl(email.getValue(), 150);
