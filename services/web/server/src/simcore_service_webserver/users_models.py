@@ -70,21 +70,19 @@ class UsersGroup(BaseModel):
                     "gid": "27",
                     "label": "A user",
                     "description": "A very special user",
-                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "thumbnail": "https://placekitten.com/10/10",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
                     "gid": "1",
                     "label": "ITIS Foundation",
                     "description": "The Foundation for Research on Information Technologies in Society",
-                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
                     "gid": "0",
                     "label": "All",
                     "description": "Open to all users",
-                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                     "accessRights": {"read": True, "write": True, "delete": True},
                 },
             ]
@@ -103,7 +101,6 @@ class AllUsersGroups(BaseModel):
                     "gid": "27",
                     "label": "A user",
                     "description": "A very special user",
-                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                     "accessRights": {"read": True, "write": True, "delete": True},
                 },
                 "organizations": [
@@ -111,7 +108,6 @@ class AllUsersGroups(BaseModel):
                         "gid": "15",
                         "label": "ITIS Foundation",
                         "description": "The Foundation for Research on Information Technologies in Society",
-                        "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                         "accessRights": {
                             "read": True,
                             "write": False,
@@ -122,7 +118,6 @@ class AllUsersGroups(BaseModel):
                         "gid": "16",
                         "label": "Blue Fundation",
                         "description": "Some foundation",
-                        "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                         "accessRights": {
                             "read": True,
                             "write": False,
@@ -134,7 +129,6 @@ class AllUsersGroups(BaseModel):
                     "gid": "0",
                     "label": "All",
                     "description": "Open to all users",
-                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
             }
