@@ -291,6 +291,18 @@ async def _create_docker_service_params(
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
+            # ensure strictness of reservations/limits (e.g. reservations = limits)
+            for key in ["NanoCPUs", "MemoryBytes"]:
+                max_value = max(
+                    docker_params["task_template"]["Resources"]["Reservations"][key],
+                    docker_params["task_template"]["Resources"]["Limits"][key],
+                )
+                docker_params["task_template"]["Resources"]["Reservations"][
+                    key
+                ] = docker_params["task_template"]["Resources"]["Limits"][
+                    key
+                ] = max_value
+
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int":  # backward comp
             docker_params["labels"]["port"] = docker_params["labels"][
