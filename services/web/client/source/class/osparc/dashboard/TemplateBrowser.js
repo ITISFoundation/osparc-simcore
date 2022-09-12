@@ -268,7 +268,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __createConfirmWindow: function(templateName) {
-      const msg = this.tr("Are you sure you want to delete ") + templateName + "?";
+      const rUSure = this.tr("Are you sure you want to delete ");
+      const msg = rUSure + "<b>" + templateName + "</b>?";
       const confWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
