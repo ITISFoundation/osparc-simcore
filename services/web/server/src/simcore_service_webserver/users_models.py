@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, EmailStr, Field
@@ -23,28 +23,13 @@ class Token(BaseModel):
         schema_extra = {
             "example": {
                 "service": "github-api-v1",
-                "token_key": "N1BP5ZSpB",
+                "token_key": "5f21abf5-c596-47b7-bfd1-c0e436ef1107",
             }
         }
 
 
-class TokenId(BaseModel):
+class TokenID(BaseModel):
     __root__: str = Field(..., description="toke identifier")
-
-
-class TokenEnveloped(BaseModel):
-    data: Token
-    error: Optional[Any] = None
-
-
-class TokensArrayEnveloped(BaseModel):
-    data: list[Token]
-    error: Optional[Any] = None
-
-
-class TokenIdEnveloped(BaseModel):
-    data: TokenId
-    error: Optional[Any] = None
 
 
 #
@@ -86,26 +71,24 @@ class UsersGroup(BaseModel):
                     "label": "A user",
                     "description": "A very special user",
                     "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
                     "gid": "1",
                     "label": "ITIS Foundation",
                     "description": "The Foundation for Research on Information Technologies in Society",
                     "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
                     "gid": "0",
                     "label": "All",
                     "description": "Open to all users",
                     "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "accessRights": {"read": True, "write": True, "delete": True},
                 },
             ]
         }
-
-
-class UsersGroupEnveloped(BaseModel):
-    data: UsersGroup
-    error: Optional[Any] = None
 
 
 class AllUsersGroups(BaseModel):
@@ -113,10 +96,49 @@ class AllUsersGroups(BaseModel):
     organizations: Optional[list[UsersGroup]] = None
     all: Optional[UsersGroup] = None
 
-
-class AllUsersGroupsEnveloped(BaseModel):
-    data: AllUsersGroups
-    error: Optional[Any] = None
+    class Config:
+        schema_extra = {
+            "example": {
+                "me": {
+                    "gid": "27",
+                    "label": "A user",
+                    "description": "A very special user",
+                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "accessRights": {"read": True, "write": True, "delete": True},
+                },
+                "organizations": [
+                    {
+                        "gid": "15",
+                        "label": "ITIS Foundation",
+                        "description": "The Foundation for Research on Information Technologies in Society",
+                        "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                        "accessRights": {
+                            "read": True,
+                            "write": False,
+                            "delete": False,
+                        },
+                    },
+                    {
+                        "gid": "16",
+                        "label": "Blue Fundation",
+                        "description": "Some foundation",
+                        "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                        "accessRights": {
+                            "read": True,
+                            "write": False,
+                            "delete": False,
+                        },
+                    },
+                ],
+                "all": {
+                    "gid": "0",
+                    "label": "All",
+                    "description": "Open to all users",
+                    "thumbnail": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+                    "accessRights": {"read": True, "write": False, "delete": False},
+                },
+            }
+        }
 
 
 class GroupUser(GroupAccessRights):
@@ -136,18 +158,11 @@ class GroupUser(GroupAccessRights):
                 "gravatar_id": "a1af5c6ecc38e81f29695f01d6ceb540",
                 "id": "1",
                 "gid": "3",
+                "read": True,
+                "write": False,
+                "delete": False,
             }
         }
-
-
-class GroupUsersArrayEnveloped(BaseModel):
-    data: list[GroupUser]
-    error: Optional[Any] = None
-
-
-class GroupUserEnveloped(BaseModel):
-    data: GroupUser
-    error: Optional[Any] = None
 
 
 #
@@ -186,8 +201,3 @@ class ProfileOutput(_ProfileCommon):
                 "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
             }
         }
-
-
-class ProfileEnveloped(BaseModel):
-    data: ProfileOutput
-    error: Optional[Any] = None
