@@ -13,7 +13,10 @@ from servicelib.archiving_utils import (
     unarchive_dir,
 )
 
+
 from .test_utils import print_tree
+
+# FIXTURES
 
 
 @pytest.fixture
@@ -75,6 +78,9 @@ def new_state_dir(tmp_path) -> Path:
     #   + empty
 
     return base_dir
+
+
+# TESTS
 
 
 def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):

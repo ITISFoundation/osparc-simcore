@@ -14,11 +14,12 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Iterator, Optional
 
 import pytest
 from faker import Faker
-from servicelib.archiving_utils import archive_dir, unarchive_dir
+from servicelib.archiving_utils import archive_dir, unarchive_dir, ArchiveError
+from servicelib import archiving_utils
 
 from .test_utils import print_tree
 
@@ -97,6 +98,23 @@ def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
     print("exclude_patterns_validation_dir ---")
     print_tree(base_dir)
     return base_dir
+
+
+def __raise_error(*arts, **kwargs) -> None:
+    raise ArchiveError("raised as requested")
+
+
+@pytest.fixture
+def zipfile_single_file_extract_worker_raises_error() -> Iterator[None]:
+    # NOTE: cannot MagicMock cannot be serialized via pickle used by
+    # multiprocessing, also `__raise_error` cannot be defined in the
+    # context fo this function or it cannot be pickled
+
+    # pylint: disable=protected-access
+    old_func = archiving_utils._zipfile_single_file_extract_worker
+    archiving_utils._zipfile_single_file_extract_worker = __raise_error
+    yield
+    archiving_utils._zipfile_single_file_extract_worker = old_func
 
 
 # UTILS
@@ -501,3 +519,28 @@ async def test_archive_unarchive_check_exclude(
     assert (
         relative_unarchived_paths == params.expected_result
     ), f"Exclude rules: {exclude_patterns=}"
+
+
+async def test_unarchive_dir_raises_error(
+    zipfile_single_file_extract_worker_raises_error: None,
+    dir_with_random_content: Path,
+    tmp_path: Path,
+):
+    temp_dir_one = tmp_path / "one"
+    temp_dir_two = tmp_path / "two"
+
+    temp_dir_one.mkdir()
+    temp_dir_two.mkdir()
+
+    archive_file = temp_dir_one / "archive.zip"
+
+    await archive_dir(
+        dir_to_compress=dir_with_random_content,
+        destination=archive_file,
+        store_relative_path=True,
+        compress=True,
+    )
+
+    with pytest.raises(ArchiveError) as err_info:
+        await archiving_utils.unarchive_dir(archive_file, temp_dir_two)
+    assert "raised as requested" in f"{err_info.value}"
