@@ -19,6 +19,12 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
+def ensure_service_runs_in_ci(monkeypatch):
+    monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", 1 * pow(1024, 3))
+    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", 1 * pow(10, 9))
+
+
+@pytest.fixture
 async def run_services(
     aiohttp_mock_app,
     configure_registry_access,
@@ -27,6 +33,7 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
+    ensure_service_runs_in_ci,
 ) -> Callable:
     started_services = []
 
