@@ -88,7 +88,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-        paddingLeft: 16
+        paddingLeft: 16,
+        visibility: "excluded"
       });
       expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
       const expirationDate = new qx.ui.basic.Label();
@@ -122,7 +123,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         raw.lastName = "Zastrow";
         raw.email = "bizzy@itis.swiss";
         raw.role = "User";
-        raw.expirationDate = "2099-12-31T22:59:59.999Z";
+        raw.expirationDate = null;
       }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
@@ -136,7 +137,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       controller.addTarget(lastName, "value", "lastName", true);
       controller.addTarget(role, "value", "role", false);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
-        converter: data => osparc.utils.Utils.formatDateAndTime(new Date(data))
+        converter: data => {
+          if (data) {
+            osparc.utils.Utils.formatDateAndTime(new Date(data));
+            expirationLayout.show();
+          }
+        }
       });
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
