@@ -20,7 +20,7 @@ services:
   autoscaling:
     ports:
       - "8007:8000"
-      - "3011:3000"
+      - "3012:3000"
 
   catalog:
     ports:
