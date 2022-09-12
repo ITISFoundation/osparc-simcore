@@ -1,6 +1,51 @@
 from typing import Any, Optional
+from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, EmailStr, Field
+
+#
+# TOKENS
+#
+
+
+class Token(BaseModel):
+    """
+    api keys for third party services
+    """
+
+    service: str = Field(
+        ..., description="uniquely identifies the service where this token is used"
+    )
+    token_key: UUID = Field(..., description="basic token key")
+    token_secret: Optional[UUID] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "service": "github-api-v1",
+                "token_key": "N1BP5ZSpB",
+            }
+        }
+
+
+class TokenId(BaseModel):
+    __root__: str = Field(..., description="toke identifier")
+
+
+class TokenEnveloped(BaseModel):
+    data: Token
+    error: Optional[Any] = None
+
+
+class TokensArrayEnveloped(BaseModel):
+    data: list[Token]
+    error: Optional[Any] = None
+
+
+class TokenIdEnveloped(BaseModel):
+    data: TokenId
+    error: Optional[Any] = None
+
 
 #
 # GROUPS
