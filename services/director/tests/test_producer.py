@@ -13,6 +13,9 @@ from typing import Callable
 import docker
 import pytest
 from simcore_service_director import config, exceptions, producer
+from tenacity import Retrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
@@ -137,12 +140,14 @@ async def test_find_service_tag():
     version = await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
 
 
-async def test_start_stop_service(run_services):
+async def test_start_stop_service(docker_network, run_services):
     # standard test
     await run_services(number_comp=1, number_dyn=1)
 
 
-async def test_service_assigned_env_variables(run_services, user_id, project_id):
+async def test_service_assigned_env_variables(
+    docker_network, run_services, user_id, project_id
+):
     started_services = await run_services(number_comp=1, number_dyn=1)
     client = docker.from_env()
     for service in started_services:
@@ -180,7 +185,7 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert config.CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 
-async def test_interactive_service_published_port(run_services):
+async def test_interactive_service_published_port(docker_network, run_services):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
     assert len(running_dynamic_services) == 1
 
@@ -208,14 +213,24 @@ def docker_network(
     docker_client: docker.client.DockerClient, docker_swarm: None
 ) -> docker.models.networks.Network:
     network = docker_client.networks.create(
-        "test_network", driver="overlay", scope="swarm"
+        "test_network_default", driver="overlay", scope="swarm"
     )
+    print(f"--> docker network '{network.name}' created")
     config.SIMCORE_SERVICES_NETWORK_NAME = network.name
     yield network
 
     # cleanup
+    print(f"<-- removing docker network '{network.name}'...")
     network.remove()
+
+    for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
+        with attempt:
+            list_networks = docker_client.networks.list(
+                config.SIMCORE_SERVICES_NETWORK_NAME
+            )
+            assert not list_networks
     config.SIMCORE_SERVICES_NETWORK_NAME = None
+    print(f"<-- removed docker network '{network.name}'")
 
 
 async def test_interactive_service_in_correct_network(
@@ -240,7 +255,7 @@ async def test_interactive_service_in_correct_network(
         )
 
 
-async def test_dependent_services_have_common_network(run_services):
+async def test_dependent_services_have_common_network(docker_network, run_services):
     running_dynamic_services = await run_services(
         number_comp=0, number_dyn=2, dependant=True
     )
