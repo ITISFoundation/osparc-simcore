@@ -212,10 +212,13 @@ async def _create_docker_service_params(
                 "MaxAttempts": config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS,
             },
             "Resources": {
-                "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
+                "Limits": {
+                    "NanoCPUs": config.DEFAULT_MAX_NANO_CPUS,
+                    "MemoryBytes": config.DEFAULT_MAX_MEMORY,
+                },
                 "Reservations": {
-                    "NanoCPUs": 1 * pow(10, 8),
-                    "MemoryBytes": 500 * pow(1024, 2),
+                    "NanoCPUs": config.DEFAULT_MAX_NANO_CPUS,
+                    "MemoryBytes": config.DEFAULT_MAX_MEMORY,
                 },
             },
         },
