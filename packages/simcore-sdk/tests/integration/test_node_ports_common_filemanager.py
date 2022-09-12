@@ -45,7 +45,8 @@ def _file_size(size_str: str, **pytest_params):
     "file_size",
     [
         _file_size("10Mib"),
-        _file_size("1003Mib"),
+        _file_size("103Mib"),
+        _file_size("1003Mib", marks=pytest.mark.heavy_load),
         _file_size("7Gib", marks=pytest.mark.heavy_load),
     ],
     ids=byte_size_ids,
@@ -169,7 +170,6 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
     "file_size",
     [
         _file_size("10Mib"),
-        _file_size("151Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -205,7 +205,6 @@ async def test_failed_upload_is_properly_removed_from_storage(
     "file_size",
     [
         _file_size("10Mib"),
-        _file_size("151Mib"),
     ],
     ids=byte_size_ids,
 )

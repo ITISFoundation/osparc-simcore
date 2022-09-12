@@ -289,7 +289,8 @@ class TutorialBase {
     if (appModeButtonsAllIds.length < 1) {
       throw ("appModeButtons not found");
     }
-    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("appModeButton_"));
+    console.log("appModeButtonsAllIds", appModeButtonsAllIds);
+    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("AppMode_StepBtn"));
     if (appModeButtonIds.length < 1) {
       throw ("appModeButtons filtered not found");
     }
@@ -423,6 +424,18 @@ class TutorialBase {
     }
   }
 
+  async openNodeFilesAppMode(nodeId) {
+    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    await auto.openNodeFilesAppMode(this.__page);
+    try {
+      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    }
+    catch (err) {
+      console.error(err);
+      throw (err);
+    }
+  }
+
   async waitAndClick(osparcTestId) {
     await utils.waitAndClick(this.__page, `[osparc-test-id=${osparcTestId}]`);
   }
@@ -434,6 +447,34 @@ class TutorialBase {
   async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
     try {
       await this.openNodeFiles(nodePos);
+      await this.takeScreenshot("checkNodeOutputs_before");
+      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent.trim()));
+      if (checkNFiles) {
+        assert(files.length === fileNames.length, 'Number of files is incorrect')
+        console.log('Number of files is correct')
+      }
+      if (checkFileNames) {
+        assert(
+          fileNames.every(fileName => files.some(file => file.includes(fileName))),
+          'File names are incorrect'
+        )
+        console.log('File names are correct')
+      }
+    }
+    catch (err) {
+      console.error("Results don't match", err);
+      throw (err)
+    }
+    finally {
+      await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
+    }
+  }
+
+  async checkNodeOutputsAppMode(nodeId, fileNames, checkNFiles = true, checkFileNames = true) {
+    try {
+      await this.openNodeFilesAppMode(nodeId);
       await this.takeScreenshot("checkNodeOutputs_before");
       const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
         elements => elements.map(el => el.textContent.trim()));

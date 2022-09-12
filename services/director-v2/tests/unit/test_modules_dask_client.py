@@ -914,6 +914,7 @@ async def test_changed_scheduler_raises_exception(
     mocked_user_completed_cb.assert_not_called()
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("fail_remote_fct", [False, True])
 async def test_get_tasks_status(
     dask_client: DaskClient,
