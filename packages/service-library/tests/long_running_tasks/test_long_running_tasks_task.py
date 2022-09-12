@@ -127,10 +127,15 @@ async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksMana
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
         fire_and_forget=True,
     )
-    await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
-    # the task shall still be present
+    await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
+    # the task shall still be present even if we did not check the status before
     status = tasks_manager.get_task_status(task_id, with_task_context=None)
     assert not status.done, "task was removed although it is fire and forget"
+    # the task shall finish
+    await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
+    # get the result
+    task_result = tasks_manager.get_task_result(task_id, with_task_context=None)
+    assert task_result == 42
 
 
 async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager):
