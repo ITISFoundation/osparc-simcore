@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     this.__userProfileData = null;
     this.__userProfileModel = null;
 
-    this.__getValuesFromServer();
+    this.__getProfile();
 
     this.add(this.__createProfileUser());
   },
@@ -200,7 +200,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       return box;
     },
 
-    __getValuesFromServer: function() {
+    __getProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToModel(profile);
