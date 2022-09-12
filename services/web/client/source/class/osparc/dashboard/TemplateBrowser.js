@@ -193,8 +193,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return menu;
     },
 
-    __getDeleteTemplateMenuButton: function(studyData) {
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
+    __getDeleteTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -202,12 +202,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmWindow(false);
+        const win = this.__createConfirmWindow(templateData.name);
         win.center();
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__deleteTemplate(studyData);
+            this.__deleteTemplate(templateData);
           }
         }, this);
       }, this);
@@ -267,8 +267,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         });
     },
 
-    __createConfirmWindow: function(isMulti) {
-      const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
+    __createConfirmWindow: function(templateName) {
+      const rUSure = this.tr("Are you sure you want to delete ");
+      const msg = rUSure + "<b>" + templateName + "</b>?";
       const confWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
