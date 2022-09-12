@@ -93,7 +93,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
       const expirationDate = new qx.ui.basic.Label("asdf");
       expirationLayout.add(expirationDate);
-      const infoExtension = new osparc.ui.hint.InfoHint(this.tr("Please contact this email"));
+      const infoLabel = this.tr("Please, contact us at email:<br>");
+      const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
+      osparc.store.StaticInfo.getInstance().getSupportEmail()
+        .then(supportEmail => infoExtension.setHintText(infoLabel + supportEmail));
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);
 
