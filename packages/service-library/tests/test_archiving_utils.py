@@ -18,8 +18,8 @@ from typing import Iterable, Iterator, Optional
 
 import pytest
 from faker import Faker
-from servicelib.archiving_utils import archive_dir, unarchive_dir, ArchiveError
 from servicelib import archiving_utils
+from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
 from .test_utils import print_tree
 
@@ -541,6 +541,5 @@ async def test_unarchive_dir_raises_error(
         compress=True,
     )
 
-    with pytest.raises(ArchiveError) as err_info:
+    with pytest.raises(ArchiveError, match=r"^.*raised as requested.*$"):
         await archiving_utils.unarchive_dir(archive_file, temp_dir_two)
-    assert "raised as requested" in f"{err_info.value}"
