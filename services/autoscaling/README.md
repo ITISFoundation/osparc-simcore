@@ -14,10 +14,3 @@ Service to auto-scale swarm
 [image-version]https://images.microbadger.com/badges/version/itisfoundation/autoscaling.svg
 [image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/autoscaling.svg
 <!------------------------->
-
-To develop this project, just
-
-```cmd
-make help
-
-```
