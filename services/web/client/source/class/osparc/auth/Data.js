@@ -68,6 +68,18 @@ qx.Class.define("osparc.auth.Data", {
       init: null,
       nullable: true,
       check: "String"
+    },
+
+    firstName: {
+      init: "",
+      nullable: true,
+      check: "String"
+    },
+
+    lastName: {
+      init: "",
+      nullable: true,
+      check: "String"
     }
   },
 
@@ -90,7 +102,11 @@ qx.Class.define("osparc.auth.Data", {
     },
 
     getUserName: function() {
-      const email = osparc.auth.Data.getInstance().getEmail();
+      const firstName = this.getFirstName();
+      if (firstName) {
+        return firstName;
+      }
+      const email = this.getEmail();
       if (email) {
         return osparc.utils.Utils.getNameFromEmail(email);
       }
