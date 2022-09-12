@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         paddingLeft: 16
       });
       expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
-      const expirationDate = new qx.ui.basic.Label();
+      const expirationDate = new qx.ui.basic.Label("asdf");
       expirationLayout.add(expirationDate);
       const infoLabel = this.tr("Please, contact us at email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
@@ -114,7 +114,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "lastName": null,
         "email": null,
         "role": null,
-        "expirationDate": "2099-12-31T22:59:59.999Z"
+        "expirationDate": null
       };
 
       if (qx.core.Environment.get("qx.debug")) {
@@ -217,7 +217,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"] || ""
+          "role": data["role"] || "",
+          "expirationDate": "2022-09-12T22:59:59.999Z"
         });
       }
     },
