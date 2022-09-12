@@ -13,6 +13,7 @@ import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
+from datetime import datetime
 from pprint import pformat
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -33,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic.types import PositiveInt
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
@@ -179,6 +180,7 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: Optional[str],
+    product_name: str,
 ) -> str:
     log.debug(
         "starting node %s:%s in project %s for user %s",
@@ -225,17 +227,22 @@ async def add_project_node(
             },
             node_id=NodeID(node_uuid),
         )
-        await director_v2_api.run_dynamic_service(
-            request.app,
-            project_id=project["uuid"],
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            service_uuid=node_uuid,
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources,
-        )
+        if not await is_service_deprecated(
+            request.app, user_id, service_key, service_version, product_name
+        ):
+            await director_v2_api.run_dynamic_service(
+                request.app,
+                project_id=project["uuid"],
+                user_id=user_id,
+                service_key=service_key,
+                service_version=service_version,
+                service_uuid=node_uuid,
+                request_dns=extract_dns_without_default_port(request.url),
+                request_scheme=request.headers.get(
+                    "X-Forwarded-Proto", request.url.scheme
+                ),
+                service_resources=service_resources,
+            )
     return node_uuid
 
 
@@ -726,6 +733,36 @@ async def add_project_states_for_user(
 #
 
 
+async def is_service_deprecated(
+    app: web.Application,
+    user_id: UserID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+) -> bool:
+    service = await catalog_client.get_service(
+        app, user_id, service_key, service_version, product_name
+    )
+    if deprecation_date := service.get("deprecated"):
+        deprecation_date = parse_obj_as(datetime, deprecation_date)
+        return datetime.utcnow() > deprecation_date
+    return False
+
+
+async def is_project_node_deprecated(
+    app: web.Application,
+    user_id: UserID,
+    project: dict[str, Any],
+    node_id: NodeID,
+    product_name: str,
+) -> bool:
+    if project_node := project.get("workbench", {}).get(f"{node_id}"):
+        return await is_service_deprecated(
+            app, user_id, project_node["key"], project_node["version"], product_name
+        )
+    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+
+
 async def get_project_node_resources(
     app: web.Application, project: dict[str, Any], node_id: NodeID
 ) -> ServiceResourcesDict:
@@ -748,7 +785,7 @@ async def set_project_node_resources(
 
 
 async def run_project_dynamic_services(
-    request: web.Request, project: dict, user_id: PositiveInt
+    request: web.Request, project: dict, user_id: UserID, product_name: str
 ) -> None:
     # first get the services if they already exist
     log.debug(
@@ -776,10 +813,26 @@ async def run_project_dynamic_services(
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
     unique_project_needed_services = set(project_needed_services.keys())
+    deprecated_services: list[bool] = await logged_gather(
+        *(
+            is_service_deprecated(
+                request.app,
+                user_id,
+                project_needed_services[service_uuid]["key"],
+                project_needed_services[service_uuid]["version"],
+                product_name,
+            )
+            for service_uuid in unique_project_needed_services
+        ),
+        reraise=True,
+    )
     service_resources_result: list[ServiceResourcesDict] = await logged_gather(
         *[
             get_project_node_resources(request.app, project=project, node_id=node_uuid)
-            for node_uuid in unique_project_needed_services
+            for node_uuid, is_deprecated in zip(
+                unique_project_needed_services, deprecated_services
+            )
+            if not is_deprecated
         ],
         reraise=True,
     )

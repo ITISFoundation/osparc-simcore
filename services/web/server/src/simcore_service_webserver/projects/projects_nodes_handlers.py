@@ -67,6 +67,7 @@ async def create_node(request: web.Request) -> web.Response:
                 body["service_key"],
                 body["service_version"],
                 body["service_id"] if "service_id" in body else None,
+                req_ctx.product_name,
             )
         }
         return web.json_response(
@@ -91,12 +92,24 @@ async def get_node(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        await projects_api.get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_templates=True,
         )
+
+        if await projects_api.is_project_node_deprecated(
+            request.app,
+            req_ctx.user_id,
+            project,
+            path_params.node_id,
+            req_ctx.product_name,
+        ):
+            project_node = project["workbench"][f"{path_params.node_id}"]
+            raise web.HTTPNotFound(
+                reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
+            )
 
         # NOTE: for legacy services a redirect to director-v0 is made
         service_state: Union[
@@ -115,6 +128,8 @@ async def get_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Node {path_params.node_id} not found") from exc
 
 
 @login_required
