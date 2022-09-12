@@ -269,7 +269,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }, this);
       } else {
         permissionsView = new osparc.component.permissions.Study(resourceData);
-        permissionsView.getChildControl("study-link").show();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          permissionsView.getChildControl("study-link").show();
+        }
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
           if (osparc.utils.Resources.isStudy(resourceData)) {
