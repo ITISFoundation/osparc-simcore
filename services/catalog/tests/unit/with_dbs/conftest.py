@@ -5,6 +5,7 @@
 
 import itertools
 import random
+from datetime import datetime
 from random import randint
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator
 
@@ -293,10 +294,15 @@ async def service_catalog_faker(
         return data
 
     def _fake_factory(
-        key, version, team_access=None, everyone_access=None, product=products_names[0]
+        key,
+        version,
+        team_access=None,
+        everyone_access=None,
+        product=products_names[0],
+        deprecated: Optional[datetime] = None,
     ) -> tuple[dict[str, Any], ...]:
 
-        service = _random_service(key=key, version=version)
+        service = _random_service(key=key, version=version, deprecated=deprecated)
 
         # owner always has full-access
         owner_access = _random_access(
