@@ -818,7 +818,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmWindow: function(studyNames) {
-      const msg = studyNames.length > 1 ? this.tr("Are you sure you want to delete ") + studyNames.length + this.tr("studies?") : this.tr("Are you sure you want to delete ") + studyNames[0] + "?";
+      const msg = studyNames.length > 1 ? this.tr("Are you sure you want to delete ") + studyNames.length + this.tr(" studies?") : this.tr("Are you sure you want to delete ") + studyNames[0] + "?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
