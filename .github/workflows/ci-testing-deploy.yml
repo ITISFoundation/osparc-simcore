@@ -1743,6 +1743,8 @@ jobs:
   coverage:
     needs:
       [
+        unit-test-api-server,
+        unit-test-autoscaling,
         unit-test-catalog,
         unit-test-datcore-adapter,
         unit-test-director,
