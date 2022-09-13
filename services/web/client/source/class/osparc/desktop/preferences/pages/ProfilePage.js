@@ -139,9 +139,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: data => {
           if (data) {
-            osparc.utils.Utils.formatDateAndTime(new Date(data));
             expirationLayout.show();
+            return osparc.utils.Utils.formatDateAndTime(new Date(data));
           }
+          return "";
         }
       });
       controller.addTarget(img, "source", "email", false, {
