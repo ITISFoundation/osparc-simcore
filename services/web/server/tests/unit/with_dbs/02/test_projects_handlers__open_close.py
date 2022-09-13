@@ -377,7 +377,6 @@ async def test_close_project(
         await asyncio.sleep(2)
 
         calls = [
-            # call(client.server.app, user_id=None, project_id=user_project["uuid"]),    # TODO: was disabled, SAN is this still viable?
             call(
                 client.server.app,
                 user_id=logged_user["id"],

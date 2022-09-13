@@ -32,6 +32,7 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
+    docker_client: docker.client.DockerClient,
 ) -> Callable:
     started_services = []
 
@@ -98,6 +99,8 @@ async def run_services(
                     print(
                         f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
                     )
+                    for service in docker_client.services.list():
+                        print(f"service details: {service.attrs}")
                     assert (
                         node_details["service_state"] == "running"
                     ), f"current state is {node_details['service_state']}"
