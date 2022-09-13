@@ -213,16 +213,23 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
-    __loginUser: function(profile) {
+    updateProfile: function(profile) {
       const authData = osparc.auth.Data.getInstance();
       authData.set({
         email: profile.login,
-        token: profile.login,
-        userId: profile.id,
-        groupId: profile["groups"]["me"]["gid"],
         firstName: profile.first_name,
         lastName: profile.last_name
       });
+    },
+
+    __loginUser: function(profile) {
+      const authData = osparc.auth.Data.getInstance();
+      authData.set({
+        token: profile.login,
+        userId: profile.id,
+        groupId: profile["groups"]["me"]["gid"]
+      });
+      this.updateProfile(profile);
       if ("organizations" in profile["groups"]) {
         const orgIds = [];
         profile["groups"]["organizations"].forEach(org => orgIds.push(org["gid"]));

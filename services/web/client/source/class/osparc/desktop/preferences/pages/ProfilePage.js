@@ -151,56 +151,73 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       });
 
       // validation
-      const manager = new qx.ui.form.validation.Manager();
-      manager.add(email, qx.util.Validate.email());
-      [firstName, lastName].forEach(field => {
-        manager.add(field, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
-      });
+      const emailValidator = new qx.ui.form.validation.Manager();
+      emailValidator.add(email, qx.util.Validate.email());
+
+      const namesValidator = new qx.ui.form.validation.Manager();
+      namesValidator.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
+      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also emtpy last name
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
         allowGrowX: false
       });
       box.add(updateBtn);
 
-      // update trigger
       updateBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
           this.__resetDataToModel();
           return;
         }
 
-        if (manager.validate()) {
-          const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
-          emailReq.setRequestData({
-            "email": model.getEmail()
-          });
-
-          const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
-          profileReq.setRequestData({
-            "first_name": model.getFirstName(),
-            "last_name": model.getLastName()
-          });
-
-          [emailReq, profileReq].forEach(req => {
-            // requests
-            req.addListenerOnce("success", e => {
-              const res = e.getTarget().getResponse();
-              if (res && res.data) {
-                osparc.component.message.FlashMessenger.getInstance().log(res.data);
-              }
-            }, this);
-
-            req.addListenerOnce("fail", e => {
-              // FIXME: should revert to old?? or GET? Store might resolve this??
-              this.__resetDataToModel();
-              const error = e.getTarget().getResponse().error;
-              const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }, this);
-
-            req.send();
-          });
+        const requests = {
+          email: null,
+          names: null
+        };
+        if (this.__userProfileData["login"] !== model.getEmail()) {
+          if (emailValidator.validate()) {
+            const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
+            emailReq.setRequestData({
+              "email": model.getEmail()
+            });
+            requests.email = emailReq;
+          }
         }
+
+        if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
+          if (namesValidator.validate()) {
+            const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
+            profileReq.setRequestData({
+              "first_name": model.getFirstName(),
+              "last_name": model.getLastName()
+            });
+            requests.names = profileReq;
+          }
+        }
+
+        Object.keys(requests).forEach(key => {
+          const req = requests[key];
+          if (req === null) {
+            return;
+          }
+
+          req.addListenerOnce("success", e => {
+            const reqData = e.getTarget().getRequestData();
+            this.__setDataToModel(Object.assign(this.__userProfileData, reqData));
+            osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
+            const res = e.getTarget().getResponse();
+            const msg = (res && res.data) ? res.data : this.tr("Profile updated");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+          }, this);
+
+          req.addListenerOnce("fail", e => {
+            this.__resetDataToModel();
+            const error = e.getTarget().getResponse().error;
+            const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          }, this);
+
+          req.send();
+        });
       }, this);
 
       return box;
