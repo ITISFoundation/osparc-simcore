@@ -159,7 +159,10 @@ def _check_for_aws_500_issue(exc: BaseException) -> bool:
     """
     if isinstance(exc, ClientResponseError):
         client_error = cast(ClientResponseError, exc)
-        return client_error.status == 500 or client_error.status == 503
+        return client_error.status in (
+            web.HTTPServerError.status_code,
+            web.HTTPServiceUnavailable.status_code,
+        )
     return False
 
 
