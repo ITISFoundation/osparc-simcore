@@ -4,8 +4,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
 
-import asyncio
-import time
 import uuid
 from dataclasses import dataclass
 from typing import Callable
@@ -21,7 +19,7 @@ from tenacity.wait import wait_fixed
 @pytest.fixture
 def ensure_service_runs_in_ci(monkeypatch):
     monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", 250 * pow(1024, 2))
-    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", 5 * pow(10, 8))
+    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(.5 * pow(10, 9)))
 
 
 @pytest.fixture
@@ -85,15 +83,16 @@ async def run_services(
             node_details = await producer.get_service_details(
                 aiohttp_mock_app, service_uuid
             )
-            start_time = time.perf_counter()
             max_time = 2 * 60
-            while node_details["service_state"] != "running":
-                await asyncio.sleep(2)
-                if (time.perf_counter() - start_time) > max_time:
-                    assert True, "waiting too long to start service"
-                node_details = await producer.get_service_details(
-                    aiohttp_mock_app, service_uuid
-                )
+            for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(max_time)):
+                with attempt:
+                    print(f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run...")
+                    node_details = await producer.get_service_details(
+                        aiohttp_mock_app, service_uuid
+                    )
+                    print(f"--> {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']}")
+                    assert node_details["service_state"] == "running", f"current state is {node_details['service_state']}"
+
             started_service["service_state"] = node_details["service_state"]
             started_service["service_message"] = node_details["service_message"]
             assert node_details == started_service
