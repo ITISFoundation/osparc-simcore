@@ -71,6 +71,10 @@ class TrackedTask(BaseModel):
     task_progress: TaskProgress
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
     task_context: dict[str, Any]
+    fire_and_forget: bool = Field(
+        ...,
+        description="if True then the task will not be auto-cancelled if no one enquires of its status",
+    )
 
     started: datetime = Field(default_factory=datetime.utcnow)
     last_status_check: Optional[datetime] = Field(
