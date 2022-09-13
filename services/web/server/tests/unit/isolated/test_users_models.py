@@ -1,9 +1,13 @@
+from datetime import datetime
 from pprint import pformat
 from typing import Any
 
 import pytest
+from faker import Faker
 from models_library.generics import Envelope
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users_models import ProfileGet, Token
 
 
@@ -41,3 +45,18 @@ def test_user_models_examples(
 
         assert model_enveloped.error is None
         assert model_array_enveloped.error is None
+
+
+def test_profile_get_expiration_date(faker: Faker):
+
+    fake_expiration = datetime.utcnow()
+
+    profile = ProfileGet(
+        login=faker.email(), role=UserRole.ADMIN, expiration_date=fake_expiration
+    )
+
+    assert fake_expiration.date() == profile.expiration_date
+
+    # TODO: encoding in body!? UTC !! ??
+    body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
+    assert body["expirationDate"] == fake_expiration.date().isoformat()
