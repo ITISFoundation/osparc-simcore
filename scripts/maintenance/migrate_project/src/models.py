@@ -4,7 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from sqlalchemy import desc
+from settings_library.r_clone import S3Provider
 
 
 class DBConfig(BaseModel):
@@ -15,10 +15,17 @@ class DBConfig(BaseModel):
 
 
 class S3Config(BaseModel):
-    endpoint: Optional[str] = None
+    endpoint: str = "https://s3.amazonaws.com"
+    provider: S3Provider = Field(
+        ...,
+        description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS"',
+    )
     access_key: str
     secret_key: str
-    bucket: str
+    bucket: str = Field(
+        ...,
+        description="S3 Bucket Name",
+    )
 
 
 class SourceConfig(BaseModel):
@@ -59,6 +66,7 @@ class Settings(BaseModel):
                     "db": {"address": "", "user": "", "password": "", "database": ""},
                     "s3": {
                         "endpoint": "",
+                        "provider": "AWS",
                         "access_key": "",
                         "secret_key": "",
                         "bucket": "",
@@ -69,7 +77,8 @@ class Settings(BaseModel):
                 "destination": {
                     "db": {"address": "", "user": "", "password": "", "database": ""},
                     "s3": {
-                        "endpoint": None,
+                        "endpoint": "",
+                        "provider": "AWS",
                         "access_key": "",
                         "secret_key": "",
                         "bucket": "",

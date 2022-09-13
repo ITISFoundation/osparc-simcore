@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import typer
 from db import (
@@ -17,13 +18,16 @@ def main(config: Path = typer.Option(..., exists=True)):
     typer.echo(f"Detected settings:\n{settings.json(indent=2)}\n")
 
     r_clone_config_path = assemble_config_file(
-        # destination is AWS S3
-        aws_access_key=settings.destination.s3.access_key,
-        aws_secret_key=settings.destination.s3.secret_key,
-        # source is MINIO
-        minio_access_key=settings.source.s3.access_key,
-        minio_secret_key=settings.source.s3.secret_key,
-        minio_endpoint=settings.source.s3.endpoint,
+        # source
+        source_access_key=settings.source.s3.access_key,
+        source_secret_key=settings.source.s3.secret_key,
+        source_endpoint=settings.source.s3.endpoint,
+        source_provider=settings.source.s3.provider,
+        # destination
+        destination_access_key=settings.destination.s3.access_key,
+        destination_secret_key=settings.destination.s3.secret_key,
+        destination_endpoint=settings.destination.s3.endpoint,
+        destination_provider=settings.destination.s3.provider,
     )
     typer.echo(f"Rclone config:\n{r_clone_config_path.read_text()}\n")
 

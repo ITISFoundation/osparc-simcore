@@ -47,7 +47,7 @@ SETUP = dict(
         "Natural Language :: English",
         "Programming Language :: Python :: 3.9",
     ],
-    long_description=(CURRENT_DIR.resolve().parent / "README.md").read_text(),
+    long_description=(CURRENT_DIR / "README.md").read_text(),
     license="MIT license",
     install_requires=INSTALL_REQUIREMENTS,
     packages=find_packages(where="src"),
