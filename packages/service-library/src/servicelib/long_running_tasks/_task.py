@@ -35,6 +35,8 @@ def _mark_task_to_remove_if_required(
     utc_now: datetime,
     stale_timeout_s: float,
 ) -> None:
+    if tracked_task.fire_and_forget:
+        return
 
     if tracked_task.last_status_check is None:
         # the task just added or never received a poll request
@@ -80,7 +82,7 @@ class TasksManager:
     async def _stale_tasks_monitor_worker(self) -> None:
         """
         A task is considered stale, if the task status is not queried
-        in the last `stale_task_detect_timeout_s`.
+        in the last `stale_task_detect_timeout_s` and it is not a fire and forget type of task.
 
         This helps detect clients who:
         - started tasks and did not remove them
@@ -157,6 +159,7 @@ class TasksManager:
         task: Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
+        fire_and_forget: bool,
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)
 
@@ -169,6 +172,7 @@ class TasksManager:
             task_name=task_name,
             task_progress=task_progress,
             task_context=task_context,
+            fire_and_forget=fire_and_forget,
         )
         self._tasks_groups[task_name][task_id] = tracked_task
 
@@ -359,6 +363,7 @@ def start_task(
     unique: bool = False,
     task_context: Optional[TaskContext] = None,
     task_name: Optional[str] = None,
+    fire_and_forget: bool = False,
     **task_kwargs,
 ) -> TaskId:
     """
@@ -378,6 +383,7 @@ def start_task(
         unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
         task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
         task_name (Optional[str], optional): optional task name. Defaults to None.
+        fire_and_forget: if True, then the task will not be cancelled if the status is never called
 
     Raises:
         TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
@@ -408,8 +414,6 @@ def start_task(
         try:
             return await handler(progress, **task_kwargs)
         finally:
-            # TODO: change that signature. it actually does not publish anything
-            # and it can raise if percent is <0 or >1!! -> simplify
             progress.update(message="finished", percent=1)
 
     async_task = asyncio.create_task(
@@ -421,6 +425,7 @@ def start_task(
         task=async_task,
         task_progress=task_progress,
         task_context=task_context or {},
+        fire_and_forget=fire_and_forget,
     )
 
     return tracked_task.task_id

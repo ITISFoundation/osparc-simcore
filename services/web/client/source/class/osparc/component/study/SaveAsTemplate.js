@@ -104,13 +104,13 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
           });
           task.addListener("pollingError", e => {
             const errMsg = e.getData();
-            const msg = this.tr("There was an error while saving as template<br>" + errMsg);
+            const msg = this.tr("There was an error while saving as template") + "<br>" + errMsg;
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
             btn.setFetching(false);
           });
         })
         .catch(errMsg => {
-          const msg = this.tr("There was an error while saving as template<br>" + errMsg);
+          const msg = this.tr("There was an error while saving as template") + "<br>" + errMsg;
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           btn.setFetching(false);
         });

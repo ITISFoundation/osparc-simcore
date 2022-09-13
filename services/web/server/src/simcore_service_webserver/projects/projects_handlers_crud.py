@@ -137,6 +137,7 @@ async def create_projects(request: web.Request):
         query_params=query_params,
         user_id=req_ctx.user_id,
         predefined_project=predefined_project,
+        fire_and_forget=True,
     )
 
 
