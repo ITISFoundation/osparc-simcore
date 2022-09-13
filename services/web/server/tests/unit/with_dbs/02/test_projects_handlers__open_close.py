@@ -229,6 +229,7 @@ async def test_share_project(
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
+    disable_gc_manual_guest_users,
 ):
     # Use-case: the user shares some projects with a group
 
@@ -301,6 +302,7 @@ async def test_open_project(
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services,
     mock_catalog_api: None,
+    disable_gc_manual_guest_users,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -346,6 +348,7 @@ async def test_close_project(
     expected,
     mocked_director_v2_api,
     fake_services,
+    disable_gc_manual_guest_users,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = fake_services(number_services=5)
@@ -377,7 +380,6 @@ async def test_close_project(
         await asyncio.sleep(2)
 
         calls = [
-            # call(client.server.app, user_id=None, project_id=user_project["uuid"]),    # TODO: was disabled, SAN is this still viable?
             call(
                 client.server.app,
                 user_id=logged_user["id"],
@@ -421,6 +423,7 @@ async def test_get_active_project(
     socketio_client_factory: Callable,
     mocked_director_v2_api,
     mock_catalog_api: None,
+    disable_gc_manual_guest_users,
 ):
     # login with socket using client session id
     client_id1 = client_session_id_factory()
@@ -520,6 +523,7 @@ async def test_project_node_lifetime(
     mock_catalog_api: None,
     mocker,
     faker: Faker,
+    disable_gc_manual_guest_users,
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
