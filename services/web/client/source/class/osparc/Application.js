@@ -359,14 +359,14 @@ qx.Class.define("osparc.Application", {
             if (daysToExpiration < 1) {
               // Will not get here. Backend should not allow
               let msg = this.tr("This account is expired.<br>");
-              msg += this.tr("Please, contact us at email:<br>");
+              msg += this.tr("Please, contact us by email:<br>");
               osparc.store.StaticInfo.getInstance().getSupportEmail()
                 .then(supportEmail => osparc.component.message.FlashMessenger.getInstance().logAs(msg+supportEmail, "ERROR"));
               this.logout();
               return;
             } else if (daysToExpiration < 7) {
               let msg = this.tr("This account will expire in ") + daysToExpiration + this.tr(" days<br>");
-              msg += this.tr("Please, contact us at email:<br>");
+              msg += this.tr("Please, contact us by email:<br>");
               osparc.store.StaticInfo.getInstance().getSupportEmail()
                 .then(supportEmail => osparc.component.message.FlashMessenger.getInstance().logAs(msg+supportEmail, "WARNING"));
             }
