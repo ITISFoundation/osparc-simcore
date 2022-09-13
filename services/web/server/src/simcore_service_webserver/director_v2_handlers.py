@@ -78,7 +78,7 @@ async def start_computation(request: web.Request) -> web.Response:
             else True
         )
 
-        _started_pipelines_ids: tuple[str] = await asyncio.gather(
+        _started_pipelines_ids: list[str] = await asyncio.gather(
             *[
                 computations.start(pid, user_id, **options)
                 for pid in running_project_ids
