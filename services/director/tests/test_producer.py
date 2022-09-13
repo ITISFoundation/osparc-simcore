@@ -19,7 +19,7 @@ from tenacity.wait import wait_fixed
 @pytest.fixture
 def ensure_service_runs_in_ci(monkeypatch):
     monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", 250 * pow(1024, 2))
-    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(.5 * pow(10, 9)))
+    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(0.5 * pow(10, 9)))
 
 
 @pytest.fixture
@@ -34,6 +34,7 @@ async def run_services(
     project_id,
 ) -> Callable:
     started_services = []
+
     async def push_start_services(number_comp: int, number_dyn: int, dependant=False):
         pushed_services = await push_services(
             number_comp, number_dyn, inter_dependent_services=dependant
@@ -83,15 +84,23 @@ async def run_services(
             node_details = await producer.get_service_details(
                 aiohttp_mock_app, service_uuid
             )
-            max_time = 2 * 60
-            for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(max_time)):
+            max_time = 60
+            for attempt in Retrying(
+                wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True
+            ):
                 with attempt:
-                    print(f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run...")
+                    print(
+                        f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run..."
+                    )
                     node_details = await producer.get_service_details(
                         aiohttp_mock_app, service_uuid
                     )
-                    print(f"--> {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']}")
-                    assert node_details["service_state"] == "running", f"current state is {node_details['service_state']}"
+                    print(
+                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
+                    )
+                    assert (
+                        node_details["service_state"] == "running"
+                    ), f"current state is {node_details['service_state']}"
 
             started_service["service_state"] = node_details["service_state"]
             started_service["service_message"] = node_details["service_message"]

@@ -239,7 +239,7 @@ async def _create_docker_service_params(
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
-
+    import pdb; pdb.set_trace()
     if config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
         log.debug(
             "adding custom constraints %s ", config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
