@@ -22,6 +22,9 @@ def ensure_service_runs_in_ci(monkeypatch):
     monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(0.5 * pow(10, 9)))
 
 
+import json
+
+
 @pytest.fixture
 async def run_services(
     ensure_service_runs_in_ci,
@@ -100,7 +103,8 @@ async def run_services(
                         f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
                     )
                     for service in docker_client.services.list():
-                        print(f"service details: {service.attrs}")
+                        tasks = service.tasks()
+                        print(f"service details: {json.dumps( tasks, indent=2)}")
                     assert (
                         node_details["service_state"] == "running"
                     ), f"current state is {node_details['service_state']}"
