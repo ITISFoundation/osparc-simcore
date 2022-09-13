@@ -178,7 +178,7 @@ qx.Class.define("osparc.utils.Study", {
       });
     },
 
-    createStudyFromTemplate: function(templateData) {
+    createStudyFromTemplate: function(templateData, loadingPage) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
         store.getInaccessibleServices(templateData)
@@ -205,6 +205,14 @@ qx.Class.define("osparc.utils.Study", {
             const interval = 1000;
             pollTasks.createPollingTask(fetchPromise, interval)
               .then(task => {
+                task.addListener("updateReceived", e => {
+                  const updateData = e.getData();
+                  if ("task_progress" in updateData && loadingPage) {
+                    const progress = updateData["task_progress"];
+                    loadingPage.setMessages([progress["message"]]);
+                    loadingPage.addWidgetToMessages(new qx.ui.indicator.ProgressBar(progress["percent"], 1));
+                  }
+                }, this);
                 task.addListener("resultReceived", e => {
                   const studyData = e.getData();
                   resolve(studyData["uuid"]);

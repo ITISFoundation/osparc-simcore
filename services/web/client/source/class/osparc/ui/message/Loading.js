@@ -153,6 +153,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
     },
 
+    addWidgetToMessages: function(widget) {
+      this.__messages.add(widget);
+    },
 
 
     // from osparc.component.widget.PersistentIframe
