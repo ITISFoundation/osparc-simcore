@@ -19,9 +19,9 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
-def ensure_service_runs_in_ci(monkeypatch):
-    monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", 250 * pow(1024, 2))
-    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", 5 * pow(10, 8))
+def ensure_service_runs_in_ci():
+    config.DEFAULT_MAX_MEMORY = 250 * pow(1024, 2)
+    config.DEFAULT_MAX_NANO_CPUS = 5 * pow(10, 8)
 
 
 @pytest.fixture
