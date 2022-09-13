@@ -27,6 +27,7 @@ from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
@@ -145,7 +146,7 @@ async def test_get_profile(
     # check enveloped
     e = Envelope[ProfileGet].parse_obj(await resp.json())
     assert e.error == error
-    assert e.data.dict(exclude_unset=True) == data if e.data else e.data == data
+    assert e.data.dict(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
 
     if not error:
         profile = ProfileGet.parse_obj(data)
