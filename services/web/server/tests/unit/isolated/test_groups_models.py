@@ -4,17 +4,24 @@ from typing import Any
 import pytest
 from models_library.generics import Envelope
 from pydantic import BaseModel
-from simcore_service_webserver.users_models import ProfileOutput, Token
+from simcore_service_webserver.groups_models import (
+    AllUsersGroups,
+    GroupAccessRights,
+    GroupUser,
+    UsersGroup,
+)
 
 
 @pytest.mark.parametrize(
     "model_cls",
     (
-        ProfileOutput,
-        Token,
+        GroupAccessRights,
+        AllUsersGroups,
+        GroupUser,
+        UsersGroup,
     ),
 )
-def test_user_models_examples(
+def test_group_models_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
 ):
     for name, example in model_cls_examples.items():
@@ -23,10 +30,10 @@ def test_user_models_examples(
         assert model_instance, f"Failed with {name}"
 
         #
-        # TokenEnveloped
-        # TokensArrayEnveloped
-        # TokenIdEnveloped
-        # ProfileEnveloped
+        # UsersGroupEnveloped
+        # AllUsersGroupsEnveloped
+        # GroupUsersArrayEnveloped
+        # GroupUserEnveloped
         #
 
         model_enveloped = Envelope[model_cls].parse_data(
