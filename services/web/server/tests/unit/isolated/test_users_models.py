@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 from pprint import pformat
 from typing import Any
@@ -60,3 +61,14 @@ def test_profile_get_expiration_date(faker: Faker):
     # TODO: encoding in body!? UTC !! ??
     body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
     assert body["expirationDate"] == fake_expiration.date().isoformat()
+
+
+@pytest.mark.parametrize("user_role", [u.name for u in UserRole])
+def test_profile_get_role(user_role: str):
+    data = deepcopy(ProfileGet.Config.schema_extra["example"])
+    data["role"] = user_role
+    m1 = ProfileGet(**data)
+
+    data["role"] = UserRole(user_role)
+    m2 = ProfileGet(**data)
+    assert m1 == m2

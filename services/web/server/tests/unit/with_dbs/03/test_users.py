@@ -1,18 +1,19 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Callable, Dict, List, Type
+from typing import Callable
 from unittest.mock import MagicMock
 
 import faker
 import pytest
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
+from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_tokens import (
@@ -30,6 +31,7 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users_models import ProfileGet
 
 API_VERSION = "v0"
 
@@ -126,13 +128,13 @@ PREFIX = "/" + API_VERSION + "/me"
     ],
 )
 async def test_get_profile(
-    logged_user: Dict,
+    logged_user: dict,
     client,
     user_role: UserRole,
-    expected: Type[web.HTTPException],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
+    expected: type[web.HTTPException],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    all_group: dict[str, str],
 ):
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
@@ -140,13 +142,20 @@ async def test_get_profile(
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
+    # check enveloped
+    e = Envelope[ProfileGet].parse_obj(await resp.json())
+    assert e.error == error
+    assert e.data.dict(exclude_unset=True) == data if e.data else e.data == data
+
     if not error:
-        assert data["login"] == logged_user["email"]
-        assert data["gravatar_id"]
-        assert data["first_name"] == logged_user["name"]
-        assert data["last_name"] == ""
-        assert data["role"] == user_role.name.capitalize()
-        assert data["groups"] == {
+        profile = ProfileGet.parse_obj(data)
+
+        assert profile.login == logged_user["email"]
+        assert profile.gravatar_id
+        assert profile.first_name == logged_user["name"]
+        assert profile.last_name == ""
+        assert profile.role == user_role.name.capitalize()
+        assert profile.groups == {
             "me": primary_group,
             "organizations": standard_groups,
             "all": all_group,
@@ -322,7 +331,7 @@ async def test_get_profile_with_failing_db_connection(
     logged_user,
     client,
     mock_failing_connection: MagicMock,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     """
     Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160

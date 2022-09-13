@@ -1,9 +1,9 @@
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
@@ -61,8 +61,8 @@ class ProfileUpdate(_ProfileCommon):
 
 
 class ProfileGet(_ProfileCommon):
-    login: Optional[EmailStr] = None
-    role: Optional[UserRole] = None
+    login: EmailStr
+    role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
     groups: Optional[AllUsersGroups] = None
     gravatar_id: Optional[str] = None
     expiration_date: Optional[date] = Field(
@@ -78,7 +78,16 @@ class ProfileGet(_ProfileCommon):
         schema_extra = {
             "example": {
                 "login": "bla@foo.com",
-                "role": "ADMIN",
+                "role": "Admin",
                 "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
             }
         }
+
+    @validator("role", pre=True)
+    @classmethod
+    def to_capitalize(cls, v):
+        if isinstance(v, str):
+            return v.capitalize()
+        if isinstance(v, UserRole):
+            return v.name.capitalize()
+        return v

@@ -7,8 +7,10 @@ from aiohttp import web
 
 from . import users_api
 from .login.decorators import RQT_USERID_KEY, login_required
+from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
+from .users_models import ProfileGet, ProfileUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,8 @@ async def get_my_profile(request: web.Request):
     # NOTE: ONLY login required to see its profile. E.g. anonymous can never see its profile
     uid = request[RQT_USERID_KEY]
     try:
-        return await users_api.get_user_profile(request.app, uid)
+        profile: ProfileGet = await users_api.get_user_profile(request.app, uid)
+        return profile.dict(**RESPONSE_MODEL_POLICY)
     except UserNotFoundError as exc:
         # NOTE: invalid user_id could happen due to timed-cache in AuthorizationPolicy
         raise web.HTTPNotFound(reason="Could not find profile!") from exc
@@ -32,8 +35,11 @@ async def update_my_profile(request: web.Request):
 
     # TODO: validate
     body = await request.json()
+    updates = ProfileUpdate.parse_obj(body)
 
-    await users_api.update_user_profile(request.app, uid, body)
+    await users_api.update_user_profile(
+        request.app, uid, updates.dict(exclude_unset=True)
+    )
     raise web.HTTPNoContent(content_type="application/json")
 
 
