@@ -29,6 +29,7 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
 	api-server \
+	autoscaling \
 	catalog \
 	dask-sidecar \
 	datcore-adapter \
