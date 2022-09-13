@@ -119,6 +119,9 @@ async def create_computation(
                 detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
             )
 
+        if is_any_task_deprecated(comp_tasks):
+            raise HTTPException(status_code=status.HTTP_406)
+
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
