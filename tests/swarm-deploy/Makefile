@@ -21,4 +21,12 @@ install-dev install-prod install-ci: _check_venv_active ## install requirements 
 .PHONY: tests
 tests: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
-	pytest -vv --asyncio-mode=auto -x --failed-first --pdb $(CURDIR)
+	@pytest \
+		--asyncio-mode=auto \
+		--color=yes \
+		--durations=10 \
+		--exitfirst \
+		--failed-first \
+		--pdb \
+		-vv \
+		$(CURDIR)
