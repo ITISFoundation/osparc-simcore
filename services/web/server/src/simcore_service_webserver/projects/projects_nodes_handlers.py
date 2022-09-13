@@ -107,7 +107,7 @@ async def get_node(request: web.Request) -> web.Response:
             req_ctx.product_name,
         ):
             project_node = project["workbench"][f"{path_params.node_id}"]
-            raise web.HTTPNotFound(
+            raise web.HTTPNotAcceptable(
                 reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
             )
 
