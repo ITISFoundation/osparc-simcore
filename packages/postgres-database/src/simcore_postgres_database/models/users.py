@@ -88,7 +88,7 @@ users = sa.Table(
         "email",
         sa.String,
         nullable=False,
-        doc="User email used as username since uniqueness is required",
+        doc="User email is used as username since it is a unique human-readable identifier",
     ),
     sa.Column(
         "phone",
@@ -141,8 +141,8 @@ users = sa.Table(
         "expires_at",
         sa.DateTime(),
         nullable=True,
-        doc="Sets expiration date for trial accounts."
-        "If set to NULL, then the account does not expire.",
+        doc="Sets the expiration date for trial accounts."
+        "If set to NULL then the account does not expire.",
     ),
     sa.Column(
         "created_ip",
@@ -156,7 +156,7 @@ users = sa.Table(
     sa.UniqueConstraint(
         "phone",
         name="user_phone_unique_constraint",
-        # cannot use same phone for two users
+        # NOTE: that cannot use same phone for two user accounts
     ),
 )
 
