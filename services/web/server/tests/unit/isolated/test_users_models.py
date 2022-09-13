@@ -4,13 +4,13 @@ from typing import Any
 import pytest
 from models_library.generics import Envelope
 from pydantic import BaseModel
-from simcore_service_webserver.users_models import ProfileOutput, Token
+from simcore_service_webserver.users_models import ProfileGet, Token
 
 
 @pytest.mark.parametrize(
     "model_cls",
     (
-        ProfileOutput,
+        ProfileGet,
         Token,
     ),
 )

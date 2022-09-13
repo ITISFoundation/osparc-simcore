@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 from .groups_models import AllUsersGroups
 
 #
-# TOKENS
+# TOKENS resource
 #
 
 
@@ -35,7 +35,7 @@ class TokenID(BaseModel):
 
 
 #
-# USERS
+# PROFILE resource
 #
 
 
@@ -52,11 +52,11 @@ class _ProfileCommon(BaseModel):
         }
 
 
-class ProfileInput(_ProfileCommon):
+class ProfileUpdate(_ProfileCommon):
     pass
 
 
-class ProfileOutput(_ProfileCommon):
+class ProfileGet(_ProfileCommon):
     login: Optional[EmailStr] = None
     role: Optional[str] = None
     groups: Optional[AllUsersGroups] = None
