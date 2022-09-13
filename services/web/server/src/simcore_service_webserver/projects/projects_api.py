@@ -13,6 +13,7 @@ import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
+from dataclasses import dataclass
 from datetime import datetime
 from pprint import pformat
 from typing import Any, Optional
@@ -22,7 +23,7 @@ from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -804,13 +805,19 @@ async def run_project_dynamic_services(
 
     running_service_uuids = [d["service_uuid"] for d in running_services]
     # now start them if needed
-    project_needed_services = {
+    project_needed_services: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
     log.debug("Starting services: %s", f"{project_needed_services=}")
+
+    @dataclass
+    class _ServiceParams:
+        node_id: NodeIDStr
+        resources: ServiceResourcesDict
+        deprecated: bool
 
     unique_project_needed_services = set(project_needed_services.keys())
     deprecated_services: list[bool] = await logged_gather(
@@ -828,17 +835,22 @@ async def run_project_dynamic_services(
     )
     service_resources_result: list[ServiceResourcesDict] = await logged_gather(
         *[
-            get_project_node_resources(request.app, project=project, node_id=node_uuid)
-            for node_uuid, is_deprecated in zip(
-                unique_project_needed_services, deprecated_services
+            get_project_node_resources(
+                request.app, project=project, node_id=NodeID(node_uuid)
             )
-            if not is_deprecated
+            for node_uuid in unique_project_needed_services
         ],
         reraise=True,
     )
-    service_resources_search: dict[str, ServiceResourcesDict] = dict(
-        zip(unique_project_needed_services, service_resources_result)
-    )
+
+    service_resources_search = {
+        n: _ServiceParams(n, r, d)
+        for n, r, d in zip(
+            unique_project_needed_services,
+            service_resources_result,
+            deprecated_services,
+        )
+    }
 
     start_service_tasks = [
         director_v2_api.run_dynamic_service(
@@ -850,9 +862,10 @@ async def run_project_dynamic_services(
             service_uuid=service_uuid,
             request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources_search[service_uuid],
+            service_resources=service_resources_search[service_uuid].resources,
         )
         for service_uuid, service in project_needed_services.items()
+        if service_resources_search[service_uuid].deprecated is False
     ]
     results = await logged_gather(*start_service_tasks, reraise=True)
     log.debug("Services start result %s", results)
