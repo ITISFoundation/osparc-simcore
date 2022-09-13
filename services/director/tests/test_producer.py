@@ -19,7 +19,7 @@ from tenacity.wait import wait_fixed
 @pytest.fixture
 def ensure_service_runs_in_ci(monkeypatch):
     monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", int(25 * pow(1024, 2)))
-    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(50 * pow(10, 8)))
+    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(0.01 * pow(10, 9)))
 
 
 import json
@@ -115,8 +115,11 @@ async def run_services(
             started_services.append(started_service)
         return started_services
 
-    yield push_start_services
+    import pdb
 
+    pdb.set_trace()
+    yield push_start_services
+    pdb.set_trace()
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
