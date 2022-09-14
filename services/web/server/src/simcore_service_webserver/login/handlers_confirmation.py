@@ -54,7 +54,10 @@ async def email_confirmation(request: web.Request):
             )
 
         elif action == CHANGE_EMAIL:
+            #
             # TODO: compose error and send to front-end using fragments in the redirection
+            # But first we need to implement this refactoring https://github.com/ITISFoundation/osparc-simcore/issues/1975
+            #
             user_update = {"email": parse_obj_as(EmailStr, confirmation["data"])}
             user = await db.get_user({"id": confirmation["user_id"]})
             await db.update_user(user, user_update)
