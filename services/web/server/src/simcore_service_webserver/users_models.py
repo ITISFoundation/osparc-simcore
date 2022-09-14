@@ -2,7 +2,6 @@ from datetime import date
 from typing import Literal, Optional
 from uuid import UUID
 
-from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, EmailStr, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
@@ -64,24 +63,32 @@ class ProfileGet(_ProfileCommon):
     login: EmailStr
     role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
     groups: Optional[AllUsersGroups] = None
-    gravatar_id: Optional[str] = Field(default=None, alias="gravatar_id")
+    gravatar_id: Optional[str] = None
     expiration_date: Optional[date] = Field(
         default=None,
         description="If user has a trial account, it sets the expiration date, otherwise None",
+        alias="expirationDate",
     )
 
     class Config:
-        # Except for gravatar_id that is snake to keep legacy
-        alias_generator = snake_to_camel
+        # NOTE: old models have an hybrid between snake and camel cases!
+        # Should be unified at some point
         allow_population_by_field_name = True
         json_dumps = json_dumps
 
         schema_extra = {
-            "example": {
-                "login": "bla@foo.com",
-                "role": "Admin",
-                "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
-            }
+            "examples": [
+                {
+                    "login": "bla@foo.com",
+                    "role": "Admin",
+                    "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
+                },
+                {
+                    "login": "bla@foo.com",
+                    "role": UserRole.ADMIN,
+                    "expirationDate": "2022-09-14",
+                },
+            ]
         }
 
     @validator("role", pre=True)

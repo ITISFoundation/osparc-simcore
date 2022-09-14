@@ -65,10 +65,11 @@ def test_profile_get_expiration_date(faker: Faker):
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
 def test_profile_get_role(user_role: str):
-    data = deepcopy(ProfileGet.Config.schema_extra["example"])
-    data["role"] = user_role
-    m1 = ProfileGet(**data)
+    for example in ProfileGet.Config.schema_extra["examples"]:
+        data = deepcopy(example)
+        data["role"] = user_role
+        m1 = ProfileGet(**data)
 
-    data["role"] = UserRole(user_role)
-    m2 = ProfileGet(**data)
-    assert m1 == m2
+        data["role"] = UserRole(user_role)
+        m2 = ProfileGet(**data)
+        assert m1 == m2
