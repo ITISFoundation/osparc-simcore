@@ -63,11 +63,12 @@ class UsersGroup(BaseModel):
                     "accessRights": {"read": True, "write": True, "delete": True},
                 },
                 {
-                    "gid": "5",
-                    "label": "SPARC",
+                    "gid": 5,
+                    "label": "SPARCi",
                     "description": "Stimulating Peripheral Activity to Relieve Conditions",
-                    "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-                    "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
+                    "thumbnail": "https://placekitten.com/15/15",
+                    "inclusionRules": {"email": r"@(sparc)+\.(io|com|us)$"},
+                    "accessRights": {"read": True, "write": True, "delete": True},
                 },
             ]
         }
