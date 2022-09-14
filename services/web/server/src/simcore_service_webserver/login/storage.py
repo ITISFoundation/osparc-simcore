@@ -72,7 +72,10 @@ class AsyncpgStorage:
                 "data": data,
                 "created_at": datetime.utcnow(),
             }
-            await _sql.insert(conn, self.confirm_tbl, confirmation)
+            c = await _sql.insert(
+                conn, self.confirm_tbl, confirmation, returning="code"
+            )
+            assert code == c  # nosec
             return confirmation
 
     async def get_confirmation(self, filter_dict) -> asyncpg.Record:
