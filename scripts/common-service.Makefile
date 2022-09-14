@@ -60,23 +60,23 @@ test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for
 
 
 .PHONY: build build-nc build-devel build-devel-nc
-build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
+build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
 .PHONY: shell
-shell: ## runs shell inside $(APP_NAME) container
+shell: ## [swarm] runs shell inside $(APP_NAME) container
 	docker exec -it $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) /bin/bash
 
 
 .PHONY: tail logs
-tail logs: ## tails log of $(APP_NAME) container
+tail logs: ## [swarm] tails log of $(APP_NAME) container
 	docker logs --follow $(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) 2>&1
 
 
 .PHONY: stats
-stats: ## display live stream of $(APP_NAME) container resource usage statistics
+stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
 	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
 

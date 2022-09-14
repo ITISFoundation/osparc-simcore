@@ -27,6 +27,17 @@ services:
     networks:
       - default
 
+  autoscaling:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+    env_file:
+      - ../.env
+    networks:
+      - default
+
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
