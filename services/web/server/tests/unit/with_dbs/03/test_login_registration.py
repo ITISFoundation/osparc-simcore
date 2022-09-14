@@ -1,9 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 
 import asyncio
+from unittest.mock import Mock
 
 import pytest
 from aiohttp import web
@@ -36,6 +37,7 @@ def client(
 
 @pytest.fixture
 def cfg(client: TestClient) -> LoginOptions:
+    assert client.app
     cfg = get_plugin_options(client.app)
     assert cfg
     return cfg
@@ -43,15 +45,17 @@ def cfg(client: TestClient) -> LoginOptions:
 
 @pytest.fixture
 def db(client: TestClient) -> AsyncpgStorage:
+    assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
 
 
 async def test_regitration_availibility(client: TestClient):
+    assert client.app
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "password": PASSWORD,
@@ -63,16 +67,18 @@ async def test_regitration_availibility(client: TestClient):
 
 
 async def test_regitration_is_not_get(client: TestClient):
+    assert client.app
     url = client.app.router["auth_register"].url_for()
-    r = await client.get(url)
+    r = await client.get(f"{url}")
     await assert_error(r, web.HTTPMethodNotAllowed)
 
 
 async def test_registration_with_existing_email(client: TestClient, cfg: LoginOptions):
+    assert client.app
     url = client.app.router["auth_register"].url_for()
     async with NewUser(app=client.app) as user:
         r = await client.post(
-            url,
+            f"{url}",
             json={
                 "email": user["email"],
                 "password": user["raw_password"],
@@ -87,13 +93,15 @@ async def test_registration_with_expired_confirmation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    mocker,
+    mocker: Mock,
 ):
+    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.settings.get_plugin_settings",
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+            LOGIN_TWILIO=None,
         ),
     )
 
@@ -104,7 +112,7 @@ async def test_registration_with_expired_confirmation(
             user, ConfirmationAction.REGISTRATION.name
         )
         r = await client.post(
-            url,
+            f"{url}",
             json={
                 "email": user["email"],
                 "password": user["raw_password"],
@@ -120,19 +128,21 @@ async def test_registration_without_confirmation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    mocker,
+    mocker: Mock,
 ):
+    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.handlers.get_plugin_settings",
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+            LOGIN_TWILIO=None,
         ),
     )
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        f"{url}", json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
     )
     data, error = unwrap_envelope(await r.json())
 
@@ -151,17 +161,19 @@ async def test_registration_with_confirmation(
     capsys,
     mocker,
 ):
+    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.handlers.get_plugin_settings",
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+            LOGIN_TWILIO=None,
         ),
     )
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        f"{url}", json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
     )
     data, error = unwrap_envelope(await r.json())
     assert r.status == 200, (data, error)
@@ -202,10 +214,10 @@ async def test_registration_with_invitation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    is_invitation_required,
-    has_valid_invitation,
-    expected_response,
-    mocker,
+    is_invitation_required: bool,
+    has_valid_invitation: bool,
+    expected_response: type[web.HTTPError],
+    mocker: Mock,
 ):
     assert client.app
     mocker.patch(
