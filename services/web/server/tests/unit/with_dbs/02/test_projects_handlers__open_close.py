@@ -8,6 +8,7 @@ import asyncio
 import json
 import time
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Iterator, Optional, Union
 from unittest import mock
 from unittest.mock import call
@@ -220,7 +221,7 @@ async def test_share_project(
     user_role: UserRole,
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     catalog_subsystem_mock,
     share_rights: dict,
     project_db_cleaner,
@@ -294,7 +295,7 @@ async def test_open_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
@@ -335,6 +336,36 @@ async def test_open_project(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynamic_services(
+    client,
+    logged_user,
+    user_project,
+    client_session_id_factory: Callable,
+    expected,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services,
+    mock_catalog_api: dict[str, mock.Mock],
+    disable_gc_manual_guest_users,
+):
+    mock_catalog_api["get_service"].return_value["deprecated"] = (
+        datetime.utcnow() - timedelta(days=1)
+    ).isoformat()
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url, json=client_session_id_factory())
+    await assert_status(resp, expected)
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client,
@@ -342,7 +373,7 @@ async def test_close_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     fake_services,
     disable_gc_manual_guest_users,
 ):
@@ -417,7 +448,7 @@ async def test_get_active_project(
     client_session_id_factory: Callable,
     expected,
     socketio_client_factory: Callable,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     disable_gc_manual_guest_users,
 ):
@@ -514,7 +545,7 @@ async def test_project_node_lifetime(
     expected_response_on_Create,
     expected_response_on_Get,
     expected_response_on_Delete,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     storage_subsystem_mock,
     mock_catalog_api: dict[str, mock.Mock],
     mocker,
@@ -695,7 +726,7 @@ async def test_open_shared_project_2_users_locked(
     expected: ExpectedResponse,
     mocker,
     disable_gc_manual_guest_users,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
@@ -876,7 +907,7 @@ async def test_open_shared_project_at_same_time(
     user_role: UserRole,
     expected: ExpectedResponse,
     disable_gc_manual_guest_users,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
