@@ -143,7 +143,7 @@ class SimcoreS3DataManager(BaseDataManager):
             async for proj_data in db_projects.list_projects(
                 conn, accesible_projects_ids
             ):
-                prj_names_mapping = {proj_data.uuid: proj_data.name} | {
+                prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
                     NodeID(node_id): node_data.label
                     for node_id, node_data in proj_data.workbench.items()
                 }
