@@ -210,7 +210,10 @@ qx.Class.define("osparc.utils.Study", {
                   if ("task_progress" in updateData && loadingPage) {
                     const progress = updateData["task_progress"];
                     loadingPage.setMessages([progress["message"]]);
-                    loadingPage.addWidgetToMessages(new qx.ui.indicator.ProgressBar(progress["percent"], 1));
+                    const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
+                      maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
+                    });
+                    loadingPage.addWidgetToMessages(pBar);
                   }
                 }, this);
                 task.addListener("resultReceived", e => {
