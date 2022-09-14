@@ -6,6 +6,7 @@
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, Union
+from unittest import mock
 
 import pytest
 from aiohttp import web
@@ -16,19 +17,11 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from simcore_service_webserver import catalog
 
-
-@pytest.fixture
-def app_environment(
-    app_environment: dict[str, str], monkeypatch: MonkeyPatch
-) -> dict[str, str]:
-    # NOTE: overrides app_environment
-    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
 
 
 @pytest.fixture
@@ -40,11 +33,63 @@ def mock_service_resources() -> ServiceResourcesDict:
 
 
 @pytest.fixture
-def mock_catalog_api(mocker, mock_service_resources: ServiceResourcesDict) -> None:
-    mocker.patch(
-        "simcore_service_webserver.catalog_client.get_service_resources",
-        return_value=mock_service_resources,
-    )
+def mock_service() -> dict[str, Any]:
+    return {
+        "name": "File Picker",
+        "thumbnail": None,
+        "description": "File Picker",
+        "classifiers": [],
+        "quality": {},
+        "access_rights": {
+            "1": {"execute_access": True, "write_access": False},
+            "4": {"execute_access": True, "write_access": True},
+        },
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "integration-version": None,
+        "type": "dynamic",
+        "badges": None,
+        "authors": [
+            {
+                "name": "Red Pandas",
+                "email": "redpandas@wonderland.com",
+                "affiliation": None,
+            }
+        ],
+        "contact": "redpandas@wonderland.com",
+        "inputs": {},
+        "outputs": {
+            "outFile": {
+                "displayOrder": 0,
+                "label": "File",
+                "description": "Chosen File",
+                "type": "data:*/*",
+                "fileToKeyMap": None,
+                "widget": None,
+            }
+        },
+        "owner": "redpandas@wonderland.com",
+    }
+
+
+@pytest.fixture
+def mock_catalog_api(
+    mocker: MockerFixture,
+    mock_service_resources: ServiceResourcesDict,
+    mock_service: dict[str, Any],
+) -> dict[str, mock.Mock]:
+    return {
+        "get_service_resources": mocker.patch(
+            "simcore_service_webserver.projects.projects_api.catalog_client.get_service_resources",
+            return_value=mock_service_resources,
+            autospec=True,
+        ),
+        "get_service": mocker.patch(
+            "simcore_service_webserver.projects.projects_api.catalog_client.get_service",
+            return_value=mock_service,
+            autospec=True,
+        ),
+    }
 
 
 @pytest.fixture
