@@ -72,7 +72,7 @@ async def test_get_node_resources(
     mock_catalog_service_api_responses: None,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     expected: type[web.HTTPException],
 ):
     assert client.app

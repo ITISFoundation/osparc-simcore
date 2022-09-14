@@ -297,7 +297,7 @@ async def test_open_project(
     mocked_director_v2_api,
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     disable_gc_manual_guest_users,
 ):
     # POST /v0/projects/{project_id}:open
@@ -418,7 +418,7 @@ async def test_get_active_project(
     expected,
     socketio_client_factory: Callable,
     mocked_director_v2_api,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     disable_gc_manual_guest_users,
 ):
     # login with socket using client session id
@@ -516,7 +516,7 @@ async def test_project_node_lifetime(
     expected_response_on_Delete,
     mocked_director_v2_api,
     storage_subsystem_mock,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     mocker,
     faker: Faker,
     disable_gc_manual_guest_users,
@@ -697,7 +697,7 @@ async def test_open_shared_project_2_users_locked(
     disable_gc_manual_guest_users,
     mocked_director_v2_api,
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -878,7 +878,7 @@ async def test_open_shared_project_at_same_time(
     disable_gc_manual_guest_users,
     mocked_director_v2_api,
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
@@ -962,7 +962,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     disable_gc_manual_guest_users,
     clean_redis_table,
 ):

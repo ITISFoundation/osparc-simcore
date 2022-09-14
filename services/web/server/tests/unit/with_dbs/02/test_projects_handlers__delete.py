@@ -5,6 +5,7 @@
 
 
 from typing import Any, Callable
+from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
@@ -96,7 +97,7 @@ async def test_delete_project(
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     client,
     logged_user,
     user_project,
